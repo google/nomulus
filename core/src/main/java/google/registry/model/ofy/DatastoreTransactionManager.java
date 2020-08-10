@@ -23,14 +23,12 @@ import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionManager;
-import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -162,9 +160,6 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys) {
-    if (Streams.stream(keys).anyMatch(key -> HistoryEntry.class.isAssignableFrom(key.getKind()))) {
-      return loadPossibleHistoryEntries(keys);
-    }
     // Keep track of the Key -> VKey mapping so we can translate them back.
     ImmutableMap<Key<T>, VKey<? extends T>> keyMap =
         StreamSupport.stream(keys.spliterator(), false)
@@ -172,7 +167,10 @@ public class DatastoreTransactionManager implements TransactionManager {
             .collect(toImmutableMap(key -> (Key<T>) key.getOfyKey(), Functions.identity()));
 
     return getOfy().load().keys(keyMap.keySet()).entrySet().stream()
-        .collect(ImmutableMap.toImmutableMap(entry -> keyMap.get(entry.getKey()), Entry::getValue));
+        .collect(
+            toImmutableMap(
+                entry -> keyMap.get(entry.getKey()),
+                entry -> toChildHistoryEntryIfPossible(entry.getValue())));
   }
 
   @Override
@@ -197,13 +195,15 @@ public class DatastoreTransactionManager implements TransactionManager {
     getOfy().delete().keys(list).now();
   }
 
-  /** The following three methods exist due to the migration to Cloud SQL.
+  /**
+   * The following three methods exist due to the migration to Cloud SQL.
    *
    * <p>In Cloud SQL, {@link HistoryEntry} objects are represented instead as {@link DomainHistory},
    * {@link ContactHistory}, and {@link HostHistory} objects. During the migration, we do not wish
    * to change the Datastore schema so all of these objects are stored in Datastore as HistoryEntry
    * objects. They are converted to/from the appropriate classes upon retrieval, and converted to
-   * HistoryEntry on save. See go/r3.0-history-objects for more details. */
+   * HistoryEntry on save. See go/r3.0-history-objects for more details.
+   */
   private void saveEntity(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     if (entity instanceof HistoryEntry) {
@@ -212,27 +212,16 @@ public class DatastoreTransactionManager implements TransactionManager {
     getOfy().save().entity(entity);
   }
 
-  private <T> ImmutableMap<VKey<? extends T>, T> loadPossibleHistoryEntries(
-      Iterable<? extends VKey<? extends T>> keys) {
-    // This is significantly slower than a bulk load, but it allows us to convert objects
-    // as appropriate (and we don't bulk-load HistoryEntry objects anyway).
-    ImmutableMap.Builder<VKey<? extends T>, T> builder = new ImmutableMap.Builder<>();
-    for (VKey<? extends T> key : keys) {
-      T object = loadNullable(key);
-      if (object != null) {
-        builder.put(key, object);
-      }
+  @SuppressWarnings("unchecked")
+  private <T> T toChildHistoryEntryIfPossible(@Nullable T obj) {
+    if (obj != null && HistoryEntry.class.isAssignableFrom(obj.getClass())) {
+      return (T) ((HistoryEntry) obj).toChildHistoryEntity();
     }
-    return builder.build();
+    return obj;
   }
 
   @Nullable
-  @SuppressWarnings("unchecked")
   private <T> T loadNullable(VKey<T> key) {
-    T nullableEntity = getOfy().load().key(key.getOfyKey()).now();
-    if (nullableEntity != null && HistoryEntry.class.isAssignableFrom(nullableEntity.getClass())) {
-      return (T) ((HistoryEntry) nullableEntity).toChildHistoryEntity();
-    }
-    return nullableEntity;
+    return toChildHistoryEntryIfPossible(getOfy().load().key(key.getOfyKey()).now());
   }
 }
