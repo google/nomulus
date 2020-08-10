@@ -34,6 +34,10 @@ public class DeploySpec11PipelineCommand implements Command {
   @Config("projectId")
   String projectId;
 
+  @Inject
+  @Config("defaultJobRegion")
+  String beamJobRegion;
+
   @Parameter(
       names = {"-p", "--project"},
       description = "Cloud KMS project ID",
@@ -71,6 +75,7 @@ public class DeploySpec11PipelineCommand implements Command {
     Spec11Pipeline pipeline =
         new Spec11Pipeline(
             projectId,
+            beamJobRegion,
             beamStagingUrl,
             spec11TemplateUrl,
             reportingBucketUrl,
