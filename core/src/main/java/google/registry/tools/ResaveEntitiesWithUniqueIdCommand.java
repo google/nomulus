@@ -70,16 +70,17 @@ public class ResaveEntitiesWithUniqueIdCommand extends MutatingCommand {
 
   @Override
   protected void init() throws Exception {
-    for (String keyPath :
+    List<String> keyPaths =
         keyPathsFile == null
             ? CharStreams.readLines(new InputStreamReader(stdin, UTF_8))
-            : Files.readLines(keyPathsFile, UTF_8)) {
+            : Files.readLines(keyPathsFile, UTF_8);
+    for (String keyPath : keyPaths) {
       Key<?> untypedKey = parseKeyPath(keyPath);
       Object entity = ofy().load().key(untypedKey).now();
       if (entity == null) {
         System.err.println(
             String.format(
-                "Entity %s read from %s doesn't exist in Datastore!",
+                "Entity %s read from %s doesn't exist in Datastore! Skipping.",
                 untypedKey,
                 keyPathsFile == null ? "STDIN" : "File " + keyPathsFile.getAbsolutePath()));
         continue;
