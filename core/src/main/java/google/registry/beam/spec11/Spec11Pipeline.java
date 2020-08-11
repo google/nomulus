@@ -89,6 +89,7 @@ public class Spec11Pipeline implements Serializable {
   public static final String THREAT_MATCHES_FIELD = "threatMatches";
 
   private final String projectId;
+  private final String beamJobRegion;
   private final String beamStagingUrl;
   private final String spec11TemplateUrl;
   private final String reportingBucketUrl;
@@ -99,6 +100,7 @@ public class Spec11Pipeline implements Serializable {
   @Inject
   public Spec11Pipeline(
       @Config("projectId") String projectId,
+      @Config("defaultJobRegion") String beamJobRegion,
       @Config("beamStagingUrl") String beamStagingUrl,
       @Config("spec11TemplateUrl") String spec11TemplateUrl,
       @Config("reportingBucketUrl") String reportingBucketUrl,
@@ -106,6 +108,7 @@ public class Spec11Pipeline implements Serializable {
       @LocalCredential GoogleCredentialsBundle googleCredentialsBundle,
       Retrier retrier) {
     this.projectId = projectId;
+    this.beamJobRegion = beamJobRegion;
     this.beamStagingUrl = beamStagingUrl;
     this.spec11TemplateUrl = spec11TemplateUrl;
     this.reportingBucketUrl = reportingBucketUrl;
@@ -146,6 +149,7 @@ public class Spec11Pipeline implements Serializable {
     // We can't store options as a member variable due to serialization concerns.
     Spec11PipelineOptions options = PipelineOptionsFactory.as(Spec11PipelineOptions.class);
     options.setProject(projectId);
+    options.setRegion(beamJobRegion);
     options.setRunner(DataflowRunner.class);
     // This causes p.run() to stage the pipeline as a template on GCS, as opposed to running it.
     options.setTemplateLocation(spec11TemplateUrl);

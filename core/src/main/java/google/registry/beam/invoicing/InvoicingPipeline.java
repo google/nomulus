@@ -59,6 +59,7 @@ import org.apache.beam.sdk.values.TypeDescriptors;
 public class InvoicingPipeline implements Serializable {
 
   private final String projectId;
+  private final String beamJobRegion;
   private final String beamBucketUrl;
   private final String invoiceTemplateUrl;
   private final String beamStagingUrl;
@@ -69,6 +70,7 @@ public class InvoicingPipeline implements Serializable {
   @Inject
   public InvoicingPipeline(
       @Config("projectId") String projectId,
+      @Config("defaultJobRegion") String beamJobRegion,
       @Config("apacheBeamBucketUrl") String beamBucketUrl,
       @Config("invoiceTemplateUrl") String invoiceTemplateUrl,
       @Config("beamStagingUrl") String beamStagingUrl,
@@ -76,6 +78,7 @@ public class InvoicingPipeline implements Serializable {
       @Config("invoiceFilePrefix") String invoiceFilePrefix,
       @LocalCredential GoogleCredentialsBundle googleCredentialsBundle) {
     this.projectId = projectId;
+    this.beamJobRegion = beamJobRegion;
     this.beamBucketUrl = beamBucketUrl;
     this.invoiceTemplateUrl = invoiceTemplateUrl;
     this.beamStagingUrl = beamStagingUrl;
@@ -103,6 +106,7 @@ public class InvoicingPipeline implements Serializable {
     // We can't store options as a member variable due to serialization concerns.
     InvoicingPipelineOptions options = PipelineOptionsFactory.as(InvoicingPipelineOptions.class);
     options.setProject(projectId);
+    options.setRegion(beamJobRegion);
     options.setRunner(DataflowRunner.class);
     // This causes p.run() to stage the pipeline as a template on GCS, as opposed to running it.
     options.setTemplateLocation(invoiceTemplateUrl);

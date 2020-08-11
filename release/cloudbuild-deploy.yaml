@@ -56,13 +56,13 @@ steps:
 #      "gs://$${project_id}-beam/cloudsql/admin_credential.enc" \
 #      deploy_spec11_pipeline --project $${project_id}
 # Deploy the invoicing pipeline to GCS.
-- name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
-  args:
-  - -e
-  - ${_ENV}
-  - --credential
-  - tool-credential.json
-  - deploy_invoicing_pipeline
+#- name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
+#  args:
+#  - -e
+#  - ${_ENV}
+#  - --credential
+#  - tool-credential.json
+#  - deploy_invoicing_pipeline
 # Save the deployed tag for the current environment on GCS. Because of b/137891685
 # which causes the for-loop in the next step to fail, this may not be the last step.
 # TODO(weiminyu): do this in last step.

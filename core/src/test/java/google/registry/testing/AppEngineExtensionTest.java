@@ -17,6 +17,7 @@ package google.registry.testing;
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,12 +29,14 @@ import com.google.common.collect.Multimaps;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -60,53 +63,72 @@ class AppEngineExtensionTest {
   private static final String UNDECLARED_INDEX =
       DECLARED_INDEX.replace("ContactResource", "NoSuchResource");
 
-  private final AppEngineExtension appEngineRule =
+  /**
+   * Sets up test AppEngine instance.
+   *
+   * <p>Not registered as extension since this instance's afterEach() method is also under test. All
+   * methods should call {@link AppEngineExtension#afterEach appEngine.afterEach} explicitly.
+   */
+  private final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+
+  private JpaTransactionManager originalJpa;
 
   @RegisterExtension
   final ContextCapturingMetaExtension context = new ContextCapturingMetaExtension();
 
   @BeforeEach
   void beforeEach() throws Exception {
-    appEngineRule.beforeEach(context.getContext());
+    originalJpa = jpaTm();
+    appEngine.beforeEach(context.getContext());
+  }
+
+  @AfterEach
+  void afterEach() {
+    // Note: cannot use isSameInstanceAs() because DummyTransactionManager would throw on any
+    // access.
+    assertWithMessage("Original state not restore. Is appEngine.afterEach not called by this test?")
+        .that(originalJpa == jpaTm())
+        .isTrue();
   }
 
   @Test
   void testTeardown_successNoAutoIndexFile() throws Exception {
-    appEngineRule.afterEach(context.getContext());
+    appEngine.afterEach(context.getContext());
   }
 
   @Test
   void testTeardown_successEmptyAutoIndexFile() throws Exception {
     writeAutoIndexFile("");
-    appEngineRule.afterEach(context.getContext());
+    appEngine.afterEach(context.getContext());
   }
 
   @Test
   void testTeardown_successWhiteSpacesOnlyAutoIndexFile() throws Exception {
     writeAutoIndexFile("  ");
-    appEngineRule.afterEach(context.getContext());
+    appEngine.afterEach(context.getContext());
   }
 
   @Test
   void testTeardown_successOnlyDeclaredIndexesUsed() throws Exception {
     writeAutoIndexFile(DECLARED_INDEX);
-    appEngineRule.afterEach(context.getContext());
+    appEngine.afterEach(context.getContext());
   }
 
   @Test
   void testTeardown_failureUndeclaredIndexesUsed() throws Exception {
     writeAutoIndexFile(UNDECLARED_INDEX);
-    assertThrows(AssertionError.class, () -> appEngineRule.afterEach(context.getContext()));
+    assertThrows(AssertionError.class, () -> appEngine.afterEach(context.getContext()));
   }
 
   @Test
-  void testRegisterOfyEntities_duplicateEntitiesWithSameName_fails() {
+  void testRegisterOfyEntities_duplicateEntitiesWithSameName_fails() throws Exception {
     AppEngineExtension appEngineRule =
         AppEngineExtension.builder()
             .withDatastoreAndCloudSql()
             .withOfyTestEntities(google.registry.testing.TestObject.class, TestObject.class)
             .build();
+    // Thrown before JPA is set up, therefore no need to call afterEach.
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class, () -> appEngineRule.beforeEach(context.getContext()));
@@ -118,10 +140,12 @@ class AppEngineExtensionTest {
                 TestObject.class.getName(),
                 "TestObject",
                 google.registry.testing.TestObject.class.getName()));
+    // The class level extension.
+    appEngine.afterEach(context.getContext());
   }
 
   @Test
-  void testOfyEntities_uniqueKinds() {
+  void testOfyEntities_uniqueKinds() throws Exception {
     try (ScanResult scanResult =
         new ClassGraph()
             .enableAnnotationInfo()
@@ -147,10 +171,11 @@ class AppEngineExtensionTest {
           .that(conflictingKinds)
           .isEmpty();
     }
+    appEngine.afterEach(context.getContext());
   }
 
   private void writeAutoIndexFile(String content) throws IOException {
-    asCharSink(new File(appEngineRule.tmpDir, "datastore-indexes-auto.xml"), UTF_8).write(content);
+    asCharSink(new File(appEngine.tmpDir, "datastore-indexes-auto.xml"), UTF_8).write(content);
   }
 
   @Entity
