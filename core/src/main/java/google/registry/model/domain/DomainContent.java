@@ -40,7 +40,6 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
@@ -419,7 +418,7 @@ public class DomainContent extends EppResource
    * parallels the logic in {@code DomainTransferApproveFlow} which handles explicit client
    * approvals.
    */
-  protected static <T extends DomainContent> T cloneDomainProjectedAtTime(T domain, DateTime now) {
+  static <T extends DomainContent> T cloneDomainProjectedAtTime(T domain, DateTime now) {
     DomainTransferData transferData = domain.getTransferData();
     DateTime transferExpirationTime = transferData.getPendingTransferExpirationTime();
 
@@ -608,7 +607,7 @@ public class DomainContent extends EppResource
    * <p>The registrant field is only set if {@code includeRegistrant} is true, as this field needs
    * to be set in some circumstances but not in others.
    */
-  protected void setContactFields(Set<DesignatedContact> contacts, boolean includeRegistrant) {
+  void setContactFields(Set<DesignatedContact> contacts, boolean includeRegistrant) {
     // Set the individual contact fields.
     for (DesignatedContact contact : contacts) {
       switch (contact.getType()) {
@@ -634,15 +633,13 @@ public class DomainContent extends EppResource
 
   @Override
   public VKey<DomainBase> createVKey() {
-    return VKey.create(DomainBase.class, getRepoId(), Key.create(this));
-  }
-
-  public static VKey<DomainBase> createVKey(Key key) {
-    return VKey.create(DomainBase.class, key.getName(), key);
+    throw new UnsupportedOperationException(
+        "DomainContent is not an actual persisted entity you can create a key to;"
+            + " use DomainBase instead");
   }
 
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */
-  protected static final Predicate<DesignatedContact> IS_REGISTRANT =
+  static final Predicate<DesignatedContact> IS_REGISTRANT =
       (DesignatedContact contact) -> DesignatedContact.Type.REGISTRANT.equals(contact.type);
 
   /** An override of {@link EppResource#asBuilder} with tighter typing. */

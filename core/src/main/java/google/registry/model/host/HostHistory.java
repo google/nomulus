@@ -83,7 +83,8 @@ public class HostHistory extends HistoryEntry {
     @Override
     public Builder setParent(Key<? extends EppResource> parent) {
       super.setParent(parent);
-      getInstance().hostRepoId = VKey.create(HostResource.class, parent.getName(), parent);
+      getInstance().hostRepoId =
+          VKey.create(HostResource.class, parent.getName(), (Key<HostResource>) parent);
       return this;
     }
   }
