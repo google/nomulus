@@ -104,7 +104,8 @@ public class DomainHistory extends HistoryEntry {
     @Override
     public Builder setParent(Key<? extends EppResource> parent) {
       super.setParent(parent);
-      getInstance().domainRepoId = VKey.create(DomainBase.class, parent.getName(), parent);
+      getInstance().domainRepoId =
+          VKey.create(DomainBase.class, parent.getName(), (Key<DomainBase>) parent);
       return this;
     }
   }

@@ -81,7 +81,8 @@ public class ContactHistory extends HistoryEntry {
     @Override
     public Builder setParent(Key<? extends EppResource> parent) {
       super.setParent(parent);
-      getInstance().contactRepoId = VKey.create(ContactResource.class, parent.getName(), parent);
+      getInstance().contactRepoId =
+          VKey.create(ContactResource.class, parent.getName(), (Key<ContactResource>) parent);
       return this;
     }
   }

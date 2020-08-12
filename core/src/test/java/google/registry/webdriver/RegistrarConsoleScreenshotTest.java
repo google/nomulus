@@ -238,6 +238,9 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     Thread.sleep(1000);
     driver.waitForElement(By.tagName("h1"));
     driver.waitForElement(By.id("reg-app-btn-add")).click();
+    // Attempt to fix flaky tests. The going theory is that the click button CSS animation needs to
+    // finish before the screenshot is captured.
+    Thread.sleep(250);
     driver.diffPage("page");
   }
 

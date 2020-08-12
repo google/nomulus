@@ -69,6 +69,7 @@ class InvoicingPipelineTest {
     invoicingPipeline =
         new InvoicingPipeline(
             "test-project",
+            "region",
             beamTempFolder,
             beamTempFolder + "/templates/invoicing",
             beamTempFolder + "/staging",

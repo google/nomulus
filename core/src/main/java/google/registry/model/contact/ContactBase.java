@@ -19,7 +19,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.EppResourceUtils.projectResourceOntoBuilderAtTime;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.condition.IfNull;
@@ -185,8 +184,9 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
 
   @Override
   public VKey<? extends ContactBase> createVKey() {
-    // TODO(mmuller): create symmetric keys if we can ever reload both sides.
-    return VKey.create(ContactBase.class, getRepoId(), Key.create(this));
+    throw new UnsupportedOperationException(
+        "ContactBase is not an actual persisted entity you can create a key to;"
+            + " use ContactResource instead");
   }
 
   public String getContactId() {

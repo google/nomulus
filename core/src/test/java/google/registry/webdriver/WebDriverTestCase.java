@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Base class for tests that needs a {@link WebDriverPlusScreenDifferExtension}. */
-@Timeout(60)
+@Timeout(120)
 class WebDriverTestCase {
 
   @RegisterExtension

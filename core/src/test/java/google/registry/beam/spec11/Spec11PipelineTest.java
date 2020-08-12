@@ -124,6 +124,7 @@ class Spec11PipelineTest {
     spec11Pipeline =
         new Spec11Pipeline(
             "test-project",
+            "region",
             beamTempFolder + "/staging",
             beamTempFolder + "/templates/invoicing",
             tmpDir.toAbsolutePath().toString(),

@@ -16,15 +16,12 @@ package google.registry.flows;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatastoreHelper.POLL_MESSAGE_ID_STRIPPER;
-import static google.registry.testing.DatastoreHelper.getPollMessages;
 import static google.registry.testing.DatastoreHelper.stripBillingEventId;
 import static google.registry.xml.XmlTestUtils.assertXmlEquals;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -34,7 +31,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.ObjectArrays;
-import com.google.common.collect.Streams;
 import google.registry.config.RegistryConfig.ConfigModule.TmchCaMode;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
 import google.registry.flows.picker.FlowPicker;
@@ -44,7 +40,6 @@ import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.ofy.Ofy;
-import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListSingleton;
 import google.registry.monitoring.whitebox.EppMetric;
@@ -212,24 +207,6 @@ public abstract class FlowTestCase<F extends Flow> {
       Iterable<GracePeriod> actual, ImmutableMap<GracePeriod, ? extends BillingEvent> expected) {
     assertThat(canonicalizeGracePeriods(Maps.toMap(actual, FlowTestCase::expandGracePeriod)))
         .isEqualTo(canonicalizeGracePeriods(expected));
-  }
-
-  protected void assertPollMessages(String clientId, PollMessage... expected) {
-    assertPollMessagesHelper(getPollMessages(clientId), expected);
-  }
-
-  protected void assertPollMessages(PollMessage... expected) {
-    assertPollMessagesHelper(getPollMessages(), expected);
-  }
-
-  /** Assert that the list matches all the poll messages in the fake Datastore. */
-  private void assertPollMessagesHelper(
-      Iterable<PollMessage> pollMessages, PollMessage... expected) {
-    // Ordering is irrelevant but duplicates should be considered independently.
-    assertThat(
-            Streams.stream(pollMessages).map(POLL_MESSAGE_ID_STRIPPER).collect(toImmutableList()))
-        .containsExactlyElementsIn(
-            Arrays.stream(expected).map(POLL_MESSAGE_ID_STRIPPER).collect(toImmutableList()));
   }
 
   private EppOutput runFlowInternal(CommitMode commitMode, UserPrivileges userPrivileges)
