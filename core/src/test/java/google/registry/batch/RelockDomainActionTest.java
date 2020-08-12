@@ -34,10 +34,10 @@ import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STAT
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.joda.time.Duration.standardSeconds;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.DomainBase;
@@ -94,7 +94,6 @@ public class RelockDomainActionTest {
   private DomainBase domain;
   private RegistryLock oldLock;
   @Mock private SendEmailService sendEmailService;
-  @Mock private AppEngineServiceUtils appEngineServiceUtils;
   private AsyncTaskEnqueuer asyncTaskEnqueuer;
   private RelockDomainAction action;
 
@@ -111,6 +110,11 @@ public class RelockDomainActionTest {
         domainLockUtils.administrativelyApplyUnlock(
             DOMAIN_NAME, CLIENT_ID, false, Optional.empty());
     assertThat(reloadDomain(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
+
+    AppEngineServiceUtils appEngineServiceUtils = mock(AppEngineServiceUtils.class);
+    lenient()
+        .when(appEngineServiceUtils.getServiceHostname("backend"))
+        .thenReturn("backend.hostname.fake");
 
     asyncTaskEnqueuer =
         AsyncTaskEnqueuerTest.createForTesting(appEngineServiceUtils, clock, Duration.ZERO);
@@ -136,7 +140,6 @@ public class RelockDomainActionTest {
 
   @Test
   void testFailure_unknownCode() throws Exception {
-    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     action = createAction(12128675309L);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
@@ -206,7 +209,6 @@ public class RelockDomainActionTest {
 
   @Test
   public void testFailure_transientFailure_enqueuesTask() {
-    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     // Hard-delete the domain to simulate a DB failure
     deleteResource(domain);
     action.run();
@@ -217,7 +219,6 @@ public class RelockDomainActionTest {
 
   @Test
   void testFailure_sufficientTransientFailures_sendsEmail() throws Exception {
-    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     // Hard-delete the domain to simulate a DB failure
     deleteResource(domain);
     action = createAction(oldLock.getRevisionId(), RelockDomainAction.FAILURES_BEFORE_EMAIL);
@@ -252,7 +253,6 @@ public class RelockDomainActionTest {
 
   @Test
   void testFailure_slowsDown() throws Exception {
-    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     deleteResource(domain);
     action = createAction(oldLock.getRevisionId(), RelockDomainAction.ATTEMPTS_BEFORE_SLOWDOWN);
     action.run();
