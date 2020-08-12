@@ -15,6 +15,7 @@
 package google.registry.batch;
 
 import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
@@ -30,6 +31,7 @@ import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardHours;
 import static org.joda.time.Duration.standardSeconds;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSortedSet;
@@ -157,8 +159,7 @@ public class AsyncTaskEnqueuerTest {
                 .setRegistrarPocId("someone@example.com")
                 .setVerificationCode("hi")
                 .build());
-    asyncTaskEnqueuer.enqueueDomainRelock(
-        lock.getRelockDuration().get().getMillis(), lock.getRevisionId(), 0);
+    asyncTaskEnqueuer.enqueueDomainRelock(lock.getRelockDuration().get(), lock.getRevisionId(), 0);
     assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
@@ -172,5 +173,28 @@ public class AsyncTaskEnqueuerTest {
             .etaDelta(
                 standardHours(6).minus(standardSeconds(30)),
                 standardHours(6).plus(standardSeconds(30))));
+  }
+
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  @Test
+  void testFailure_enqueueRelock_noDuration() {
+    RegistryLock lockWithoutDuration =
+        saveRegistryLock(
+            new RegistryLock.Builder()
+                .isSuperuser(false)
+                .setDomainName("example.tld")
+                .setRepoId("repoId")
+                .setRegistrarId("TheRegistrar")
+                .setRegistrarPocId("someone@example.com")
+                .setVerificationCode("hi")
+                .build());
+    assertThat(
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> asyncTaskEnqueuer.enqueueDomainRelock(lockWithoutDuration)))
+        .hasMessageThat()
+        .isEqualTo(
+            String.format(
+                "Lock with ID %s not configured for relock", lockWithoutDuration.getRevisionId()));
   }
 }

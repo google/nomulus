@@ -203,8 +203,9 @@ public final class DomainLockUtils {
   }
 
   private void submitRelockIfNecessary(RegistryLock lock) {
-    lock.getRelockDuration().ifPresent(
-        d -> asyncTaskEnqueuer.enqueueDomainRelock(d.getMillis(), lock.getRevisionId(), 0));
+    if (lock.getRelockDuration().isPresent()) {
+      asyncTaskEnqueuer.enqueueDomainRelock(lock);
+    }
   }
 
   private void setAsRelock(RegistryLock newLock) {

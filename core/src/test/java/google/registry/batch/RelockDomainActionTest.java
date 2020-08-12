@@ -33,7 +33,6 @@ import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.joda.time.Duration.standardMinutes;
 import static org.joda.time.Duration.standardSeconds;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -66,12 +65,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link RelockDomainAction}. */
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 public class RelockDomainActionTest {
 
   private static final String DOMAIN_NAME = "example.tld";
@@ -98,6 +94,7 @@ public class RelockDomainActionTest {
   private DomainBase domain;
   private RegistryLock oldLock;
   @Mock private SendEmailService sendEmailService;
+  @Mock private AppEngineServiceUtils appEngineServiceUtils;
   private AsyncTaskEnqueuer asyncTaskEnqueuer;
   private RelockDomainAction action;
 
@@ -115,8 +112,6 @@ public class RelockDomainActionTest {
             DOMAIN_NAME, CLIENT_ID, false, Optional.empty());
     assertThat(reloadDomain(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
 
-    AppEngineServiceUtils appEngineServiceUtils = mock(AppEngineServiceUtils.class);
-    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     asyncTaskEnqueuer =
         AsyncTaskEnqueuerTest.createForTesting(appEngineServiceUtils, clock, Duration.ZERO);
     action = createAction(oldLock.getRevisionId());
@@ -141,11 +136,12 @@ public class RelockDomainActionTest {
 
   @Test
   void testFailure_unknownCode() throws Exception {
+    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     action = createAction(12128675309L);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.getPayload()).isEqualTo("Relock failed: Unknown revision ID 12128675309");
-    assertTaskEnqueued(1, 12128675309L); // should retry, transient
+    assertThat(response.getPayload()).isEqualTo("Re-lock failed: Unknown revision ID 12128675309");
+    assertTaskEnqueued(1, 12128675309L, Duration.standardMinutes(10)); // should retry, transient
   }
 
   @Test
@@ -155,7 +151,7 @@ public class RelockDomainActionTest {
     String expectedFailureMessage = "Domain example.tld has a pending delete.";
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
-        .isEqualTo(String.format("Relock failed: %s", expectedFailureMessage));
+        .isEqualTo(String.format("Re-lock failed: %s", expectedFailureMessage));
     assertNonTransientFailureEmail(expectedFailureMessage);
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
@@ -167,7 +163,7 @@ public class RelockDomainActionTest {
     String expectedFailureMessage = "Domain example.tld has a pending transfer.";
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
-        .isEqualTo(String.format("Relock failed: %s", expectedFailureMessage));
+        .isEqualTo(String.format("Re-lock failed: %s", expectedFailureMessage));
     assertNonTransientFailureEmail(expectedFailureMessage);
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
@@ -178,7 +174,7 @@ public class RelockDomainActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
-        .isEqualTo("Domain example.tld is already manually relocked, skipping automated relock.");
+        .isEqualTo("Domain example.tld is already manually re-locked, skipping automated re-lock.");
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 
@@ -189,7 +185,7 @@ public class RelockDomainActionTest {
     String expectedFailureMessage = "Domain example.tld has been deleted.";
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
-        .isEqualTo(String.format("Relock failed: %s", expectedFailureMessage));
+        .isEqualTo(String.format("Re-lock failed: %s", expectedFailureMessage));
     assertNonTransientFailureEmail(expectedFailureMessage);
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
@@ -203,23 +199,25 @@ public class RelockDomainActionTest {
             + "NewRegistrar since the unlock.";
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
-        .isEqualTo(String.format("Relock failed: %s", expectedFailureMessage));
+        .isEqualTo(String.format("Re-lock failed: %s", expectedFailureMessage));
     assertNonTransientFailureEmail(expectedFailureMessage);
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 
   @Test
   public void testFailure_transientFailure_enqueuesTask() {
+    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     // Hard-delete the domain to simulate a DB failure
     deleteResource(domain);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.getPayload()).isEqualTo("Relock failed: null");
+    assertThat(response.getPayload()).isEqualTo("Re-lock failed: null");
     assertTaskEnqueued(1);
   }
 
   @Test
   void testFailure_sufficientTransientFailures_sendsEmail() throws Exception {
+    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     // Hard-delete the domain to simulate a DB failure
     deleteResource(domain);
     action = createAction(oldLock.getRevisionId(), RelockDomainAction.FAILURES_BEFORE_EMAIL);
@@ -227,7 +225,7 @@ public class RelockDomainActionTest {
     assertTaskEnqueued(RelockDomainAction.FAILURES_BEFORE_EMAIL + 1);
     assertTransientFailureEmail();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.getPayload()).isEqualTo("Relock failed: null");
+    assertThat(response.getPayload()).isEqualTo("Re-lock failed: null");
   }
 
   @Test
@@ -248,25 +246,20 @@ public class RelockDomainActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
-        .isEqualTo("Domain example.tld is already manually relocked, skipping automated relock.");
+        .isEqualTo("Domain example.tld is already manually re-locked, skipping automated re-lock.");
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 
   @Test
-  void testFailure_maxRetries() throws Exception {
+  void testFailure_slowsDown() throws Exception {
+    when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     deleteResource(domain);
-    action = createAction(oldLock.getRevisionId(), RelockDomainAction.MAX_ATTEMPTS);
+    action = createAction(oldLock.getRevisionId(), RelockDomainAction.ATTEMPTS_BEFORE_SLOWDOWN);
     action.run();
-    assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
-    String expectedBody =
-        "There have been unexpected errors when automatically re-locking example.tld, for the last "
-            + "6 hours. We will not attempt to re-lock the domain again. Please contact support at "
-            + "support@example.com if you have any questions";
-    assertFailureEmailWithBody(
-        expectedBody,
-        ImmutableSet.of(
-            new InternetAddress("Marla.Singer.RegistryLock@crr.com"),
-            new InternetAddress("alerts@example.com")));
+    assertTaskEnqueued(
+        RelockDomainAction.ATTEMPTS_BEFORE_SLOWDOWN + 1,
+        oldLock.getRevisionId(),
+        Duration.standardHours(1));
   }
 
   private void assertSuccessEmailSent() throws Exception {
@@ -318,10 +311,10 @@ public class RelockDomainActionTest {
   }
 
   private void assertTaskEnqueued(int numAttempts) {
-    assertTaskEnqueued(numAttempts, oldLock.getRevisionId());
+    assertTaskEnqueued(numAttempts, oldLock.getRevisionId(), Duration.standardMinutes(10));
   }
 
-  private void assertTaskEnqueued(int numAttempts, long oldUnlockRevisionId) {
+  private void assertTaskEnqueued(int numAttempts, long oldUnlockRevisionId, Duration duration) {
     assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
@@ -332,9 +325,7 @@ public class RelockDomainActionTest {
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(oldUnlockRevisionId))
             .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, String.valueOf(numAttempts))
-            .etaDelta(
-                standardMinutes(10).minus(standardSeconds(30)),
-                standardMinutes(10).plus(standardSeconds(30))));
+            .etaDelta(duration.minus(standardSeconds(30)), duration.plus(standardSeconds(30))));
   }
 
   private DomainBase reloadDomain(DomainBase domain) {

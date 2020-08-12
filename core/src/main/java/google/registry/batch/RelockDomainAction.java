@@ -42,12 +42,12 @@ import google.registry.util.DateTimeUtils;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import org.joda.time.Duration;
 
-/** Task that relocks a previously-Registry-Locked domain after a predetermined period of time. */
+/** Task that re-locks a previously-Registry-Locked domain after a predetermined period of time. */
 @Action(
     service = Action.Service.BACKEND,
     path = RelockDomainAction.PATH,
@@ -60,9 +60,10 @@ public class RelockDomainAction implements Runnable {
   public static final String OLD_UNLOCK_REVISION_ID_PARAM = "oldUnlockRevisionId";
   public static final String PREVIOUS_ATTEMPTS_PARAM = "previousAttempts";
 
-  static final int MAX_ATTEMPTS = 36; // every ten minutes for six hours
+  static final int ATTEMPTS_BEFORE_SLOWDOWN = 36; // every ten minutes for six hours then every hour
   static final int FAILURES_BEFORE_EMAIL = 2; // email after three failures, one half hour
-  private static final int TEN_MINUTES_MILLIS = 10 * 60 * 1000;
+  private static final Duration TEN_MINUTES = Duration.standardMinutes(10);
+  private static final Duration ONE_HOUR = Duration.standardHours(1);
 
   private static final String RELOCK_SUCCESS_EMAIL_TEMPLATE =
       "The domain %s was successfully re-locked.\n\nPlease contact support at %s if you have any "
@@ -73,10 +74,8 @@ public class RelockDomainAction implements Runnable {
   private static final String RELOCK_TRANSIENT_FAILURE_EMAIL_TEMPLATE =
       "There was an unexpected error when automatically re-locking %s. We will continue retrying "
           + "the lock for five hours. Please contact support at %s if you have any questions";
-  private static final String RELOCK_FINAL_TRANSIENT_FAILURE_EMAIL_TEMPLATE =
-      "There have been unexpected errors when automatically re-locking %s, for the last 6 hours. "
-          + "We will not attempt to re-lock the domain again. Please contact support at %s if you "
-          + "have any questions";
+  private static final String RELOCK_UNKNOWN_ID_FAILURE_EMAIL_TEMPLATE =
+      "The old lock with revision ID %d is not present or is not accessible";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -145,16 +144,16 @@ public class RelockDomainAction implements Runnable {
               .now()
               .cloneProjectedAtTime(jpaTm().getTransactionTime());
     } catch (Throwable t) {
-      handleTransientFailure(oldLock, t);
+      handleTransientFailure(Optional.ofNullable(oldLock), t);
       return;
     }
 
     if (domain.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES)
         || oldLock.getRelock() != null) {
-      // The domain was manually locked, so we shouldn't worry about relocking
+      // The domain was manually locked, so we shouldn't worry about re-locking
       String message =
           String.format(
-              "Domain %s is already manually relocked, skipping automated relock.",
+              "Domain %s is already manually re-locked, skipping automated re-lock.",
               domain.getDomainName());
       logger.atInfo().log(message);
       response.setPayload(message);
@@ -164,13 +163,13 @@ public class RelockDomainAction implements Runnable {
       verifyDomainAndLockState(oldLock, domain);
     } catch (Throwable t) {
       // If the domain was, for example, transferred, then notify the old registrar and don't retry.
-      handleNonTransientFailure(oldLock, t);
+      handleNonRetryableFailure(oldLock, t);
       return;
     }
     try {
       applyRelock(oldLock);
     } catch (Throwable t) {
-      handleTransientFailure(oldLock, t);
+      handleTransientFailure(Optional.of(oldLock), t);
     }
   }
 
@@ -180,7 +179,7 @@ public class RelockDomainAction implements Runnable {
         oldLock.getRegistrarId(),
         oldLock.getRegistrarPocId(),
         oldLock.isSuperuser());
-    logger.atInfo().log("Relocked domain %s.", oldLock.getDomainName());
+    logger.atInfo().log("Re-locked domain %s.", oldLock.getDomainName());
     response.setStatus(SC_OK);
     // Only send a success email if we previously sent a failure email
     if (previousAttempts > FAILURES_BEFORE_EMAIL) {
@@ -212,10 +211,11 @@ public class RelockDomainAction implements Runnable {
         domain.getCurrentSponsorClientId());
   }
 
-  private void handleNonTransientFailure(RegistryLock oldLock, Throwable t) {
+  private void handleNonRetryableFailure(RegistryLock oldLock, Throwable t) {
     logger.atWarning().withCause(t).log(
-        "Exception when attempting to relock domain with old revision ID %d.", oldUnlockRevisionId);
-    response.setPayload(String.format("Relock failed: %s", t.getMessage()));
+        "Exception thrown when attempting to re-lock domain with old revision ID %d.",
+        oldUnlockRevisionId);
+    response.setPayload(String.format("Re-lock failed: %s", t.getMessage()));
 
     String body =
         String.format(
@@ -232,27 +232,27 @@ public class RelockDomainAction implements Runnable {
             .build());
   }
 
-  private void handleTransientFailure(@Nullable RegistryLock oldLock, Throwable t) {
-    String message = String.format("Relock failed: %s", t.getMessage());
+  private void handleTransientFailure(Optional<RegistryLock> oldLock, Throwable t) {
+    String message = String.format("Re-lock failed: %s", t.getMessage());
     logger.atSevere().withCause(t).log(message);
     response.setPayload(message);
-    // Retry (and possibly send a notification email) if we haven't hit the max attempts
-    if (previousAttempts < MAX_ATTEMPTS) {
-      if (oldLock != null && previousAttempts == FAILURES_BEFORE_EMAIL) {
+
+    if (previousAttempts == FAILURES_BEFORE_EMAIL) {
+      if (oldLock.isPresent()) {
         String body =
             String.format(
-                RELOCK_TRANSIENT_FAILURE_EMAIL_TEMPLATE, oldLock.getDomainName(), supportEmail);
-        sendGenericTransientFailureEmail(oldLock, body);
+                RELOCK_TRANSIENT_FAILURE_EMAIL_TEMPLATE,
+                oldLock.get().getDomainName(),
+                supportEmail);
+        sendGenericTransientFailureEmail(oldLock.get(), body);
+      } else {
+        // if the old lock isn't present, something has gone horribly wrong
+        sendUnknownRevisionIdAlertEmail();
       }
-      asyncTaskEnqueuer.enqueueDomainRelock(
-          TEN_MINUTES_MILLIS, oldUnlockRevisionId, previousAttempts + 1);
-    } else if (oldLock != null) {
-      // In the case where we've maxed out on attempts, send a final summary email
-      String body =
-          String.format(
-              RELOCK_FINAL_TRANSIENT_FAILURE_EMAIL_TEMPLATE, oldLock.getDomainName(), supportEmail);
-      sendGenericTransientFailureEmail(oldLock, body);
     }
+    Duration timeBeforeRetry = previousAttempts < ATTEMPTS_BEFORE_SLOWDOWN ? TEN_MINUTES : ONE_HOUR;
+    asyncTaskEnqueuer.enqueueDomainRelock(
+        timeBeforeRetry, oldUnlockRevisionId, previousAttempts + 1);
   }
 
   private void sendSuccessEmail(RegistryLock oldLock) {
@@ -281,6 +281,16 @@ public class RelockDomainAction implements Runnable {
             .setBody(body)
             .setSubject(String.format("Error re-locking domain %s", oldLock.getDomainName()))
             .setRecipients(allRecipients)
+            .build());
+  }
+
+  private void sendUnknownRevisionIdAlertEmail() {
+    sendEmailService.sendEmail(
+        EmailMessage.newBuilder()
+            .setFrom(gSuiteOutgoingEmailAddress)
+            .setBody(String.format(RELOCK_UNKNOWN_ID_FAILURE_EMAIL_TEMPLATE, oldUnlockRevisionId))
+            .setSubject("Error re-locking domain")
+            .setRecipients(ImmutableSet.of(alertRecipientAddress))
             .build());
   }
 
