@@ -252,11 +252,27 @@ public class DomainContent extends EppResource
    */
   DateTime lastTransferTime;
 
+  /**
+   * When the domain's autorenewal status will expire.
+   *
+   * <p>This will be null for the vast majority of domains because all domains autorenew
+   * indefinitely by default and autorenew can only be countermanded by administrators, typically
+   * for reasons of the URS process or termination of a registrar for nonpayment.
+   *
+   * <p>When a domain is scheduled to not autorenew, this field is set to the current value of its
+   * {@link #registrationExpirationTime}, after which point the next invocation of a periodic
+   * cronjob will explicitly delete the domain. This field is a DateTime and not a boolean because
+   * of edge cases that occur during the autorenew grace period. We need to be able to tell the
+   * difference domains that have reached their life and must be deleted now, and domains that
+   * happen to be in the autorenew grace period now but should be deleted in roughly a year.
+   */
+  @Nullable @Index DateTime autorenewEndTime;
+
   @OnLoad
   void load() {
     // Reconstitute all of the contacts so that they have VKeys.
     allContacts =
-        allContacts.stream().map(contact -> contact.reconstitute()).collect(toImmutableSet());
+        allContacts.stream().map(DesignatedContact::reconstitute).collect(toImmutableSet());
     setContactFields(allContacts, true);
 
     // We have to return the cloned object here because the original object's
@@ -275,8 +291,7 @@ public class DomainContent extends EppResource
   @PostLoad
   void postLoad() {
     // Reconstitute the contact list.
-    ImmutableSet.Builder<DesignatedContact> contactsBuilder =
-        new ImmutableSet.Builder<DesignatedContact>();
+    ImmutableSet.Builder<DesignatedContact> contactsBuilder = new ImmutableSet.Builder<>();
 
     if (registrantContact != null) {
       contactsBuilder.add(
@@ -321,6 +336,10 @@ public class DomainContent extends EppResource
 
   public String getSmdId() {
     return smdId;
+  }
+
+  public Optional<DateTime> getAutorenewEndTime() {
+    return Optional.ofNullable(autorenewEndTime);
   }
 
   @Override
@@ -832,6 +851,11 @@ public class DomainContent extends EppResource
     public B removeGracePeriod(GracePeriod gracePeriod) {
       getInstance().gracePeriods =
           CollectionUtils.difference(getInstance().getGracePeriods(), gracePeriod);
+      return thisCastToDerived();
+    }
+
+    public B setAutorenewEndTime(Optional<DateTime> autorenewEndTime) {
+      getInstance().autorenewEndTime = autorenewEndTime.orElse(null);
       return thisCastToDerived();
     }
 

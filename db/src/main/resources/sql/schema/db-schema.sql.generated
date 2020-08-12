@@ -233,6 +233,7 @@ create sequence history_id_sequence start 1 increment 1;
         auth_info_repo_id text,
         auth_info_value text,
         billing_recurrence_id int8,
+        autorenew_end_time timestamptz,
         autorenew_poll_message_id int8,
         billing_contact text,
         deletion_poll_message_id int8,
@@ -283,6 +284,7 @@ create sequence history_id_sequence start 1 increment 1;
         auth_info_repo_id text,
         auth_info_value text,
         billing_recurrence_id int8,
+        autorenew_end_time timestamptz,
         autorenew_poll_message_id int8,
         billing_contact text,
         deletion_poll_message_id int8,
@@ -591,6 +593,7 @@ create index IDXhsjqiy2lyobfymplb28nm74lm on "Domain" (current_sponsor_registrar
 create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
 create index IDXc5aw4pk1vkd6ymhvkpanmoadv on "Domain" (domain_name);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
+create index IDXlrq7v63pc21uoh3auq6eybyhl on "Domain" (autorenew_end_time);
 create index IDXrh4xmrot9bd63o382ow9ltfig on "DomainHistory" (creation_time);
 create index IDXaro1omfuaxjwmotk3vo00trwm on "DomainHistory" (history_registrar_id);
 create index IDXsu1nam10cjes9keobapn5jvxj on "DomainHistory" (history_type);
