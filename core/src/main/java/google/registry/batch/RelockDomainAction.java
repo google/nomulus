@@ -68,7 +68,7 @@ public class RelockDomainAction implements Runnable {
   private static final String RELOCK_SUCCESS_EMAIL_TEMPLATE =
       "The domain %s was successfully re-locked.\n\nPlease contact support at %s if you have any "
           + "questions.";
-  private static final String RELOCK_NON_TRANSIENT_FAILURE_EMAIL_TEMPLATE =
+  private static final String RELOCK_NON_RETRYABLE_FAILURE_EMAIL_TEMPLATE =
       "There was an error when automatically re-locking %s. Error message: %s\n\nPlease contact "
           + "support at %s if you have any questions.";
   private static final String RELOCK_TRANSIENT_FAILURE_EMAIL_TEMPLATE =
@@ -219,7 +219,7 @@ public class RelockDomainAction implements Runnable {
 
     String body =
         String.format(
-            RELOCK_NON_TRANSIENT_FAILURE_EMAIL_TEMPLATE,
+            RELOCK_NON_RETRYABLE_FAILURE_EMAIL_TEMPLATE,
             oldLock.getDomainName(),
             t.getMessage(),
             supportEmail);
@@ -239,12 +239,7 @@ public class RelockDomainAction implements Runnable {
 
     if (previousAttempts == FAILURES_BEFORE_EMAIL) {
       if (oldLock.isPresent()) {
-        String body =
-            String.format(
-                RELOCK_TRANSIENT_FAILURE_EMAIL_TEMPLATE,
-                oldLock.get().getDomainName(),
-                supportEmail);
-        sendGenericTransientFailureEmail(oldLock.get(), body);
+        sendGenericTransientFailureEmail(oldLock.get());
       } else {
         // if the old lock isn't present, something has gone horribly wrong
         sendUnknownRevisionIdAlertEmail();
@@ -268,7 +263,10 @@ public class RelockDomainAction implements Runnable {
             .build());
   }
 
-  private void sendGenericTransientFailureEmail(RegistryLock oldLock, String body) {
+  private void sendGenericTransientFailureEmail(RegistryLock oldLock) {
+    String body =
+        String.format(
+            RELOCK_TRANSIENT_FAILURE_EMAIL_TEMPLATE, oldLock.getDomainName(), supportEmail);
     // For an unexpected failure, notify both the lock-enabled contacts and our alerting email
     ImmutableSet<InternetAddress> allRecipients =
         new ImmutableSet.Builder<InternetAddress>()
