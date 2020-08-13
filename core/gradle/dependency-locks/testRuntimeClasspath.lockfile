@@ -64,10 +64,10 @@ com.google.apis:google-api-services-storage:v1-rev20200326-1.30.9
 com.google.appengine.tools:appengine-gcs-client:0.6
 com.google.appengine.tools:appengine-mapreduce:0.9
 com.google.appengine.tools:appengine-pipeline:0.2.13
-com.google.appengine:appengine-api-1.0-sdk:1.9.48
-com.google.appengine:appengine-api-stubs:1.9.48
-com.google.appengine:appengine-remote-api:1.9.48
-com.google.appengine:appengine-testing:1.9.58
+com.google.appengine:appengine-api-1.0-sdk:1.9.81
+com.google.appengine:appengine-api-stubs:1.9.81
+com.google.appengine:appengine-remote-api:1.9.81
+com.google.appengine:appengine-testing:1.9.81
 com.google.auth:google-auth-library-credentials:0.20.0
 com.google.auth:google-auth-library-oauth2-http:0.20.0
 com.google.auto.value:auto-value-annotations:1.7.1
