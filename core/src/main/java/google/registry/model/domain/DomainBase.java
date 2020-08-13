@@ -16,7 +16,6 @@ package google.registry.model.domain;
 
 
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
@@ -31,10 +30,13 @@ import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
+import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import org.joda.time.DateTime;
 
 /**
@@ -47,16 +49,17 @@ import org.joda.time.DateTime;
  * @see <a href="https://tools.ietf.org/html/rfc5731">RFC 5731</a>
  */
 @ReportedOn
-@Entity
-@javax.persistence.Entity(name = "Domain")
-@javax.persistence.Table(
+@com.googlecode.objectify.annotation.Entity
+@Entity(name = "Domain")
+@Table(
     name = "Domain",
     indexes = {
-      @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "currentSponsorRegistrarId"),
-      @javax.persistence.Index(columnList = "deletionTime"),
-      @javax.persistence.Index(columnList = "domainName"),
-      @javax.persistence.Index(columnList = "tld")
+      @Index(columnList = "creationTime"),
+      @Index(columnList = "currentSponsorRegistrarId"),
+      @Index(columnList = "deletionTime"),
+      @Index(columnList = "domainName"),
+      @Index(columnList = "tld"),
+      @Index(columnList = "autorenewEndTime")
     })
 @WithStringVKey
 @ExternalMessagingName("domain")

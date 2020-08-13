@@ -14,14 +14,33 @@
 
 package google.registry.tools;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.SchemaVersion;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
 /** Generates the schema file used for model versioning. */
 @Parameters(commandDescription = "Generate a model schema file")
 final class GetSchemaCommand implements Command {
+
+  @Parameter(
+      names = {"-o", "--out_file"},
+      description = "Name of the output file.")
+  String outFile;
+
   @Override
-  public void run() {
-    System.out.println(SchemaVersion.getSchema());
+  public void run() throws IOException {
+    String schema = SchemaVersion.getSchema();
+    if (outFile == null) {
+      System.out.println(schema);
+    } else {
+      File file = new File(outFile);
+      file.createNewFile(); // Create the output file if it doesn't already exist.
+      Files.write(file.toPath(), schema.getBytes(UTF_8));
+    }
   }
 }
