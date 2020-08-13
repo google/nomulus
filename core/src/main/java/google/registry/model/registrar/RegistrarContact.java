@@ -365,9 +365,7 @@ public class RegistrarContact extends ImmutableObject
 
   public VKey<RegistrarContact> createVKey() {
     return VKey.create(
-        getClass(),
-        new RegistrarPocId(emailAddress, registrarId),
-        Key.create(parent, getClass(), emailAddress));
+        RegistrarContact.class, new RegistrarPocId(emailAddress, registrarId), Key.create(this));
   }
 
   /** Class to represent the composite primary key for {@link RegistrarContact} entity. */
