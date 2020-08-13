@@ -19,8 +19,14 @@ import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
 
 /**
  * A persisted history entry representing an EPP modification to a contact.
@@ -38,12 +44,26 @@ import javax.persistence.Entity;
       @javax.persistence.Index(columnList = "historyModificationTime")
     })
 @EntitySubclass
+@Access(AccessType.FIELD)
 public class ContactHistory extends HistoryEntry {
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
   ContactBase contactBase;
 
   @Column(nullable = false)
   VKey<ContactResource> contactRepoId;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "HistorySequenceGenerator")
+  @SequenceGenerator(
+      name = "HistorySequenceGenerator",
+      sequenceName = "history_id_sequence",
+      allocationSize = 1)
+  @Column(name = "historyRevisionId")
+  @Access(AccessType.PROPERTY)
+  @Override
+  public Long getId() {
+    return super.getId();
+  }
 
   /** The state of the {@link ContactBase} object at this point in time. */
   public ContactBase getContactBase() {
