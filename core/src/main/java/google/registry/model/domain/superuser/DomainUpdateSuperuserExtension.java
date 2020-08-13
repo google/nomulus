@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,24 +14,22 @@
 
 package google.registry.model.domain.superuser;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
+
+import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-/** A superuser extension that may be present on domain delete commands. */
-@XmlRootElement(name = "domainDelete")
-public class DomainDeleteSuperuserExtension extends SuperuserExtension {
+/** A superuser extension that may be present on domain update commands. */
+@XmlRootElement(name = "domainUpdate")
+public class DomainUpdateSuperuserExtension extends SuperuserExtension {
 
-  @XmlElement(name = "redemptionGracePeriodDays")
-  int redemptionGracePeriodDays;
+  @XmlElement(name = "autorenews")
+  @Nullable
+  String autorenews;
 
-  @XmlElement(name = "pendingDeleteDays")
-  int pendingDeleteDays;
-
-  public int getRedemptionGracePeriodDays() {
-    return redemptionGracePeriodDays;
-  }
-
-  public int getPendingDeleteDays() {
-    return pendingDeleteDays;
+  public Optional<Boolean> getAutorenews() {
+    return Optional.ofNullable(isNullOrEmpty(autorenews) ? null : Boolean.valueOf(autorenews));
   }
 }

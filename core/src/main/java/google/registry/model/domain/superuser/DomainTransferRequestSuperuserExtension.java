@@ -21,6 +21,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 /** A superuser extension that may be present on domain transfer request commands. */
 @XmlRootElement(name = "domainTransferRequest")
 public class DomainTransferRequestSuperuserExtension extends SuperuserExtension {
+
   // We need to specify the period here because the transfer object's period cannot be set to zero.
   @XmlElement(name = "renewalPeriod")
   Period renewalPeriod;

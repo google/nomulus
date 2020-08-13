@@ -42,10 +42,6 @@ public abstract class XjcObject {
     XjcXmlTransformer.marshalStrict(this, out, encoding);
   }
 
-  public void marshalLenient(OutputStream out, Charset encoding) throws XmlException {
-    XjcXmlTransformer.marshalLenient(this, out, encoding);
-  }
-
   /**
    * Turns object into a formatted XML string <i>by any means necessary</i>.
    *

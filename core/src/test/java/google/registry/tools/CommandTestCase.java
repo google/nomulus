@@ -19,6 +19,7 @@ import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.JCommander;
 import com.google.common.base.Joiner;
@@ -41,6 +42,7 @@ import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,7 +68,7 @@ public abstract class CommandTestCase<C extends Command> {
 
   protected C command;
 
-  public final FakeClock fakeClock = new FakeClock();
+  protected final FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

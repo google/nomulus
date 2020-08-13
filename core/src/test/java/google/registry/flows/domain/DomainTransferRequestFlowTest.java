@@ -572,6 +572,7 @@ class DomainTransferRequestFlowTest
       Duration expectedAutomaticTransferLength,
       BillingEvent.Cancellation.Builder... extraExpectedBillingEvents)
       throws Exception {
+    eppRequestSource = EppRequestSource.TOOL;
     setEppInput(commandFilename, substitutions);
     ImmutableSet<GracePeriod> originalGracePeriods = domain.getGracePeriods();
     // Replace the ROID in the xml file with the one generated in our test.
@@ -903,7 +904,6 @@ class DomainTransferRequestFlowTest
   @Test
   void testSuccess_superuserExtension_zeroPeriod_nonZeroAutomaticTransferLength() throws Exception {
     setupDomain("example", "tld");
-    eppRequestSource = EppRequestSource.TOOL;
     clock.advanceOneMilli();
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",
@@ -918,7 +918,6 @@ class DomainTransferRequestFlowTest
   @Test
   void testSuccess_superuserExtension_zeroPeriod_zeroAutomaticTransferLength() throws Exception {
     setupDomain("example", "tld");
-    eppRequestSource = EppRequestSource.TOOL;
     clock.advanceOneMilli();
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",
@@ -934,7 +933,6 @@ class DomainTransferRequestFlowTest
   void testSuccess_superuserExtension_nonZeroPeriod_nonZeroAutomaticTransferLength()
       throws Exception {
     setupDomain("example", "tld");
-    eppRequestSource = EppRequestSource.TOOL;
     clock.advanceOneMilli();
     doSuccessfulSuperuserExtensionTest(
         "domain_transfer_request_superuser_extension.xml",
@@ -948,7 +946,6 @@ class DomainTransferRequestFlowTest
 
   @Test
   void testSuccess_superuserExtension_zeroPeriod_autorenewGraceActive() throws Exception {
-    eppRequestSource = EppRequestSource.TOOL;
     setupDomain("example", "tld");
     VKey<BillingEvent.Recurring> existingAutorenewEvent = domain.getAutorenewBillingEvent();
     // Set domain to have auto-renewed just before the transfer request, so that it will have an

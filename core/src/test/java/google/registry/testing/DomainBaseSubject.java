@@ -17,6 +17,7 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Fact.simpleFact;
 import static com.google.common.truth.Truth.assertAbout;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.FailureMetadata;
@@ -100,6 +101,15 @@ public final class DomainBaseSubject
 
   public And<DomainBaseSubject> hasSmdId(String smdId) {
     return hasValue(smdId, actual.getSmdId(), "getSmdId()");
+  }
+
+  public And<DomainBaseSubject> hasAutorenewEndTime(DateTime autorenewEndTime) {
+    checkArgumentNotNull(autorenewEndTime, "Use hasNoAutorenewEndTime() instead");
+    return hasValue(autorenewEndTime, actual.getAutorenewEndTime(), "getAutorenewEndTime()");
+  }
+
+  public And<DomainBaseSubject> hasNoAutorenewEndTime() {
+    return hasNoValue(actual.getAutorenewEndTime(), "getAutorenewEndTime()");
   }
 
   public static SimpleSubjectBuilder<DomainBaseSubject, DomainBase> assertAboutDomains() {

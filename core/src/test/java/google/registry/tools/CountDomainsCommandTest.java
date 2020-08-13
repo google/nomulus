@@ -17,12 +17,9 @@ package google.registry.tools;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
-import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.ofy.Ofy;
-import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -30,14 +27,12 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link CountDomainsCommand}. */
 public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand> {
 
-  protected FakeClock clock = new FakeClock(DateTime.now(UTC));
-
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @BeforeEach
   final void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
-    command.clock = clock;
+    inject.setStaticField(Ofy.class, "clock", fakeClock);
+    command.clock = fakeClock;
     createTlds("foo", "bar", "baz", "qux");
   }
 
@@ -55,13 +50,12 @@ public class CountDomainsCommandTest extends CommandTestCase<CountDomainsCommand
 
   @Test
   void testSuccess_multipleTlds() throws Exception {
-    command.clock = clock;
     for (int i = 0; i < 29; i++) {
       persistActiveDomain(String.format("test-%d.foo", i));
     }
     for (int j = 0; j < 17; j++) {
       persistActiveDomain(String.format("test-%d.baz", j));
-      persistDeletedDomain(String.format("del-%d.foo", j), clock.nowUtc().minusYears(1));
+      persistDeletedDomain(String.format("del-%d.foo", j), fakeClock.nowUtc().minusYears(1));
     }
     persistActiveDomain("not-counted.qux");
     runCommand("--tlds=foo,bar,baz");

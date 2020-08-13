@@ -15,26 +15,51 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.domain.rgp.GracePeriodStatus.AUTO_RENEW;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
-import static google.registry.testing.DatastoreHelper.createTlds;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
+import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newContactResource;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
+import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingEvent.Flag;
+import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
+import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.model.ofy.Ofy;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.testing.InjectExtension;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateDomainCommand}. */
 class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand> {
+
+  private DomainBase domain;
+
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+
+  @BeforeEach
+  void beforeEach() {
+    inject.setStaticField(Ofy.class, "clock", fakeClock);
+    command.clock = fakeClock;
+    domain = persistActiveDomain("example.tld");
+  }
 
   @Test
   void testSuccess_complete() throws Exception {
@@ -78,6 +103,8 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
 
   @Test
   void testSuccess_multipleDomains() throws Exception {
+    createTld("abc");
+    persistActiveDomain("example.abc");
     runCommandForced(
         "--client=NewRegistrar",
         "--add_nameservers=ns1.zdns.google,ns2.zdns.google",
@@ -110,7 +137,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
   }
 
   private void runTest_multipleDomains_setNameservers(String nsParam) throws Exception {
-    createTlds("abc", "tld");
+    createTld("abc");
     HostResource host1 = persistActiveHost("foo.bar.tld");
     HostResource host2 = persistActiveHost("baz.bar.tld");
     persistResource(
@@ -252,6 +279,59 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         "--clear_ds_records",
         "example.tld");
     eppVerifier.verifySent("domain_update_clear_ds_records.xml");
+  }
+
+  @Test
+  void testSuccess_enableAutorenew() throws Exception {
+    runCommandForced("--client=NewRegistrar", "--autorenews=true", "example.tld");
+    eppVerifier.verifySent(
+        "domain_update_set_autorenew.xml", ImmutableMap.of("AUTORENEWS", "true"));
+  }
+
+  @Test
+  void testSuccess_disableAutorenew() throws Exception {
+    runCommandForced("--client=NewRegistrar", "--autorenews=false", "example.tld");
+    eppVerifier.verifySent(
+        "domain_update_set_autorenew.xml", ImmutableMap.of("AUTORENEWS", "false"));
+    assertThat(getStderrAsString()).doesNotContain("autorenew grace period");
+  }
+
+  @Test
+  void testSuccess_disableAutorenew_inAutorenewGracePeriod() throws Exception {
+    HistoryEntry createHistoryEntry =
+        persistResource(
+            new HistoryEntry.Builder().setType(DOMAIN_CREATE).setParent(domain).build());
+    BillingEvent.Recurring autorenewBillingEvent =
+        persistResource(
+            new BillingEvent.Recurring.Builder()
+                .setReason(Reason.RENEW)
+                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                .setTargetId("example.tld")
+                .setClientId("NewRegistrar")
+                .setEventTime(fakeClock.nowUtc().minusDays(5))
+                .setRecurrenceEndTime(END_OF_TIME)
+                .setParent(createHistoryEntry)
+                .build());
+    persistResource(
+        domain
+            .asBuilder()
+            .setRegistrationExpirationTime(fakeClock.nowUtc().plusDays(360))
+            .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
+            .setGracePeriods(
+                ImmutableSet.of(
+                    GracePeriod.createForRecurring(
+                        AUTO_RENEW,
+                        domain.getRepoId(),
+                        fakeClock.nowUtc().plusDays(40),
+                        "NewRegistrar",
+                        autorenewBillingEvent.createVKey())))
+            .build());
+    runCommandForced("--client=NewRegistrar", "--autorenews=false", "example.tld");
+    eppVerifier.verifySent(
+        "domain_update_set_autorenew.xml", ImmutableMap.of("AUTORENEWS", "false"));
+    String stdErr = getStderrAsString();
+    assertThat(stdErr).contains("The following domains are in autorenew grace periods.");
+    assertThat(stdErr).contains("example.tld");
   }
 
   @Test
