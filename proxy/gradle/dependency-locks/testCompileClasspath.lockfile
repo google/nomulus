@@ -8,8 +8,8 @@ com.google.api-client:google-api-client:1.30.8
 com.google.apis:google-api-services-cloudkms:v1-rev12-1.22.0
 com.google.apis:google-api-services-monitoring:v3-rev426-1.23.0
 com.google.apis:google-api-services-storage:v1-rev150-1.22.0
-com.google.appengine:appengine-api-1.0-sdk:1.9.48
-com.google.appengine:appengine-testing:1.9.58
+com.google.appengine:appengine-api-1.0-sdk:1.9.81
+com.google.appengine:appengine-testing:1.9.81
 com.google.auth:google-auth-library-credentials:0.16.1
 com.google.auth:google-auth-library-oauth2-http:0.16.1
 com.google.auto.value:auto-value-annotations:1.6.3

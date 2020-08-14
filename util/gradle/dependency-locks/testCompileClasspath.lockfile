@@ -4,9 +4,9 @@
 androidx.annotation:annotation:1.1.0
 com.fasterxml.jackson.core:jackson-core:2.10.2
 com.google.api-client:google-api-client:1.30.8
-com.google.appengine:appengine-api-1.0-sdk:1.9.48
-com.google.appengine:appengine-api-stubs:1.9.48
-com.google.appengine:appengine-testing:1.9.58
+com.google.appengine:appengine-api-1.0-sdk:1.9.81
+com.google.appengine:appengine-api-stubs:1.9.81
+com.google.appengine:appengine-testing:1.9.81
 com.google.auth:google-auth-library-credentials:0.16.1
 com.google.auth:google-auth-library-oauth2-http:0.16.1
 com.google.auto.value:auto-value-annotations:1.6.3
