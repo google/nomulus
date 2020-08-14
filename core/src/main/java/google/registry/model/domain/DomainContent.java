@@ -380,7 +380,7 @@ public class DomainContent extends EppResource
   // Hibernate needs this in order to populate nsHosts but no one else should ever use it
   @SuppressWarnings("UnusedMethod")
   private void setNsHosts(Set<VKey<HostResource>> nsHosts) {
-    this.nsHosts = nsHosts;
+    this.nsHosts = forceEmptyToNull(nsHosts);
   }
 
   // Hibernate needs this in order to populate gracePeriods but no one else should ever use it

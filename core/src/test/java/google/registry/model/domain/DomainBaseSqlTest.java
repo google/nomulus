@@ -144,11 +144,10 @@ public class DomainBaseSqlTest {
               EntityManager em = jpaTm().getEntityManager();
               DomainBase result = em.find(DomainBase.class, "4-COM");
 
-              // Fix grace period and DS data, since we can't persist them yet.
+              // Fix DS data, since we can't persist it yet.
               result =
                   result
                       .asBuilder()
-                      .setRegistrant(contactKey)
                       .setDsData(
                           ImmutableSet.of(
                               DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
@@ -191,6 +190,38 @@ public class DomainBaseSqlTest {
                     jpaTm().saveNew(host);
                   });
         });
+  }
+
+  @Test
+  void testUpdates() {
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().saveNew(contact);
+              jpaTm().saveNew(contact2);
+              jpaTm().saveNew(domain);
+              jpaTm().saveNew(host);
+            });
+    domain = domain.asBuilder().setNameservers(ImmutableSet.of()).build();
+    jpaTm().transact(() -> jpaTm().saveNewOrUpdate(domain));
+    jpaTm()
+        .transact(
+            () -> {
+              DomainBase result = jpaTm().load(domain.createVKey());
+
+              // Fix DS data, since we can't persist that yet.
+              result =
+                  result
+                      .asBuilder()
+                      .setDsData(
+                          ImmutableSet.of(
+                              DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+                      .build();
+
+              assertAboutImmutableObjects()
+                  .that(result)
+                  .isEqualExceptFields(domain, "updateTimestamp", "creationTime");
+            });
   }
 
   static ContactResource makeContact(String repoId) {
