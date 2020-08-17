@@ -18,19 +18,9 @@ Using the `nomulus` admin tool currently requires two additional steps to enable
 full functionality.  These steps should _not_ be done for a production
 deployment - a suitable solution for production is in progress.
 
-1.  Modify the `tools` module `web.xml` file to remove admin-only restrictions.
-    Look for the `<auth-constraint>admin</auth-constraint>` element.  Comment
-    out this element, and redeploy the tools module to your live app.
-
-2.  Set up [application default credentials][app-default-creds] in `gcloud` by
-    running the following command:
-
-```shell
-$ gcloud beta auth application-default login
-Your browser has been opened to visit:
-[ ... snip logging in via browser ... ]
-You are now logged in as [user@email.tld].
-```
+Modify the `tools` module `web.xml` file to remove admin-only restrictions.
+Look for the `<auth-constraint>admin</auth-constraint>` element.  Comment out
+this element, and redeploy the tools module to your live app.
 
 [app-default-creds]: https://developers.google.com/identity/protocols/application-default-credentials
 
@@ -42,7 +32,8 @@ it'll never be created for real on the Internet at large.
 
 ```shell
 $ nomulus -e alpha create_tld example --roid_suffix EXAMPLE \
-  --initial_tld_state GENERAL_AVAILABILITY --tld_type TEST
+  --initial_tld_state GENERAL_AVAILABILITY --tld_type TEST \
+  --dns_writers VoidDnsWriter
 [ ... snip confirmation prompt ... ]
 Perform this command? (y/N): y
 Updated 1 entities.
@@ -64,6 +55,11 @@ Updated 1 entities.
     it is 8 characters or fewer), such as "EXAMPLE." You can also abbreviate the
     upper-case TLD name down to 8 characters. Refer to the [gTLD Registry
     Advisory: Correction of non-compliant ROIDs][roids] for further information.
+*   `--dns_writers` is the list of DNS writer modules that specify how changes
+    to domains for the TLD are communicated to actual DNS servers.  We use
+    `VoidDnsWriter` in this case so as to not have to set up DNS.  Typically
+    one might use CloudDnsWriter (for Google Cloud DNS) or implement your own
+    solution.
 
 ## Create a registrar
 
