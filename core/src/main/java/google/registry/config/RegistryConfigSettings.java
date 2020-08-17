@@ -122,10 +122,12 @@ public class RegistryConfigSettings {
     public String jdbcUrl;
     public String username;
     public String instanceConnectionName;
+    public boolean replicateTransactions;
   }
 
   /** Configuration for Apache Beam (Cloud Dataflow). */
   public static class Beam {
+    public String defaultJobRegion;
     public String defaultJobZone;
   }
 

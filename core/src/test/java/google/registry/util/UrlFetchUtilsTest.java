@@ -20,7 +20,7 @@ import static com.google.common.net.MediaType.CSV_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.UrlFetchUtils.setPayloadMultipart;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -30,29 +30,24 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.appengine.api.urlfetch.HTTPHeader;
 import com.google.appengine.api.urlfetch.HTTPRequest;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link UrlFetchUtils}. */
-@RunWith(JUnit4.class)
-public class UrlFetchUtilsTest {
+class UrlFetchUtilsTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .build();
+  @RegisterExtension final AppEngineExtension appEngine = AppEngineExtension.builder().build();
 
   private final Random random = mock(Random.class);
 
-  @Before
-  public void setupRandomZeroes() {
+  @BeforeEach
+  void beforeEach() {
     doAnswer(
             info -> {
               Arrays.fill((byte[]) info.getArguments()[0], (byte) 0);
@@ -63,7 +58,7 @@ public class UrlFetchUtilsTest {
   }
 
   @Test
-  public void testSetPayloadMultipart() {
+  void testSetPayloadMultipart() {
     HTTPRequest request = mock(HTTPRequest.class);
     setPayloadMultipart(
         request,
@@ -82,18 +77,19 @@ public class UrlFetchUtilsTest {
                 + "boundary=\"------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"");
     assertThat(addedHeaders.get(1).getName()).isEqualTo(CONTENT_LENGTH);
     assertThat(addedHeaders.get(1).getValue()).isEqualTo("294");
-    String payload = "--------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r\n"
-        + "Content-Disposition: form-data; name=\"lol\"; filename=\"cat\"\r\n"
-        + "Content-Type: text/csv; charset=utf-8\r\n"
-        + "\r\n"
-        + "The nice people at the store say hello. ヘ(◕。◕ヘ)\r\n"
-        + "--------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA--\r\n";
+    String payload =
+        "--------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r\n"
+            + "Content-Disposition: form-data; name=\"lol\"; filename=\"cat\"\r\n"
+            + "Content-Type: text/csv; charset=utf-8\r\n"
+            + "\r\n"
+            + "The nice people at the store say hello. ヘ(◕。◕ヘ)\r\n"
+            + "--------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA--\r\n";
     verify(request).setPayload(payload.getBytes(UTF_8));
     verifyNoMoreInteractions(request);
   }
 
   @Test
-  public void testSetPayloadMultipart_boundaryInPayload() {
+  void testSetPayloadMultipart_boundaryInPayload() {
     HTTPRequest request = mock(HTTPRequest.class);
     String payload = "I screamed------------------------------AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHHH";
     IllegalStateException thrown =

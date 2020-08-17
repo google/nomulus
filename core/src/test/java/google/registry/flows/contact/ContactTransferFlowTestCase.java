@@ -25,10 +25,10 @@ import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Base class for contact transfer flow unit tests.
@@ -36,8 +36,8 @@ import org.junit.Before;
  * @param <F> the flow type
  * @param <R> the resource type
  */
-public class ContactTransferFlowTestCase<F extends Flow, R extends EppResource>
-    extends ResourceFlowTestCase<F, R>{
+abstract class ContactTransferFlowTestCase<F extends Flow, R extends EppResource>
+    extends ResourceFlowTestCase<F, R> {
 
   // Transfer is requested on the 6th and expires on the 11th.
   // The "now" of this flow is on the 9th, 3 days in.
@@ -49,21 +49,20 @@ public class ContactTransferFlowTestCase<F extends Flow, R extends EppResource>
 
   protected ContactResource contact;
 
-  public ContactTransferFlowTestCase() {
+  ContactTransferFlowTestCase() {
     checkState(!Registry.DEFAULT_TRANSFER_GRACE_PERIOD.isShorterThan(TIME_SINCE_REQUEST));
     clock.setTo(TRANSFER_REQUEST_TIME.plus(TIME_SINCE_REQUEST));
   }
 
-  @Before
-  public void initContactTest() {
+  @BeforeEach
+  void beforeEachContactTransferFlowTestCase() {
     // Registrar ClientZ is used in tests that need another registrar that definitely doesn't own
     // the resources in question.
-    persistResource(
-        AppEngineRule.makeRegistrar1().asBuilder().setClientId("ClientZ").build());
+    persistResource(AppEngineExtension.makeRegistrar1().asBuilder().setClientId("ClientZ").build());
   }
 
   /** Adds a contact that has a pending transfer on it from TheRegistrar to NewRegistrar. */
-  protected void setupContactWithPendingTransfer() {
+  void setupContactWithPendingTransfer() {
     contact = persistContactWithPendingTransfer(
         newContactResource("sh8013"),
         TRANSFER_REQUEST_TIME,

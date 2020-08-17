@@ -44,7 +44,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.util.Retrier;
 import google.registry.util.SystemClock;
 import google.registry.util.SystemSleeper;
@@ -53,26 +53,25 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Test case for {@link CloudDnsWriter}. */
-@RunWith(JUnit4.class)
+@ExtendWith(MockitoExtension.class)
 public class CloudDnsWriterTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private static final Inet4Address IPv4 = (Inet4Address) InetAddresses.forString("127.0.0.1");
   private static final Inet6Address IPv6 = (Inet6Address) InetAddresses.forString("::1");
@@ -116,8 +115,8 @@ public class CloudDnsWriterTest {
     return listResourceRecordSetsRequest;
   }
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     createTld("tld");
     writer =
         new CloudDnsWriter(
@@ -312,15 +311,17 @@ public class CloudDnsWriterTest {
         .build();
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testLoadDomain_nonExistentDomain() {
+  void testLoadDomain_nonExistentDomain() {
     writer.publishDomain("example.tld");
 
     verifyZone(ImmutableSet.of());
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testLoadDomain_noDsDataOrNameservers() {
+  void testLoadDomain_noDsDataOrNameservers() {
     persistResource(fakeDomain("example.tld", ImmutableSet.of(), 0));
     writer.publishDomain("example.tld");
 
@@ -328,7 +329,7 @@ public class CloudDnsWriterTest {
   }
 
   @Test
-  public void testLoadDomain_deleteOldData() {
+  void testLoadDomain_deleteOldData() {
     stubZone = fakeDomainRecords("example.tld", 2, 2, 2, 2);
     persistResource(fakeDomain("example.tld", ImmutableSet.of(), 0));
     writer.publishDomain("example.tld");
@@ -337,7 +338,7 @@ public class CloudDnsWriterTest {
   }
 
   @Test
-  public void testLoadDomain_withExternalNs() {
+  void testLoadDomain_withExternalNs() {
     persistResource(
         fakeDomain("example.tld", ImmutableSet.of(persistResource(fakeHost("0.external"))), 0));
     writer.publishDomain("example.tld");
@@ -346,7 +347,7 @@ public class CloudDnsWriterTest {
   }
 
   @Test
-  public void testLoadDomain_withDsData() {
+  void testLoadDomain_withDsData() {
     persistResource(
         fakeDomain("example.tld", ImmutableSet.of(persistResource(fakeHost("0.external"))), 1));
     writer.publishDomain("example.tld");
@@ -355,7 +356,7 @@ public class CloudDnsWriterTest {
   }
 
   @Test
-  public void testLoadDomain_withInBailiwickNs_IPv4() {
+  void testLoadDomain_withInBailiwickNs_IPv4() {
     persistResource(
         fakeDomain(
                 "example.tld",
@@ -370,7 +371,7 @@ public class CloudDnsWriterTest {
   }
 
   @Test
-  public void testLoadDomain_withInBailiwickNs_IPv6() {
+  void testLoadDomain_withInBailiwickNs_IPv6() {
     persistResource(
         fakeDomain(
                 "example.tld",
@@ -385,7 +386,7 @@ public class CloudDnsWriterTest {
   }
 
   @Test
-  public void testLoadDomain_withNameserveThatEndsWithDomainName() {
+  void testLoadDomain_withNameserveThatEndsWithDomainName() {
     persistResource(
         fakeDomain(
             "example.tld",
@@ -396,8 +397,9 @@ public class CloudDnsWriterTest {
     verifyZone(fakeDomainRecords("example.tld", "ns.another-example.tld."));
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testLoadHost_externalHost() {
+  void testLoadHost_externalHost() {
     writer.publishHost("ns1.example.com");
 
     // external hosts should not be published in our zone
@@ -405,7 +407,7 @@ public class CloudDnsWriterTest {
   }
 
   @Test
-  public void testLoadHost_removeStaleNsRecords() {
+  void testLoadHost_removeStaleNsRecords() {
     // Initialize the zone with both NS records
     stubZone = fakeDomainRecords("example.tld", 2, 0, 0, 0);
 
@@ -426,8 +428,9 @@ public class CloudDnsWriterTest {
     verifyZone(fakeDomainRecords("example.tld", 1, 0, 0, 0));
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void retryMutateZoneOnError() {
+  void retryMutateZoneOnError() {
     CloudDnsWriter spyWriter = spy(writer);
     // First call - throw. Second call - do nothing.
     doThrow(ZoneStateException.class)
@@ -439,8 +442,9 @@ public class CloudDnsWriterTest {
     verify(spyWriter, times(2)).mutateZone(ArgumentMatchers.any());
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testLoadDomain_withClientHold() {
+  void testLoadDomain_withClientHold() {
     persistResource(
         fakeDomain(
                 "example.tld",
@@ -454,8 +458,9 @@ public class CloudDnsWriterTest {
     verifyZone(ImmutableSet.of());
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testLoadDomain_withServerHold() {
+  void testLoadDomain_withServerHold() {
     persistResource(
         fakeDomain(
                 "example.tld",
@@ -470,8 +475,9 @@ public class CloudDnsWriterTest {
     verifyZone(ImmutableSet.of());
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testLoadDomain_withPendingDelete() {
+  void testLoadDomain_withPendingDelete() {
     persistResource(
         fakeDomain(
                 "example.tld",
@@ -486,7 +492,7 @@ public class CloudDnsWriterTest {
   }
 
   @Test
-  public void testDuplicateRecords() {
+  void testDuplicateRecords() {
     // In publishing DNS records, we can end up publishing information on the same host twice
     // (through a domain change and a host change), so this scenario needs to work.
     persistResource(
@@ -504,7 +510,7 @@ public class CloudDnsWriterTest {
   }
 
   @Test
-  public void testInvalidZoneNames() {
+  void testInvalidZoneNames() {
     createTld("triple.secret.tld");
     persistResource(
         fakeDomain(
@@ -518,8 +524,9 @@ public class CloudDnsWriterTest {
     assertThat(zoneNameCaptor.getValue()).isEqualTo("triple-secret-tld");
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testEmptyCommit() {
+  void testEmptyCommit() {
     writer.commit();
     verify(dnsConnection, times(0)).changes();
   }

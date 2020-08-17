@@ -23,17 +23,19 @@ import static google.registry.testing.DatastoreHelper.newRegistry;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
-import google.registry.testing.AppEngineRule;
+import google.registry.model.registry.label.PremiumList;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -44,54 +46,70 @@ public class PremiumListDaoTest {
   private final FakeClock fakeClock = new FakeClock();
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .enableJpaEntityCoverageCheck(true)
           .withClock(fakeClock)
           .build();
 
-  private static final ImmutableMap<String, BigDecimal> TEST_PRICES =
-      ImmutableMap.of(
-          "silver",
-          BigDecimal.valueOf(10.23),
-          "gold",
-          BigDecimal.valueOf(1305.47),
-          "palladium",
-          BigDecimal.valueOf(1552.78));
+  private ImmutableMap<String, BigDecimal> testPrices;
+
+  private PremiumList testList;
+
+  @BeforeEach
+  void setUp() {
+    testPrices =
+        ImmutableMap.of(
+            "silver",
+            BigDecimal.valueOf(10.23),
+            "gold",
+            BigDecimal.valueOf(1305.47),
+            "palladium",
+            BigDecimal.valueOf(1552.78));
+    testList =
+        new PremiumList.Builder()
+            .setName("testname")
+            .setCurrency(USD)
+            .setLabelsToPrices(testPrices)
+            .setCreationTime(fakeClock.nowUtc())
+            .build();
+  }
 
   @Test
   public void saveNew_worksSuccessfully() {
-    PremiumList premiumList = PremiumList.create("testname", USD, TEST_PRICES);
-    PremiumListDao.saveNew(premiumList);
+    PremiumListDao.saveNew(testList);
     jpaTm()
         .transact(
             () -> {
               Optional<PremiumList> persistedListOpt = PremiumListDao.getLatestRevision("testname");
               assertThat(persistedListOpt).isPresent();
               PremiumList persistedList = persistedListOpt.get();
-              assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(TEST_PRICES);
-              assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
+              assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(testPrices);
+              assertThat(persistedList.getCreationTime()).isEqualTo(fakeClock.nowUtc());
             });
   }
 
   @Test
   public void update_worksSuccessfully() {
-    PremiumListDao.saveNew(PremiumList.create("testname", CurrencyUnit.USD, TEST_PRICES));
+    PremiumListDao.saveNew(testList);
     Optional<PremiumList> persistedList = PremiumListDao.getLatestRevision("testname");
     assertThat(persistedList).isPresent();
     long firstRevisionId = persistedList.get().getRevisionId();
     PremiumListDao.update(
-        PremiumList.create(
-            "testname",
-            CurrencyUnit.USD,
-            ImmutableMap.of(
-                "update",
-                BigDecimal.valueOf(55343.12),
-                "new",
-                BigDecimal.valueOf(0.01),
-                "silver",
-                BigDecimal.valueOf(30.03))));
+        new PremiumList.Builder()
+            .setName("testname")
+            .setCurrency(USD)
+            .setLabelsToPrices(
+                ImmutableMap.of(
+                    "update",
+                    BigDecimal.valueOf(55343.12),
+                    "new",
+                    BigDecimal.valueOf(0.01),
+                    "silver",
+                    BigDecimal.valueOf(30.03)))
+            .setCreationTime(fakeClock.nowUtc())
+            .build());
     jpaTm()
         .transact(
             () -> {
@@ -107,20 +125,18 @@ public class PremiumListDaoTest {
                           BigDecimal.valueOf(0.01),
                           "silver",
                           BigDecimal.valueOf(30.03)));
-              assertThat(updatedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
+              assertThat(updatedList.getCreationTime()).isEqualTo(fakeClock.nowUtc());
               assertThat(updatedList.getRevisionId()).isGreaterThan(firstRevisionId);
-              assertThat(updatedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
+              assertThat(updatedList.getCreationTime()).isEqualTo(fakeClock.nowUtc());
             });
   }
 
   @Test
   public void saveNew_throwsWhenPremiumListAlreadyExists() {
-    PremiumListDao.saveNew(PremiumList.create("testlist", USD, TEST_PRICES));
+    PremiumListDao.saveNew(testList);
     IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> PremiumListDao.saveNew(PremiumList.create("testlist", USD, TEST_PRICES)));
-    assertThat(thrown).hasMessageThat().isEqualTo("Premium list 'testlist' already exists");
+        assertThrows(IllegalArgumentException.class, () -> PremiumListDao.saveNew(testList));
+    assertThat(thrown).hasMessageThat().isEqualTo("Premium list 'testname' already exists");
   }
 
   // TODO(b/147246613): Un-ignore this.
@@ -128,19 +144,17 @@ public class PremiumListDaoTest {
   @Disabled
   public void update_throwsWhenListDoesntExist() {
     IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> PremiumListDao.update(PremiumList.create("testlist", USD, TEST_PRICES)));
+        assertThrows(IllegalArgumentException.class, () -> PremiumListDao.update(testList));
     assertThat(thrown)
         .hasMessageThat()
-        .isEqualTo("Can't update non-existent premium list 'testlist'");
+        .isEqualTo("Can't update non-existent premium list 'testname'");
   }
 
   @Test
   public void checkExists_worksSuccessfully() {
-    assertThat(PremiumListDao.checkExists("testlist")).isFalse();
-    PremiumListDao.saveNew(PremiumList.create("testlist", USD, TEST_PRICES));
-    assertThat(PremiumListDao.checkExists("testlist")).isTrue();
+    assertThat(PremiumListDao.checkExists("testname")).isFalse();
+    PremiumListDao.saveNew(testList);
+    assertThat(PremiumListDao.checkExists("testname")).isTrue();
   }
 
   @Test
@@ -151,8 +165,19 @@ public class PremiumListDaoTest {
   @Test
   public void getLatestRevision_worksSuccessfully() {
     PremiumListDao.saveNew(
-        PremiumList.create("list1", JPY, ImmutableMap.of("wrong", BigDecimal.valueOf(1000.50))));
-    PremiumListDao.update(PremiumList.create("list1", JPY, TEST_PRICES));
+        new PremiumList.Builder()
+            .setName("list1")
+            .setCurrency(JPY)
+            .setLabelsToPrices(ImmutableMap.of("wrong", BigDecimal.valueOf(1000.50)))
+            .setCreationTime(fakeClock.nowUtc())
+            .build());
+    PremiumListDao.update(
+        new PremiumList.Builder()
+            .setName("list1")
+            .setCurrency(JPY)
+            .setLabelsToPrices(testPrices)
+            .setCreationTime(fakeClock.nowUtc())
+            .build());
     jpaTm()
         .transact(
             () -> {
@@ -161,7 +186,7 @@ public class PremiumListDaoTest {
               assertThat(persistedList.get().getName()).isEqualTo("list1");
               assertThat(persistedList.get().getCurrency()).isEqualTo(JPY);
               assertThat(persistedList.get().getLabelsToPrices())
-                  .containsExactlyEntriesIn(TEST_PRICES);
+                  .containsExactlyEntriesIn(testPrices);
             });
   }
 
@@ -182,7 +207,13 @@ public class PremiumListDaoTest {
                     google.registry.model.registry.label.PremiumList.class,
                     "premlist"))
             .build());
-    PremiumListDao.saveNew(PremiumList.create("premlist", USD, TEST_PRICES));
+    PremiumListDao.saveNew(
+        new PremiumList.Builder()
+            .setName("premlist")
+            .setCurrency(USD)
+            .setLabelsToPrices(testPrices)
+            .setCreationTime(fakeClock.nowUtc())
+            .build());
     assertThat(PremiumListDao.getPremiumPrice("silver", Registry.get("foobar")))
         .hasValue(Money.of(USD, 10.23));
     assertThat(PremiumListDao.getPremiumPrice("gold", Registry.get("foobar")))
@@ -212,16 +243,19 @@ public class PremiumListDaoTest {
                     "premlist"))
             .build());
     PremiumListDao.saveNew(
-        PremiumList.create(
-            "premlist",
-            JPY,
-            ImmutableMap.of(
-                "silver",
-                BigDecimal.valueOf(10.00),
-                "gold",
-                BigDecimal.valueOf(1000.0),
-                "palladium",
-                BigDecimal.valueOf(15000))));
+        new PremiumList.Builder()
+            .setName("premlist")
+            .setCurrency(JPY)
+            .setLabelsToPrices(
+                ImmutableMap.of(
+                    "silver",
+                    BigDecimal.valueOf(10.00),
+                    "gold",
+                    BigDecimal.valueOf(1000.0),
+                    "palladium",
+                    BigDecimal.valueOf(15000)))
+            .setCreationTime(fakeClock.nowUtc())
+            .build());
     assertThat(PremiumListDao.getPremiumPrice("silver", Registry.get("foobar")))
         .hasValue(moneyOf(JPY, 10));
     assertThat(PremiumListDao.getPremiumPrice("gold", Registry.get("foobar")))

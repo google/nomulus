@@ -38,32 +38,29 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link SyncRegistrarsSheet}. */
-@RunWith(JUnit4.class)
+@ExtendWith(MockitoExtension.class)
 public class SyncRegistrarsSheetTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
-  @Rule public final InjectRule inject = new InjectRule();
-
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @Captor private ArgumentCaptor<ImmutableList<ImmutableMap<String, String>>> rowsCaptor;
   @Mock private SheetSynchronizer sheetSynchronizer;
@@ -77,8 +74,8 @@ public class SyncRegistrarsSheetTest {
     return result;
   }
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     createTld("example");
     // Remove Registrar entities created by AppEngineRule.
@@ -86,12 +83,12 @@ public class SyncRegistrarsSheetTest {
   }
 
   @Test
-  public void test_wereRegistrarsModified_noRegistrars_returnsFalse() {
+  void test_wereRegistrarsModified_noRegistrars_returnsFalse() {
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isFalse();
   }
 
   @Test
-  public void test_wereRegistrarsModified_atDifferentCursorTimes() {
+  void test_wereRegistrarsModified_atDifferentCursorTimes() {
     persistNewRegistrar("SomeRegistrar", "Some Registrar Inc.", Registrar.Type.REAL, 8L);
     persistResource(Cursor.createGlobal(SYNC_REGISTRAR_SHEET, clock.nowUtc().minusHours(1)));
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isTrue();
@@ -100,7 +97,7 @@ public class SyncRegistrarsSheetTest {
   }
 
   @Test
-  public void testRun() throws Exception {
+  void testRun() throws Exception {
     DateTime beforeExecution = clock.nowUtc();
     persistResource(new Registrar.Builder()
         .setClientId("anotherregistrar")
@@ -329,7 +326,7 @@ public class SyncRegistrarsSheetTest {
   }
 
   @Test
-  public void testRun_missingValues_stillWorks() throws Exception {
+  void testRun_missingValues_stillWorks() throws Exception {
     persistNewRegistrar("SomeRegistrar", "Some Registrar", Registrar.Type.REAL, 8L);
 
     newSyncRegistrarsSheet().run("foobar");

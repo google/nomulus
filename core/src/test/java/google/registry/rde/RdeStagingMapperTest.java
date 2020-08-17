@@ -26,7 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.xml.ValidationMode;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,7 +41,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link RdeStagingMapper}. */
 @ExtendWith(MockitoExtension.class)
-public class RdeStagingMapperTest {
+class RdeStagingMapperTest {
 
   private static final Pattern REGISTRAR_NAME_PATTERN =
       Pattern.compile("<rdeRegistrar:name>(.*)</rdeRegistrar:name>");
@@ -50,11 +50,12 @@ public class RdeStagingMapperTest {
 
   @Mock MapperContext<PendingDeposit, DepositFragment> context;
 
-  ArgumentCaptor<DepositFragment> depositFragmentCaptor =
+  private ArgumentCaptor<DepositFragment> depositFragmentCaptor =
       ArgumentCaptor.forClass(DepositFragment.class);
 
   @RegisterExtension
-  AppEngineRule appEngineRule = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  AppEngineExtension appEngineRule =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private RdeStagingMapper rdeStagingMapper;
 

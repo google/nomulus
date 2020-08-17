@@ -22,25 +22,22 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link BloomFilterConverter}. */
-@RunWith(JUnit4.class)
-public class BloomFilterConverterTest {
+class BloomFilterConverterTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameBloomFilter() {
+  void roundTripConversion_returnsSameBloomFilter() {
     BloomFilter<String> bloomFilter = BloomFilter.create(stringFunnel(US_ASCII), 3);
     ImmutableSet.of("foo", "bar", "baz").forEach(bloomFilter::put);
     TestEntity entity = new TestEntity(bloomFilter);

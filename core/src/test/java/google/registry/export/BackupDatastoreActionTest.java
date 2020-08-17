@@ -24,24 +24,22 @@ import com.google.common.base.Joiner;
 import google.registry.export.datastore.DatastoreAdmin;
 import google.registry.export.datastore.DatastoreAdmin.Export;
 import google.registry.export.datastore.Operation;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link BackupDatastoreAction}. */
-@RunWith(JUnit4.class)
+@ExtendWith(MockitoExtension.class)
 public class BackupDatastoreActionTest {
 
-  @Rule public final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @RegisterExtension
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
 
   @Mock private DatastoreAdmin datastoreAdmin;
   @Mock private Export exportRequest;
@@ -50,8 +48,8 @@ public class BackupDatastoreActionTest {
   private final FakeResponse response = new FakeResponse();
   private final BackupDatastoreAction action = new BackupDatastoreAction();
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     action.datastoreAdmin = datastoreAdmin;
     action.response = response;
 
@@ -66,7 +64,7 @@ public class BackupDatastoreActionTest {
   }
 
   @Test
-  public void testBackup_enqueuesPollTask() {
+  void testBackup_enqueuesPollTask() {
     action.run();
     assertTasksEnqueued(
         CheckBackupAction.QUEUE,

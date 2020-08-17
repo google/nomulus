@@ -20,16 +20,13 @@ import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
 import static google.registry.util.PasswordUtils.hashPassword;
 
 import java.util.Arrays;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link google.registry.util.PasswordUtils}. */
-@RunWith(JUnit4.class)
-public final class PasswordUtilsTest {
+final class PasswordUtilsTest {
 
   @Test
-  public void testDifferentSalts() {
+  void testDifferentSalts() {
     byte[] first = SALT_SUPPLIER.get();
     byte[] second = SALT_SUPPLIER.get();
     assertThat(first.length).isEqualTo(32);
@@ -38,7 +35,7 @@ public final class PasswordUtilsTest {
   }
 
   @Test
-  public void testHash() {
+  void testHash() {
     String salt = base64().encode(SALT_SUPPLIER.get());
     String password = "mySuperSecurePassword";
     String hashedPassword = hashPassword(password, salt);

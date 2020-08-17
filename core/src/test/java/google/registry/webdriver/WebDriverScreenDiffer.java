@@ -50,7 +50,7 @@ class WebDriverScreenDiffer implements ScreenDiffer {
 
   private String screenshotDir = System.getProperty("test.screenshot.dir", "build/screenshots");
 
-  public WebDriverScreenDiffer(
+  WebDriverScreenDiffer(
       WebDriver webDriver, String goldensPath, int maxColorDiff, int maxPixelDiff) {
     this.webDriver = webDriver;
     this.goldensPath = goldensPath;
@@ -92,15 +92,15 @@ class WebDriverScreenDiffer implements ScreenDiffer {
   }
 
   static class ScreenshotNotSimilarException extends RuntimeException {
-    public ScreenshotNotSimilarException(String message) {
+    ScreenshotNotSimilarException(String message) {
       super(message);
     }
   }
 
   @Override
-  public void diffElement(WebElement element, String imageKey, int attempt) {
+  public void diffElement(WebElement element, String imageKey) {
     ActualScreenshot elementImage =
-        ActualScreenshot.create(imageKey, attempt, takeScreenshot())
+        ActualScreenshot.create(imageKey, takeScreenshot())
             .getSubimage(
                 element.getLocation().getX(),
                 element.getLocation().getY(),
@@ -110,15 +110,14 @@ class WebDriverScreenDiffer implements ScreenDiffer {
   }
 
   @Override
-  public void diffPage(String imageKey, int attempt) {
-    actualScreenshots.add(ActualScreenshot.create(imageKey, attempt, takeScreenshot()));
+  public void diffPage(String imageKey) {
+    actualScreenshots.add(ActualScreenshot.create(imageKey, takeScreenshot()));
   }
 
   @Override
   public void verifyAndQuit() {
     String errorMessage =
-        actualScreenshots
-            .parallelStream()
+        actualScreenshots.parallelStream()
             .map(this::compareScreenshots)
             .map(
                 result -> {
@@ -219,11 +218,7 @@ class WebDriverScreenDiffer implements ScreenDiffer {
 
   private Path persistScreenshot(ComparisonResult result) {
     File thisScreenshotDir =
-        Paths.get(
-                screenshotDir,
-                "attempt_" + result.actualScreenshot().getAttempt(),
-                result.isConsideredSimilar() ? "similar" : "different")
-            .toFile();
+        Paths.get(screenshotDir, result.isConsideredSimilar() ? "similar" : "different").toFile();
     thisScreenshotDir.mkdirs();
     File thisScreenshotFile = new File(thisScreenshotDir, result.actualScreenshot().getImageName());
     result.actualScreenshot().writeTo(thisScreenshotFile);

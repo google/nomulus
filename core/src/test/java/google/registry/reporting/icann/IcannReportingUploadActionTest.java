@@ -21,7 +21,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.GcsTestingUtils.writeGcsFile;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -37,7 +37,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
 import google.registry.request.HttpException.ServiceUnavailableException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
@@ -50,18 +50,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.icann.IcannReportingUploadAction} */
-@RunWith(JUnit4.class)
-public class IcannReportingUploadActionTest {
+class IcannReportingUploadActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private static final byte[] PAYLOAD_SUCCESS = "test,csv\n13,37".getBytes(UTF_8);
   private static final byte[] PAYLOAD_FAIL = "ahah,csv\n12,34".getBytes(UTF_8);
@@ -89,8 +87,8 @@ public class IcannReportingUploadActionTest {
     return action;
   }
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     createTlds("tld", "foo");
     writeGcsFile(
         gcsService,
@@ -129,7 +127,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     IcannReportingUploadAction action = createAction();
     action.run();
     verify(mockReporter).send(PAYLOAD_SUCCESS, "foo-activity-200606.csv");
@@ -152,7 +150,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess_january() throws Exception {
+  void testSuccess_january() throws Exception {
     clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
     persistResource(
         Cursor.create(
@@ -189,7 +187,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess_advancesCursor() throws Exception {
+  void testSuccess_advancesCursor() throws Exception {
     writeGcsFile(
         gcsService,
         new GcsFilename("basin/icann/monthly/2006-06", "tld-activity-200606.csv"),
@@ -207,7 +205,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess_noUploadsNeeded() throws Exception {
+  void testSuccess_noUploadsNeeded() throws Exception {
     clock.setTo(DateTime.parse("2006-5-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.run();
@@ -223,7 +221,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess_withRetry() throws Exception {
+  void testSuccess_withRetry() throws Exception {
     IcannReportingUploadAction action = createAction();
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv"))
         .thenThrow(new IOException("Expected exception."))
@@ -248,7 +246,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testFailure_quicklySkipsOverNonRetryableUploadException() throws Exception {
+  void testFailure_quicklySkipsOverNonRetryableUploadException() throws Exception {
     runTest_nonRetryableException(
         new IOException(
             "<msg>A report for that month already exists, the cut-off date already"
@@ -256,13 +254,13 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testFailure_quicklySkipsOverIpAllowListException() throws Exception {
+  void testFailure_quicklySkipsOverIpAllowListException() throws Exception {
     runTest_nonRetryableException(
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
   }
 
   @Test
-  public void testFailure_cursorIsNotAdvancedForward() throws Exception {
+  void testFailure_cursorIsNotAdvancedForward() throws Exception {
     runTest_nonRetryableException(
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
     ofy().clearSessionCache();
@@ -275,7 +273,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testNotRunIfCursorDateIsAfterToday() throws Exception {
+  void testNotRunIfCursorDateIsAfterToday() throws Exception {
     clock.setTo(DateTime.parse("2006-05-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.run();
@@ -316,7 +314,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testFail_fileNotFound() throws Exception {
+  void testFail_fileNotFound() throws Exception {
     clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
     persistResource(
         Cursor.create(
@@ -332,7 +330,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testWarning_fileNotStagedYet() throws Exception {
+  void testWarning_fileNotStagedYet() throws Exception {
     persistResource(
         Cursor.create(
             CursorType.ICANN_UPLOAD_ACTIVITY, DateTime.parse("2006-08-01TZ"), Registry.get("foo")));
@@ -349,7 +347,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testFailure_lockIsntAvailable() throws Exception {
+  void testFailure_lockIsntAvailable() throws Exception {
     IcannReportingUploadAction action = createAction();
     action.lockHandler = new FakeLockHandler(false);
     ServiceUnavailableException thrown =
@@ -360,7 +358,7 @@ public class IcannReportingUploadActionTest {
   }
 
   @Test
-  public void testSuccess_nullCursorsInitiatedToFirstOfNextMonth() throws Exception {
+  void testSuccess_nullCursorsInitiatedToFirstOfNextMonth() throws Exception {
     createTlds("new");
 
     IcannReportingUploadAction action = createAction();

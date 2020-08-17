@@ -7,7 +7,7 @@
   <sessions-enabled>true</sessions-enabled>
   <instance-class>B4_1G</instance-class>
   <manual-scaling>
-    <instances>10</instances>
+    <instances>20</instances>
   </manual-scaling>
 
   <system-properties>

@@ -16,8 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.mock;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
@@ -37,25 +36,29 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link AuthModule}. */
-@RunWith(JUnit4.class)
-public class AuthModuleTest {
+@ExtendWith(MockitoExtension.class)
+class AuthModuleTest {
 
   private static final String CLIENT_ID = "UNITTEST-CLIENT-ID";
   private static final String CLIENT_SECRET = "UNITTEST-CLIENT-SECRET";
   private static final String ACCESS_TOKEN = "FakeAccessToken";
   private static final String REFRESH_TOKEN = "FakeReFreshToken";
 
-  @Rule
-  public final TemporaryFolder folder = new TemporaryFolder();
+  @SuppressWarnings("WeakerAccess")
+  @TempDir
+  Path folder;
 
   private final Credential fakeCredential =
       new Credential.Builder(
@@ -77,8 +80,7 @@ public class AuthModuleTest {
           .setClientAuthentication(new ClientParametersAuthentication(CLIENT_ID, CLIENT_SECRET))
           .build();
 
-  @SuppressWarnings("unchecked")
-  DataStore<StoredCredential> dataStore = mock(DataStore.class);
+  @Mock DataStore<StoredCredential> dataStore;
 
   class FakeDataStoreFactory extends AbstractDataStoreFactory {
     @Override
@@ -89,14 +91,15 @@ public class AuthModuleTest {
     }
   }
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     fakeCredential.setRefreshToken(REFRESH_TOKEN);
     when(dataStore.get(CLIENT_ID + " scope1")).thenReturn(new StoredCredential(fakeCredential));
   }
 
   @Test
-  public void test_clientScopeQualifier() {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void test_clientScopeQualifier() {
     String simpleQualifier =
         AuthModule.provideClientScopeQualifier("client-id", ImmutableList.of("foo", "bar"));
 
@@ -161,7 +164,7 @@ public class AuthModuleTest {
   }
 
   @Test
-  public void test_provideLocalCredentialJson() {
+  void test_provideLocalCredentialJson() {
     String credentialJson =
         AuthModule.provideLocalCredentialJson(this::getSecrets, this::getCredential, null);
     Map<String, String> jsonMap =
@@ -173,8 +176,9 @@ public class AuthModuleTest {
   }
 
   @Test
-  public void test_provideExternalCredentialJson() throws Exception {
-    File credentialFile = folder.newFile("credential.json");
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void test_provideExternalCredentialJson() throws Exception {
+    File credentialFile = folder.resolve("credential.json").toFile();
     Files.write(credentialFile.toPath(), "{some_field: some_value}".getBytes(UTF_8));
     String credentialJson =
         AuthModule.provideLocalCredentialJson(
@@ -183,7 +187,7 @@ public class AuthModuleTest {
   }
 
   @Test
-  public void test_provideCredential() {
+  void test_provideCredential() {
     Credential cred = getCredential();
     assertThat(cred.getAccessToken()).isEqualTo(fakeCredential.getAccessToken());
     assertThat(cred.getRefreshToken()).isEqualTo(fakeCredential.getRefreshToken());
@@ -192,7 +196,7 @@ public class AuthModuleTest {
   }
 
   @Test
-  public void test_provideCredential_notStored() throws IOException {
+  void test_provideCredential_notStored() throws IOException {
     when(dataStore.get(CLIENT_ID + " scope1")).thenReturn(null);
     assertThrows(AuthModule.LoginRequiredException.class, this::getCredential);
   }

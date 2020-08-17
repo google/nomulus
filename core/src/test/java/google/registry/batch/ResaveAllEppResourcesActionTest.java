@@ -25,18 +25,14 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ResaveAllEppResourcesAction}. */
-@RunWith(JUnit4.class)
-public class ResaveAllEppResourcesActionTest
-    extends MapreduceTestCase<ResaveAllEppResourcesAction> {
+class ResaveAllEppResourcesActionTest extends MapreduceTestCase<ResaveAllEppResourcesAction> {
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     action = new ResaveAllEppResourcesAction();
     action.mrRunner = makeDefaultRunner();
     action.response = new FakeResponse();
@@ -48,19 +44,19 @@ public class ResaveAllEppResourcesActionTest
   }
 
   @Test
-  public void test_mapreduceSuccessfullyResavesEntity() throws Exception {
+  void test_mapreduceSuccessfullyResavesEntity() throws Exception {
     ContactResource contact = persistActiveContact("test123");
-    DateTime creationTime = contact.getUpdateAutoTimestamp().getTimestamp();
-    assertThat(ofy().load().entity(contact).now().getUpdateAutoTimestamp().getTimestamp())
+    DateTime creationTime = contact.getUpdateTimestamp().getTimestamp();
+    assertThat(ofy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
         .isEqualTo(creationTime);
     ofy().clearSessionCache();
     runMapreduce();
-    assertThat(ofy().load().entity(contact).now().getUpdateAutoTimestamp().getTimestamp())
+    assertThat(ofy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
         .isGreaterThan(creationTime);
   }
 
   @Test
-  public void test_mapreduceResolvesPendingTransfer() throws Exception {
+  void test_mapreduceResolvesPendingTransfer() throws Exception {
     DateTime now = DateTime.now(UTC);
     // Set up a contact with a transfer that implicitly completed five days ago.
     ContactResource contact =

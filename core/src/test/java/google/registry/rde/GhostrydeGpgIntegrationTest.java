@@ -14,74 +14,78 @@
 
 package google.registry.rde;
 
-import static com.google.common.base.Strings.repeat;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import google.registry.keyring.api.Keyring;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
-import google.registry.testing.GpgSystemCommandRule;
-import google.registry.testing.ShardableTestCase;
+import google.registry.testing.GpgSystemCommandExtension;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.stream.Stream;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.junit.Rule;
-import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /** GnuPG integration tests for {@link Ghostryde}. */
-@RunWith(Theories.class)
-@SuppressWarnings("resource")
-public class GhostrydeGpgIntegrationTest extends ShardableTestCase {
+class GhostrydeGpgIntegrationTest {
 
-  @Rule
-  public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
-  @Rule
-  public final GpgSystemCommandRule gpg =
-      new GpgSystemCommandRule(
+  @RegisterExtension
+  final GpgSystemCommandExtension gpg =
+      new GpgSystemCommandExtension(
           RdeTestData.loadBytes("pgp-public-keyring.asc"),
           RdeTestData.loadBytes("pgp-private-keyring-registry.asc"));
 
-  @DataPoints
-  public static GpgCommand[] commands = new GpgCommand[] {
-    new GpgCommand("gpg"),
-    new GpgCommand("gpg2"),
-  };
+  private static final ImmutableList<String> COMMANDS = ImmutableList.of("gpg", "gpg2");
+  private static final ImmutableList<String> CONTENTS =
+      ImmutableList.of(
+          "(◕‿◕)",
+          Strings.repeat("Fanatics have their dreams, wherewith they weave\n", 1000),
+          "\0yolo",
+          "");
 
-  @DataPoints
-  public static Content[] contents = new Content[] {
-    new Content("(◕‿◕)"),
-    new Content(repeat("Fanatics have their dreams, wherewith they weave\n", 1000)),
-    new Content("\0yolo"),
-    new Content(""),
-  };
+  @SuppressWarnings("unused")
+  static Stream<Arguments> provideTestCombinations() {
+    Stream.Builder<Arguments> stream = Stream.builder();
+    for (String command : COMMANDS) {
+      for (String content : CONTENTS) {
+        stream.add(Arguments.of(command, content));
+      }
+    }
+    return stream.build();
+  }
 
-  @Theory
-  public void test(GpgCommand cmd, Content content) throws Exception {
-    assumeTrue(hasCommand(cmd.get() + " --version"));
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void test(String command, String content) throws Exception {
+    assumeTrue(hasCommand(command + " --version"));
     Keyring keyring = new FakeKeyringModule().get();
     PGPPublicKey publicKey = keyring.getRdeStagingEncryptionKey();
     File file = new File(gpg.getCwd(), "love.gpg");
-    byte[] data = content.get().getBytes(UTF_8);
+    byte[] data = content.getBytes(UTF_8);
 
     try (OutputStream output = new FileOutputStream(file);
         OutputStream ghostrydeEncoder = Ghostryde.encoder(output, publicKey)) {
       ghostrydeEncoder.write(data);
     }
 
-    Process pid = gpg.exec(cmd.get(), "--list-packets", "--keyid-format", "long", file.getPath());
+    Process pid = gpg.exec(command, "--list-packets", "--keyid-format", "long", file.getPath());
     String stdout = CharStreams.toString(new InputStreamReader(pid.getInputStream(), UTF_8));
     String stderr = CharStreams.toString(new InputStreamReader(pid.getErrorStream(), UTF_8));
     assertWithMessage(stderr).that(pid.waitFor()).isEqualTo(0);
@@ -91,39 +95,15 @@ public class GhostrydeGpgIntegrationTest extends ShardableTestCase {
     assertThat(stdout).contains("name=\"" + Ghostryde.INNER_FILENAME + "\"");
     assertThat(stderr).contains("encrypted with 2048-bit RSA key, ID A59C132F3589A1D5");
 
-    pid = gpg.exec(cmd.get(), "--use-embedded-filename", file.getPath());
+    pid = gpg.exec(command, "--use-embedded-filename", file.getPath());
     stderr = CharStreams.toString(new InputStreamReader(pid.getErrorStream(), UTF_8));
     assertWithMessage(stderr).that(pid.waitFor()).isEqualTo(0);
     File dataFile = new File(gpg.getCwd(), Ghostryde.INNER_FILENAME);
     assertThat(dataFile.exists()).isTrue();
-    assertThat(slurp(dataFile)).isEqualTo(content.get());
+    assertThat(slurp(dataFile)).isEqualTo(content);
   }
 
   private String slurp(File file) throws IOException {
     return CharStreams.toString(new InputStreamReader(new FileInputStream(file), UTF_8));
-  }
-
-  private static class GpgCommand {
-    private final String value;
-
-    GpgCommand(String value) {
-      this.value = value;
-    }
-
-    String get() {
-      return value;
-    }
-  }
-
-  private static class Content {
-    private final String value;
-
-    Content(String value) {
-      this.value = value;
-    }
-
-    String get() {
-      return value;
-    }
   }
 }

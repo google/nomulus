@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskEnqueuer;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
@@ -52,13 +53,16 @@ public final class DomainLockUtils {
   private static final int VERIFICATION_CODE_LENGTH = 32;
 
   private final StringGenerator stringGenerator;
+  private final String registryAdminRegistrarId;
   private final AsyncTaskEnqueuer asyncTaskEnqueuer;
 
   @Inject
   public DomainLockUtils(
       @Named("base58StringGenerator") StringGenerator stringGenerator,
+      @Config("registryAdminClientId") String registryAdminRegistrarId,
       AsyncTaskEnqueuer asyncTaskEnqueuer) {
     this.stringGenerator = stringGenerator;
+    this.registryAdminRegistrarId = registryAdminRegistrarId;
     this.asyncTaskEnqueuer = asyncTaskEnqueuer;
   }
 
@@ -113,7 +117,7 @@ public final class DomainLockUtils {
               RegistryLock newLock =
                   RegistryLockDao.save(lock.asBuilder().setLockCompletionTimestamp(now).build());
               setAsRelock(newLock);
-              tm().transact(() -> applyLockStatuses(newLock, now));
+              tm().transact(() -> applyLockStatuses(newLock, now, isAdmin));
               return newLock;
             });
   }
@@ -167,7 +171,7 @@ public final class DomainLockUtils {
                       createLockBuilder(domainName, registrarId, registrarPocId, isAdmin)
                           .setLockCompletionTimestamp(now)
                           .build());
-              tm().transact(() -> applyLockStatuses(newLock, now));
+              tm().transact(() -> applyLockStatuses(newLock, now, isAdmin));
               setAsRelock(newLock);
               return newLock;
             });
@@ -217,19 +221,19 @@ public final class DomainLockUtils {
   private RegistryLock.Builder createLockBuilder(
       String domainName, String registrarId, @Nullable String registrarPocId, boolean isAdmin) {
     DateTime now = jpaTm().getTransactionTime();
-    DomainBase domainBase = getDomain(domainName, now);
-    verifyDomainNotLocked(domainBase);
+    DomainBase domainBase = getDomain(domainName, registrarId, now);
+    verifyDomainNotLocked(domainBase, isAdmin);
 
-    // Multiple pending actions are not allowed
+    // Multiple pending actions are not allowed for non-admins
     RegistryLockDao.getMostRecentByRepoId(domainBase.getRepoId())
         .ifPresent(
             previousLock ->
                 checkArgument(
                     previousLock.isLockRequestExpired(now)
-                        || previousLock.getUnlockCompletionTimestamp().isPresent(),
+                        || previousLock.getUnlockCompletionTimestamp().isPresent()
+                        || isAdmin,
                     "A pending or completed lock action already exists for %s",
                     previousLock.getDomainName()));
-
     return new RegistryLock.Builder()
         .setVerificationCode(stringGenerator.createString(VERIFICATION_CODE_LENGTH))
         .setDomainName(domainName)
@@ -242,9 +246,11 @@ public final class DomainLockUtils {
   private RegistryLock.Builder createUnlockBuilder(
       String domainName, String registrarId, boolean isAdmin, Optional<Duration> relockDuration) {
     DateTime now = jpaTm().getTransactionTime();
-    DomainBase domainBase = getDomain(domainName, now);
+    DomainBase domainBase = getDomain(domainName, registrarId, now);
     Optional<RegistryLock> lockOptional =
         RegistryLockDao.getMostRecentVerifiedLockByRepoId(domainBase.getRepoId());
+
+    verifyDomainLocked(domainBase, isAdmin);
 
     RegistryLock.Builder newLockBuilder;
     if (isAdmin) {
@@ -261,7 +267,6 @@ public final class DomainLockUtils {
                       .setLockCompletionTimestamp(now)
                       .setRegistrarId(registrarId));
     } else {
-      verifyDomainLocked(domainBase);
       RegistryLock lock =
           lockOptional.orElseThrow(
               () ->
@@ -289,24 +294,33 @@ public final class DomainLockUtils {
         .setRegistrarId(registrarId);
   }
 
-  private static void verifyDomainNotLocked(DomainBase domainBase) {
+  private static void verifyDomainNotLocked(DomainBase domainBase, boolean isAdmin) {
     checkArgument(
-        !domainBase.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES),
+        isAdmin || !domainBase.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES),
         "Domain %s is already locked",
         domainBase.getDomainName());
   }
 
-  private static void verifyDomainLocked(DomainBase domainBase) {
+  private static void verifyDomainLocked(DomainBase domainBase, boolean isAdmin) {
     checkArgument(
-        !Sets.intersection(domainBase.getStatusValues(), REGISTRY_LOCK_STATUSES).isEmpty(),
+        isAdmin
+            || !Sets.intersection(domainBase.getStatusValues(), REGISTRY_LOCK_STATUSES).isEmpty(),
         "Domain %s is already unlocked",
         domainBase.getDomainName());
   }
 
-  private static DomainBase getDomain(String domainName, DateTime now) {
-    return loadByForeignKeyCached(DomainBase.class, domainName, now)
-        .orElseThrow(
-            () -> new IllegalArgumentException(String.format("Unknown domain %s", domainName)));
+  private DomainBase getDomain(String domainName, String registrarId, DateTime now) {
+    DomainBase domain =
+        loadByForeignKeyCached(DomainBase.class, domainName, now)
+            .orElseThrow(() -> new IllegalArgumentException("Domain doesn't exist"));
+    // The user must have specified either the correct registrar ID or the admin registrar ID
+    checkArgument(
+        registryAdminRegistrarId.equals(registrarId)
+            || domain.getCurrentSponsorClientId().equals(registrarId),
+        "Domain %s is not owned by registrar %s",
+        domainName,
+        registrarId);
+    return domain;
   }
 
   private static RegistryLock getByVerificationCode(String verificationCode) {
@@ -317,9 +331,9 @@ public final class DomainLockUtils {
                     String.format("Invalid verification code %s", verificationCode)));
   }
 
-  private static void applyLockStatuses(RegistryLock lock, DateTime lockTime) {
-    DomainBase domain = getDomain(lock.getDomainName(), lockTime);
-    verifyDomainNotLocked(domain);
+  private void applyLockStatuses(RegistryLock lock, DateTime lockTime, boolean isAdmin) {
+    DomainBase domain = getDomain(lock.getDomainName(), lock.getRegistrarId(), lockTime);
+    verifyDomainNotLocked(domain, isAdmin);
 
     DomainBase newDomain =
         domain
@@ -330,11 +344,9 @@ public final class DomainLockUtils {
     saveEntities(newDomain, lock, lockTime, true);
   }
 
-  private static void removeLockStatuses(RegistryLock lock, boolean isAdmin, DateTime unlockTime) {
-    DomainBase domain = getDomain(lock.getDomainName(), unlockTime);
-    if (!isAdmin) {
-      verifyDomainLocked(domain);
-    }
+  private void removeLockStatuses(RegistryLock lock, boolean isAdmin, DateTime unlockTime) {
+    DomainBase domain = getDomain(lock.getDomainName(), lock.getRegistrarId(), unlockTime);
+    verifyDomainLocked(domain, isAdmin);
 
     DomainBase newDomain =
         domain

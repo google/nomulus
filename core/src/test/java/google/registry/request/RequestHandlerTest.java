@@ -24,8 +24,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.users.User;
@@ -35,27 +35,24 @@ import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.RequestAuthenticator;
 import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.UserInfo;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RequestHandler}. */
-@RunWith(JUnit4.class)
 public final class RequestHandlerTest {
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withUserService(UserInfo.create("test@example.com", "test@example.com"))
           .build();
@@ -102,7 +99,7 @@ public final class RequestHandlerTest {
 
   @Action(service = Action.Service.DEFAULT, path = "/failAtConstruction", auth = AUTH_PUBLIC)
   public static final class FailAtConstructionTask implements Runnable {
-    public FailAtConstructionTask() {
+    FailAtConstructionTask() {
       throw new ServiceUnavailableException("Fail at construction");
     }
 
@@ -207,8 +204,8 @@ public final class RequestHandlerTest {
   private AuthResult providedAuthResult = null;
   private final User testUser = new User("test@example.com", "test@example.com");
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     // Initialize here, not inline, so that we pick up the mocked UserService.
     handler =
         RequestHandler.createForTest(
@@ -226,8 +223,8 @@ public final class RequestHandlerTest {
     handler.requestMetrics = requestMetrics;
   }
 
-  @After
-  public void after() {
+  @AfterEach
+  void afterEach() {
     verifyNoMoreInteractions(rsp, bumblebeeTask, slothTask, safeSlothTask, requestMetrics);
   }
 
@@ -237,7 +234,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testHandleRequest_normalRequest_works() throws Exception {
+  void testHandleRequest_normalRequest_works() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/bumblebee");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -245,13 +242,13 @@ public final class RequestHandlerTest {
 
     handler.handleRequest(req, rsp);
 
-    verifyZeroInteractions(rsp);
+    verifyNoInteractions(rsp);
     verify(bumblebeeTask).run();
     assertMetric("/bumblebee", GET, AuthLevel.NONE, true);
   }
 
   @Test
-  public void testHandleRequest_multipleMethodMappings_works() throws Exception {
+  void testHandleRequest_multipleMethodMappings_works() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getRequestURI()).thenReturn("/bumblebee");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -264,7 +261,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testHandleRequest_prefixEnabled_subpathsWork() throws Exception {
+  void testHandleRequest_prefixEnabled_subpathsWork() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/bumblebee/hive");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -277,7 +274,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testHandleRequest_taskHasAutoPrintOk_printsOk() throws Exception {
+  void testHandleRequest_taskHasAutoPrintOk_printsOk() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getRequestURI()).thenReturn("/sloth");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -293,7 +290,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testHandleRequest_prefixDisabled_subpathsReturn404NotFound() throws Exception {
+  void testHandleRequest_prefixDisabled_subpathsReturn404NotFound() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getRequestURI()).thenReturn("/sloth/nest");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -305,7 +302,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testHandleRequest_taskThrowsHttpException_getsHandledByHandler() throws Exception {
+  void testHandleRequest_taskThrowsHttpException_getsHandledByHandler() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/fail");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -319,7 +316,7 @@ public final class RequestHandlerTest {
 
   /** Test for a regression of the issue in b/21377705. */
   @Test
-  public void testHandleRequest_taskThrowsHttpException_atConstructionTime_getsHandledByHandler()
+  void testHandleRequest_taskThrowsHttpException_atConstructionTime_getsHandledByHandler()
       throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/failAtConstruction");
@@ -333,7 +330,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testHandleRequest_notFound_returns404NotFound() throws Exception {
+  void testHandleRequest_notFound_returns404NotFound() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/bogus");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -345,7 +342,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testHandleRequest_methodNotAllowed_returns405MethodNotAllowed() throws Exception {
+  void testHandleRequest_methodNotAllowed_returns405MethodNotAllowed() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getRequestURI()).thenReturn("/fail");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -357,7 +354,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testHandleRequest_insaneMethod_returns405MethodNotAllowed() throws Exception {
+  void testHandleRequest_insaneMethod_returns405MethodNotAllowed() throws Exception {
     when(req.getMethod()).thenReturn("FIREAWAY");
     when(req.getRequestURI()).thenReturn("/fail");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -368,10 +365,12 @@ public final class RequestHandlerTest {
     verify(rsp).sendError(405);
   }
 
-  /** @see <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html#sec5.1.1">
-   *     RFC2616 - HTTP/1.1 - Method</a> */
+  /**
+   * @see <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html#sec5.1.1">RFC2616 -
+   *     HTTP/1.1 - Method</a>
+   */
   @Test
-  public void testHandleRequest_lowercaseMethod_notRecognized() throws Exception {
+  void testHandleRequest_lowercaseMethod_notRecognized() throws Exception {
     when(req.getMethod()).thenReturn("get");
     when(req.getRequestURI()).thenReturn("/bumblebee");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -382,8 +381,9 @@ public final class RequestHandlerTest {
     verify(rsp).sendError(405);
   }
 
+  @SuppressWarnings("UnstableApiUsage")
   @Test
-  public void testNullness() {
+  void testNullness() {
     NullPointerTester tester = new NullPointerTester();
     tester.setDefault(Class.class, Component.class);
     tester.setDefault(RequestAuthenticator.class, requestAuthenticator);
@@ -392,7 +392,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testXsrfProtection_validTokenProvided_runsAction() throws Exception {
+  void testXsrfProtection_validTokenProvided_runsAction() throws Exception {
     when(req.getMethod()).thenReturn("POST");
     when(req.getRequestURI()).thenReturn("/safe-sloth");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -405,7 +405,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testXsrfProtection_GETMethodWithoutToken_doesntCheckToken() throws Exception {
+  void testXsrfProtection_GETMethodWithoutToken_doesntCheckToken() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/safe-sloth");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -418,7 +418,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testNoAuthNeeded_success() throws Exception {
+  void testNoAuthNeeded_success() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/auth/none");
     when(requestAuthenticator.authorize(AUTH_PUBLIC.authSettings(), req))
@@ -433,7 +433,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testAuthNeeded_failure() throws Exception {
+  void testAuthNeeded_failure() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/auth/adminUser");
     when(requestAuthenticator.authorize(AUTH_INTERNAL_OR_ADMIN.authSettings(), req))
@@ -446,7 +446,7 @@ public final class RequestHandlerTest {
   }
 
   @Test
-  public void testAuthNeeded_success() throws Exception {
+  void testAuthNeeded_success() throws Exception {
     when(req.getMethod()).thenReturn("GET");
     when(req.getRequestURI()).thenReturn("/auth/adminUser");
     when(requestAuthenticator.authorize(AUTH_INTERNAL_OR_ADMIN.authSettings(), req))
@@ -462,5 +462,4 @@ public final class RequestHandlerTest {
     assertThat(providedAuthResult.userAuthInfo().get().oauthTokenInfo()).isEmpty();
     assertMetric("/auth/adminUser", GET, AuthLevel.USER, true);
   }
-
 }

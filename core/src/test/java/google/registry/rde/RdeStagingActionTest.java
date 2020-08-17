@@ -33,7 +33,7 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.tldconfig.idn.IdnTableEnum.EXTENDED_LATIN;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;
@@ -59,7 +59,7 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import google.registry.tldconfig.idn.IdnTableEnum;
@@ -90,15 +90,12 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeStagingAction}. */
-@RunWith(JUnit4.class)
 public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
 
   private static final GcsFilename XML_FILE =
@@ -106,8 +103,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   private static final GcsFilename LENGTH_FILE =
       new GcsFilename("rde-bucket", "lol_2000-01-01_full_S1_R0.xml.length");
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private final FakeClock clock = new FakeClock();
   private final FakeResponse response = new FakeResponse();
@@ -117,16 +113,16 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   private static PGPPublicKey encryptKey;
   private static PGPPrivateKey decryptKey;
 
-  @BeforeClass
-  public static void beforeClass() {
+  @BeforeAll
+  static void beforeAll() {
     try (Keyring keyring = new FakeKeyringModule().get()) {
       encryptKey = keyring.getRdeStagingEncryptionKey();
       decryptKey = keyring.getRdeStagingDecryptionKey();
     }
   }
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     action = new RdeStagingAction();
     action.clock = clock;
@@ -154,7 +150,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testRun_modeInNonManualMode_throwsException() {
+  void testRun_modeInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.modeStrings = ImmutableSet.of("full");
@@ -162,7 +158,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testRun_tldInNonManualMode_throwsException() {
+  void testRun_tldInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.tlds = ImmutableSet.of("tld");
@@ -170,7 +166,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testRun_watermarkInNonManualMode_throwsException() {
+  void testRun_watermarkInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.watermarks = ImmutableSet.of(clock.nowUtc());
@@ -178,7 +174,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testRun_revisionInNonManualMode_throwsException() {
+  void testRun_revisionInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.revision = Optional.of(42);
@@ -186,14 +182,14 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testRun_noTlds_returns204() {
+  void testRun_noTlds_returns204() {
     action.run();
     assertThat(response.getStatus()).isEqualTo(204);
     assertNoTasksEnqueued("mapreduce");
   }
 
   @Test
-  public void testRun_tldWithoutEscrowEnabled_returns204() {
+  void testRun_tldWithoutEscrowEnabled_returns204() {
     createTld("lol");
     persistResource(Registry.get("lol").asBuilder().setEscrowEnabled(false).build());
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -203,7 +199,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testRun_tldWithEscrowEnabled_runsMapReduce() {
+  void testRun_tldWithEscrowEnabled_runsMapReduce() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.run();
@@ -213,7 +209,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testRun_withinTransactionCooldown_getsExcludedAndReturns204() {
+  void testRun_withinTransactionCooldown_getsExcludedAndReturns204() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01T00:04:59Z"));
     action.transactionCooldown = Duration.standardMinutes(5);
@@ -223,7 +219,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testRun_afterTransactionCooldown_runsMapReduce() {
+  void testRun_afterTransactionCooldown_runsMapReduce() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01T00:05:00Z"));
     action.transactionCooldown = Duration.standardMinutes(5);
@@ -232,7 +228,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testManualRun_emptyMode_throwsException() {
+  void testManualRun_emptyMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.manual = true;
@@ -244,7 +240,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testManualRun_invalidMode_throwsException() {
+  void testManualRun_invalidMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.manual = true;
@@ -256,7 +252,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testManualRun_emptyTld_throwsException() {
+  void testManualRun_emptyTld_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.manual = true;
@@ -268,7 +264,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testManualRun_emptyWatermark_throwsException() {
+  void testManualRun_emptyWatermark_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.manual = true;
@@ -280,7 +276,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testManualRun_nonDayStartWatermark_throwsException() {
+  void testManualRun_nonDayStartWatermark_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.manual = true;
@@ -292,7 +288,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testManualRun_invalidRevision_throwsException() {
+  void testManualRun_invalidRevision_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.manual = true;
@@ -305,7 +301,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testManualRun_validParameters_runsMapReduce() {
+  void testManualRun_validParameters_runsMapReduce() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.manual = true;
@@ -320,7 +316,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_bunchOfResources_headerHasCorrectCounts() throws Exception {
+  void testMapReduce_bunchOfResources_headerHasCorrectCounts() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("lol");
     makeDomainBase(clock, "lol");
@@ -350,7 +346,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_validHostResources_getPutInDeposit() throws Exception {
+  void testMapReduce_validHostResources_getPutInDeposit() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("lol");
     makeHostResource(clock, "ns1.cat.lol", "feed::a:bee");
@@ -393,7 +389,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_defaultTestFixtureRegistrars_getPutInDeposit() throws Exception {
+  void testMapReduce_defaultTestFixtureRegistrars_getPutInDeposit() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("lol");
     makeHostResource(clock, "ns1.cat.lol", "feed::a:bee");
@@ -415,7 +411,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_sameDayRdeDeposit_advancesCursorToTomorrow() throws Exception {
+  void testMapReduce_sameDayRdeDeposit_advancesCursorToTomorrow() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("lol");
     makeDomainBase(clock, "lol");
@@ -436,7 +432,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_onBrdaDay_advancesBothCursors() throws Exception {
+  void testMapReduce_onBrdaDay_advancesBothCursors() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("lol");
     makeDomainBase(clock, "lol");
@@ -457,7 +453,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_onBrdaDay_enqueuesBothTasks() throws Exception {
+  void testMapReduce_onBrdaDay_enqueuesBothTasks() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("lol");
     makeDomainBase(clock, "lol");
@@ -478,7 +474,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_noEppResourcesAndWayInPast_depositsRegistrarsOnly() throws Exception {
+  void testMapReduce_noEppResourcesAndWayInPast_depositsRegistrarsOnly() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("fop");
     setCursor(Registry.get("fop"), RDE_STAGING, DateTime.parse("1971-01-01TZ"));
@@ -513,7 +509,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_idnTables_goInDeposit() throws Exception {
+  void testMapReduce_idnTables_goInDeposit() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("fop");
     makeDomainBase(clock, "fop");
@@ -539,7 +535,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_withDomain_producesExpectedXml() throws Exception {
+  void testMapReduce_withDomain_producesExpectedXml() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("lol");
     makeDomainBase(clock, "lol");
@@ -556,7 +552,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_withDomain_producesCorrectLengthFile() throws Exception {
+  void testMapReduce_withDomain_producesCorrectLengthFile() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("lol");
     makeDomainBase(clock, "lol");
@@ -571,7 +567,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_withDomain_producesReportXml() throws Exception {
+  void testMapReduce_withDomain_producesReportXml() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("lol");
     makeDomainBase(clock, "lol");
@@ -588,7 +584,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_twoDomainsDifferentTlds_isolatesDomains() throws Exception {
+  void testMapReduce_twoDomainsDifferentTlds_isolatesDomains() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("boggle");
     makeDomainBase(clock, "boggle");
@@ -609,7 +605,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_twoHostsDifferentTlds_includedInBothTldDeposits() throws Exception {
+  void testMapReduce_twoHostsDifferentTlds_includedInBothTldDeposits() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("fop");
     makeHostResource(clock, "ns1.dein.fop", "a:fed::cafe");
@@ -630,7 +626,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_rewindCursor_resendsDepositAtHigherRevision() throws Exception {
+  void testMapReduce_rewindCursor_resendsDepositAtHigherRevision() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("fop");
     makeHostResource(clock, "ns1.dein.fop", "a:fed::cafe");
@@ -654,7 +650,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_brdaDeposit_doesntIncludeHostsOrContacts() throws Exception {
+  void testMapReduce_brdaDeposit_doesntIncludeHostsOrContacts() throws Exception {
     clock.setTo(DateTime.parse("1999-12-31TZ"));
     createTldWithEscrowEnabled("xn--q9jyb4c");
     makeHostResource(clock, "ns1.bofh.みんな", "dead:fed::cafe");
@@ -676,7 +672,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_catchUpCursor_doesPointInTime() throws Exception {
+  void testMapReduce_catchUpCursor_doesPointInTime() throws Exception {
     // Do nothing on the first day.
     clock.setTo(DateTime.parse("1984-12-17T12:00Z"));
     createTldWithEscrowEnabled("lol");
@@ -794,8 +790,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_manualMode_generatesCorrectDepositsWithoutAdvancingCursors()
-      throws Exception {
+  void testMapReduce_manualMode_generatesCorrectDepositsWithoutAdvancingCursors() throws Exception {
     doManualModeMapReduceTest(0, ImmutableSet.of("lol"));
     XmlTestUtils.assertXmlEquals(
         loadFile(getClass(), "testMapReduce_withDomain_producesExpectedXml.xml"),
@@ -810,8 +805,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   @Test
-  public void testMapReduce_manualMode_nonZeroRevisionAndMultipleTlds()
-      throws Exception {
+  void testMapReduce_manualMode_nonZeroRevisionAndMultipleTlds() throws Exception {
     doManualModeMapReduceTest(42, ImmutableSet.of("lol", "slug"));
   }
 

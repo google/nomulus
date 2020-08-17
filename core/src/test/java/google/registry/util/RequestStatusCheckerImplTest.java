@@ -27,18 +27,15 @@ import com.google.apphosting.api.ApiProxy;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.util.logging.Level;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RequestStatusCheckerImpl}. */
-@RunWith(JUnit4.class)
-public final class RequestStatusCheckerImplTest {
+final class RequestStatusCheckerImplTest {
 
   private static final TestLogHandler logHandler = new TestLogHandler();
 
@@ -61,21 +58,23 @@ public final class RequestStatusCheckerImplTest {
         });
   }
 
-  @Rule
-  public AppEngineRule appEngineRule = AppEngineRule.builder().build();
+  @RegisterExtension AppEngineExtension appEngineRule = AppEngineExtension.builder().build();
 
-  @Before public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     LoggerConfig.getConfig(RequestStatusCheckerImpl.class).addHandler(logHandler);
     RequestStatusCheckerImpl.logService = mock(LogService.class);
   }
 
-  @After public void tearDown() {
+  @AfterEach
+  void afterEach() {
     LoggerConfig.getConfig(RequestStatusCheckerImpl.class).removeHandler(logHandler);
   }
 
   // If a logId is unrecognized, it could be that the log hasn't been uploaded yet - so we assume
   // it's a request that has just started running recently.
-  @Test public void testIsRunning_unrecognized() {
+  @Test
+  void testIsRunning_unrecognized() {
     when(RequestStatusCheckerImpl.logService.fetch(expectedLogQuery("12345678")))
         .thenReturn(ImmutableList.of());
     assertThat(requestStatusChecker.isRunning("12345678")).isTrue();
@@ -84,7 +83,8 @@ public final class RequestStatusCheckerImplTest {
         .hasLogAtLevelWithMessage(Level.INFO, "Queried an unrecognized requestLogId");
   }
 
-  @Test public void testIsRunning_notFinished() {
+  @Test
+  void testIsRunning_notFinished() {
     RequestLogs requestLogs = new RequestLogs();
     requestLogs.setFinished(false);
 
@@ -97,7 +97,8 @@ public final class RequestStatusCheckerImplTest {
         .hasLogAtLevelWithMessage(Level.INFO, "isFinished: false");
   }
 
-  @Test public void testIsRunning_finished() {
+  @Test
+  void testIsRunning_finished() {
     RequestLogs requestLogs = new RequestLogs();
     requestLogs.setFinished(true);
 
@@ -110,13 +111,15 @@ public final class RequestStatusCheckerImplTest {
         .hasLogAtLevelWithMessage(Level.INFO, "isFinished: true");
   }
 
-  @Test public void testGetLogId_returnsRequestLogId() {
+  @Test
+  void testGetLogId_returnsRequestLogId() {
     String expectedLogId = ApiProxy.getCurrentEnvironment().getAttributes().get(
         "com.google.appengine.runtime.request_log_id").toString();
     assertThat(requestStatusChecker.getLogId()).isEqualTo(expectedLogId);
   }
 
-  @Test public void testGetLogId_createsLog() {
+  @Test
+  void testGetLogId_createsLog() {
     requestStatusChecker.getLogId();
     assertAboutLogs()
         .that(logHandler)

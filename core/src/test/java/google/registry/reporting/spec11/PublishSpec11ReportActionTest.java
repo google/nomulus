@@ -41,14 +41,11 @@ import google.registry.testing.FakeResponse;
 import java.io.IOException;
 import java.util.Optional;
 import org.joda.time.LocalDate;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PublishSpec11ReportAction}. */
-@RunWith(JUnit4.class)
-public class PublishSpec11ReportActionTest {
+class PublishSpec11ReportActionTest {
 
   private final LocalDate date = new LocalDate(2018, 6, 5);
 
@@ -63,8 +60,8 @@ public class PublishSpec11ReportActionTest {
   private FakeResponse response;
   private PublishSpec11ReportAction publishAction;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     dataflow = mock(Dataflow.class);
     projects = mock(Projects.class);
     jobs = mock(Jobs.class);
@@ -91,7 +88,7 @@ public class PublishSpec11ReportActionTest {
   }
 
   @Test
-  public void testJobDone_emailsOnlyMonthlyResultsOnSecondOfMonth() throws Exception {
+  void testJobDone_emailsOnlyMonthlyResultsOnSecondOfMonth() throws Exception {
     LocalDate secondOfMonth = date.withDayOfMonth(2);
     when(parser.getRegistrarThreatMatches(secondOfMonth)).thenReturn(sampleThreatMatches());
     expectedJob.setCurrentState("JOB_STATE_DONE");
@@ -117,7 +114,7 @@ public class PublishSpec11ReportActionTest {
   }
 
   @Test
-  public void testJobFailed_returnsNonRetriableResponse() {
+  void testJobFailed_returnsNonRetriableResponse() {
     expectedJob.setCurrentState("JOB_STATE_FAILED");
     publishAction.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
@@ -128,7 +125,7 @@ public class PublishSpec11ReportActionTest {
   }
 
   @Test
-  public void testJobIndeterminate_returnsRetriableResponse() {
+  void testJobIndeterminate_returnsRetriableResponse() {
     expectedJob.setCurrentState("JOB_STATE_RUNNING");
     publishAction.run();
     assertThat(response.getStatus()).isEqualTo(SC_NOT_MODIFIED);
@@ -136,7 +133,7 @@ public class PublishSpec11ReportActionTest {
   }
 
   @Test
-  public void testIOException_returnsFailureMessage() throws IOException {
+  void testIOException_returnsFailureMessage() throws IOException {
     when(get.execute()).thenThrow(new IOException("expected"));
     publishAction.run();
     assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
@@ -149,7 +146,7 @@ public class PublishSpec11ReportActionTest {
   }
 
   @Test
-  public void testJobDone_onlyDailyResults() throws Exception {
+  void testJobDone_onlyDailyResults() throws Exception {
     LocalDate yesterday = date.minusDays(1);
     when(parser.getPreviousDateWithMatches(date)).thenReturn(Optional.of(yesterday));
     when(parser.getRegistrarThreatMatches(date)).thenReturn(sampleThreatMatches());
@@ -167,7 +164,7 @@ public class PublishSpec11ReportActionTest {
   }
 
   @Test
-  public void testJobDone_multipleEntriesWithSameEmail() throws Exception {
+  void testJobDone_multipleEntriesWithSameEmail() throws Exception {
     LocalDate yesterday = date.minusDays(1);
     when(parser.getPreviousDateWithMatches(date)).thenReturn(Optional.of(yesterday));
     when(parser.getRegistrarThreatMatches(yesterday)).thenReturn(ImmutableSet.of());
@@ -200,7 +197,7 @@ public class PublishSpec11ReportActionTest {
   }
 
   @Test
-  public void testJobDone_noDifferentResults() throws Exception {
+  void testJobDone_noDifferentResults() throws Exception {
     LocalDate yesterday = date.minusDays(1);
     when(parser.getPreviousDateWithMatches(date)).thenReturn(Optional.of(yesterday));
     when(parser.getRegistrarThreatMatches(date)).thenReturn(sampleThreatMatches());
@@ -218,7 +215,7 @@ public class PublishSpec11ReportActionTest {
   }
 
   @Test
-  public void testJobDone_failsDueToNoPreviousResults() {
+  void testJobDone_failsDueToNoPreviousResults() {
     when(parser.getPreviousDateWithMatches(date)).thenReturn(Optional.empty());
     expectedJob.setCurrentState("JOB_STATE_DONE");
     publishAction.run();

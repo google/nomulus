@@ -20,33 +20,31 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListRevision;
 import google.registry.model.tmch.ClaimsListShard.UnshardedSaveException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ClaimsListShard}. */
-@RunWith(JUnit4.class)
 public class ClaimsListShardTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final int shardSize = 10;
 
   @Test
-  public void test_unshardedSaveFails() {
+  void test_unshardedSaveFails() {
     assertThrows(
         UnshardedSaveException.class,
         () ->
@@ -63,13 +61,13 @@ public class ClaimsListShardTest {
   }
 
   @Test
-  public void testGet_safelyLoadsEmptyClaimsList_whenNoShardsExist() {
+  void testGet_safelyLoadsEmptyClaimsList_whenNoShardsExist() {
     assertThat(ClaimsListShard.get().labelsToKeys).isEmpty();
     assertThat(ClaimsListShard.get().creationTime).isEqualTo(START_OF_TIME);
   }
 
   @Test
-  public void test_savesAndGets_withSharding() {
+  void test_savesAndGets_withSharding() {
     // Create a ClaimsList that will need 4 shards to save.
     Map<String, String> labelsToKeys = new HashMap<>();
     for (int i = 0; i <= shardSize * 3; i++) {

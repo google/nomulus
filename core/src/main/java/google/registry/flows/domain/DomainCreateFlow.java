@@ -347,8 +347,8 @@ public class DomainCreateFlow implements TransactionalFlow {
             .setRepoId(repoId)
             .setIdnTableName(validateDomainNameWithIdnTables(domainName))
             .setRegistrationExpirationTime(registrationExpirationTime)
-            .setAutorenewBillingEvent(Key.create(autorenewBillingEvent))
-            .setAutorenewPollMessage(Key.create(autorenewPollMessage))
+            .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
+            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
             .setLaunchNotice(hasClaimsNotice ? launchCreate.get().getNotice() : null)
             .setSmdId(signedMarkId)
             .setDsData(secDnsCreate.isPresent() ? secDnsCreate.get().getDsData() : null)
@@ -360,7 +360,8 @@ public class DomainCreateFlow implements TransactionalFlow {
                     command.getNameservers().stream().collect(toImmutableSet()))
             .setStatusValues(statuses.build())
             .setContacts(command.getContacts())
-            .addGracePeriod(GracePeriod.forBillingEvent(GracePeriodStatus.ADD, createBillingEvent))
+            .addGracePeriod(
+                GracePeriod.forBillingEvent(GracePeriodStatus.ADD, repoId, createBillingEvent))
             .build();
     entitiesToSave.add(
         newDomain,

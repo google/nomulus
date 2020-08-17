@@ -34,7 +34,7 @@ import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.ofy.Ofy;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import java.io.IOException;
 import org.joda.time.DateTime;
 
@@ -49,7 +49,7 @@ public enum Fixture {
   INJECTED_FAKE_CLOCK {
     @Override
     public void load() {
-      new InjectRule()
+      new InjectExtension()
           .setStaticField(Ofy.class, "clock", new FakeClock(DateTime.parse("2000-01-01TZ")));
     }
   },

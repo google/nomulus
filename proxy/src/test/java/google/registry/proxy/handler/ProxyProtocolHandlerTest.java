@@ -21,13 +21,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ProxyProtocolHandler}. */
-@RunWith(JUnit4.class)
-public class ProxyProtocolHandlerTest {
+class ProxyProtocolHandlerTest {
 
   private static final String HEADER_TEMPLATE = "PROXY TCP%d %s %s %s %s\r\n";
 
@@ -37,7 +34,7 @@ public class ProxyProtocolHandlerTest {
   private String header;
 
   @Test
-  public void testSuccess_proxyHeaderPresent_singleFrame() {
+  void testSuccess_proxyHeaderPresent_singleFrame() {
     header = String.format(HEADER_TEMPLATE, 4, "172.0.0.1", "255.255.255.255", "234", "123");
     String message = "some message";
     // Header processed, rest of the message passed along.
@@ -50,7 +47,7 @@ public class ProxyProtocolHandlerTest {
   }
 
   @Test
-  public void testSuccess_proxyHeaderUnknownSource_singleFrame() {
+  void testSuccess_proxyHeaderUnknownSource_singleFrame() {
     header = "PROXY UNKNOWN\r\n";
     String message = "some message";
     // Header processed, rest of the message passed along.
@@ -63,7 +60,7 @@ public class ProxyProtocolHandlerTest {
   }
 
   @Test
-  public void testSuccess_proxyHeaderPresent_multipleFrames() {
+  void testSuccess_proxyHeaderPresent_multipleFrames() {
     header = String.format(HEADER_TEMPLATE, 4, "172.0.0.1", "255.255.255.255", "234", "123");
     String frame1 = header.substring(0, 4);
     String frame2 = header.substring(4, 7);
@@ -85,7 +82,7 @@ public class ProxyProtocolHandlerTest {
   }
 
   @Test
-  public void testSuccess_proxyHeaderPresent_singleFrame_ipv6() {
+  void testSuccess_proxyHeaderPresent_singleFrame_ipv6() {
     header =
         String.format(HEADER_TEMPLATE, 6, "2001:db8:0:1:1:1:1:1", "0:0:0:0:0:0:0:1", "234", "123");
     String message = "some message";
@@ -99,7 +96,7 @@ public class ProxyProtocolHandlerTest {
   }
 
   @Test
-  public void testSuccess_proxyHeaderNotPresent_singleFrame() {
+  void testSuccess_proxyHeaderNotPresent_singleFrame() {
     String message = "some message";
     // No header present, rest of the message passed along.
     assertThat(channel.writeInbound(Unpooled.wrappedBuffer(message.getBytes(UTF_8)))).isTrue();
@@ -110,7 +107,7 @@ public class ProxyProtocolHandlerTest {
   }
 
   @Test
-  public void testSuccess_proxyHeaderNotPresent_multipleFrames() {
+  void testSuccess_proxyHeaderNotPresent_multipleFrames() {
     String frame1 = "som";
     String frame2 = "e mess";
     String frame3 = "age\nis not";

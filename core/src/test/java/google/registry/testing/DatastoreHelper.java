@@ -26,6 +26,8 @@ import static google.registry.config.RegistryConfig.getContactAndHostRoidSuffix;
 import static google.registry.config.RegistryConfig.getContactAutomaticTransferLength;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.EppResourceUtils.createRepoId;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.ResourceTransferUtils.createTransferResponse;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
@@ -51,7 +53,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
 import com.google.common.net.InetAddresses;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.cmd.Saver;
@@ -71,6 +72,7 @@ import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -100,7 +102,6 @@ import google.registry.tmch.LordnTaskUtils;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -119,12 +120,16 @@ public class DatastoreHelper {
                   String.class));
 
   public static HostResource newHostResource(String hostName) {
+    return newHostResourceWithRoid(hostName, generateNewContactHostRoid());
+  }
+
+  public static HostResource newHostResourceWithRoid(String hostName, String repoId) {
     return new HostResource.Builder()
         .setHostName(hostName)
         .setCreationClientId("TheRegistrar")
         .setPersistedCurrentSponsorClientId("TheRegistrar")
         .setCreationTimeForTest(START_OF_TIME)
-        .setRepoId(generateNewContactHostRoid())
+        .setRepoId(repoId)
         .build();
   }
 
@@ -498,9 +503,10 @@ public class DatastoreHelper {
       DateTime creationTime,
       DateTime expirationTime) {
     String domainName = String.format("%s.%s", label, tld);
+    String repoId = generateNewDomainRoid(tld);
     DomainBase domain =
         new DomainBase.Builder()
-            .setRepoId(generateNewDomainRoid(tld))
+            .setRepoId(repoId)
             .setDomainName(domainName)
             .setPersistedCurrentSponsorClientId("TheRegistrar")
             .setCreationClientId("TheRegistrar")
@@ -513,7 +519,7 @@ public class DatastoreHelper {
                     DesignatedContact.create(Type.TECH, contact.createVKey())))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")))
             .addGracePeriod(
-                GracePeriod.create(GracePeriodStatus.ADD, now.plusDays(10), "foo", null))
+                GracePeriod.create(GracePeriodStatus.ADD, repoId, now.plusDays(10), "foo", null))
             .build();
     HistoryEntry historyEntryDomainCreate =
         persistResource(
@@ -545,8 +551,8 @@ public class DatastoreHelper {
     return persistResource(
         domain
             .asBuilder()
-            .setAutorenewBillingEvent(Key.create(autorenewEvent))
-            .setAutorenewPollMessage(Key.create(autorenewPollMessage))
+            .setAutorenewBillingEvent(autorenewEvent.createVKey())
+            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
             .build());
   }
 
@@ -588,13 +594,13 @@ public class DatastoreHelper {
                 .build());
     // Modify the existing autorenew event to reflect the pending transfer.
     persistResource(
-        ofy().load().key(domain.getAutorenewBillingEvent()).now().asBuilder()
+        tm().load(domain.getAutorenewBillingEvent())
+            .asBuilder()
             .setRecurrenceEndTime(expirationTime)
             .build());
     // Update the end time of the existing autorenew poll message. We must delete it if it has no
     // events left in it.
-    PollMessage.Autorenew autorenewPollMessage =
-        ofy().load().key(domain.getAutorenewPollMessage()).now();
+    PollMessage.Autorenew autorenewPollMessage = tm().load(domain.getAutorenewPollMessage());
     if (autorenewPollMessage.getEventTime().isBefore(expirationTime)) {
       persistResource(
           autorenewPollMessage.asBuilder()
@@ -681,20 +687,15 @@ public class DatastoreHelper {
 
   /** Assert that the actual billing event matches the expected one, ignoring IDs. */
   public static void assertBillingEventsEqual(BillingEvent actual, BillingEvent expected) {
-    assertThat(stripBillingEventId(actual)).isEqualTo(stripBillingEventId(expected));
+    assertAboutImmutableObjects().that(actual).isEqualExceptFields(expected, "id");
   }
 
   /** Assert that the actual billing events match the expected ones, ignoring IDs and order. */
   public static void assertBillingEventsEqual(
       Iterable<BillingEvent> actual, Iterable<BillingEvent> expected) {
-    assertThat(
-            Streams.stream(actual)
-                .map(DatastoreHelper::stripBillingEventId)
-                .collect(toImmutableList()))
-        .containsExactlyElementsIn(
-            Streams.stream(expected)
-                .map(DatastoreHelper::stripBillingEventId)
-                .collect(toImmutableList()));
+    assertThat(actual)
+        .comparingElementsUsing(immutableObjectCorrespondence("id"))
+        .containsExactlyElementsIn(expected);
   }
 
   /** Assert that the expected billing events are exactly the ones found in the fake Datastore. */
@@ -712,14 +713,7 @@ public class DatastoreHelper {
    */
   public static void assertBillingEventsForResource(
       EppResource resource, BillingEvent... expected) {
-    assertThat(
-            Streams.stream(getBillingEvents(resource))
-                .map(DatastoreHelper::stripBillingEventId)
-                .collect(toImmutableList()))
-        .containsExactlyElementsIn(
-            Arrays.stream(expected)
-                .map(DatastoreHelper::stripBillingEventId)
-                .collect(toImmutableList()));
+    assertBillingEventsEqual(getBillingEvents(resource), Arrays.asList(expected));
   }
 
   /** Assert that there are no billing events. */
@@ -727,74 +721,71 @@ public class DatastoreHelper {
     assertThat(getBillingEvents()).isEmpty();
   }
 
-  /** Strips the billing event ID (really, sets it to a constant value) to facilitate comparison. */
+  /**
+   * Strips the billing event ID (really, sets it to a constant value) to facilitate comparison.
+   *
+   * <p>Note: Prefer {@link #assertPollMessagesEqual} when that is suitable.
+   */
   public static BillingEvent stripBillingEventId(BillingEvent billingEvent) {
     return billingEvent.asBuilder().setId(1L).build();
   }
 
   /** Assert that the actual poll message matches the expected one, ignoring IDs. */
   public static void assertPollMessagesEqual(PollMessage actual, PollMessage expected) {
-    assertThat(POLL_MESSAGE_ID_STRIPPER.apply(actual))
-        .isEqualTo(POLL_MESSAGE_ID_STRIPPER.apply(expected));
+    assertAboutImmutableObjects().that(actual).isEqualExceptFields(expected, "id");
   }
 
   /** Assert that the actual poll messages match the expected ones, ignoring IDs and order. */
   public static void assertPollMessagesEqual(
       Iterable<PollMessage> actual, Iterable<PollMessage> expected) {
-    assertThat(Streams.stream(actual).map(POLL_MESSAGE_ID_STRIPPER).collect(toImmutableList()))
-        .containsExactlyElementsIn(
-            Streams.stream(expected).map(POLL_MESSAGE_ID_STRIPPER).collect(toImmutableList()));
+    assertThat(actual)
+        .comparingElementsUsing(immutableObjectCorrespondence("id"))
+        .containsExactlyElementsIn(expected);
+  }
+
+  public static void assertPollMessages(String clientId, PollMessage... expected) {
+    assertPollMessagesEqual(getPollMessages(clientId), Arrays.asList(expected));
+  }
+
+  public static void assertPollMessages(PollMessage... expected) {
+    assertPollMessagesEqual(getPollMessages(), Arrays.asList(expected));
   }
 
   public static void assertPollMessagesForResource(EppResource resource, PollMessage... expected) {
-    assertThat(
-            getPollMessages(resource)
-                .stream()
-                .map(POLL_MESSAGE_ID_STRIPPER)
-                .collect(toImmutableList()))
-        .containsExactlyElementsIn(
-            Arrays.stream(expected).map(POLL_MESSAGE_ID_STRIPPER).collect(toImmutableList()));
+    assertPollMessagesEqual(getPollMessages(resource), Arrays.asList(expected));
   }
 
-  /** Helper to effectively erase the poll message ID to facilitate comparison. */
-  public static final Function<PollMessage, PollMessage> POLL_MESSAGE_ID_STRIPPER =
-      pollMessage -> pollMessage.asBuilder().setId(1L).build();
-
   public static ImmutableList<PollMessage> getPollMessages() {
-    return Streams.stream(ofy().load().type(PollMessage.class)).collect(toImmutableList());
+    return ImmutableList.copyOf(ofy().load().type(PollMessage.class));
   }
 
   public static ImmutableList<PollMessage> getPollMessages(String clientId) {
-    return Streams.stream(ofy().load().type(PollMessage.class).filter("clientId", clientId))
-        .collect(toImmutableList());
+    return ImmutableList.copyOf(ofy().load().type(PollMessage.class).filter("clientId", clientId));
   }
 
   public static ImmutableList<PollMessage> getPollMessages(EppResource resource) {
-    return Streams.stream(ofy().load().type(PollMessage.class).ancestor(resource))
-        .collect(toImmutableList());
+    return ImmutableList.copyOf(ofy().load().type(PollMessage.class).ancestor(resource));
   }
 
   public static ImmutableList<PollMessage> getPollMessages(String clientId, DateTime now) {
-    return Streams.stream(
-            ofy()
-                .load()
-                .type(PollMessage.class)
-                .filter("clientId", clientId)
-                .filter("eventTime <=", now.toDate()))
-        .collect(toImmutableList());
+    return ImmutableList.copyOf(
+        ofy()
+            .load()
+            .type(PollMessage.class)
+            .filter("clientId", clientId)
+            .filter("eventTime <=", now.toDate()));
   }
 
   /** Gets all PollMessages associated with the given EppResource. */
   public static ImmutableList<PollMessage> getPollMessages(
       EppResource resource, String clientId, DateTime now) {
-    return Streams.stream(
-            ofy()
-                .load()
-                .type(PollMessage.class)
-                .ancestor(resource)
-                .filter("clientId", clientId)
-                .filter("eventTime <=", now.toDate()))
-        .collect(toImmutableList());
+    return ImmutableList.copyOf(
+        ofy()
+            .load()
+            .type(PollMessage.class)
+            .ancestor(resource)
+            .filter("clientId", clientId)
+            .filter("eventTime <=", now.toDate()));
   }
 
   public static PollMessage getOnlyPollMessage(String clientId) {
@@ -826,6 +817,12 @@ public class DatastoreHelper {
         .filter(subType::isInstance)
         .map(subType::cast)
         .collect(onlyElement());
+  }
+
+  public static void assertAllocationTokens(AllocationToken... expectedTokens) {
+    assertThat(ofy().load().type(AllocationToken.class).list())
+        .comparingElementsUsing(immutableObjectCorrespondence("updateTimestamp", "creationTime"))
+        .containsExactlyElementsIn(expectedTokens);
   }
 
   /** Returns a newly allocated, globally unique domain repoId of the format HEX-TLD. */

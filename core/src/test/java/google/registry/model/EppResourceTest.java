@@ -24,20 +24,20 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.host.HostResource;
-import google.registry.testing.TestCacheRule;
+import google.registry.testing.TestCacheExtension;
 import org.joda.time.Duration;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link EppResource}. */
 public class EppResourceTest extends EntityTestCase {
 
-  @Rule
-  public final TestCacheRule testCacheRule =
-      new TestCacheRule.Builder().withEppResourceCache(Duration.standardDays(1)).build();
+  @RegisterExtension
+  public final TestCacheExtension testCacheExtension =
+      new TestCacheExtension.Builder().withEppResourceCache(Duration.standardDays(1)).build();
 
   @Test
-  public void test_loadCached_ignoresContactChange() {
+  void test_loadCached_ignoresContactChange() {
     ContactResource originalContact = persistActiveContact("contact123");
     assertThat(EppResource.loadCached(ImmutableList.of(originalContact.createVKey())))
         .containsExactly(originalContact.createVKey(), originalContact);
@@ -50,7 +50,7 @@ public class EppResourceTest extends EntityTestCase {
   }
 
   @Test
-  public void test_loadCached_ignoresHostChange() {
+  void test_loadCached_ignoresHostChange() {
     HostResource originalHost = persistActiveHost("ns1.example.com");
     assertThat(EppResource.loadCached(ImmutableList.of(originalHost.createVKey())))
         .containsExactly(originalHost.createVKey(), originalHost);

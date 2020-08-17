@@ -18,7 +18,14 @@
       and streams it to cloud storage. When this job has finished successfully, it'll
       launch a separate task that uploads the deposit file to Iron Mountain via SFTP.
     </description>
-    <schedule>every day 00:07</schedule>
+    <!--
+      This only needs to run once per day, but we launch additional jobs in case the
+      cursor is lagging behind, so it'll catch up to the current date eventually.
+
+      See <a href="../../../production/default/WEB-INF/cron.xml">production config</a> for an
+      explanation of job starting times.
+    -->
+    <schedule>every 12 hours from 00:07 to 12:07</schedule>
     <target>backend</target>
   </cron>
 

@@ -50,7 +50,7 @@ import google.registry.model.server.Lock;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import google.registry.util.AppEngineServiceUtils;
@@ -61,27 +61,24 @@ import google.registry.util.SystemSleeper;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
 
 /** Unit tests for {@link RefreshDnsOnHostRenameAction}. */
-@RunWith(JUnit4.class)
 public class RefreshDnsOnHostRenameActionTest
     extends MapreduceTestCase<RefreshDnsOnHostRenameAction> {
 
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private AsyncTaskEnqueuer enqueuer;
   private final FakeClock clock = new FakeClock(DateTime.parse("2015-01-15T11:22:33Z"));
   private final FakeResponse fakeResponse = new FakeResponse();
   @Mock private RequestStatusChecker requestStatusChecker;
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
     enqueuer =
         AsyncTaskEnqueuerTest.createForTesting(
@@ -124,7 +121,7 @@ public class RefreshDnsOnHostRenameActionTest
   }
 
   @Test
-  public void testSuccess_dnsUpdateEnqueued() throws Exception {
+  void testSuccess_dnsUpdateEnqueued() throws Exception {
     HostResource host = persistActiveHost("ns1.example.tld");
     persistResource(newDomainBase("example.tld", host));
     persistResource(newDomainBase("otherexample.tld", host));
@@ -141,7 +138,7 @@ public class RefreshDnsOnHostRenameActionTest
   }
 
   @Test
-  public void testSuccess_multipleHostsProcessedInBatch() throws Exception {
+  void testSuccess_multipleHostsProcessedInBatch() throws Exception {
     HostResource host1 = persistActiveHost("ns1.example.tld");
     HostResource host2 = persistActiveHost("ns2.example.tld");
     HostResource host3 = persistActiveHost("ns3.example.tld");
@@ -165,7 +162,7 @@ public class RefreshDnsOnHostRenameActionTest
   }
 
   @Test
-  public void testSuccess_deletedHost_doesntTriggerDnsRefresh() throws Exception {
+  void testSuccess_deletedHost_doesntTriggerDnsRefresh() throws Exception {
     HostResource host = persistDeletedHost("ns11.fakesss.tld", clock.nowUtc().minusDays(4));
     persistResource(newDomainBase("example1.tld", host));
     DateTime timeEnqueued = clock.nowUtc();
@@ -180,7 +177,7 @@ public class RefreshDnsOnHostRenameActionTest
   }
 
   @Test
-  public void testSuccess_noDnsTasksForDeletedDomain() throws Exception {
+  void testSuccess_noDnsTasksForDeletedDomain() throws Exception {
     HostResource renamedHost = persistActiveHost("ns1.example.tld");
     persistResource(
         newDomainBase("example.tld", renamedHost)
@@ -194,7 +191,7 @@ public class RefreshDnsOnHostRenameActionTest
   }
 
   @Test
-  public void testRun_hostDoesntExist_delaysTask() throws Exception {
+  void testRun_hostDoesntExist_delaysTask() throws Exception {
     HostResource host = newHostResource("ns1.example.tld");
     enqueuer.enqueueAsyncDnsRefresh(host, clock.nowUtc());
     enqueueMapreduceOnly();
@@ -208,7 +205,7 @@ public class RefreshDnsOnHostRenameActionTest
   }
 
   @Test
-  public void test_cannotAcquireLock() {
+  void test_cannotAcquireLock() {
     // Make lock acquisition fail.
     acquireLock();
     enqueueMapreduceOnly();
@@ -217,7 +214,7 @@ public class RefreshDnsOnHostRenameActionTest
   }
 
   @Test
-  public void test_mapreduceHasWorkToDo_lockIsAcquired() {
+  void test_mapreduceHasWorkToDo_lockIsAcquired() {
     HostResource host = persistActiveHost("ns1.example.tld");
     enqueuer.enqueueAsyncDnsRefresh(host, clock.nowUtc());
     enqueueMapreduceOnly();
@@ -225,7 +222,7 @@ public class RefreshDnsOnHostRenameActionTest
   }
 
   @Test
-  public void test_noTasksToLease_releasesLockImmediately() throws Exception {
+  void test_noTasksToLease_releasesLockImmediately() throws Exception {
     enqueueMapreduceOnly();
     assertNoDnsTasksEnqueued();
     assertNoTasksEnqueued(QUEUE_ASYNC_HOST_RENAME);

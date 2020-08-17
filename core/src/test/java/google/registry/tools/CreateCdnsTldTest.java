@@ -15,21 +15,23 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.api.services.dns.Dns;
 import com.google.api.services.dns.model.ManagedZone;
 import com.google.api.services.dns.model.ManagedZoneDnsSecConfig;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link CreateCdnsTld}. */
-public class CreateCdnsTldTest extends CommandTestCase<CreateCdnsTld> {
+class CreateCdnsTldTest extends CommandTestCase<CreateCdnsTld> {
 
   @Mock Dns dnsService;
   @Mock Dns.ManagedZones managedZones;
@@ -37,8 +39,8 @@ public class CreateCdnsTldTest extends CommandTestCase<CreateCdnsTld> {
   @Captor ArgumentCaptor<String> projectId;
   @Captor ArgumentCaptor<ManagedZone> requestBody;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     when(dnsService.managedZones()).thenReturn(managedZones);
     when(managedZones.create(projectId.capture(), requestBody.capture())).thenReturn(request);
     command = new CreateCdnsTld();
@@ -57,7 +59,7 @@ public class CreateCdnsTldTest extends CommandTestCase<CreateCdnsTld> {
   }
 
   @Test
-  public void testBasicFunctionality() throws Exception {
+  void testBasicFunctionality() throws Exception {
     runCommand("--dns_name=tld.", "--name=tld", "--description=test run", "--force");
     verify(request).execute();
     assertThat(projectId.getValue()).isEqualTo("test-project");
@@ -66,14 +68,15 @@ public class CreateCdnsTldTest extends CommandTestCase<CreateCdnsTld> {
   }
 
   @Test
-  public void testNameDefault() throws Exception {
+  void testNameDefault() throws Exception {
     runCommand("--dns_name=tld.", "--description=test run", "--force");
     ManagedZone zone = requestBody.getValue();
     assertThat(zone).isEqualTo(createZone("cloud-dns-registry-test", "test run", "tld.", "tld."));
   }
 
   @Test
-  public void testSandboxTldRestrictions() throws Exception {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void testSandboxTldRestrictions() throws Exception {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

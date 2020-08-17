@@ -34,9 +34,7 @@ Below are the steps to submit a schema change:
 2.  Run the `devTool generate_sql_schema` command to generate a new version of
     `db-schema.sql.generated`. The full command line to do this is:
 
-    `./gradlew devTool --args="-e localhost generate_sql_schema
-    --start_postgresql -o
-    /path/to/nomulus/db/src/main/resources/sql/schema/db-schema.sql.generated"`
+    `./nom_build generateSqlSchema`
 
 3.  Write an incremental DDL script that changes the existing schema to your new
     one. The generated SQL file from the previous step should help. New create
@@ -49,14 +47,18 @@ Below are the steps to submit a schema change:
     following the existing scripts in that folder. Note the double underscore in
     the naming pattern.
 
-4.  Run the `:db:test` task from the Gradle root project. The SchemaTest will
-    fail because the new schema does not match the golden file.
+4.  Run `./nom_build :nom:generate_golden_file`.  This is a pseudo-task
+    implemented in the `nom_build` script that does the following:
+    -   Runs the `:db:test` task from the Gradle root project. The SchemaTest
+        will fail because the new schema does not match the golden file.
 
-5.  Copy `db/build/resources/test/testcontainer/mount/dump.txt` to the golden
-    file `db/src/main/resources/sql/schema/nomulus.golden.sql`. Diff it against
-    the old version and verify that all changes are expected.
+    -   Copies `db/build/resources/test/testcontainer/mount/dump.txt` to the golden
+        file `db/src/main/resources/sql/schema/nomulus.golden.sql`.
 
-6.  Re-run the `:db:test` task. This time all tests should pass.
+    -   Re-runs the `:db:test` task. This time all tests should pass.
+
+    You'll want to have a look at the diffs in the golden schema to verify
+    that all changes are intentional.
 
 Relevant files (under db/src/main/resources/sql/schema/):
 
@@ -97,7 +99,7 @@ gcloud builds submit --config=release/cloudbuild-schema-deploy.yaml \
     --substitutions=TAG_NAME=${SCHEMA_TAG},_ENV=${SQL_ENV} \
     --project domain-registry-dev
 # Verify by checking Flyway Schema History:
-./gradlew :db:flywayInfo -PdbServer=${SQL_ENV}
+./nom_build :db:flywayInfo --dbServer=${SQL_ENV}
 ```
 
 #### Glass Breaking
@@ -135,9 +137,9 @@ test instance. E.g.,
 
 ```shell
 # Deploy to a local instance at standard port as the super user.
-gradlew :db:flywayMigrate -PdbServer=192.168.9.2 -PdbPassword=domain-registry
+./nom_build :db:flywayMigrate --dbServer=192.168.9.2 --dbPassword=domain-registry
 
 # Full specification of all parameters
-gradlew :db:flywayMigrate -PdbServer=192.168.9.2:5432 -PdbUser=postgres \
-    -PdbPassword=domain-registry
+./nom_build :db:flywayMigrate --dbServer=192.168.9.2:5432 --dbUser=postgres \
+    --dbPassword=domain-registry
 ```

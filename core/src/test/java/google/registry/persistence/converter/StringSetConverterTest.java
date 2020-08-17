@@ -20,24 +20,22 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.util.Set;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link StringSetConverter}. */
-@RunWith(JUnit4.class)
 public class StringSetConverterTest {
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameStringList() {
+  void roundTripConversion_returnsSameStringList() {
     Set<String> tlds = ImmutableSet.of("app", "dev", "how");
     TestEntity testEntity = new TestEntity(tlds);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
@@ -47,7 +45,7 @@ public class StringSetConverterTest {
   }
 
   @Test
-  public void testNullValue_writesAndReadsNullSuccessfully() {
+  void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -56,7 +54,7 @@ public class StringSetConverterTest {
   }
 
   @Test
-  public void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
+  void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
     TestEntity testEntity = new TestEntity(ImmutableSet.of());
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =

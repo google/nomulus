@@ -14,16 +14,13 @@
 
 package google.registry.request.auth;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Auth}. */
-@RunWith(JUnit4.class)
-public final class AuthTest {
+final class AuthTest {
 
   @Test
-  public void testAuthValues_validConfig() {
+  void testAuthValues_validConfig() {
     for (Auth auth : Auth.values()) {
       RequestAuthenticator.checkAuthConfig(auth.authSettings());
     }

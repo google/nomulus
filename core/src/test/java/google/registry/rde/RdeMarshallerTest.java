@@ -18,26 +18,23 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.xml.ValidationMode.STRICT;
 
-import google.registry.testing.AppEngineRule;
-import google.registry.testing.ShardableTestCase;
+import google.registry.testing.AppEngineExtension;
 import google.registry.xml.XmlTestUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeMarshaller}. */
-@RunWith(JUnit4.class)
-public class RdeMarshallerTest extends ShardableTestCase {
+public class RdeMarshallerTest {
 
   private static final String DECLARATION =
       "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n";
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testMarshalRegistrar_validData_producesXmlFragment() throws Exception {
+  void testMarshalRegistrar_validData_producesXmlFragment() throws Exception {
     DepositFragment fragment =
         new RdeMarshaller(STRICT).marshalRegistrar(loadRegistrar("TheRegistrar"));
     assertThat(fragment.type()).isEqualTo(RdeResourceType.REGISTRAR);
@@ -81,7 +78,7 @@ public class RdeMarshallerTest extends ShardableTestCase {
   }
 
   @Test
-  public void testMarshalRegistrar_unicodeCharacters_dontGetMangled() {
+  void testMarshalRegistrar_unicodeCharacters_dontGetMangled() {
     DepositFragment fragment =
         new RdeMarshaller(STRICT).marshalRegistrar(loadRegistrar("TheRegistrar"));
     assertThat(fragment.xml()).contains("123 Example Bőulevard");

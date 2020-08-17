@@ -532,7 +532,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
           resource.getClass().getSimpleName());
       return new AutoValue_DeleteContactsAndHostsAction_DeletionRequest.Builder()
           .setKey(resourceKey)
-          .setLastUpdateTime(resource.getUpdateAutoTimestamp().getTimestamp())
+          .setLastUpdateTime(resource.getUpdateTimestamp().getTimestamp())
           .setRequestingClientId(
               checkNotNull(
                   params.get(PARAM_REQUESTING_CLIENT_ID), "Requesting client id not specified"))

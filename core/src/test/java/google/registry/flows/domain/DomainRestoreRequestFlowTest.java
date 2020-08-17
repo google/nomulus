@@ -15,8 +15,9 @@
 package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.assertBillingEvents;
+import static google.registry.testing.DatastoreHelper.assertPollMessages;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatastoreHelper.getPollMessages;
@@ -33,12 +34,11 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
@@ -73,11 +73,11 @@ import google.registry.model.reporting.HistoryEntry;
 import java.util.Map;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainRestoreRequestFlow}. */
-public class DomainRestoreRequestFlowTest
+class DomainRestoreRequestFlowTest
     extends ResourceFlowTestCase<DomainRestoreRequestFlow, DomainBase> {
 
   private static final ImmutableMap<String, String> FEE_06_MAP =
@@ -87,8 +87,8 @@ public class DomainRestoreRequestFlowTest
   private static final ImmutableMap<String, String> FEE_12_MAP =
       ImmutableMap.of("FEE_VERSION", "0.12", "FEE_NS", "fee12", "CURRENCY", "USD");
 
-  @Before
-  public void initDomainTest() {
+  @BeforeEach
+  void initDomainTest() {
     createTld("tld");
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
   }
@@ -113,29 +113,33 @@ public class DomainRestoreRequestFlowTest
             .setDeletionTime(clock.nowUtc().plusDays(35))
             .addGracePeriod(
                 GracePeriod.create(
-                    GracePeriodStatus.REDEMPTION, clock.nowUtc().plusDays(1), "foo", null))
+                    GracePeriodStatus.REDEMPTION,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "foo",
+                    null))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .setDeletePollMessage(
-                Key.create(
-                    persistResource(
+                persistResource(
                         new PollMessage.OneTime.Builder()
                             .setClientId("TheRegistrar")
                             .setEventTime(clock.nowUtc().plusDays(5))
                             .setParent(historyEntry)
-                            .build())))
+                            .build())
+                    .createVKey())
             .build());
     clock.advanceOneMilli();
   }
 
   @Test
-  public void testDryRun() throws Exception {
+  void testDryRun() throws Exception {
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     persistPendingDeleteDomain();
     dryRunFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
   @Test
-  public void testSuccess_expiryStillInFuture_notExtended() throws Exception {
+  void testSuccess_expiryStillInFuture_notExtended() throws Exception {
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     DateTime expirationTime = clock.nowUtc().plusYears(5).plusDays(45);
     persistPendingDeleteDomain(expirationTime);
@@ -146,7 +150,7 @@ public class DomainRestoreRequestFlowTest
     DomainBase domain = reloadResourceByForeignKey();
     HistoryEntry historyEntryDomainRestore =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE);
-    assertThat(ofy().load().key(domain.getAutorenewBillingEvent()).now().getEventTime())
+    assertThat(tm().load(domain.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(expirationTime);
     assertAboutDomains()
         .that(domain)
@@ -202,7 +206,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testSuccess_expiryInPast_extendedByOneYear() throws Exception {
+  void testSuccess_expiryInPast_extendedByOneYear() throws Exception {
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     DateTime expirationTime = clock.nowUtc().minusDays(20);
     DateTime newExpirationTime = expirationTime.plusYears(1);
@@ -214,7 +218,7 @@ public class DomainRestoreRequestFlowTest
     DomainBase domain = reloadResourceByForeignKey();
     HistoryEntry historyEntryDomainRestore =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE);
-    assertThat(ofy().load().key(domain.getAutorenewBillingEvent()).now().getEventTime())
+    assertThat(tm().load(domain.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(newExpirationTime);
     assertAboutDomains()
         .that(domain)
@@ -280,14 +284,14 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testSuccess_fee_v06() throws Exception {
+  void testSuccess_fee_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_06_MAP));
   }
 
   @Test
-  public void testSuccess_fee_v06_noRenewal() throws Exception {
+  void testSuccess_fee_v06_noRenewal() throws Exception {
     setEppInput("domain_update_restore_request_fee_no_renewal.xml", FEE_06_MAP);
     persistPendingDeleteDomain(clock.nowUtc().plusMonths(6));
     runFlowAssertResponse(
@@ -295,42 +299,42 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testSuccess_fee_v11() throws Exception {
+  void testSuccess_fee_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_11_MAP));
   }
 
   @Test
-  public void testSuccess_fee_v12() throws Exception {
+  void testSuccess_fee_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_12_MAP));
   }
 
   @Test
-  public void testSuccess_fee_withDefaultAttributes_v06() throws Exception {
+  void testSuccess_fee_withDefaultAttributes_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee_defaults.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_06_MAP));
   }
 
   @Test
-  public void testSuccess_fee_withDefaultAttributes_v11() throws Exception {
+  void testSuccess_fee_withDefaultAttributes_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee_defaults.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_11_MAP));
   }
 
   @Test
-  public void testSuccess_fee_withDefaultAttributes_v12() throws Exception {
+  void testSuccess_fee_withDefaultAttributes_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee_defaults.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
     runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_12_MAP));
   }
 
   @Test
-  public void testFailure_fee_unknownCurrency() {
+  void testFailure_fee_unknownCurrency() {
     ImmutableMap<String, String> substitutions =
         ImmutableMap.of("FEE_VERSION", "0.12", "FEE_NS", "fee12", "CURRENCY", "BAD");
     setEppInput("domain_update_restore_request_fee.xml", substitutions);
@@ -340,7 +344,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_refundableFee_v06() throws Exception {
+  void testFailure_refundableFee_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee_refundable.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
@@ -348,7 +352,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_refundableFee_v11() throws Exception {
+  void testFailure_refundableFee_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee_refundable.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
@@ -356,7 +360,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_refundableFee_v12() throws Exception {
+  void testFailure_refundableFee_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee_refundable.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
@@ -364,7 +368,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_gracePeriodFee_v06() throws Exception {
+  void testFailure_gracePeriodFee_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee_grace_period.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
@@ -372,7 +376,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_gracePeriodFee_v11() throws Exception {
+  void testFailure_gracePeriodFee_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee_grace_period.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
@@ -380,7 +384,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_gracePeriodFee_v12() throws Exception {
+  void testFailure_gracePeriodFee_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee_grace_period.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
@@ -388,7 +392,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_appliedFee_v06() throws Exception {
+  void testFailure_appliedFee_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee_applied.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
@@ -396,7 +400,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_appliedFee_v11() throws Exception {
+  void testFailure_appliedFee_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee_applied.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
@@ -404,7 +408,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_appliedFee_v12() throws Exception {
+  void testFailure_appliedFee_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee_applied.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(UnsupportedFeeAttributeException.class, this::runFlow);
@@ -412,7 +416,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testSuccess_premiumNotBlocked() throws Exception {
+  void testSuccess_premiumNotBlocked() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request_premium.xml");
     persistPendingDeleteDomain();
@@ -420,7 +424,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testSuccess_premiumNotBlocked_andNoRenewal() throws Exception {
+  void testSuccess_premiumNotBlocked_andNoRenewal() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request_premium_no_renewal.xml");
     persistPendingDeleteDomain(clock.nowUtc().plusYears(2));
@@ -429,7 +433,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testSuccess_superuserOverridesReservedList() throws Exception {
+  void testSuccess_superuserOverridesReservedList() throws Exception {
     persistResource(
         Registry.get("tld")
             .asBuilder()
@@ -441,7 +445,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testSuccess_superuserOverridesPremiumNameBlock() throws Exception {
+  void testSuccess_superuserOverridesPremiumNameBlock() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request_premium.xml");
     persistPendingDeleteDomain();
@@ -454,7 +458,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_doesNotExist() throws Exception {
+  void testFailure_doesNotExist() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
@@ -462,7 +466,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_suspendedRegistrarCantRestoreDomain() {
+  void testFailure_suspendedRegistrarCantRestoreDomain() {
     persistResource(
         Registrar.loadByClientId("TheRegistrar")
             .get()
@@ -475,7 +479,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_pendingRegistrarCantRestoreDomain() {
+  void testFailure_pendingRegistrarCantRestoreDomain() {
     persistResource(
         Registrar.loadByClientId("TheRegistrar")
             .get()
@@ -488,7 +492,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_wrongFeeAmount_v06() throws Exception {
+  void testFailure_wrongFeeAmount_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
     persistResource(
@@ -498,7 +502,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_wrongFeeAmount_v11() throws Exception {
+  void testFailure_wrongFeeAmount_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
     persistResource(
@@ -508,7 +512,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_wrongFeeAmount_v12() throws Exception {
+  void testFailure_wrongFeeAmount_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
     persistResource(
@@ -535,22 +539,22 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_wrongCurrency_v06() throws Exception {
+  void testFailure_wrongCurrency_v06() throws Exception {
     runWrongCurrencyTest(FEE_06_MAP);
   }
 
   @Test
-  public void testFailure_wrongCurrency_v11() throws Exception {
+  void testFailure_wrongCurrency_v11() throws Exception {
     runWrongCurrencyTest(FEE_11_MAP);
   }
 
   @Test
-  public void testFailure_wrongCurrency_v12() throws Exception {
+  void testFailure_wrongCurrency_v12() throws Exception {
     runWrongCurrencyTest(FEE_12_MAP);
   }
 
   @Test
-  public void testFailure_feeGivenInWrongScale_v06() throws Exception {
+  void testFailure_feeGivenInWrongScale_v06() throws Exception {
     setEppInput("domain_update_restore_request_fee_bad_scale.xml", FEE_06_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(CurrencyValueScaleException.class, this::runFlow);
@@ -558,7 +562,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_feeGivenInWrongScale_v11() throws Exception {
+  void testFailure_feeGivenInWrongScale_v11() throws Exception {
     setEppInput("domain_update_restore_request_fee_bad_scale.xml", FEE_11_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(CurrencyValueScaleException.class, this::runFlow);
@@ -566,7 +570,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_feeGivenInWrongScale_v12() throws Exception {
+  void testFailure_feeGivenInWrongScale_v12() throws Exception {
     setEppInput("domain_update_restore_request_fee_bad_scale.xml", FEE_12_MAP);
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(CurrencyValueScaleException.class, this::runFlow);
@@ -574,7 +578,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_notInRedemptionPeriod() throws Exception {
+  void testFailure_notInRedemptionPeriod() throws Exception {
     persistResource(
         newDomainBase(getUniqueIdFromCommand())
             .asBuilder()
@@ -586,21 +590,21 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_notDeleted() throws Exception {
+  void testFailure_notDeleted() throws Exception {
     persistActiveDomain(getUniqueIdFromCommand());
     EppException thrown = assertThrows(DomainNotEligibleForRestoreException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testFailure_fullyDeleted() throws Exception {
+  void testFailure_fullyDeleted() throws Exception {
     persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     EppException thrown = assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testFailure_withChange() throws Exception {
+  void testFailure_withChange() throws Exception {
     persistPendingDeleteDomain();
     setEppInput("domain_update_restore_request_with_change.xml");
     EppException thrown = assertThrows(RestoreCommandIncludesChangesException.class, this::runFlow);
@@ -608,7 +612,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_withAdd() throws Exception {
+  void testFailure_withAdd() throws Exception {
     persistPendingDeleteDomain();
     setEppInput("domain_update_restore_request_with_add.xml");
     EppException thrown = assertThrows(RestoreCommandIncludesChangesException.class, this::runFlow);
@@ -616,7 +620,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_withRemove() throws Exception {
+  void testFailure_withRemove() throws Exception {
     persistPendingDeleteDomain();
     setEppInput("domain_update_restore_request_with_remove.xml");
     EppException thrown = assertThrows(RestoreCommandIncludesChangesException.class, this::runFlow);
@@ -624,7 +628,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_withSecDnsExtension() throws Exception {
+  void testFailure_withSecDnsExtension() throws Exception {
     persistPendingDeleteDomain();
     setEppInput("domain_update_restore_request_with_secdns.xml");
     EppException thrown = assertThrows(UnimplementedExtensionException.class, this::runFlow);
@@ -632,7 +636,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_unauthorizedClient() throws Exception {
+  void testFailure_unauthorizedClient() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
@@ -640,7 +644,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testSuccess_superuserUnauthorizedClient() throws Exception {
+  void testSuccess_superuserUnauthorizedClient() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     persistPendingDeleteDomain();
     EppException thrown =
@@ -651,7 +655,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_notAuthorizedForTld() throws Exception {
+  void testFailure_notAuthorizedForTld() throws Exception {
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
     persistPendingDeleteDomain();
@@ -660,7 +664,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testSuccess_superuserNotAuthorizedForTld() throws Exception {
+  void testSuccess_superuserNotAuthorizedForTld() throws Exception {
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
     persistPendingDeleteDomain();
@@ -669,7 +673,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_premiumBlocked() throws Exception {
+  void testFailure_premiumBlocked() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request_premium.xml");
     persistPendingDeleteDomain();
@@ -680,7 +684,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_reservedBlocked() throws Exception {
+  void testFailure_reservedBlocked() throws Exception {
     createTld("tld");
     persistResource(
         Registry.get("tld")
@@ -693,7 +697,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_premiumNotAcked() throws Exception {
+  void testFailure_premiumNotAcked() throws Exception {
     createTld("example");
     setEppInput("domain_update_restore_request.xml", ImmutableMap.of("DOMAIN", "rich.example"));
     persistPendingDeleteDomain();
@@ -702,7 +706,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     persistPendingDeleteDomain();
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-dom-rgp-restore-request");
@@ -710,7 +714,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testIcannTransactionReportField_getsStored() throws Exception {
+  void testIcannTransactionReportField_getsStored() throws Exception {
     persistPendingDeleteDomain();
     runFlow();
     DomainBase domain = reloadResourceByForeignKey();
@@ -726,7 +730,7 @@ public class DomainRestoreRequestFlowTest
   }
 
   @Test
-  public void testFailure_restoreReportsAreNotSupported() {
+  void testFailure_restoreReportsAreNotSupported() {
     setEppInput("domain_update_restore_report.xml");
     // This exception is referred to by its fully qualified path (rather than being imported) so
     // that it is not included in the list of exceptions thrown by DomainRestoreRequestFlow, as this

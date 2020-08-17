@@ -14,71 +14,71 @@
 
 package google.registry.rde;
 
-import static com.google.common.base.Strings.repeat;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.keyring.api.PgpHelper.KeyRequirement.ENCRYPT;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThan;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import google.registry.keyring.api.Keyring;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Base64;
+import java.util.stream.Stream;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /** Unit tests for {@link Ghostryde}. */
-@RunWith(Theories.class)
 @SuppressWarnings("resource")
 public class GhostrydeTest {
 
-  @Rule
-  public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
-  @DataPoints
-  public static Content[] contents = new Content[] {
-    new Content("hi"),
-    new Content("(◕‿◕)"),
-    new Content(repeat("Fanatics have their dreams, wherewith they weave.\n", 1000)),
-    new Content("\0yolo"),
-    new Content(""),
-  };
+  @SuppressWarnings("unused")
+  static Stream<Arguments> provideTestCombinations() {
+    return Stream.of(
+            "hi",
+            "(◕‿◕)",
+            Strings.repeat("Fanatics have their dreams, wherewith they weave\n", 1000),
+            "\0yolo",
+            "")
+        .map(Arguments::of);
+  }
 
-  @Theory
-  public void testSimpleApi(Content content) throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testSimpleApi(String content) throws Exception {
     Keyring keyring = new FakeKeyringModule().get();
-    byte[] data = content.get().getBytes(UTF_8);
+    byte[] data = content.getBytes(UTF_8);
     PGPPublicKey publicKey = keyring.getRdeStagingEncryptionKey();
     PGPPrivateKey privateKey = keyring.getRdeStagingDecryptionKey();
 
     byte[] blob = Ghostryde.encode(data, publicKey);
     byte[] result = Ghostryde.decode(blob, privateKey);
 
-    assertThat(new String(result, UTF_8)).isEqualTo(content.get());
+    assertThat(new String(result, UTF_8)).isEqualTo(content);
   }
 
-  @Theory
-  public void testStreamingApi(Content content) throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testStreamingApi(String content) throws Exception {
     Keyring keyring = new FakeKeyringModule().get();
-    byte[] data = content.get().getBytes(UTF_8);
+    byte[] data = content.getBytes(UTF_8);
     PGPPublicKey publicKey = keyring.getRdeStagingEncryptionKey();
     PGPPrivateKey privateKey = keyring.getRdeStagingDecryptionKey();
 
@@ -94,13 +94,14 @@ public class GhostrydeTest {
     }
     assertThat(bsOut.size()).isEqualTo(data.length);
 
-    assertThat(new String(bsOut.toByteArray(), UTF_8)).isEqualTo(content.get());
+    assertThat(new String(bsOut.toByteArray(), UTF_8)).isEqualTo(content);
   }
 
-  @Theory
-  public void testStreamingApi_withSize(Content content) throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testStreamingApi_withSize(String content) throws Exception {
     Keyring keyring = new FakeKeyringModule().get();
-    byte[] data = content.get().getBytes(UTF_8);
+    byte[] data = content.getBytes(UTF_8);
     PGPPublicKey publicKey = keyring.getRdeStagingEncryptionKey();
 
     ByteArrayOutputStream bsOut = new ByteArrayOutputStream();
@@ -114,14 +115,15 @@ public class GhostrydeTest {
     assertThat(Long.parseLong(new String(lenOut.toByteArray(), UTF_8))).isEqualTo(data.length);
   }
 
-  @Theory
-  public void testFailure_tampering(Content content) throws Exception {
-    assumeThat(content.get().length(), is(greaterThan(100)));
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testFailure_tampering(String content) throws Exception {
+    assumeTrue(content.length() > 100);
 
     Keyring keyring = new FakeKeyringModule().get();
     PGPPublicKey publicKey = keyring.getRdeStagingEncryptionKey();
     PGPPrivateKey privateKey = keyring.getRdeStagingDecryptionKey();
-    byte[] data = content.get().getBytes(UTF_8);
+    byte[] data = content.getBytes(UTF_8);
 
     ByteArrayOutputStream bsOut = new ByteArrayOutputStream();
     try (OutputStream encoder = Ghostryde.encoder(bsOut, publicKey)) {
@@ -143,14 +145,15 @@ public class GhostrydeTest {
     assertThat(thrown).hasMessageThat().contains("tampering");
   }
 
-  @Theory
-  public void testFailure_corruption(Content content) throws Exception {
-    assumeThat(content.get().length(), is(lessThan(100)));
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void testFailure_corruption(String content) throws Exception {
+    assumeTrue(content.length() < 100);
 
     Keyring keyring = new FakeKeyringModule().get();
     PGPPublicKey publicKey = keyring.getRdeStagingEncryptionKey();
     PGPPrivateKey privateKey = keyring.getRdeStagingDecryptionKey();
-    byte[] data = content.get().getBytes(UTF_8);
+    byte[] data = content.getBytes(UTF_8);
 
     ByteArrayOutputStream bsOut = new ByteArrayOutputStream();
     try (OutputStream encoder = Ghostryde.encoder(bsOut, publicKey)) {
@@ -173,7 +176,7 @@ public class GhostrydeTest {
   }
 
   @Test
-  public void testFullEncryption() throws Exception {
+  void testFullEncryption() throws Exception {
     // Check that the full encryption hasn't changed. All the other tests check that encrypting and
     // decrypting results in the original data, but not whether the encryption method has changed.
     FakeKeyringModule keyringModule = new FakeKeyringModule();
@@ -207,7 +210,7 @@ public class GhostrydeTest {
   }
 
   @Test
-  public void testFailure_keyMismatch() throws Exception {
+  void testFailure_keyMismatch() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     byte[] data = "Fanatics have their dreams, wherewith they weave.".getBytes(UTF_8);
     PGPKeyPair dsa1 = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
@@ -238,8 +241,8 @@ public class GhostrydeTest {
   }
 
   @Test
-  @Ignore("Intentionally corrupting a PGP key is easier said than done >_>")
-  public void testFailure_keyCorruption() throws Exception {
+  @Disabled("Intentionally corrupting a PGP key is easier said than done >_>")
+  void testFailure_keyCorruption() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     byte[] data = "Fanatics have their dreams, wherewith they weave.".getBytes(UTF_8);
     PGPKeyPair rsa = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
@@ -248,10 +251,11 @@ public class GhostrydeTest {
     // Make the last byte of the private key off by one. muahahaha
     byte[] keyData = rsa.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
     keyData[keyData.length - 1]++;
-    PGPPrivateKey privateKey = new PGPPrivateKey(
-        rsa.getKeyID(),
-        rsa.getPrivateKey().getPublicKeyPacket(),
-        rsa.getPrivateKey().getPrivateKeyDataPacket());
+    PGPPrivateKey privateKey =
+        new PGPPrivateKey(
+            rsa.getKeyID(),
+            rsa.getPrivateKey().getPublicKeyPacket(),
+            rsa.getPrivateKey().getPrivateKeyDataPacket());
 
     ByteArrayOutputStream bsOut = new ByteArrayOutputStream();
     try (OutputStream encoder = Ghostryde.encoder(bsOut, publicKey)) {
@@ -269,18 +273,6 @@ public class GhostrydeTest {
       bytes[position] = 7;
     } else {
       bytes[position] = 23;
-    }
-  }
-
-  private static class Content {
-    private final String value;
-
-    Content(String value) {
-      this.value = value;
-    }
-
-    String get() {
-      return value;
     }
   }
 }

@@ -94,7 +94,7 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import google.registry.util.AppEngineServiceUtils;
@@ -105,19 +105,16 @@ import google.registry.util.SystemSleeper;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
 
 /** Unit tests for {@link DeleteContactsAndHostsAction}. */
-@RunWith(JUnit4.class)
 public class DeleteContactsAndHostsActionTest
     extends MapreduceTestCase<DeleteContactsAndHostsAction> {
 
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private AsyncTaskEnqueuer enqueuer;
   private final FakeClock clock = new FakeClock(DateTime.parse("2015-01-15T11:22:33Z"));
@@ -146,8 +143,8 @@ public class DeleteContactsAndHostsActionTest
     ofy().clearSessionCache();
   }
 
-  @Before
-  public void setup() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     enqueuer =
         AsyncTaskEnqueuerTest.createForTesting(
@@ -171,7 +168,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_contact_referencedByActiveDomain_doesNotGetDeleted() throws Exception {
+  void testSuccess_contact_referencedByActiveDomain_doesNotGetDeleted() throws Exception {
     ContactResource contact = persistContactPendingDelete("blah8221");
     persistResource(newDomainBase("example.tld", contact));
     DateTime timeEnqueued = clock.nowUtc();
@@ -211,17 +208,17 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_contact_notReferenced_getsDeleted_andPiiWipedOut() throws Exception {
+  void testSuccess_contact_notReferenced_getsDeleted_andPiiWipedOut() throws Exception {
     runSuccessfulContactDeletionTest(Optional.of("fakeClientTrid"));
   }
 
   @Test
-  public void testSuccess_contact_andNoClientTrid_deletesSuccessfully() throws Exception {
+  void testSuccess_contact_andNoClientTrid_deletesSuccessfully() throws Exception {
     runSuccessfulContactDeletionTest(Optional.empty());
   }
 
   @Test
-  public void test_cannotAcquireLock() {
+  void test_cannotAcquireLock() {
     // Make lock acquisition fail.
     acquireLock();
     enqueueMapreduceOnly();
@@ -229,7 +226,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void test_mapreduceHasWorkToDo_lockIsAcquired() {
+  void test_mapreduceHasWorkToDo_lockIsAcquired() {
     ContactResource contact = persistContactPendingDelete("blah8221");
     persistResource(newDomainBase("example.tld", contact));
     DateTime timeEnqueued = clock.nowUtc();
@@ -244,7 +241,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void test_noTasksToLease_releasesLockImmediately() {
+  void test_noTasksToLease_releasesLockImmediately() {
     enqueueMapreduceOnly();
     // If the Lock was correctly released, then we can acquire it now.
     assertThat(acquireLock()).isPresent();
@@ -293,8 +290,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_contactWithoutPendingTransfer_isDeletedAndHasNoTransferData()
-      throws Exception {
+  void testSuccess_contactWithoutPendingTransfer_isDeletedAndHasNoTransferData() throws Exception {
     ContactResource contact = persistContactPendingDelete("blah8221");
     enqueuer.enqueueAsyncDelete(
         contact,
@@ -308,7 +304,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_contactWithPendingTransfer_getsDeleted() throws Exception {
+  void testSuccess_contactWithPendingTransfer_getsDeleted() throws Exception {
     DateTime transferRequestTime = clock.nowUtc().minusDays(3);
     ContactResource contact =
         persistContactWithPendingTransfer(
@@ -371,7 +367,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_contact_referencedByDeletedDomain_getsDeleted() throws Exception {
+  void testSuccess_contact_referencedByDeletedDomain_getsDeleted() throws Exception {
     ContactResource contactUsed = persistContactPendingDelete("blah1234");
     persistResource(
         newDomainBase("example.tld", contactUsed)
@@ -410,7 +406,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_contact_notRequestedByOwner_doesNotGetDeleted() throws Exception {
+  void testSuccess_contact_notRequestedByOwner_doesNotGetDeleted() throws Exception {
     ContactResource contact = persistContactPendingDelete("jane0991");
     enqueuer.enqueueAsyncDelete(
         contact,
@@ -438,7 +434,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_contact_notRequestedByOwner_isSuperuser_getsDeleted() throws Exception {
+  void testSuccess_contact_notRequestedByOwner_isSuperuser_getsDeleted() throws Exception {
     ContactResource contact = persistContactWithPii("nate007");
     enqueuer.enqueueAsyncDelete(
         contact,
@@ -480,7 +476,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_targetResourcesDontExist_areDelayedForADay() throws Exception {
+  void testSuccess_targetResourcesDontExist_areDelayedForADay() throws Exception {
     ContactResource contactNotSaved = newContactResource("somecontact");
     HostResource hostNotSaved = newHostResource("a11.blah.foo");
     DateTime timeBeforeRun = clock.nowUtc();
@@ -519,7 +515,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_unparseableTasks_areDelayedForADay() throws Exception {
+  void testSuccess_unparseableTasks_areDelayedForADay() throws Exception {
     TaskOptions task =
         TaskOptions.Builder.withMethod(Method.PULL).param("gobbledygook", "kljhadfgsd9f7gsdfh");
     getQueue(QUEUE_ASYNC_DELETE).add(task);
@@ -535,7 +531,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_resourcesNotInPendingDelete_areSkipped() throws Exception {
+  void testSuccess_resourcesNotInPendingDelete_areSkipped() throws Exception {
     ContactResource contact = persistActiveContact("blah2222");
     HostResource host = persistActiveHost("rustles.your.jimmies");
     DateTime timeEnqueued = clock.nowUtc();
@@ -567,7 +563,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_alreadyDeletedResources_areSkipped() throws Exception {
+  void testSuccess_alreadyDeletedResources_areSkipped() throws Exception {
     ContactResource contactDeleted = persistDeletedContact("blah1236", clock.nowUtc().minusDays(2));
     HostResource hostDeleted = persistDeletedHost("a.lim.lop", clock.nowUtc().minusDays(3));
     enqueuer.enqueueAsyncDelete(
@@ -590,7 +586,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_host_referencedByActiveDomain_doesNotGetDeleted() throws Exception {
+  void testSuccess_host_referencedByActiveDomain_doesNotGetDeleted() throws Exception {
     HostResource host = persistHostPendingDelete("ns1.example.tld");
     persistUsedDomain("example.tld", persistActiveContact("abc456"), host);
     DateTime timeEnqueued = clock.nowUtc();
@@ -627,12 +623,12 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_host_notReferenced_getsDeleted() throws Exception {
+  void testSuccess_host_notReferenced_getsDeleted() throws Exception {
     runSuccessfulHostDeletionTest(Optional.of("fakeClientTrid"));
   }
 
   @Test
-  public void testSuccess_host_andNoClientTrid_deletesSuccessfully() throws Exception {
+  void testSuccess_host_andNoClientTrid_deletesSuccessfully() throws Exception {
     runSuccessfulHostDeletionTest(Optional.empty());
   }
 
@@ -675,7 +671,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_host_referencedByDeletedDomain_getsDeleted() throws Exception {
+  void testSuccess_host_referencedByDeletedDomain_getsDeleted() throws Exception {
     HostResource host = persistHostPendingDelete("ns1.example.tld");
     persistResource(
         newDomainBase("example.tld")
@@ -715,7 +711,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_subordinateHost_getsDeleted() throws Exception {
+  void testSuccess_subordinateHost_getsDeleted() throws Exception {
     DomainBase domain =
         persistResource(
             newDomainBase("example.tld")
@@ -766,7 +762,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_host_notRequestedByOwner_doesNotGetDeleted() throws Exception {
+  void testSuccess_host_notRequestedByOwner_doesNotGetDeleted() throws Exception {
     HostResource host = persistHostPendingDelete("ns2.example.tld");
     enqueuer.enqueueAsyncDelete(
         host,
@@ -794,7 +790,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_host_notRequestedByOwner_isSuperuser_getsDeleted() throws Exception {
+  void testSuccess_host_notRequestedByOwner_isSuperuser_getsDeleted() throws Exception {
     HostResource host = persistHostPendingDelete("ns66.example.tld");
     enqueuer.enqueueAsyncDelete(
         host,
@@ -828,7 +824,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  public void testSuccess_deleteABunchOfContactsAndHosts_butNotSome() throws Exception {
+  void testSuccess_deleteABunchOfContactsAndHosts_butNotSome() throws Exception {
     ContactResource c1 = persistContactPendingDelete("nsaid54");
     ContactResource c2 = persistContactPendingDelete("nsaid55");
     ContactResource c3 = persistContactPendingDelete("nsaid57");

@@ -31,7 +31,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -54,10 +54,10 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
@@ -67,39 +67,40 @@ import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link NordnUploadAction}. */
-@RunWith(JUnit4.class)
-public class NordnUploadActionTest {
+@ExtendWith(MockitoExtension.class)
+class NordnUploadActionTest {
 
-  private static final String CLAIMS_CSV = "1,2010-05-01T10:11:12.000Z,1\n"
-      + "roid,domain-name,notice-id,registrar-id,registration-datetime,ack-datetime,"
-      + "application-datetime\n"
-      + "2-TLD,claims-landrush1.tld,landrush1tcn,99999,2010-05-01T10:11:12.000Z,"
-      + "1969-12-31T23:00:00.000Z\n";
+  private static final String CLAIMS_CSV =
+      "1,2010-05-01T10:11:12.000Z,1\n"
+          + "roid,domain-name,notice-id,registrar-id,registration-datetime,ack-datetime,"
+          + "application-datetime\n"
+          + "2-TLD,claims-landrush1.tld,landrush1tcn,99999,2010-05-01T10:11:12.000Z,"
+          + "1969-12-31T23:00:00.000Z\n";
 
-  private static final String SUNRISE_CSV = "1,2010-05-01T10:11:12.000Z,1\n"
-      + "roid,domain-name,SMD-id,registrar-id,registration-datetime,application-datetime\n"
-      + "2-TLD,sunrise1.tld,my-smdid,99999,2010-05-01T10:11:12.000Z\n";
+  private static final String SUNRISE_CSV =
+      "1,2010-05-01T10:11:12.000Z,1\n"
+          + "roid,domain-name,SMD-id,registrar-id,registration-datetime,application-datetime\n"
+          + "2-TLD,sunrise1.tld,my-smdid,99999,2010-05-01T10:11:12.000Z\n";
 
   private static final String LOCATION_URL = "http://trololol";
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @Mock private URLFetchService fetchService;
   @Mock private HTTPResponse httpResponse;
@@ -110,8 +111,8 @@ public class NordnUploadActionTest {
       new LordnRequestInitializer(Optional.of("attack"));
   private final NordnUploadAction action = new NordnUploadAction();
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     inject.setStaticField(Ofy.class, "clock", clock);
     when(fetchService.fetch(any(HTTPRequest.class))).thenReturn(httpResponse);
     when(httpResponse.getContent()).thenReturn("Success".getBytes(US_ASCII));
@@ -132,8 +133,9 @@ public class NordnUploadActionTest {
     action.retrier = new Retrier(new FakeSleeper(clock), 3);
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void test_convertTasksToCsv() {
+  void test_convertTasksToCsv() {
     List<TaskHandle> tasks =
         ImmutableList.of(
             makeTaskHandle("task1", "example", "csvLine1", "lordn-sunrise"),
@@ -143,22 +145,25 @@ public class NordnUploadActionTest {
         .isEqualTo("1,2010-05-01T10:11:12.000Z,3\ncol1,col2\ncsvLine1\ncsvLine2\nending\n");
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void test_convertTasksToCsv_doesntFailOnEmptyTasks() {
+  void test_convertTasksToCsv_doesntFailOnEmptyTasks() {
     assertThat(NordnUploadAction.convertTasksToCsv(ImmutableList.of(), clock.nowUtc(), "col1,col2"))
         .isEqualTo("1,2010-05-01T10:11:12.000Z,0\ncol1,col2\n");
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void test_convertTasksToCsv_throwsNpeOnNullTasks() {
+  void test_convertTasksToCsv_throwsNpeOnNullTasks() {
     assertThrows(
         NullPointerException.class,
         () -> NordnUploadAction.convertTasksToCsv(null, clock.nowUtc(), "header"));
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @SuppressWarnings("unchecked")
   @Test
-  public void test_loadAllTasks_retryLogic_thirdTrysTheCharm() {
+  void test_loadAllTasks_retryLogic_thirdTrysTheCharm() {
     Queue queue = mock(Queue.class);
     TaskHandle task = new TaskHandle(TaskOptions.Builder.withTaskName("blah"), "blah");
     when(queue.leaseTasks(any(LeaseOptions.class)))
@@ -168,8 +173,9 @@ public class NordnUploadActionTest {
     assertThat(action.loadAllTasks(queue, "tld")).containsExactly(task);
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void test_loadAllTasks_retryLogic_allFailures() {
+  void test_loadAllTasks_retryLogic_allFailures() {
     Queue queue = mock(Queue.class);
     when(queue.leaseTasks(any(LeaseOptions.class)))
         .thenThrow(new TransientFailureException("some transient error"));
@@ -179,7 +185,7 @@ public class NordnUploadActionTest {
   }
 
   @Test
-  public void testRun_claimsMode_appendsTldAndClaimsToRequestUrl() throws Exception {
+  void testRun_claimsMode_appendsTldAndClaimsToRequestUrl() throws Exception {
     persistClaimsModeDomain();
     action.run();
     assertThat(getCapturedHttpRequest().getURL())
@@ -187,7 +193,7 @@ public class NordnUploadActionTest {
   }
 
   @Test
-  public void testRun_sunriseMode_appendsTldAndClaimsToRequestUrl() throws Exception {
+  void testRun_sunriseMode_appendsTldAndClaimsToRequestUrl() throws Exception {
     persistSunriseModeDomain();
     action.run();
     assertThat(getCapturedHttpRequest().getURL())
@@ -195,7 +201,7 @@ public class NordnUploadActionTest {
   }
 
   @Test
-  public void testRun_usesMultipartContentType() throws Exception {
+  void testRun_usesMultipartContentType() throws Exception {
     persistClaimsModeDomain();
     action.run();
     assertThat(getHeaderFirst(getCapturedHttpRequest(), CONTENT_TYPE).get())
@@ -203,15 +209,15 @@ public class NordnUploadActionTest {
   }
 
   @Test
-  public void testRun_hasPassword_setsAuthorizationHeader() throws Exception {
+  void testRun_hasPassword_setsAuthorizationHeader() throws Exception {
     persistClaimsModeDomain();
     action.run();
     assertThat(getHeaderFirst(getCapturedHttpRequest(), AUTHORIZATION))
-        .hasValue("Basic bG9sY2F0OmF0dGFjaw==");  // echo -n lolcat:attack | base64
+        .hasValue("Basic bG9sY2F0OmF0dGFjaw=="); // echo -n lolcat:attack | base64
   }
 
   @Test
-  public void testRun_noPassword_doesntSendAuthorizationHeader() throws Exception {
+  void testRun_noPassword_doesntSendAuthorizationHeader() throws Exception {
     action.lordnRequestInitializer = new LordnRequestInitializer(Optional.empty());
     persistClaimsModeDomain();
     action.run();
@@ -219,31 +225,33 @@ public class NordnUploadActionTest {
   }
 
   @Test
-  public void testRun_claimsMode_payloadMatchesClaimsCsv() throws Exception {
+  void testRun_claimsMode_payloadMatchesClaimsCsv() throws Exception {
     persistClaimsModeDomain();
     action.run();
     assertThat(new String(getCapturedHttpRequest().getPayload(), UTF_8)).contains(CLAIMS_CSV);
   }
 
   @Test
-  public void testRun_claimsMode_verifyTaskGetsEnqueuedWithClaimsCsv() {
+  void testRun_claimsMode_verifyTaskGetsEnqueuedWithClaimsCsv() {
     persistClaimsModeDomain();
     action.run();
-    assertTasksEnqueued(NordnVerifyAction.QUEUE, new TaskMatcher()
-        .url(NordnVerifyAction.PATH)
-        .header(NordnVerifyAction.URL_HEADER, LOCATION_URL)
-        .header(CONTENT_TYPE, FORM_DATA.toString()));
+    assertTasksEnqueued(
+        NordnVerifyAction.QUEUE,
+        new TaskMatcher()
+            .url(NordnVerifyAction.PATH)
+            .header(NordnVerifyAction.URL_HEADER, LOCATION_URL)
+            .header(CONTENT_TYPE, FORM_DATA.toString()));
   }
 
   @Test
-  public void testRun_sunriseMode_payloadMatchesSunriseCsv() throws Exception {
+  void testRun_sunriseMode_payloadMatchesSunriseCsv() throws Exception {
     persistSunriseModeDomain();
     action.run();
     assertThat(new String(getCapturedHttpRequest().getPayload(), UTF_8)).contains(SUNRISE_CSV);
   }
 
   @Test
-  public void test_noResponseContent_stillWorksNormally() throws Exception {
+  void test_noResponseContent_stillWorksNormally() throws Exception {
     // Returning null only affects logging.
     when(httpResponse.getContent()).thenReturn(null);
     persistSunriseModeDomain();
@@ -252,25 +260,29 @@ public class NordnUploadActionTest {
   }
 
   @Test
-  public void testRun_sunriseMode_verifyTaskGetsEnqueuedWithSunriseCsv() {
+  void testRun_sunriseMode_verifyTaskGetsEnqueuedWithSunriseCsv() {
     persistSunriseModeDomain();
     action.run();
-    assertTasksEnqueued(NordnVerifyAction.QUEUE, new TaskMatcher()
-        .url(NordnVerifyAction.PATH)
-        .header(NordnVerifyAction.URL_HEADER, LOCATION_URL)
-        .header(CONTENT_TYPE, FORM_DATA.toString()));
+    assertTasksEnqueued(
+        NordnVerifyAction.QUEUE,
+        new TaskMatcher()
+            .url(NordnVerifyAction.PATH)
+            .header(NordnVerifyAction.URL_HEADER, LOCATION_URL)
+            .header(CONTENT_TYPE, FORM_DATA.toString()));
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testFailure_nullRegistryUser() {
+  void testFailure_nullRegistryUser() {
     persistClaimsModeDomain();
     persistResource(Registry.get("tld").asBuilder().setLordnUsername(null).build());
     VerifyException thrown = assertThrows(VerifyException.class, action::run);
     assertThat(thrown).hasMessageThat().contains("lordnUsername is not set for tld.");
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testFetchFailure() {
+  void testFetchFailure() {
     persistClaimsModeDomain();
     when(httpResponse.getResponseCode()).thenReturn(SC_INTERNAL_SERVER_ERROR);
     assertThrows(UrlFetchException.class, action::run);

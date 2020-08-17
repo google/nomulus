@@ -33,41 +33,38 @@ import google.registry.monitoring.whitebox.CheckApiMetric;
 import google.registry.monitoring.whitebox.CheckApiMetric.Availability;
 import google.registry.monitoring.whitebox.CheckApiMetric.Status;
 import google.registry.monitoring.whitebox.CheckApiMetric.Tier;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import java.util.Map;
 import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Tests for {@link CheckApiAction}. */
-@RunWith(JUnit4.class)
-public class CheckApiActionTest {
+@ExtendWith(MockitoExtension.class)
+class CheckApiActionTest {
 
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Mock private CheckApiMetrics checkApiMetrics;
   @Captor private ArgumentCaptor<CheckApiMetric> metricCaptor;
 
   private DateTime endTime;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTld("example");
     persistResource(
         Registry.get("example")
@@ -98,7 +95,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testFailure_nullDomain() {
+  void testFailure_nullDomain() {
     assertThat(getCheckResponse(null))
         .containsExactly(
             "status", "error",
@@ -108,7 +105,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testFailure_emptyDomain() {
+  void testFailure_emptyDomain() {
     assertThat(getCheckResponse(""))
         .containsExactly(
             "status", "error",
@@ -118,7 +115,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testFailure_invalidDomain() {
+  void testFailure_invalidDomain() {
     assertThat(getCheckResponse("@#$%^"))
         .containsExactly(
             "status", "error",
@@ -128,7 +125,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testFailure_singlePartDomain() {
+  void testFailure_singlePartDomain() {
     assertThat(getCheckResponse("foo"))
         .containsExactly(
             "status", "error",
@@ -138,7 +135,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testFailure_nonExistentTld() {
+  void testFailure_nonExistentTld() {
     assertThat(getCheckResponse("foo.bar"))
         .containsExactly(
             "status", "error",
@@ -148,7 +145,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testFailure_invalidIdnTable() {
+  void testFailure_invalidIdnTable() {
     assertThat(getCheckResponse("ΑΒΓ.example"))
         .containsExactly(
             "status", "error",
@@ -158,7 +155,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testFailure_tldInPredelegation() {
+  void testFailure_tldInPredelegation() {
     createTld("predelegated", PREDELEGATION);
     assertThat(getCheckResponse("foo.predelegated"))
         .containsExactly(
@@ -169,7 +166,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testSuccess_availableStandard() {
+  void testSuccess_availableStandard() {
     assertThat(getCheckResponse("somedomain.example"))
         .containsExactly(
             "status", "success",
@@ -180,7 +177,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testSuccess_availableCapital() {
+  void testSuccess_availableCapital() {
     assertThat(getCheckResponse("SOMEDOMAIN.EXAMPLE"))
         .containsExactly(
             "status", "success",
@@ -191,7 +188,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testSuccess_availableUnicode() {
+  void testSuccess_availableUnicode() {
     assertThat(getCheckResponse("ééé.example"))
         .containsExactly(
             "status", "success",
@@ -202,7 +199,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testSuccess_availablePunycode() {
+  void testSuccess_availablePunycode() {
     assertThat(getCheckResponse("xn--9caaa.example"))
         .containsExactly(
             "status", "success",
@@ -213,7 +210,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testSuccess_availablePremium() {
+  void testSuccess_availablePremium() {
     assertThat(getCheckResponse("rich.example"))
         .containsExactly(
             "status", "success",
@@ -224,7 +221,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testSuccess_registered_standard() {
+  void testSuccess_registered_standard() {
     persistActiveDomain("somedomain.example");
     assertThat(getCheckResponse("somedomain.example"))
         .containsExactly(
@@ -237,7 +234,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testSuccess_reserved_standard() {
+  void testSuccess_reserved_standard() {
     assertThat(getCheckResponse("foo.example"))
         .containsExactly(
             "tier", "standard",
@@ -249,7 +246,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testSuccess_registered_premium() {
+  void testSuccess_registered_premium() {
     persistActiveDomain("rich.example");
     assertThat(getCheckResponse("rich.example"))
         .containsExactly(
@@ -262,7 +259,7 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testSuccess_reserved_premium() {
+  void testSuccess_reserved_premium() {
     assertThat(getCheckResponse("platinum.example"))
         .containsExactly(
             "tier", "premium",
@@ -274,13 +271,13 @@ public class CheckApiActionTest {
   }
 
   @Test
-  public void testSuccess_reservedForSpecificUse_premium() {
+  void testSuccess_reservedForSpecificUse_premium() {
     assertThat(getCheckResponse("gold.example"))
         .containsExactly(
             "tier", "premium",
             "status", "success",
             "available", false,
-            "reason", "Allocation token required");
+            "reason", "Reserved; alloc. token required");
 
     verifySuccessMetric(PREMIUM, RESERVED);
   }

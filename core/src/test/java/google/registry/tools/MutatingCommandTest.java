@@ -22,37 +22,35 @@ import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.util.Arrays;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link MutatingCommand}. */
-@RunWith(JUnit4.class)
 public class MutatingCommandTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  Registrar registrar1;
-  Registrar registrar2;
-  Registrar newRegistrar1;
-  Registrar newRegistrar2;
-  HostResource host1;
-  HostResource host2;
-  HostResource newHost1;
-  HostResource newHost2;
+  private Registrar registrar1;
+  private Registrar registrar2;
+  private Registrar newRegistrar1;
+  private Registrar newRegistrar2;
+  private HostResource host1;
+  private HostResource host2;
+  private HostResource newHost1;
+  private HostResource newHost2;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     registrar1 = persistNewRegistrar("Registrar1", "Registrar1", Registrar.Type.REAL, 1L);
     registrar2 = persistNewRegistrar("Registrar2", "Registrar2", Registrar.Type.REAL, 2L);
     newRegistrar1 = registrar1.asBuilder().setBillingIdentifier(42L).build();
@@ -68,7 +66,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testSuccess_noChanges() throws Exception {
+  void testSuccess_noChanges() throws Exception {
     MutatingCommand command = new MutatingCommand() {
       @Override
       protected void init() {}
@@ -79,7 +77,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testSuccess_update() throws Exception {
+  void testSuccess_update() throws Exception {
     MutatingCommand command = new MutatingCommand() {
       @Override
       public void init() {
@@ -112,7 +110,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testSuccess_create() throws Exception {
+  void testSuccess_create() throws Exception {
     ofy().deleteWithoutBackup().entities(Arrays.asList(host1, host2, registrar1, registrar2)).now();
     MutatingCommand command = new MutatingCommand() {
       @Override
@@ -146,7 +144,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testSuccess_delete() throws Exception {
+  void testSuccess_delete() throws Exception {
     MutatingCommand command = new MutatingCommand() {
       @Override
       protected void init() {
@@ -179,7 +177,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testSuccess_noopUpdate() throws Exception {
+  void testSuccess_noopUpdate() throws Exception {
     MutatingCommand command = new MutatingCommand() {
       @Override
       protected void init() {
@@ -203,7 +201,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testSuccess_batching() throws Exception {
+  void testSuccess_batching() throws Exception {
     MutatingCommand command = new MutatingCommand() {
       @Override
       protected void init() {
@@ -239,7 +237,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testSuccess_batching_partialExecutionWorks() throws Exception {
+  void testSuccess_batching_partialExecutionWorks() throws Exception {
     // The expected behavior here is that the first transaction will work and be committed, and
     // the second transaction will throw an IllegalStateException and not commit.
     MutatingCommand command = new MutatingCommand() {
@@ -281,7 +279,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testFailure_nullEntityChange() {
+  void testFailure_nullEntityChange() {
     MutatingCommand command = new MutatingCommand() {
       @Override
       protected void init() {
@@ -292,7 +290,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testFailure_updateSameEntityTwice() {
+  void testFailure_updateSameEntityTwice() {
     MutatingCommand command =
         new MutatingCommand() {
           @Override
@@ -309,7 +307,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testFailure_updateDifferentLongId() {
+  void testFailure_updateDifferentLongId() {
     MutatingCommand command = new MutatingCommand() {
       @Override
       protected void init() {
@@ -323,7 +321,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testFailure_updateDifferentStringId() {
+  void testFailure_updateDifferentStringId() {
     MutatingCommand command =
         new MutatingCommand() {
           @Override
@@ -338,7 +336,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testFailure_updateDifferentKind() {
+  void testFailure_updateDifferentKind() {
     MutatingCommand command =
         new MutatingCommand() {
           @Override
@@ -353,7 +351,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testFailure_updateModifiedEntity() throws Exception {
+  void testFailure_updateModifiedEntity() throws Exception {
     MutatingCommand command =
         new MutatingCommand() {
           @Override
@@ -368,7 +366,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testFailure_createExistingEntity() throws Exception {
+  void testFailure_createExistingEntity() throws Exception {
     MutatingCommand command =
         new MutatingCommand() {
           @Override
@@ -383,7 +381,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testFailure_deleteChangedEntity() throws Exception {
+  void testFailure_deleteChangedEntity() throws Exception {
     MutatingCommand command =
         new MutatingCommand() {
           @Override
@@ -398,7 +396,7 @@ public class MutatingCommandTest {
   }
 
   @Test
-  public void testFailure_deleteRemovedEntity() throws Exception {
+  void testFailure_deleteRemovedEntity() throws Exception {
     MutatingCommand command =
         new MutatingCommand() {
           @Override

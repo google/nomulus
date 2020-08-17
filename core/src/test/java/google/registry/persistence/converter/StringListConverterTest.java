@@ -16,30 +16,28 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.NoResultException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link StringListConverter}. */
-@RunWith(JUnit4.class)
 public class StringListConverterTest {
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
 
   @Test
-  public void roundTripConversion_returnsSameStringList() {
+  void roundTripConversion_returnsSameStringList() {
     List<String> tlds = ImmutableList.of("app", "dev", "how");
     TestEntity testEntity = new TestEntity(tlds);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
@@ -49,7 +47,7 @@ public class StringListConverterTest {
   }
 
   @Test
-  public void testMerge_succeeds() {
+  void testMerge_succeeds() {
     List<String> tlds = ImmutableList.of("app", "dev", "how");
     TestEntity testEntity = new TestEntity(tlds);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
@@ -63,7 +61,7 @@ public class StringListConverterTest {
   }
 
   @Test
-  public void testNullValue_writesAndReadsNullSuccessfully() {
+  void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -72,7 +70,7 @@ public class StringListConverterTest {
   }
 
   @Test
-  public void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
+  void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
     TestEntity testEntity = new TestEntity(ImmutableList.of());
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
     TestEntity persisted =
@@ -81,7 +79,7 @@ public class StringListConverterTest {
   }
 
   @Test
-  public void testNativeQuery_succeeds() throws Exception {
+  void testNativeQuery_succeeds() throws Exception {
     executeNativeQuery("INSERT INTO \"TestEntity\" (name, tlds) VALUES ('id', '{app, dev}')");
 
     assertThat(

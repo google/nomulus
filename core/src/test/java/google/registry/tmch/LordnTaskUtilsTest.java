@@ -22,39 +22,35 @@ import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistDomainAndEnqueueLordn;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar.Type;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.Clock;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link LordnTaskUtils}. */
-@RunWith(JUnit4.class)
 public class LordnTaskUtilsTest {
 
   private static final Clock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12Z"));
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     createTld("example");
     inject.setStaticField(Ofy.class, "clock", clock);
   }
@@ -68,7 +64,7 @@ public class LordnTaskUtilsTest {
   }
 
   @Test
-  public void test_enqueueDomainBaseTask_sunrise() {
+  void test_enqueueDomainBaseTask_sunrise() {
     persistDomainAndEnqueueLordn(newDomainBuilder().setRepoId("A-EXAMPLE").build());
     String expectedPayload =
         "A-EXAMPLE,fleece.example,smdzzzz,1,2010-05-01T10:11:12.000Z";
@@ -77,7 +73,7 @@ public class LordnTaskUtilsTest {
   }
 
   @Test
-  public void test_enqueueDomainBaseTask_claims() {
+  void test_enqueueDomainBaseTask_claims() {
     DomainBase domain =
         newDomainBuilder()
             .setRepoId("11-EXAMPLE")
@@ -93,7 +89,7 @@ public class LordnTaskUtilsTest {
   }
 
   @Test
-  public void test_oteRegistrarWithNullIanaId() {
+  void test_oteRegistrarWithNullIanaId() {
     tm()
         .transact(
             () ->
@@ -112,7 +108,7 @@ public class LordnTaskUtilsTest {
   }
 
   @Test
-  public void test_enqueueDomainBaseTask_throwsExceptionOnInvalidRegistrar() {
+  void test_enqueueDomainBaseTask_throwsExceptionOnInvalidRegistrar() {
     DomainBase domain =
         newDomainBuilder()
             .setRepoId("9000-EXAMPLE")
@@ -126,7 +122,7 @@ public class LordnTaskUtilsTest {
   }
 
   @Test
-  public void test_enqueueDomainBaseTask_throwsNpeOnNullDomain() {
+  void test_enqueueDomainBaseTask_throwsNpeOnNullDomain() {
     assertThrows(
         NullPointerException.class,
         () -> tm().transactNew(() -> LordnTaskUtils.enqueueDomainBaseTask(null)));

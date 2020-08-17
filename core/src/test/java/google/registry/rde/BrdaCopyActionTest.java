@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.testing.GcsTestingUtils.readGcsFile;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;
@@ -29,12 +29,11 @@ import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.Keyring;
-import google.registry.testing.AppEngineRule;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.AppEngineExtension;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.GcsTestingUtils;
-import google.registry.testing.GpgSystemCommandRule;
-import google.registry.testing.ShardableTestCase;
+import google.registry.testing.GpgSystemCommandExtension;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,16 +42,13 @@ import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link BrdaCopyAction}. */
-@RunWith(JUnit4.class)
-public class BrdaCopyActionTest extends ShardableTestCase {
+public class BrdaCopyActionTest {
 
   private static final ByteSource DEPOSIT_XML = RdeTestData.loadBytes("deposit_full.xml");
 
@@ -65,24 +61,26 @@ public class BrdaCopyActionTest extends ShardableTestCase {
   private static final GcsFilename SIG_FILE =
       new GcsFilename("tub", "lol_2010-10-17_thin_S1_R0.sig");
 
-  @Rule
-  public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @Rule
-  public final GpgSystemCommandRule gpg = new GpgSystemCommandRule(
-      RdeTestData.loadBytes("pgp-public-keyring.asc"),
-      RdeTestData.loadBytes("pgp-private-keyring-escrow.asc"));
+  @RegisterExtension
+  public final GpgSystemCommandExtension gpg =
+      new GpgSystemCommandExtension(
+          RdeTestData.loadBytes("pgp-public-keyring.asc"),
+          RdeTestData.loadBytes("pgp-private-keyring-escrow.asc"));
 
   private static PGPPublicKey encryptKey;
   private static PGPPrivateKey decryptKey;
   private static PGPPublicKey receiverKey;
   private static PGPKeyPair signingKey;
 
-  @BeforeClass
-  public static void beforeClass() {
+  @BeforeAll
+  static void beforeAll() {
     try (Keyring keyring = new FakeKeyringModule().get()) {
       encryptKey = keyring.getRdeStagingEncryptionKey();
       decryptKey = keyring.getRdeStagingDecryptionKey();
@@ -95,8 +93,8 @@ public class BrdaCopyActionTest extends ShardableTestCase {
   private final GcsUtils gcsUtils = new GcsUtils(gcsService, 1024);
   private final BrdaCopyAction action = new BrdaCopyAction();
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     action.gcsUtils = gcsUtils;
     action.tld = "lol";
     action.watermark = DateTime.parse("2010-10-17TZ");
@@ -113,7 +111,7 @@ public class BrdaCopyActionTest extends ShardableTestCase {
   }
 
   @Test
-  public void testRun() {
+  void testRun() {
     action.run();
     assertThat(gcsUtils.existsAndNotEmpty(STAGE_FILE)).isTrue();
     assertThat(gcsUtils.existsAndNotEmpty(RYDE_FILE)).isTrue();
@@ -121,7 +119,7 @@ public class BrdaCopyActionTest extends ShardableTestCase {
   }
 
   @Test
-  public void testRun_rydeFormat() throws Exception {
+  void testRun_rydeFormat() throws Exception {
     assumeTrue(hasCommand("gpg --version"));
     action.run();
 
@@ -168,7 +166,7 @@ public class BrdaCopyActionTest extends ShardableTestCase {
   }
 
   @Test
-  public void testRun_rydeSignature() throws Exception {
+  void testRun_rydeSignature() throws Exception {
     assumeTrue(hasCommand("gpg --version"));
     action.run();
 

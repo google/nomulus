@@ -92,12 +92,14 @@ public class EppMessage {
   @VisibleForTesting
   public static final String XPASS_EXPRESSION =
       String.format("//eppns:result[@code>='%s'][@code<'%s']", 1000, 2000);
+
   /**
    * Expression that expresses a result code in the {@link EppResponseMessage} that means failure.
    */
   @VisibleForTesting
   public static final String XFAIL_EXPRESSION =
       String.format("//eppns:result[@code>='%s'][@code<'%s']", 2000, 3000);
+
   // "Security" errors from RFC 5730, plus the error we get when we end
   // up no longer logged (see b/28196510).
   // 2002    "Command use error"

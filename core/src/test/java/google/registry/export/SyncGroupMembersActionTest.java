@@ -39,31 +39,28 @@ import google.registry.groups.GroupsConnection.Role;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.request.Response;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.util.Retrier;
 import java.io.IOException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit tests for {@link SyncGroupMembersAction}.
  *
  * <p>Note that this relies on the registrars NewRegistrar and TheRegistrar created by default in
- * {@link AppEngineRule}.
+ * {@link AppEngineExtension}.
  */
-@RunWith(JUnit4.class)
 public class SyncGroupMembersActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private final DirectoryGroupsConnection connection = mock(DirectoryGroupsConnection.class);
   private final Response response = mock(Response.class);
@@ -78,7 +75,7 @@ public class SyncGroupMembersActionTest {
   }
 
   @Test
-  public void test_getGroupEmailAddressForContactType_convertsToLowercase() {
+  void test_getGroupEmailAddressForContactType_convertsToLowercase() {
     assertThat(getGroupEmailAddressForContactType(
             "SomeRegistrar",
             RegistrarContact.Type.ADMIN,
@@ -87,7 +84,7 @@ public class SyncGroupMembersActionTest {
   }
 
   @Test
-  public void test_getGroupEmailAddressForContactType_convertsNonAlphanumericChars() {
+  void test_getGroupEmailAddressForContactType_convertsNonAlphanumericChars() {
     assertThat(getGroupEmailAddressForContactType(
             "Weird.ಠ_ಠRegistrar",
               MARKETING,
@@ -96,7 +93,7 @@ public class SyncGroupMembersActionTest {
   }
 
   @Test
-  public void test_doPost_noneModified() {
+  void test_doPost_noneModified() {
     persistResource(
         loadRegistrar("NewRegistrar").asBuilder().setContactsRequireSyncing(false).build());
     persistResource(
@@ -109,7 +106,7 @@ public class SyncGroupMembersActionTest {
   }
 
   @Test
-  public void test_doPost_syncsNewContact() throws Exception {
+  void test_doPost_syncsNewContact() throws Exception {
     runAction();
     verify(connection).addMemberToGroup(
         "newregistrar-primary-contacts@domain-registry.example",
@@ -121,7 +118,7 @@ public class SyncGroupMembersActionTest {
   }
 
   @Test
-  public void test_doPost_removesOldContact() throws Exception {
+  void test_doPost_removesOldContact() throws Exception {
     when(connection.getMembersOfGroup("newregistrar-primary-contacts@domain-registry.example"))
         .thenReturn(ImmutableSet.of("defunct@example.com", "janedoe@theregistrar.com"));
     runAction();
@@ -132,7 +129,7 @@ public class SyncGroupMembersActionTest {
   }
 
   @Test
-  public void test_doPost_removesAllContactsFromGroup() throws Exception {
+  void test_doPost_removesAllContactsFromGroup() throws Exception {
     when(connection.getMembersOfGroup("newregistrar-primary-contacts@domain-registry.example"))
         .thenReturn(ImmutableSet.of("defunct@example.com", "janedoe@theregistrar.com"));
     ofy().deleteWithoutBackup()
@@ -148,7 +145,7 @@ public class SyncGroupMembersActionTest {
   }
 
   @Test
-  public void test_doPost_addsAndRemovesContacts_acrossMultipleRegistrars() throws Exception {
+  void test_doPost_addsAndRemovesContacts_acrossMultipleRegistrars() throws Exception {
     when(connection.getMembersOfGroup("newregistrar-primary-contacts@domain-registry.example"))
         .thenReturn(ImmutableSet.of("defunct@example.com", "janedoe@theregistrar.com"));
     when(connection.getMembersOfGroup("newregistrar-marketing-contacts@domain-registry.example"))
@@ -196,7 +193,7 @@ public class SyncGroupMembersActionTest {
   }
 
   @Test
-  public void test_doPost_gracefullyHandlesExceptionForSingleRegistrar() throws Exception {
+  void test_doPost_gracefullyHandlesExceptionForSingleRegistrar() throws Exception {
     when(connection.getMembersOfGroup("newregistrar-primary-contacts@domain-registry.example"))
         .thenReturn(ImmutableSet.of());
     when(connection.getMembersOfGroup("theregistrar-primary-contacts@domain-registry.example"))
@@ -215,7 +212,7 @@ public class SyncGroupMembersActionTest {
   }
 
   @Test
-  public void test_doPost_retriesOnTransientException() throws Exception {
+  void test_doPost_retriesOnTransientException() throws Exception {
     doThrow(IOException.class)
         .doNothing()
         .when(connection)

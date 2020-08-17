@@ -19,9 +19,15 @@ import static google.registry.beam.BeamUtils.getQueryFromFile;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableSet;
+import google.registry.backup.AppEngineEnvironment;
+import google.registry.beam.initsql.Transforms.SerializableSupplier;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.reporting.Spec11ThreatMatch;
+import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
 import google.registry.util.SqlTemplate;
@@ -37,6 +43,7 @@ import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.options.ValueProvider.NestedValueProvider;
+import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -46,6 +53,7 @@ import org.apache.beam.sdk.values.TypeDescriptor;
 import org.apache.beam.sdk.values.TypeDescriptors;
 import org.joda.time.LocalDate;
 import org.joda.time.YearMonth;
+import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -77,29 +85,34 @@ public class Spec11Pipeline implements Serializable {
   public static final String REGISTRAR_EMAIL_FIELD = "registrarEmailAddress";
   /** The JSON object field into which we put the registrar's name for Spec11 reports. */
   public static final String REGISTRAR_CLIENT_ID_FIELD = "registrarClientId";
-  /** The JSON object field we put the threat match array for Spec11 reports. */
+  /** The JSON object field into which we put the threat match array for Spec11 reports. */
   public static final String THREAT_MATCHES_FIELD = "threatMatches";
 
   private final String projectId;
+  private final String beamJobRegion;
   private final String beamStagingUrl;
   private final String spec11TemplateUrl;
   private final String reportingBucketUrl;
   private final GoogleCredentials googleCredentials;
   private final Retrier retrier;
+  private final SerializableSupplier<JpaTransactionManager> jpaSupplierFactory;
 
   @Inject
   public Spec11Pipeline(
       @Config("projectId") String projectId,
+      @Config("defaultJobRegion") String beamJobRegion,
       @Config("beamStagingUrl") String beamStagingUrl,
       @Config("spec11TemplateUrl") String spec11TemplateUrl,
       @Config("reportingBucketUrl") String reportingBucketUrl,
+      SerializableSupplier<JpaTransactionManager> jpaSupplierFactory,
       @LocalCredential GoogleCredentialsBundle googleCredentialsBundle,
-      Retrier retrier
-  ) {
+      Retrier retrier) {
     this.projectId = projectId;
+    this.beamJobRegion = beamJobRegion;
     this.beamStagingUrl = beamStagingUrl;
     this.spec11TemplateUrl = spec11TemplateUrl;
     this.reportingBucketUrl = reportingBucketUrl;
+    this.jpaSupplierFactory = jpaSupplierFactory;
     this.googleCredentials = googleCredentialsBundle.getGoogleCredentials();
     this.retrier = retrier;
   }
@@ -136,6 +149,7 @@ public class Spec11Pipeline implements Serializable {
     // We can't store options as a member variable due to serialization concerns.
     Spec11PipelineOptions options = PipelineOptionsFactory.as(Spec11PipelineOptions.class);
     options.setProject(projectId);
+    options.setRegion(beamJobRegion);
     options.setRunner(DataflowRunner.class);
     // This causes p.run() to stage the pipeline as a template on GCS, as opposed to running it.
     options.setTemplateLocation(spec11TemplateUrl);
@@ -177,18 +191,48 @@ public class Spec11Pipeline implements Serializable {
       PCollection<Subdomain> domains,
       EvaluateSafeBrowsingFn evaluateSafeBrowsingFn,
       ValueProvider<String> dateProvider) {
-    PCollection<KV<Subdomain, ThreatMatch>> subdomains =
+
+    PCollection<KV<Subdomain, ThreatMatch>> subdomainsSql =
+        domains.apply("Run through SafeBrowsing API", ParDo.of(evaluateSafeBrowsingFn));
+    /* Store ThreatMatch objects in SQL. */
+    subdomainsSql.apply(
+        ParDo.of(
+            new DoFn<KV<Subdomain, ThreatMatch>, Void>() {
+              @ProcessElement
+              public void processElement(ProcessContext context) {
+                // create the Spec11ThreatMatch from Subdomain and ThreatMatch
+                try (AppEngineEnvironment env = new AppEngineEnvironment()) {
+                  Subdomain subdomain = context.element().getKey();
+                  Spec11ThreatMatch threatMatch =
+                      new Spec11ThreatMatch.Builder()
+                          .setThreatTypes(
+                              ImmutableSet.of(
+                                  ThreatType.valueOf(context.element().getValue().threatType())))
+                          .setCheckDate(
+                              LocalDate.parse(dateProvider.get(), ISODateTimeFormat.date()))
+                          .setDomainName(subdomain.domainName())
+                          .setDomainRepoId(subdomain.domainRepoId())
+                          .setRegistrarId(subdomain.registrarId())
+                          .build();
+                  JpaTransactionManager jpaTransactionManager = jpaSupplierFactory.get();
+                  jpaTransactionManager.transact(() -> jpaTransactionManager.saveNew(threatMatch));
+                }
+              }
+            }));
+
+    /* Store ThreatMatch objects in JSON. */
+    PCollection<KV<Subdomain, ThreatMatch>> subdomainsJson =
         domains.apply("Run through SafeBrowsingAPI", ParDo.of(evaluateSafeBrowsingFn));
-    subdomains
+    subdomainsJson
         .apply(
-            "Map registrar client ID to email/ThreatMatch pair",
+            "Map registrar ID to email/ThreatMatch pair",
             MapElements.into(
                     TypeDescriptors.kvs(
                         TypeDescriptors.strings(), TypeDescriptor.of(EmailAndThreatMatch.class)))
                 .via(
                     (KV<Subdomain, ThreatMatch> kv) ->
                         KV.of(
-                            kv.getKey().registrarClientId(),
+                            kv.getKey().registrarId(),
                             EmailAndThreatMatch.create(
                                 kv.getKey().registrarEmailAddress(), kv.getValue()))))
         .apply("Group by registrar client ID", GroupByKey.create())

@@ -15,23 +15,20 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import javax.annotation.Nullable;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ComparingInvocationHandler}. */
-@RunWith(JUnit4.class)
-public class ComparingInvocationHandlerTest {
+class ComparingInvocationHandlerTest {
 
-  static class Dummy {}
+  private static class Dummy {}
 
   interface MyInterface {
     String func(int a, String b);
@@ -51,7 +48,7 @@ public class ComparingInvocationHandlerTest {
     }
   }
 
-  static final ArrayList<String> log = new ArrayList<>();
+  private static final ArrayList<String> log = new ArrayList<>();
 
   static final class MyInterfaceComparingInvocationHandler
       extends ComparingInvocationHandler<MyInterface> {
@@ -112,14 +109,14 @@ public class ComparingInvocationHandlerTest {
   private final MyInterface mySecondMock = mock(MyInterface.class);
   private MyInterfaceComparingInvocationHandler invocationHandler;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     log.clear();
     invocationHandler = new MyInterfaceComparingInvocationHandler(myActualMock, mySecondMock);
   }
 
   @Test
-  public void test_actualThrows_logDifference() {
+  void test_actualThrows_logDifference() {
     MyInterface comparator = invocationHandler.makeProxy();
     MyException myException = new MyException("message");
     when(myActualMock.func(3, "str")).thenThrow(myException);
@@ -134,7 +131,7 @@ public class ComparingInvocationHandlerTest {
   }
 
   @Test
-  public void test_secondThrows_logDifference() {
+  void test_secondThrows_logDifference() {
     MyInterface comparator = invocationHandler.makeProxy();
     MyOtherException myOtherException = new MyOtherException("message");
     when(myActualMock.func(3, "str")).thenReturn(ACTUAL_RESULT);
@@ -150,7 +147,7 @@ public class ComparingInvocationHandlerTest {
   }
 
   @Test
-  public void test_bothThrowEqual_noLog() {
+  void test_bothThrowEqual_noLog() {
     MyInterface comparator = invocationHandler.setExeptionsEquals(true).makeProxy();
     MyException myException = new MyException("actual message");
     MyOtherException myOtherException = new MyOtherException("second message");
@@ -162,7 +159,7 @@ public class ComparingInvocationHandlerTest {
   }
 
   @Test
-  public void test_bothThrowDifferent_logDifference() {
+  void test_bothThrowDifferent_logDifference() {
     MyInterface comparator = invocationHandler.setExeptionsEquals(false).makeProxy();
     MyException myException = new MyException("actual message");
     MyOtherException myOtherException = new MyOtherException("second message");
@@ -179,7 +176,7 @@ public class ComparingInvocationHandlerTest {
   }
 
   @Test
-  public void test_bothReturnSame_noLog() {
+  void test_bothReturnSame_noLog() {
     MyInterface comparator = invocationHandler.makeProxy();
     when(myActualMock.func(3, "str")).thenReturn(ACTUAL_RESULT);
     when(mySecondMock.func(3, "str")).thenReturn(ACTUAL_RESULT);
@@ -190,7 +187,7 @@ public class ComparingInvocationHandlerTest {
   }
 
   @Test
-  public void test_bothReturnDifferent_logDifference() {
+  void test_bothReturnDifferent_logDifference() {
     MyInterface comparator = invocationHandler.makeProxy();
     when(myActualMock.func(3, "str")).thenReturn(ACTUAL_RESULT);
     when(mySecondMock.func(3, "str")).thenReturn(SECOND_RESULT);
@@ -202,7 +199,7 @@ public class ComparingInvocationHandlerTest {
   }
 
   @Test
-  public void test_usesOverriddenMethods_noDifference() {
+  void test_usesOverriddenMethods_noDifference() {
     MyInterface comparator = invocationHandler.setDummyEquals(true).makeProxy();
     when(myActualMock.func()).thenReturn(new Dummy());
     when(mySecondMock.func()).thenReturn(new Dummy());
@@ -213,7 +210,7 @@ public class ComparingInvocationHandlerTest {
   }
 
   @Test
-  public void test_usesOverriddenMethods_logDifference() {
+  void test_usesOverriddenMethods_logDifference() {
     MyInterface comparator = invocationHandler.setDummyEquals(false).makeProxy();
     when(myActualMock.func()).thenReturn(new Dummy());
     when(mySecondMock.func()).thenReturn(new Dummy());

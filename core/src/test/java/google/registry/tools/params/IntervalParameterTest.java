@@ -15,22 +15,20 @@
 package google.registry.tools.params;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link IntervalParameter}. */
-@RunWith(JUnit4.class)
-public class IntervalParameterTest {
+class IntervalParameterTest {
+
   private final IntervalParameter instance = new IntervalParameter();
 
   @Test
-  public void testConvert() {
+  void testConvert() {
     assertThat(instance.convert("2004-06-09T12:30:00Z/2004-07-10T13:30:00Z"))
         .isEqualTo(new Interval(
             DateTime.parse("2004-06-09T12:30:00Z"),
@@ -38,34 +36,34 @@ public class IntervalParameterTest {
   }
 
   @Test
-  public void testConvert_singleDate() {
+  void testConvert_singleDate() {
     assertThrows(IllegalArgumentException.class, () -> instance.convert("2004-06-09T12:30:00Z"));
   }
 
   @Test
-  public void testConvert_backwardsInterval() {
+  void testConvert_backwardsInterval() {
     assertThrows(
         IllegalArgumentException.class,
         () -> instance.convert("2004-07-10T13:30:00Z/2004-06-09T12:30:00Z"));
   }
 
   @Test
-  public void testConvert_empty_throws() {
+  void testConvert_empty_throws() {
     assertThrows(IllegalArgumentException.class, () -> instance.convert(""));
   }
 
   @Test
-  public void testConvert_null_throws() {
+  void testConvert_null_throws() {
     assertThrows(NullPointerException.class, () -> instance.convert(null));
   }
 
   @Test
-  public void testConvert_sillyString_throws() {
+  void testConvert_sillyString_throws() {
     assertThrows(IllegalArgumentException.class, () -> instance.convert("foo"));
   }
 
   @Test
-  public void testValidate_sillyString_throws() {
+  void testValidate_sillyString_throws() {
     ParameterException thrown =
         assertThrows(ParameterException.class, () -> instance.validate("--time", "foo"));
     assertThat(thrown).hasMessageThat().contains("--time=foo not an");

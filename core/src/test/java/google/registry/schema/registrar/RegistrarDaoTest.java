@@ -17,7 +17,7 @@ package google.registry.schema.registrar;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.registrar.Registrar;
@@ -51,7 +51,7 @@ public class RegistrarDaoTest {
   private Registrar testRegistrar;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     testRegistrar =
         new Registrar.Builder()
             .setType(Registrar.Type.TEST)
@@ -69,14 +69,14 @@ public class RegistrarDaoTest {
   }
 
   @Test
-  public void saveNew_worksSuccessfully() {
+  void saveNew_worksSuccessfully() {
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
     jpaTm().transact(() -> jpaTm().saveNew(testRegistrar));
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isTrue();
   }
 
   @Test
-  public void update_worksSuccessfully() {
+  void update_worksSuccessfully() {
     jpaTm().transact(() -> jpaTm().saveNew(testRegistrar));
     Registrar persisted = jpaTm().transact(() -> jpaTm().load(registrarKey));
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
@@ -91,7 +91,7 @@ public class RegistrarDaoTest {
   }
 
   @Test
-  public void update_throwsExceptionWhenEntityDoesNotExist() {
+  void update_throwsExceptionWhenEntityDoesNotExist() {
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
     assertThrows(
         IllegalArgumentException.class,
@@ -99,7 +99,7 @@ public class RegistrarDaoTest {
   }
 
   @Test
-  public void load_worksSuccessfully() {
+  void load_worksSuccessfully() {
     assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
     jpaTm().transact(() -> jpaTm().saveNew(testRegistrar));
     Registrar persisted = jpaTm().transact(() -> jpaTm().load(registrarKey));

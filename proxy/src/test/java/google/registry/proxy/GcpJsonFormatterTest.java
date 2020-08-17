@@ -19,14 +19,11 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.base.Joiner;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link google.registry.proxy.GcpJsonFormatter}. */
-@RunWith(JUnit4.class)
-public class GcpJsonFormatterTest {
+class GcpJsonFormatterTest {
 
   private static final String LOGGER_NAME = "example.company.app.logger";
   private static final String SOURCE_CLASS_NAME = "example.company.app.component.Doer";
@@ -55,20 +52,20 @@ public class GcpJsonFormatterTest {
     return "\"" + content.replaceAll("\n", "\\\\n") + "\"";
   }
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     logRecord.setLoggerName(LOGGER_NAME);
   }
 
   @Test
-  public void testSuccess() {
+  void testSuccess() {
     String actual = formatter.format(logRecord);
     String expected = makeJson("WARNING", LOGGER_NAME, MESSAGE);
     assertThat(actual).isEqualTo(expected);
   }
 
   @Test
-  public void testSuccess_sourceClassAndMethod() {
+  void testSuccess_sourceClassAndMethod() {
     logRecord.setSourceClassName(SOURCE_CLASS_NAME);
     logRecord.setSourceMethodName(SOURCE_METHOD_NAME);
     String actual = formatter.format(logRecord);
@@ -77,7 +74,7 @@ public class GcpJsonFormatterTest {
   }
 
   @Test
-  public void testSuccess_multilineMessage() {
+  void testSuccess_multilineMessage() {
     String multilineMessage = "First line message\nSecond line message\n";
     logRecord.setMessage(multilineMessage);
     String actual = formatter.format(logRecord);
@@ -86,7 +83,7 @@ public class GcpJsonFormatterTest {
   }
 
   @Test
-  public void testSuccess_withCause() {
+  void testSuccess_withCause() {
     Throwable throwable = new Throwable("Some reason");
     StackTraceElement[] stacktrace = {
       new StackTraceElement("class1", "method1", "file1", 5),

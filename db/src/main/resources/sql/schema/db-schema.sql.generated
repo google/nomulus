@@ -77,6 +77,7 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "Contact" (
        repo_id text not null,
+        update_timestamp timestamptz,
         creation_registrar_id text not null,
         creation_time timestamptz not null,
         current_sponsor_registrar_id text not null,
@@ -133,6 +134,75 @@ create sequence history_id_sequence start 1 increment 1;
         primary key (repo_id)
     );
 
+    create table "ContactHistory" (
+       history_revision_id int8 not null,
+        history_by_superuser boolean not null,
+        history_registrar_id text,
+        history_modification_time timestamptz not null,
+        history_reason text not null,
+        history_requested_by_registrar boolean not null,
+        history_client_transaction_id text,
+        history_server_transaction_id text,
+        history_type text not null,
+        history_xml_bytes bytea not null,
+        auth_info_repo_id text,
+        auth_info_value text,
+        contact_id text,
+        disclose_types_addr text[],
+        disclose_show_email boolean,
+        disclose_show_fax boolean,
+        disclose_mode_flag boolean,
+        disclose_types_name text[],
+        disclose_types_org text[],
+        disclose_show_voice boolean,
+        email text,
+        fax_phone_extension text,
+        fax_phone_number text,
+        addr_i18n_city text,
+        addr_i18n_country_code text,
+        addr_i18n_state text,
+        addr_i18n_street_line1 text,
+        addr_i18n_street_line2 text,
+        addr_i18n_street_line3 text,
+        addr_i18n_zip text,
+        addr_i18n_name text,
+        addr_i18n_org text,
+        addr_i18n_type text,
+        last_transfer_time timestamptz,
+        addr_local_city text,
+        addr_local_country_code text,
+        addr_local_state text,
+        addr_local_street_line1 text,
+        addr_local_street_line2 text,
+        addr_local_street_line3 text,
+        addr_local_zip text,
+        addr_local_name text,
+        addr_local_org text,
+        addr_local_type text,
+        search_name text,
+        transfer_gaining_poll_message_id int8,
+        transfer_losing_poll_message_id int8,
+        transfer_client_txn_id text,
+        transfer_server_txn_id text,
+        transfer_gaining_registrar_id text,
+        transfer_losing_registrar_id text,
+        transfer_pending_expiration_time timestamptz,
+        transfer_request_time timestamptz,
+        transfer_status text,
+        voice_phone_extension text,
+        voice_phone_number text,
+        creation_registrar_id text not null,
+        creation_time timestamptz not null,
+        current_sponsor_registrar_id text not null,
+        deletion_time timestamptz,
+        last_epp_update_registrar_id text,
+        last_epp_update_time timestamptz,
+        statuses text[],
+        update_timestamp timestamptz,
+        contact_repo_id text not null,
+        primary key (history_revision_id)
+    );
+
     create table "Cursor" (
        scope text not null,
         type text not null,
@@ -151,6 +221,7 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "Domain" (
        repo_id text not null,
+        update_timestamp timestamptz,
         creation_registrar_id text not null,
         creation_time timestamptz not null,
         current_sponsor_registrar_id text not null,
@@ -161,7 +232,11 @@ create sequence history_id_sequence start 1 increment 1;
         admin_contact text,
         auth_info_repo_id text,
         auth_info_value text,
+        billing_recurrence_id int8,
+        autorenew_end_time timestamptz,
+        autorenew_poll_message_id int8,
         billing_contact text,
+        deletion_poll_message_id int8,
         domain_name text,
         idn_table_name text,
         last_transfer_time timestamptz,
@@ -194,18 +269,84 @@ create sequence history_id_sequence start 1 increment 1;
         primary key (repo_id)
     );
 
+    create table "DomainHistory" (
+       history_revision_id int8 not null,
+        history_by_superuser boolean not null,
+        history_registrar_id text,
+        history_modification_time timestamptz not null,
+        history_reason text not null,
+        history_requested_by_registrar boolean not null,
+        history_client_transaction_id text,
+        history_server_transaction_id text,
+        history_type text not null,
+        history_xml_bytes bytea not null,
+        admin_contact text,
+        auth_info_repo_id text,
+        auth_info_value text,
+        billing_recurrence_id int8,
+        autorenew_end_time timestamptz,
+        autorenew_poll_message_id int8,
+        billing_contact text,
+        deletion_poll_message_id int8,
+        domain_name text,
+        idn_table_name text,
+        last_transfer_time timestamptz,
+        launch_notice_accepted_time timestamptz,
+        launch_notice_expiration_time timestamptz,
+        launch_notice_tcn_id text,
+        launch_notice_validator_id text,
+        registrant_contact text,
+        registration_expiration_time timestamptz,
+        smd_id text,
+        subordinate_hosts text[],
+        tech_contact text,
+        tld text,
+        transfer_billing_cancellation_id int8,
+        transfer_billing_recurrence_id int8,
+        transfer_autorenew_poll_message_id int8,
+        transfer_billing_event_id int8,
+        transfer_renew_period_unit text,
+        transfer_renew_period_value int4,
+        transfer_registration_expiration_time timestamptz,
+        transfer_gaining_poll_message_id int8,
+        transfer_losing_poll_message_id int8,
+        transfer_client_txn_id text,
+        transfer_server_txn_id text,
+        transfer_gaining_registrar_id text,
+        transfer_losing_registrar_id text,
+        transfer_pending_expiration_time timestamptz,
+        transfer_request_time timestamptz,
+        transfer_status text,
+        creation_registrar_id text not null,
+        creation_time timestamptz not null,
+        current_sponsor_registrar_id text not null,
+        deletion_time timestamptz,
+        last_epp_update_registrar_id text,
+        last_epp_update_time timestamptz,
+        statuses text[],
+        update_timestamp timestamptz,
+        domain_repo_id text not null,
+        primary key (history_revision_id)
+    );
+
+    create table "DomainHistoryHost" (
+       domain_history_history_revision_id int8 not null,
+        host_repo_id text
+    );
+
     create table "DomainHost" (
        domain_repo_id text not null,
-        ns_hosts text
+        host_repo_id text
     );
 
     create table "GracePeriod" (
        id  bigserial not null,
-        billing_event_one_time bytea,
-        billing_event_recurring bytea,
-        registrar_id text,
-        expiration_time timestamptz,
-        type int4,
+        billing_event_id int8,
+        billing_recurrence_id int8,
+        registrar_id text not null,
+        domain_repo_id text not null,
+        expiration_time timestamptz not null,
+        type text not null,
         primary key (id)
     );
 
@@ -232,12 +373,14 @@ create sequence history_id_sequence start 1 increment 1;
         last_epp_update_registrar_id text,
         last_epp_update_time timestamptz,
         statuses text[],
+        update_timestamp timestamptz,
         host_repo_id text not null,
         primary key (history_revision_id)
     );
 
     create table "HostResource" (
        repo_id text not null,
+        update_timestamp timestamptz,
         creation_registrar_id text not null,
         creation_time timestamptz not null,
         current_sponsor_registrar_id text not null,
@@ -301,10 +444,10 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "PremiumList" (
        revision_id  bigserial not null,
-        bloom_filter bytea not null,
         creation_timestamp timestamptz not null,
-        currency text not null,
         name text not null,
+        bloom_filter bytea not null,
+        currency text not null,
         primary key (revision_id)
     );
 
@@ -383,7 +526,7 @@ create sequence history_id_sequence start 1 increment 1;
         lock_request_timestamp timestamptz not null,
         registrar_id text not null,
         registrar_poc_id text,
-        relock_duration int8,
+        relock_duration interval,
         repo_id text not null,
         unlock_completion_timestamp timestamptz,
         unlock_request_timestamp timestamptz,
@@ -394,8 +537,8 @@ create sequence history_id_sequence start 1 increment 1;
 
     create table "ReservedEntry" (
        revision_id int8 not null,
-        comment text,
         reservation_type int4 not null,
+        comment text,
         domain_label text not null,
         primary key (revision_id, domain_label)
     );
@@ -418,6 +561,12 @@ create sequence history_id_sequence start 1 increment 1;
         tld text not null,
         primary key (id)
     );
+
+    create table "Transaction" (
+       id  bigserial not null,
+        contents bytea,
+        primary key (id)
+    );
 create index IDXih4b2tea127p5rb61gje6e1y2 on "BillingCancellation" (registrar_id);
 create index IDX2exdfbx6oiiwnhr8j6gjpqt2j on "BillingCancellation" (event_time);
 create index IDXqa3g92jc17e8dtiaviy4fet4x on "BillingCancellation" (billing_time);
@@ -433,15 +582,23 @@ create index IDXjny8wuot75b5e6p38r47wdawu on "BillingRecurrence" (recurrence_tim
 create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
 create index IDXtm415d6fe1rr35stm33s5mg18 on "Contact" (current_sponsor_registrar_id);
 create index IDXn1f711wicdnooa2mqb7g1m55o on "Contact" (deletion_time);
+create index IDXoqd7n4hbx86hvlgkilq75olas on "Contact" (contact_id);
 create index IDX1p3esngcwwu6hstyua6itn6ff on "Contact" (search_name);
-
-    alter table if exists "Contact" 
-       add constraint UKoqd7n4hbx86hvlgkilq75olas unique (contact_id);
+create index IDXo1xdtpij2yryh0skxe9v91sep on "ContactHistory" (creation_time);
+create index IDXhp33wybmb6tbpr1bq7ttwk8je on "ContactHistory" (history_registrar_id);
+create index IDX9q53px6r302ftgisqifmc6put on "ContactHistory" (history_type);
+create index IDXsudwswtwqnfnx2o1hx4s0k0g5 on "ContactHistory" (history_modification_time);
 create index IDX8nr0ke9mrrx4ewj6pd2ag4rmr on "Domain" (creation_time);
 create index IDXhsjqiy2lyobfymplb28nm74lm on "Domain" (current_sponsor_registrar_id);
 create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
 create index IDXc5aw4pk1vkd6ymhvkpanmoadv on "Domain" (domain_name);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
+create index IDXlrq7v63pc21uoh3auq6eybyhl on "Domain" (autorenew_end_time);
+create index IDXrh4xmrot9bd63o382ow9ltfig on "DomainHistory" (creation_time);
+create index IDXaro1omfuaxjwmotk3vo00trwm on "DomainHistory" (history_registrar_id);
+create index IDXsu1nam10cjes9keobapn5jvxj on "DomainHistory" (history_type);
+create index IDX6w3qbtgce93cal2orjg1tw7b7 on "DomainHistory" (history_modification_time);
+create index IDXj1mtx98ndgbtb1bkekahms18w on "GracePeriod" (domain_repo_id);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
 create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
 create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);
@@ -468,8 +625,18 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        foreign key (revision_id) 
        references "ClaimsList";
 
+    alter table if exists "DomainHistoryHost" 
+       add constraint FK378h8v3j8qd8xtjn2e0bcmrtj 
+       foreign key (domain_history_history_revision_id) 
+       references "DomainHistory";
+
     alter table if exists "DomainHost" 
        add constraint FKeq1guccbre1yk3oosgp2io554 
+       foreign key (domain_repo_id) 
+       references "Domain";
+
+    alter table if exists "GracePeriod" 
+       add constraint FK2mys4hojm6ev2g9tmy5aq6m7g 
        foreign key (domain_repo_id) 
        references "Domain";
 

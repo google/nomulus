@@ -33,29 +33,26 @@ import google.registry.bigquery.BigqueryConnection.DestinationTable;
 import google.registry.bigquery.BigqueryUtils.TableType;
 import google.registry.gcs.GcsUtils;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import org.joda.time.YearMonth;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.icann.IcannReportingStager}. */
-@RunWith(JUnit4.class)
-public class IcannReportingStagerTest {
+class IcannReportingStagerTest {
 
-  BigqueryConnection bigquery = mock(BigqueryConnection.class);
+  private BigqueryConnection bigquery = mock(BigqueryConnection.class);
   FakeResponse response = new FakeResponse();
-  GcsService gcsService = GcsServiceFactory.createGcsService();
-  YearMonth yearMonth = new YearMonth(2017, 6);
-  String subdir = "icann/monthly/2017-06";
+  private GcsService gcsService = GcsServiceFactory.createGcsService();
+  private YearMonth yearMonth = new YearMonth(2017, 6);
+  private String subdir = "icann/monthly/2017-06";
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withLocalModules().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withLocalModules().build();
 
   private IcannReportingStager createStager() {
     IcannReportingStager action = new IcannReportingStager();
@@ -74,16 +71,17 @@ public class IcannReportingStagerTest {
 
   private void setUpBigquery() {
     when(bigquery.query(any(String.class), any(DestinationTable.class))).thenReturn(fakeFuture());
-    DestinationTable.Builder tableBuilder = new DestinationTable.Builder()
-        .datasetId("testdataset")
-        .type(TableType.TABLE)
-        .name("tablename")
-        .overwrite(true);
+    DestinationTable.Builder tableBuilder =
+        new DestinationTable.Builder()
+            .datasetId("testdataset")
+            .type(TableType.TABLE)
+            .name("tablename")
+            .overwrite(true);
     when(bigquery.buildDestinationTable(any(String.class))).thenReturn(tableBuilder);
   }
 
   @Test
-  public void testRunSuccess_activityReport() throws Exception {
+  void testRunSuccess_activityReport() throws Exception {
     setUpBigquery();
     ImmutableTable<Integer, TableFieldSchema, Object> activityReportTable =
         new ImmutableTable.Builder<Integer, TableFieldSchema, Object>()
@@ -113,7 +111,7 @@ public class IcannReportingStagerTest {
   }
 
   @Test
-  public void testRunSuccess_transactionsReport() throws Exception {
+  void testRunSuccess_transactionsReport() throws Exception {
     setUpBigquery();
     /*
       The fake table result looks like:
@@ -157,7 +155,7 @@ public class IcannReportingStagerTest {
   }
 
   @Test
-  public void testRunSuccess_createAndUploadManifest() throws Exception {
+  void testRunSuccess_createAndUploadManifest() throws Exception {
     IcannReportingStager stager = createStager();
     ImmutableList<String> filenames =
         ImmutableList.of("fooTld-transactions-201706.csv", "barTld-activity-201706.csv");
@@ -204,4 +202,3 @@ public class IcannReportingStagerTest {
     };
   }
 }
-

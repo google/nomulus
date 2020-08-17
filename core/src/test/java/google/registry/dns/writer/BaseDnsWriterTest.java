@@ -15,15 +15,12 @@
 package google.registry.dns.writer;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link BaseDnsWriter}. */
-@RunWith(JUnit4.class)
-public class BaseDnsWriterTest {
+class BaseDnsWriterTest {
 
   static class StubDnsWriter extends BaseDnsWriter {
 
@@ -46,7 +43,7 @@ public class BaseDnsWriterTest {
   }
 
   @Test
-  public void test_cannotBeCalledTwice() {
+  void test_cannotBeCalledTwice() {
     StubDnsWriter writer = new StubDnsWriter();
     assertThat(writer.commitCallCount).isEqualTo(0);
     writer.commit();

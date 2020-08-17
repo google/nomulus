@@ -24,7 +24,7 @@ import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableList;
@@ -34,18 +34,18 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UpdateRegistrarCommand}. */
-public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand> {
+class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand> {
 
   @Test
-  public void testSuccess_alsoUpdateInCloudSql() throws Exception {
+  void testSuccess_alsoUpdateInCloudSql() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isFalse();
     jpaTm().transact(() -> jpaTm().saveNew(loadRegistrar("NewRegistrar")));
     runCommand("--password=some_password", "--force", "NewRegistrar");
@@ -58,14 +58,14 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_password() throws Exception {
+  void testSuccess_password() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isFalse();
     runCommand("--password=some_password", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isTrue();
   }
 
   @Test
-  public void testSuccess_registrarType() throws Exception {
+  void testSuccess_registrarType() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -78,7 +78,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_noPasscodeOnChangeToReal() {
+  void testFailure_noPasscodeOnChangeToReal() {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -94,14 +94,14 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_registrarState() throws Exception {
+  void testSuccess_registrarState() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getState()).isEqualTo(State.ACTIVE);
     runCommand("--registrar_state=SUSPENDED", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getState()).isEqualTo(State.SUSPENDED);
   }
 
   @Test
-  public void testSuccess_allowedTlds() throws Exception {
+  void testSuccess_allowedTlds() throws Exception {
     persistWhoisAbuseContact();
     createTlds("xn--q9jyb4c", "foobar");
     persistResource(
@@ -119,7 +119,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_addAllowedTlds() throws Exception {
+  void testSuccess_addAllowedTlds() throws Exception {
     persistWhoisAbuseContact();
     createTlds("xn--q9jyb4c", "foo", "bar");
     persistResource(
@@ -137,7 +137,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_addAllowedTldsWithDupes() throws Exception {
+  void testSuccess_addAllowedTldsWithDupes() throws Exception {
     persistWhoisAbuseContact();
     createTlds("xn--q9jyb4c", "foo", "bar");
     persistResource(
@@ -155,7 +155,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_allowedTldsInNonProductionEnvironment() throws Exception {
+  void testSuccess_allowedTldsInNonProductionEnvironment() throws Exception {
     createTlds("xn--q9jyb4c", "foobar");
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -172,7 +172,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_allowedTldsInPdtRegistrar() throws Exception {
+  void testSuccess_allowedTldsInPdtRegistrar() throws Exception {
     createTlds("xn--q9jyb4c", "foobar");
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -191,7 +191,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_ipAllowList() throws Exception {
+  void testSuccess_ipAllowList() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getIpAddressAllowList()).isEmpty();
     runCommand("--ip_allow_list=192.168.1.1,192.168.0.2/16", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getIpAddressAllowList())
@@ -201,7 +201,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_clearIpAllowList_useNull() throws Exception {
+  void testSuccess_clearIpAllowList_useNull() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -216,7 +216,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_clearIpAllowList_useEmpty() throws Exception {
+  void testSuccess_clearIpAllowList_useEmpty() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -231,7 +231,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_certFile() throws Exception {
+  void testSuccess_certFile() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getClientCertificate()).isNull();
     assertThat(registrar.getClientCertificateHash()).isNull();
@@ -244,7 +244,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_certHash() throws Exception {
+  void testSuccess_certHash() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getClientCertificateHash()).isNull();
     runCommand("--cert_hash=" + SAMPLE_CERT_HASH, "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getClientCertificateHash())
@@ -252,7 +252,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_clearCert() throws Exception {
+  void testSuccess_clearCert() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -264,7 +264,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_clearCertHash() throws Exception {
+  void testSuccess_clearCertHash() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -276,28 +276,28 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_ianaId() throws Exception {
+  void testSuccess_ianaId() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getIanaIdentifier()).isEqualTo(8);
     runCommand("--iana_id=12345", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getIanaIdentifier()).isEqualTo(12345);
   }
 
   @Test
-  public void testSuccess_billingId() throws Exception {
+  void testSuccess_billingId() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getBillingIdentifier()).isNull();
     runCommand("--billing_id=12345", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getBillingIdentifier()).isEqualTo(12345);
   }
 
   @Test
-  public void testSuccess_poNumber() throws Exception {
+  void testSuccess_poNumber() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getPoNumber()).isEmpty();
     runCommand("--po_number=52345", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getPoNumber()).hasValue("52345");
   }
 
   @Test
-  public void testSuccess_billingAccountMap() throws Exception {
+  void testSuccess_billingAccountMap() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap()).isEmpty();
     runCommand("--billing_account_map=USD=abc123,JPY=789xyz", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap())
@@ -305,7 +305,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_billingAccountMap_doesNotContainEntryForTldAllowed() {
+  void testFailure_billingAccountMap_doesNotContainEntryForTldAllowed() {
     createTlds("foo");
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap()).isEmpty();
     IllegalArgumentException thrown =
@@ -322,7 +322,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_billingAccountMap_onlyAppliesToRealRegistrar() throws Exception {
+  void testSuccess_billingAccountMap_onlyAppliesToRealRegistrar() throws Exception {
     createTlds("foo");
     assertThat(loadRegistrar("NewRegistrar").getBillingAccountMap()).isEmpty();
     runCommand("--billing_account_map=JPY=789xyz", "--allowed_tlds=foo", "--force", "NewRegistrar");
@@ -331,7 +331,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_billingAccountMap_partialUpdate() throws Exception {
+  void testSuccess_billingAccountMap_partialUpdate() throws Exception {
     createTlds("foo");
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -345,7 +345,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_streetAddress() throws Exception {
+  void testSuccess_streetAddress() throws Exception {
     runCommand(
         "--street=\"1234 Main St\"",
         "--street \"4th Floor\"",
@@ -370,35 +370,35 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_blockPremiumNames() throws Exception {
+  void testSuccess_blockPremiumNames() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").getBlockPremiumNames()).isFalse();
     runCommandForced("--block_premium=true", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getBlockPremiumNames()).isTrue();
   }
 
   @Test
-  public void testSuccess_resetBlockPremiumNames() throws Exception {
+  void testSuccess_resetBlockPremiumNames() throws Exception {
     persistResource(loadRegistrar("NewRegistrar").asBuilder().setBlockPremiumNames(true).build());
     runCommandForced("--block_premium=false", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getBlockPremiumNames()).isFalse();
   }
 
   @Test
-  public void testSuccess_allowRegistryLock() throws Exception {
+  void testSuccess_allowRegistryLock() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").isRegistryLockAllowed()).isFalse();
     runCommandForced("--registry_lock_allowed=true", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").isRegistryLockAllowed()).isTrue();
   }
 
   @Test
-  public void testSuccess_disallowRegistryLock() throws Exception {
+  void testSuccess_disallowRegistryLock() throws Exception {
     persistResource(loadRegistrar("NewRegistrar").asBuilder().setRegistryLockAllowed(true).build());
     runCommandForced("--registry_lock_allowed=false", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").isRegistryLockAllowed()).isFalse();
   }
 
   @Test
-  public void testSuccess_unspecifiedBooleansArentChanged() throws Exception {
+  void testSuccess_unspecifiedBooleansArentChanged() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -414,7 +414,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_updateMultiple() throws Exception {
+  void testSuccess_updateMultiple() throws Exception {
     assertThat(loadRegistrar("TheRegistrar").getState()).isEqualTo(State.ACTIVE);
     assertThat(loadRegistrar("NewRegistrar").getState()).isEqualTo(State.ACTIVE);
     runCommandForced("--registrar_state=SUSPENDED", "TheRegistrar", "NewRegistrar");
@@ -423,7 +423,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_resetOptionalParamsNullString() throws Exception {
+  void testSuccess_resetOptionalParamsNullString() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     registrar =
         persistResource(
@@ -466,7 +466,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_resetOptionalParamsEmptyString() throws Exception {
+  void testSuccess_resetOptionalParamsEmptyString() throws Exception {
     Registrar registrar = loadRegistrar("NewRegistrar");
     registrar =
         persistResource(
@@ -509,7 +509,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_setIcannEmail() throws Exception {
+  void testSuccess_setIcannEmail() throws Exception {
     runCommand("--icann_referral_email=foo@bar.test", "--force", "TheRegistrar");
     Registrar registrar = loadRegistrar("TheRegistrar");
     assertThat(registrar.getIcannReferralEmail()).isEqualTo("foo@bar.test");
@@ -517,20 +517,20 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_setEmail() throws Exception {
+  void testSuccess_setEmail() throws Exception {
     runCommand("--email=foo@bar.baz", "--force", "TheRegistrar");
     Registrar registrar = loadRegistrar("TheRegistrar");
     assertThat(registrar.getEmailAddress()).isEqualTo("foo@bar.baz");
   }
 
   @Test
-  public void testSuccess_setWhoisServer_works() throws Exception {
+  void testSuccess_setWhoisServer_works() throws Exception {
     runCommand("--whois=whois.goth.black", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getWhoisServer()).isEqualTo("whois.goth.black");
   }
 
   @Test
-  public void testSuccess_triggerGroupSyncing_works() throws Exception {
+  void testSuccess_triggerGroupSyncing_works() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar").asBuilder().setContactsRequireSyncing(false).build());
     assertThat(loadRegistrar("NewRegistrar").getContactsRequireSyncing()).isFalse();
@@ -539,83 +539,83 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_invalidRegistrarType() {
+  void testFailure_invalidRegistrarType() {
     assertThrows(
         ParameterException.class,
         () -> runCommand("--registrar_type=INVALID_TYPE", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_invalidRegistrarState() {
+  void testFailure_invalidRegistrarState() {
     assertThrows(
         ParameterException.class,
         () -> runCommand("--registrar_state=INVALID_STATE", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_negativeIanaId() {
+  void testFailure_negativeIanaId() {
     assertThrows(
         IllegalArgumentException.class,
         () -> runCommand("--iana_id=-1", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_nonIntegerIanaId() {
+  void testFailure_nonIntegerIanaId() {
     assertThrows(
         ParameterException.class, () -> runCommand("--iana_id=ABC123", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_negativeBillingId() {
+  void testFailure_negativeBillingId() {
     assertThrows(
         IllegalArgumentException.class,
         () -> runCommand("--billing_id=-1", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_nonIntegerBillingId() {
+  void testFailure_nonIntegerBillingId() {
     assertThrows(
         ParameterException.class,
         () -> runCommand("--billing_id=ABC123", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_passcodeTooShort() {
+  void testFailure_passcodeTooShort() {
     assertThrows(
         IllegalArgumentException.class,
         () -> runCommand("--passcode=0123", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_passcodeTooLong() {
+  void testFailure_passcodeTooLong() {
     assertThrows(
         IllegalArgumentException.class,
         () -> runCommand("--passcode=012345", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_invalidPasscode() {
+  void testFailure_invalidPasscode() {
     assertThrows(
         IllegalArgumentException.class,
         () -> runCommand("--passcode=code1", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_allowedTldDoesNotExist() {
+  void testFailure_allowedTldDoesNotExist() {
     assertThrows(
         IllegalArgumentException.class,
         () -> runCommand("--allowed_tlds=foobar", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_addAllowedTldDoesNotExist() {
+  void testFailure_addAllowedTldDoesNotExist() {
     assertThrows(
         IllegalArgumentException.class,
         () -> runCommand("--add_allowed_tlds=foobar", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_allowedTldsAndAddAllowedTlds() {
+  void testFailure_allowedTldsAndAddAllowedTlds() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -623,7 +623,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_setAllowedTldsWithoutAbuseContact() {
+  void testFailure_setAllowedTldsWithoutAbuseContact() {
     createTlds("bar");
     IllegalArgumentException thrown =
         assertThrows(
@@ -638,7 +638,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_addAllowedTldsWithoutAbuseContact() {
+  void testFailure_addAllowedTldsWithoutAbuseContact() {
     createTlds("bar");
     IllegalArgumentException thrown =
         assertThrows(
@@ -653,21 +653,21 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_invalidIpAllowList() {
+  void testFailure_invalidIpAllowList() {
     assertThrows(
         IllegalArgumentException.class,
         () -> runCommand("--ip_allow_list=foobarbaz", "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_invalidCertFileContents() {
+  void testFailure_invalidCertFileContents() {
     assertThrows(
         Exception.class,
         () -> runCommand("--cert_file=" + writeToTmpFile("ABCDEF"), "--force", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_certHashAndCertFile() {
+  void testFailure_certHashAndCertFile() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -679,12 +679,12 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_missingClientId() {
+  void testFailure_missingClientId() {
     assertThrows(ParameterException.class, () -> runCommand("--force"));
   }
 
   @Test
-  public void testFailure_missingStreetLines() {
+  void testFailure_missingStreetLines() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -698,7 +698,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_missingCity() {
+  void testFailure_missingCity() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -714,7 +714,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_missingState() {
+  void testFailure_missingState() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -730,7 +730,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_missingZip() {
+  void testFailure_missingZip() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -746,7 +746,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_missingCc() {
+  void testFailure_missingCc() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -762,7 +762,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_missingInvalidCc() {
+  void testFailure_missingInvalidCc() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -779,7 +779,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_tooManyStreetLines() {
+  void testFailure_tooManyStreetLines() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -797,7 +797,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_tooFewStreetLines() {
+  void testFailure_tooFewStreetLines() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -812,21 +812,21 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_unknownFlag() {
+  void testFailure_unknownFlag() {
     assertThrows(
         ParameterException.class,
         () -> runCommand("--force", "--unrecognized_flag=foo", "NewRegistrar"));
   }
 
   @Test
-  public void testFailure_doesNotExist() {
+  void testFailure_doesNotExist() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("--force", "ClientZ"));
     assertThat(thrown).hasMessageThat().contains("Registrar ClientZ not found");
   }
 
   @Test
-  public void testFailure_registrarNameSimilarToExisting() {
+  void testFailure_registrarNameSimilarToExisting() {
     // Note that "tHeRe GiStRaR" normalizes identically to "The Registrar", which is created by
     // AppEngineRule.
     assertThrows(
@@ -835,7 +835,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_poNumberNotSpecified_doesntWipeOutExisting() throws Exception {
+  void testSuccess_poNumberNotSpecified_doesntWipeOutExisting() throws Exception {
     Registrar registrar =
         persistResource(
             loadRegistrar("NewRegistrar").asBuilder().setPoNumber(Optional.of("1664")).build());
@@ -847,7 +847,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testSuccess_poNumber_canBeBlanked() throws Exception {
+  void testSuccess_poNumber_canBeBlanked() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar").asBuilder().setPoNumber(Optional.of("1664")).build());
     runCommand("--po_number=null", "--force", "NewRegistrar");
@@ -855,7 +855,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
   }
 
   @Test
-  public void testFailure_badEmail() {
+  void testFailure_badEmail() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -867,7 +867,7 @@ public class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarC
 
   private void persistWhoisAbuseContact() {
     persistResource(
-        AppEngineRule.makeRegistrarContact1()
+        AppEngineExtension.makeRegistrarContact1()
             .asBuilder()
             .setVisibleInDomainWhoisAsAbuse(true)
             .build());

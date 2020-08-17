@@ -34,26 +34,23 @@ import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
 import google.registry.security.XsrfTokenManager;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.UserInfo;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ConsoleUiAction}. */
-@RunWith(JUnit4.class)
-public class ConsoleUiActionTest {
+class ConsoleUiActionTest {
 
-  @Rule
-  public final AppEngineRule appEngineRule =
-      AppEngineRule.builder()
+  @RegisterExtension
+  final AppEngineExtension appEngineExtension =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withUserService(UserInfo.create("marla.singer@example.com", "12345"))
           .build();
@@ -63,8 +60,8 @@ public class ConsoleUiActionTest {
   private final ConsoleUiAction action = new ConsoleUiAction();
   private final User user = new User("marla.singer@example.com", "gmail.com", "12345");
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     action.enabled = true;
     action.logoFilename = "logo.png";
     action.productName = "Nomulus";
@@ -93,47 +90,47 @@ public class ConsoleUiActionTest {
     RegistrarConsoleMetrics.consoleRequestMetric.reset();
   }
 
-  @After
-  public void tearDown() {
+  @AfterEach
+  void afterEach() {
     assertThat(RegistrarConsoleMetrics.consoleRequestMetric).hasNoOtherValues();
   }
 
-  public void assertMetric(String clientId, String explicitClientId, String roles, String status) {
+  void assertMetric(String clientId, String explicitClientId, String roles, String status) {
     assertThat(RegistrarConsoleMetrics.consoleRequestMetric)
         .hasValueForLabels(1, clientId, explicitClientId, roles, status);
     RegistrarConsoleMetrics.consoleRequestMetric.reset(clientId, explicitClientId, roles, status);
   }
 
   @Test
-  public void testWebPage_disallowsIframe() {
+  void testWebPage_disallowsIframe() {
     action.run();
     assertThat(response.getHeaders()).containsEntry("X-Frame-Options", "SAMEORIGIN");
     assertMetric("TheRegistrar", "false", "[OWNER]", "SUCCESS");
   }
 
   @Test
-  public void testWebPage_setsHtmlUtf8ContentType() {
+  void testWebPage_setsHtmlUtf8ContentType() {
     action.run();
     assertThat(response.getContentType()).isEqualTo(MediaType.HTML_UTF_8);
     assertMetric("TheRegistrar", "false", "[OWNER]", "SUCCESS");
   }
 
   @Test
-  public void testWebPage_containsUserNickname() {
+  void testWebPage_containsUserNickname() {
     action.run();
     assertThat(response.getPayload()).contains("marla.singer");
     assertMetric("TheRegistrar", "false", "[OWNER]", "SUCCESS");
   }
 
   @Test
-  public void testWebPage_containsGoogleAnalyticsId() {
+  void testWebPage_containsGoogleAnalyticsId() {
     action.run();
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
     assertMetric("TheRegistrar", "false", "[OWNER]", "SUCCESS");
   }
 
   @Test
-  public void testUserHasAccessAsTheRegistrar_showsRegistrarConsole() {
+  void testUserHasAccessAsTheRegistrar_showsRegistrarConsole() {
     action.run();
     assertThat(response.getPayload()).contains("Registrar Console");
     assertThat(response.getPayload()).contains("reg-content-and-footer");
@@ -141,7 +138,7 @@ public class ConsoleUiActionTest {
   }
 
   @Test
-  public void testConsoleDisabled_showsDisabledPage() {
+  void testConsoleDisabled_showsDisabledPage() {
     action.enabled = false;
     action.run();
     assertThat(response.getPayload()).contains("<h1>Console is disabled</h1>");
@@ -149,7 +146,7 @@ public class ConsoleUiActionTest {
   }
 
   @Test
-  public void testUserDoesntHaveAccessToAnyRegistrar_showsWhoAreYouPage() {
+  void testUserDoesntHaveAccessToAnyRegistrar_showsWhoAreYouPage() {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
     action.run();
@@ -160,7 +157,7 @@ public class ConsoleUiActionTest {
   }
 
   @Test
-  public void testNoUser_redirect() {
+  void testNoUser_redirect() {
     when(request.getRequestURI()).thenReturn("/test");
     action.authResult = AuthResult.NOT_AUTHENTICATED;
     action.run();
@@ -169,7 +166,7 @@ public class ConsoleUiActionTest {
   }
 
   @Test
-  public void testNoUserInformationAtAll_redirectToRoot() {
+  void testNoUserInformationAtAll_redirectToRoot() {
     when(request.getRequestURI()).thenThrow(new IllegalArgumentException());
     action.authResult = AuthResult.NOT_AUTHENTICATED;
     action.run();
@@ -178,7 +175,7 @@ public class ConsoleUiActionTest {
   }
 
   @Test
-  public void testSettingClientId_notAllowed_showsNeedPermissionPage() {
+  void testSettingClientId_notAllowed_showsNeedPermissionPage() {
     // Behaves the same way if fakeRegistrar exists, but we don't have access to it
     action.paramClientId = Optional.of("fakeRegistrar");
     action.run();
@@ -189,7 +186,7 @@ public class ConsoleUiActionTest {
   }
 
   @Test
-  public void testSettingClientId_allowed_showsRegistrarConsole() {
+  void testSettingClientId_allowed_showsRegistrarConsole() {
     action.paramClientId = Optional.of("NewRegistrar");
     action.run();
     assertThat(response.getPayload()).contains("Registrar Console");
@@ -199,7 +196,7 @@ public class ConsoleUiActionTest {
   }
 
   @Test
-  public void testUserHasAccessAsTheRegistrar_showsClientIdChooser() {
+  void testUserHasAccessAsTheRegistrar_showsClientIdChooser() {
     action.run();
     assertThat(response.getPayload()).contains("<option value=\"TheRegistrar\" selected>");
     assertThat(response.getPayload()).contains("<option value=\"NewRegistrar\">");

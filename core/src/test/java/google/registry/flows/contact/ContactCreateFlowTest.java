@@ -22,7 +22,7 @@ import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistDeletedContact;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.EppException;
 import google.registry.flows.ResourceFlowTestCase;
@@ -32,13 +32,12 @@ import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientExcept
 import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.contact.ContactResource;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactCreateFlow}. */
-public class ContactCreateFlowTest
-    extends ResourceFlowTestCase<ContactCreateFlow, ContactResource> {
+class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, ContactResource> {
 
-  public ContactCreateFlowTest() {
+  ContactCreateFlowTest() {
     setEppInput("contact_create.xml");
     clock.setTo(DateTime.parse("1999-04-03T22:00:00.0Z"));
   }
@@ -56,24 +55,24 @@ public class ContactCreateFlowTest
   }
 
   @Test
-  public void testDryRun() throws Exception {
+  void testDryRun() throws Exception {
     dryRunFlowAssertResponse(loadFile("contact_create_response.xml"));
   }
 
   @Test
-  public void testSuccess_neverExisted() throws Exception {
+  void testSuccess_neverExisted() throws Exception {
     doSuccessfulTest();
   }
 
   @Test
-  public void testSuccess_existedButWasDeleted() throws Exception {
+  void testSuccess_existedButWasDeleted() throws Exception {
     persistDeletedContact(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     clock.advanceOneMilli();
     doSuccessfulTest();
   }
 
   @Test
-  public void testFailure_alreadyExists() throws Exception {
+  void testFailure_alreadyExists() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     ResourceAlreadyExistsForThisClientException thrown =
         assertThrows(ResourceAlreadyExistsForThisClientException.class, this::runFlow);
@@ -85,7 +84,7 @@ public class ContactCreateFlowTest
   }
 
   @Test
-  public void testFailure_resourceContention() throws Exception {
+  void testFailure_resourceContention() throws Exception {
     String targetId = getUniqueIdFromCommand();
     persistResource(
         newContactResource(targetId)
@@ -101,13 +100,13 @@ public class ContactCreateFlowTest
   }
 
   @Test
-  public void testSuccess_nonAsciiInLocAddress() throws Exception {
+  void testSuccess_nonAsciiInLocAddress() throws Exception {
     setEppInput("contact_create_hebrew_loc.xml");
     doSuccessfulTest();
   }
 
   @Test
-  public void testFailure_nonAsciiInIntAddress() {
+  void testFailure_nonAsciiInIntAddress() {
     setEppInput("contact_create_hebrew_int.xml");
     EppException thrown =
         assertThrows(BadInternationalizedPostalInfoException.class, this::runFlow);
@@ -115,7 +114,7 @@ public class ContactCreateFlowTest
   }
 
   @Test
-  public void testFailure_declineDisclosure() {
+  void testFailure_declineDisclosure() {
     setEppInput("contact_create_decline_disclosure.xml");
     EppException thrown =
         assertThrows(DeclineContactDisclosureFieldDisallowedPolicyException.class, this::runFlow);
@@ -123,7 +122,7 @@ public class ContactCreateFlowTest
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-create");
   }

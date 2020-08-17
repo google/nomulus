@@ -15,21 +15,18 @@
 package google.registry.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.tmch.LordnLog.Result;
 import java.util.Map.Entry;
 import org.joda.time.DateTime;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link LordnLog}. */
-@RunWith(JUnit4.class)
-public class LordnLogTest {
+class LordnLogTest {
 
-  public static final ImmutableList<String> EXAMPLE_FROM_RFC =
+  private static final ImmutableList<String> EXAMPLE_FROM_RFC =
       ImmutableList.of(
           "1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,"
               + "0000000000000478Nzs+3VMkR8ckuUynOLmyeqTmZQSbzDuf/R50n2n5QX4=,"
@@ -37,7 +34,7 @@ public class LordnLogTest {
           "roid,result-code",
           "SH8013-REP,2000");
 
-  public static final ImmutableList<String> EXAMPLE_WITH_WARNINGS =
+  private static final ImmutableList<String> EXAMPLE_WITH_WARNINGS =
       ImmutableList.of(
           "1,2014-03-21T15:40:08.4Z,2014-03-21T15:35:28.0Z,"
               + "0000000000000004799,accepted,warnings-present,2",
@@ -46,7 +43,7 @@ public class LordnLogTest {
           "1580e26-roid,3610");
 
   @Test
-  public void testSuccess_parseFirstLine() {
+  void testSuccess_parseFirstLine() {
     LordnLog log = LordnLog.parse(EXAMPLE_FROM_RFC);
     assertThat(log.getStatus()).isEqualTo(LordnLog.Status.ACCEPTED);
     assertThat(log.getLogCreation()).isEqualTo(DateTime.parse("2012-08-16T02:15:00.0Z"));
@@ -57,7 +54,7 @@ public class LordnLogTest {
   }
 
   @Test
-  public void testSuccess_parseDnLines() {
+  void testSuccess_parseDnLines() {
     LordnLog log = LordnLog.parse(EXAMPLE_FROM_RFC);
     Result result = log.getResult("SH8013-REP");
     assertThat(result).isNotNull();
@@ -67,7 +64,7 @@ public class LordnLogTest {
   }
 
   @Test
-  public void testSuccess_iterate() {
+  void testSuccess_iterate() {
     for (Entry<String, Result> result : LordnLog.parse(EXAMPLE_FROM_RFC)) {
       assertThat(result.getKey()).isEqualTo("SH8013-REP");
       assertThat(result.getValue().getCode()).isEqualTo(2000);
@@ -77,14 +74,14 @@ public class LordnLogTest {
   }
 
   @Test
-  public void testSuccess_noDnLines() {
+  void testSuccess_noDnLines() {
     LordnLog.parse(ImmutableList.of(
         "1,2012-08-16T02:15:00.0Z,2012-08-16T00:00:00.0Z,lolcat,accepted,no-warnings,0",
         "roid,result-code"));
   }
 
   @Test
-  public void testFailure_noDnLineMismatch() {
+  void testFailure_noDnLineMismatch() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -95,17 +92,17 @@ public class LordnLogTest {
   }
 
   @Test
-  public void testFailure_parseNull() {
+  void testFailure_parseNull() {
     assertThrows(NullPointerException.class, () -> LordnLog.parse(null));
   }
 
   @Test
-  public void testFailure_parseEmpty() {
+  void testFailure_parseEmpty() {
     assertThrows(Exception.class, () -> LordnLog.parse(ImmutableList.of()));
   }
 
   @Test
-  public void testFailure_parseMissingHeaderLine() {
+  void testFailure_parseMissingHeaderLine() {
     assertThrows(
         Exception.class,
         () ->
@@ -115,7 +112,7 @@ public class LordnLogTest {
   }
 
   @Test
-  public void testSuccess_toString() {
+  void testSuccess_toString() {
     assertThat(LordnLog.parse(EXAMPLE_WITH_WARNINGS).toString()).isEqualTo(
         "LordnLog{"
         + "logId=0000000000000004799, "
@@ -132,14 +129,14 @@ public class LordnLogTest {
   }
 
   @Test
-  public void testSuccess_resultToString() {
+  void testSuccess_resultToString() {
     assertThat(
         LordnLog.parse(EXAMPLE_FROM_RFC).iterator().next().toString())
             .isEqualTo("SH8013-REP=Result{code=2000, outcome=OK, description=OK}");
   }
 
   @Test
-  public void testSuccess_withWarnings() {
+  void testSuccess_withWarnings() {
     LordnLog log = LordnLog.parse(EXAMPLE_WITH_WARNINGS);
     assertThat(log.getStatus()).isEqualTo(LordnLog.Status.ACCEPTED);
     assertThat(log.getLogCreation()).isEqualTo(DateTime.parse("2014-03-21T15:40:08.4Z"));

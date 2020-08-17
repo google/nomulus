@@ -616,6 +616,18 @@ public final class RegistryConfig {
     }
 
     /**
+     * Returns the default job region to run Apache Beam (Cloud Dataflow) jobs in.
+     *
+     * @see google.registry.beam.invoicing.InvoicingPipeline
+     * @see google.registry.beam.spec11.Spec11Pipeline
+     */
+    @Provides
+    @Config("defaultJobRegion")
+    public static String provideDefaultJobRegion(RegistryConfigSettings config) {
+      return config.beam.defaultJobRegion;
+    }
+
+    /**
      * Returns the default job zone to run Apache Beam (Cloud Dataflow) jobs in.
      *
      * @see google.registry.reporting.billing.GenerateInvoicesAction
@@ -1525,6 +1537,21 @@ public final class RegistryConfig {
   /** Returns the idle timeout for HikariCP. */
   public static String getHibernateHikariIdleTimeout() {
     return CONFIG_SETTINGS.get().hibernate.hikariIdleTimeout;
+  }
+
+  /**
+   * Returns whether to replicate cloud SQL transactions to datastore.
+   *
+   * <p>If true, all cloud SQL transactions will be persisted as TransactionEntity objects in the
+   * Transaction table and replayed against datastore in a cron job.
+   */
+  public static boolean getCloudSqlReplicateTransactions() {
+    return CONFIG_SETTINGS.get().cloudSql.replicateTransactions;
+  }
+
+  @VisibleForTesting
+  public static void overrideCloudSqlReplicateTransactions(boolean replicateTransactions) {
+    CONFIG_SETTINGS.get().cloudSql.replicateTransactions = replicateTransactions;
   }
 
   /** Returns the roid suffix to be used for the roids of all contacts and hosts. */

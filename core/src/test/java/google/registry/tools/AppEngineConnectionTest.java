@@ -27,23 +27,19 @@ import com.google.common.net.MediaType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(JUnit4.class)
-public final class AppEngineConnectionTest {
+/** Unit tests for {@link google.registry.tools.AppEngineConnection}. */
+@ExtendWith(MockitoExtension.class)
+final class AppEngineConnectionTest {
 
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
-
-  AppEngineConnection connection;
-  TestHttpTransport httpTransport;
-  TestLowLevelHttpRequest lowLevelHttpRequest;
+  private AppEngineConnection connection;
+  private TestHttpTransport httpTransport;
+  private TestLowLevelHttpRequest lowLevelHttpRequest;
   @Mock LowLevelHttpResponse lowLevelHttpResponse;
 
   private final class TestHttpTransport extends HttpTransport {
@@ -81,8 +77,8 @@ public final class AppEngineConnectionTest {
     }
   }
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     lowLevelHttpRequest = new TestLowLevelHttpRequest();
     when(lowLevelHttpResponse.getContent())
         .thenReturn(new ByteArrayInputStream("MyContent".getBytes(UTF_8)));
@@ -94,7 +90,7 @@ public final class AppEngineConnectionTest {
   }
 
   @Test
-  public void testSendGetRequest() throws Exception {
+  void testSendGetRequest() throws Exception {
     assertThat(
             connection.sendGetRequest(
                 "/my/path?query", ImmutableMap.of("key1", "value1", "key2", "value2")))
@@ -107,7 +103,7 @@ public final class AppEngineConnectionTest {
   }
 
   @Test
-  public void testSendPostRequest() throws Exception {
+  void testSendPostRequest() throws Exception {
     assertThat(
             connection.sendPostRequest(
                 "/my/path?query",
@@ -125,7 +121,7 @@ public final class AppEngineConnectionTest {
   }
 
   @Test
-  public void testSendJsonRequest() throws Exception {
+  void testSendJsonRequest() throws Exception {
     when(lowLevelHttpResponse.getContent())
         .thenReturn(
             new ByteArrayInputStream((JSON_SAFETY_PREFIX + "{\"key\":\"value\"}").getBytes(UTF_8)));

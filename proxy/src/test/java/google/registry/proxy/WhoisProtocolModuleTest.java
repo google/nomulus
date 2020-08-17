@@ -19,7 +19,7 @@ import static google.registry.proxy.TestUtils.makeWhoisHttpRequest;
 import static google.registry.proxy.TestUtils.makeWhoisHttpResponse;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
@@ -31,20 +31,17 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import java.nio.channels.ClosedChannelException;
 import java.util.stream.Stream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** End-to-end tests for {@link WhoisProtocolModule}. */
-@RunWith(JUnit4.class)
-public class WhoisProtocolModuleTest extends ProtocolModuleTest {
+class WhoisProtocolModuleTest extends ProtocolModuleTest {
 
-  public WhoisProtocolModuleTest() {
+  WhoisProtocolModuleTest() {
     super(TestComponent::whoisHandlers);
   }
 
   @Test
-  public void testSuccess_singleFrameInboundMessage() {
+  void testSuccess_singleFrameInboundMessage() {
     String inputString = "test.tld\r\n";
     // Inbound message processed and passed along.
     assertThat(channel.writeInbound(Unpooled.wrappedBuffer(inputString.getBytes(US_ASCII))))
@@ -64,7 +61,7 @@ public class WhoisProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_noNewlineInboundMessage() {
+  void testSuccess_noNewlineInboundMessage() {
     String inputString = "test.tld";
     // No newline encountered, no message formed.
     assertThat(channel.writeInbound(Unpooled.wrappedBuffer(inputString.getBytes(US_ASCII))))
@@ -73,7 +70,7 @@ public class WhoisProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_multiFrameInboundMessage() {
+  void testSuccess_multiFrameInboundMessage() {
     String frame1 = "test";
     String frame2 = "1.tld";
     String frame3 = "\r\nte";
@@ -113,7 +110,7 @@ public class WhoisProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_inboundMessageTooLong() {
+  void testSuccess_inboundMessageTooLong() {
     String inputString = Stream.generate(() -> "x").limit(513).collect(joining()) + "\r\n";
     // Nothing gets propagated further.
     assertThat(channel.writeInbound(Unpooled.wrappedBuffer(inputString.getBytes(US_ASCII))))
@@ -123,7 +120,7 @@ public class WhoisProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_parseSingleOutboundHttpResponse() {
+  void testSuccess_parseSingleOutboundHttpResponse() {
     String outputString = "line1\r\nline2\r\n";
     FullHttpResponse response = makeWhoisHttpResponse(outputString, HttpResponseStatus.OK);
     // Http response parsed and passed along.
@@ -136,7 +133,7 @@ public class WhoisProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testFailure_parseOnlyFirstFromMultipleOutboundHttpResponse() {
+  void testFailure_parseOnlyFirstFromMultipleOutboundHttpResponse() {
     String outputString1 = "line1\r\nline2\r\n";
     String outputString2 = "line3\r\nline4\r\nline5\r\n";
     FullHttpResponse response1 = makeWhoisHttpResponse(outputString1, HttpResponseStatus.OK);
@@ -151,7 +148,7 @@ public class WhoisProtocolModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testFailure_outboundResponseStatusNotOK() {
+  void testFailure_outboundResponseStatusNotOK() {
     String outputString = "line1\r\nline2\r\n";
     FullHttpResponse response = makeWhoisHttpResponse(outputString, HttpResponseStatus.BAD_REQUEST);
     EncoderException thrown =

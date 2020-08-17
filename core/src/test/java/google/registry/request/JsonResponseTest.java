@@ -21,25 +21,22 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.testing.FakeResponse;
 import java.util.Map;
 import org.json.simple.JSONValue;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link JsonResponse}. */
-@RunWith(JUnit4.class)
-public class JsonResponseTest {
+class JsonResponseTest {
 
-  FakeResponse fakeResponse = new FakeResponse();
-  JsonResponse jsonResponse = new JsonResponse(fakeResponse);
+  private FakeResponse fakeResponse = new FakeResponse();
+  private JsonResponse jsonResponse = new JsonResponse(fakeResponse);
 
   @Test
-  public void testSetStatus() {
+  void testSetStatus() {
     jsonResponse.setStatus(666);
     assertThat(fakeResponse.getStatus()).isEqualTo(666);
   }
 
   @Test
-  public void testSetResponseValue() {
+  void testSetResponseValue() {
     ImmutableMap<String, String> responseValues = ImmutableMap.of(
         "hello", "world",
         "goodbye", "cruel world");
@@ -53,7 +50,7 @@ public class JsonResponseTest {
   }
 
   @Test
-  public void testSetHeader() {
+  void testSetHeader() {
     jsonResponse.setHeader("header", "value");
     Map<String, Object> headerMap = fakeResponse.getHeaders();
     assertThat(headerMap.size()).isEqualTo(1);

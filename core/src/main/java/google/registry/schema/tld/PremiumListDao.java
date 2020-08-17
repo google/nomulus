@@ -20,6 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import google.registry.model.registry.Registry;
+import google.registry.model.registry.label.PremiumList;
 import google.registry.schema.tld.PremiumListCache.RevisionIdAndLabel;
 import java.math.BigDecimal;
 import java.util.Optional;

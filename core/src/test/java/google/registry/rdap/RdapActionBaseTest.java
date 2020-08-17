@@ -32,16 +32,13 @@ import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapActionBase}. */
-@RunWith(JUnit4.class)
-public class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapTestAction> {
+class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTest.RdapTestAction> {
 
-  public RdapActionBaseTest() {
+  RdapActionBaseTest() {
     super(RdapTestAction.class);
   }
 
@@ -72,13 +69,13 @@ public class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTes
     }
   }
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     createTld("thing");
   }
 
   @Test
-  public void testIllegalValue_showsReadableTypeName() {
+  void testIllegalValue_showsReadableTypeName() {
     assertThat(generateActualJson("IllegalArgumentException")).isEqualTo(generateExpectedJsonError(
         "Not a valid human-readable string",
         400));
@@ -86,45 +83,45 @@ public class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTes
   }
 
   @Test
-  public void testRuntimeException_returns500Error() {
+  void testRuntimeException_returns500Error() {
     assertThat(generateActualJson("RuntimeException"))
         .isEqualTo(generateExpectedJsonError("An error was encountered", 500));
     assertThat(response.getStatus()).isEqualTo(500);
   }
 
   @Test
-  public void testValidName_works() {
+  void testValidName_works() {
     assertThat(generateActualJson("no.thing")).isEqualTo(loadJsonFile("rdapjson_toplevel.json"));
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
-  public void testContentType_rdapjson_utf8() {
+  void testContentType_rdapjson_utf8() {
     generateActualJson("no.thing");
     assertThat(response.getContentType().toString())
         .isEqualTo("application/rdap+json; charset=utf-8");
   }
 
   @Test
-  public void testHeadRequest_returnsNoContent() {
+  void testHeadRequest_returnsNoContent() {
     assertThat(generateHeadPayload("no.thing")).isEmpty();
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
   @Test
-  public void testHeadRequestIllegalValue_returnsNoContent() {
+  void testHeadRequestIllegalValue_returnsNoContent() {
     assertThat(generateHeadPayload("IllegalArgumentException")).isEmpty();
     assertThat(response.getStatus()).isEqualTo(400);
   }
 
   @Test
-  public void testRdapServer_allowsAllCrossOriginRequests() {
+  void testRdapServer_allowsAllCrossOriginRequests() {
     generateActualJson("no.thing");
     assertThat(response.getHeaders().get(ACCESS_CONTROL_ALLOW_ORIGIN)).isEqualTo("*");
   }
 
   @Test
-  public void testMetrics_onSuccess() {
+  void testMetrics_onSuccess() {
     generateActualJson("no.thing");
     verify(rdapMetrics)
         .updateMetrics(
@@ -143,7 +140,7 @@ public class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTes
   }
 
   @Test
-  public void testMetrics_onError() {
+  void testMetrics_onError() {
     generateActualJson("IllegalArgumentException");
     verify(rdapMetrics)
         .updateMetrics(
@@ -162,7 +159,7 @@ public class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTes
   }
 
   @Test
-  public void testUnformatted() {
+  void testUnformatted() {
     action.requestPath = actionPath + "no.thing";
     action.requestMethod = GET;
     action.run();
@@ -172,7 +169,7 @@ public class RdapActionBaseTest extends RdapActionBaseTestCase<RdapActionBaseTes
   }
 
   @Test
-  public void testFormatted() {
+  void testFormatted() {
     action.requestPath = actionPath + "no.thing?formatOutput=true";
     action.requestMethod = GET;
     action.formatOutputParam = Optional.of(true);

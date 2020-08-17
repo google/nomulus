@@ -16,7 +16,7 @@ package google.registry.reporting.billing;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -35,23 +35,20 @@ import java.nio.charset.StandardCharsets;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.YearMonth;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link google.registry.reporting.billing.BillingEmailUtils}. */
-@RunWith(JUnit4.class)
-public class BillingEmailUtilsTest {
+class BillingEmailUtilsTest {
 
   private SendEmailService emailService;
   private BillingEmailUtils emailUtils;
   private GcsUtils gcsUtils;
   private ArgumentCaptor<EmailMessage> contentCaptor;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     emailService = mock(SendEmailService.class);
     gcsUtils = mock(GcsUtils.class);
     when(gcsUtils.openInputStream(new GcsFilename("test-bucket", "results/REG-INV-2017-10.csv")))
@@ -74,7 +71,7 @@ public class BillingEmailUtilsTest {
   }
 
   @Test
-  public void testSuccess_emailOverallInvoice() throws MessagingException {
+  void testSuccess_emailOverallInvoice() throws MessagingException {
     emailUtils.emailOverallInvoice();
 
     verify(emailService).sendEmail(contentCaptor.capture());
@@ -98,7 +95,7 @@ public class BillingEmailUtilsTest {
   }
 
   @Test
-  public void testFailure_emailsAlert() throws MessagingException {
+  void testFailure_emailsAlert() throws MessagingException {
     doThrow(new RuntimeException(new MessagingException("expected")))
         .doNothing()
         .when(emailService)
@@ -116,7 +113,7 @@ public class BillingEmailUtilsTest {
   }
 
   @Test
-  public void testSuccess_sendAlertEmail() throws MessagingException {
+  void testSuccess_sendAlertEmail() throws MessagingException {
     emailUtils.sendAlertEmail("Alert!");
     verify(emailService).sendEmail(contentCaptor.capture());
     validateAlertMessage(contentCaptor.getValue(), "Alert!");

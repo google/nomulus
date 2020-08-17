@@ -23,7 +23,7 @@ import static google.registry.export.UpdateSnapshotViewAction.UPDATE_SNAPSHOT_TA
 import static google.registry.export.UpdateSnapshotViewAction.UPDATE_SNAPSHOT_VIEWNAME_PARAM;
 import static google.registry.export.UpdateSnapshotViewAction.createViewUpdateTask;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -37,25 +37,21 @@ import com.google.api.services.bigquery.model.Table;
 import com.google.common.collect.Iterables;
 import google.registry.bigquery.CheckedBigquery;
 import google.registry.request.HttpException.InternalServerErrorException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 /** Unit tests for {@link UpdateSnapshotViewAction}. */
-@RunWith(JUnit4.class)
 public class UpdateSnapshotViewActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withTaskQueue()
-      .build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
+
   private final CheckedBigquery checkedBigquery = mock(CheckedBigquery.class);
   private final Bigquery bigquery = mock(Bigquery.class);
   private final Bigquery.Datasets bigqueryDatasets = mock(Bigquery.Datasets.class);
@@ -66,8 +62,8 @@ public class UpdateSnapshotViewActionTest {
 
   private UpdateSnapshotViewAction action;
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     when(checkedBigquery.ensureDataSetExists(anyString(), anyString())).thenReturn(bigquery);
     when(bigquery.datasets()).thenReturn(bigqueryDatasets);
     when(bigqueryDatasets.insert(anyString(), any(Dataset.class)))
@@ -86,7 +82,7 @@ public class UpdateSnapshotViewActionTest {
   }
 
   @Test
-  public void testSuccess_createViewUpdateTask() {
+  void testSuccess_createViewUpdateTask() {
     getQueue(QUEUE)
         .add(
             createViewUpdateTask(
@@ -103,7 +99,7 @@ public class UpdateSnapshotViewActionTest {
   }
 
   @Test
-  public void testSuccess_doPost() throws Exception {
+  void testSuccess_doPost() throws Exception {
     action.run();
 
     InOrder factoryOrder = inOrder(checkedBigquery);
@@ -126,7 +122,7 @@ public class UpdateSnapshotViewActionTest {
   }
 
   @Test
-  public void testFailure_bigqueryConnectionThrowsError() throws Exception {
+  void testFailure_bigqueryConnectionThrowsError() throws Exception {
     when(bigqueryTables.update(anyString(), anyString(), anyString(), any(Table.class)))
         .thenThrow(new IOException("I'm sorry Dave, I can't let you do that"));
     InternalServerErrorException thrown =

@@ -15,7 +15,7 @@
 package google.registry.beam.invoicing;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
@@ -29,14 +29,11 @@ import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link BillingEvent} */
-@RunWith(JUnit4.class)
-public class BillingEventTest {
+class BillingEventTest {
 
   private static final String BILLING_EVENT_SCHEMA =
       "{\"name\": \"BillingEvent\", "
@@ -60,8 +57,8 @@ public class BillingEventTest {
 
   private SchemaAndRecord schemaAndRecord;
 
-  @Before
-  public void initializeRecord() {
+  @BeforeEach
+  void beforeEach() {
     // Create a record with a given JSON schema.
     schemaAndRecord = new SchemaAndRecord(createRecord(), null);
   }
@@ -86,7 +83,7 @@ public class BillingEventTest {
   }
 
   @Test
-  public void testParseBillingEventFromRecord_success() {
+  void testParseBillingEventFromRecord_success() {
     BillingEvent event = BillingEvent.parseFromRecord(schemaAndRecord);
     assertThat(event.id()).isEqualTo(1);
     assertThat(event.billingTime())
@@ -107,7 +104,7 @@ public class BillingEventTest {
   }
 
   @Test
-  public void testParseBillingEventFromRecord_sunriseCreate_reducedPrice_success() {
+  void testParseBillingEventFromRecord_sunriseCreate_reducedPrice_success() {
     schemaAndRecord.getRecord().put("flags", "SUNRISE");
     BillingEvent event = BillingEvent.parseFromRecord(schemaAndRecord);
     assertThat(event.amount()).isEqualTo(17.43);
@@ -115,7 +112,7 @@ public class BillingEventTest {
   }
 
   @Test
-  public void testParseBillingEventFromRecord_anchorTenant_zeroPrice_success() {
+  void testParseBillingEventFromRecord_anchorTenant_zeroPrice_success() {
     schemaAndRecord.getRecord().put("flags", "SUNRISE ANCHOR_TENANT");
     BillingEvent event = BillingEvent.parseFromRecord(schemaAndRecord);
     assertThat(event.amount()).isZero();
@@ -123,27 +120,39 @@ public class BillingEventTest {
   }
 
   @Test
-  public void testParseBillingEventFromRecord_nullValue_throwsException() {
+  void testParseBillingEventFromRecord_nullValue_throwsException() {
     schemaAndRecord.getRecord().put("tld", null);
     assertThrows(IllegalStateException.class, () -> BillingEvent.parseFromRecord(schemaAndRecord));
   }
 
   @Test
-  public void testConvertBillingEvent_toCsv() {
+  void testConvertBillingEvent_toCsv() {
     BillingEvent event = BillingEvent.parseFromRecord(schemaAndRecord);
     assertThat(event.toCsv())
-        .isEqualTo("1,2017-10-24 09:06:03 UTC,2017-01-19 23:59:43 UTC,myRegistrar,"
-            + "12345-CRRHELLO,test,RENEW,example.test,123456,5,USD,20.50,AUTO_RENEW");
+        .isEqualTo(
+            "1,2017-10-24 09:06:03 UTC,2017-01-19 23:59:43 UTC,myRegistrar,"
+                + "12345-CRRHELLO,,test,RENEW,example.test,123456,5,USD,20.50,AUTO_RENEW");
   }
 
   @Test
-  public void testGenerateBillingEventFilename() {
+  void testConvertBillingEvent_nonNullPoNumber_toCsv() {
+    GenericRecord record = createRecord();
+    record.put("poNumber", "905610");
+    BillingEvent event = BillingEvent.parseFromRecord(new SchemaAndRecord(record, null));
+    assertThat(event.toCsv())
+        .isEqualTo(
+            "1,2017-10-24 09:06:03 UTC,2017-01-19 23:59:43 UTC,myRegistrar,"
+                + "12345-CRRHELLO,905610,test,RENEW,example.test,123456,5,USD,20.50,AUTO_RENEW");
+  }
+
+  @Test
+  void testGenerateBillingEventFilename() {
     BillingEvent event = BillingEvent.parseFromRecord(schemaAndRecord);
     assertThat(event.toFilename("2017-10")).isEqualTo("invoice_details_2017-10_myRegistrar_test");
   }
 
   @Test
-  public void testGetInvoiceGroupingKey_fromBillingEvent() {
+  void testGetInvoiceGroupingKey_fromBillingEvent() {
     BillingEvent event = BillingEvent.parseFromRecord(schemaAndRecord);
     InvoiceGroupingKey invoiceKey = event.getInvoiceGroupingKey();
     assertThat(invoiceKey.startDate()).isEqualTo("2017-10-01");
@@ -157,7 +166,7 @@ public class BillingEventTest {
   }
 
   @Test
-  public void test_nonNullPoNumber() {
+  void test_nonNullPoNumber() {
     GenericRecord record = createRecord();
     record.put("poNumber", "905610");
     BillingEvent event = BillingEvent.parseFromRecord(new SchemaAndRecord(record, null));
@@ -167,7 +176,7 @@ public class BillingEventTest {
   }
 
   @Test
-  public void testConvertInvoiceGroupingKey_toCsv() {
+  void testConvertInvoiceGroupingKey_toCsv() {
     BillingEvent event = BillingEvent.parseFromRecord(schemaAndRecord);
     InvoiceGroupingKey invoiceKey = event.getInvoiceGroupingKey();
     assertThat(invoiceKey.toCsv(3L))
@@ -177,7 +186,7 @@ public class BillingEventTest {
   }
 
   @Test
-  public void testInvoiceGroupingKeyCoder_deterministicSerialization() throws IOException {
+  void testInvoiceGroupingKeyCoder_deterministicSerialization() throws IOException {
     InvoiceGroupingKey invoiceKey =
         BillingEvent.parseFromRecord(schemaAndRecord).getInvoiceGroupingKey();
     InvoiceGroupingKeyCoder coder = new InvoiceGroupingKeyCoder();
@@ -188,7 +197,7 @@ public class BillingEventTest {
   }
 
   @Test
-  public void testGetDetailReportHeader() {
+  void testGetDetailReportHeader() {
     assertThat(BillingEvent.getHeader())
         .isEqualTo(
             "id,billingTime,eventTime,registrarId,billingId,poNumber,tld,action,"
@@ -196,7 +205,7 @@ public class BillingEventTest {
   }
 
   @Test
-  public void testGetOverallInvoiceHeader() {
+  void testGetOverallInvoiceHeader() {
     assertThat(InvoiceGroupingKey.invoiceHeader())
         .isEqualTo("StartDate,EndDate,ProductAccountKey,Amount,AmountCurrency,BillingProductCode,"
             + "SalesChannel,LineItemType,UsageGroupingKey,Quantity,Description,UnitPrice,"

@@ -17,7 +17,7 @@ package google.registry.model.ofy;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.initOfy;
 import static google.registry.testing.DatastoreHelper.newContactResource;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
@@ -28,23 +28,20 @@ import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.contact.ContactResource;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Tests for our replacement Objectify filter. */
-@RunWith(JUnit4.class)
-public class OfyFilterTest {
+class OfyFilterTest {
 
   private LocalServiceTestHelper helper;
   private ObjectifyFactory factory;
 
   // We can't use AppEngineRule, because it triggers the precise behavior that we are testing.
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig()).setUp();
     // Clear out the factory so that it requires re-registration on each test method.
     // Otherwise, static registration of types in one method would persist across methods.
@@ -53,8 +50,8 @@ public class OfyFilterTest {
     ObjectifyService.setFactory(new ObjectifyFactory(false));
   }
 
-  @After
-  public void after() {
+  @AfterEach
+  void afterEach() {
     ObjectifyFilter.complete();
     ObjectifyService.setFactory(factory);
     ObjectifyFilter.complete();
@@ -65,12 +62,12 @@ public class OfyFilterTest {
    * Key.create looks up kind metadata for the class of the object it is given. If this happens
    * before the first reference to ObjectifyService, which statically triggers type registrations,
    * then the create will fail. Note that this is only a problem if the type in question doesn't
-   * call ObjectifyService.allocateId() inside its own builder or create method, since if it
-   * does that would trigger the statics as well. In this example, Registrar has a string id, so
-   * the bug occurs, were it not for OfyFilter.
+   * call ObjectifyService.allocateId() inside its own builder or create method, since if it does
+   * that would trigger the statics as well. In this example, Registrar has a string id, so the bug
+   * occurs, were it not for OfyFilter.
    */
   @Test
-  public void testFilterRegistersTypes() {
+  void testFilterRegistersTypes() {
     UnregisteredEntity entity = new UnregisteredEntity(5L);
     IllegalStateException e = assertThrows(IllegalStateException.class, () -> Key.create(entity));
     assertThat(e)
@@ -82,7 +79,7 @@ public class OfyFilterTest {
 
   /** The filter should register all types for us. */
   @Test
-  public void testKeyCreateAfterFilter() {
+  void testKeyCreateAfterFilter() {
     new OfyFilter().init(null);
     ContactResource contact = newContactResource("contact1234");
     Key.create(contact);

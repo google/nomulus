@@ -16,21 +16,21 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.keyring.api.Keyring;
 import google.registry.rde.Ghostryde;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link GhostrydeCommand}. */
-public class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
+class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
 
   private static final byte[] SONG_BY_CHRISTINA_ROSSETTI = (""
       + "When I am dead, my dearest,       \n"
@@ -51,50 +51,51 @@ public class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
       + "Haply I may remember,             \n"
       + "  And haply may forget.           \n").getBytes(UTF_8);
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
-  @Rule
-  public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   private Keyring keyring;
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     keyring = new FakeKeyringModule().get();
     command.rdeStagingDecryptionKey = keyring::getRdeStagingDecryptionKey;
     command.rdeStagingEncryptionKey = keyring::getRdeStagingEncryptionKey;
   }
 
   @Test
-  public void testParameters_cantSpecifyBothEncryptAndDecrypt() {
+  void testParameters_cantSpecifyBothEncryptAndDecrypt() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("--encrypt", "--decrypt"));
     assertThat(thrown).hasMessageThat().isEqualTo("Please specify either --encrypt or --decrypt");
   }
 
   @Test
-  public void testParameters_mustSpecifyOneOfEncryptOrDecrypt() {
+  void testParameters_mustSpecifyOneOfEncryptOrDecrypt() throws Exception {
+    Path inputFile = Files.createFile(tmpDir.resolve("foo.dat"));
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommand("--input=" + tmpDir.newFile(), "--output=" + tmpDir.newFile()));
+            () -> runCommand("--input=" + inputFile.toString(), "--output=bar.dat"));
     assertThat(thrown).hasMessageThat().isEqualTo("Please specify either --encrypt or --decrypt");
   }
 
   @Test
-  public void testEncrypt_outputPathIsRequired() {
+  void testEncrypt_outputPathIsRequired() throws Exception {
+    Path inputFile = Files.createFile(tmpDir.resolve("foo.dat"));
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommand("--encrypt", "--input=" + tmpDir.newFile()));
+            () -> runCommand("--encrypt", "--input=" + inputFile.toString()));
     assertThat(thrown).hasMessageThat().isEqualTo("--output path is required in --encrypt mode");
   }
 
   @Test
-  public void testEncrypt_outputIsAFile_writesToFile() throws Exception {
-    Path inFile = tmpDir.newFile("atrain.txt").toPath();
-    Path outFile = tmpDir.newFile().toPath();
+  void testEncrypt_outputIsAFile_writesToFile() throws Exception {
+    Path inFile = tmpDir.resolve("atrain.txt");
+    Path outFile = tmpDir.resolve("out.dat");
     Files.write(inFile, SONG_BY_CHRISTINA_ROSSETTI);
     runCommand("--encrypt", "--input=" + inFile, "--output=" + outFile);
     byte[] decoded =
@@ -103,24 +104,23 @@ public class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
   }
 
   @Test
-  public void testEncrypt_outputIsADirectory_appendsGhostrydeExtension() throws Exception {
-    Path inFile = tmpDir.newFile("atrain.txt").toPath();
-    Path outDir = tmpDir.newFolder().toPath();
+  void testEncrypt_outputIsADirectory_appendsGhostrydeExtension() throws Exception {
+    Path inFile = tmpDir.resolve("atrain.txt");
     Files.write(inFile, SONG_BY_CHRISTINA_ROSSETTI);
-    runCommand("--encrypt", "--input=" + inFile, "--output=" + outDir);
-    Path lenOutFile = outDir.resolve("atrain.txt.length");
+    runCommand("--encrypt", "--input=" + inFile, "--output=" + tmpDir.toString());
+    Path lenOutFile = tmpDir.resolve("atrain.txt.length");
     assertThat(Ghostryde.readLength(Files.newInputStream(lenOutFile)))
         .isEqualTo(SONG_BY_CHRISTINA_ROSSETTI.length);
-    Path outFile = outDir.resolve("atrain.txt.ghostryde");
+    Path outFile = tmpDir.resolve("atrain.txt.ghostryde");
     byte[] decoded =
         Ghostryde.decode(Files.readAllBytes(outFile), keyring.getRdeStagingDecryptionKey());
     assertThat(decoded).isEqualTo(SONG_BY_CHRISTINA_ROSSETTI);
   }
 
   @Test
-  public void testDecrypt_outputIsAFile_writesToFile() throws Exception {
-    Path inFile = tmpDir.newFile().toPath();
-    Path outFile = tmpDir.newFile().toPath();
+  void testDecrypt_outputIsAFile_writesToFile() throws Exception {
+    Path inFile = tmpDir.resolve("atrain.txt");
+    Path outFile = tmpDir.resolve("out.dat");
     Files.write(
         inFile, Ghostryde.encode(SONG_BY_CHRISTINA_ROSSETTI, keyring.getRdeStagingEncryptionKey()));
     runCommand("--decrypt", "--input=" + inFile, "--output=" + outFile);
@@ -128,19 +128,18 @@ public class GhostrydeCommandTest extends CommandTestCase<GhostrydeCommand> {
   }
 
   @Test
-  public void testDecrypt_outputIsADirectory_AppendsDecryptExtension() throws Exception {
-    Path inFile = tmpDir.newFolder().toPath().resolve("atrain.ghostryde");
-    Path outDir = tmpDir.newFolder().toPath();
+  void testDecrypt_outputIsADirectory_AppendsDecryptExtension() throws Exception {
+    Path inFile = tmpDir.resolve("atrain.ghostryde");
     Files.write(
         inFile, Ghostryde.encode(SONG_BY_CHRISTINA_ROSSETTI, keyring.getRdeStagingEncryptionKey()));
-    runCommand("--decrypt", "--input=" + inFile, "--output=" + outDir);
-    Path outFile = outDir.resolve("atrain.ghostryde.decrypt");
+    runCommand("--decrypt", "--input=" + inFile, "--output=" + tmpDir.toString());
+    Path outFile = tmpDir.resolve("atrain.ghostryde.decrypt");
     assertThat(Files.readAllBytes(outFile)).isEqualTo(SONG_BY_CHRISTINA_ROSSETTI);
   }
 
   @Test
-  public void testDecrypt_outputIsStdOut() throws Exception {
-    Path inFile = tmpDir.newFolder().toPath().resolve("atrain.ghostryde");
+  void testDecrypt_outputIsStdOut() throws Exception {
+    Path inFile = tmpDir.resolve("atrain.ghostryde");
     Files.write(
         inFile, Ghostryde.encode(SONG_BY_CHRISTINA_ROSSETTI, keyring.getRdeStagingEncryptionKey()));
     runCommand("--decrypt", "--input=" + inFile);

@@ -30,9 +30,8 @@ interface ScreenDiffer {
    * @param element the element on the page to be compared
    * @param imageKey a unique name such that by prepending the calling class name and method name in
    *     the format of ClassName_MethodName_<imageKey> will uniquely identify golden image.
-   * @param attempt the attempt number of the test
    */
-  void diffElement(WebElement element, String imageKey, int attempt);
+  void diffElement(WebElement element, String imageKey);
 
   /**
    * Checks that the screenshot matches the golden image by pixel comparison. {@link
@@ -44,9 +43,8 @@ interface ScreenDiffer {
    *
    * @param imageKey a unique name such that by prepending the calling class name and method name in
    *     the format of ClassName_MethodName_<imageKey> will uniquely identify golden image.
-   * @param attempt the attempt number of the test
    */
-  void diffPage(String imageKey, int attempt);
+  void diffPage(String imageKey);
 
   /** Asserts that all diffs up to this point have PASSED. */
   void verifyAndQuit();

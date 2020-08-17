@@ -22,20 +22,35 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 /**
- * Sets up a placeholder {@link Environment} on a non-AppEngine platform so that Datastore Entities
- * can be deserialized. See {@code DatastoreEntityExtension} in test source for more information.
+ * Sets up a fake {@link Environment} so that the following operations can be performed without the
+ * Datastore service:
+ *
+ * <ul>
+ *   <li>Create Objectify {@code Keys}.
+ *   <li>Instantiate Objectify objects.
+ *   <li>Convert Datastore {@code Entities} to their corresponding Objectify objects.
+ * </ul>
+ *
+ * <p>User has the option to specify their desired {@code appId} string, which forms part of an
+ * Objectify {@code Key} and is included in the equality check. This feature makes it easy to
+ * compare a migrated object in SQL with the original in Objectify.
+ *
+ * <p>Note that conversion from Objectify objects to Datastore {@code Entities} still requires the
+ * Datastore service.
  */
 public class AppEngineEnvironment implements Closeable {
-
-  private static final Environment PLACEHOLDER_ENV = createAppEngineEnvironment();
 
   private boolean isPlaceHolderNeeded;
 
   public AppEngineEnvironment() {
+    this("PlaceholderAppId");
+  }
+
+  public AppEngineEnvironment(String appId) {
     isPlaceHolderNeeded = ApiProxy.getCurrentEnvironment() == null;
     // isPlaceHolderNeeded may be true when we are invoked in a test with AppEngineRule.
     if (isPlaceHolderNeeded) {
-      ApiProxy.setEnvironmentForCurrentThread(PLACEHOLDER_ENV);
+      ApiProxy.setEnvironmentForCurrentThread(createAppEngineEnvironment(appId));
     }
   }
 
@@ -47,7 +62,7 @@ public class AppEngineEnvironment implements Closeable {
   }
 
   /** Returns a placeholder {@link Environment} that can return hardcoded AppId and Attributes. */
-  private static Environment createAppEngineEnvironment() {
+  private static Environment createAppEngineEnvironment(String appId) {
     return (Environment)
         Proxy.newProxyInstance(
             Environment.class.getClassLoader(),
@@ -55,7 +70,7 @@ public class AppEngineEnvironment implements Closeable {
             (Object proxy, Method method, Object[] args) -> {
               switch (method.getName()) {
                 case "getAppId":
-                  return "PlaceholderAppId";
+                  return appId;
                 case "getAttributes":
                   return ImmutableMap.<String, Object>of();
                 default:

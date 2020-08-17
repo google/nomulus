@@ -20,7 +20,7 @@ import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSet;
@@ -29,20 +29,20 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UniformRapidSuspensionCommand}. */
-public class UniformRapidSuspensionCommandTest
+class UniformRapidSuspensionCommandTest
     extends EppToolCommandTestCase<UniformRapidSuspensionCommand> {
 
-  HostResource ns1;
-  HostResource ns2;
-  HostResource urs1;
-  HostResource urs2;
+  private HostResource ns1;
+  private HostResource ns2;
+  private HostResource urs1;
+  private HostResource urs2;
 
-  @Before
-  public void initResources() {
+  @BeforeEach
+  void beforeEach() {
     // Since the command's history client ID must be CharlestonRoad, resave TheRegistrar that way.
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setClientId("CharlestonRoad").build());
@@ -66,12 +66,12 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testCommand_addsLocksReplacesHostsAndDsDataPrintsUndo() throws Exception {
+  void testCommand_addsLocksReplacesHostsAndDsDataPrintsUndo() throws Exception {
     persistDomainWithHosts(ns1, ns2);
     runCommandForced(
         "--domain_name=evil.tld",
         "--hosts=urs1.example.com,urs2.example.com",
-        "--dsdata={\"keyTag\":1,\"alg\":1,\"digestType\":1,\"digest\":\"abc\"}");
+        "--dsdata=1 1 1 abcd");
     eppVerifier
         .expectClientId("CharlestonRoad")
         .expectSuperuser()
@@ -79,14 +79,13 @@ public class UniformRapidSuspensionCommandTest
     assertInStdout("uniform_rapid_suspension --undo");
     assertInStdout("--domain_name evil.tld");
     assertInStdout("--hosts ns1.example.com,ns2.example.com");
-    assertInStdout("--dsdata "
-        + "{\"keyTag\":1,\"algorithm\":2,\"digestType\":3,\"digest\":\"DEAD\"},"
-        + "{\"keyTag\":4,\"algorithm\":5,\"digestType\":6,\"digest\":\"BEEF\"}");
+    assertInStdout("--dsdata 1 2 3 DEAD,4 5 6 BEEF");
     assertNotInStdout("--locks_to_preserve");
+    assertNotInStdout("--restore_client_hold");
   }
 
   @Test
-  public void testCommand_respectsExistingHost() throws Exception {
+  void testCommand_respectsExistingHost() throws Exception {
     persistDomainWithHosts(urs2, ns1);
     runCommandForced("--domain_name=evil.tld", "--hosts=urs1.example.com,urs2.example.com");
     eppVerifier
@@ -100,7 +99,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testCommand_generatesUndoForUndelegatedDomain() throws Exception {
+  void testCommand_generatesUndoForUndelegatedDomain() throws Exception {
     persistActiveDomain("evil.tld");
     runCommandForced("--domain_name=evil.tld", "--hosts=urs1.example.com,urs2.example.com");
     eppVerifier.verifySentAny();
@@ -110,7 +109,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testCommand_generatesUndoWithLocksToPreserve() throws Exception {
+  void testCommand_generatesUndoWithLocksToPreserve() throws Exception {
     persistResource(
         newDomainBase("evil.tld").asBuilder()
           .addStatusValue(StatusValue.SERVER_DELETE_PROHIBITED)
@@ -123,7 +122,30 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testUndo_removesLocksReplacesHostsAndDsData() throws Exception {
+  void testCommand_removeClientHold() throws Exception {
+    persistResource(
+        newDomainBase("evil.tld")
+            .asBuilder()
+            .addStatusValue(StatusValue.CLIENT_HOLD)
+            .addNameserver(ns1.createVKey())
+            .addNameserver(ns2.createVKey())
+            .build());
+    runCommandForced(
+        "--domain_name=evil.tld",
+        "--hosts=urs1.example.com,urs2.example.com",
+        "--dsdata=1 1 1 abcd");
+    eppVerifier
+        .expectClientId("CharlestonRoad")
+        .expectSuperuser()
+        .verifySent("uniform_rapid_suspension_with_client_hold.xml");
+    assertInStdout("uniform_rapid_suspension --undo");
+    assertInStdout("--domain_name evil.tld");
+    assertInStdout("--hosts ns1.example.com,ns2.example.com");
+    assertInStdout("--restore_client_hold");
+  }
+
+  @Test
+  void testUndo_removesLocksReplacesHostsAndDsData() throws Exception {
     persistDomainWithHosts(urs1, urs2);
     runCommandForced(
         "--domain_name=evil.tld", "--undo", "--hosts=ns1.example.com,ns2.example.com");
@@ -135,7 +157,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testUndo_respectsLocksToPreserveFlag() throws Exception {
+  void testUndo_respectsLocksToPreserveFlag() throws Exception {
     persistDomainWithHosts(urs1, urs2);
     runCommandForced(
         "--domain_name=evil.tld",
@@ -150,7 +172,22 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testFailure_locksToPreserveWithoutUndo() {
+  void testUndo_restoresClientHolds() throws Exception {
+    persistDomainWithHosts(urs1, urs2);
+    runCommandForced(
+        "--domain_name=evil.tld",
+        "--undo",
+        "--hosts=ns1.example.com,ns2.example.com",
+        "--restore_client_hold");
+    eppVerifier
+        .expectClientId("CharlestonRoad")
+        .expectSuperuser()
+        .verifySent("uniform_rapid_suspension_undo_client_hold.xml");
+    assertNotInStdout("--undo"); // Undo shouldn't print a new undo command.
+  }
+
+  @Test
+  void testFailure_locksToPreserveWithoutUndo() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
         assertThrows(
@@ -162,7 +199,7 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testFailure_domainNameRequired() {
+  void testFailure_domainNameRequired() {
     persistActiveDomain("evil.tld");
     ParameterException thrown =
         assertThrows(
@@ -172,38 +209,34 @@ public class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  public void testFailure_extraFieldInDsData() {
+  void testFailure_extraFieldInDsData() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () ->
-                runCommandForced(
-                    "--domain_name=evil.tld",
-                    "--dsdata={\"keyTag\":1,\"alg\":1,\"digestType\":1,\"digest\":\"abc\",\"foo\":1}"));
-    assertThat(thrown).hasMessageThat().contains("Incorrect fields on --dsdata JSON");
+            () -> runCommandForced("--domain_name=evil.tld", "--dsdata=1 1 1 abc 1"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("dsRecord 1 1 1 abc 1 should have 4 parts, but has 5");
   }
 
   @Test
-  public void testFailure_missingFieldInDsData() {
+  void testFailure_missingFieldInDsData() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () ->
-                runCommandForced(
-                    "--domain_name=evil.tld",
-                    "--dsdata={\"keyTag\":1,\"alg\":1,\"digestType\":1}"));
-    assertThat(thrown).hasMessageThat().contains("Incorrect fields on --dsdata JSON");
+            () -> runCommandForced("--domain_name=evil.tld", "--dsdata=1 1 1"));
+    assertThat(thrown).hasMessageThat().contains("dsRecord 1 1 1 should have 4 parts, but has 3");
   }
 
   @Test
-  public void testFailure_malformedDsData() {
+  void testFailure_malformedDsData() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommandForced("--domain_name=evil.tld", "--dsdata=[1,2,3]"));
-    assertThat(thrown).hasMessageThat().contains("Invalid --dsdata JSON");
+            () -> runCommandForced("--domain_name=evil.tld", "--dsdata=1,2,3"));
+    assertThat(thrown).hasMessageThat().contains("dsRecord 1 should have 4 parts, but has 1");
   }
 }

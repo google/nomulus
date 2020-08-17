@@ -22,34 +22,34 @@ import com.googlecode.objectify.Key;
 import google.registry.keyring.api.KeySerializer;
 import google.registry.model.server.KmsSecret;
 import google.registry.model.server.KmsSecretRevision;
-import google.registry.testing.AppEngineRule;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.AppEngineExtension;
+import google.registry.testing.BouncyCastleProviderExtension;
 import java.io.IOException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
+/** Unit tests for {@link KmsUpdater} */
 public class KmsUpdaterTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @Rule public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   private KmsUpdater updater;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     updater = new KmsUpdater(new FakeKmsConnection());
   }
 
   @Test
-  public void test_setMultipleSecrets() {
+  void test_setMultipleSecrets() {
     updater
         .setMarksdbDnlLoginAndPassword("value1")
         .setIcannReportingPassword("value2")
@@ -69,7 +69,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setBrdaReceiverKey() throws Exception {
+  void test_setBrdaReceiverKey() throws Exception {
     updater.setBrdaReceiverPublicKey(KmsTestHelper.getPublicKey()).update();
 
     verifySecretAndSecretRevisionWritten(
@@ -79,7 +79,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setBrdaSigningKey() throws Exception {
+  void test_setBrdaSigningKey() throws Exception {
     updater.setBrdaSigningKey(KmsTestHelper.getKeyPair()).update();
 
     verifySecretAndSecretRevisionWritten(
@@ -93,7 +93,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setCloudSqlPassword() {
+  void test_setCloudSqlPassword() {
     updater.setCloudSqlPassword("value1").update();
 
     verifySecretAndSecretRevisionWritten(
@@ -101,7 +101,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setToolsCloudSqlPassword() {
+  void test_setToolsCloudSqlPassword() {
     updater.setToolsCloudSqlPassword("value1").update();
 
     verifySecretAndSecretRevisionWritten(
@@ -111,7 +111,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setIcannReportingPassword() {
+  void test_setIcannReportingPassword() {
     updater.setIcannReportingPassword("value1").update();
 
     verifySecretAndSecretRevisionWritten(
@@ -121,7 +121,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setJsonCredential() {
+  void test_setJsonCredential() {
     updater.setJsonCredential("value1").update();
 
     verifySecretAndSecretRevisionWritten(
@@ -129,7 +129,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setMarksdbDnlLoginAndPassword() {
+  void test_setMarksdbDnlLoginAndPassword() {
     updater.setMarksdbDnlLoginAndPassword("value1").update();
 
     verifySecretAndSecretRevisionWritten(
@@ -137,7 +137,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setMarksdbLordnPassword() {
+  void test_setMarksdbLordnPassword() {
     updater.setMarksdbLordnPassword("value1").update();
 
     verifySecretAndSecretRevisionWritten(
@@ -147,7 +147,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setMarksdbSmdrlLoginAndPassword() {
+  void test_setMarksdbSmdrlLoginAndPassword() {
     updater.setMarksdbSmdrlLoginAndPassword("value1").update();
 
     verifySecretAndSecretRevisionWritten(
@@ -155,7 +155,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setRdeReceiverKey() throws Exception {
+  void test_setRdeReceiverKey() throws Exception {
     updater.setRdeReceiverPublicKey(KmsTestHelper.getPublicKey()).update();
 
     verifySecretAndSecretRevisionWritten(
@@ -166,7 +166,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setRdeSigningKey() throws Exception {
+  void test_setRdeSigningKey() throws Exception {
     updater.setRdeSigningKey(KmsTestHelper.getKeyPair()).update();
 
     verifySecretAndSecretRevisionWritten(
@@ -180,7 +180,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setRdeSshClientPrivateKey() {
+  void test_setRdeSshClientPrivateKey() {
     updater.setRdeSshClientPrivateKey("value1").update();
 
     verifySecretAndSecretRevisionWritten(
@@ -190,7 +190,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setRdeSshClientPublicKey() {
+  void test_setRdeSshClientPublicKey() {
     updater.setRdeSshClientPublicKey("value1").update();
 
     verifySecretAndSecretRevisionWritten(
@@ -200,7 +200,7 @@ public class KmsUpdaterTest {
   }
 
   @Test
-  public void test_setRdeStagingKey() throws Exception {
+  void test_setRdeStagingKey() throws Exception {
     updater.setRdeStagingKey(KmsTestHelper.getKeyPair()).update();
 
     verifySecretAndSecretRevisionWritten(

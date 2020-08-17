@@ -23,16 +23,20 @@ import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
+import javax.persistence.Column;
+import javax.persistence.MappedSuperclass;
 
 /**
  * Represents a label entry parsed from a line in a reserved/premium list txt file.
  *
  * @param <T> The type of the value stored for the domain label, e.g. {@link ReservationType}.
  */
+@MappedSuperclass
 public abstract class DomainLabelEntry<T extends Comparable<?>, D extends DomainLabelEntry<?, ?>>
     extends ImmutableObject implements Comparable<D> {
 
   @Id
+  @Column(name = "domain_label", insertable = false, updatable = false)
   String label;
 
   String comment;

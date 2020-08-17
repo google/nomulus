@@ -19,28 +19,25 @@ import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 
 import com.google.common.base.Joiner;
 import google.registry.model.ofy.CommitLogBucket;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CommitLogFanoutAction}. */
-@RunWith(JUnit4.class)
-public class CommitLogFanoutActionTest {
+class CommitLogFanoutActionTest {
 
   private static final String ENDPOINT = "/the/servlet";
   private static final String QUEUE = "the-queue";
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  @RegisterExtension
+  final AppEngineExtension appEngineRule =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withTaskQueue(
               Joiner.on('\n')
@@ -55,7 +52,7 @@ public class CommitLogFanoutActionTest {
           .build();
 
   @Test
-  public void testSuccess() {
+  void testSuccess() {
     CommitLogFanoutAction action = new CommitLogFanoutAction();
     action.taskQueueUtils = new TaskQueueUtils(new Retrier(null, 1));
     action.endpoint = ENDPOINT;

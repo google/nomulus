@@ -18,22 +18,20 @@ import static org.joda.time.DateTimeZone.UTC;
 import static org.joda.time.format.ISODateTimeFormat.dateTimeNoMillis;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Test flows without login. */
-@RunWith(JUnit4.class)
-public class EppLoggedOutTest extends EppTestCase {
+class EppLoggedOutTest extends EppTestCase {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testHello() throws Exception {
+  void testHello() throws Exception {
     DateTime now = DateTime.now(UTC);
     assertThatCommand("hello.xml", null)
         .atTime(now)
@@ -41,7 +39,7 @@ public class EppLoggedOutTest extends EppTestCase {
   }
 
   @Test
-  public void testSyntaxError() throws Exception {
+  void testSyntaxError() throws Exception {
     assertThatCommand("syntax_error.xml")
         .hasResponse(
             "response_error_no_cltrid.xml",

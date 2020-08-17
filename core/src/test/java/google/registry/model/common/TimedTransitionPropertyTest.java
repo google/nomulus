@@ -19,21 +19,18 @@ import static google.registry.model.common.TimedTransitionProperty.forMapify;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSortedMap;
 import java.util.Map;
 import java.util.Set;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TimedTransitionProperty}. */
-@RunWith(JUnit4.class)
-public class TimedTransitionPropertyTest {
+class TimedTransitionPropertyTest {
   private static final DateTime A_LONG_TIME_AGO = new DateTime(Long.MIN_VALUE, UTC);
 
   private static final DateTime DATE_1 = DateTime.parse("2001-01-01T00:00:00.0Z");
@@ -64,15 +61,15 @@ public class TimedTransitionPropertyTest {
       DATE_2, "2",
       DATE_3, "3");
 
-  TimedTransitionProperty<String, StringTimedTransition> timedString;
+  private TimedTransitionProperty<String, StringTimedTransition> timedString;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void init() {
     timedString = TimedTransitionProperty.fromValueMap(values, StringTimedTransition.class);
   }
 
   @Test
-  public void testSuccess_toValueMap() {
+  void testSuccess_toValueMap() {
     assertThat(timedString.toValueMap()).isEqualTo(values);
   }
 
@@ -94,12 +91,12 @@ public class TimedTransitionPropertyTest {
   }
 
   @Test
-  public void testSuccess_getValueAtTime() {
+  void testSuccess_getValueAtTime() {
     testGetValueAtTime(timedString);
   }
 
   @Test
-  public void testSuccess_getNextTransitionAfter() {
+  void testSuccess_getNextTransitionAfter() {
     assertThat(timedString.getNextTransitionAfter(A_LONG_TIME_AGO)).isEqualTo(DATE_1);
     assertThat(timedString.getNextTransitionAfter(START_OF_TIME.plusMillis(1))).isEqualTo(DATE_1);
     assertThat(timedString.getNextTransitionAfter(DATE_1.minusMillis(1))).isEqualTo(DATE_1);
@@ -110,7 +107,7 @@ public class TimedTransitionPropertyTest {
   }
 
   @Test
-  public void testSuccess_simulatedLoad() {
+  void testSuccess_simulatedLoad() {
     // Just for testing, don't extract transitions from a TimedTransitionProperty in real code.
     Set<Map.Entry<DateTime, StringTimedTransition>> transitions = timedString.entrySet();
     timedString = forMapify("0", StringTimedTransition.class);
@@ -124,7 +121,7 @@ public class TimedTransitionPropertyTest {
   }
 
   @Test
-  public void testFailure_valueMapNotChronologicallyOrdered() {
+  void testFailure_valueMapNotChronologicallyOrdered() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -134,7 +131,7 @@ public class TimedTransitionPropertyTest {
   }
 
   @Test
-  public void testFailure_transitionTimeBeforeStartOfTime() {
+  void testFailure_transitionTimeBeforeStartOfTime() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -143,7 +140,7 @@ public class TimedTransitionPropertyTest {
   }
 
   @Test
-  public void testFailure_noValues() {
+  void testFailure_noValues() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -152,7 +149,7 @@ public class TimedTransitionPropertyTest {
   }
 
   @Test
-  public void testFailure_noValueAtStartOfTime() {
+  void testFailure_noValueAtStartOfTime() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -161,7 +158,7 @@ public class TimedTransitionPropertyTest {
   }
 
   @Test
-  public void testFailure_noValuesAfterSimulatedEmptyLoad() {
+  void testFailure_noValuesAfterSimulatedEmptyLoad() {
     timedString = forMapify("0", StringTimedTransition.class);
     // Simulate a load from Datastore by clearing, but don't insert any transitions.
     timedString.clear();
@@ -169,7 +166,7 @@ public class TimedTransitionPropertyTest {
   }
 
   @Test
-  public void testFailure_noValueAtStartOfTimeAfterSimulatedLoad() {
+  void testFailure_noValueAtStartOfTimeAfterSimulatedLoad() {
     // Just for testing, don't extract transitions from a TimedTransitionProperty in real code.
     StringTimedTransition transition1 = timedString.get(DATE_1);
     timedString = forMapify("0", StringTimedTransition.class);

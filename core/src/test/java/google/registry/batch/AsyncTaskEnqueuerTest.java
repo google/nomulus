@@ -31,7 +31,7 @@ import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardHours;
 import static org.joda.time.Duration.standardSeconds;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSortedSet;
@@ -39,11 +39,10 @@ import com.google.common.flogger.LoggerConfig;
 import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
 import google.registry.schema.domain.RegistryLock;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
-import google.registry.testing.InjectRule;
-import google.registry.testing.ShardableTestCase;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.CapturingLogHandler;
@@ -51,26 +50,24 @@ import google.registry.util.Retrier;
 import java.util.logging.Level;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link AsyncTaskEnqueuer}. */
-@RunWith(JUnit4.class)
-public class AsyncTaskEnqueuerTest extends ShardableTestCase {
+@ExtendWith(MockitoExtension.class)
+public class AsyncTaskEnqueuerTest {
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Rule public final InjectRule inject = new InjectRule();
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @Mock private AppEngineServiceUtils appEngineServiceUtils;
 
@@ -78,8 +75,8 @@ public class AsyncTaskEnqueuerTest extends ShardableTestCase {
   private final CapturingLogHandler logHandler = new CapturingLogHandler();
   private final FakeClock clock = new FakeClock(DateTime.parse("2015-05-18T12:34:56Z"));
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     LoggerConfig.getConfig(AsyncTaskEnqueuer.class).addHandler(logHandler);
     when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     asyncTaskEnqueuer = createForTesting(appEngineServiceUtils, clock, standardSeconds(90));
@@ -97,7 +94,7 @@ public class AsyncTaskEnqueuerTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_enqueueAsyncResave_success() {
+  void test_enqueueAsyncResave_success() {
     ContactResource contact = persistActiveContact("jd23456");
     asyncTaskEnqueuer.enqueueAsyncResave(contact, clock.nowUtc(), clock.nowUtc().plusDays(5));
     assertTasksEnqueued(
@@ -115,7 +112,7 @@ public class AsyncTaskEnqueuerTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_enqueueAsyncResave_multipleResaves() {
+  void test_enqueueAsyncResave_multipleResaves() {
     ContactResource contact = persistActiveContact("jd23456");
     DateTime now = clock.nowUtc();
     asyncTaskEnqueuer.enqueueAsyncResave(
@@ -131,16 +128,15 @@ public class AsyncTaskEnqueuerTest extends ShardableTestCase {
             .header("content-type", "application/x-www-form-urlencoded")
             .param(PARAM_RESOURCE_KEY, Key.create(contact).getString())
             .param(PARAM_REQUESTED_TIME, now.toString())
-            .param(
-                PARAM_RESAVE_TIMES,
-                "2015-05-20T14:34:56.000Z,2015-05-21T15:34:56.000Z")
+            .param(PARAM_RESAVE_TIMES, "2015-05-20T14:34:56.000Z,2015-05-21T15:34:56.000Z")
             .etaDelta(
                 standardHours(24).minus(standardSeconds(30)),
                 standardHours(24).plus(standardSeconds(30))));
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void test_enqueueAsyncResave_ignoresTasksTooFarIntoFuture() throws Exception {
+  void test_enqueueAsyncResave_ignoresTasksTooFarIntoFuture() throws Exception {
     ContactResource contact = persistActiveContact("jd23456");
     asyncTaskEnqueuer.enqueueAsyncResave(contact, clock.nowUtc(), clock.nowUtc().plusDays(31));
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
@@ -148,7 +144,7 @@ public class AsyncTaskEnqueuerTest extends ShardableTestCase {
   }
 
   @Test
-  public void testEnqueueRelock() {
+  void testEnqueueRelock() {
     RegistryLock lock =
         saveRegistryLock(
             new RegistryLock.Builder()
@@ -169,6 +165,7 @@ public class AsyncTaskEnqueuerTest extends ShardableTestCase {
         new TaskMatcher()
             .url(RelockDomainAction.PATH)
             .method("POST")
+            .header("Host", "backend.hostname.fake")
             .param(
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))
@@ -177,8 +174,9 @@ public class AsyncTaskEnqueuerTest extends ShardableTestCase {
                 standardHours(6).plus(standardSeconds(30))));
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void testFailure_enqueueRelock_noDuration() {
+  void testFailure_enqueueRelock_noDuration() {
     RegistryLock lockWithoutDuration =
         saveRegistryLock(
             new RegistryLock.Builder()

@@ -43,10 +43,10 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Base class for domain transfer flow unit tests.
@@ -54,38 +54,37 @@ import org.junit.Before;
  * @param <F> the flow type
  * @param <R> the resource type
  */
-public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
-    extends ResourceFlowTestCase<F, R>{
+abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
+    extends ResourceFlowTestCase<F, R> {
 
   // Transfer is requested on the 6th and expires on the 11th.
   // The "now" of this flow is on the 9th, 3 days in.
 
-  protected static final DateTime TRANSFER_REQUEST_TIME = DateTime.parse("2000-06-06T22:00:00.0Z");
-  protected static final DateTime TRANSFER_EXPIRATION_TIME =
+  static final DateTime TRANSFER_REQUEST_TIME = DateTime.parse("2000-06-06T22:00:00.0Z");
+  static final DateTime TRANSFER_EXPIRATION_TIME =
       TRANSFER_REQUEST_TIME.plus(Registry.DEFAULT_AUTOMATIC_TRANSFER_LENGTH);
-  protected static final Duration TIME_SINCE_REQUEST = Duration.standardDays(3);
-  protected static final int EXTENDED_REGISTRATION_YEARS = 1;
-  protected static final DateTime REGISTRATION_EXPIRATION_TIME =
+  private static final Duration TIME_SINCE_REQUEST = Duration.standardDays(3);
+  private static final int EXTENDED_REGISTRATION_YEARS = 1;
+  private static final DateTime REGISTRATION_EXPIRATION_TIME =
       DateTime.parse("2001-09-08T22:00:00.0Z");
-  protected static final DateTime EXTENDED_REGISTRATION_EXPIRATION_TIME =
+  static final DateTime EXTENDED_REGISTRATION_EXPIRATION_TIME =
       REGISTRATION_EXPIRATION_TIME.plusYears(EXTENDED_REGISTRATION_YEARS);
 
   protected ContactResource contact;
   protected DomainBase domain;
-  protected HostResource subordinateHost;
-  protected HistoryEntry historyEntryDomainCreate;
+  HostResource subordinateHost;
+  private HistoryEntry historyEntryDomainCreate;
 
-  public DomainTransferFlowTestCase() {
+  DomainTransferFlowTestCase() {
     checkState(!Registry.DEFAULT_TRANSFER_GRACE_PERIOD.isShorterThan(TIME_SINCE_REQUEST));
     clock.setTo(TRANSFER_REQUEST_TIME.plus(TIME_SINCE_REQUEST));
   }
 
-  @Before
-  public void makeClientZ() {
+  @BeforeEach
+  void beforeEachDomainTransferFlowTestCase() {
     // Registrar ClientZ is used in tests that need another registrar that definitely doesn't own
     // the resources in question.
-    persistResource(
-        AppEngineRule.makeRegistrar1().asBuilder().setClientId("ClientZ").build());
+    persistResource(AppEngineExtension.makeRegistrar1().asBuilder().setClientId("ClientZ").build());
   }
 
   static DomainBase persistWithPendingTransfer(DomainBase domain) {
@@ -97,7 +96,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   }
 
   /** Adds a domain with no pending transfer on it. */
-  protected void setupDomain(String label, String tld) {
+  void setupDomain(String label, String tld) {
     createTld(tld);
     contact = persistActiveContact("jd1234");
     domain =
@@ -124,7 +123,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
     historyEntryDomainCreate = getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE);
   }
 
-  protected BillingEvent.OneTime getBillingEventForImplicitTransfer() {
+  BillingEvent.OneTime getBillingEventForImplicitTransfer() {
     HistoryEntry historyEntry =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST);
     return createBillingEventForTransfer(
@@ -135,7 +134,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   }
 
   /** Get the autorenew event that the losing client will have after a SERVER_APPROVED transfer. */
-  protected BillingEvent.Recurring getLosingClientAutorenewEvent() {
+  BillingEvent.Recurring getLosingClientAutorenewEvent() {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -148,7 +147,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   }
 
   /** Get the autorenew event that the gaining client will have after a SERVER_APPROVED transfer. */
-  protected BillingEvent.Recurring getGainingClientAutorenewEvent() {
+  BillingEvent.Recurring getGainingClientAutorenewEvent() {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -160,7 +159,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .build();
   }
 
-  protected void assertTransferFailed(
+  void assertTransferFailed(
       DomainBase domain, TransferStatus status, TransferData oldTransferData) {
     assertAboutDomains().that(domain)
         .doesNotHaveStatusValue(StatusValue.PENDING_TRANSFER).and()
@@ -176,7 +175,7 @@ public class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   }
 
   /** Adds a domain that has a pending transfer on it from TheRegistrar to NewRegistrar. */
-  protected void setupDomainWithPendingTransfer(String label, String tld) {
+  void setupDomainWithPendingTransfer(String label, String tld) {
     setupDomain(label, tld);
     domain = persistWithPendingTransfer(domain);
   }

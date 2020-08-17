@@ -517,14 +517,14 @@ public class DomainFlowUtils {
    */
   public static void updateAutorenewRecurrenceEndTime(DomainBase domain, DateTime newEndTime) {
     Optional<PollMessage.Autorenew> autorenewPollMessage =
-        Optional.ofNullable(ofy().load().key(domain.getAutorenewPollMessage()).now());
+        tm().maybeLoad(domain.getAutorenewPollMessage());
 
     // Construct an updated autorenew poll message. If the autorenew poll message no longer exists,
     // create a new one at the same id. This can happen if a transfer was requested on a domain
     // where all autorenew poll messages had already been delivered (this would cause the poll
     // message to be deleted), and then subsequently the transfer was canceled, rejected, or deleted
     // (which would cause the poll message to be recreated here).
-    Key<PollMessage.Autorenew> existingAutorenewKey = domain.getAutorenewPollMessage();
+    Key<PollMessage.Autorenew> existingAutorenewKey = domain.getAutorenewPollMessage().getOfyKey();
     PollMessage.Autorenew updatedAutorenewPollMessage =
         autorenewPollMessage.isPresent()
             ? autorenewPollMessage.get().asBuilder().setAutorenewEndTime(newEndTime).build()
@@ -542,7 +542,7 @@ public class DomainFlowUtils {
       ofy().save().entity(updatedAutorenewPollMessage);
     }
 
-    Recurring recurring = ofy().load().key(domain.getAutorenewBillingEvent()).now();
+    Recurring recurring = tm().load(domain.getAutorenewBillingEvent());
     ofy().save().entity(recurring.asBuilder().setRecurrenceEndTime(newEndTime).build());
   }
 

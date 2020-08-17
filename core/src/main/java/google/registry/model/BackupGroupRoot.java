@@ -14,17 +14,22 @@
 
 package google.registry.model;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
+import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * Base class for entities that are the root of a Registry 2.0 entity group that gets enrolled in
  * commit logs for backup purposes.
  *
- * <p>The commit log system needs to preserve the ordering of closely timed mutations to entities
- * in a single entity group. We require an {@link UpdateAutoTimestamp} field on the root of a group
- * so that we can enforce strictly increasing timestamps.
+ * <p>The commit log system needs to preserve the ordering of closely timed mutations to entities in
+ * a single entity group. We require an {@link UpdateAutoTimestamp} field on the root of a group so
+ * that we can enforce strictly increasing timestamps.
  */
+@MappedSuperclass
 public abstract class BackupGroupRoot extends ImmutableObject {
+
   /**
    * An automatically managed timestamp of when this object was last written to Datastore.
    *
@@ -32,10 +37,13 @@ public abstract class BackupGroupRoot extends ImmutableObject {
    * that this is updated on every save, rather than only in response to an {@code <update>} command
    */
   @XmlTransient
+  // Prevents subclasses from unexpectedly accessing as property (e.g., HostResource), which would
+  // require an unnecessary non-private setter method.
+  @Access(AccessType.FIELD)
   UpdateAutoTimestamp updateTimestamp = UpdateAutoTimestamp.create(null);
 
   /** Get the {@link UpdateAutoTimestamp} for this entity. */
-  public final UpdateAutoTimestamp getUpdateAutoTimestamp() {
+  public UpdateAutoTimestamp getUpdateTimestamp() {
     return updateTimestamp;
   }
 }

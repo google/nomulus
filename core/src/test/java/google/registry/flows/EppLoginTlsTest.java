@@ -19,30 +19,28 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
 import java.util.Optional;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Test logging in with TLS credentials. */
-@RunWith(JUnit4.class)
-public class EppLoginTlsTest extends EppTestCase {
+class EppLoginTlsTest extends EppTestCase {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   void setClientCertificateHash(String clientCertificateHash) {
     setTransportCredentials(
         new TlsCredentials(true, clientCertificateHash, Optional.of("192.168.1.100:54321")));
   }
 
-  @Before
-  public void initTest() {
+  @BeforeEach
+  void beforeEach() {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -57,14 +55,14 @@ public class EppLoginTlsTest extends EppTestCase {
   }
 
   @Test
-  public void testLoginLogout() throws Exception {
+  void testLoginLogout() throws Exception {
     setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH);
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
   }
 
   @Test
-  public void testLogin_wrongPasswordFails() throws Exception {
+  void testLogin_wrongPasswordFails() throws Exception {
     setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH);
     // For TLS login, we also check the epp xml password.
     assertThatLogin("NewRegistrar", "incorrect")
@@ -74,7 +72,7 @@ public class EppLoginTlsTest extends EppTestCase {
   }
 
   @Test
-  public void testMultiLogin() throws Exception {
+  void testMultiLogin() throws Exception {
     setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH);
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
@@ -88,7 +86,7 @@ public class EppLoginTlsTest extends EppTestCase {
   }
 
   @Test
-  public void testNonAuthedLogin_fails() throws Exception {
+  void testNonAuthedLogin_fails() throws Exception {
     setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH);
     assertThatLogin("TheRegistrar", "password2")
         .hasResponse(
@@ -97,9 +95,8 @@ public class EppLoginTlsTest extends EppTestCase {
                 "CODE", "2200", "MSG", "Registrar certificate does not match stored certificate"));
   }
 
-
   @Test
-  public void testBadCertificate_failsBadCertificate2200() throws Exception {
+  void testBadCertificate_failsBadCertificate2200() throws Exception {
     setClientCertificateHash("laffo");
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
@@ -109,7 +106,7 @@ public class EppLoginTlsTest extends EppTestCase {
   }
 
   @Test
-  public void testGfeDidntProvideClientCertificate_failsMissingCertificate2200() throws Exception {
+  void testGfeDidntProvideClientCertificate_failsMissingCertificate2200() throws Exception {
     setClientCertificateHash("");
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
@@ -118,7 +115,7 @@ public class EppLoginTlsTest extends EppTestCase {
   }
 
   @Test
-  public void testGoodPrimaryCertificate() throws Exception {
+  void testGoodPrimaryCertificate() throws Exception {
     setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH);
     DateTime now = DateTime.now(UTC);
     persistResource(
@@ -131,7 +128,7 @@ public class EppLoginTlsTest extends EppTestCase {
   }
 
   @Test
-  public void testGoodFailoverCertificate() throws Exception {
+  void testGoodFailoverCertificate() throws Exception {
     setClientCertificateHash(CertificateSamples.SAMPLE_CERT2_HASH);
     DateTime now = DateTime.now(UTC);
     persistResource(
@@ -144,7 +141,7 @@ public class EppLoginTlsTest extends EppTestCase {
   }
 
   @Test
-  public void testMissingPrimaryCertificateButHasFailover_usesFailover() throws Exception {
+  void testMissingPrimaryCertificateButHasFailover_usesFailover() throws Exception {
     setClientCertificateHash(CertificateSamples.SAMPLE_CERT2_HASH);
     DateTime now = DateTime.now(UTC);
     persistResource(
@@ -157,7 +154,7 @@ public class EppLoginTlsTest extends EppTestCase {
   }
 
   @Test
-  public void testRegistrarHasNoCertificatesOnFile_fails() throws Exception {
+  void testRegistrarHasNoCertificatesOnFile_fails() throws Exception {
     setClientCertificateHash("laffo");
     DateTime now = DateTime.now(UTC);
     persistResource(

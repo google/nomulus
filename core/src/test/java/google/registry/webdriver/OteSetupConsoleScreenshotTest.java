@@ -21,18 +21,16 @@ import com.googlecode.objectify.ObjectifyFilter;
 import google.registry.model.ofy.OfyFilter;
 import google.registry.module.frontend.FrontendServlet;
 import google.registry.server.RegistryTestServer;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junitpioneer.jupiter.RetryingTest;
 import org.openqa.selenium.By;
 
 /** Registrar Console Screenshot Differ tests. */
-@RunWith(RepeatableRunner.class)
 public class OteSetupConsoleScreenshotTest extends WebDriverTestCase {
 
-  @Rule
-  public final TestServerRule server =
-      new TestServerRule.Builder()
+  @RegisterExtension
+  final TestServerExtension server =
+      new TestServerExtension.Builder()
           .setRunfiles(RegistryTestServer.RUNFILES)
           .setRoutes(route("/registrar-ote-setup", FrontendServlet.class))
           .setFilters(ObjectifyFilter.class, OfyFilter.class)
@@ -40,15 +38,15 @@ public class OteSetupConsoleScreenshotTest extends WebDriverTestCase {
           .setEmail("Marla.Singer@google.com")
           .build();
 
-  @Test
-  public void get_owner_fails() throws Throwable {
+  @RetryingTest(3)
+  void get_owner_fails() throws Throwable {
     driver.get(server.getUrl("/registrar-ote-setup"));
     driver.waitForElement(By.tagName("h1"));
     driver.diffPage("unauthorized");
   }
 
-  @Test
-  public void get_admin_succeeds() throws Throwable {
+  @RetryingTest(3)
+  void get_admin_succeeds() throws Throwable {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar-ote-setup"));
     driver.waitForElement(By.tagName("h1"));
@@ -62,8 +60,8 @@ public class OteSetupConsoleScreenshotTest extends WebDriverTestCase {
     driver.diffPage("oteResult");
   }
 
-  @Test
-  public void get_admin_fails_badEmail() throws Throwable {
+  @RetryingTest(3)
+  void get_admin_fails_badEmail() throws Throwable {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar-ote-setup"));
     driver.waitForElement(By.tagName("h1"));

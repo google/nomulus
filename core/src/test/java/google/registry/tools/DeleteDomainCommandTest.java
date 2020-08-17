@@ -14,42 +14,42 @@
 
 package google.registry.tools;
 
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DeleteDomainCommand}. */
-public class DeleteDomainCommandTest extends EppToolCommandTestCase<DeleteDomainCommand> {
+class DeleteDomainCommandTest extends EppToolCommandTestCase<DeleteDomainCommand> {
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     runCommand("--client=NewRegistrar", "--domain_name=example.tld", "--force", "--reason=Test");
     eppVerifier.verifySent("domain_delete.xml");
   }
 
   @Test
-  public void testSuccess_multipleWordReason() throws Exception {
+  void testSuccess_multipleWordReason() throws Exception {
     runCommandForced(
         "--client=NewRegistrar", "--domain_name=example.tld", "--reason=\"Test test\"");
     eppVerifier.verifySent("domain_delete_multiple_word_reason.xml");
   }
 
   @Test
-  public void testSuccess_immediately() throws Exception {
+  void testSuccess_immediately() throws Exception {
     runCommandForced(
         "--client=NewRegistrar", "--domain_name=example.tld", "--immediately", "--reason=Test");
     eppVerifier.expectSuperuser().verifySent("domain_delete_immediately.xml");
   }
 
   @Test
-  public void testSuccess_requestedByRegistrarFalse() throws Exception {
+  void testSuccess_requestedByRegistrarFalse() throws Exception {
     runCommandForced("--client=NewRegistrar", "--domain_name=example.tld", "--reason=Test");
     eppVerifier.verifySent("domain_delete.xml");
   }
 
   @Test
-  public void testSuccess_requestedByRegistrarTrue() throws Exception {
+  void testSuccess_requestedByRegistrarTrue() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
         "--domain_name=example.tld",
@@ -59,28 +59,28 @@ public class DeleteDomainCommandTest extends EppToolCommandTestCase<DeleteDomain
   }
 
   @Test
-  public void testFailure_noReason() {
+  void testFailure_noReason() {
     assertThrows(
         ParameterException.class,
         () -> runCommand("--client=NewRegistrar", "--domain_name=example.tld", "--force"));
   }
 
   @Test
-  public void testFailure_missingClientId() {
+  void testFailure_missingClientId() {
     assertThrows(
         ParameterException.class,
         () -> runCommand("--domain_name=example.tld", "--force", "--reason=Test"));
   }
 
   @Test
-  public void testFailure_missingDomainName() {
+  void testFailure_missingDomainName() {
     assertThrows(
         ParameterException.class,
         () -> runCommand("--client=NewRegistrar", "--force", "--reason=Test"));
   }
 
   @Test
-  public void testFailure_unknownFlag() {
+  void testFailure_unknownFlag() {
     assertThrows(
         ParameterException.class,
         () ->
@@ -93,7 +93,7 @@ public class DeleteDomainCommandTest extends EppToolCommandTestCase<DeleteDomain
   }
 
   @Test
-  public void testFailure_mainParameter() {
+  void testFailure_mainParameter() {
     assertThrows(
         ParameterException.class,
         () ->

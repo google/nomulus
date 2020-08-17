@@ -23,37 +23,35 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import google.registry.request.RequestModule;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for Dagger injection of the whois package. */
-@RunWith(JUnit4.class)
-public final class WhoisInjectionTest {
+final class WhoisInjectionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final HttpServletRequest req = mock(HttpServletRequest.class);
   private final HttpServletResponse rsp = mock(HttpServletResponse.class);
   private final StringWriter httpOutput = new StringWriter();
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     when(rsp.getWriter()).thenReturn(new PrintWriter(httpOutput));
   }
 
   @Test
-  public void testWhoisAction_injectsAndWorks() throws Exception {
+  void testWhoisAction_injectsAndWorks() throws Exception {
     createTld("lol");
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     when(req.getReader()).thenReturn(new BufferedReader(new StringReader("ns1.cat.lol\r\n")));
@@ -67,7 +65,7 @@ public final class WhoisInjectionTest {
   }
 
   @Test
-  public void testWhoisHttpAction_injectsAndWorks() {
+  void testWhoisHttpAction_injectsAndWorks() {
     createTld("lol");
     persistResource(makeHostResource("ns1.cat.lol", "1.2.3.4"));
     when(req.getRequestURI()).thenReturn("/whois/ns1.cat.lol");

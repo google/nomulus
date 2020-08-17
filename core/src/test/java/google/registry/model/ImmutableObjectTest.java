@@ -29,7 +29,7 @@ import com.google.common.collect.Iterables;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -38,18 +38,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ImmutableObject}. */
-@RunWith(JUnit4.class)
 public class ImmutableObjectTest {
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(ValueObject.class)
           .build();
@@ -59,14 +56,14 @@ public class ImmutableObjectTest {
     String a;
     String b;
 
-    public SimpleObject(String a, String b) {
+    SimpleObject(String a, String b) {
       this.a = a;
       this.b = b;
     }
   }
 
   @Test
-  public void testToString_simpleClass() {
+  void testToString_simpleClass() {
     SimpleObject object = new SimpleObject("foo", null);
     assertThat(object.toString()).isEqualTo(""
         + "SimpleObject (@" + System.identityHashCode(object) + "): {\n"
@@ -76,7 +73,7 @@ public class ImmutableObjectTest {
   }
 
   @Test
-  public void testToDiffableFieldMap_simpleClass() {
+  void testToDiffableFieldMap_simpleClass() {
     SimpleObject object = new SimpleObject("foo", null);
     assertThat(object.toDiffableFieldMap()).containsEntry("a", "foo");
     assertThat(object.toDiffableFieldMap()).containsEntry("b", null);
@@ -92,7 +89,7 @@ public class ImmutableObjectTest {
   }
 
   @Test
-  public void testToDiffableFieldMap_typesClass() {
+  void testToDiffableFieldMap_typesClass() {
     TypesObject object = new TypesObject();
     object.bool = true;
     object.boolObject = true;
@@ -110,13 +107,13 @@ public class ImmutableObjectTest {
   public static class NestedObject extends ImmutableObject {
     ImmutableObject nested;
 
-    public NestedObject(ImmutableObject nested) {
+    NestedObject(ImmutableObject nested) {
       this.nested = nested;
     }
   }
 
   @Test
-  public void testToDiffableFieldMap_nestedObjectClass() {
+  void testToDiffableFieldMap_nestedObjectClass() {
     SimpleObject innermostObject = new SimpleObject("foo", "bar");
     NestedObject innerObject = new NestedObject(innermostObject);
     NestedObject object = new NestedObject(innerObject);
@@ -135,7 +132,7 @@ public class ImmutableObjectTest {
   }
 
   @Test
-  public void testToDiffableFieldMap_nestedObjectCollectionsClass() {
+  void testToDiffableFieldMap_nestedObjectCollectionsClass() {
     SimpleObject obj1 = new SimpleObject("foo", "bar");
     SimpleObject obj2 = new SimpleObject("bax", "bar");
     Map<?, ?> obj1map = obj1.toDiffableFieldMap();
@@ -158,19 +155,19 @@ public class ImmutableObjectTest {
   public static class IterableObject extends ImmutableObject {
     Iterable<?> iterable;
 
-    public IterableObject(Iterable<?> iterable) {
+    IterableObject(Iterable<?> iterable) {
       this.iterable = iterable;
     }
   }
 
   @Test
-  public void testToDiffableFieldMap_iterableField_notExpanded() {
+  void testToDiffableFieldMap_iterableField_notExpanded() {
     IterableObject iterableObject = new IterableObject(new CidrAddressBlock("127.0.0.1/32"));
     assertThat(iterableObject.toDiffableFieldMap()).containsEntry("iterable", "127.0.0.1/32");
   }
 
   @Test
-  public void testToDiffableFieldMap_infiniteIterableField_notExpanded() {
+  void testToDiffableFieldMap_infiniteIterableField_notExpanded() {
     IterableObject iterableObject = new IterableObject(Iterables.cycle("na"));
     assertThat(iterableObject.toDiffableFieldMap()).containsEntry("iterable", "[na] (cycled)");
   }
@@ -202,7 +199,7 @@ public class ImmutableObjectTest {
     Map<Object, Object> immutableObjectMap = newHashMap();
     Map<Object, Object> heterogenousMap = newHashMap();
 
-    public EmptyableObject() {
+    EmptyableObject() {
       stringMap.put("a", "");
       stringMap.put("b", null);
       immutableObjectMap.put("a", new SimpleObject("", ""));
@@ -213,7 +210,7 @@ public class ImmutableObjectTest {
   }
 
   @Test
-  public void testCloneEmptyToNull() {
+  void testCloneEmptyToNull() {
     EmptyableObject cloned = cloneEmptyToNull(new EmptyableObject());
     assertThat(cloned.nullString).isNull();
     assertThat(cloned.emptyString).isNull();
@@ -253,13 +250,13 @@ public class ImmutableObjectTest {
     Set<?> set = newHashSet((Object) null);
     Map<String, ?> map = newHashMap();
 
-    public NullInContainersObject() {
+    NullInContainersObject() {
       map.put("a", null);
     }
   }
 
   @Test
-  public void testToDiffableFieldMap_withEmptyAndNulls() {
+  void testToDiffableFieldMap_withEmptyAndNulls() {
     Map<String, Object> diffableFieldMap = new NullInContainersObject().toDiffableFieldMap();
     assertThat((List<?>) diffableFieldMap.get("array")).containsExactly((Object) null);
     assertThat((List<?>) diffableFieldMap.get("list")).containsExactly((Object) null);
@@ -297,7 +294,7 @@ public class ImmutableObjectTest {
   }
 
   @Test
-  public void testToHydratedString_skipsDoNotHydrate() {
+  void testToHydratedString_skipsDoNotHydrate() {
     RootObject root = new RootObject();
     root.hydrateMe = Key.create(persistResource(ValueObject.create(1, "foo")));
     root.skipMe = Key.create(persistResource(ValueObject.create(2, "bar")));
@@ -307,7 +304,7 @@ public class ImmutableObjectTest {
   }
 
   @Test
-  public void testToHydratedString_expandsMaps() {
+  void testToHydratedString_expandsMaps() {
     RootObject root = new RootObject();
     root.map = ImmutableMap.of("foo", Key.create(persistResource(ValueObject.create(1, "bar"))));
     String hydratedString = root.toHydratedString();
@@ -316,7 +313,7 @@ public class ImmutableObjectTest {
   }
 
   @Test
-  public void testToHydratedString_expandsCollections() {
+  void testToHydratedString_expandsCollections() {
     RootObject root = new RootObject();
     root.set = ImmutableSet.of(Key.create(persistResource(ValueObject.create(1, "foo"))));
     assertThat(root.toHydratedString()).contains("foo");

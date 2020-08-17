@@ -26,7 +26,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.testing.CertificateSamples;
 import google.registry.util.CidrAddressBlock;
 import java.util.Optional;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link LoginFlow} when accessed via a TLS transport. */
 public class LoginFlowViaTlsTest extends LoginFlowTestCase {
@@ -47,14 +47,14 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   }
 
   @Test
-  public void testSuccess_withGoodCredentials() throws Exception {
+  void testSuccess_withGoodCredentials() throws Exception {
     persistResource(getRegistrarBuilder().build());
     credentials = new TlsCredentials(true, GOOD_CERT, GOOD_IP);
     doSuccessfulTest("login_valid.xml");
   }
 
   @Test
-  public void testSuccess_withGoodCredentialsIpv6() throws Exception {
+  void testSuccess_withGoodCredentialsIpv6() throws Exception {
     persistResource(
         getRegistrarBuilder()
             .setIpAddressAllowList(
@@ -65,7 +65,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   }
 
   @Test
-  public void testSuccess_withIpv6AddressInSubnet() throws Exception {
+  void testSuccess_withIpv6AddressInSubnet() throws Exception {
     persistResource(
         getRegistrarBuilder()
             .setIpAddressAllowList(
@@ -76,7 +76,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   }
 
   @Test
-  public void testSuccess_withIpv4AddressInSubnet() throws Exception {
+  void testSuccess_withIpv4AddressInSubnet() throws Exception {
     persistResource(
         getRegistrarBuilder()
             .setIpAddressAllowList(ImmutableList.of(CidrAddressBlock.create("192.168.1.255/24")))
@@ -86,21 +86,21 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   }
 
   @Test
-  public void testFailure_incorrectClientCertificateHash() {
+  void testFailure_incorrectClientCertificateHash() {
     persistResource(getRegistrarBuilder().build());
     credentials = new TlsCredentials(true, BAD_CERT, GOOD_IP);
     doFailingTest("login_valid.xml", BadRegistrarCertificateException.class);
   }
 
   @Test
-  public void testFailure_missingClientCertificateHash() {
+  void testFailure_missingClientCertificateHash() {
     persistResource(getRegistrarBuilder().build());
     credentials = new TlsCredentials(true, null, GOOD_IP);
     doFailingTest("login_valid.xml", MissingRegistrarCertificateException.class);
   }
 
   @Test
-  public void testFailure_missingClientIpAddress() {
+  void testFailure_missingClientIpAddress() {
     persistResource(
         getRegistrarBuilder()
             .setIpAddressAllowList(
@@ -113,7 +113,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   }
 
   @Test
-  public void testFailure_incorrectClientIpv4Address() {
+  void testFailure_incorrectClientIpv4Address() {
     persistResource(
         getRegistrarBuilder()
             .setIpAddressAllowList(
@@ -126,7 +126,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   }
 
   @Test
-  public void testFailure_incorrectClientIpv6Address() {
+  void testFailure_incorrectClientIpv6Address() {
     persistResource(
         getRegistrarBuilder()
             .setIpAddressAllowList(

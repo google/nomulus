@@ -18,20 +18,17 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.io.ByteStreams;
-import google.registry.testing.ShardableTestCase;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-@RunWith(JUnit4.class)
-public final class RydeCompressionTest extends ShardableTestCase {
+/** Unit tests for {@link RydeCompression} */
+final class RydeCompressionTest {
 
   @Test
-  public void testCompression_decompression() throws Exception {
+  void testCompression_decompression() throws Exception {
     byte[] expected = "Testing 1, 2, 3".getBytes(UTF_8);
 
     ByteArrayOutputStream output = new ByteArrayOutputStream();

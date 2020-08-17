@@ -20,7 +20,7 @@ import static google.registry.model.server.Lock.LockState.FREE;
 import static google.registry.model.server.Lock.LockState.IN_USE;
 import static google.registry.model.server.Lock.LockState.OWNER_DIED;
 import static google.registry.model.server.Lock.LockState.TIMED_OUT;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -28,21 +28,18 @@ import static org.mockito.Mockito.when;
 
 import google.registry.model.ofy.Ofy;
 import google.registry.model.server.Lock.LockState;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.util.RequestStatusChecker;
 import java.util.Optional;
 import org.joda.time.Duration;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Lock}. */
-@RunWith(JUnit4.class)
 public class LockTest {
 
   private static final String RESOURCE_NAME = "foo";
@@ -53,11 +50,11 @@ public class LockTest {
 
   private LockMetrics origLockMetrics;
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withClock(clock).build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(clock).build();
 
-  @Rule public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private Optional<Lock> acquire(String tld, Duration leaseLength, LockState expectedLockState) {
     Lock.lockMetrics = mock(LockMetrics.class);
@@ -77,7 +74,8 @@ public class LockTest {
     Lock.lockMetrics = null;
   }
 
-  @Before public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     origLockMetrics = Lock.lockMetrics;
     Lock.lockMetrics = null;
@@ -85,13 +83,13 @@ public class LockTest {
     when(requestStatusChecker.isRunning("current-request-id")).thenReturn(true);
   }
 
-  @After
-  public void restoreLockMetric() {
+  @AfterEach
+  void restoreLockMetric() {
     Lock.lockMetrics = origLockMetrics;
   }
 
   @Test
-  public void testReleasedExplicitly() {
+  void testReleasedExplicitly() {
     Optional<Lock> lock = acquire("", ONE_DAY, FREE);
     assertThat(lock).isPresent();
     // We can't get it again at the same time.
@@ -103,7 +101,7 @@ public class LockTest {
   }
 
   @Test
-  public void testReleasedAfterTimeout() {
+  void testReleasedAfterTimeout() {
     assertThat(acquire("", TWO_MILLIS, FREE)).isPresent();
     // We can't get it again at the same time.
     assertThat(acquire("", TWO_MILLIS, IN_USE)).isEmpty();
@@ -116,7 +114,7 @@ public class LockTest {
   }
 
   @Test
-  public void testReleasedAfterRequestFinish() {
+  void testReleasedAfterRequestFinish() {
     assertThat(acquire("", ONE_DAY, FREE)).isPresent();
     // We can't get it again while request is active
     assertThat(acquire("", ONE_DAY, IN_USE)).isEmpty();
@@ -126,7 +124,7 @@ public class LockTest {
   }
 
   @Test
-  public void testTldsAreIndependent() {
+  void testTldsAreIndependent() {
     Optional<Lock> lockA = acquire("a", ONE_DAY, FREE);
     assertThat(lockA).isPresent();
     // For a different tld we can still get a lock with the same name.
@@ -141,7 +139,7 @@ public class LockTest {
   }
 
   @Test
-  public void testFailure_emptyResourceName() {
+  void testFailure_emptyResourceName() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

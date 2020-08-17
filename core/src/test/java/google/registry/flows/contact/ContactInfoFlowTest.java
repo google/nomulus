@@ -21,7 +21,7 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -39,12 +39,12 @@ import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.StatusValue;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactInfoFlow}. */
-public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactResource> {
+class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactResource> {
 
-  public ContactInfoFlowTest() {
+  ContactInfoFlowTest() {
     setEppInput("contact_info.xml");
   }
 
@@ -95,7 +95,7 @@ public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, C
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     persistContactResource(true);
     // Check that the persisted contact info was returned.
     assertTransactionalFlow(false);
@@ -108,7 +108,7 @@ public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, C
   }
 
   @Test
-  public void testSuccess_linked() throws Exception {
+  void testSuccess_linked() throws Exception {
     createTld("foobar");
     persistResource(newDomainBase("example.foobar", persistContactResource(true)));
     // Check that the persisted contact info was returned.
@@ -122,7 +122,7 @@ public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, C
   }
 
   @Test
-  public void testSuccess_owningRegistrarWithoutAuthInfo_seesAuthInfo() throws Exception {
+  void testSuccess_owningRegistrarWithoutAuthInfo_seesAuthInfo() throws Exception {
     setEppInput("contact_info_no_authinfo.xml");
     persistContactResource(true);
     // Check that the persisted contact info was returned.
@@ -136,7 +136,7 @@ public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, C
   }
 
   @Test
-  public void testFailure_otherRegistrar_notAuthorized() throws Exception {
+  void testFailure_otherRegistrar_notAuthorized() throws Exception {
     setClientIdForFlow("NewRegistrar");
     persistContactResource(true);
     // Check that the persisted contact info was returned.
@@ -146,8 +146,7 @@ public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, C
   }
 
   @Test
-  public void testSuccess_otherRegistrarWithoutAuthInfoAsSuperuser_doesNotSeeAuthInfo()
-      throws Exception {
+  void testSuccess_otherRegistrarWithoutAuthInfoAsSuperuser_doesNotSeeAuthInfo() throws Exception {
     setClientIdForFlow("NewRegistrar");
     setEppInput("contact_info_no_authinfo.xml");
     persistContactResource(true);
@@ -164,7 +163,7 @@ public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, C
   }
 
   @Test
-  public void testSuccess_otherRegistrarWithAuthInfoAsSuperuser_seesAuthInfo() throws Exception {
+  void testSuccess_otherRegistrarWithAuthInfoAsSuperuser_seesAuthInfo() throws Exception {
     setClientIdForFlow("NewRegistrar");
     persistContactResource(true);
     // Check that the persisted contact info was returned.
@@ -180,7 +179,7 @@ public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, C
   }
 
   @Test
-  public void testFailure_neverExisted() throws Exception {
+  void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
@@ -188,7 +187,7 @@ public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, C
   }
 
   @Test
-  public void testFailure_existedButWasDeleted() throws Exception {
+  void testFailure_existedButWasDeleted() throws Exception {
     persistContactResource(false);
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
@@ -197,7 +196,7 @@ public class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, C
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     persistContactResource(true);
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-info");

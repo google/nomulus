@@ -18,22 +18,19 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_AND_CLOSE;
 import static google.registry.testing.EppMetricSubject.assertThat;
 
-import google.registry.testing.AppEngineRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import google.registry.testing.AppEngineExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for login lifecycle. */
-@RunWith(JUnit4.class)
-public class EppLifecycleLoginTest extends EppTestCase {
+class EppLifecycleLoginTest extends EppTestCase {
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   @Test
-  public void testLoginAndLogout_recordsEppMetric() throws Exception {
+  void testLoginAndLogout_recordsEppMetric() throws Exception {
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThat(getRecordedEppMetric())
         .hasClientId("NewRegistrar")

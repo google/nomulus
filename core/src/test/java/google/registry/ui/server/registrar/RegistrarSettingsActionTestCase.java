@@ -41,9 +41,9 @@ import google.registry.request.auth.AuthLevel;
 import google.registry.request.auth.AuthResult;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor;
 import google.registry.request.auth.UserAuthInfo;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.EmailMessage;
@@ -54,25 +54,28 @@ import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Base class for tests using {@link RegistrarSettingsAction}. */
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public abstract class RegistrarSettingsActionTestCase {
 
   static final String CLIENT_ID = "TheRegistrar";
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Rule public final InjectRule inject = new InjectRule();
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @Mock AppEngineServiceUtils appEngineServiceUtils;
   @Mock HttpServletRequest req;
@@ -80,13 +83,13 @@ public abstract class RegistrarSettingsActionTestCase {
   @Mock SendEmailService emailService;
 
   final RegistrarSettingsAction action = new RegistrarSettingsAction();
-  final StringWriter writer = new StringWriter();
+  private final StringWriter writer = new StringWriter();
   final FakeClock clock = new FakeClock(DateTime.parse("2014-01-01T00:00:00Z"));
 
   RegistrarContact techContact;
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  public void beforeEachRegistrarSettingsActionTestCase() throws Exception {
     // Registrar "TheRegistrar" has access to TLD "currenttld" but not to "newtld".
     createTlds("currenttld", "newtld");
     disallowRegistrarAccess(CLIENT_ID, "newtld");
@@ -123,26 +126,26 @@ public abstract class RegistrarSettingsActionTestCase {
     RegistrarConsoleMetrics.settingsRequestMetric.reset();
   }
 
-  @After
-  public void tearDown() {
+  @AfterEach
+  public void afterEach() {
     assertThat(RegistrarConsoleMetrics.settingsRequestMetric).hasNoOtherValues();
   }
 
-  public void assertMetric(String clientId, String op, String roles, String status) {
+  void assertMetric(String clientId, String op, String roles, String status) {
     assertThat(RegistrarConsoleMetrics.settingsRequestMetric)
         .hasValueForLabels(1, clientId, op, roles, status);
     RegistrarConsoleMetrics.settingsRequestMetric.reset(clientId, op, roles, status);
   }
 
   /** Sets registrarAccessor.getRegistrar to succeed for CLIENT_ID only. */
-  protected void setUserWithAccess() {
+  private void setUserWithAccess() {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of(CLIENT_ID, OWNER));
   }
 
   /** Sets registrarAccessor.getRegistrar to always fail. */
-  protected void setUserWithoutAccess() {
+  void setUserWithoutAccess() {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
   }
@@ -150,14 +153,14 @@ public abstract class RegistrarSettingsActionTestCase {
   /**
    * Sets registrarAccessor.getAllClientIdWithRoles to return a map with admin role for CLIENT_ID
    */
-  protected void setUserAdmin() {
+  void setUserAdmin() {
     action.registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
             ImmutableSetMultimap.of(CLIENT_ID, ADMIN));
   }
 
   /** Verifies that the original contact of TheRegistrar is among those notified of a change. */
-  protected void verifyNotificationEmailsSent() throws Exception {
+  void verifyNotificationEmailsSent() throws Exception {
     ArgumentCaptor<EmailMessage> captor = ArgumentCaptor.forClass(EmailMessage.class);
     verify(emailService).sendEmail(captor.capture());
     Truth.assertThat(captor.getValue().recipients())

@@ -21,41 +21,37 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateAutoTimestamp}. */
-@RunWith(JUnit4.class)
 public class UpdateAutoTimestampTest {
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
-          .withOfyTestEntities(TestObject.class)
+          .withOfyTestEntities(UpdateAutoTimestampTestObject.class)
           .build();
 
   /** Timestamped class. */
   @Entity(name = "UatTestEntity")
-  public static class TestObject extends CrossTldSingleton {
+  public static class UpdateAutoTimestampTestObject extends CrossTldSingleton {
     UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create(null);
   }
 
-  private TestObject reload() {
-    return ofy().load().entity(new TestObject()).now();
+  private UpdateAutoTimestampTestObject reload() {
+    return ofy().load().entity(new UpdateAutoTimestampTestObject()).now();
   }
 
   @Test
-  public void testSaveSetsTime() {
+  void testSaveSetsTime() {
     DateTime transactionTime =
-        tm()
-            .transact(
+        tm().transact(
                 () -> {
-                  TestObject object = new TestObject();
+                  UpdateAutoTimestampTestObject object = new UpdateAutoTimestampTestObject();
                   assertThat(object.updateTime.timestamp).isNull();
                   ofy().save().entity(object);
                   return tm().getTransactionTime();
@@ -65,12 +61,11 @@ public class UpdateAutoTimestampTest {
   }
 
   @Test
-  public void testResavingOverwritesOriginalTime() {
+  void testResavingOverwritesOriginalTime() {
     DateTime transactionTime =
-        tm()
-            .transact(
+        tm().transact(
                 () -> {
-                  TestObject object = new TestObject();
+                  UpdateAutoTimestampTestObject object = new UpdateAutoTimestampTestObject();
                   object.updateTime = UpdateAutoTimestamp.create(DateTime.now(UTC).minusDays(1));
                   ofy().save().entity(object);
                   return tm().getTransactionTime();

@@ -17,28 +17,25 @@ package google.registry.util;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.partitionMap;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CollectionUtils} */
-@RunWith(JUnit4.class)
-public class CollectionUtilsTest {
+class CollectionUtilsTest {
 
   @Test
-  public void testNullToEmptyMap_leavesNonNullAlone() {
+  void testNullToEmptyMap_leavesNonNullAlone() {
     Map<String, Integer> map = ImmutableMap.of("hello", 1);
     assertThat(nullToEmpty(map)).isEqualTo(map);
   }
 
   @Test
-  public void testNullToEmptyMap_convertsNullToEmptyMap() {
+  void testNullToEmptyMap_convertsNullToEmptyMap() {
     Map<String, Integer> map = null;
     Map<String, Integer> convertedMap = nullToEmpty(map);
     assertThat(map).isNull();
@@ -47,7 +44,7 @@ public class CollectionUtilsTest {
   }
 
   @Test
-  public void testPartitionMap() {
+  void testPartitionMap() {
     Map<String, String> map = ImmutableMap.of("ka", "va", "kb", "vb", "kc", "vc");
     assertThat(partitionMap(map, 2)).containsExactlyElementsIn(ImmutableList.of(
         ImmutableMap.of("ka", "va", "kb", "vb"),
@@ -55,22 +52,22 @@ public class CollectionUtilsTest {
   }
 
   @Test
-  public void testPartitionMap_emptyInput() {
+  void testPartitionMap_emptyInput() {
     assertThat(partitionMap(ImmutableMap.of(), 100)).isEmpty();
   }
 
   @Test
-  public void testPartitionMap_negativePartitionSize() {
+  void testPartitionMap_negativePartitionSize() {
     assertThrows(IllegalArgumentException.class, () -> partitionMap(ImmutableMap.of("A", "b"), -2));
   }
 
   @Test
-  public void testPartitionMap_nullMap() {
+  void testPartitionMap_nullMap() {
     assertThrows(NullPointerException.class, () -> partitionMap(null, 100));
   }
 
   @Test
-  public void testDeadCodeWeDontWantToDelete() {
+  void testDeadCodeWeDontWantToDelete() {
     CollectionUtils.nullToEmpty(HashMultimap.create());
   }
 }

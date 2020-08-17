@@ -19,35 +19,33 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.newRegistry;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.net.InternetDomainName;
 import google.registry.model.registry.Registry.TldType;
-import google.registry.testing.AppEngineRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import google.registry.testing.AppEngineExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Registries}. */
-@RunWith(JUnit4.class)
-public class RegistriesTest {
+class RegistriesTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private void initTestTlds() {
     createTlds("foo", "a.b.c"); // Test a multipart tld.
   }
 
   @Test
-  public void testGetTlds() {
+  void testGetTlds() {
     initTestTlds();
     assertThat(Registries.getTlds()).containsExactly("foo", "a.b.c");
   }
 
   @Test
-  public void test_getTldEntities() {
+  void test_getTldEntities() {
     initTestTlds();
     persistResource(newRegistry("testtld", "TESTTLD").asBuilder().setTldType(TldType.TEST).build());
     assertThat(Registries.getTldEntitiesOfType(TldType.REAL))
@@ -57,25 +55,25 @@ public class RegistriesTest {
   }
 
   @Test
-  public void testGetTlds_withNoRegistriesPersisted_returnsEmptySet() {
+  void testGetTlds_withNoRegistriesPersisted_returnsEmptySet() {
     assertThat(Registries.getTlds()).isEmpty();
   }
 
   @Test
-  public void testAssertTldExists_doesExist() {
+  void testAssertTldExists_doesExist() {
     initTestTlds();
     Registries.assertTldExists("foo");
     Registries.assertTldExists("a.b.c");
   }
 
   @Test
-  public void testAssertTldExists_doesntExist() {
+  void testAssertTldExists_doesntExist() {
     initTestTlds();
     assertThrows(IllegalArgumentException.class, () -> Registries.assertTldExists("baz"));
   }
 
   @Test
-  public void testFindTldForName() {
+  void testFindTldForName() {
     initTestTlds();
     assertThat(Registries.findTldForName(InternetDomainName.from("example.foo")).get().toString())
         .isEqualTo("foo");

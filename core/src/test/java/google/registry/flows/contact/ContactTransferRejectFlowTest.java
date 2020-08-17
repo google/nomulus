@@ -23,7 +23,7 @@ import static google.registry.testing.DatastoreHelper.getOnlyPollMessage;
 import static google.registry.testing.DatastoreHelper.getPollMessages;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.EppException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
@@ -40,15 +40,15 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactTransferRejectFlow}. */
-public class ContactTransferRejectFlowTest
+class ContactTransferRejectFlowTest
     extends ContactTransferFlowTestCase<ContactTransferRejectFlow, ContactResource> {
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     setEppInput("contact_transfer_reject.xml");
     setClientIdForFlow("TheRegistrar");
     setupContactWithPendingTransfer();
@@ -121,24 +121,24 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testDryRun() throws Exception {
+  void testDryRun() throws Exception {
     setEppInput("contact_transfer_reject.xml");
     dryRunFlowAssertResponse(loadFile("contact_transfer_reject_response.xml"));
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     doSuccessfulTest("contact_transfer_reject.xml", "contact_transfer_reject_response.xml");
   }
 
   @Test
-  public void testSuccess_domainAuthInfo() throws Exception {
+  void testSuccess_domainAuthInfo() throws Exception {
     doSuccessfulTest("contact_transfer_reject_with_authinfo.xml",
         "contact_transfer_reject_response.xml");
   }
 
   @Test
-  public void testFailure_badPassword() {
+  void testFailure_badPassword() {
     // Change the contact's password so it does not match the password in the file.
     contact =
         persistResource(
@@ -154,7 +154,7 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testFailure_neverBeenTransferred() {
+  void testFailure_neverBeenTransferred() {
     changeTransferStatus(null);
     EppException thrown =
         assertThrows(
@@ -163,7 +163,7 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testFailure_clientApproved() {
+  void testFailure_clientApproved() {
     changeTransferStatus(TransferStatus.CLIENT_APPROVED);
     EppException thrown =
         assertThrows(
@@ -172,7 +172,7 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testFailure_clientRejected() {
+  void testFailure_clientRejected() {
     changeTransferStatus(TransferStatus.CLIENT_REJECTED);
     EppException thrown =
         assertThrows(
@@ -181,7 +181,7 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testFailure_clientCancelled() {
+  void testFailure_clientCancelled() {
     changeTransferStatus(TransferStatus.CLIENT_CANCELLED);
     EppException thrown =
         assertThrows(
@@ -190,7 +190,7 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testFailure_serverApproved() {
+  void testFailure_serverApproved() {
     changeTransferStatus(TransferStatus.SERVER_APPROVED);
     EppException thrown =
         assertThrows(
@@ -199,7 +199,7 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testFailure_serverCancelled() {
+  void testFailure_serverCancelled() {
     changeTransferStatus(TransferStatus.SERVER_CANCELLED);
     EppException thrown =
         assertThrows(
@@ -208,7 +208,7 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testFailure_gainingClient() {
+  void testFailure_gainingClient() {
     setClientIdForFlow("NewRegistrar");
     EppException thrown =
         assertThrows(
@@ -217,7 +217,7 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testFailure_unrelatedClient() {
+  void testFailure_unrelatedClient() {
     setClientIdForFlow("ClientZ");
     EppException thrown =
         assertThrows(
@@ -226,7 +226,7 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testFailure_deletedContact() throws Exception {
+  void testFailure_deletedContact() throws Exception {
     contact =
         persistResource(contact.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     ResourceDoesNotExistException thrown =
@@ -238,7 +238,7 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testFailure_nonexistentContact() throws Exception {
+  void testFailure_nonexistentContact() throws Exception {
     deleteResource(contact);
     ResourceDoesNotExistException thrown =
         assertThrows(
@@ -249,7 +249,7 @@ public class ContactTransferRejectFlowTest
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-transfer-reject");
   }

@@ -79,6 +79,10 @@ nomulus.iml
 nomulus.ipr
 nomulus.iws
 
+# Auto-generated java classes by Intellij
+*/src/main/generated/
+*/src/test/generated_tests/
+
 # VScode
 .vscode
 
@@ -93,8 +97,9 @@ nomulus.iws
 ######################################################################
 # Gradle Ignores
 
-# We don't want to ignore the gradle jar files
+# We don't want to ignore the gradle or google-java-format jar files
 !/gradle/wrapper/**/*.jar
+!/java-format/*.jar
 .gradle/
 **/build
 cloudbuild-caches/

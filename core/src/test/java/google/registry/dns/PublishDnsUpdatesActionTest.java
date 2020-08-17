@@ -19,7 +19,7 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistActiveSubordinateHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -38,28 +38,24 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PublishDnsUpdatesAction}. */
-@RunWith(JUnit4.class)
 public class PublishDnsUpdatesActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
   private final FakeClock clock = new FakeClock(DateTime.parse("1971-01-01TZ"));
   private final FakeLockHandler lockHandler = new FakeLockHandler(true);
   private final DnsWriter dnsWriter = mock(DnsWriter.class);
@@ -67,8 +63,8 @@ public class PublishDnsUpdatesActionTest {
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
   private PublishDnsUpdatesAction action;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     createTld("xn--q9jyb4c");
     persistResource(
@@ -104,7 +100,7 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  public void testHost_published() {
+  void testHost_published() {
     action = createAction("xn--q9jyb4c");
     action.hosts = ImmutableSet.of("ns1.example.xn--q9jyb4c");
 
@@ -132,7 +128,7 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  public void testDomain_published() {
+  void testDomain_published() {
     action = createAction("xn--q9jyb4c");
     action.domains = ImmutableSet.of("example.xn--q9jyb4c");
 
@@ -160,7 +156,7 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  public void testAction_acquiresCorrectLock() {
+  void testAction_acquiresCorrectLock() {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
     action = createAction("xn--q9jyb4c");
     action.lockIndex = 2;
@@ -178,7 +174,7 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  public void testPublish_commitFails() {
+  void testPublish_commitFails() {
     action = createAction("xn--q9jyb4c");
     action.domains = ImmutableSet.of("example.xn--q9jyb4c", "example2.xn--q9jyb4c");
     action.hosts =
@@ -207,11 +203,12 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  public void testHostAndDomain_published() {
+  void testHostAndDomain_published() {
     action = createAction("xn--q9jyb4c");
     action.domains = ImmutableSet.of("example.xn--q9jyb4c", "example2.xn--q9jyb4c");
-    action.hosts = ImmutableSet.of(
-        "ns1.example.xn--q9jyb4c", "ns2.example.xn--q9jyb4c", "ns1.example2.xn--q9jyb4c");
+    action.hosts =
+        ImmutableSet.of(
+            "ns1.example.xn--q9jyb4c", "ns2.example.xn--q9jyb4c", "ns1.example2.xn--q9jyb4c");
 
     action.run();
 
@@ -241,7 +238,7 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  public void testWrongTld_notPublished() {
+  void testWrongTld_notPublished() {
     action = createAction("xn--q9jyb4c");
     action.domains = ImmutableSet.of("example.com", "example2.com");
     action.hosts = ImmutableSet.of("ns1.example.com", "ns2.example.com", "ns1.example2.com");
@@ -269,7 +266,7 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  public void testLockIsntAvailable() {
+  void testLockIsntAvailable() {
     action = createAction("xn--q9jyb4c");
     action.domains = ImmutableSet.of("example.com", "example2.com");
     action.hosts = ImmutableSet.of("ns1.example.com", "ns2.example.com", "ns1.example2.com");
@@ -293,7 +290,7 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  public void testParam_invalidLockIndex() {
+  void testParam_invalidLockIndex() {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
     action = createAction("xn--q9jyb4c");
     action.domains = ImmutableSet.of("example.com");
@@ -319,7 +316,7 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  public void testRegistryParam_mismatchedMaxLocks() {
+  void testRegistryParam_mismatchedMaxLocks() {
     persistResource(Registry.get("xn--q9jyb4c").asBuilder().setNumDnsPublishLocks(4).build());
     action = createAction("xn--q9jyb4c");
     action.domains = ImmutableSet.of("example.com");
@@ -345,7 +342,7 @@ public class PublishDnsUpdatesActionTest {
   }
 
   @Test
-  public void testWrongDnsWriter() {
+  void testWrongDnsWriter() {
     action = createAction("xn--q9jyb4c");
     action.domains = ImmutableSet.of("example.com", "example2.com");
     action.hosts = ImmutableSet.of("ns1.example.com", "ns2.example.com", "ns1.example2.com");

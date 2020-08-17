@@ -15,13 +15,13 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.tools.server.ToolsTestData;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link EppToolCommand}. */
 public class EppToolCommandTest extends EppToolCommandTestCase<EppToolCommand> {
@@ -50,7 +50,7 @@ public class EppToolCommandTest extends EppToolCommandTestCase<EppToolCommand> {
   }
 
   @Test
-  public void testSuccess_singleXmlCommand() throws Exception {
+  void testSuccess_singleXmlCommand() throws Exception {
     // The choice of xml file is arbitrary.
     runCommandForced(
         "--client=NewRegistrar",
@@ -59,7 +59,7 @@ public class EppToolCommandTest extends EppToolCommandTestCase<EppToolCommand> {
   }
 
   @Test
-  public void testSuccess_multipleXmlCommands() throws Exception {
+  void testSuccess_multipleXmlCommands() throws Exception {
     // The choice of xml files is arbitrary.
     runCommandForced(
         "--client=NewRegistrar",
@@ -73,7 +73,7 @@ public class EppToolCommandTest extends EppToolCommandTestCase<EppToolCommand> {
   }
 
   @Test
-  public void testFailure_nonexistentClientId() {
+  void testFailure_nonexistentClientId() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

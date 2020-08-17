@@ -21,42 +21,37 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.common.reflect.ClassPath;
 import com.google.common.reflect.ClassPath.ClassInfo;
-import com.google.common.truth.Expect;
-import google.registry.testing.SystemPropertyRule;
+import google.registry.testing.SystemPropertyExtension;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
-import java.util.List;
 import java.util.Map;
-import junitparams.JUnitParamsRunner;
-import junitparams.naming.TestCaseName;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /** Unit tests for {@link RegistryTool} and {@link DevTool}. */
-@RunWith(JUnitParamsRunner.class)
-public class ToolsTest {
+class ToolsTest {
 
-  @Rule
-  public final Expect expect = Expect.create();
+  @RegisterExtension
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
-  @Rule public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
-
-  @Before
-  public void init() {
-    RegistryToolEnvironment.UNITTEST.setup(systemPropertyRule);
+  @BeforeEach
+  void beforeEach() {
+    RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
   }
 
   @Test
-  public void test_commandMap_includesAllCommands() throws Exception {
+  void test_commandMap_includesAllCommands() throws Exception {
     ImmutableSet<?> registryToolCommands = ImmutableSet.copyOf(RegistryTool.COMMAND_MAP.values());
     ImmutableSet<?> devToolCommands = ImmutableSet.copyOf(DevTool.COMMAND_MAP.values());
     assertWithMessage("RegistryTool and DevTool have overlapping commands")
@@ -73,32 +68,29 @@ public class ToolsTest {
         .isEmpty();
   }
 
-  @Test
-  @junitparams.Parameters(method = "getToolCommandMap")
-  @TestCaseName("{method}_{0}")
-  public void test_commandMap_namesAreInAlphabeticalOrder(
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void test_commandMap_namesAreInAlphabeticalOrder(
       String toolName, ImmutableMap<String, Class<? extends Command>> commandMap) {
     assertThat(commandMap.keySet()).isInStrictOrder();
   }
 
-  @Test
-  @junitparams.Parameters(method = "getToolCommandMap")
-  @TestCaseName("{method}_{0}")
-  public void test_commandMap_namesAreDerivedFromClassNames(
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void test_commandMap_namesAreDerivedFromClassNames(
       String toolName, ImmutableMap<String, Class<? extends Command>> commandMap) {
     for (Map.Entry<String, ? extends Class<? extends Command>> commandEntry :
         commandMap.entrySet()) {
       String className = commandEntry.getValue().getSimpleName();
-      expect.that(commandEntry.getKey())
+      assertThat(commandEntry.getKey())
           // JCommander names should match the class name, up to "Command" and case formatting.
           .isEqualTo(UPPER_CAMEL.to(LOWER_UNDERSCORE, className.replaceFirst("Command$", "")));
     }
   }
 
-  @Test
-  @junitparams.Parameters(method = "getToolCommandMap")
-  @TestCaseName("{method}_{0}")
-  public void test_commandMap_allCommandsHaveDescriptions(
+  @ParameterizedTest
+  @MethodSource("provideTestCombinations")
+  void test_commandMap_allCommandsHaveDescriptions(
       String toolName, ImmutableMap<String, Class<? extends Command>> commandMap) {
     for (Map.Entry<String, ? extends Class<? extends Command>> commandEntry :
         commandMap.entrySet()) {
@@ -109,10 +101,10 @@ public class ToolsTest {
   }
 
   @SuppressWarnings("unused")
-  private List<List<Object>> getToolCommandMap() {
-    return ImmutableList.of(
-        ImmutableList.of("RegistryTool", RegistryTool.COMMAND_MAP),
-        ImmutableList.of("DevTool", DevTool.COMMAND_MAP));
+  private static Stream<Arguments> provideTestCombinations() {
+    return Stream.of(
+        Arguments.of("RegistryTool", RegistryTool.COMMAND_MAP),
+        Arguments.of("DevTool", DevTool.COMMAND_MAP));
   }
 
   /**
@@ -126,9 +118,9 @@ public class ToolsTest {
   @SuppressWarnings("unchecked")
   private ImmutableSet<Class<? extends Command>> getAllCommandClasses() throws IOException {
     ImmutableSet.Builder<Class<? extends Command>> builder = new ImmutableSet.Builder<>();
-    for (ClassInfo classInfo : ClassPath
-        .from(getClass().getClassLoader())
-        .getTopLevelClassesRecursive(getPackageName(getClass()))) {
+    for (ClassInfo classInfo :
+        ClassPath.from(getClass().getClassLoader())
+            .getTopLevelClassesRecursive(getPackageName(getClass()))) {
       Class<?> clazz = classInfo.load();
       if (Command.class.isAssignableFrom(clazz)
           && !Modifier.isAbstract(clazz.getModifiers())

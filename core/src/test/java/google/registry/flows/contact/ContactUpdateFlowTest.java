@@ -22,7 +22,7 @@ import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistDeletedContact;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -41,13 +41,12 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.StatusValue;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactUpdateFlow}. */
-public class ContactUpdateFlowTest
-    extends ResourceFlowTestCase<ContactUpdateFlow, ContactResource> {
+class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, ContactResource> {
 
-  public ContactUpdateFlowTest() {
+  ContactUpdateFlowTest() {
     setEppInput("contact_update.xml");
   }
 
@@ -65,18 +64,18 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testDryRun() throws Exception {
+  void testDryRun() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     dryRunFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     doSuccessfulTest();
   }
 
   @Test
-  public void testSuccess_updatingInternationalizedPostalInfoDeletesLocalized() throws Exception {
+  void testSuccess_updatingInternationalizedPostalInfoDeletesLocalized() throws Exception {
     ContactResource contact =
         persistResource(
             newContactResource(getUniqueIdFromCommand()).asBuilder()
@@ -114,7 +113,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testSuccess_updatingLocalizedPostalInfoDeletesInternationalized() throws Exception {
+  void testSuccess_updatingLocalizedPostalInfoDeletesInternationalized() throws Exception {
     setEppInput("contact_update_localized.xml");
     ContactResource contact =
         persistResource(
@@ -153,7 +152,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testSuccess_partialPostalInfoUpdate() throws Exception {
+  void testSuccess_partialPostalInfoUpdate() throws Exception {
     setEppInput("contact_update_partial_postalinfo.xml");
     persistResource(
         newContactResource(getUniqueIdFromCommand()).asBuilder()
@@ -188,9 +187,8 @@ public class ContactUpdateFlowTest
             .build());
   }
 
-
   @Test
-  public void testSuccess_updateOnePostalInfo_touchOtherPostalInfoPreservesIt() throws Exception {
+  void testSuccess_updateOnePostalInfo_touchOtherPostalInfoPreservesIt() throws Exception {
     setEppInput("contact_update_partial_postalinfo_preserve_int.xml");
     persistResource(
         newContactResource(getUniqueIdFromCommand()).asBuilder()
@@ -256,7 +254,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testFailure_neverExisted() throws Exception {
+  void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
@@ -264,7 +262,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testFailure_existedButWasDeleted() throws Exception {
+  void testFailure_existedButWasDeleted() throws Exception {
     persistDeletedContact(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
@@ -273,7 +271,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testFailure_statusValueNotClientSettable() throws Exception {
+  void testFailure_statusValueNotClientSettable() throws Exception {
     setEppInput("contact_update_prohibited_status.xml");
     persistActiveContact(getUniqueIdFromCommand());
     EppException thrown = assertThrows(StatusNotClientSettableException.class, this::runFlow);
@@ -281,7 +279,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testSuccess_superuserStatusValueNotClientSettable() throws Exception {
+  void testSuccess_superuserStatusValueNotClientSettable() throws Exception {
     setEppInput("contact_update_prohibited_status.xml");
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
@@ -290,7 +288,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testFailure_unauthorizedClient() throws Exception {
+  void testFailure_unauthorizedClient() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
@@ -298,7 +296,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testSuccess_superuserUnauthorizedClient() throws Exception {
+  void testSuccess_superuserUnauthorizedClient() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
@@ -307,7 +305,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testSuccess_clientUpdateProhibited_removed() throws Exception {
+  void testSuccess_clientUpdateProhibited_removed() throws Exception {
     setEppInput("contact_update_remove_client_update_prohibited.xml");
     persistResource(
         newContactResource(getUniqueIdFromCommand())
@@ -321,7 +319,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testSuccess_superuserClientUpdateProhibited_notRemoved() throws Exception {
+  void testSuccess_superuserClientUpdateProhibited_notRemoved() throws Exception {
     setEppInput("contact_update_prohibited_status.xml");
     persistResource(
         newContactResource(getUniqueIdFromCommand())
@@ -339,7 +337,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testFailure_clientUpdateProhibited_notRemoved() throws Exception {
+  void testFailure_clientUpdateProhibited_notRemoved() throws Exception {
     persistResource(
         newContactResource(getUniqueIdFromCommand())
             .asBuilder()
@@ -351,7 +349,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testFailure_serverUpdateProhibited() throws Exception {
+  void testFailure_serverUpdateProhibited() throws Exception {
     persistResource(
         newContactResource(getUniqueIdFromCommand())
             .asBuilder()
@@ -364,7 +362,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testFailure_pendingDeleteProhibited() throws Exception {
+  void testFailure_pendingDeleteProhibited() throws Exception {
     persistResource(
         newContactResource(getUniqueIdFromCommand())
             .asBuilder()
@@ -377,13 +375,13 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testSuccess_nonAsciiInLocAddress() throws Exception {
+  void testSuccess_nonAsciiInLocAddress() throws Exception {
     setEppInput("contact_update_hebrew_loc.xml");
     doSuccessfulTest();
   }
 
   @Test
-  public void testFailure_nonAsciiInIntAddress() throws Exception {
+  void testFailure_nonAsciiInIntAddress() throws Exception {
     setEppInput("contact_update_hebrew_int.xml");
     persistActiveContact(getUniqueIdFromCommand());
     EppException thrown =
@@ -392,7 +390,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testFailure_declineDisclosure() throws Exception {
+  void testFailure_declineDisclosure() throws Exception {
     setEppInput("contact_update_decline_disclosure.xml");
     persistActiveContact(getUniqueIdFromCommand());
     EppException thrown =
@@ -401,7 +399,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testFailure_addRemoveSameValue() throws Exception {
+  void testFailure_addRemoveSameValue() throws Exception {
     setEppInput("contact_update_add_remove_same.xml");
     persistActiveContact(getUniqueIdFromCommand());
     EppException thrown = assertThrows(AddRemoveSameValueException.class, this::runFlow);
@@ -409,7 +407,7 @@ public class ContactUpdateFlowTest
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     runFlow();

@@ -26,7 +26,7 @@ import static google.registry.export.UploadDatastoreBackupAction.UPLOAD_BACKUP_K
 import static google.registry.export.UploadDatastoreBackupAction.enqueueUploadBackupTask;
 import static google.registry.export.UploadDatastoreBackupAction.getBackupInfoFileForKind;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -45,25 +45,21 @@ import com.google.common.collect.Iterables;
 import google.registry.bigquery.CheckedBigquery;
 import google.registry.export.BigqueryPollJobAction.BigqueryPollJobEnqueuer;
 import google.registry.request.HttpException.InternalServerErrorException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.io.IOException;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link UploadDatastoreBackupAction}. */
-@RunWith(JUnit4.class)
 public class UploadDatastoreBackupActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder()
-      .withTaskQueue()
-      .build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
+
   private final CheckedBigquery checkedBigquery = mock(CheckedBigquery.class);
   private final Bigquery bigquery = mock(Bigquery.class);
   private final Bigquery.Jobs bigqueryJobs = mock(Bigquery.Jobs.class);
@@ -74,8 +70,8 @@ public class UploadDatastoreBackupActionTest {
   private final BigqueryPollJobEnqueuer bigqueryPollEnqueuer = mock(BigqueryPollJobEnqueuer.class);
   private UploadDatastoreBackupAction action;
 
-  @Before
-  public void before() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     when(checkedBigquery.ensureDataSetExists("Project-Id", BACKUP_DATASET)).thenReturn(bigquery);
     when(bigquery.jobs()).thenReturn(bigqueryJobs);
     when(bigqueryJobs.insert(eq("Project-Id"), any(Job.class))).thenReturn(bigqueryJobsInsert);
@@ -92,7 +88,7 @@ public class UploadDatastoreBackupActionTest {
   }
 
   @Test
-  public void testSuccess_enqueueLoadTask() {
+  void testSuccess_enqueueLoadTask() {
     enqueueUploadBackupTask("id12345", "gs://bucket/path", ImmutableSet.of("one", "two", "three"));
     assertTasksEnqueued(
         QUEUE,
@@ -105,7 +101,7 @@ public class UploadDatastoreBackupActionTest {
   }
 
   @Test
-  public void testSuccess_doPost() throws Exception {
+  void testSuccess_doPost() throws Exception {
     action.run();
 
     // Verify that checkedBigquery was called in a way that would create the dataset if it didn't
@@ -187,7 +183,7 @@ public class UploadDatastoreBackupActionTest {
   }
 
   @Test
-  public void testFailure_doPost_bigqueryThrowsException() throws Exception {
+  void testFailure_doPost_bigqueryThrowsException() throws Exception {
     when(bigqueryJobsInsert.execute()).thenThrow(new IOException("The Internet has gone missing"));
     InternalServerErrorException thrown =
         assertThrows(InternalServerErrorException.class, action::run);
@@ -197,7 +193,7 @@ public class UploadDatastoreBackupActionTest {
   }
 
   @Test
-  public void testgetBackupInfoFileForKind() {
+  void testgetBackupInfoFileForKind() {
     assertThat(
             getBackupInfoFileForKind(
                 "gs://BucketName/2018-11-11T00:00:00_12345", "AllocationToken"))

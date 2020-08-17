@@ -26,7 +26,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,32 +47,29 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.AppEngineRule;
-import google.registry.testing.ShardableTestCase;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link AllocationTokenFlowUtils}. */
-@RunWith(JUnit4.class)
-public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
+class AllocationTokenFlowUtilsTest {
 
   private final AllocationTokenFlowUtils flowUtils =
       new AllocationTokenFlowUtils(new AllocationTokenCustomLogic());
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @Before
-  public void initTest() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
   }
 
   @Test
-  public void test_validateToken_successfullyVerifiesValidToken() throws Exception {
+  void test_validateToken_successfullyVerifiesValidToken() throws Exception {
     AllocationToken token =
         persistResource(
             new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
@@ -87,12 +84,12 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_validateToken_failsOnNonexistentToken() {
+  void test_validateToken_failsOnNonexistentToken() {
     assertValidateThrowsEppException(InvalidAllocationTokenException.class);
   }
 
   @Test
-  public void test_validateToken_failsOnNullToken() {
+  void test_validateToken_failsOnNullToken() {
     assertAboutEppExceptions()
         .that(
             assertThrows(
@@ -108,7 +105,7 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_validateToken_callsCustomLogic() {
+  void test_validateToken_callsCustomLogic() {
     AllocationTokenFlowUtils failingFlowUtils =
         new AllocationTokenFlowUtils(new FailingAllocationTokenCustomLogic());
     persistResource(
@@ -127,7 +124,7 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_validateToken_invalidForClientId() {
+  void test_validateToken_invalidForClientId() {
     persistResource(
         createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
             .setAllowedClientIds(ImmutableSet.of("NewRegistrar"))
@@ -136,7 +133,7 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_validateToken_invalidForTld() {
+  void test_validateToken_invalidForTld() {
     persistResource(
         createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
             .setAllowedTlds(ImmutableSet.of("nottld"))
@@ -145,19 +142,19 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_validateToken_beforePromoStart() {
+  void test_validateToken_beforePromoStart() {
     persistResource(createOneMonthPromoTokenBuilder(DateTime.now(UTC).plusDays(1)).build());
     assertValidateThrowsEppException(AllocationTokenNotInPromotionException.class);
   }
 
   @Test
-  public void test_validateToken_afterPromoEnd() {
+  void test_validateToken_afterPromoEnd() {
     persistResource(createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusMonths(2)).build());
     assertValidateThrowsEppException(AllocationTokenNotInPromotionException.class);
   }
 
   @Test
-  public void test_validateToken_promoCancelled() {
+  void test_validateToken_promoCancelled() {
     // the promo would be valid but it was cancelled 12 hours ago
     persistResource(
         createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
@@ -172,7 +169,7 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_checkDomainsWithToken_successfullyVerifiesValidToken() {
+  void test_checkDomainsWithToken_successfullyVerifiesValidToken() {
     persistResource(
         new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
     assertThat(
@@ -191,7 +188,7 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_checkDomainsWithToken_showsFailureMessageForRedeemedToken() {
+  void test_checkDomainsWithToken_showsFailureMessageForRedeemedToken() {
     persistResource(
         new AllocationToken.Builder()
             .setToken("tokeN")
@@ -217,7 +214,7 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_checkDomainsWithToken_callsCustomLogic() {
+  void test_checkDomainsWithToken_callsCustomLogic() {
     persistResource(
         new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
     AllocationTokenFlowUtils failingFlowUtils =
@@ -236,7 +233,7 @@ public class AllocationTokenFlowUtilsTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_checkDomainsWithToken_resultsFromCustomLogicAreIntegrated() {
+  void test_checkDomainsWithToken_resultsFromCustomLogicAreIntegrated() {
     persistResource(
         new AllocationToken.Builder().setToken("tokeN").setTokenType(SINGLE_USE).build());
     AllocationTokenFlowUtils customResultFlowUtils =

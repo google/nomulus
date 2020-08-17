@@ -15,31 +15,30 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import google.registry.export.datastore.DatastoreAdmin;
 import google.registry.export.datastore.DatastoreAdmin.Get;
 import google.registry.export.datastore.Operation;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link GetOperationStatusCommand}. */
-@RunWith(JUnit4.class)
-public class GetOperationStatusCommandTest extends CommandTestCase<GetOperationStatusCommand> {
+class GetOperationStatusCommandTest extends CommandTestCase<GetOperationStatusCommand> {
 
   @Mock private DatastoreAdmin datastoreAdmin;
   @Mock private Get getRequest;
   @Captor ArgumentCaptor<String> operationName;
 
-  @Before
-  public void setup() throws IOException {
+  @BeforeEach
+  void beforeEach() throws IOException {
     command.datastoreAdmin = datastoreAdmin;
 
     when(datastoreAdmin.get(operationName.capture())).thenReturn(getRequest);
@@ -47,13 +46,14 @@ public class GetOperationStatusCommandTest extends CommandTestCase<GetOperationS
   }
 
   @Test
-  public void test_success() throws Exception {
+  void test_success() throws Exception {
     runCommand("projects/project-id/operations/HASH");
     assertThat(operationName.getValue()).isEqualTo("projects/project-id/operations/HASH");
   }
 
   @Test
-  public void test_failure_tooManyNames() {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void test_failure_tooManyNames() {
     assertThrows(IllegalArgumentException.class, () -> runCommand("a", "b"));
   }
 }

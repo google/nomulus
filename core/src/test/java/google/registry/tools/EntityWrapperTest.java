@@ -21,23 +21,22 @@ import com.google.appengine.api.datastore.EntityTranslator;
 import com.google.common.collect.ImmutableList;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import com.google.storage.onestore.v3.OnestoreEntity.Property;
-import google.registry.testing.AppEngineRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import google.registry.testing.AppEngineExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
+/** Unit tests for {@link EntityWrapper}. */
 public final class EntityWrapperTest {
 
   private static final String TEST_ENTITY_KIND = "TestEntity";
   private static final int ARBITRARY_KEY_ID = 1001;
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testEquals() {
+  void testEquals() {
     // Create an entity with a key and some properties.
     Entity entity = new Entity(TEST_ENTITY_KIND, ARBITRARY_KEY_ID);
     // Note that we need to specify these as long for property comparisons to work because that's
@@ -73,7 +72,7 @@ public final class EntityWrapperTest {
   }
 
   @Test
-  public void testDifferentPropertiesNotEqual() {
+  void testDifferentPropertiesNotEqual() {
     Entity entity = new Entity(TEST_ENTITY_KIND, ARBITRARY_KEY_ID);
     // Note that we need to specify these as long for property comparisons to work because that's
     // how they are deserialized from protos.
@@ -98,7 +97,7 @@ public final class EntityWrapperTest {
   }
 
   @Test
-  public void testDifferentKeysNotEqual() {
+  void testDifferentKeysNotEqual() {
     EntityProto proto1 =
         EntityTranslator.convertToPb(new Entity(TEST_ENTITY_KIND, ARBITRARY_KEY_ID));
     EntityProto proto2 =
@@ -115,7 +114,7 @@ public final class EntityWrapperTest {
   }
 
   @Test
-  public void testComparisonAgainstNonComparableEntities() {
+  void testComparisonAgainstNonComparableEntities() {
     EntityWrapper ce = new EntityWrapper(new Entity(TEST_ENTITY_KIND, ARBITRARY_KEY_ID));
     // Note: this has to be "isNotEqualTo()" and not isNotNull() because we want to test the
     // equals() method and isNotNull() just checks for "ce != null".

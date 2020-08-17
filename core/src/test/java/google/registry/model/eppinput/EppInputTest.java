@@ -18,23 +18,20 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.eppcommon.EppXmlTransformer.unmarshal;
 import static google.registry.testing.TestDataHelper.loadBytes;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.contact.ContactResourceTest;
 import google.registry.model.domain.DomainBaseTest;
 import google.registry.model.eppinput.EppInput.InnerCommand;
 import google.registry.model.eppinput.EppInput.Login;
 import google.registry.xml.XmlException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link EppInput}. */
-@RunWith(JUnit4.class)
-public class EppInputTest {
+class EppInputTest {
 
   @Test
-  public void testUnmarshalling_contactInfo() throws Exception {
+  void testUnmarshalling_contactInfo() throws Exception {
     EppInput input =
         unmarshal(EppInput.class, loadBytes(ContactResourceTest.class, "contact_info.xml").read());
     assertThat(input.getCommandWrapper().getClTrid()).hasValue("ABC-12345");
@@ -45,7 +42,7 @@ public class EppInputTest {
   }
 
   @Test
-  public void testUnmarshalling_domainCheck() throws Exception {
+  void testUnmarshalling_domainCheck() throws Exception {
     EppInput input =
         unmarshal(EppInput.class, loadBytes(DomainBaseTest.class, "domain_check.xml").read());
     assertThat(input.getCommandWrapper().getClTrid()).hasValue("ABC-12345");
@@ -56,7 +53,7 @@ public class EppInputTest {
   }
 
   @Test
-  public void testUnmarshalling_login() throws Exception {
+  void testUnmarshalling_login() throws Exception {
     EppInput input = unmarshal(EppInput.class, loadBytes(getClass(), "login_valid.xml").read());
     assertThat(input.getCommandWrapper().getClTrid()).hasValue("ABC-12345");
     assertThat(input.getCommandType()).isEqualTo("login");
@@ -81,7 +78,7 @@ public class EppInputTest {
   }
 
   @Test
-  public void testUnmarshalling_loginTagInWrongCase_throws() {
+  void testUnmarshalling_loginTagInWrongCase_throws() {
     assertThrows(
         XmlException.class,
         () -> unmarshal(EppInput.class, loadBytes(getClass(), "login_wrong_case.xml").read()));

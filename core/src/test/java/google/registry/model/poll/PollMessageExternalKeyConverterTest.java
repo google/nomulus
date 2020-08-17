@@ -23,7 +23,7 @@ import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.Period;
@@ -31,31 +31,28 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessageExternalKeyConverter.PollMessageExternalKeyParseException;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PollMessageExternalKeyConverter}. */
-@RunWith(JUnit4.class)
 public class PollMessageExternalKeyConverterTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @Rule
-  public InjectRule inject = new InjectRule();
+  @RegisterExtension public InjectExtension inject = new InjectExtension();
 
-  HistoryEntry historyEntry;
-  FakeClock clock = new FakeClock(DateTime.parse("2007-07-07T01:01:01Z"));
+  private HistoryEntry historyEntry;
+  private FakeClock clock = new FakeClock(DateTime.parse("2007-07-07T01:01:01Z"));
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     createTld("foobar");
     historyEntry = persistResource(new HistoryEntry.Builder()
@@ -73,7 +70,7 @@ public class PollMessageExternalKeyConverterTest {
   }
 
   @Test
-  public void testSuccess_domain() {
+  void testSuccess_domain() {
     PollMessage.OneTime pollMessage =
         persistResource(
             new PollMessage.OneTime.Builder()
@@ -88,7 +85,7 @@ public class PollMessageExternalKeyConverterTest {
   }
 
   @Test
-  public void testSuccess_contact() {
+  void testSuccess_contact() {
     historyEntry =
         persistResource(historyEntry.asBuilder().setParent(persistActiveContact("tim")).build());
     PollMessage.OneTime pollMessage =
@@ -104,7 +101,7 @@ public class PollMessageExternalKeyConverterTest {
   }
 
   @Test
-  public void testSuccess_host() {
+  void testSuccess_host() {
     historyEntry =
         persistResource(historyEntry.asBuilder().setParent(persistActiveHost("time.zyx")).build());
     PollMessage.OneTime pollMessage =
@@ -120,14 +117,14 @@ public class PollMessageExternalKeyConverterTest {
   }
 
   @Test
-  public void testFailure_missingYearField() {
+  void testFailure_missingYearField() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
         () -> parsePollMessageExternalId("1-2-FOOBAR-4-5"));
   }
 
   @Test
-  public void testFailure_invalidEppResourceTypeId() {
+  void testFailure_invalidEppResourceTypeId() {
     // Populate the testdata correctly as for 1-2-FOOBAR-4-5 so we know that the only thing that
     // is wrong here is the EppResourceTypeId.
     testSuccess_domain();
@@ -137,22 +134,21 @@ public class PollMessageExternalKeyConverterTest {
   }
 
   @Test
-  public void testFailure_tooFewComponentParts() {
+  void testFailure_tooFewComponentParts() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
         () -> parsePollMessageExternalId("1-3-EXAMPLE"));
   }
 
   @Test
-  public void testFailure_tooManyComponentParts() {
+  void testFailure_tooManyComponentParts() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
         () -> parsePollMessageExternalId("1-3-EXAMPLE-4-5-2007-2009"));
   }
 
-
   @Test
-  public void testFailure_nonNumericIds() {
+  void testFailure_nonNumericIds() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
         () -> parsePollMessageExternalId("A-B-FOOBAR-D-E-F"));

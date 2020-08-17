@@ -16,7 +16,7 @@ package google.registry.flows.host;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Strings;
 import google.registry.flows.host.HostFlowUtils.HostNameNotLowerCaseException;
@@ -25,71 +25,68 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooLongException;
 import google.registry.flows.host.HostFlowUtils.HostNameTooShallowException;
 import google.registry.flows.host.HostFlowUtils.InvalidHostNameException;
-import google.registry.testing.AppEngineRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import google.registry.testing.AppEngineExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostFlowUtils}. */
-@RunWith(JUnit4.class)
-public class HostFlowUtilsTest {
+class HostFlowUtilsTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void test_validExternalHostName_validates() throws Exception {
+  void test_validExternalHostName_validates() throws Exception {
     assertThat(validateHostName("host.example.com").toString()).isEqualTo("host.example.com");
   }
 
   @Test
-  public void test_validExternalHostNameOnRegistrySuffixList_validates() throws Exception {
+  void test_validExternalHostNameOnRegistrySuffixList_validates() throws Exception {
     assertThat(validateHostName("host.blogspot.com").toString()).isEqualTo("host.blogspot.com");
   }
 
   @Test
-  public void test_validExternalHostNameOnRegistrySuffixList_multipartTLD_validates()
-      throws Exception {
+  void test_validExternalHostNameOnRegistrySuffixList_multipartTLD_validates() throws Exception {
     assertThat(validateHostName("ns1.host.co.uk").toString()).isEqualTo("ns1.host.co.uk");
   }
 
   @Test
-  public void test_validExternalHostNameOnRegistrySuffixList_multipartTLD_tooShallow() {
+  void test_validExternalHostNameOnRegistrySuffixList_multipartTLD_tooShallow() {
     assertThrows(
         HostNameTooShallowException.class, () -> validateHostName("host.co.uk").toString());
   }
 
   @Test
-  public void test_validateHostName_hostNameTooLong() {
+  void test_validateHostName_hostNameTooLong() {
     assertThrows(
         HostNameTooLongException.class,
         () -> validateHostName(Strings.repeat("na", 200) + ".wat.man"));
   }
 
   @Test
-  public void test_validateHostName_hostNameNotLowerCase() {
+  void test_validateHostName_hostNameNotLowerCase() {
     assertThrows(HostNameNotLowerCaseException.class, () -> validateHostName("NA.CAPS.TLD"));
   }
 
   @Test
-  public void test_validateHostName_hostNameNotPunyCoded() {
+  void test_validateHostName_hostNameNotPunyCoded() {
     assertThrows(
         HostNameNotPunyCodedException.class, () -> validateHostName("motörhead.death.metal"));
   }
 
   @Test
-  public void test_validateHostName_hostNameNotNormalized() {
+  void test_validateHostName_hostNameNotNormalized() {
     assertThrows(HostNameNotNormalizedException.class, () -> validateHostName("root.node.yeah."));
   }
 
   @Test
-  public void test_validateHostName_hostNameHasLeadingHyphen() {
+  void test_validateHostName_hostNameHasLeadingHyphen() {
     assertThrows(InvalidHostNameException.class, () -> validateHostName("-giga.mega.tld"));
   }
 
   @Test
-  public void test_validateHostName_hostNameTooShallow() {
+  void test_validateHostName_hostNameTooShallow() {
     assertThrows(HostNameTooShallowException.class, () -> validateHostName("domain.tld"));
   }
 }

@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.newRegistry;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
@@ -27,7 +27,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.tools.server.ListDomainsAction;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /**
  * Unit tests for {@link ListDomainsCommand}.
@@ -47,7 +49,8 @@ public class ListDomainsCommandTest extends ListObjectsCommandTestCase<ListDomai
   }
 
   @Test
-  public void test_tldsParamTooLong() {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void test_tldsParamTooLong() {
     String tldsParam = "--tlds=foo,bar" + Strings.repeat(",baz", 300);
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand(tldsParam));
@@ -57,7 +60,7 @@ public class ListDomainsCommandTest extends ListObjectsCommandTestCase<ListDomai
   }
 
   @Test
-  public void test_bothParamsSpecified() throws Exception {
+  void test_bothParamsSpecified() throws Exception {
     runCommand("--tlds=foo,bar", "--limit=100");
     verify(connection)
         .sendPostRequest(
@@ -68,7 +71,7 @@ public class ListDomainsCommandTest extends ListObjectsCommandTestCase<ListDomai
   }
 
   @Test
-  public void test_defaultsToAllRealTlds() throws Exception {
+  void test_defaultsToAllRealTlds() throws Exception {
     createTlds("tldone", "tldtwo");
     persistResource(newRegistry("fake", "FAKE").asBuilder().setTldType(TldType.TEST).build());
     runCommand();

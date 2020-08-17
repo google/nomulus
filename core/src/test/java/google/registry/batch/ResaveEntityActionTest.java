@@ -42,41 +42,39 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.ofy.Ofy;
 import google.registry.request.Response;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
-import google.registry.testing.ShardableTestCase;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.AppEngineServiceUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link ResaveEntityAction}. */
-@RunWith(JUnit4.class)
-public class ResaveEntityActionTest extends ShardableTestCase {
+@ExtendWith(MockitoExtension.class)
+public class ResaveEntityActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Rule public final InjectRule inject = new InjectRule();
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @Mock private AppEngineServiceUtils appEngineServiceUtils;
   @Mock private Response response;
   private final FakeClock clock = new FakeClock(DateTime.parse("2016-02-11T10:00:00Z"));
   private AsyncTaskEnqueuer asyncTaskEnqueuer;
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     when(appEngineServiceUtils.getServiceHostname("backend")).thenReturn("backend.hostname.fake");
     asyncTaskEnqueuer =
@@ -94,8 +92,9 @@ public class ResaveEntityActionTest extends ShardableTestCase {
     action.run();
   }
 
+  @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  public void test_domainPendingTransfer_isResavedAndTransferCompleted() {
+  void test_domainPendingTransfer_isResavedAndTransferCompleted() {
     DomainBase domain =
         persistDomainWithPendingTransfer(
             persistDomainWithDependentResources(
@@ -117,10 +116,11 @@ public class ResaveEntityActionTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_domainPendingDeletion_isResavedAndReenqueued() {
+  void test_domainPendingDeletion_isResavedAndReenqueued() {
+    DomainBase newDomain = newDomainBase("domain.tld");
     DomainBase domain =
         persistResource(
-            newDomainBase("domain.tld")
+            newDomain
                 .asBuilder()
                 .setDeletionTime(clock.nowUtc().plusDays(35))
                 .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
@@ -128,6 +128,7 @@ public class ResaveEntityActionTest extends ShardableTestCase {
                     ImmutableSet.of(
                         GracePeriod.createWithoutBillingEvent(
                             GracePeriodStatus.REDEMPTION,
+                            newDomain.getRepoId(),
                             clock.nowUtc().plusDays(30),
                             "TheRegistrar")))
                 .build());

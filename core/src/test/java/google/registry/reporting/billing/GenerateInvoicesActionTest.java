@@ -31,23 +31,20 @@ import com.google.api.services.dataflow.model.LaunchTemplateParameters;
 import com.google.api.services.dataflow.model.LaunchTemplateResponse;
 import com.google.api.services.dataflow.model.RuntimeEnvironment;
 import com.google.common.collect.ImmutableMap;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.io.IOException;
 import org.joda.time.YearMonth;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.billing.GenerateInvoicesAction}. */
-@RunWith(JUnit4.class)
-public class GenerateInvoicesActionTest {
+class GenerateInvoicesActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
 
   private Dataflow dataflow;
   private Projects projects;
@@ -55,10 +52,10 @@ public class GenerateInvoicesActionTest {
   private Launch launch;
   private FakeResponse response;
   private BillingEmailUtils emailUtils;
-  GenerateInvoicesAction action;
+  private GenerateInvoicesAction action;
 
-  @Before
-  public void setUp() throws IOException {
+  @BeforeEach
+  void beforeEach() throws IOException {
     dataflow = mock(Dataflow.class);
     projects = mock(Projects.class);
     templates = mock(Templates.class);
@@ -77,7 +74,7 @@ public class GenerateInvoicesActionTest {
   }
 
   @Test
-  public void testLaunchTemplateJob_withPublish() throws Exception {
+  void testLaunchTemplateJob_withPublish() throws Exception {
     action =
         new GenerateInvoicesAction(
             "test-project",
@@ -113,7 +110,7 @@ public class GenerateInvoicesActionTest {
   }
 
   @Test
-  public void testLaunchTemplateJob_withoutPublish() throws Exception {
+  void testLaunchTemplateJob_withoutPublish() throws Exception {
     action =
         new GenerateInvoicesAction(
             "test-project",
@@ -142,7 +139,7 @@ public class GenerateInvoicesActionTest {
   }
 
   @Test
-  public void testCaughtIOException() throws IOException {
+  void testCaughtIOException() throws IOException {
     when(launch.execute()).thenThrow(new IOException("expected"));
     action =
         new GenerateInvoicesAction(

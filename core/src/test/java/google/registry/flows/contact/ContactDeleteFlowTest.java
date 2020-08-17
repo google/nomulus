@@ -24,7 +24,7 @@ import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistDeletedContact;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
@@ -37,26 +37,25 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactDeleteFlow}. */
-public class ContactDeleteFlowTest
-    extends ResourceFlowTestCase<ContactDeleteFlow, ContactResource> {
+class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, ContactResource> {
 
-  @Before
-  public void initFlowTest() {
+  @BeforeEach
+  void initFlowTest() {
     setEppInput("contact_delete.xml");
   }
 
   @Test
-  public void testDryRun() throws Exception {
+  void testDryRun() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     dryRunFlowAssertResponse(loadFile("contact_delete_response.xml"));
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
@@ -73,7 +72,7 @@ public class ContactDeleteFlowTest
   }
 
   @Test
-  public void testSuccess_clTridNotSpecified() throws Exception {
+  void testSuccess_clTridNotSpecified() throws Exception {
     setEppInput("contact_delete_no_cltrid.xml");
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
@@ -91,7 +90,7 @@ public class ContactDeleteFlowTest
   }
 
   @Test
-  public void testFailure_neverExisted() throws Exception {
+  void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
@@ -99,7 +98,7 @@ public class ContactDeleteFlowTest
   }
 
   @Test
-  public void testFailure_existedButWasDeleted() throws Exception {
+  void testFailure_existedButWasDeleted() throws Exception {
     persistDeletedContact(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
@@ -108,19 +107,19 @@ public class ContactDeleteFlowTest
   }
 
   @Test
-  public void testFailure_existedButWasClientDeleteProhibited() throws Exception {
+  void testFailure_existedButWasClientDeleteProhibited() throws Exception {
     doFailingStatusTest(
         StatusValue.CLIENT_DELETE_PROHIBITED, ResourceStatusProhibitsOperationException.class);
   }
 
   @Test
-  public void testFailure_existedButWasServerDeleteProhibited() throws Exception {
+  void testFailure_existedButWasServerDeleteProhibited() throws Exception {
     doFailingStatusTest(
         StatusValue.SERVER_DELETE_PROHIBITED, ResourceStatusProhibitsOperationException.class);
   }
 
   @Test
-  public void testFailure_existedButWasPendingDelete() throws Exception {
+  void testFailure_existedButWasPendingDelete() throws Exception {
     doFailingStatusTest(
         StatusValue.PENDING_DELETE, ResourceStatusProhibitsOperationException.class);
   }
@@ -137,7 +136,7 @@ public class ContactDeleteFlowTest
   }
 
   @Test
-  public void testFailure_unauthorizedClient() throws Exception {
+  void testFailure_unauthorizedClient() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
@@ -145,7 +144,7 @@ public class ContactDeleteFlowTest
   }
 
   @Test
-  public void testSuccess_superuserUnauthorizedClient() throws Exception {
+  void testSuccess_superuserUnauthorizedClient() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
@@ -163,7 +162,7 @@ public class ContactDeleteFlowTest
   }
 
   @Test
-  public void testFailure_failfastWhenLinkedToDomain() throws Exception {
+  void testFailure_failfastWhenLinkedToDomain() throws Exception {
     createTld("tld");
     persistResource(
         newDomainBase("example.tld", persistActiveContact(getUniqueIdFromCommand())));
@@ -172,7 +171,7 @@ public class ContactDeleteFlowTest
   }
 
   @Test
-  public void testFailure_failfastWhenLinkedToApplication() throws Exception {
+  void testFailure_failfastWhenLinkedToApplication() throws Exception {
     createTld("tld");
     persistResource(
         newDomainBase("example.tld", persistActiveContact(getUniqueIdFromCommand())));
@@ -181,7 +180,7 @@ public class ContactDeleteFlowTest
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     runFlow();

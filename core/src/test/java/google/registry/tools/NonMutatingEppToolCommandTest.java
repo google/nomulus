@@ -15,13 +15,13 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.tools.server.ToolsTestData;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link NonMutatingEppToolCommand}. */
 public class NonMutatingEppToolCommandTest
@@ -34,8 +34,7 @@ public class NonMutatingEppToolCommandTest
     @Parameter(names = {"--client"})
     String clientId;
 
-    @Parameter
-    List<String> xmlPayloads;
+    @Parameter List<String> xmlPayloads;
 
     @Override
     void initEppToolCommand() {
@@ -51,14 +50,14 @@ public class NonMutatingEppToolCommandTest
   }
 
   @Test
-  public void testSuccess_doesntPrompt_whenNotForced() throws Exception {
+  void testSuccess_doesntPrompt_whenNotForced() throws Exception {
     // The choice of xml file is arbitrary.
     runCommand("--client=NewRegistrar", ToolsTestData.loadFile("domain_check.xml"));
     eppVerifier.expectDryRun().verifySent("domain_check.xml");
   }
 
   @Test
-  public void testFailure_doesntAllowForce() {
+  void testFailure_doesntAllowForce() {
     Exception e =
         assertThrows(
             IllegalArgumentException.class,

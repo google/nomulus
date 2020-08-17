@@ -28,9 +28,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /**
  * End-to-end tests for {@link WebWhoisProtocolsModule}.
@@ -49,8 +47,7 @@ import org.junit.runners.JUnit4;
  * <p>Only the HTTP redirect protocol is tested as both protocols share the same handlers except for
  * those that are excluded ({@code SslServerInitializer}, {@code WebWhoisRedirectHandler}).
  */
-@RunWith(JUnit4.class)
-public class WebWhoisProtocolsModuleTest extends ProtocolModuleTest {
+class WebWhoisProtocolsModuleTest extends ProtocolModuleTest {
 
   private static final String HOST = "test.tld";
   private static final String PATH = "/path/to/test";
@@ -58,7 +55,7 @@ public class WebWhoisProtocolsModuleTest extends ProtocolModuleTest {
   private final EmbeddedChannel clientChannel =
       new EmbeddedChannel(new HttpClientCodec(), new HttpObjectAggregator(512 * 1024));
 
-  public WebWhoisProtocolsModuleTest() {
+  WebWhoisProtocolsModuleTest() {
     super(TestComponent::httpWhoisHandlers);
   }
 
@@ -98,12 +95,12 @@ public class WebWhoisProtocolsModuleTest extends ProtocolModuleTest {
   }
 
   @Test
-  public void testSuccess_OkResponse() {
+  void testSuccess_OkResponse() {
     requestAndRespondWithStatus(HttpResponseStatus.OK);
   }
 
   @Test
-  public void testSuccess_NonOkResponse() {
+  void testSuccess_NonOkResponse() {
     requestAndRespondWithStatus(HttpResponseStatus.BAD_REQUEST);
   }
 }

@@ -18,21 +18,18 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.annotation.Id;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.lang.reflect.Field;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ModelUtils}. */
-@RunWith(JUnit4.class)
 public class ModelUtilsTest {
 
-  @Rule
-  public AppEngineRule appEngineRule = new AppEngineRule.Builder().build();
+  @RegisterExtension
+  public AppEngineExtension appEngineRule = new AppEngineExtension.Builder().build();
 
   /** Test class for reflection methods. */
   public static class TestClass extends ImmutableObject implements Buildable {
@@ -79,13 +76,13 @@ public class ModelUtilsTest {
     }
   }
 
-  @Before
-  public void resetCaches() {
+  @BeforeEach
+  void resetCaches() {
     ModelUtils.resetCaches();
   }
 
   @Test
-  public void testGetAllFields() throws Exception {
+  void testGetAllFields() throws Exception {
     Map<String, Field> expected = ImmutableMap.of(
         "id", TestClass.class.getDeclaredField("id"),
         "a", TestClass.class.getDeclaredField("a"),
@@ -101,7 +98,7 @@ public class ModelUtilsTest {
   }
 
   @Test
-  public void testGetFieldValues() throws Exception {
+  void testGetFieldValues() throws Exception {
     TestClass testInstance = new TestClass();
     testInstance.id = "foo";
     testInstance.a = "a";
@@ -125,7 +122,7 @@ public class ModelUtilsTest {
   }
 
   @Test
-  public void testBuildingResetsHashCode() {
+  void testBuildingResetsHashCode() {
     TestClass original = new TestClass();
     original.id = "foo";
     TestClass cloned = original.asBuilder().setId("bar").build();

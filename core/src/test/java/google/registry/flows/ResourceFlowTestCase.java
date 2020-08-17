@@ -22,7 +22,7 @@ import static google.registry.model.tmch.ClaimsListShardTest.createTestClaimsLis
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -46,8 +46,8 @@ import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.json.simple.JSONValue;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Base class for resource flow unit tests.
@@ -60,8 +60,8 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
 
   private final TestLogHandler logHandler = new TestLogHandler();
 
-  @Before
-  public void beforeResourceFlowTestCase() {
+  @BeforeEach
+  void beforeResourceFlowTestCase() {
     // Attach TestLogHandler to the root logger so it has access to all log messages.
     // Note that in theory for assertIcannReportingActivityFieldLogged() below it would suffice to
     // attach it only to the FlowRunner logger, but for some reason this doesn't work for all flows.
@@ -89,7 +89,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     return refreshedResource;
   }
 
-  protected ResourceCommand.SingleResourceCommand getResourceCommand() throws Exception {
+  private ResourceCommand.SingleResourceCommand getResourceCommand() throws Exception {
     return (ResourceCommand.SingleResourceCommand)
         ((ResourceCommandWrapper) eppLoader.getEpp().getCommandWrapper().getCommand())
             .getResourceCommand();
@@ -99,7 +99,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     return getResourceCommand().getTargetId();
   }
 
-  protected Class<R> getResourceClass() {
+  private Class<R> getResourceClass() {
     return new TypeInstantiator<R>(getClass()){}.getExactType();
   }
 
@@ -119,7 +119,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
   }
 
   @Test
-  public void testRequiresLogin() {
+  void testRequiresLogin() {
     sessionMetadata.setClientId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();

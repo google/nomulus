@@ -106,6 +106,7 @@ registry.registrar.ContactSettings.prototype.renderItem = function(rspObj) {
           registryLockAllowedForRegistrar: rspObj.registryLockAllowed
         });
     this.setupAppbar();
+    this.setupPasswordElemIfNecessary_(targetContactNdx);
   } else {
     var contactsByType = {};
     for (var c in contacts) {
@@ -250,4 +251,27 @@ registry.registrar.ContactSettings.prototype.handleDeleteResponse =
     this.console.view('contact-settings');
   }
   return rsp;
+};
+
+// Show or hide the password based on what the user chooses
+registry.registrar.ContactSettings.prototype.setupPasswordElemIfNecessary_ =
+    function(contactIndex) {
+  var showOrHidePasswordButton = goog.dom.getElement('showOrHideRegistryLockPassword')
+  var showOrHidePassword = function() {
+    var inputElement = goog.dom.getRequiredElement(
+        'contacts[' + contactIndex + '].registryLockPassword')
+    var type = inputElement.getAttribute('type')
+    if (type === 'password') {
+      showOrHidePasswordButton.text = 'Hide password';
+      inputElement.setAttribute('type', 'text');
+    } else {
+      showOrHidePasswordButton.text = 'Show password';
+      inputElement.setAttribute('type', 'password');
+    }
+  };
+
+  if (showOrHidePasswordButton != null) {
+    goog.events.listen(showOrHidePasswordButton,
+        goog.events.EventType.CLICK, showOrHidePassword, false, this);
+  }
 };

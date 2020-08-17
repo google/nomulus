@@ -16,11 +16,13 @@ package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import google.registry.testing.DatastoreEntityExtension;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -32,6 +34,9 @@ public class PersistenceModuleTest {
   @Container
   private final PostgreSQLContainer database =
       new PostgreSQLContainer(NomulusPostgreSql.getDockerTag());
+
+  @RegisterExtension
+  public DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   private EntityManagerFactory emf;
 

@@ -28,8 +28,8 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.appengine.api.datastore.DatastoreFailureException;
 import com.google.appengine.api.datastore.DatastoreTimeoutException;
@@ -45,30 +45,29 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
 import google.registry.util.SystemClock;
 import java.util.ConcurrentModificationException;
 import java.util.function.Supplier;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for our wrapper around Objectify. */
-@RunWith(JUnit4.class)
 public class OfyTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+
   /** An entity to use in save and delete tests. */
   private HistoryEntry someObject;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
     someObject = new HistoryEntry.Builder()
         .setClientId("client id")
@@ -81,8 +80,8 @@ public class OfyTest {
   }
 
   private void doBackupGroupRootTimestampInversionTest(Runnable runnable) {
-    DateTime groupTimestamp = ofy().load().key(someObject.getParent()).now()
-        .getUpdateAutoTimestamp().getTimestamp();
+    DateTime groupTimestamp =
+        ofy().load().key(someObject.getParent()).now().getUpdateTimestamp().getTimestamp();
     // Set the clock in Ofy to the same time as the backup group root's save time.
     Ofy ofy = new Ofy(new FakeClock(groupTimestamp));
     TimestampInversionException thrown =
@@ -97,17 +96,17 @@ public class OfyTest {
   }
 
   @Test
-  public void testBackupGroupRootTimestampsMustIncreaseOnSave() {
+  void testBackupGroupRootTimestampsMustIncreaseOnSave() {
     doBackupGroupRootTimestampInversionTest(() -> ofy().save().entity(someObject));
   }
 
   @Test
-  public void testBackupGroupRootTimestampsMustIncreaseOnDelete() {
+  void testBackupGroupRootTimestampsMustIncreaseOnDelete() {
     doBackupGroupRootTimestampInversionTest(() -> ofy().delete().entity(someObject));
   }
 
   @Test
-  public void testSavingKeyTwice() {
+  void testSavingKeyTwice() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -122,7 +121,7 @@ public class OfyTest {
   }
 
   @Test
-  public void testDeletingKeyTwice() {
+  void testDeletingKeyTwice() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -137,7 +136,7 @@ public class OfyTest {
   }
 
   @Test
-  public void testSaveDeleteKey() {
+  void testSaveDeleteKey() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -152,7 +151,7 @@ public class OfyTest {
   }
 
   @Test
-  public void testDeleteSaveKey() {
+  void testDeleteSaveKey() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -167,7 +166,7 @@ public class OfyTest {
   }
 
   @Test
-  public void testSavingKeyTwiceInOneCall() {
+  void testSavingKeyTwiceInOneCall() {
     assertThrows(
         IllegalArgumentException.class,
         () -> tm().transact(() -> ofy().save().entities(someObject, someObject)));
@@ -198,7 +197,7 @@ public class OfyTest {
   }
 
   @Test
-  public void testLifecycleCallbacks_loadFromEntity() {
+  void testLifecycleCallbacks_loadFromEntity() {
     ofy().factory().register(LifecycleObject.class);
     LifecycleObject object = new LifecycleObject();
     Entity entity = ofy().save().toEntity(object);
@@ -207,7 +206,7 @@ public class OfyTest {
   }
 
   @Test
-  public void testLifecycleCallbacks_loadFromDatastore() {
+  void testLifecycleCallbacks_loadFromDatastore() {
     ofy().factory().register(LifecycleObject.class);
     final LifecycleObject object = new LifecycleObject();
     tm().transact(() -> ofy().save().entity(object).now());
@@ -218,7 +217,7 @@ public class OfyTest {
 
   /** Avoid regressions of b/21309102 where transaction time did not change on each retry. */
   @Test
-  public void testTransact_getsNewTimestampOnEachTry() {
+  void testTransact_getsNewTimestampOnEachTry() {
     tm().transact(new Runnable() {
 
       DateTime firstAttemptTime;
@@ -236,7 +235,7 @@ public class OfyTest {
   }
 
   @Test
-  public void testTransact_transientFailureException_retries() {
+  void testTransact_transientFailureException_retries() {
     assertThat(
             tm().transact(
                     new Supplier<Integer>() {
@@ -256,7 +255,7 @@ public class OfyTest {
   }
 
   @Test
-  public void testTransact_datastoreTimeoutException_noManifest_retries() {
+  void testTransact_datastoreTimeoutException_noManifest_retries() {
     assertThat(
             tm().transact(
                     new Supplier<Integer>() {
@@ -279,7 +278,7 @@ public class OfyTest {
   }
 
   @Test
-  public void testTransact_datastoreTimeoutException_manifestNotWrittenToDatastore_retries() {
+  void testTransact_datastoreTimeoutException_manifestNotWrittenToDatastore_retries() {
     assertThat(
             tm().transact(
                     new Supplier<Integer>() {
@@ -302,7 +301,7 @@ public class OfyTest {
   }
 
   @Test
-  public void testTransact_datastoreTimeoutException_manifestWrittenToDatastore_returnsSuccess() {
+  void testTransact_datastoreTimeoutException_manifestWrittenToDatastore_returnsSuccess() {
     // A work unit that throws if it is ever retried.
     Supplier work =
         new Supplier<Void>() {
@@ -356,22 +355,22 @@ public class OfyTest {
   }
 
   @Test
-  public void testTransactNewReadOnly_transientFailureException_retries() {
+  void testTransactNewReadOnly_transientFailureException_retries() {
     doReadOnlyRetryTest(new TransientFailureException(""));
   }
 
   @Test
-  public void testTransactNewReadOnly_datastoreTimeoutException_retries() {
+  void testTransactNewReadOnly_datastoreTimeoutException_retries() {
     doReadOnlyRetryTest(new DatastoreTimeoutException(""));
   }
 
   @Test
-  public void testTransactNewReadOnly_datastoreFailureException_retries() {
+  void testTransactNewReadOnly_datastoreFailureException_retries() {
     doReadOnlyRetryTest(new DatastoreFailureException(""));
   }
 
   @Test
-  public void test_getBaseEntityClassFromEntityOrKey_regularEntity() {
+  void test_getBaseEntityClassFromEntityOrKey_regularEntity() {
     ContactResource contact = newContactResource("testcontact");
     assertThat(getBaseEntityClassFromEntityOrKey(contact)).isEqualTo(ContactResource.class);
     assertThat(getBaseEntityClassFromEntityOrKey(Key.create(contact)))
@@ -379,7 +378,7 @@ public class OfyTest {
   }
 
   @Test
-  public void test_getBaseEntityClassFromEntityOrKey_subclassEntity() {
+  void test_getBaseEntityClassFromEntityOrKey_subclassEntity() {
     DomainBase domain = DatastoreHelper.newDomainBase("test.tld");
     assertThat(getBaseEntityClassFromEntityOrKey(domain)).isEqualTo(DomainBase.class);
     assertThat(getBaseEntityClassFromEntityOrKey(Key.create(domain)))
@@ -387,7 +386,7 @@ public class OfyTest {
   }
 
   @Test
-  public void test_getBaseEntityClassFromEntityOrKey_unregisteredEntity() {
+  void test_getBaseEntityClassFromEntityOrKey_unregisteredEntity() {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
@@ -396,7 +395,7 @@ public class OfyTest {
   }
 
   @Test
-  public void test_getBaseEntityClassFromEntityOrKey_unregisteredEntityKey() {
+  void test_getBaseEntityClassFromEntityOrKey_unregisteredEntityKey() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -409,7 +408,7 @@ public class OfyTest {
   }
 
   @Test
-  public void test_doWithFreshSessionCache() {
+  void test_doWithFreshSessionCache() {
     ofy().saveWithoutBackup().entity(someObject).now();
     final HistoryEntry modifiedObject =
         someObject.asBuilder().setModificationTime(END_OF_TIME).build();

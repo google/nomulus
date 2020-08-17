@@ -45,24 +45,22 @@ import google.registry.persistence.VKey;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectRule;
-import google.registry.testing.ShardableTestCase;
+import google.registry.testing.InjectExtension;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-public class EppTestCase extends ShardableTestCase {
+public class EppTestCase {
 
   private static final MediaType APPLICATION_EPP_XML_UTF8 =
       MediaType.create("application", "epp+xml").withCharset(UTF_8);
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   protected final FakeClock clock = new FakeClock();
 
@@ -71,8 +69,8 @@ public class EppTestCase extends ShardableTestCase {
   private EppMetric.Builder eppMetricBuilder;
   private boolean isSuperuser;
 
-  @Before
-  public void initTestCase() {
+  @BeforeEach
+  public void beforeEachEppTestCase() {
     // For transactional flows
     inject.setStaticField(Ofy.class, "clock", clock);
   }
@@ -85,7 +83,7 @@ public class EppTestCase extends ShardableTestCase {
    * such as {@link EppLoginUserTest}, {@link EppLoginAdminUserTest} and {@link EppLoginTlsTest}.
    * Therefore, only those tests should call this method.
    */
-  protected void setTransportCredentials(TransportCredentials credentials) {
+  void setTransportCredentials(TransportCredentials credentials) {
     this.credentials = credentials;
   }
 
@@ -134,7 +132,7 @@ public class EppTestCase extends ShardableTestCase {
     return new CommandAsserter(inputFilename, inputSubstitutions);
   }
 
-  protected CommandAsserter assertThatLogin(String clientId, String password) {
+  CommandAsserter assertThatLogin(String clientId, String password) {
     return assertThatCommand("login.xml", ImmutableMap.of("CLID", clientId, "PW", password));
   }
 
@@ -203,12 +201,12 @@ public class EppTestCase extends ShardableTestCase {
     return result;
   }
 
-  protected EppMetric getRecordedEppMetric() {
+  EppMetric getRecordedEppMetric() {
     return eppMetricBuilder.build();
   }
 
   /** Create the two administrative contacts and two hosts. */
-  protected void createContactsAndHosts() throws Exception {
+  void createContactsAndHosts() throws Exception {
     DateTime createTime = DateTime.parse("2000-06-01T00:00:00Z");
     createContacts(createTime);
     assertThatCommand("host_create.xml", ImmutableMap.of("HOSTNAME", "ns1.example.external"))
@@ -240,7 +238,7 @@ public class EppTestCase extends ShardableTestCase {
   }
 
   /** Creates the domain fakesite.example with two nameservers on it. */
-  protected void createFakesite() throws Exception {
+  void createFakesite() throws Exception {
     createContactsAndHosts();
     assertThatCommand("domain_create_fakesite.xml")
         .atTime("2000-06-01T00:04:00Z")
@@ -256,7 +254,7 @@ public class EppTestCase extends ShardableTestCase {
   }
 
   /** Creates ns3.fakesite.example as a host, then adds it to fakesite. */
-  protected void createSubordinateHost() throws Exception {
+  void createSubordinateHost() throws Exception {
     // Add the fakesite nameserver (requires that domain is already created).
     assertThatCommand("host_create_fakesite.xml")
         .atTime("2000-06-06T00:01:00Z")
@@ -291,8 +289,7 @@ public class EppTestCase extends ShardableTestCase {
   }
 
   /** Makes a one-time billing event corresponding to the given domain's renewal. */
-  protected static BillingEvent.OneTime makeOneTimeRenewBillingEvent(
-      DomainBase domain, DateTime renewTime) {
+  static BillingEvent.OneTime makeOneTimeRenewBillingEvent(DomainBase domain, DateTime renewTime) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.RENEW)
         .setTargetId(domain.getDomainName())
@@ -306,14 +303,14 @@ public class EppTestCase extends ShardableTestCase {
   }
 
   /** Makes a recurring billing event corresponding to the given domain's creation. */
-  protected static BillingEvent.Recurring makeRecurringCreateBillingEvent(
+  static BillingEvent.Recurring makeRecurringCreateBillingEvent(
       DomainBase domain, DateTime eventTime, DateTime endTime) {
     return makeRecurringBillingEvent(
         domain, getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE), eventTime, endTime);
   }
 
   /** Makes a recurring billing event corresponding to the given domain's renewal. */
-  protected static BillingEvent.Recurring makeRecurringRenewBillingEvent(
+  static BillingEvent.Recurring makeRecurringRenewBillingEvent(
       DomainBase domain, DateTime eventTime, DateTime endTime) {
     return makeRecurringBillingEvent(
         domain, getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW), eventTime, endTime);
@@ -334,7 +331,7 @@ public class EppTestCase extends ShardableTestCase {
   }
 
   /** Makes a cancellation billing event cancelling out the given domain create billing event. */
-  protected static BillingEvent.Cancellation makeCancellationBillingEventForCreate(
+  static BillingEvent.Cancellation makeCancellationBillingEventForCreate(
       DomainBase domain, OneTime billingEventToCancel, DateTime createTime, DateTime deleteTime) {
     return new BillingEvent.Cancellation.Builder()
         .setTargetId(domain.getDomainName())
@@ -348,7 +345,7 @@ public class EppTestCase extends ShardableTestCase {
   }
 
   /** Makes a cancellation billing event cancelling out the given domain renew billing event. */
-  protected static BillingEvent.Cancellation makeCancellationBillingEventForRenew(
+  static BillingEvent.Cancellation makeCancellationBillingEventForRenew(
       DomainBase domain, OneTime billingEventToCancel, DateTime renewTime, DateTime deleteTime) {
     return new BillingEvent.Cancellation.Builder()
         .setTargetId(domain.getDomainName())
@@ -370,7 +367,7 @@ public class EppTestCase extends ShardableTestCase {
    * This is necessary because the ID will be different even though all the rest of the fields are
    * the same.
    */
-  protected static Key<OneTime> findKeyToActualOneTimeBillingEvent(OneTime expectedBillingEvent) {
+  private static Key<OneTime> findKeyToActualOneTimeBillingEvent(OneTime expectedBillingEvent) {
     Optional<OneTime> actualCreateBillingEvent =
         ofy()
             .load()

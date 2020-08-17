@@ -20,25 +20,25 @@ import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistDeletedHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetHostCommand}. */
-public class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
+class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
 
-  DateTime now = DateTime.now(UTC);
+  private DateTime now = DateTime.now(UTC);
 
-  @Before
-  public void initialize() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     persistActiveHost("ns1.example.tld");
     runCommand("ns1.example.tld");
     assertInStdout("fullyQualifiedHostName=ns1.example.tld");
@@ -46,7 +46,7 @@ public class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
   }
 
   @Test
-  public void testSuccess_expand() throws Exception {
+  void testSuccess_expand() throws Exception {
     persistActiveHost("ns1.example.tld");
     runCommand("ns1.example.tld", "--expand");
     assertInStdout("fullyQualifiedHostName=ns1.example.tld");
@@ -55,7 +55,7 @@ public class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
   }
 
   @Test
-  public void testSuccess_multipleArguments() throws Exception {
+  void testSuccess_multipleArguments() throws Exception {
     persistActiveHost("ns1.example.tld");
     persistActiveHost("ns2.example.tld");
     runCommand("ns1.example.tld", "ns2.example.tld");
@@ -66,7 +66,7 @@ public class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
   }
 
   @Test
-  public void testSuccess_multipleTlds() throws Exception {
+  void testSuccess_multipleTlds() throws Exception {
     persistActiveHost("ns1.example.tld");
     createTld("tld2");
     persistActiveHost("ns1.example.tld2");
@@ -76,20 +76,20 @@ public class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
   }
 
   @Test
-  public void testSuccess_deletedHost() throws Exception {
+  void testSuccess_deletedHost() throws Exception {
     persistDeletedHost("ns1.example.tld", now.minusDays(1));
     runCommand("ns1.example.tld");
     assertInStdout("Host 'ns1.example.tld' does not exist or is deleted");
   }
 
   @Test
-  public void testSuccess_hostDoesNotExist() throws Exception {
+  void testSuccess_hostDoesNotExist() throws Exception {
     runCommand("foo.example.tld");
     assertInStdout("Host 'foo.example.tld' does not exist or is deleted");
   }
 
   @Test
-  public void testSuccess_hostDeletedInFuture() throws Exception {
+  void testSuccess_hostDeletedInFuture() throws Exception {
     persistResource(
         newHostResource("ns1.example.tld").asBuilder()
             .setDeletionTime(now.plusDays(1))
@@ -99,14 +99,14 @@ public class GetHostCommandTest extends CommandTestCase<GetHostCommand> {
   }
 
   @Test
-  public void testSuccess_externalHost() throws Exception {
+  void testSuccess_externalHost() throws Exception {
     persistActiveHost("ns1.example.foo");
     runCommand("ns1.example.foo");
     assertInStdout("fullyQualifiedHostName=ns1.example.foo");
   }
 
   @Test
-  public void testFailure_noHostName() {
+  void testFailure_noHostName() {
     assertThrows(ParameterException.class, this::runCommand);
   }
 }

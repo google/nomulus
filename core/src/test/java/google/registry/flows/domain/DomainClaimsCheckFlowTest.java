@@ -21,7 +21,7 @@ import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -36,19 +36,19 @@ import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainClaimsCheckFlow}. */
 public class DomainClaimsCheckFlowTest
     extends ResourceFlowTestCase<DomainClaimsCheckFlow, DomainBase> {
 
-  public DomainClaimsCheckFlowTest() {
+  DomainClaimsCheckFlowTest() {
     setEppInput("domain_check_claims.xml");
   }
 
-  @Before
-  public void initCheckTest() {
+  @BeforeEach
+  void initCheckTest() {
     createTld("tld");
   }
 
@@ -60,25 +60,25 @@ public class DomainClaimsCheckFlowTest
   }
 
   @Test
-  public void testSuccess_noClaims() throws Exception {
+  void testSuccess_noClaims() throws Exception {
     doSuccessfulTest("domain_check_claims_response_none.xml");
   }
 
   @Test
-  public void testSuccess_quietPeriod() throws Exception {
+  void testSuccess_quietPeriod() throws Exception {
     createTld("tld", TldState.QUIET_PERIOD);
     doSuccessfulTest("domain_check_claims_response_none.xml");
   }
 
   @Test
-  public void testSuccess_oneClaim() throws Exception {
+  void testSuccess_oneClaim() throws Exception {
     persistClaimsList(
         ImmutableMap.of("example2", "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001"));
     doSuccessfulTest("domain_check_claims_response.xml");
   }
 
   @Test
-  public void testSuccess_multipleTlds() throws Exception {
+  void testSuccess_multipleTlds() throws Exception {
     setEppInput("domain_check_claims_multiple_tlds.xml");
     createTld("tld1");
     createTld("tld2");
@@ -88,28 +88,28 @@ public class DomainClaimsCheckFlowTest
   }
 
   @Test
-  public void testSuccess_50IdsAllowed() throws Exception {
+  void testSuccess_50IdsAllowed() throws Exception {
     // Make sure we don't have a regression that reduces the number of allowed checks.
     setEppInput("domain_check_claims_50.xml");
     runFlow();
   }
 
   @Test
-  public void testFailure_TooManyIds() {
+  void testFailure_TooManyIds() {
     setEppInput("domain_check_claims_51.xml");
     EppException thrown = assertThrows(TooManyResourceChecksException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testFailure_tldDoesntExist() {
+  void testFailure_tldDoesntExist() {
     setEppInput("domain_check_claims_bad_tld.xml");
     EppException thrown = assertThrows(TldDoesNotExistException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testFailure_notAuthorizedForTld() {
+  void testFailure_notAuthorizedForTld() {
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
     EppException thrown = assertThrows(NotAuthorizedForTldException.class, this::runFlow);
@@ -117,7 +117,7 @@ public class DomainClaimsCheckFlowTest
   }
 
   @Test
-  public void testSuccess_superuserNotAuthorizedForTld() throws Exception {
+  void testSuccess_superuserNotAuthorizedForTld() throws Exception {
     persistClaimsList(
         ImmutableMap.of("example2", "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001"));
     persistResource(
@@ -130,7 +130,7 @@ public class DomainClaimsCheckFlowTest
   }
 
   @Test
-  public void testFailure_predelgation() {
+  void testFailure_predelgation() {
     createTld("tld", PREDELEGATION);
     setEppInput("domain_check_claims.xml");
     EppException thrown = assertThrows(BadCommandForRegistryPhaseException.class, this::runFlow);
@@ -138,7 +138,7 @@ public class DomainClaimsCheckFlowTest
   }
 
   @Test
-  public void testFailure_allocationToken() {
+  void testFailure_allocationToken() {
     createTld("tld");
     setEppInput("domain_check_claims_allocationtoken.xml");
     EppException thrown =
@@ -147,7 +147,7 @@ public class DomainClaimsCheckFlowTest
   }
 
   @Test
-  public void testFailure_multipleTlds_oneHasEndedClaims() {
+  void testFailure_multipleTlds_oneHasEndedClaims() {
     createTlds("tld1", "tld2");
     persistResource(
         Registry.get("tld2").asBuilder().setClaimsPeriodEnd(clock.nowUtc().minusMillis(1)).build());
@@ -157,7 +157,7 @@ public class DomainClaimsCheckFlowTest
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-dom-check");
     assertTldsFieldLogged("tld");

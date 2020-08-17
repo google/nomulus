@@ -30,35 +30,30 @@ import google.registry.flows.EppTestComponent.FakesAndMocksModule;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.monitoring.whitebox.EppMetric;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
-import google.registry.testing.InjectRule;
-import google.registry.testing.ShardableTestCase;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Test that domain flows create the commit logs needed to reload at points in the past. */
-@RunWith(JUnit4.class)
-public class EppCommitLogsTest extends ShardableTestCase {
+class EppCommitLogsTest {
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension final InjectExtension inject = new InjectExtension();
 
   private final FakeClock clock = new FakeClock(DateTime.now(UTC));
   private EppLoader eppLoader;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     createTld("tld");
     inject.setStaticField(Ofy.class, "clock", clock);
   }
@@ -67,8 +62,7 @@ public class EppCommitLogsTest extends ShardableTestCase {
     SessionMetadata sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
     sessionMetadata.setClientId("TheRegistrar");
     DaggerEppTestComponent.builder()
-        .fakesAndMocksModule(
-            FakesAndMocksModule.create(clock, EppMetric.builderForRequest(clock)))
+        .fakesAndMocksModule(FakesAndMocksModule.create(clock, EppMetric.builderForRequest(clock)))
         .build()
         .startRequest()
         .flowComponentBuilder()
@@ -88,8 +82,8 @@ public class EppCommitLogsTest extends ShardableTestCase {
   }
 
   @Test
-  public void testLoadAtPointInTime() throws Exception {
-    clock.setTo(DateTime.parse("1984-12-18T12:30Z"));  // not midnight
+  void testLoadAtPointInTime() throws Exception {
+    clock.setTo(DateTime.parse("1984-12-18T12:30Z")); // not midnight
 
     persistActiveHost("ns1.example.net");
     persistActiveHost("ns2.example.net");
@@ -115,7 +109,7 @@ public class EppCommitLogsTest extends ShardableTestCase {
     DomainBase domainAfterFirstUpdate = ofy().load().key(key).now();
     assertThat(domainAfterCreate).isNotEqualTo(domainAfterFirstUpdate);
 
-    clock.advanceOneMilli();  // same day as first update
+    clock.advanceOneMilli(); // same day as first update
     DateTime timeAtSecondUpdate = clock.nowUtc();
     eppLoader = new EppLoader(this, "domain_update_dsdata_rem.xml");
     runFlow();
@@ -147,8 +141,7 @@ public class EppCommitLogsTest extends ShardableTestCase {
     // key to the first update should have been overwritten by the second, and its timestamp rolled
     // forward. So we have to fall back to the last revision before midnight.
     ofy().clearSessionCache();
-    assertThat(loadAtPointInTime(latest, timeAtFirstUpdate).now())
-        .isEqualTo(domainAfterCreate);
+    assertThat(loadAtPointInTime(latest, timeAtFirstUpdate).now()).isEqualTo(domainAfterCreate);
 
     ofy().clearSessionCache();
     assertThat(loadAtPointInTime(latest, timeAtSecondUpdate).now())

@@ -76,10 +76,10 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
   private List<String> addStatuses = new ArrayList<>();
 
   @Parameter(
-    names = "--add_ds_records",
-    description = "DS records to add. Cannot be set if --ds_records or --clear_ds_records is set.",
-    converter = DsRecordConverter.class
-  )
+      names = "--add_ds_records",
+      description =
+          "DS records to add. Cannot be set if --ds_records or --clear_ds_records is set.",
+      converter = DsRecord.Converter.class)
   private List<DsRecord> addDsRecords = new ArrayList<>();
 
   @Parameter(
@@ -110,11 +110,10 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
   private List<String> removeStatuses = new ArrayList<>();
 
   @Parameter(
-    names = "--remove_ds_records",
-    description =
-        "DS records to remove. Cannot be set if --ds_records or --clear_ds_records is set.",
-    converter = DsRecordConverter.class
-  )
+      names = "--remove_ds_records",
+      description =
+          "DS records to remove. Cannot be set if --ds_records or --clear_ds_records is set.",
+      converter = DsRecord.Converter.class)
   private List<DsRecord> removeDsRecords = new ArrayList<>();
 
   @Parameter(

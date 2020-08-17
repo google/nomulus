@@ -17,7 +17,7 @@ package google.registry.model.translators;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
@@ -25,16 +25,16 @@ import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class VKeyTranslatorFactoryTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastore().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withDatastore().build();
 
-  public VKeyTranslatorFactoryTest() {}
+  VKeyTranslatorFactoryTest() {}
 
   @Test
   void testEntityWithFlatKey() {

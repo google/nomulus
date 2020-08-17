@@ -19,15 +19,18 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.BloomFilter;
+import google.registry.model.registry.label.PremiumList;
+import google.registry.testing.DatastoreEntityExtension;
 import java.math.BigDecimal;
 import org.joda.money.CurrencyUnit;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PremiumList}. */
-@RunWith(JUnit4.class)
 public class PremiumListTest {
+
+  @RegisterExtension
+  public DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   private static final ImmutableMap<String, BigDecimal> TEST_PRICES =
       ImmutableMap.of(
@@ -41,7 +44,12 @@ public class PremiumListTest {
   @Test
   public void bloomFilter_worksCorrectly() {
     BloomFilter<String> bloomFilter =
-        PremiumList.create("testname", CurrencyUnit.USD, TEST_PRICES).getBloomFilter();
+        new PremiumList.Builder()
+            .setName("testname")
+            .setCurrency(CurrencyUnit.USD)
+            .setLabelsToPrices(TEST_PRICES)
+            .build()
+            .getBloomFilter();
     ImmutableSet.of("silver", "gold", "palladium")
         .forEach(l -> assertThat(bloomFilter.mightContain(l)).isTrue());
     ImmutableSet.of("dirt", "pyrite", "zirconia")

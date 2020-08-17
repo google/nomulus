@@ -29,9 +29,9 @@ import com.googlecode.objectify.annotation.Serialize;
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import google.registry.util.CidrAddressBlock;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -41,34 +41,41 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Set;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Base class of all unit tests for entities which are persisted to Datastore via Objectify. */
 public abstract class EntityTestCase {
 
-  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
-
-  @Rule @RegisterExtension public final AppEngineRule appEngine;
-
-  @Rule @RegisterExtension public InjectRule inject = new InjectRule();
-
-  protected EntityTestCase() {
-    this(false);
+  protected enum JpaEntityCoverageCheck {
+    /**
+     * The test will contribute to the coverage checks in {@link
+     * google.registry.schema.integration.SqlIntegrationTestSuite}.
+     */
+    ENABLED,
+    /** The test is not relevant for JPA coverage checks. */
+    DISABLED;
   }
 
-  protected EntityTestCase(boolean enableJpaEntityCheck) {
+  protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
+
+  @RegisterExtension public final AppEngineExtension appEngine;
+
+  @RegisterExtension public InjectExtension inject = new InjectExtension();
+
+  protected EntityTestCase() {
+    this(JpaEntityCoverageCheck.DISABLED);
+  }
+
+  protected EntityTestCase(JpaEntityCoverageCheck jpaEntityCoverageCheck) {
     appEngine =
-        AppEngineRule.builder()
+        AppEngineExtension.builder()
             .withDatastoreAndCloudSql()
-            .enableJpaEntityCoverageCheck(enableJpaEntityCheck)
+            .enableJpaEntityCoverageCheck(jpaEntityCoverageCheck == JpaEntityCoverageCheck.ENABLED)
             .withClock(fakeClock)
             .build();
   }
 
-  @Before
   @BeforeEach
   public void injectClock() {
     inject.setStaticField(Ofy.class, "clock", fakeClock);

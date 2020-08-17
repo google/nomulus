@@ -17,30 +17,28 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.tools.EntityWrapper.Property;
 import java.io.File;
 import java.io.IOException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
 
-@RunWith(JUnit4.class)
+/** Unit tests for {@link RecordAccumulator}. */
 public class RecordAccumulatorTest {
 
   private static final int BASE_ID = 1001;
 
-  @Rule public final TemporaryFolder tempFs = new TemporaryFolder();
+  @TempDir public File tmpDir;
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testReadDirectory() throws IOException {
-    File subdir = tempFs.newFolder("folder");
-    LevelDbFileBuilder builder = new LevelDbFileBuilder(new File(subdir, "data1"));
+  void testReadDirectory() throws IOException {
+    LevelDbFileBuilder builder = new LevelDbFileBuilder(new File(tmpDir, "data1"));
 
     // Note that we need to specify property values as "Long" for property comparisons to work
     // correctly because that's how they are deserialized from protos.
@@ -60,7 +58,7 @@ public class RecordAccumulatorTest {
     builder.addEntity(e2.getEntity());
     builder.build();
 
-    builder = new LevelDbFileBuilder(new File(subdir, "data2"));
+    builder = new LevelDbFileBuilder(new File(tmpDir, "data2"));
 
     // Duplicate of the record in the other file.
     builder.addEntity(
@@ -81,7 +79,7 @@ public class RecordAccumulatorTest {
     builder.build();
 
     ImmutableSet<EntityWrapper> entities =
-        RecordAccumulator.readDirectory(subdir, any -> true).getEntityWrapperSet();
+        RecordAccumulator.readDirectory(tmpDir, any -> true).getEntityWrapperSet();
     assertThat(entities).containsExactly(e1, e2, e3);
   }
 }

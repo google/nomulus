@@ -25,7 +25,7 @@ import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -50,23 +50,23 @@ import org.junit.jupiter.api.Test;
 public class BillingEventTest extends EntityTestCase {
   private final DateTime now = DateTime.now(UTC);
 
-  public BillingEventTest() {
-    super(true);
+  BillingEventTest() {
+    super(JpaEntityCoverageCheck.ENABLED);
   }
 
-  HistoryEntry historyEntry;
-  HistoryEntry historyEntry2;
-  DomainBase domain;
-  BillingEvent.OneTime sqlOneTime;
-  BillingEvent.OneTime oneTime;
-  BillingEvent.OneTime oneTimeSynthetic;
-  BillingEvent.Recurring recurring;
-  BillingEvent.Cancellation cancellationOneTime;
-  BillingEvent.Cancellation cancellationRecurring;
-  BillingEvent.Modification modification;
+  private HistoryEntry historyEntry;
+  private HistoryEntry historyEntry2;
+  private DomainBase domain;
+  private BillingEvent.OneTime sqlOneTime;
+  private BillingEvent.OneTime oneTime;
+  private BillingEvent.OneTime oneTimeSynthetic;
+  private BillingEvent.Recurring recurring;
+  private BillingEvent.Cancellation cancellationOneTime;
+  private BillingEvent.Cancellation cancellationRecurring;
+  private BillingEvent.Modification modification;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     createTld("tld");
     domain = persistActiveDomain("foo.tld");
     historyEntry = persistResource(
@@ -184,7 +184,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testCloudSqlPersistence_OneTime() {
+  void testCloudSqlPersistence_OneTime() {
     saveRegistrar("a registrar");
     saveNewBillingEvent(sqlOneTime);
 
@@ -203,7 +203,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testCloudSqlPersistence_Cancellation() {
+  void testCloudSqlPersistence_Cancellation() {
     saveRegistrar("a registrar");
     saveNewBillingEvent(sqlOneTime);
     VKey<BillingEvent.OneTime> sqlVKey = VKey.createSql(BillingEvent.OneTime.class, sqlOneTime.id);
@@ -235,7 +235,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testCloudSqlPersistence_Recurring() {
+  void testCloudSqlPersistence_Recurring() {
     saveRegistrar("a registrar");
     BillingEvent.Recurring sqlRecurring =
         recurring
@@ -256,7 +256,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     assertThat(ofy().load().entity(oneTime).now()).isEqualTo(oneTime);
     assertThat(ofy().load().entity(oneTimeSynthetic).now()).isEqualTo(oneTimeSynthetic);
     assertThat(ofy().load().entity(recurring).now()).isEqualTo(recurring);
@@ -266,7 +266,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testParenting() {
+  void testParenting() {
     // Note that these are all tested separately because BillingEvent is an abstract base class that
     // lacks the @Entity annotation, and thus we cannot call .type(BillingEvent.class)
     assertThat(ofy().load().type(BillingEvent.OneTime.class).ancestor(domain).list())
@@ -288,7 +288,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testCancellationMatching() {
+  void testCancellationMatching() {
     Key<?> recurringKey =
         ofy()
             .load()
@@ -300,7 +300,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testIndexing() throws Exception {
+  void testIndexing() throws Exception {
     verifyIndexing(
         oneTime,
         "clientId",
@@ -322,7 +322,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testFailure_syntheticFlagWithoutCreationTime() {
+  void testFailure_syntheticFlagWithoutCreationTime() {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
@@ -338,7 +338,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testFailure_syntheticCreationTimeWithoutFlag() {
+  void testFailure_syntheticCreationTimeWithoutFlag() {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
@@ -349,7 +349,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testFailure_syntheticFlagWithoutCancellationMatchingKey() {
+  void testFailure_syntheticFlagWithoutCancellationMatchingKey() {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
@@ -367,7 +367,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testFailure_cancellationMatchingKeyWithoutFlag() {
+  void testFailure_cancellationMatchingKeyWithoutFlag() {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
@@ -384,47 +384,53 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testSuccess_cancellation_forGracePeriod_withOneTime() {
-    BillingEvent.Cancellation newCancellation = BillingEvent.Cancellation.forGracePeriod(
-        GracePeriod.forBillingEvent(GracePeriodStatus.ADD, oneTime),
-        historyEntry2,
-        "foo.tld");
+  void testSuccess_cancellation_forGracePeriod_withOneTime() {
+    BillingEvent.Cancellation newCancellation =
+        BillingEvent.Cancellation.forGracePeriod(
+            GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), oneTime),
+            historyEntry2,
+            "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
     newCancellation = newCancellation.asBuilder().setId(cancellationOneTime.getId()).build();
     assertThat(newCancellation).isEqualTo(cancellationOneTime);
   }
 
   @Test
-  public void testSuccess_cancellation_forGracePeriod_withRecurring() {
-    BillingEvent.Cancellation newCancellation = BillingEvent.Cancellation.forGracePeriod(
-        GracePeriod.createForRecurring(
-            GracePeriodStatus.AUTO_RENEW,
-            now.plusYears(1).plusDays(45),
-            "a registrar",
-            Key.create(recurring)),
-        historyEntry2,
-        "foo.tld");
+  void testSuccess_cancellation_forGracePeriod_withRecurring() {
+    BillingEvent.Cancellation newCancellation =
+        BillingEvent.Cancellation.forGracePeriod(
+            GracePeriod.createForRecurring(
+                GracePeriodStatus.AUTO_RENEW,
+                domain.getRepoId(),
+                now.plusYears(1).plusDays(45),
+                "a registrar",
+                recurring.createVKey()),
+            historyEntry2,
+            "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
     newCancellation = newCancellation.asBuilder().setId(cancellationRecurring.getId()).build();
     assertThat(newCancellation).isEqualTo(cancellationRecurring);
   }
 
   @Test
-  public void testFailure_cancellation_forGracePeriodWithoutBillingEvent() {
+  void testFailure_cancellation_forGracePeriodWithoutBillingEvent() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
             () ->
                 BillingEvent.Cancellation.forGracePeriod(
                     GracePeriod.createWithoutBillingEvent(
-                        GracePeriodStatus.REDEMPTION, now.plusDays(1), "a registrar"),
+                        GracePeriodStatus.REDEMPTION,
+                        domain.getRepoId(),
+                        now.plusDays(1),
+                        "a registrar"),
                     historyEntry,
                     "foo.tld"));
     assertThat(thrown).hasMessageThat().contains("grace period without billing event");
   }
 
   @Test
-  public void testFailure_cancellationWithNoBillingEvent() {
+  void testFailure_cancellationWithNoBillingEvent() {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
@@ -438,7 +444,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testFailure_cancellationWithBothBillingEvents() {
+  void testFailure_cancellationWithBothBillingEvents() {
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
@@ -452,7 +458,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   @Test
-  public void testDeadCodeThatDeletedScrapCommandsReference() {
+  void testDeadCodeThatDeletedScrapCommandsReference() {
     assertThat(recurring.getParentKey()).isEqualTo(Key.create(historyEntry));
     new BillingEvent.OneTime.Builder().setParent(Key.create(historyEntry));
   }

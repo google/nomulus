@@ -45,18 +45,15 @@ import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
-/** Tests for {@link GenerateZoneFilesAction}.*/
-@RunWith(JUnit4.class)
-public class GenerateZoneFilesActionTest extends MapreduceTestCase<GenerateZoneFilesAction> {
+/** Tests for {@link GenerateZoneFilesAction}. */
+class GenerateZoneFilesActionTest extends MapreduceTestCase<GenerateZoneFilesAction> {
 
   private final GcsService gcsService = createGcsService();
 
   @Test
-  public void testGenerate() throws Exception {
+  void testGenerate() throws Exception {
     DateTime now = DateTime.now(DateTimeZone.UTC).withTimeAtStartOfDay();
     createTlds("tld", "com");
 

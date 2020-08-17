@@ -20,7 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.schema.replay.EntityTest;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -33,7 +33,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class LocalDateConverterTest {
 
   @RegisterExtension
-  public final JpaUnitTestRule jpaRule =
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder()
           .withEntityClass(LocalDateConverterTestEntity.class)
           .buildUnitTestRule();
@@ -41,13 +41,13 @@ public class LocalDateConverterTest {
   private final LocalDate exampleDate = LocalDate.parse("2020-06-10", ISODateTimeFormat.date());
 
   @Test
-  public void testNullInput() {
+  void testNullInput() {
     LocalDateConverterTestEntity retrievedEntity = persistAndLoadTestEntity(null);
     assertThat(retrievedEntity.date).isNull();
   }
 
   @Test
-  public void testSaveAndLoad_success() {
+  void testSaveAndLoad_success() {
     LocalDateConverterTestEntity retrievedEntity = persistAndLoadTestEntity(exampleDate);
     assertThat(retrievedEntity.date).isEqualTo(exampleDate);
   }

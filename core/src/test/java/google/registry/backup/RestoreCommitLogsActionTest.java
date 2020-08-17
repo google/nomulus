@@ -42,7 +42,7 @@ import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.TestObject;
@@ -54,31 +54,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RestoreCommitLogsAction}. */
-@RunWith(JUnit4.class)
 public class RestoreCommitLogsActionTest {
 
-  static final String GCS_BUCKET = "gcs bucket";
+  private static final String GCS_BUCKET = "gcs bucket";
 
-  final DateTime now = DateTime.now(UTC);
-  final RestoreCommitLogsAction action = new RestoreCommitLogsAction();
-  final GcsService gcsService = createGcsService();
+  private final DateTime now = DateTime.now(UTC);
+  private final RestoreCommitLogsAction action = new RestoreCommitLogsAction();
+  private final GcsService gcsService = createGcsService();
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestObject.class)
           .build();
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     action.gcsService = gcsService;
     action.dryRun = false;
     action.datastoreService = DatastoreServiceFactory.getDatastoreService();
@@ -91,7 +88,7 @@ public class RestoreCommitLogsActionTest {
   }
 
   @Test
-  public void testRestore_multipleDiffFiles() throws Exception {
+  void testRestore_multipleDiffFiles() throws Exception {
     ofy().saveWithoutBackup().entities(
         TestObject.create("previous to keep"),
         TestObject.create("previous to delete")).now();
@@ -141,7 +138,7 @@ public class RestoreCommitLogsActionTest {
   }
 
   @Test
-  public void testRestore_noManifests() throws Exception {
+  void testRestore_noManifests() throws Exception {
     ofy().saveWithoutBackup().entity(
         TestObject.create("previous to keep")).now();
     saveDiffFileNotToRestore(now.minusMinutes(1));
@@ -155,7 +152,7 @@ public class RestoreCommitLogsActionTest {
   }
 
   @Test
-  public void testRestore_manifestWithNoDeletions() throws Exception {
+  void testRestore_manifestWithNoDeletions() throws Exception {
     ofy().saveWithoutBackup().entity(TestObject.create("previous to keep")).now();
     Key<CommitLogBucket> bucketKey = getBucketKey(1);
     Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(bucketKey, now);
@@ -174,7 +171,7 @@ public class RestoreCommitLogsActionTest {
 }
 
   @Test
-  public void testRestore_manifestWithNoMutations() throws Exception {
+  void testRestore_manifestWithNoMutations() throws Exception {
     ofy().saveWithoutBackup().entities(
         TestObject.create("previous to keep"),
         TestObject.create("previous to delete")).now();
@@ -195,7 +192,7 @@ public class RestoreCommitLogsActionTest {
 
   // This is a pathological case that shouldn't be possible, but we should be robust to it.
   @Test
-  public void testRestore_manifestWithNoMutationsOrDeletions() throws Exception {
+  void testRestore_manifestWithNoMutationsOrDeletions() throws Exception {
     ofy().saveWithoutBackup().entities(
         TestObject.create("previous to keep")).now();
     saveDiffFileNotToRestore(now.minusMinutes(1));
@@ -211,7 +208,7 @@ public class RestoreCommitLogsActionTest {
   }
 
   @Test
-  public void testRestore_mutateExistingEntity() throws Exception {
+  void testRestore_mutateExistingEntity() throws Exception {
     ofy().saveWithoutBackup().entity(TestObject.create("existing", "a")).now();
     Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(getBucketKey(1), now);
     saveDiffFileNotToRestore(now.minusMinutes(1));
@@ -229,7 +226,7 @@ public class RestoreCommitLogsActionTest {
 
   // This should be harmless; deletes are idempotent.
   @Test
-  public void testRestore_deleteMissingEntity() throws Exception {
+  void testRestore_deleteMissingEntity() throws Exception {
     ofy().saveWithoutBackup().entity(TestObject.create("previous to keep", "a")).now();
     saveDiffFileNotToRestore(now.minusMinutes(1));
     Iterable<ImmutableObject> commitLogs = saveDiffFile(

@@ -20,32 +20,29 @@ import static google.registry.model.ofy.CommitLogBucket.loadAllBuckets;
 import static google.registry.model.ofy.CommitLogBucket.loadBucket;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.annotation.Cache;
-import google.registry.testing.AppEngineRule;
-import google.registry.testing.InjectRule;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import google.registry.testing.AppEngineExtension;
+import google.registry.testing.InjectExtension;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link CommitLogBucket}. */
-@RunWith(JUnit4.class)
 public class CommitLogBucketTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
-  CommitLogBucket bucket;
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+  private CommitLogBucket bucket;
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void before() {
     // Save the bucket with some non-default properties set so that we can distinguish a correct
     // load from one that returns a newly created bucket instance.
     bucket = persistResource(
@@ -56,27 +53,27 @@ public class CommitLogBucketTest {
   }
 
   @Test
-  public void test_getBucketKey_createsBucketKeyInDefaultNamespace() {
+  void test_getBucketKey_createsBucketKeyInDefaultNamespace() {
     // Key.getNamespace() returns the empty string for the default namespace, not null.
     assertThat(getBucketKey(1).getRaw().getNamespace()).isEmpty();
   }
 
   @Test
-  public void test_getBucketKey_bucketNumberTooLow_throws() {
+  void test_getBucketKey_bucketNumberTooLow_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> getBucketKey(0));
     assertThat(thrown).hasMessageThat().contains("0 not in [");
   }
 
   @Test
-  public void test_getBucketKey_bucketNumberTooHigh_throws() {
+  void test_getBucketKey_bucketNumberTooHigh_throws() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> getBucketKey(11));
     assertThat(thrown).hasMessageThat().contains("11 not in [");
   }
 
   @Test
-  public void test_getArbitraryBucketId_withSupplierOverridden() {
+  void test_getArbitraryBucketId_withSupplierOverridden() {
     inject.setStaticField(
         CommitLogBucket.class, "bucketIdSupplier", Suppliers.ofInstance(4));  // xkcd.com/221
     // Try multiple times just in case it's actually still random.  If it is, the probability of
@@ -87,18 +84,18 @@ public class CommitLogBucketTest {
   }
 
   @Test
-  public void test_loadBucket_loadsTheBucket() {
+  void test_loadBucket_loadsTheBucket() {
     assertThat(loadBucket(getBucketKey(1))).isEqualTo(bucket);
   }
 
   @Test
-  public void test_loadBucket_forNonexistentBucket_returnsNewBucket() {
+  void test_loadBucket_forNonexistentBucket_returnsNewBucket() {
     assertThat(loadBucket(getBucketKey(3))).isEqualTo(
         new CommitLogBucket.Builder().setBucketNum(3).build());
   }
 
   @Test
-  public void test_loadAllBuckets_loadsExistingBuckets_orNewOnesIfNonexistent() {
+  void test_loadAllBuckets_loadsExistingBuckets_orNewOnesIfNonexistent() {
     ImmutableSet<CommitLogBucket> buckets = loadAllBuckets();
     assertThat(buckets).hasSize(3);
     assertThat(buckets).contains(bucket);
@@ -107,7 +104,7 @@ public class CommitLogBucketTest {
   }
 
   @Test
-  public void test_noCacheAnnotation() {
+  void test_noCacheAnnotation() {
     // Don't ever put @Cache on CommitLogBucket; it could mess up the checkpointing algorithm.
     assertThat(CommitLogBucket.class.isAnnotationPresent(Cache.class)).isFalse();
   }

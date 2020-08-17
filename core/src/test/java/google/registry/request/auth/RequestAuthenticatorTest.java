@@ -17,9 +17,9 @@ package google.registry.request.auth;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.users.User;
@@ -30,24 +30,21 @@ import google.registry.request.auth.RequestAuthenticator.AuthMethod;
 import google.registry.request.auth.RequestAuthenticator.AuthSettings;
 import google.registry.request.auth.RequestAuthenticator.UserPolicy;
 import google.registry.security.XsrfTokenManager;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeOAuthService;
 import google.registry.testing.FakeUserService;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RequestAuthenticator}. */
-@RunWith(JUnit4.class)
-public class RequestAuthenticatorTest {
+class RequestAuthenticatorTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().build();
+  @RegisterExtension final AppEngineExtension appEngine = AppEngineExtension.builder().build();
+
   private static final AuthSettings AUTH_NONE = AuthSettings.create(
       ImmutableList.of(AuthMethod.INTERNAL),
       AuthLevel.NONE,
@@ -112,8 +109,8 @@ public class RequestAuthenticatorTest {
       "test-client-id",
       ImmutableList.of("test-scope1", "test-scope2", "nontest-scope"));
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     when(req.getMethod()).thenReturn("POST");
   }
 
@@ -135,55 +132,55 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testNoAuthNeeded_noneFound() {
+  void testNoAuthNeeded_noneFound() {
     Optional<AuthResult> authResult = runTest(mockUserService, AUTH_NONE);
 
-    verifyZeroInteractions(mockUserService);
+    verifyNoInteractions(mockUserService);
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.NONE);
   }
 
   @Test
-  public void testNoAuthNeeded_internalFound() {
+  void testNoAuthNeeded_internalFound() {
     when(req.getHeader("X-AppEngine-QueueName")).thenReturn("__cron");
 
     Optional<AuthResult> authResult = runTest(mockUserService, AUTH_NONE);
 
-    verifyZeroInteractions(mockUserService);
+    verifyNoInteractions(mockUserService);
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.APP);
     assertThat(authResult.get().userAuthInfo()).isEmpty();
   }
 
   @Test
-  public void testInternalAuth_notInvokedInternally() {
+  void testInternalAuth_notInvokedInternally() {
     Optional<AuthResult> authResult = runTest(mockUserService, AUTH_INTERNAL_OR_ADMIN);
 
-    verifyZeroInteractions(mockUserService);
+    verifyNoInteractions(mockUserService);
     assertThat(authResult).isEmpty();
   }
 
   @Test
-  public void testInternalAuth_success() {
+  void testInternalAuth_success() {
     when(req.getHeader("X-AppEngine-QueueName")).thenReturn("__cron");
 
     Optional<AuthResult> authResult = runTest(mockUserService, AUTH_INTERNAL_OR_ADMIN);
 
-    verifyZeroInteractions(mockUserService);
+    verifyNoInteractions(mockUserService);
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.APP);
     assertThat(authResult.get().userAuthInfo()).isEmpty();
   }
 
   @Test
-  public void testAnyUserAnyMethod_notLoggedIn() {
+  void testAnyUserAnyMethod_notLoggedIn() {
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ANY_USER_ANY_METHOD);
 
     assertThat(authResult).isEmpty();
   }
 
   @Test
-  public void testAnyUserAnyMethod_xsrfFailure() {
+  void testAnyUserAnyMethod_xsrfFailure() {
     fakeUserService.setUser(testUser, false);
 
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ANY_USER_ANY_METHOD);
@@ -192,7 +189,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testAnyUserAnyMethod_success() {
+  void testAnyUserAnyMethod_success() {
     fakeUserService.setUser(testUser, false /* isAdmin */);
     when(req.getHeader(XsrfTokenManager.X_CSRF_TOKEN))
         .thenReturn(xsrfTokenManager.generateToken(testUser.getEmail()));
@@ -208,7 +205,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testAnyUserAnyMethod_xsrfNotRequiredForGet() {
+  void testAnyUserAnyMethod_xsrfNotRequiredForGet() {
     fakeUserService.setUser(testUser, false);
     when(req.getMethod()).thenReturn("GET");
 
@@ -222,14 +219,14 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testAdminUserAnyMethod_notLoggedIn() {
+  void testAdminUserAnyMethod_notLoggedIn() {
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ADMIN_USER_ANY_METHOD);
 
     assertThat(authResult).isEmpty();
   }
 
   @Test
-  public void testAdminUserAnyMethod_notAdminUser() {
+  void testAdminUserAnyMethod_notAdminUser() {
     fakeUserService.setUser(testUser, false /* isAdmin */);
 
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ADMIN_USER_ANY_METHOD);
@@ -238,7 +235,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testAdminUserAnyMethod_xsrfFailure() {
+  void testAdminUserAnyMethod_xsrfFailure() {
     fakeUserService.setUser(testUser, true);
 
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ADMIN_USER_ANY_METHOD);
@@ -247,7 +244,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testAdminUserAnyMethod_success() {
+  void testAdminUserAnyMethod_success() {
     fakeUserService.setUser(testUser, true /* isAdmin */);
     when(req.getHeader(XsrfTokenManager.X_CSRF_TOKEN))
         .thenReturn(xsrfTokenManager.generateToken(testUser.getEmail()));
@@ -263,7 +260,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testOAuth_success() {
+  void testOAuth_success() {
     fakeOAuthService.setUser(testUser);
     fakeOAuthService.setOAuthEnabled(true);
     when(req.getHeader(AUTHORIZATION)).thenReturn("Bearer TOKEN");
@@ -285,7 +282,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testOAuthAdmin_success() {
+  void testOAuthAdmin_success() {
     fakeOAuthService.setUser(testUser);
     fakeOAuthService.setUserAdmin(true);
     fakeOAuthService.setOAuthEnabled(true);
@@ -308,7 +305,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testOAuthMissingAuthenticationToken_failure() {
+  void testOAuthMissingAuthenticationToken_failure() {
     fakeOAuthService.setUser(testUser);
     fakeOAuthService.setOAuthEnabled(true);
 
@@ -318,7 +315,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testOAuthClientIdMismatch_failure() {
+  void testOAuthClientIdMismatch_failure() {
     fakeOAuthService.setUser(testUser);
     fakeOAuthService.setOAuthEnabled(true);
     fakeOAuthService.setClientId("wrong-client-id");
@@ -330,7 +327,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testOAuthNoScopes_failure() {
+  void testOAuthNoScopes_failure() {
     fakeOAuthService.setUser(testUser);
     fakeOAuthService.setOAuthEnabled(true);
     fakeOAuthService.setAuthorizedScopes();
@@ -342,7 +339,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testOAuthMissingScope_failure() {
+  void testOAuthMissingScope_failure() {
     fakeOAuthService.setUser(testUser);
     fakeOAuthService.setOAuthEnabled(true);
     fakeOAuthService.setAuthorizedScopes("test-scope1", "test-scope3");
@@ -354,7 +351,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testOAuthExtraScope_success() {
+  void testOAuthExtraScope_success() {
     fakeOAuthService.setUser(testUser);
     fakeOAuthService.setOAuthEnabled(true);
     fakeOAuthService.setAuthorizedScopes("test-scope1", "test-scope2", "test-scope3");
@@ -377,7 +374,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testAnyUserNoLegacy_failureWithLegacyUser() {
+  void testAnyUserNoLegacy_failureWithLegacyUser() {
     fakeUserService.setUser(testUser, false /* isAdmin */);
 
     Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_ANY_USER_NO_LEGACY);
@@ -386,7 +383,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testCheckAuthConfig_NoMethods_failure() {
+  void testCheckAuthConfig_NoMethods_failure() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -395,7 +392,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testCheckAuthConfig_WrongMethodOrdering_failure() {
+  void testCheckAuthConfig_WrongMethodOrdering_failure() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -406,7 +403,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testCheckAuthConfig_DuplicateMethods_failure() {
+  void testCheckAuthConfig_DuplicateMethods_failure() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -417,7 +414,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testCheckAuthConfig_InternalWithUser_failure() {
+  void testCheckAuthConfig_InternalWithUser_failure() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -428,7 +425,7 @@ public class RequestAuthenticatorTest {
   }
 
   @Test
-  public void testCheckAuthConfig_WronglyIgnoringUser_failure() {
+  void testCheckAuthConfig_WronglyIgnoringUser_failure() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

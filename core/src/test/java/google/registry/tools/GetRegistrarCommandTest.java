@@ -15,40 +15,40 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetRegistrarCommand}. */
-public class GetRegistrarCommandTest extends CommandTestCase<GetRegistrarCommand> {
+class GetRegistrarCommandTest extends CommandTestCase<GetRegistrarCommand> {
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     // This registrar is created by AppEngineRule.
     runCommand("NewRegistrar");
   }
 
   @Test
-  public void testSuccess_multipleArguments() throws Exception {
+  void testSuccess_multipleArguments() throws Exception {
     // Registrars are created by AppEngineRule.
     runCommand("NewRegistrar", "TheRegistrar");
   }
 
   @Test
-  public void testFailure_registrarDoesNotExist() {
+  void testFailure_registrarDoesNotExist() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("ClientZ"));
     assertThat(thrown).hasMessageThat().contains("Registrar with id ClientZ does not exist");
   }
 
   @Test
-  public void testFailure_noRegistrarName() {
+  void testFailure_noRegistrarName() {
     assertThrows(ParameterException.class, this::runCommand);
   }
 
   @Test
-  public void testFailure_oneRegistrarDoesNotExist() {
+  void testFailure_oneRegistrarDoesNotExist() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("NewRegistrar", "ClientZ"));
     assertThat(thrown).hasMessageThat().contains("Registrar with id ClientZ does not exist");

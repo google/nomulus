@@ -25,7 +25,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.testing.TestLogHandler;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import java.util.List;
 import java.util.logging.Level;
@@ -42,8 +42,8 @@ public class CursorDaoTest {
   private final Logger loggerToIntercept = Logger.getLogger(CursorDao.class.getCanonicalName());
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .enableJpaEntityCoverageCheck(true)
           .withClock(fakeClock)

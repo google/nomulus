@@ -24,7 +24,7 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.Registry.TldStateTransition;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
@@ -32,10 +32,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link TldStateTransitionConverter}. */
-public class TldStateTransitionConverterTest {
+class TldStateTransitionConverterTest {
 
   @RegisterExtension
-  public final JpaUnitTestRule jpa =
+  public final JpaUnitTestExtension jpa =
       new JpaTestRules.Builder()
           .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(TestEntity.class)

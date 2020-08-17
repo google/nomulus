@@ -67,6 +67,19 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   private Double discountFraction;
 
   @Parameter(
+      names = {"--discount_premiums"},
+      description =
+          "Whether the discount is valid for premium names in addition to standard ones. Default"
+              + " is false.",
+      arity = 1)
+  private Boolean discountPremiums;
+
+  @Parameter(
+      names = {"--discount_years"},
+      description = "The number of years the discount applies for. Default is 1, max value is 10.")
+  private Integer discountYears;
+
+  @Parameter(
       names = "--token_status_transitions",
       converter = TokenStatusTransitions.class,
       validateWith = TokenStatusTransitions.class,
@@ -122,6 +135,8 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     Optional.ofNullable(allowedTlds)
         .ifPresent(tlds -> builder.setAllowedTlds(ImmutableSet.copyOf(tlds)));
     Optional.ofNullable(discountFraction).ifPresent(builder::setDiscountFraction);
+    Optional.ofNullable(discountPremiums).ifPresent(builder::setDiscountPremiums);
+    Optional.ofNullable(discountYears).ifPresent(builder::setDiscountYears);
     Optional.ofNullable(tokenStatusTransitions).ifPresent(builder::setTokenStatusTransitions);
     return builder.build();
   }

@@ -22,6 +22,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.translators.VKeyTranslatorFactory;
 import java.io.Serializable;
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * VKey is an abstraction that encapsulates the key concept.
@@ -52,24 +53,31 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    *
    * <p>Deprecated. Create symmetric keys with create() instead.
    */
-  public static <T> VKey<T> createSql(Class<? extends T> kind, Object sqlKey) {
+  public static <T> VKey<T> createSql(Class<T> kind, Object sqlKey) {
     checkArgumentNotNull(kind, "kind must not be null");
     checkArgumentNotNull(sqlKey, "sqlKey must not be null");
-    return new VKey(kind, null, sqlKey);
+    return new VKey<T>(kind, null, sqlKey);
+  }
+
+  /** Creates a {@link VKey} which only contains the ofy primary key. */
+  public static <T> VKey<T> createOfy(Class<T> kind, com.googlecode.objectify.Key<T> ofyKey) {
+    checkArgumentNotNull(kind, "kind must not be null");
+    checkArgumentNotNull(ofyKey, "ofyKey must not be null");
+    return new VKey<T>(kind, ofyKey, null);
   }
 
   /** Creates a {@link VKey} which only contains both sql and ofy primary key. */
   public static <T> VKey<T> create(
-      Class<? extends T> kind, Object sqlKey, com.googlecode.objectify.Key ofyKey) {
+      Class<T> kind, Object sqlKey, com.googlecode.objectify.Key<T> ofyKey) {
     checkArgumentNotNull(kind, "kind must not be null");
     checkArgumentNotNull(sqlKey, "sqlKey must not be null");
     checkArgumentNotNull(ofyKey, "ofyKey must not be null");
-    return new VKey(kind, ofyKey, sqlKey);
+    return new VKey<T>(kind, ofyKey, sqlKey);
   }
 
   /** Creates a symmetric {@link VKey} in which both sql and ofy keys are {@code id}. */
-  public static <T> VKey<T> create(Class<? extends T> kind, long id) {
-    return new VKey(kind, Key.create(kind, id), id);
+  public static <T> VKey<T> create(Class<T> kind, long id) {
+    return new VKey<T>(kind, Key.create(kind, id), id);
   }
 
   /** Returns the type of the entity. */
@@ -100,6 +108,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   }
 
   /** Convenience method to construct a VKey from an objectify Key. */
+  @Nullable
   public static <T> VKey<T> from(Key<T> key) {
     return VKeyTranslatorFactory.createVKey(key);
   }

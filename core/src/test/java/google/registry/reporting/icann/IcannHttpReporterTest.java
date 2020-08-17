@@ -19,7 +19,7 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.api.client.http.LowLevelHttpRequest;
 import com.google.api.client.http.LowLevelHttpResponse;
@@ -29,21 +29,16 @@ import com.google.api.client.testing.http.MockLowLevelHttpResponse;
 import com.google.api.client.util.Base64;
 import com.google.api.client.util.StringUtils;
 import com.google.common.io.ByteSource;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-/**
- * Unit tests for {@link IcannHttpReporter}.
- */
-@RunWith(JUnit4.class)
-public class IcannHttpReporterTest {
+/** Unit tests for {@link IcannHttpReporter}. */
+class IcannHttpReporterTest {
 
   private static final ByteSource IIRDEA_GOOD_XML = ReportingTestData.loadBytes("iirdea_good.xml");
   private static final ByteSource IIRDEA_BAD_XML = ReportingTestData.loadBytes("iirdea_bad.xml");
@@ -51,32 +46,33 @@ public class IcannHttpReporterTest {
 
   private MockLowLevelHttpRequest mockRequest;
 
-  @Rule
-  public AppEngineRule appEngineRule =
-      new AppEngineRule.Builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  AppEngineExtension appEngineRule =
+      new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
 
-  private MockHttpTransport createMockTransport (final ByteSource iirdeaResponse) {
+  private MockHttpTransport createMockTransport(final ByteSource iirdeaResponse) {
     return new MockHttpTransport() {
       @Override
       public LowLevelHttpRequest buildRequest(String method, String url) {
-        mockRequest = new MockLowLevelHttpRequest() {
-          @Override
-          public LowLevelHttpResponse execute() throws IOException {
-            MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
-            response.setStatusCode(200);
-            response.setContentType(PLAIN_TEXT_UTF_8.toString());
-            response.setContent(iirdeaResponse.read());
-            return response;
-          }
-        };
+        mockRequest =
+            new MockLowLevelHttpRequest() {
+              @Override
+              public LowLevelHttpResponse execute() throws IOException {
+                MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
+                response.setStatusCode(200);
+                response.setContentType(PLAIN_TEXT_UTF_8.toString());
+                response.setContent(iirdeaResponse.read());
+                return response;
+              }
+            };
         mockRequest.setUrl(url);
         return mockRequest;
       }
     };
   }
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     createTld("test");
     createTld("xn--abc123");
   }
@@ -91,7 +87,7 @@ public class IcannHttpReporterTest {
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     IcannHttpReporter reporter = createReporter();
     reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv");
 
@@ -105,7 +101,7 @@ public class IcannHttpReporterTest {
   }
 
   @Test
-  public void testSuccess_internationalTld() throws Exception {
+  void testSuccess_internationalTld() throws Exception {
     IcannHttpReporter reporter = createReporter();
     reporter.send(FAKE_PAYLOAD, "xn--abc123-transactions-201706.csv");
 
@@ -119,14 +115,14 @@ public class IcannHttpReporterTest {
   }
 
   @Test
-  public void testFail_BadIirdeaResponse() throws Exception {
+  void testFail_BadIirdeaResponse() throws Exception {
     IcannHttpReporter reporter = createReporter();
     reporter.httpTransport = createMockTransport(IIRDEA_BAD_XML);
     assertThat(reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv")).isFalse();
   }
 
   @Test
-  public void testFail_invalidFilename_nonSixDigitYearMonth() {
+  void testFail_invalidFilename_nonSixDigitYearMonth() {
     IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(
@@ -140,7 +136,7 @@ public class IcannHttpReporterTest {
   }
 
   @Test
-  public void testFail_invalidFilename_notActivityOrTransactions() {
+  void testFail_invalidFilename_notActivityOrTransactions() {
     IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(
@@ -153,7 +149,7 @@ public class IcannHttpReporterTest {
   }
 
   @Test
-  public void testFail_invalidFilename_invalidTldName() {
+  void testFail_invalidFilename_invalidTldName() {
     IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(
@@ -167,7 +163,7 @@ public class IcannHttpReporterTest {
   }
 
   @Test
-  public void testFail_invalidFilename_tldDoesntExist() {
+  void testFail_invalidFilename_tldDoesntExist() {
     IcannHttpReporter reporter = createReporter();
     IllegalArgumentException thrown =
         assertThrows(

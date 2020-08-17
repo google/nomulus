@@ -16,32 +16,32 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.ImmutableObject;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import google.registry.schema.tmch.ClaimsList;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.PersistenceException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** JUnit test for {@link JpaTransactionManagerRule}, with {@link JpaUnitTestRule} as proxy. */
-@RunWith(JUnit4.class)
+/**
+ * JUnit test for {@link JpaTransactionManagerExtension}, with {@link JpaUnitTestExtension} as
+ * proxy.
+ */
 public class JpaTransactionManagerRuleTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder()
           .withEntityClass(ClaimsList.class, TestEntity.class)
           .buildUnitTestRule();
 
   @Test
-  public void verifiesRuleWorks() {
+  void verifiesRuleWorks() {
     assertThrows(
         PersistenceException.class,
         () ->
@@ -65,7 +65,7 @@ public class JpaTransactionManagerRuleTest {
   }
 
   @Test
-  public void testExtraParameters() {
+  void testExtraParameters() {
     // This test verifies that 1) withEntityClass() has registered TestEntity and 2) The table
     // has been created, implying withProperty(HBM2DDL_AUTO, "update") worked.
     TestEntity original = new TestEntity("key", "value");

@@ -1,0 +1,19 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:creData
+       xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>%DOMAIN%</domain:name>
+        <domain:crDate>%CRDATE%</domain:crDate>
+        <domain:exDate>%EXDATE%</domain:exDate>
+      </domain:creData>
+    </resData>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>

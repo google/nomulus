@@ -17,13 +17,12 @@ package google.registry.rde;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.keyring.api.PgpHelper.KeyRequirement.ENCRYPT;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
-import google.registry.testing.BouncyCastleProviderRule;
+import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
-import google.registry.testing.ShardableTestCase;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -31,18 +30,17 @@ import java.io.OutputStream;
 import java.util.Base64;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@RunWith(JUnit4.class)
-public final class RydeEncryptionTest extends ShardableTestCase {
+/** Unit tests for {@link RydeEncryption} */
+public final class RydeEncryptionTest {
 
-  @Rule public final BouncyCastleProviderRule bouncy = new BouncyCastleProviderRule();
+  @RegisterExtension
+  public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
   @Test
-  public void testSuccess_oneReceiver_decryptWithCorrectKey() throws Exception {
+  void testSuccess_oneReceiver_decryptWithCorrectKey() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     PGPKeyPair key = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
     byte[] expected = "Testing 1, 2, 3".getBytes(UTF_8);
@@ -61,7 +59,7 @@ public final class RydeEncryptionTest extends ShardableTestCase {
   }
 
   @Test
-  public void testFail_oneReceiver_decryptWithWrongKey() throws Exception {
+  void testFail_oneReceiver_decryptWithWrongKey() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     PGPKeyPair key = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
     PGPKeyPair wrongKey = keyringModule.get("rde-unittest-dsa@registry.test", ENCRYPT);
@@ -87,7 +85,7 @@ public final class RydeEncryptionTest extends ShardableTestCase {
   }
 
   @Test
-  public void testSuccess_twoReceivers() throws Exception {
+  void testSuccess_twoReceivers() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     PGPKeyPair key1 = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
     PGPKeyPair key2 = keyringModule.get("rde-unittest-dsa@registry.test", ENCRYPT);
@@ -114,7 +112,7 @@ public final class RydeEncryptionTest extends ShardableTestCase {
   }
 
   @Test
-  public void testSuccess_decryptHasntChanged() throws Exception {
+  void testSuccess_decryptHasntChanged() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     PGPKeyPair key = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
     byte[] expected = "Testing 1, 2, 3".getBytes(UTF_8);
@@ -135,7 +133,7 @@ public final class RydeEncryptionTest extends ShardableTestCase {
   }
 
   @Test
-  public void testSuccess_oneReceiver_withIntegrityPacket() throws Exception {
+  void testSuccess_oneReceiver_withIntegrityPacket() throws Exception {
     FakeKeyringModule keyringModule = new FakeKeyringModule();
     PGPKeyPair key = keyringModule.get("rde-unittest@registry.test", ENCRYPT);
     byte[] expected = "Testing 1, 2, 3".getBytes(UTF_8);

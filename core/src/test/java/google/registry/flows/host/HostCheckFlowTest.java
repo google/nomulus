@@ -18,23 +18,23 @@ import static google.registry.model.eppoutput.CheckData.HostCheck.create;
 import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistDeletedHost;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.EppException;
 import google.registry.flows.ResourceCheckFlowTestCase;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.host.HostResource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostCheckFlow}. */
-public class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, HostResource> {
+class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, HostResource> {
 
-  public HostCheckFlowTest() {
+  HostCheckFlowTest() {
     setEppInput("host_check.xml");
   }
 
   @Test
-  public void testNothingExists() throws Exception {
+  void testNothingExists() throws Exception {
     // These ids come from the check xml.
     doCheckTest(
         create(true, "ns1.example.tld", null),
@@ -43,7 +43,7 @@ public class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, 
   }
 
   @Test
-  public void testOneExists() throws Exception {
+  void testOneExists() throws Exception {
     persistActiveHost("ns1.example.tld");
     // These ids come from the check xml.
     doCheckTest(
@@ -53,7 +53,7 @@ public class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, 
   }
 
   @Test
-  public void testOneExistsButWasDeleted() throws Exception {
+  void testOneExistsButWasDeleted() throws Exception {
     persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
     // These ids come from the check xml.
     doCheckTest(
@@ -63,27 +63,27 @@ public class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, 
   }
 
   @Test
-  public void testXmlMatches() throws Exception {
+  void testXmlMatches() throws Exception {
     persistActiveHost("ns2.example.tld");
     runFlowAssertResponse(loadFile("host_check_response.xml"));
   }
 
   @Test
-  public void test50IdsAllowed() throws Exception {
+  void test50IdsAllowed() throws Exception {
     // Make sure we don't have a regression that reduces the number of allowed checks.
     setEppInput("host_check_50.xml");
     runFlow();
   }
 
   @Test
-  public void testTooManyIds() {
+  void testTooManyIds() {
     setEppInput("host_check_51.xml");
     EppException thrown = assertThrows(TooManyResourceChecksException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-host-check");
   }

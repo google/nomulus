@@ -17,7 +17,7 @@ package google.registry.persistence.converter;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Maps;
@@ -25,7 +25,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.util.Map;
 import javax.persistence.Converter;
 import javax.persistence.Entity;
@@ -36,10 +36,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link TimedTransitionPropertyConverterBase}. */
-public class TimedTransitionPropertyConverterBaseTest {
+class TimedTransitionPropertyConverterBaseTest {
 
   @RegisterExtension
-  public final JpaUnitTestRule jpa =
+  public final JpaUnitTestExtension jpa =
       new JpaTestRules.Builder()
           .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(TestTimedTransitionPropertyConverter.class, TestEntity.class)

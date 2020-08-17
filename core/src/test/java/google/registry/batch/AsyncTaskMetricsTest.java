@@ -21,20 +21,16 @@ import static google.registry.batch.AsyncTaskMetrics.OperationType.CONTACT_AND_H
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.testing.FakeClock;
-import google.registry.testing.ShardableTestCase;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link AsyncTaskMetrics}. */
-@RunWith(JUnit4.class)
-public class AsyncTaskMetricsTest extends ShardableTestCase {
+class AsyncTaskMetricsTest {
 
   private final FakeClock clock = new FakeClock();
   private final AsyncTaskMetrics asyncTaskMetrics = new AsyncTaskMetrics(clock);
 
   @Test
-  public void testRecordAsyncFlowResult_calculatesDurationMillisCorrectly() {
+  void testRecordAsyncFlowResult_calculatesDurationMillisCorrectly() {
     asyncTaskMetrics.recordAsyncFlowResult(
         CONTACT_AND_HOST_DELETE,
         SUCCESS,

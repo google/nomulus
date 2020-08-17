@@ -15,39 +15,37 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.testing.NullPointerTester;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.util.function.Function;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Concurrent}. */
-@RunWith(JUnit4.class)
-public class ConcurrentTest {
+class ConcurrentTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void testTransform_emptyList_returnsEmptyList() {
+  void testTransform_emptyList_returnsEmptyList() {
     assertThat(Concurrent.transform(ImmutableList.of(), x -> x)).isEmpty();
   }
 
   @Test
-  public void testTransform_addIntegers() {
+  void testTransform_addIntegers() {
     assertThat(Concurrent.transform(ImmutableList.of(1, 2, 3), input -> input + 1))
         .containsExactly(2, 3, 4)
         .inOrder();
   }
 
   @Test
-  public void testTransform_throwsException_isSinglyWrappedByUee() {
+  void testTransform_throwsException_isSinglyWrappedByUee() {
     UncheckedExecutionException e =
         assertThrows(
             UncheckedExecutionException.class,
@@ -62,7 +60,7 @@ public class ConcurrentTest {
   }
 
   @Test
-  public void testNullness() {
+  void testNullness() {
     NullPointerTester tester = new NullPointerTester().setDefault(Function.class, x -> x);
     tester.testAllPublicStaticMethods(Concurrent.class);
   }

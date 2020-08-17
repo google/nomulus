@@ -16,7 +16,7 @@ package google.registry.model.domain;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
@@ -24,48 +24,49 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.AppEngineRule;
+import google.registry.persistence.VKey;
+import google.registry.testing.AppEngineExtension;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link GracePeriod}. */
-@RunWith(JUnit4.class)
 public class GracePeriodTest {
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql() // Needed to be able to construct Keys.
           .build();
 
   private final DateTime now = DateTime.now(UTC);
   private BillingEvent.OneTime onetime;
 
-  @Before
-  public void before() {
-    onetime = new BillingEvent.OneTime.Builder()
-      .setEventTime(now)
-      .setBillingTime(now.plusDays(1))
-      .setClientId("TheRegistrar")
-      .setCost(Money.of(CurrencyUnit.USD, 42))
-      .setParent(Key.create(HistoryEntry.class, 12345))
-      .setReason(Reason.CREATE)
-      .setPeriodYears(1)
-      .setTargetId("foo.google")
-      .build();
+  @BeforeEach
+  void before() {
+    onetime =
+        new BillingEvent.OneTime.Builder()
+            .setEventTime(now)
+            .setBillingTime(now.plusDays(1))
+            .setClientId("TheRegistrar")
+            .setCost(Money.of(CurrencyUnit.USD, 42))
+            .setParent(
+                Key.create(Key.create(DomainBase.class, "domain"), HistoryEntry.class, 12345))
+            .setReason(Reason.CREATE)
+            .setPeriodYears(1)
+            .setTargetId("foo.google")
+            .build();
   }
 
   @Test
-  public void testSuccess_forBillingEvent() {
-    GracePeriod gracePeriod = GracePeriod.forBillingEvent(GracePeriodStatus.ADD, onetime);
+  void testSuccess_forBillingEvent() {
+    GracePeriod gracePeriod = GracePeriod.forBillingEvent(GracePeriodStatus.ADD, "1-TEST", onetime);
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.ADD);
-    assertThat(gracePeriod.getOneTimeBillingEvent()).isEqualTo(Key.create(onetime));
+    assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
+    assertThat(gracePeriod.getOneTimeBillingEvent()).isEqualTo(onetime.createVKey());
     assertThat(gracePeriod.getRecurringBillingEvent()).isNull();
     assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
@@ -73,10 +74,12 @@ public class GracePeriodTest {
   }
 
   @Test
-  public void testSuccess_createWithoutBillingEvent() {
-    GracePeriod gracePeriod = GracePeriod.createWithoutBillingEvent(
-        GracePeriodStatus.REDEMPTION, now, "TheRegistrar");
+  void testSuccess_createWithoutBillingEvent() {
+    GracePeriod gracePeriod =
+        GracePeriod.createWithoutBillingEvent(
+            GracePeriodStatus.REDEMPTION, "1-TEST", now, "TheRegistrar");
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.REDEMPTION);
+    assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
     assertThat(gracePeriod.getOneTimeBillingEvent()).isNull();
     assertThat(gracePeriod.getRecurringBillingEvent()).isNull();
     assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
@@ -85,25 +88,26 @@ public class GracePeriodTest {
   }
 
   @Test
-  public void testFailure_forBillingEvent_autoRenew() {
+  void testFailure_forBillingEvent_autoRenew() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> GracePeriod.forBillingEvent(GracePeriodStatus.AUTO_RENEW, onetime));
+            () -> GracePeriod.forBillingEvent(GracePeriodStatus.AUTO_RENEW, "1-TEST", onetime));
     assertThat(thrown).hasMessageThat().contains("autorenew");
   }
 
   @Test
-  public void testFailure_createForRecurring_notAutoRenew() {
+  void testFailure_createForRecurring_notAutoRenew() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
             () ->
                 GracePeriod.createForRecurring(
                     GracePeriodStatus.RENEW,
+                    "1-TEST",
                     now.plusDays(1),
                     "TheRegistrar",
-                    Key.create(Recurring.class, 12345)));
+                    VKey.create(Recurring.class, 12345)));
     assertThat(thrown).hasMessageThat().contains("autorenew");
   }
 }

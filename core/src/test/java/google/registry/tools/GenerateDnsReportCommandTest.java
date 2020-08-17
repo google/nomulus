@@ -24,7 +24,7 @@ import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableList;
@@ -41,21 +41,15 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GenerateDnsReportCommand}. */
-public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportCommand> {
-
-  @Rule
-  public final TemporaryFolder folder = new TemporaryFolder();
+class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportCommand> {
 
   private final DateTime now = DateTime.now(UTC);
   private final FakeClock clock = new FakeClock();
@@ -120,9 +114,9 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
           "192.168.1.1",
           "2607:f8b0:400d:c00:0:0:0:c1"));
 
-  @Before
-  public void init() throws Exception {
-    output = Paths.get(folder.newFile().toString());
+  @BeforeEach
+  void beforeEach() throws Exception {
+    output = tmpDir.resolve("out.dat");
     command.clock = clock;
     clock.setTo(now);
 
@@ -165,7 +159,7 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
     Iterable<?> output = (Iterable<?>) getOutputAsJson();
     assertThat(output).containsAnyOf(DOMAIN1_OUTPUT, DOMAIN1_OUTPUT_ALT);
@@ -173,7 +167,7 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
   }
 
   @Test
-  public void testSuccess_skipDeletedDomain() throws Exception {
+  void testSuccess_skipDeletedDomain() throws Exception {
     persistResource(domain1.asBuilder().setDeletionTime(now).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
     assertThat((Iterable<?>) getOutputAsJson())
@@ -181,7 +175,7 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
   }
 
   @Test
-  public void testSuccess_skipDeletedNameserver() throws Exception {
+  void testSuccess_skipDeletedNameserver() throws Exception {
     persistResource(nameserver1.asBuilder().setDeletionTime(now).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
     Iterable<?> output = (Iterable<?>) getOutputAsJson();
@@ -190,7 +184,7 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
   }
 
   @Test
-  public void testSuccess_skipClientHoldDomain() throws Exception {
+  void testSuccess_skipClientHoldDomain() throws Exception {
     persistResource(domain1.asBuilder().addStatusValue(StatusValue.CLIENT_HOLD).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
     assertThat((Iterable<?>) getOutputAsJson())
@@ -198,7 +192,7 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
   }
 
   @Test
-  public void testSuccess_skipServerHoldDomain() throws Exception {
+  void testSuccess_skipServerHoldDomain() throws Exception {
     persistResource(domain1.asBuilder().addStatusValue(StatusValue.SERVER_HOLD).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
     assertThat((Iterable<?>) getOutputAsJson())
@@ -206,7 +200,7 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
   }
 
   @Test
-  public void testSuccess_skipPendingDeleteDomain() throws Exception {
+  void testSuccess_skipPendingDeleteDomain() throws Exception {
     persistResource(
         domain1
             .asBuilder()
@@ -219,7 +213,7 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
   }
 
   @Test
-  public void testSuccess_skipDomainsWithoutNameservers() throws Exception {
+  void testSuccess_skipDomainsWithoutNameservers() throws Exception {
     persistResource(domain1.asBuilder().setNameservers(ImmutableSet.of()).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
     assertThat((Iterable<?>) getOutputAsJson())
@@ -227,12 +221,12 @@ public class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsRep
   }
 
   @Test
-  public void testFailure_tldDoesNotExist() {
+  void testFailure_tldDoesNotExist() {
     assertThrows(IllegalArgumentException.class, () -> runCommand("--tld=foobar"));
   }
 
   @Test
-  public void testFailure_missingTldParameter() {
+  void testFailure_missingTldParameter() {
     assertThrows(ParameterException.class, () -> runCommand(""));
   }
 }

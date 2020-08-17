@@ -26,30 +26,28 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link NameserverWhoisResponse}. */
-@RunWith(JUnit4.class)
-public class NameserverWhoisResponseTest {
+class NameserverWhoisResponseTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private HostResource hostResource1;
   private HostResource hostResource2;
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2009-05-29T20:15:00Z"));
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void beforeEach() {
     persistNewRegistrar("example", "Hänsel & Gretel Registrar, Inc.", Registrar.Type.REAL, 8L);
     persistResource(loadRegistrar("example").asBuilder().setUrl("http://my.fake.url").build());
     createTld("tld");
@@ -78,7 +76,7 @@ public class NameserverWhoisResponseTest {
   }
 
   @Test
-  public void testGetTextOutput() {
+  void testGetTextOutput() {
     NameserverWhoisResponse nameserverWhoisResponse =
         new NameserverWhoisResponse(hostResource1, clock.nowUtc());
     assertThat(
@@ -89,14 +87,13 @@ public class NameserverWhoisResponseTest {
   }
 
   @Test
-  public void testGetMultipleNameserversResponse() {
+  void testGetMultipleNameserversResponse() {
     NameserverWhoisResponse nameserverWhoisResponse =
         new NameserverWhoisResponse(ImmutableList.of(hostResource1, hostResource2), clock.nowUtc());
     assertThat(
             nameserverWhoisResponse.getResponse(
                 false,
                 "Doodle Disclaimer\nI exist so that carriage return\nin disclaimer can be tested."))
-        .isEqualTo(
-            WhoisResponseResults.create(loadFile("whois_multiple_nameservers.txt"), 2));
+        .isEqualTo(WhoisResponseResults.create(loadFile("whois_multiple_nameservers.txt"), 2));
   }
 }

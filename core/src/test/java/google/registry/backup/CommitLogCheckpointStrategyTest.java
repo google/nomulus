@@ -31,32 +31,28 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.persistence.transaction.TransactionManager;
 import google.registry.schema.cursor.CursorDao;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
+import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CommitLogCheckpointStrategy}. */
-@RunWith(JUnit4.class)
 public class CommitLogCheckpointStrategyTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
-
-  final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
-  final Ofy ofy = new Ofy(clock);
-  final TransactionManager tm = new DatastoreTransactionManager(ofy);
-  final CommitLogCheckpointStrategy strategy = new CommitLogCheckpointStrategy();
+  private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+  private final Ofy ofy = new Ofy(clock);
+  private final TransactionManager tm = new DatastoreTransactionManager(ofy);
+  private final CommitLogCheckpointStrategy strategy = new CommitLogCheckpointStrategy();
 
   /**
    * Supplier to inject into CommitLogBucket for doling out predictable bucket IDs.
@@ -64,7 +60,7 @@ public class CommitLogCheckpointStrategyTest {
    * <p>If not overridden, the supplier returns 1 so that other saves won't hit an NPE (since even
    * if they use saveWithoutBackup() the transaction still selects a bucket key early).
    */
-  final FakeSupplier<Integer> fakeBucketIdSupplier = new FakeSupplier<>(1);
+  private final FakeSupplier<Integer> fakeBucketIdSupplier = new FakeSupplier<>(1);
 
   /** Gross but necessary supplier that can be modified to return the desired value. */
   private static class FakeSupplier<T> implements Supplier<T> {
@@ -74,7 +70,7 @@ public class CommitLogCheckpointStrategyTest {
     /** Set this value field to make the supplier return this value. */
     T value = null;
 
-    public FakeSupplier(T defaultValue) {
+    FakeSupplier(T defaultValue) {
       this.defaultValue = defaultValue;
     }
 
@@ -84,8 +80,8 @@ public class CommitLogCheckpointStrategyTest {
     }
   }
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     strategy.clock = clock;
     strategy.ofy = ofy;
 
@@ -102,13 +98,13 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_readBucketTimestamps_noCommitLogs() {
+  void test_readBucketTimestamps_noCommitLogs() {
     assertThat(strategy.readBucketTimestamps())
         .containsExactly(1, START_OF_TIME, 2, START_OF_TIME, 3, START_OF_TIME);
   }
 
   @Test
-  public void test_readBucketTimestamps_withSomeCommitLogs() {
+  void test_readBucketTimestamps_withSomeCommitLogs() {
     DateTime startTime = clock.nowUtc();
     writeCommitLogToBucket(1);
     clock.advanceOneMilli();
@@ -118,7 +114,7 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_readBucketTimestamps_againAfterUpdate_reflectsUpdate() {
+  void test_readBucketTimestamps_againAfterUpdate_reflectsUpdate() {
     DateTime firstTime = clock.nowUtc();
     writeCommitLogToBucket(1);
     writeCommitLogToBucket(2);
@@ -133,14 +129,14 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_readNewCommitLogsAndFindThreshold_noCommitsAtAll_returnsEndOfTime() {
+  void test_readNewCommitLogsAndFindThreshold_noCommitsAtAll_returnsEndOfTime() {
     ImmutableMap<Integer, DateTime> bucketTimes =
         ImmutableMap.of(1, START_OF_TIME, 2, START_OF_TIME, 3, START_OF_TIME);
     assertThat(strategy.readNewCommitLogsAndFindThreshold(bucketTimes)).isEqualTo(END_OF_TIME);
   }
 
   @Test
-  public void test_readNewCommitLogsAndFindThreshold_noNewCommits_returnsEndOfTime() {
+  void test_readNewCommitLogsAndFindThreshold_noNewCommits_returnsEndOfTime() {
     DateTime now = clock.nowUtc();
     writeCommitLogToBucket(1);
     clock.advanceOneMilli();
@@ -153,7 +149,7 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_readNewCommitLogsAndFindThreshold_tiedNewCommits_returnsCommitTimeMinusOne() {
+  void test_readNewCommitLogsAndFindThreshold_tiedNewCommits_returnsCommitTimeMinusOne() {
     DateTime now = clock.nowUtc();
     writeCommitLogToBucket(1);
     writeCommitLogToBucket(2);
@@ -164,7 +160,7 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_readNewCommitLogsAndFindThreshold_someNewCommits_returnsEarliestTimeMinusOne() {
+  void test_readNewCommitLogsAndFindThreshold_someNewCommits_returnsEarliestTimeMinusOne() {
     DateTime now = clock.nowUtc();
     writeCommitLogToBucket(1);  // 1A
     writeCommitLogToBucket(2);  // 2A
@@ -191,7 +187,7 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_readNewCommitLogsAndFindThreshold_commitsAtBucketTimes() {
+  void test_readNewCommitLogsAndFindThreshold_commitsAtBucketTimes() {
     DateTime now = clock.nowUtc();
     ImmutableMap<Integer, DateTime> bucketTimes =
         ImmutableMap.of(1, now.minusMillis(1), 2, now, 3, now.plusMillis(1));
@@ -199,7 +195,7 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_computeBucketCheckpointTimes_earlyThreshold_setsEverythingToThreshold() {
+  void test_computeBucketCheckpointTimes_earlyThreshold_setsEverythingToThreshold() {
     DateTime now = clock.nowUtc();
     ImmutableMap<Integer, DateTime> bucketTimes =
         ImmutableMap.of(1, now.minusMillis(1), 2, now, 3, now.plusMillis(1));
@@ -208,7 +204,7 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_computeBucketCheckpointTimes_middleThreshold_clampsToThreshold() {
+  void test_computeBucketCheckpointTimes_middleThreshold_clampsToThreshold() {
     DateTime now = clock.nowUtc();
     ImmutableMap<Integer, DateTime> bucketTimes =
         ImmutableMap.of(1, now.minusMillis(1), 2, now, 3, now.plusMillis(1));
@@ -217,7 +213,7 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_computeBucketCheckpointTimes_lateThreshold_leavesBucketTimesAsIs() {
+  void test_computeBucketCheckpointTimes_lateThreshold_leavesBucketTimesAsIs() {
     DateTime now = clock.nowUtc();
     ImmutableMap<Integer, DateTime> bucketTimes =
         ImmutableMap.of(1, now.minusMillis(1), 2, now, 3, now.plusMillis(1));
@@ -226,7 +222,7 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_computeCheckpoint_noCommitsAtAll_bucketCheckpointTimesAreStartOfTime() {
+  void test_computeCheckpoint_noCommitsAtAll_bucketCheckpointTimesAreStartOfTime() {
     assertThat(strategy.computeCheckpoint())
         .isEqualTo(CommitLogCheckpoint.create(
             clock.nowUtc(),
@@ -234,7 +230,7 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_computeCheckpoint_noNewCommitLogs_bucketCheckpointTimesAreBucketTimes() {
+  void test_computeCheckpoint_noNewCommitLogs_bucketCheckpointTimesAreBucketTimes() {
     DateTime now = clock.nowUtc();
     writeCommitLogToBucket(1);
     clock.advanceOneMilli();
@@ -250,7 +246,7 @@ public class CommitLogCheckpointStrategyTest {
   }
 
   @Test
-  public void test_computeCheckpoint_someNewCommits_bucketCheckpointTimesAreClampedToThreshold() {
+  void test_computeCheckpoint_someNewCommits_bucketCheckpointTimesAreClampedToThreshold() {
     DateTime now = clock.nowUtc();
     writeCommitLogToBucket(1);  // 1A
     writeCommitLogToBucket(2);  // 2A

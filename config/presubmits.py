@@ -22,7 +22,7 @@ import sys
 import re
 
 # We should never analyze any generated files
-UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/"}
+UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/", ".git/"}
 # We can't rely on CI to have the Enum package installed so we do this instead.
 FORBIDDEN = 1
 REQUIRED = 2
@@ -77,9 +77,9 @@ PRESUBMITS = {
     PresubmitCheck(
         r".*Copyright 20\d{2} The Nomulus Authors\. All Rights Reserved\.",
         ("java", "js", "soy", "sql", "py", "sh", "gradle"), {
-            ".git", "/build/", "/generated/", "node_modules/",
-            "JUnitBackports.java", "registrar_bin.", "registrar_dbg.",
-            "google-java-format-diff.py",
+            ".git", "/build/", "/generated/", "/generated_tests/",
+            "node_modules/", "JUnitBackports.java", "registrar_bin.",
+            "registrar_dbg.", "google-java-format-diff.py",
             "nomulus.golden.sql", "soyutils_usegoog.js"
         }, REQUIRED):
         "File did not include the license header.",
@@ -93,20 +93,20 @@ PRESUBMITS = {
     PresubmitCheck(
         r".*\bSystem\.(out|err)\.print", "java", {
             "StackdriverDashboardBuilder.java", "/tools/", "/example/",
-            "RegistryTestServerMain.java", "TestServerRule.java",
+            "RegistryTestServerMain.java", "TestServerExtension.java",
             "FlowDocumentationTool.java"
         }):
         "System.(out|err).println is only allowed in tools/ packages. Please "
         "use a logger instead.",
 
-    # ObjectifyService.register is restricted to main/ or AppEngineRule.
+    # ObjectifyService.register is restricted to main/ or AppEngineExtension.
     PresubmitCheck(
         r".*\bObjectifyService\.register", "java", {
             "/build/", "/generated/", "node_modules/", "src/main/",
-            "AppEngineRule.java"
+            "AppEngineExtension.java"
         }):
-      "ObjectifyService.register is not allowed in tests. Please use "
-      "AppengineRule.register instead.",
+      "ObjectifyService.register(...) is not allowed in tests. Please use "
+      "AppEngineExtension.register(...) instead.",
 
     # PostgreSQLContainer instantiation must specify docker tag
     PresubmitCheck(

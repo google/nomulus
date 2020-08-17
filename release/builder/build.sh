@@ -17,12 +17,15 @@ set -e
 apt-get update -y
 apt-get install locales -y
 locale-gen en_US.UTF-8
-apt-get install apt-utils -y
+apt-get install apt-utils gnupg -y
 apt-get upgrade -y
 # Install Java
-apt-get install openjdk-8-jdk-headless -y
-# Install npm
-apt-get install npm -y
+apt-get install openjdk-11-jdk-headless -y
+# Install Python
+apt-get install python -y
+# Install Node
+curl -sL https://deb.nodesource.com/setup_current.x | bash -
+apt-get install -y nodejs
 # Install gcloud
 # Cribbed from https://cloud.google.com/sdk/docs/quickstart-debian-ubuntu
 apt-get install lsb-release -y

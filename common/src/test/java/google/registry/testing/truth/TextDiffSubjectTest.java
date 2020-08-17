@@ -17,7 +17,7 @@ package google.registry.testing.truth;
 import static com.google.common.io.Resources.getResource;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.truth.TextDiffSubject.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -25,13 +25,10 @@ import com.google.common.io.Resources;
 import google.registry.testing.truth.TextDiffSubject.DiffFormat;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TextDiffSubject}. */
-@RunWith(JUnit4.class)
-public class TextDiffSubjectTest {
+class TextDiffSubjectTest {
 
   private static final String RESOURCE_FOLDER = "google/registry/testing/truth/";
   // Resources for input data.
@@ -44,21 +41,21 @@ public class TextDiffSubjectTest {
       RESOURCE_FOLDER + "text-sidebyside-diff.txt";
 
   @Test
-  public void unifiedDiff_equal() throws IOException {
+  void unifiedDiff_equal() throws IOException {
     assertThat(getResource(ACTUAL_RESOURCE))
         .withDiffFormat(DiffFormat.UNIFIED_DIFF)
         .hasSameContentAs(getResource(ACTUAL_RESOURCE));
   }
 
   @Test
-  public void sideBySideDiff_equal() throws IOException {
+  void sideBySideDiff_equal() throws IOException {
     assertThat(getResource(ACTUAL_RESOURCE))
         .withDiffFormat(DiffFormat.SIDE_BY_SIDE_MARKDOWN)
         .hasSameContentAs(getResource(ACTUAL_RESOURCE));
   }
 
   @Test
-  public void unifedDiff_notEqual() throws IOException {
+  void unifedDiff_notEqual() throws IOException {
     assertThrows(
         AssertionError.class,
         () ->
@@ -68,7 +65,7 @@ public class TextDiffSubjectTest {
   }
 
   @Test
-  public void sideBySideDiff_notEqual() throws IOException {
+  void sideBySideDiff_notEqual() throws IOException {
     assertThrows(
         AssertionError.class,
         () ->
@@ -78,13 +75,13 @@ public class TextDiffSubjectTest {
   }
 
   @Test
-  public void displayed_unifiedDiff_noDiff() throws IOException {
+  void displayed_unifiedDiff_noDiff() throws IOException {
     ImmutableList<String> actual = readAllLinesFromResource(ACTUAL_RESOURCE);
     assertThat(TextDiffSubject.generateUnifiedDiff(actual, actual)).isEqualTo("");
   }
 
   @Test
-  public void displayed_unifiedDiff_hasDiff() throws IOException {
+  void displayed_unifiedDiff_hasDiff() throws IOException {
     ImmutableList<String> actual = readAllLinesFromResource(ACTUAL_RESOURCE);
     ImmutableList<String> expected = readAllLinesFromResource(EXPECTED_RESOURCE);
     String diff = Joiner.on('\n').join(readAllLinesFromResource(UNIFIED_DIFF_RESOURCE));
@@ -92,7 +89,7 @@ public class TextDiffSubjectTest {
   }
 
   @Test
-  public void displayed_sideBySideDiff_hasDiff() throws IOException {
+  void displayed_sideBySideDiff_hasDiff() throws IOException {
     ImmutableList<String> actual = readAllLinesFromResource(ACTUAL_RESOURCE);
     ImmutableList<String> expected = readAllLinesFromResource(EXPECTED_RESOURCE);
     String diff = Joiner.on('\n').join(readAllLinesFromResource(SIDE_BY_SIDE_DIFF_RESOURCE));

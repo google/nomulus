@@ -27,17 +27,15 @@ import google.registry.testing.TestDataHelper;
 import java.io.IOException;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for unmarshalling {@link Operation} and its member types. */
-@RunWith(JUnit4.class)
-public class OperationTest {
+class OperationTest {
+
   private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 
   @Test
-  public void testCommonMetadata_unmarshall() throws IOException {
+  void testCommonMetadata_unmarshall() throws IOException {
     CommonMetadata commonMetadata = loadJson("common_metadata.json", CommonMetadata.class);
     assertThat(commonMetadata.getState()).isEqualTo("SUCCESSFUL");
     assertThat(commonMetadata.getOperationType()).isEqualTo("EXPORT_ENTITIES");
@@ -47,14 +45,14 @@ public class OperationTest {
   }
 
   @Test
-  public void testProgress_unmarshall() throws IOException {
+  void testProgress_unmarshall() throws IOException {
     Progress progress = loadJson("progress.json", Progress.class);
     assertThat(progress.getWorkCompleted()).isEqualTo(51797);
     assertThat(progress.getWorkEstimated()).isEqualTo(54513);
   }
 
   @Test
-  public void testMetadata_unmarshall() throws IOException {
+  void testMetadata_unmarshall() throws IOException {
     Metadata metadata = loadJson("metadata.json", Metadata.class);
     assertThat(metadata.getCommonMetadata().getOperationType()).isEqualTo("EXPORT_ENTITIES");
     assertThat(metadata.getCommonMetadata().getState()).isEqualTo("SUCCESSFUL");
@@ -67,7 +65,7 @@ public class OperationTest {
   }
 
   @Test
-  public void testOperation_unmarshall() throws IOException {
+  void testOperation_unmarshall() throws IOException {
     Operation operation = loadJson("operation.json", Operation.class);
     assertThat(operation.getName())
         .startsWith("projects/domain-registry-alpha/operations/ASAzNjMwOTEyNjUJ");
@@ -86,7 +84,7 @@ public class OperationTest {
   }
 
   @Test
-  public void testOperationList_unmarshall() throws IOException {
+  void testOperationList_unmarshall() throws IOException {
     Operation.OperationList operationList =
         loadJson("operation_list.json", Operation.OperationList.class);
     assertThat(operationList.toList()).hasSize(2);

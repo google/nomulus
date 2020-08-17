@@ -94,6 +94,21 @@ public class PersistenceModule {
       @Config("cloudSqlJdbcUrl") String jdbcUrl,
       @Config("cloudSqlInstanceConnectionName") String instanceConnectionName,
       @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs) {
+    return createPartialSqlConfigs(jdbcUrl, instanceConnectionName, defaultConfigs);
+  }
+
+  @Provides
+  @Singleton
+  @BeamPipelineCloudSqlConfigs
+  static ImmutableMap<String, String> provideBeamPipelineCloudSqlConfigs(
+      @Config("beamCloudSqlJdbcUrl") String jdbcUrl,
+      @Config("beamCloudSqlInstanceConnectionName") String instanceConnectionName,
+      @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs) {
+    return createPartialSqlConfigs(jdbcUrl, instanceConnectionName, defaultConfigs);
+  }
+
+  private static ImmutableMap<String, String> createPartialSqlConfigs(
+      String jdbcUrl, String instanceConnectionName, ImmutableMap<String, String> defaultConfigs) {
     HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
     overrides.put(Environment.URL, jdbcUrl);
     overrides.put(HIKARI_DS_SOCKET_FACTORY, "com.google.cloud.sql.postgres.SocketFactory");
@@ -135,13 +150,15 @@ public class PersistenceModule {
   @Singleton
   @SocketFactoryJpaTm
   static JpaTransactionManager provideSocketFactoryJpaTm(
-      @Config("cloudSqlUsername") String username,
-      @Config("cloudSqlPassword") String password,
-      @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
+      @Config("beamCloudSqlUsername") String username,
+      @Config("beamCloudSqlPassword") String password,
+      @Config("beamHibernateHikariMaximumPoolSize") int hikariMaximumPoolSize,
+      @BeamPipelineCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
       Clock clock) {
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
     overrides.put(Environment.USER, username);
     overrides.put(Environment.PASS, password);
+    overrides.put(HIKARI_MAXIMUM_POOL_SIZE, String.valueOf(hikariMaximumPoolSize));
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -149,9 +166,9 @@ public class PersistenceModule {
   @Singleton
   @JdbcJpaTm
   static JpaTransactionManager provideLocalJpaTm(
-      @Config("cloudSqlJdbcUrl") String jdbcUrl,
-      @Config("cloudSqlUsername") String username,
-      @Config("cloudSqlPassword") String password,
+      @Config("beamCloudSqlJdbcUrl") String jdbcUrl,
+      @Config("beamCloudSqlUsername") String username,
+      @Config("beamCloudSqlPassword") String password,
       @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs,
       Clock clock) {
     HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
@@ -217,6 +234,11 @@ public class PersistenceModule {
   @Qualifier
   @Documented
   @interface PartialCloudSqlConfigs {}
+
+  /** Dagger qualifier for the Cloud SQL configs used by Beam pipelines. */
+  @Qualifier
+  @Documented
+  @interface BeamPipelineCloudSqlConfigs {}
 
   /** Dagger qualifier for the default Hibernate configurations. */
   // TODO(shicong): Change annotations in this class to none public or put them in a top level

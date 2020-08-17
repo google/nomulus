@@ -22,7 +22,6 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.condition.IfNull;
@@ -125,8 +124,10 @@ public class HostBase extends EppResource {
   }
 
   @Override
-  public VKey<? extends EppResource> createVKey() {
-    return VKey.create(HostBase.class, getRepoId(), Key.create(this));
+  public VKey<? extends HostBase> createVKey() {
+    throw new UnsupportedOperationException(
+        "HostBase is not an actual persisted entity you can create a key to;"
+            + " use HostResource instead");
   }
 
   @Deprecated

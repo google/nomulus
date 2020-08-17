@@ -38,21 +38,20 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.Retrier;
 import java.io.ByteArrayInputStream;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
-@RunWith(JUnit4.class)
-public class KmsConnectionImplTest {
-
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+/** Unit tests for {@link KmsConnectionImpl}. */
+@ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+class KmsConnectionImplTest {
 
   @Mock private CloudKMS kms;
   @Mock private CloudKMS.Projects kmsProjects;
@@ -91,8 +90,8 @@ public class KmsConnectionImplTest {
 
   private final Retrier retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     when(kms.projects()).thenReturn(kmsProjects);
     when(kmsProjects.locations()).thenReturn(kmsLocations);
     when(kmsLocations.keyRings()).thenReturn(kmsKeyRings);
@@ -123,7 +122,7 @@ public class KmsConnectionImplTest {
   }
 
   @Test
-  public void test_encrypt_createsKeyRingIfNotFound() throws Exception {
+  void test_encrypt_createsKeyRingIfNotFound() throws Exception {
     when(kmsKeyRingsGet.execute()).thenThrow(createNotFoundException());
 
     new KmsConnectionImpl("foo", "bar", retrier, kms).encrypt("key", "moo".getBytes(UTF_8));
@@ -142,7 +141,7 @@ public class KmsConnectionImplTest {
   }
 
   @Test
-  public void test_encrypt_newCryptoKey() throws Exception {
+  void test_encrypt_newCryptoKey() throws Exception {
     when(kmsCryptoKeysGet.execute()).thenThrow(createNotFoundException());
 
     new KmsConnectionImpl("foo", "bar", retrier, kms).encrypt("key", "moo".getBytes(UTF_8));
@@ -163,9 +162,8 @@ public class KmsConnectionImplTest {
   }
 
   @Test
-  public void test_encrypt() throws Exception {
+  void test_encrypt() throws Exception {
     new KmsConnectionImpl("foo", "bar", retrier, kms).encrypt("key", "moo".getBytes(UTF_8));
-
 
     verify(kmsCryptoKeyVersions).create(cryptoKeyName.capture(), cryptoKeyVersion.capture());
     assertThat(cryptoKeyName.getValue())
@@ -188,7 +186,7 @@ public class KmsConnectionImplTest {
   }
 
   @Test
-  public void test_decrypt() throws Exception {
+  void test_decrypt() throws Exception {
     when(kmsCryptoKeysDecrypt.execute())
         .thenReturn(new DecryptResponse().encodePlaintext("moo".getBytes(UTF_8)));
 

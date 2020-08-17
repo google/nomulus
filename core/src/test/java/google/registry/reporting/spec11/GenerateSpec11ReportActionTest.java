@@ -31,23 +31,20 @@ import com.google.api.services.dataflow.model.LaunchTemplateResponse;
 import com.google.api.services.dataflow.model.RuntimeEnvironment;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.io.IOException;
 import org.joda.time.LocalDate;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.spec11.GenerateSpec11ReportAction}. */
-@RunWith(JUnit4.class)
-public class GenerateSpec11ReportActionTest {
+class GenerateSpec11ReportActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withTaskQueue().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
 
   private FakeResponse response;
   private Dataflow dataflow;
@@ -57,8 +54,8 @@ public class GenerateSpec11ReportActionTest {
 
   private GenerateSpec11ReportAction action;
 
-  @Before
-  public void setUp() throws IOException {
+  @BeforeEach
+  void beforeEach() throws IOException {
     response = new FakeResponse();
     dataflow = mock(Dataflow.class);
 
@@ -79,7 +76,7 @@ public class GenerateSpec11ReportActionTest {
   }
 
   @Test
-  public void testLaunch_success() throws IOException {
+  void testLaunch_success() throws IOException {
     action =
         new GenerateSpec11ReportAction(
             "test",

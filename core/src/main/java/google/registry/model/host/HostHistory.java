@@ -73,7 +73,7 @@ public class HostHistory extends HistoryEntry {
       return this;
     }
 
-    public Builder setHostResourceId(VKey<HostResource> hostRepoId) {
+    public Builder setHostRepoId(VKey<HostResource> hostRepoId) {
       getInstance().hostRepoId = hostRepoId;
       hostRepoId.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
       return this;

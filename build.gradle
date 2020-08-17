@@ -25,7 +25,7 @@ buildscript {
 
   dependencies {
     classpath 'com.google.cloud.tools:appengine-gradle-plugin:2.0.1'
-    classpath "net.ltgt.gradle:gradle-errorprone-plugin:0.6.1"
+    classpath 'net.ltgt.gradle:gradle-errorprone-plugin:0.6.1'
     classpath 'org.sonatype.aether:aether-api:1.13.1'
     classpath 'org.sonatype.aether:aether-impl:1.13.1'
   }
@@ -35,9 +35,6 @@ plugins {
   // Java static analysis plugins. Keep versions consistent with
   // ./buildSrc/build.gradle
   id 'nebula.lint' version '16.0.2'
-  // TODO(weiminyu): consider remove net.ltgt.apt. Gradle 5.2+
-  //  has similar functionalities.
-  id 'net.ltgt.apt' version '0.19' apply false
   id 'net.ltgt.errorprone' version '0.6.1'
   id 'checkstyle'
   id 'com.github.johnrengelman.shadow' version '5.1.0'
@@ -49,6 +46,7 @@ plugins {
   id 'com.diffplug.gradle.spotless' version '3.25.0'
 
   id 'jacoco'
+  id 'com.dorongold.task-tree' version '1.5'
 }
 
 wrapper {
@@ -289,12 +287,6 @@ subprojects {
 
   project.tasks.test.dependsOn runPresubmits
 
-// Path to code generated with annotation processors. Note that this path is
-// chosen by the 'net.ltgt.apt' plugin, and may change if IDE-specific plugins
-// are applied, e.g., 'idea' or 'eclipse'
-  def aptGeneratedDir = "${project.buildDir}/generated/source/apt/main"
-  def aptGeneratedTestDir = "${project.buildDir}/generated/source/apt/test"
-
   def commonlyExcludedResources = ['**/*.java', '**/BUILD']
 
   project.ext.javaDir = "${project.projectDir}/src/main/java"
@@ -303,18 +295,12 @@ subprojects {
 
   sourceSets {
     main {
-      java {
-        srcDirs += aptGeneratedDir
-      }
       resources {
         srcDirs += project.ext.javaDir
         exclude commonlyExcludedResources
       }
     }
     test {
-      java {
-        srcDirs += aptGeneratedTestDir
-      }
       resources {
         srcDirs += project.ext.javaTestDir
         exclude commonlyExcludedResources
@@ -322,9 +308,14 @@ subprojects {
     }
   }
 
-  javadocSource << project.sourceSets.main.allJava
-  javadocClasspath << project.sourceSets.main.compileClasspath
-  javadocDependentTasks << project.tasks.compileJava
+  // No need to produce javadoc for the docs subproject, which has no APIs to
+  // expose to users.
+  if (project.name != 'docs') {
+    javadocSource << project.sourceSets.main.allJava
+    javadocClasspath << project.sourceSets.main.compileClasspath
+    javadocClasspath << "${buildDir}/generated/sources/annotationProcessor/java/main"
+    javadocDependentTasks << project.tasks.compileJava
+  }
 }
 
 // If "-P verboseTestOutput=true" is passed in, configure all subprojects to dump all of their
@@ -443,6 +434,7 @@ task javaIncrementalFormatDryRun {
     println("${invokeJavaDiffFormatScript("show")}")
   }
 }
+tasks.build.dependsOn(tasks.javaIncrementalFormatCheck)
 
 // Checks if modified lines in Java source files need reformatting.
 // Note that this task processes modified Java files in the entire repository.
@@ -451,8 +443,6 @@ task javaIncrementalFormatApply {
     invokeJavaDiffFormatScript("format")
   }
 }
-
-tasks.build.dependsOn(tasks.javaIncrementalFormatCheck)
 
 task javadoc(type: Javadoc) {
   source javadocSource
@@ -467,5 +457,17 @@ task javadoc(type: Javadoc) {
 }
 
 tasks.build.dependsOn(tasks.javadoc)
+
+// Task for doing development on core Nomulus.
+// This fixes code formatting automatically as necessary, builds and tests the
+// core Nomulus codebase, and runs all presubmits.
+task coreDev {
+  dependsOn 'javaIncrementalFormatApply'
+  dependsOn 'javadoc'
+  dependsOn 'checkDependenciesDotGradle'
+  dependsOn 'checkLicense'
+  dependsOn ':core:check'
+  dependsOn 'assemble'
+}
 
 javadocDependentTasks.each { tasks.javadoc.dependsOn(it) }

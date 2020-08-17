@@ -23,7 +23,7 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -36,20 +36,18 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.request.Response;
 import google.registry.storage.drive.DriveConnection;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExportReservedTermsAction}. */
-@RunWith(JUnit4.class)
 public class ExportReservedTermsActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
   private final Response response = mock(Response.class);
@@ -63,8 +61,8 @@ public class ExportReservedTermsActionTest {
     action.run();
   }
 
-  @Before
-  public void init() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     ReservedList rl = persistReservedList(
         "tld-reserved",
         "lol,FULLY_BLOCKED",
@@ -81,7 +79,7 @@ public class ExportReservedTermsActionTest {
   }
 
   @Test
-  public void test_uploadFileToDrive_succeeds() throws Exception {
+  void test_uploadFileToDrive_succeeds() throws Exception {
     runAction("tld");
     byte[] expected = "# This is a disclaimer.\ncat\nlol\n".getBytes(UTF_8);
     verify(driveConnection)
@@ -91,7 +89,7 @@ public class ExportReservedTermsActionTest {
   }
 
   @Test
-  public void test_uploadFileToDrive_doesNothingIfReservedListsNotConfigured() {
+  void test_uploadFileToDrive_doesNothingIfReservedListsNotConfigured() {
     persistResource(
         Registry.get("tld")
             .asBuilder()
@@ -104,7 +102,7 @@ public class ExportReservedTermsActionTest {
   }
 
   @Test
-  public void test_uploadFileToDrive_doesNothingWhenDriveFolderIdIsNull() {
+  void test_uploadFileToDrive_doesNothingWhenDriveFolderIdIsNull() {
     persistResource(Registry.get("tld").asBuilder().setDriveFolderId(null).build());
     runAction("tld");
     verify(response).setStatus(SC_OK);
@@ -113,7 +111,7 @@ public class ExportReservedTermsActionTest {
   }
 
   @Test
-  public void test_uploadFileToDrive_failsWhenDriveCannotBeReached() throws Exception {
+  void test_uploadFileToDrive_failsWhenDriveCannotBeReached() throws Exception {
     when(driveConnection.createOrUpdateFile(
         anyString(),
         any(MediaType.class),
@@ -125,7 +123,7 @@ public class ExportReservedTermsActionTest {
   }
 
   @Test
-  public void test_uploadFileToDrive_failsWhenTldDoesntExist() {
+  void test_uploadFileToDrive_failsWhenTldDoesntExist() {
     RuntimeException thrown = assertThrows(RuntimeException.class, () -> runAction("fakeTld"));
     verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
     assertThat(thrown)

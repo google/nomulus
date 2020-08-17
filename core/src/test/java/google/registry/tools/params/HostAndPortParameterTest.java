@@ -16,36 +16,33 @@ package google.registry.tools.params;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostAndPortParameter}. */
-@RunWith(JUnit4.class)
-public class HostAndPortParameterTest {
+class HostAndPortParameterTest {
 
   private final HostAndPortParameter instance = new HostAndPortParameter();
 
   @Test
-  public void testConvert_hostOnly() {
+  void testConvert_hostOnly() {
     assertThat(instance.convert("foo.bar").getHost()).isEqualTo("foo.bar");
     assertThat(instance.convert("foo.bar").getPortOrDefault(31337)).isEqualTo(31337);
   }
 
   @Test
-  public void testConvert_hostAndPort() {
+  void testConvert_hostAndPort() {
     assertThat(instance.convert("foo.bar:1234").getHost()).isEqualTo("foo.bar");
     assertThat(instance.convert("foo.bar:1234").getPortOrDefault(31337)).isEqualTo(1234);
   }
 
   @Test
-  public void testConvert_ipv6_hostOnly() {
+  void testConvert_ipv6_hostOnly() {
     assertThat(instance.convert("[feed:a:bee]").getHost()).isEqualTo("feed:a:bee");
     assertThat(instance.convert("[feed:a:bee]").getPortOrDefault(31337)).isEqualTo(31337);
   }
 
   @Test
-  public void testConvert_ipv6_hostAndPort() {
+  void testConvert_ipv6_hostAndPort() {
     assertThat(instance.convert("[feed:a:bee]:1234").getHost()).isEqualTo("feed:a:bee");
     assertThat(instance.convert("[feed:a:bee]:1234").getPortOrDefault(31337)).isEqualTo(1234);
   }

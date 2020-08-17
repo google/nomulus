@@ -18,24 +18,23 @@ import static google.registry.model.eppoutput.CheckData.ContactCheck.create;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistDeletedContact;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.EppException;
 import google.registry.flows.ResourceCheckFlowTestCase;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.contact.ContactResource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactCheckFlow}. */
-public class ContactCheckFlowTest
-    extends ResourceCheckFlowTestCase<ContactCheckFlow, ContactResource> {
+class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, ContactResource> {
 
-  public ContactCheckFlowTest() {
+  ContactCheckFlowTest() {
     setEppInput("contact_check.xml");
   }
 
   @Test
-  public void testNothingExists() throws Exception {
+  void testNothingExists() throws Exception {
     // These ids come from the check xml.
     doCheckTest(
         create(true, "sh8013", null),
@@ -44,7 +43,7 @@ public class ContactCheckFlowTest
   }
 
   @Test
-  public void testOneExists() throws Exception {
+  void testOneExists() throws Exception {
     persistActiveContact("sh8013");
     // These ids come from the check xml.
     doCheckTest(
@@ -54,7 +53,7 @@ public class ContactCheckFlowTest
   }
 
   @Test
-  public void testOneExistsButWasDeleted() throws Exception {
+  void testOneExistsButWasDeleted() throws Exception {
     persistDeletedContact("sh8013", clock.nowUtc().minusDays(1));
     // These ids come from the check xml.
     doCheckTest(
@@ -64,27 +63,27 @@ public class ContactCheckFlowTest
   }
 
   @Test
-  public void testXmlMatches() throws Exception {
+  void testXmlMatches() throws Exception {
     persistActiveContact("sah8013");
     runFlowAssertResponse(loadFile("contact_check_response.xml"));
   }
 
   @Test
-  public void test50IdsAllowed() throws Exception {
+  void test50IdsAllowed() throws Exception {
     // Make sure we don't have a regression that reduces the number of allowed checks.
     setEppInput("contact_check_50.xml");
     runFlow();
   }
 
   @Test
-  public void testTooManyIds() {
+  void testTooManyIds() {
     setEppInput("contact_check_51.xml");
     EppException thrown = assertThrows(TooManyResourceChecksException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @Test
-  public void testIcannActivityReportField_getsLogged() throws Exception {
+  void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-check");
   }

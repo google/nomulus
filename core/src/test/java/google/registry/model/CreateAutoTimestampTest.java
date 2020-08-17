@@ -21,20 +21,17 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CreateAutoTimestamp}. */
-@RunWith(JUnit4.class)
 public class CreateAutoTimestampTest {
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestObject.class)
           .build();
@@ -50,7 +47,7 @@ public class CreateAutoTimestampTest {
   }
 
   @Test
-  public void testSaveSetsTime() {
+  void testSaveSetsTime() {
     DateTime transactionTime =
         tm()
             .transact(
@@ -65,7 +62,7 @@ public class CreateAutoTimestampTest {
   }
 
   @Test
-  public void testResavingRespectsOriginalTime() {
+  void testResavingRespectsOriginalTime() {
     final DateTime oldCreateTime = DateTime.now(UTC).minusDays(1);
     tm()
         .transact(

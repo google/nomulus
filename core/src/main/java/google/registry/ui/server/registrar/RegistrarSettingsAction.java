@@ -454,7 +454,13 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
                 .orElseThrow(
                     () ->
                         new FormException(
-                            "Not allowed to set registry lock password directly on new contact"));
+                            "Cannot set registry lock password directly on new contact"));
+        // Can't modify registry lock email address
+        if (!Objects.equals(
+            updatedContact.getRegistryLockEmailAddress(),
+            existingContact.getRegistryLockEmailAddress())) {
+          throw new FormException("Cannot modify registryLockEmailAddress through the UI");
+        }
         if (updatedContact.isRegistryLockAllowed()) {
           // the password must have been set before or the user was allowed to set it now
           if (!existingContact.isAllowedToSetRegistryLockPassword()
@@ -464,7 +470,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
         }
         if (updatedContact.isAllowedToSetRegistryLockPassword()) {
           if (!existingContact.isAllowedToSetRegistryLockPassword()) {
-            throw new FormException("Cannot set isAllowedToSetRegistryLockPassword through UI");
+            throw new FormException(
+                "Cannot modify isAllowedToSetRegistryLockPassword through the UI");
           }
         }
       }

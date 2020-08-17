@@ -4,7 +4,7 @@
       <domain:create
        xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
         <domain:name>%DOMAIN%</domain:name>
-        <domain:period unit="y">2</domain:period>
+        <domain:period unit="y">%YEARS%</domain:period>
         <domain:ns>
           <domain:hostObj>ns1.example.net</domain:hostObj>
           <domain:hostObj>ns2.example.net</domain:hostObj>

@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.cmd.QueryKeys;
+import google.registry.flows.poll.PollFlowUtils;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
@@ -49,8 +50,7 @@ import javax.inject.Inject;
  * delete confirmations) and it is desired that the registrar be able to ACK the rest of the poll
  * messages in-band.
  *
- * <p>This command only ACKs {@link OneTime} poll messages because that's our only use case so far,
- * but it could be extended to ACK {@link Autorenew} poll messages as well if needed. The main
+ * <p>This command ACKs both {@link OneTime} and {@link Autorenew} poll messages. The main
  * difference is that one-time poll messages are deleted when ACKed whereas Autorenews are sometimes
  * modified and re-saved instead, if the corresponding domain is still active.
  *
@@ -85,18 +85,17 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
   @Override
   public void run() {
     QueryKeys<PollMessage> query = getPollMessagesQuery(clientId, clock.nowUtc()).keys();
+    // TODO(b/160325686): Remove the batch logic after db migration.
     for (List<Key<PollMessage>> keys : Iterables.partition(query, BATCH_SIZE)) {
-      tm()
-          .transact(
+      tm().transact(
               () -> {
                 // Load poll messages and filter to just those of interest.
                 ImmutableList<PollMessage> pollMessages =
                     ofy().load().keys(keys).values().stream()
-                        .filter(pm -> pm instanceof OneTime)
                         .filter(pm -> isNullOrEmpty(message) || pm.getMsg().contains(message))
                         .collect(toImmutableList());
                 if (!dryRun) {
-                  ofy().delete().entities(pollMessages).now();
+                  pollMessages.forEach(PollFlowUtils::ackPollMessage);
                 }
                 pollMessages.forEach(
                     pm ->

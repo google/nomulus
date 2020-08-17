@@ -25,10 +25,9 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectRule;
-import google.registry.testing.ShardableTestCase;
+import google.registry.testing.InjectExtension;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrar;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarAddrType;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarPostalInfoEnumType;
@@ -36,31 +35,28 @@ import google.registry.xjc.rderegistrar.XjcRdeRegistrarPostalInfoType;
 import google.registry.xjc.rderegistrar.XjcRdeRegistrarStatusType;
 import java.io.ByteArrayOutputStream;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
  * Unit tests for {@link RegistrarToXjcConverter}.
  *
- * <p>This tests the mapping between {@link Registrar} and {@link XjcRdeRegistrar} as well as
- * some exceptional conditions.
+ * <p>This tests the mapping between {@link Registrar} and {@link XjcRdeRegistrar} as well as some
+ * exceptional conditions.
  */
-@RunWith(JUnit4.class)
-public class RegistrarToXjcConverterTest extends ShardableTestCase {
+public class RegistrarToXjcConverterTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @Rule
-  public final InjectRule inject = new InjectRule();
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
-  Registrar registrar;
+  private Registrar registrar;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     registrar = new Registrar.Builder()
         .setClientId("GoblinMarket")
         .setRegistrarName("Maids heard the goblins cry: Come buy, come buy:")
@@ -95,7 +91,7 @@ public class RegistrarToXjcConverterTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_convertRegistrar() {
+  void test_convertRegistrar() {
     XjcRdeRegistrar bean = convertRegistrar(registrar);
 
     assertThat(bean.getId()).isEqualTo("GoblinMarket");
@@ -141,13 +137,13 @@ public class RegistrarToXjcConverterTest extends ShardableTestCase {
   }
 
   @Test
-  public void test_convertRegistrar_disabledStateMeansTerminated() {
+  void test_convertRegistrar_disabledStateMeansTerminated() {
     XjcRdeRegistrar bean = convertRegistrar(registrar.asBuilder().setState(State.DISABLED).build());
     assertThat(bean.getStatus()).isEqualTo(XjcRdeRegistrarStatusType.TERMINATED);
   }
 
   @Test
-  public void test_convertRegistrar_handlesAllRegistrarStates() {
+  void test_convertRegistrar_handlesAllRegistrarStates() {
     for (State state : Registrar.State.values()) {
       // This will throw an exception if it can't handle the chosen state.
       convertRegistrar(registrar.asBuilder().setState(state).build());
@@ -155,7 +151,7 @@ public class RegistrarToXjcConverterTest extends ShardableTestCase {
   }
 
   @Test
-  public void testMarshal() throws Exception {
+  void testMarshal() throws Exception {
     marshalStrict(RegistrarToXjcConverter.convert(registrar), new ByteArrayOutputStream(), UTF_8);
   }
 }

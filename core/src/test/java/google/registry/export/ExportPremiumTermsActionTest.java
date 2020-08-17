@@ -25,14 +25,14 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
@@ -41,16 +41,14 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.request.Response;
 import google.registry.storage.drive.DriveConnection;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentMatchers;
 
-@RunWith(JUnit4.class)
+/** Unit tests for {@link ExportPremiumTermsAction}. */
 public class ExportPremiumTermsActionTest {
 
   private static final String DISCLAIMER_WITH_NEWLINE = "# Premium Terms Export Disclaimer\n";
@@ -59,8 +57,9 @@ public class ExportPremiumTermsActionTest {
   private static final String EXPECTED_FILE_CONTENT =
       DISCLAIMER_WITH_NEWLINE + "0,USD 549.00\n" + "2048,USD 549.00\n";
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final DriveConnection driveConnection = mock(DriveConnection.class);
   private final Response response = mock(Response.class);
@@ -74,8 +73,8 @@ public class ExportPremiumTermsActionTest {
     action.run();
   }
 
-  @Before
-  public void setup() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     createTld("tld");
     PremiumList pl = new PremiumList.Builder().setName("pl-name").build();
     savePremiumListAndEntries(pl, PREMIUM_NAMES);
@@ -90,7 +89,7 @@ public class ExportPremiumTermsActionTest {
   }
 
   @Test
-  public void test_exportPremiumTerms_success() throws IOException {
+  void test_exportPremiumTerms_success() throws IOException {
     runAction("tld");
 
     verify(driveConnection)
@@ -108,7 +107,7 @@ public class ExportPremiumTermsActionTest {
   }
 
   @Test
-  public void test_exportPremiumTerms_success_emptyPremiumList() throws IOException {
+  void test_exportPremiumTerms_success_emptyPremiumList() throws IOException {
     PremiumList pl = new PremiumList.Builder().setName("pl-name").build();
     savePremiumListAndEntries(pl, ImmutableList.of());
     runAction("tld");
@@ -128,11 +127,11 @@ public class ExportPremiumTermsActionTest {
   }
 
   @Test
-  public void test_exportPremiumTerms_doNothing_listNotConfigured() {
+  void test_exportPremiumTerms_doNothing_listNotConfigured() {
     persistResource(Registry.get("tld").asBuilder().setPremiumList(null).build());
     runAction("tld");
 
-    verifyZeroInteractions(driveConnection);
+    verifyNoInteractions(driveConnection);
     verify(response).setStatus(SC_OK);
     verify(response).setPayload("No premium lists configured");
     verify(response).setContentType(PLAIN_TEXT_UTF_8);
@@ -140,11 +139,11 @@ public class ExportPremiumTermsActionTest {
   }
 
   @Test
-  public void testExportPremiumTerms_doNothing_driveIdNotConfiguredInTld() {
+  void testExportPremiumTerms_doNothing_driveIdNotConfiguredInTld() {
     persistResource(Registry.get("tld").asBuilder().setDriveFolderId(null).build());
     runAction("tld");
 
-    verifyZeroInteractions(driveConnection);
+    verifyNoInteractions(driveConnection);
     verify(response).setStatus(SC_OK);
     verify(response)
         .setPayload("Skipping export because no Drive folder is associated with this TLD");
@@ -153,11 +152,11 @@ public class ExportPremiumTermsActionTest {
   }
 
   @Test
-  public void test_exportPremiumTerms_failure_noSuchTld() {
+  void test_exportPremiumTerms_failure_noSuchTld() {
     deleteTld("tld");
     assertThrows(RuntimeException.class, () -> runAction("tld"));
 
-    verifyZeroInteractions(driveConnection);
+    verifyNoInteractions(driveConnection);
     verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
     verify(response).setPayload(anyString());
     verify(response).setContentType(PLAIN_TEXT_UTF_8);
@@ -165,11 +164,11 @@ public class ExportPremiumTermsActionTest {
   }
 
   @Test
-  public void test_exportPremiumTerms_failure_noPremiumList() {
+  void test_exportPremiumTerms_failure_noPremiumList() {
     deletePremiumList(new PremiumList.Builder().setName("pl-name").build());
     assertThrows(RuntimeException.class, () -> runAction("tld"));
 
-    verifyZeroInteractions(driveConnection);
+    verifyNoInteractions(driveConnection);
     verify(response).setStatus(SC_INTERNAL_SERVER_ERROR);
     verify(response).setPayload("Could not load premium list for " + "tld");
     verify(response).setContentType(PLAIN_TEXT_UTF_8);
@@ -177,7 +176,7 @@ public class ExportPremiumTermsActionTest {
   }
 
   @Test
-  public void testExportPremiumTerms_failure_driveIdThrowsException() throws IOException {
+  void testExportPremiumTerms_failure_driveIdThrowsException() throws IOException {
     persistResource(Registry.get("tld").asBuilder().setDriveFolderId("bad_folder_id").build());
     assertThrows(RuntimeException.class, () -> runAction("tld"));
 

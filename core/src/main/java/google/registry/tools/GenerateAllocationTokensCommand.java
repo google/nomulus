@@ -115,7 +115,20 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
       description =
           "A discount off the base price for the first year between 0.0 and 1.0. Default is 0.0,"
               + " i.e. no discount.")
-  private double discountFraction;
+  private Double discountFraction;
+
+  @Parameter(
+      names = {"--discount_premiums"},
+      description =
+          "Whether the discount is valid for premium names in addition to standard ones. Default"
+              + " is false.",
+      arity = 1)
+  private Boolean discountPremiums;
+
+  @Parameter(
+      names = {"--discount_years"},
+      description = "The number of years the discount applies for. Default is 1, max value is 10.")
+  private Integer discountYears;
 
   @Parameter(
       names = "--token_status_transitions",
@@ -170,8 +183,10 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
                             .setToken(t)
                             .setTokenType(tokenType == null ? SINGLE_USE : tokenType)
                             .setAllowedClientIds(ImmutableSet.copyOf(nullToEmpty(allowedClientIds)))
-                            .setAllowedTlds(ImmutableSet.copyOf(nullToEmpty(allowedTlds)))
-                            .setDiscountFraction(discountFraction);
+                            .setAllowedTlds(ImmutableSet.copyOf(nullToEmpty(allowedTlds)));
+                    Optional.ofNullable(discountFraction).ifPresent(token::setDiscountFraction);
+                    Optional.ofNullable(discountPremiums).ifPresent(token::setDiscountPremiums);
+                    Optional.ofNullable(discountYears).ifPresent(token::setDiscountYears);
                     Optional.ofNullable(tokenStatusTransitions)
                         .ifPresent(token::setTokenStatusTransitions);
                     Optional.ofNullable(domainNames)

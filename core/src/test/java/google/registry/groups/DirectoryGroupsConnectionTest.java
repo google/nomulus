@@ -19,7 +19,7 @@ import static google.registry.groups.DirectoryGroupsConnection.getDefaultGroupPe
 import static javax.servlet.http.HttpServletResponse.SC_CONFLICT;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -49,16 +49,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.groups.GroupsConnection.Role;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-/**
- * Unit tests for {@link DirectoryGroupsConnection}.
- */
-@RunWith(JUnit4.class)
-public class DirectoryGroupsConnectionTest {
+/** Unit tests for {@link DirectoryGroupsConnection}. */
+class DirectoryGroupsConnectionTest {
+
   private final Directory directory = mock(Directory.class);
   private final Groupssettings groupsSettings = mock(Groupssettings.class);
   private final Directory.Members members = mock(Directory.Members.class);
@@ -75,8 +71,8 @@ public class DirectoryGroupsConnectionTest {
   private DirectoryGroupsConnection connection;
   private Member expectedOwner = new Member();
 
-  @Before
-  public void init() throws Exception {
+  @BeforeEach
+  void beforeEach() throws Exception {
     when(directory.members()).thenReturn(members);
     when(members.insert(anyString(), any(Member.class))).thenReturn(membersInsert);
     when(members.get(anyString(), anyString())).thenReturn(membersGet);
@@ -94,12 +90,12 @@ public class DirectoryGroupsConnectionTest {
   }
 
   @Test
-  public void test_addMemberToGroup_succeeds() throws Exception {
+  void test_addMemberToGroup_succeeds() throws Exception {
     runAddMemberTest();
   }
 
   @Test
-  public void test_addMemberToGroup_isIdempotent_whenMemberAlreadyExists() throws Exception {
+  void test_addMemberToGroup_isIdempotent_whenMemberAlreadyExists() throws Exception {
     Member expected = runAddMemberTest();
     when(membersInsert.execute())
         .thenThrow(makeResponseException(SC_CONFLICT, "Member already exists."));
@@ -109,14 +105,14 @@ public class DirectoryGroupsConnectionTest {
   }
 
   @Test
-  public void test_addMemberToGroup_handlesExceptionThrownByDirectoryService() throws Exception {
+  void test_addMemberToGroup_handlesExceptionThrownByDirectoryService() throws Exception {
     when(membersInsert.execute()).thenThrow(
         makeResponseException(SC_INTERNAL_SERVER_ERROR, "Could not contact Directory server."));
     assertThrows(GoogleJsonResponseException.class, this::runAddMemberTest);
   }
 
   @Test
-  public void test_addMemberToGroup_handlesMemberKeyNotFoundException() throws Exception {
+  void test_addMemberToGroup_handlesMemberKeyNotFoundException() throws Exception {
     when(membersInsert.execute()).thenThrow(
         makeResponseException(SC_NOT_FOUND, "Resource Not Found: memberKey"));
     RuntimeException thrown =
@@ -131,7 +127,7 @@ public class DirectoryGroupsConnectionTest {
   }
 
   @Test
-  public void test_addMemberToGroup_createsGroupWhenNonexistent() throws Exception {
+  void test_addMemberToGroup_createsGroupWhenNonexistent() throws Exception {
     Member expected = new Member();
     expected.setEmail("tim@example.com");
     expected.setRole("MEMBER");
@@ -157,12 +153,12 @@ public class DirectoryGroupsConnectionTest {
   }
 
   @Test
-  public void test_createGroup_succeeds() throws Exception {
+  void test_createGroup_succeeds() throws Exception {
     runCreateGroupTest();
   }
 
   @Test
-  public void test_createGroup_isIdempotent_whenGroupAlreadyExists() throws Exception {
+  void test_createGroup_isIdempotent_whenGroupAlreadyExists() throws Exception {
     Group expected = runCreateGroupTest();
     when(groupsInsert.execute())
         .thenThrow(makeResponseException(SC_CONFLICT, "Entity already exists."));
@@ -173,14 +169,14 @@ public class DirectoryGroupsConnectionTest {
   }
 
   @Test
-  public void test_createGroup_handlesExceptionThrownByDirectoryService() throws Exception {
+  void test_createGroup_handlesExceptionThrownByDirectoryService() throws Exception {
     when(groupsInsert.execute()).thenThrow(
         makeResponseException(SC_INTERNAL_SERVER_ERROR, "Could not contact Directory server."));
     assertThrows(GoogleJsonResponseException.class, this::runCreateGroupTest);
   }
 
   @Test
-  public void test_getMembersOfGroup_succeeds() throws Exception {
+  void test_getMembersOfGroup_succeeds() throws Exception {
     Member member1 = new Member();
     member1.setEmail("john@example.com");
     Member member2 = new Member();
@@ -208,7 +204,7 @@ public class DirectoryGroupsConnectionTest {
   }
 
   @Test
-  public void test_getMembersOfNonexistentGroup_returnsEmptySet() throws Exception {
+  void test_getMembersOfNonexistentGroup_returnsEmptySet() throws Exception {
     when(members.list("nonexistent_group@fake.notreal")).thenReturn(membersList);
     when(membersList.setRoles("MEMBER")).thenReturn(membersList);
     when(membersList.execute())
@@ -217,7 +213,7 @@ public class DirectoryGroupsConnectionTest {
   }
 
   @Test
-  public void test_isMemberOfSupportGroup_userInGroup_True() throws Exception {
+  void test_isMemberOfSupportGroup_userInGroup_True() throws Exception {
     when(members.get("support@domain-registry.example", "user@example.com")).thenReturn(membersGet);
     when(membersGet.execute()).thenReturn(new Member());
     assertThat(connection.isMemberOfGroup("user@example.com", "support@domain-registry.example"))
@@ -225,7 +221,7 @@ public class DirectoryGroupsConnectionTest {
   }
 
   @Test
-  public void test_isMemberOfSupportGroup_userExistButNotInGroup_returnsFalse() throws Exception {
+  void test_isMemberOfSupportGroup_userExistButNotInGroup_returnsFalse() throws Exception {
     when(members.get("support@domain-registry.example", "user@example.com"))
         .thenThrow(makeResponseException(0, "Resource Not Found: memberKey"));
     when(membersGet.execute()).thenReturn(new Member());
@@ -234,7 +230,7 @@ public class DirectoryGroupsConnectionTest {
   }
 
   @Test
-  public void test_isMemberOfSupportGroup_userDoesntExist_returnsFalse() throws Exception {
+  void test_isMemberOfSupportGroup_userDoesntExist_returnsFalse() throws Exception {
     when(members.get("support@domain-registry.example", "user@example.com"))
         .thenThrow(makeResponseException(0, "Missing required field: memberKey"));
     when(membersGet.execute()).thenReturn(new Member());
@@ -243,7 +239,7 @@ public class DirectoryGroupsConnectionTest {
   }
 
   @Test
-  public void test_isMemberOfSupportGroup_otherError_throws() throws Exception {
+  void test_isMemberOfSupportGroup_otherError_throws() throws Exception {
     when(members.get("support@domain-registry.example", "user@example.com"))
         .thenThrow(makeResponseException(0, "some error"));
     when(membersGet.execute()).thenReturn(new Member());

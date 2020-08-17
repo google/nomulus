@@ -19,7 +19,7 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistActiveHost;
 import static google.registry.testing.DatastoreHelper.persistActiveSubordinateHost;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -28,21 +28,18 @@ import google.registry.dns.DnsConstants.TargetType;
 import google.registry.model.domain.DomainBase;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.NotFoundException;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RefreshDnsAction}. */
-@RunWith(JUnit4.class)
 public class RefreshDnsActionTest {
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
   private final FakeClock clock = new FakeClock();
@@ -51,13 +48,13 @@ public class RefreshDnsActionTest {
     new RefreshDnsAction(name, type, clock, dnsQueue).run();
   }
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     createTld("xn--q9jyb4c");
   }
 
   @Test
-  public void testSuccess_host() {
+  void testSuccess_host() {
     DomainBase domain = persistActiveDomain("example.xn--q9jyb4c");
     persistActiveSubordinateHost("ns1.example.xn--q9jyb4c", domain);
     run(TargetType.HOST, "ns1.example.xn--q9jyb4c");
@@ -66,7 +63,7 @@ public class RefreshDnsActionTest {
   }
 
   @Test
-  public void testSuccess_externalHostNotEnqueued() {
+  void testSuccess_externalHostNotEnqueued() {
     persistActiveDomain("example.xn--q9jyb4c");
     persistActiveHost("ns1.example.xn--q9jyb4c");
     BadRequestException thrown =
@@ -85,7 +82,7 @@ public class RefreshDnsActionTest {
   }
 
   @Test
-  public void testSuccess_domain() {
+  void testSuccess_domain() {
     persistActiveDomain("example.xn--q9jyb4c");
     run(TargetType.DOMAIN, "example.xn--q9jyb4c");
     verify(dnsQueue).addDomainRefreshTask("example.xn--q9jyb4c");
@@ -93,17 +90,17 @@ public class RefreshDnsActionTest {
   }
 
   @Test
-  public void testFailure_unqualifiedName() {
+  void testFailure_unqualifiedName() {
     assertThrows(BadRequestException.class, () -> run(TargetType.DOMAIN, "example"));
   }
 
   @Test
-  public void testFailure_hostDoesNotExist() {
+  void testFailure_hostDoesNotExist() {
     assertThrows(NotFoundException.class, () -> run(TargetType.HOST, "ns1.example.xn--q9jyb4c"));
   }
 
   @Test
-  public void testFailure_domainDoesNotExist() {
+  void testFailure_domainDoesNotExist() {
     assertThrows(NotFoundException.class, () -> run(TargetType.DOMAIN, "example.xn--q9jyb4c"));
   }
 }

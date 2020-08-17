@@ -33,25 +33,21 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.monitoring.whitebox.EppMetric;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
-import google.registry.testing.ShardableTestCase;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mockito;
 
 /** Unit tests for {@link FlowRunner}. */
-@RunWith(JUnit4.class)
-public class FlowRunnerTest extends ShardableTestCase {
+class FlowRunnerTest {
 
-  @Rule
-  public final AppEngineRule appEngineRule = new AppEngineRule.Builder().build();
+  @RegisterExtension
+  final AppEngineExtension appEngineRule = new AppEngineExtension.Builder().build();
 
   private final FlowRunner flowRunner = new FlowRunner();
   private final EppMetric.Builder eppMetricBuilder = EppMetric.builderForRequest(new FakeClock());
@@ -65,8 +61,8 @@ public class FlowRunnerTest extends ShardableTestCase {
     }
   }
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     LoggerConfig.getConfig(FlowRunner.class).addHandler(handler);
     flowRunner.clientId = "TheRegistrar";
     flowRunner.credentials = new PasswordOnlyTransportCredentials();
@@ -84,33 +80,33 @@ public class FlowRunnerTest extends ShardableTestCase {
   }
 
   @Test
-  public void testRun_nonTransactionalCommand_setsCommandNameOnMetric() throws Exception {
+  void testRun_nonTransactionalCommand_setsCommandNameOnMetric() throws Exception {
     flowRunner.isTransactional = true;
     flowRunner.run(eppMetricBuilder);
     assertThat(eppMetricBuilder.build().getCommandName()).hasValue("TestCommand");
   }
 
   @Test
-  public void testRun_transactionalCommand_setsCommandNameOnMetric() throws Exception {
+  void testRun_transactionalCommand_setsCommandNameOnMetric() throws Exception {
     flowRunner.run(eppMetricBuilder);
     assertThat(eppMetricBuilder.build().getCommandName()).hasValue("TestCommand");
   }
 
   @Test
-  public void testRun_callsFlowReporterOnce() throws Exception {
+  void testRun_callsFlowReporterOnce() throws Exception {
     flowRunner.run(eppMetricBuilder);
     verify(flowRunner.flowReporter).recordToLogs();
   }
 
   @Test
-  public void testRun_dryRun_doesNotCallFlowReporter() throws Exception {
+  void testRun_dryRun_doesNotCallFlowReporter() throws Exception {
     flowRunner.isDryRun = true;
     flowRunner.run(eppMetricBuilder);
     verify(flowRunner.flowReporter, never()).recordToLogs();
   }
 
   @Test
-  public void testRun_loggingStatement_basic() throws Exception {
+  void testRun_loggingStatement_basic() throws Exception {
     flowRunner.run(eppMetricBuilder);
     assertThat(Splitter.on("\n\t").split(findFirstLogMessageByPrefix(handler, "EPP Command\n\t")))
         .containsExactly(
@@ -129,7 +125,7 @@ public class FlowRunnerTest extends ShardableTestCase {
   }
 
   @Test
-  public void testRun_loggingStatement_httpSessionMetadata() throws Exception {
+  void testRun_loggingStatement_httpSessionMetadata() throws Exception {
     flowRunner.sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
     flowRunner.sessionMetadata.setClientId("TheRegistrar");
     flowRunner.run(eppMetricBuilder);
@@ -140,7 +136,7 @@ public class FlowRunnerTest extends ShardableTestCase {
   }
 
   @Test
-  public void testRun_loggingStatement_tlsCredentials() throws Exception {
+  void testRun_loggingStatement_tlsCredentials() throws Exception {
     flowRunner.credentials = new TlsCredentials(true, "abc123def", Optional.of("127.0.0.1"));
     flowRunner.run(eppMetricBuilder);
     assertThat(Splitter.on("\n\t").split(findFirstLogMessageByPrefix(handler, "EPP Command\n\t")))
@@ -148,7 +144,7 @@ public class FlowRunnerTest extends ShardableTestCase {
   }
 
   @Test
-  public void testRun_loggingStatement_dryRun() throws Exception {
+  void testRun_loggingStatement_dryRun() throws Exception {
     flowRunner.isDryRun = true;
     flowRunner.run(eppMetricBuilder);
     assertThat(Splitter.on("\n\t").split(findFirstLogMessageByPrefix(handler, "EPP Command\n\t")))
@@ -156,7 +152,7 @@ public class FlowRunnerTest extends ShardableTestCase {
   }
 
   @Test
-  public void testRun_loggingStatement_superuser() throws Exception {
+  void testRun_loggingStatement_superuser() throws Exception {
     flowRunner.isSuperuser = true;
     flowRunner.run(eppMetricBuilder);
     assertThat(Splitter.on("\n\t").split(findFirstLogMessageByPrefix(handler, "EPP Command\n\t")))
@@ -164,7 +160,7 @@ public class FlowRunnerTest extends ShardableTestCase {
   }
 
   @Test
-  public void testRun_loggingStatement_complexEppInput() throws Exception {
+  void testRun_loggingStatement_complexEppInput() throws Exception {
     String domainCreateXml = loadFile(getClass(), "domain_create_prettyprinted.xml");
     String sanitizedDomainCreateXml = domainCreateXml.replace("2fooBAR", "*******");
     flowRunner.inputXmlBytes = domainCreateXml.getBytes(UTF_8);

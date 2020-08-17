@@ -16,16 +16,16 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatastoreHelper.createTld;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CreateHostCommand}. */
-public class CreateHostCommandTest extends EppToolCommandTestCase<CreateHostCommand> {
+class CreateHostCommandTest extends EppToolCommandTestCase<CreateHostCommand> {
 
   @Test
-  public void testSuccess_complete() throws Exception {
+  void testSuccess_complete() throws Exception {
     createTld("tld");
     runCommandForced(
         "--client=NewRegistrar",
@@ -35,7 +35,7 @@ public class CreateHostCommandTest extends EppToolCommandTestCase<CreateHostComm
   }
 
   @Test
-  public void testSuccess_minimal() throws Exception {
+  void testSuccess_minimal() throws Exception {
     // Test that each optional field can be omitted.
     runCommandForced(
         "--client=NewRegistrar",
@@ -44,12 +44,12 @@ public class CreateHostCommandTest extends EppToolCommandTestCase<CreateHostComm
   }
 
   @Test
-  public void testFailure_missingHost() {
+  void testFailure_missingHost() {
     assertThrows(ParameterException.class, () -> runCommandForced("--client=NewRegistrar"));
   }
 
   @Test
-  public void testFailure_invalidIpAddress() {
+  void testFailure_invalidIpAddress() {
     createTld("tld");
     IllegalArgumentException thrown =
         assertThrows(

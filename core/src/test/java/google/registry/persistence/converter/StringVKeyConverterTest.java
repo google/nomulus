@@ -20,28 +20,23 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestRule;
+import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Test SQL persistence of VKey. */
-@RunWith(JUnit4.class)
 public class StringVKeyConverterTest {
 
-  @Rule
-  public final JpaUnitTestRule jpaRule =
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder()
           .withEntityClass(TestEntity.class, VKeyConverter_StringType.class)
           .buildUnitTestRule();
 
-  public StringVKeyConverterTest() {}
-
   @Test
-  public void testRoundTrip() {
+  void testRoundTrip() {
     TestEntity original =
         new TestEntity("TheRealSpartacus", VKey.createSql(TestEntity.class, "ImSpartacus!"));
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(original));

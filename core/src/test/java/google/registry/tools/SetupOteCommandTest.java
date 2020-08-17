@@ -25,7 +25,7 @@ import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistPremiumList;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableList;
@@ -43,19 +43,19 @@ import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link SetupOteCommand}. */
-public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
+class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
-  static final String PASSWORD = "abcdefghijklmnop";
+  private static final String PASSWORD = "abcdefghijklmnop";
 
-  DeterministicStringGenerator passwordGenerator =
+  private DeterministicStringGenerator passwordGenerator =
       new DeterministicStringGenerator("abcdefghijklmnopqrstuvwxyz");
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     command.passwordGenerator = passwordGenerator;
     command.clock = new FakeClock(DateTime.parse("2018-07-07TZ"));
     persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
@@ -133,7 +133,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testSuccess() throws Exception {
+  void testSuccess() throws Exception {
     runCommandForced(
         "--ip_allow_list=1.1.1.1",
         "--registrar=blobio",
@@ -159,7 +159,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testSuccess_shortRegistrarName() throws Exception {
+  void testSuccess_shortRegistrarName() throws Exception {
     runCommandForced(
         "--ip_allow_list=1.1.1.1",
         "--registrar=abc",
@@ -185,7 +185,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testSuccess_certificateHash() throws Exception {
+  void testSuccess_certificateHash() throws Exception {
     runCommandForced(
         "--ip_allow_list=1.1.1.1",
         "--registrar=blobio",
@@ -203,7 +203,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testSuccess_multipleIps() throws Exception {
+  void testSuccess_multipleIps() throws Exception {
     runCommandForced(
         "--ip_allow_list=1.1.1.1,2.2.2.2",
         "--registrar=blobio",
@@ -230,7 +230,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_missingIpAllowList() {
+  void testFailure_missingIpAllowList() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -243,7 +243,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_missingRegistrar() {
+  void testFailure_missingRegistrar() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -256,7 +256,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_missingCertificateFileAndCertificateHash() {
+  void testFailure_missingCertificateFileAndCertificateHash() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -270,7 +270,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_suppliedCertificateFileAndCertificateHash() {
+  void testFailure_suppliedCertificateFileAndCertificateHash() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -288,7 +288,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_missingEmail() {
+  void testFailure_missingEmail() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
@@ -301,7 +301,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_invalidCert() {
+  void testFailure_invalidCert() {
     CertificateParsingException thrown =
         assertThrows(
             CertificateParsingException.class,
@@ -315,7 +315,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_invalidRegistrar() {
+  void testFailure_invalidRegistrar() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -329,7 +329,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_registrarTooShort() {
+  void testFailure_registrarTooShort() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -343,7 +343,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_registrarTooLong() {
+  void testFailure_registrarTooLong() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -357,7 +357,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_registrarInvalidCharacter() {
+  void testFailure_registrarInvalidCharacter() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -371,7 +371,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_tldExists() {
+  void testFailure_tldExists() {
     createTld("blobio-sunrise");
     IllegalStateException thrown =
         assertThrows(
@@ -386,7 +386,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testSuccess_tldExists_replaceExisting() throws Exception {
+  void testSuccess_tldExists_replaceExisting() throws Exception {
     createTld("blobio-sunrise");
 
     runCommandForced(
@@ -401,7 +401,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testFailure_registrarExists() {
+  void testFailure_registrarExists() {
     Registrar registrar = loadRegistrar("TheRegistrar").asBuilder()
         .setClientId("blobio-1")
         .setRegistrarName("blobio-1")
@@ -420,7 +420,7 @@ public class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  public void testSuccess_registrarExists_replaceExisting() throws Exception {
+  void testSuccess_registrarExists_replaceExisting() throws Exception {
     Registrar registrar = loadRegistrar("TheRegistrar").asBuilder()
         .setClientId("blobio-1")
         .setRegistrarName("blobio-1")

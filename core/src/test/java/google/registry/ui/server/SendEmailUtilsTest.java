@@ -26,14 +26,11 @@ import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link SendEmailUtils}. */
-@RunWith(JUnit4.class)
-public class SendEmailUtilsTest {
+class SendEmailUtilsTest {
 
   private final SendEmailService emailService = mock(SendEmailService.class);
   private SendEmailUtils sendEmailUtils;
@@ -48,7 +45,7 @@ public class SendEmailUtilsTest {
   }
 
   @Test
-  public void testSuccess_sendToOneAddress() throws Exception {
+  void testSuccess_sendToOneAddress() throws Exception {
     setRecipients(ImmutableList.of("johnny@fakesite.tld"));
     assertThat(sendEmailUtils.hasRecipients()).isTrue();
     assertThat(
@@ -60,7 +57,7 @@ public class SendEmailUtilsTest {
   }
 
   @Test
-  public void testSuccess_sendToMultipleAddresses() throws Exception {
+  void testSuccess_sendToMultipleAddresses() throws Exception {
     setRecipients(ImmutableList.of("foo@example.com", "bar@example.com"));
     assertThat(sendEmailUtils.hasRecipients()).isTrue();
     assertThat(
@@ -72,7 +69,7 @@ public class SendEmailUtilsTest {
   }
 
   @Test
-  public void testSuccess_ignoresMalformedEmailAddress() throws Exception {
+  void testSuccess_ignoresMalformedEmailAddress() throws Exception {
     setRecipients(ImmutableList.of("foo@example.com", "1iñvalidemail"));
     assertThat(sendEmailUtils.hasRecipients()).isTrue();
     assertThat(
@@ -84,7 +81,7 @@ public class SendEmailUtilsTest {
   }
 
   @Test
-  public void testFailure_noAddresses() throws Exception {
+  void testFailure_noAddresses() throws Exception {
     setRecipients(ImmutableList.of());
     assertThat(sendEmailUtils.hasRecipients()).isFalse();
     assertThat(
@@ -96,7 +93,7 @@ public class SendEmailUtilsTest {
   }
 
   @Test
-  public void testFailure_onlyGivenMalformedAddress() throws Exception {
+  void testFailure_onlyGivenMalformedAddress() throws Exception {
     setRecipients(ImmutableList.of("1iñvalidemail"));
     assertThat(sendEmailUtils.hasRecipients()).isTrue();
     assertThat(
@@ -108,7 +105,7 @@ public class SendEmailUtilsTest {
   }
 
   @Test
-  public void testFailure_exceptionThrownDuringSend() throws Exception {
+  void testFailure_exceptionThrownDuringSend() throws Exception {
     setRecipients(ImmutableList.of("foo@example.com"));
     assertThat(sendEmailUtils.hasRecipients()).isTrue();
     doThrow(new RuntimeException(new MessagingException("expected")))
@@ -123,7 +120,7 @@ public class SendEmailUtilsTest {
   }
 
   @Test
-  public void testAdditionalRecipients() throws Exception {
+  void testAdditionalRecipients() throws Exception {
     setRecipients(ImmutableList.of("foo@example.com"));
     assertThat(sendEmailUtils.hasRecipients()).isTrue();
     assertThat(
@@ -136,7 +133,7 @@ public class SendEmailUtilsTest {
   }
 
   @Test
-  public void testOnlyAdditionalRecipients() throws Exception {
+  void testOnlyAdditionalRecipients() throws Exception {
     setRecipients(ImmutableList.of());
     assertThat(sendEmailUtils.hasRecipients()).isFalse();
     assertThat(

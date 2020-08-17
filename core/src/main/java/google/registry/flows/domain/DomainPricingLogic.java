@@ -60,7 +60,7 @@ public final class DomainPricingLogic {
    * <p>If {@code allocationToken} is present and the domain is non-premium, that discount will be
    * applied to the first year.
    */
-  public FeesAndCredits getCreatePrice(
+  FeesAndCredits getCreatePrice(
       Registry registry,
       String domainName,
       DateTime dateTime,
@@ -104,8 +104,8 @@ public final class DomainPricingLogic {
 
   /** Returns a new renew price for the pricer. */
   @SuppressWarnings("unused")
-  public FeesAndCredits getRenewPrice(
-      Registry registry, String domainName, DateTime dateTime, int years) throws EppException {
+  FeesAndCredits getRenewPrice(Registry registry, String domainName, DateTime dateTime, int years)
+      throws EppException {
     DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
     BigDecimal renewCost = domainPrices.getRenewCost().multipliedBy(years).getAmount();
     return customLogic.customizeRenewPrice(
@@ -123,7 +123,7 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new restore price for the pricer. */
-  public FeesAndCredits getRestorePrice(
+  FeesAndCredits getRestorePrice(
       Registry registry, String domainName, DateTime dateTime, boolean isExpired)
       throws EppException {
     DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
@@ -147,7 +147,7 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new transfer price for the pricer. */
-  public FeesAndCredits getTransferPrice(Registry registry, String domainName, DateTime dateTime)
+  FeesAndCredits getTransferPrice(Registry registry, String domainName, DateTime dateTime)
       throws EppException {
     DomainPrices domainPrices = getPricesForDomainName(domainName, dateTime);
     return customLogic.customizeTransferPrice(
@@ -168,7 +168,7 @@ public final class DomainPricingLogic {
   }
 
   /** Returns a new update price for the pricer. */
-  public FeesAndCredits getUpdatePrice(Registry registry, String domainName, DateTime dateTime)
+  FeesAndCredits getUpdatePrice(Registry registry, String domainName, DateTime dateTime)
       throws EppException {
     CurrencyUnit currency = registry.getCurrency();
     BaseFee feeOrCredit = Fee.create(zeroInCurrency(currency), FeeType.UPDATE, false);
@@ -191,16 +191,20 @@ public final class DomainPricingLogic {
       throws EppException {
     if (allocationToken.isPresent()
         && allocationToken.get().getDiscountFraction() != 0.0
-        && domainPrices.isPremium()) {
+        && domainPrices.isPremium()
+        && !allocationToken.get().shouldDiscountPremiums()) {
       throw new AllocationTokenInvalidForPremiumNameException();
     }
     Money oneYearCreateCost = domainPrices.getCreateCost();
     Money totalDomainCreateCost = oneYearCreateCost.multipliedBy(years);
-    // If a discount is applicable, apply it only to the first year
+
+    // Apply the allocation token discount, if applicable.
     if (allocationToken.isPresent()) {
+      int discountedYears = Math.min(years, allocationToken.get().getDiscountYears());
       Money discount =
           oneYearCreateCost.multipliedBy(
-              allocationToken.get().getDiscountFraction(), RoundingMode.HALF_UP);
+              discountedYears * allocationToken.get().getDiscountFraction(),
+              RoundingMode.HALF_EVEN);
       totalDomainCreateCost = totalDomainCreateCost.minus(discount);
     }
     return totalDomainCreateCost;
@@ -209,7 +213,7 @@ public final class DomainPricingLogic {
   /** An allocation token was provided that is invalid for premium domains. */
   public static class AllocationTokenInvalidForPremiumNameException
       extends CommandUseErrorException {
-    public AllocationTokenInvalidForPremiumNameException() {
+    AllocationTokenInvalidForPremiumNameException() {
       super("A nonzero discount code cannot be applied to premium domains");
     }
   }

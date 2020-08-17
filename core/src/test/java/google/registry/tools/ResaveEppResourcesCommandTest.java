@@ -22,13 +22,13 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ResaveEppResourceCommand}. */
-public class ResaveEppResourcesCommandTest extends CommandTestCase<ResaveEppResourceCommand> {
+class ResaveEppResourcesCommandTest extends CommandTestCase<ResaveEppResourceCommand> {
 
   @Test
-  public void testSuccess_createsCommitLogs() throws Exception {
+  void testSuccess_createsCommitLogs() throws Exception {
     ContactResource contact = persistActiveContact("contact");
     deleteEntitiesOfTypes(CommitLogManifest.class, CommitLogMutation.class);
     assertThat(ofy().load().type(CommitLogManifest.class).keys()).isEmpty();

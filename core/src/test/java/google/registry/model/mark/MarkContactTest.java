@@ -16,16 +16,13 @@ package google.registry.model.mark;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link MarkContact}. */
-@RunWith(JUnit4.class)
-public final class MarkContactTest {
+final class MarkContactTest {
 
   @Test
-  public void testDeadCodeWeDontWantToDelete() {
+  void testDeadCodeWeDontWantToDelete() {
     MarkContact mc = new MarkContact();
     mc.type = MarkContact.ContactType.OWNER;
     assertThat(mc.getType()).isEqualTo(MarkContact.ContactType.OWNER);

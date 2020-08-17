@@ -29,33 +29,31 @@ import com.google.common.collect.ObjectArrays;
 import com.google.common.io.Files;
 import com.google.common.reflect.TypeToken;
 import google.registry.model.poll.PollMessage;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.CertificateSamples;
 import google.registry.testing.FakeClock;
-import google.registry.testing.SystemPropertyRule;
+import google.registry.testing.SystemPropertyExtension;
 import google.registry.tools.params.ParameterFactory;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * Base class for all command tests.
  *
  * @param <C> the command type
  */
-@RunWith(JUnit4.class)
+@ExtendWith(MockitoExtension.class)
 public abstract class CommandTestCase<C extends Command> {
 
   // Lock for stdout/stderr.  Note that this is static: since we're dealing with globals, we need
@@ -70,25 +68,23 @@ public abstract class CommandTestCase<C extends Command> {
 
   public final FakeClock fakeClock = new FakeClock();
 
-  @Rule
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withClock(fakeClock)
           .withTaskQueue()
           .build();
 
-  @Rule public final SystemPropertyRule systemPropertyRule = new SystemPropertyRule();
+  @RegisterExtension
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
-  @Rule public final MockitoRule mocks = MockitoJUnit.rule();
+  @TempDir public Path tmpDir;
 
-  @Rule
-  public TemporaryFolder tmpDir = new TemporaryFolder();
-
-  @Before
-  public final void beforeCommandTestCase() throws Exception {
+  @BeforeEach
+  public final void beforeEachCommandTestCase() throws Exception {
     // Ensure the UNITTEST environment has been set before constructing a new command instance.
-    RegistryToolEnvironment.UNITTEST.setup(systemPropertyRule);
+    RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     command = newCommandInstance();
 
     // Capture standard output/error. This is problematic because gradle tests run in parallel in
@@ -101,15 +97,15 @@ public abstract class CommandTestCase<C extends Command> {
     System.setErr(new PrintStream(new OutputSplitter(System.err, stderr)));
   }
 
-  @After
-  public final void afterCommandTestCase() throws Exception {
+  @AfterEach
+  public final void afterEachCommandTestCase() {
     System.setOut(oldStdout);
     System.setErr(oldStderr);
     streamsLock.unlock();
   }
 
   void runCommandInEnvironment(RegistryToolEnvironment env, String... args) throws Exception {
-    env.setup(systemPropertyRule);
+    env.setup(systemPropertyExtension);
     try {
       JCommander jcommander = new JCommander(command);
       jcommander.addConverterFactory(new ParameterFactory());
@@ -120,7 +116,7 @@ public abstract class CommandTestCase<C extends Command> {
       // This primarily matters for AutoTimestamp fields, which otherwise won't have updated values.
       ofy().clearSessionCache();
       // Reset back to UNITTEST environment.
-      RegistryToolEnvironment.UNITTEST.setup(systemPropertyRule);
+      RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     }
   }
 
@@ -144,10 +140,10 @@ public abstract class CommandTestCase<C extends Command> {
   }
 
   /** Writes the data to a named temporary file and then returns a path to the file. */
-  String writeToNamedTmpFile(String filename, byte[] data) throws IOException {
-    File tmpFile = tmpDir.newFile(filename);
-    Files.write(data, tmpFile);
-    return tmpFile.getPath();
+  private String writeToNamedTmpFile(String filename, byte[] data) throws IOException {
+    Path tmpFile = tmpDir.resolve(filename);
+    Files.write(data, tmpFile.toFile());
+    return tmpFile.toString();
   }
 
   /** Writes the data to a named temporary file and then returns a path to the file. */
@@ -199,7 +195,7 @@ public abstract class CommandTestCase<C extends Command> {
         .isEqualTo(stripImmutableObjectHashCodes(expected).trim());
   }
 
-  protected void assertStdoutIs(String expected) {
+  void assertStdoutIs(String expected) {
     assertThat(getStdoutAsString()).isEqualTo(expected);
   }
 
@@ -210,34 +206,34 @@ public abstract class CommandTestCase<C extends Command> {
     }
   }
 
-  protected void assertInStderr(String... expected) {
+  void assertInStderr(String... expected) {
     String stderror = new String(stderr.toByteArray(), UTF_8);
     for (String line : expected) {
       assertThat(stderror).contains(line);
     }
   }
 
-  protected void assertNotInStdout(String expected) {
+  void assertNotInStdout(String expected) {
     assertThat(getStdoutAsString()).doesNotContain(expected);
   }
 
-  protected void assertNotInStderr(String expected) {
+  void assertNotInStderr(String expected) {
     assertThat(getStderrAsString()).doesNotContain(expected);
   }
 
-  protected String getStdoutAsString() {
+  String getStdoutAsString() {
     return new String(stdout.toByteArray(), UTF_8);
   }
 
-  protected String getStderrAsString() {
+  String getStderrAsString() {
     return new String(stderr.toByteArray(), UTF_8);
   }
 
-  protected List<String> getStdoutAsLines() {
+  List<String> getStdoutAsLines() {
     return Splitter.on('\n').omitEmptyStrings().trimResults().splitToList(getStdoutAsString());
   }
 
-  protected String stripImmutableObjectHashCodes(String string) {
+  private String stripImmutableObjectHashCodes(String string) {
     return string.replaceAll("\\(@\\d+\\)", "(@)");
   }
 

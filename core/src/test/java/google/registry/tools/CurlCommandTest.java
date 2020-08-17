@@ -20,7 +20,7 @@ import static google.registry.request.Action.Service.DEFAULT;
 import static google.registry.request.Action.Service.PUBAPI;
 import static google.registry.request.Action.Service.TOOLS;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -29,19 +29,22 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link CurlCommand}. */
-public class CurlCommandTest extends CommandTestCase<CurlCommand> {
+class CurlCommandTest extends CommandTestCase<CurlCommand> {
+
   @Mock private AppEngineConnection connection;
   @Mock private AppEngineConnection connectionForService;
 
-  @Before
-  public void init() {
+  @BeforeEach
+  void beforeEach() {
     command.setConnection(connection);
     when(connection.withService(any())).thenReturn(connectionForService);
   }
@@ -49,7 +52,7 @@ public class CurlCommandTest extends CommandTestCase<CurlCommand> {
   @Captor ArgumentCaptor<ImmutableMap<String, String>> urlParamCaptor;
 
   @Test
-  public void testGetInvocation() throws Exception {
+  void testGetInvocation() throws Exception {
     runCommand("--path=/foo/bar?a=1&b=2", "--service=TOOLS");
     verify(connection).withService(TOOLS);
     verifyNoMoreInteractions(connection);
@@ -58,7 +61,7 @@ public class CurlCommandTest extends CommandTestCase<CurlCommand> {
   }
 
   @Test
-  public void testExplicitGetInvocation() throws Exception {
+  void testExplicitGetInvocation() throws Exception {
     runCommand("--path=/foo/bar?a=1&b=2", "--request=GET", "--service=BACKEND");
     verify(connection).withService(BACKEND);
     verifyNoMoreInteractions(connection);
@@ -67,7 +70,7 @@ public class CurlCommandTest extends CommandTestCase<CurlCommand> {
   }
 
   @Test
-  public void testPostInvocation() throws Exception {
+  void testPostInvocation() throws Exception {
     runCommand("--path=/foo/bar?a=1&b=2", "--data=some data", "--service=DEFAULT");
     verify(connection).withService(DEFAULT);
     verifyNoMoreInteractions(connection);
@@ -80,7 +83,7 @@ public class CurlCommandTest extends CommandTestCase<CurlCommand> {
   }
 
   @Test
-  public void testPostInvocation_withContentType() throws Exception {
+  void testPostInvocation_withContentType() throws Exception {
     runCommand(
         "--path=/foo/bar?a=1&b=2",
         "--data=some data",
@@ -97,7 +100,8 @@ public class CurlCommandTest extends CommandTestCase<CurlCommand> {
   }
 
   @Test
-  public void testPostInvocation_badContentType() throws Exception {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void testPostInvocation_badContentType() throws Exception {
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -111,7 +115,7 @@ public class CurlCommandTest extends CommandTestCase<CurlCommand> {
   }
 
   @Test
-  public void testMultiDataPost() throws Exception {
+  void testMultiDataPost() throws Exception {
     runCommand(
         "--path=/foo/bar?a=1&b=2", "--data=first=100", "-d", "second=200", "--service=PUBAPI");
     verify(connection).withService(PUBAPI);
@@ -125,7 +129,7 @@ public class CurlCommandTest extends CommandTestCase<CurlCommand> {
   }
 
   @Test
-  public void testDataDoesntSplit() throws Exception {
+  void testDataDoesntSplit() throws Exception {
     runCommand(
         "--path=/foo/bar?a=1&b=2", "--data=one,two", "--service=PUBAPI");
     verify(connection).withService(PUBAPI);
@@ -139,7 +143,7 @@ public class CurlCommandTest extends CommandTestCase<CurlCommand> {
   }
 
   @Test
-  public void testExplicitPostInvocation() throws Exception {
+  void testExplicitPostInvocation() throws Exception {
     runCommand("--path=/foo/bar?a=1&b=2", "--request=POST", "--service=TOOLS");
     verify(connection).withService(TOOLS);
     verifyNoMoreInteractions(connection);
@@ -152,7 +156,8 @@ public class CurlCommandTest extends CommandTestCase<CurlCommand> {
   }
 
   @Test
-  public void testGetWithBody() throws Exception {
+  @MockitoSettings(strictness = Strictness.LENIENT)
+  void testGetWithBody() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

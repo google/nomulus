@@ -65,6 +65,13 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
               + "If not set, credentials saved by running `nomulus login' will be used.")
   private String credentialJson = null;
 
+  @Parameter(
+      names = {"--sql_access_info"},
+      description =
+          "Name of a file containing space-separated SQL access info used when deploying "
+              + "Beam pipelines")
+  private String sqlAccessInfoFile = null;
+
   // Do not make this final - compile-time constant inlining may interfere with JCommander.
   @ParametersDelegate
   private LoggingParameters loggingParams = new LoggingParameters();
@@ -153,11 +160,15 @@ final class RegistryCli implements AutoCloseable, CommandRunner {
       return;
     }
 
-    checkState(RegistryToolEnvironment.get() == environment,
+    checkState(
+        RegistryToolEnvironment.get() == environment,
         "RegistryToolEnvironment argument pre-processing kludge failed.");
 
     component =
-        DaggerRegistryToolComponent.builder().credentialFilename(credentialJson).build();
+        DaggerRegistryToolComponent.builder()
+            .credentialFilePath(credentialJson)
+            .sqlAccessInfoFile(sqlAccessInfoFile)
+            .build();
 
     // JCommander stores sub-commands as nested JCommander objects containing a list of user objects
     // to be populated.  Extract the subcommand by getting the JCommander wrapper and then

@@ -21,21 +21,19 @@ import static google.registry.testing.DatastoreHelper.persistResource;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.testing.AppEngineRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import google.registry.testing.AppEngineExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExportUtils}. */
-@RunWith(JUnit4.class)
-public class ExportUtilsTest {
+class ExportUtilsTest {
 
-  @Rule
-  public final AppEngineRule appEngine = AppEngineRule.builder().withDatastoreAndCloudSql().build();
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @Test
-  public void test_exportReservedTerms() {
+  void test_exportReservedTerms() {
     ReservedList rl1 = persistReservedList(
         "tld-reserved1",
         "lol,FULLY_BLOCKED",

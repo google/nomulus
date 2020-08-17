@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.model.common.Cursor;
@@ -26,16 +26,16 @@ import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.RegistryNotFoundException;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UpdateCursorsCommand}. */
-public class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
+class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
-  Registry registry;
+  private Registry registry;
 
-  @Before
-  public void before() {
+  @BeforeEach
+  void beforeEach() {
     createTld("foo");
     registry = Registry.get("foo");
   }
@@ -66,33 +66,33 @@ public class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsComma
   }
 
   @Test
-  public void testSuccess_oldValueisEmpty() throws Exception {
+  void testSuccess_oldValueisEmpty() throws Exception {
     assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry)).now()).isNull();
     doUpdateTest();
   }
 
   @Test
-  public void testSuccess_hasOldValue() throws Exception {
+  void testSuccess_hasOldValue() throws Exception {
     persistResource(Cursor.create(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
     doUpdateTest();
   }
 
   @Test
-  public void testSuccess_global_hasOldValue() throws Exception {
+  void testSuccess_global_hasOldValue() throws Exception {
     persistResource(
         Cursor.createGlobal(CursorType.RECURRING_BILLING, DateTime.parse("1950-12-18TZ")));
     doGlobalUpdateTest();
   }
 
   @Test
-  public void testSuccess_global_oldValueisEmpty() throws Exception {
+  void testSuccess_global_oldValueisEmpty() throws Exception {
     assertThat(ofy().load().key(Cursor.createGlobalKey(CursorType.RECURRING_BILLING)).now())
         .isNull();
     doGlobalUpdateTest();
   }
 
   @Test
-  public void testSuccess_multipleTlds_hasOldValue() throws Exception {
+  void testSuccess_multipleTlds_hasOldValue() throws Exception {
     createTld("bar");
     Registry registry2 = Registry.get("bar");
     persistResource(Cursor.create(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
@@ -110,7 +110,7 @@ public class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsComma
   }
 
   @Test
-  public void testSuccess_multipleTlds_oldValueisEmpty() throws Exception {
+  void testSuccess_multipleTlds_oldValueisEmpty() throws Exception {
     createTld("bar");
     Registry registry2 = Registry.get("bar");
     assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry)).now()).isNull();
@@ -128,14 +128,14 @@ public class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsComma
   }
 
   @Test
-  public void testFailure_badTld() {
+  void testFailure_badTld() {
     assertThrows(
         RegistryNotFoundException.class,
         () -> runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "bar"));
   }
 
   @Test
-  public void testFailure_badCursorType() {
+  void testFailure_badCursorType() {
     ParameterException thrown =
         assertThrows(
             ParameterException.class,

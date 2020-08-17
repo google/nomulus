@@ -29,12 +29,14 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Range;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Mapify;
+import com.googlecode.objectify.annotation.OnLoad;
 import google.registry.flows.EppException;
 import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.BackupGroupRoot;
@@ -108,9 +110,22 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
    */
   double discountFraction;
 
+  /** Whether the discount fraction (if any) also applies to premium names. Defaults to false. */
+  boolean discountPremiums;
+
+  /** Up to how many years of initial creation receive the discount (if any). Defaults to 1. */
+  int discountYears = 1;
+
   /** The type of the token, either single-use or unlimited-use. */
-  // TODO(b/130301183): this should not be nullable, we can remove this once we're sure it isn't
-  @Nullable TokenType tokenType;
+  TokenType tokenType;
+
+  // TODO: Remove onLoad once all allocation tokens are migrated to have a discountYears of 1.
+  @OnLoad
+  void onLoad() {
+    if (discountYears == 0) {
+      discountYears = 1;
+    }
+  }
 
   /**
    * Promotional token validity periods.
@@ -146,8 +161,8 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
     return token;
   }
 
-  public Key<HistoryEntry> getRedemptionHistoryEntry() {
-    return redemptionHistoryEntry;
+  public Optional<Key<HistoryEntry>> getRedemptionHistoryEntry() {
+    return Optional.ofNullable(redemptionHistoryEntry);
   }
 
   public boolean isRedeemed() {
@@ -174,6 +189,16 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
     return discountFraction;
   }
 
+  public boolean shouldDiscountPremiums() {
+    return discountPremiums;
+  }
+
+  public int getDiscountYears() {
+    // Allocation tokens created prior to the addition of the discountYears field will have a value
+    // of 0 for it, but it should be the default value of 1 to retain the previous behavior.
+    return Math.max(1, discountYears);
+  }
+
   public TokenType getTokenType() {
     return tokenType;
   }
@@ -183,7 +208,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
   }
 
   public VKey<AllocationToken> createVKey() {
-    return VKey.create(getClass(), getToken(), Key.create(this));
+    return VKey.create(AllocationToken.class, getToken(), Key.create(this));
   }
 
   @Override
@@ -193,6 +218,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
 
   /** A builder for constructing {@link AllocationToken} objects, since they are immutable. */
   public static class Builder extends Buildable.Builder<AllocationToken> {
+
     public Builder() {}
 
     private Builder(AllocationToken instance) {
@@ -210,6 +236,12 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
           getInstance().redemptionHistoryEntry == null
               || TokenType.SINGLE_USE.equals(getInstance().tokenType),
           "Redemption history entry can only be specified for SINGLE_USE tokens");
+      checkArgument(
+          getInstance().discountFraction > 0 || !getInstance().discountPremiums,
+          "Discount premiums can only be specified along with a discount fraction");
+      checkArgument(
+          getInstance().discountFraction > 0 || getInstance().discountYears == 1,
+          "Discount years can only be specified along with a discount fraction");
       if (getInstance().domainName != null) {
         try {
           DomainFlowUtils.validateDomainName(getInstance().domainName);
@@ -258,7 +290,23 @@ public class AllocationToken extends BackupGroupRoot implements Buildable {
     }
 
     public Builder setDiscountFraction(double discountFraction) {
+      checkArgument(
+          Range.closed(0.0d, 1.0d).contains(discountFraction),
+          "Discount fraction must be between 0 and 1 inclusive");
       getInstance().discountFraction = discountFraction;
+      return this;
+    }
+
+    public Builder setDiscountPremiums(boolean discountPremiums) {
+      getInstance().discountPremiums = discountPremiums;
+      return this;
+    }
+
+    public Builder setDiscountYears(int discountYears) {
+      checkArgument(
+          Range.closed(1, 10).contains(discountYears),
+          "Discount years must be between 1 and 10 inclusive");
+      getInstance().discountYears = discountYears;
       return this;
     }
 

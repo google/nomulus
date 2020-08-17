@@ -20,13 +20,10 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HealthCheckHandler}. */
-@RunWith(JUnit4.class)
-public class HealthCheckHandlerTest {
+class HealthCheckHandlerTest {
 
   private static final String CHECK_REQ = "REQUEST";
   private static final String CHECK_RES = "RESPONSE";
@@ -36,7 +33,7 @@ public class HealthCheckHandlerTest {
   private final EmbeddedChannel channel = new EmbeddedChannel(healthCheckHandler);
 
   @Test
-  public void testSuccess_ResponseSent() {
+  void testSuccess_ResponseSent() {
     ByteBuf input = Unpooled.wrappedBuffer(CHECK_REQ.getBytes(US_ASCII));
     // No inbound message passed to the next handler.
     assertThat(channel.writeInbound(input)).isFalse();
@@ -46,7 +43,7 @@ public class HealthCheckHandlerTest {
   }
 
   @Test
-  public void testSuccess_IgnoreUnrecognizedRequest() {
+  void testSuccess_IgnoreUnrecognizedRequest() {
     String unrecognizedInput = "1234567";
     ByteBuf input = Unpooled.wrappedBuffer(unrecognizedInput.getBytes(US_ASCII));
     // No inbound message passed to the next handler.

@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
-import static google.registry.ui.server.registrar.RegistrarConsoleModule.PARAM_CLIENT_ID;
 import static google.registry.ui.server.registrar.RegistryLockGetAction.getContactMatchingLogin;
 import static google.registry.ui.server.registrar.RegistryLockGetAction.getRegistrarAndVerifyLockAccess;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -31,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.request.Action;
@@ -116,11 +116,10 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       checkArgumentNotNull(input, "Null JSON");
       RegistryLockPostInput postInput =
           GSON.fromJson(GSON.toJsonTree(input), RegistryLockPostInput.class);
-      checkArgument(
-          !Strings.isNullOrEmpty(postInput.clientId),
-          "Missing key for client: %s",
-          PARAM_CLIENT_ID);
+      String registrarId = postInput.registrarId;
+      checkArgument(!Strings.isNullOrEmpty(registrarId), "Missing key for registrarId");
       checkArgument(!Strings.isNullOrEmpty(postInput.domainName), "Missing key for domainName");
+      DomainFlowUtils.validateDomainName(postInput.domainName);
       checkNotNull(postInput.isLock, "Missing key for isLock");
       UserAuthInfo userAuthInfo =
           authResult
@@ -135,12 +134,12 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
                     postInput.isLock
                         ? domainLockUtils.saveNewRegistryLockRequest(
                             postInput.domainName,
-                            postInput.clientId,
+                            registrarId,
                             userEmail,
                             registrarAccessor.isAdmin())
                         : domainLockUtils.saveNewRegistryUnlockRequest(
                             postInput.domainName,
-                            postInput.clientId,
+                            registrarId,
                             registrarAccessor.isAdmin(),
                             Optional.ofNullable(postInput.relockDurationMillis).map(Duration::new));
                 sendVerificationEmail(registryLock, userEmail, postInput.isLock);
@@ -190,9 +189,9 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       return user.getEmail();
     }
     // Verify that the user can access the registrar, that the user has
-    // registry lock enabled, and that the user providjed a correct password
+    // registry lock enabled, and that the user provided a correct password
     Registrar registrar =
-        getRegistrarAndVerifyLockAccess(registrarAccessor, postInput.clientId, false);
+        getRegistrarAndVerifyLockAccess(registrarAccessor, postInput.registrarId, false);
     RegistrarContact registrarContact =
         getContactMatchingLogin(user, registrar)
             .orElseThrow(
@@ -215,7 +214,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
 
   /** Value class that represents the expected input body from the UI request. */
   private static class RegistryLockPostInput {
-    private String clientId;
+    private String registrarId;
     private String domainName;
     private Boolean isLock;
     private String password;

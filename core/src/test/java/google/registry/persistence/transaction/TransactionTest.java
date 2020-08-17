@@ -15,16 +15,19 @@
 package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
-import google.registry.testing.AppEngineRule;
+import google.registry.testing.AppEngineExtension;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.StreamCorruptedException;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,8 +37,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class TransactionTest {
 
   @RegisterExtension
-  public final AppEngineRule appEngine =
-      AppEngineRule.builder()
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestEntity.class)
           .withJpaUnitTestEntities(TestEntity.class)
@@ -97,6 +100,51 @@ public class TransactionTest {
     // Test with a short byte array.
     assertThrows(
         StreamCorruptedException.class, () -> Transaction.deserialize(new byte[] {1, 2, 3, 4}));
+  }
+
+  @Test
+  public void testTransactionSerialization() throws IOException {
+    RegistryConfig.overrideCloudSqlReplicateTransactions(true);
+    try {
+      jpaTm()
+          .transact(
+              () -> {
+                jpaTm().saveNew(fooEntity);
+                jpaTm().saveNew(barEntity);
+              });
+      TransactionEntity txnEnt =
+          jpaTm().transact(() -> jpaTm().load(VKey.createSql(TransactionEntity.class, 1L)));
+      Transaction txn = Transaction.deserialize(txnEnt.contents);
+      txn.writeToDatastore();
+      ofyTm()
+          .transact(
+              () -> {
+                assertThat(ofyTm().load(fooEntity.key())).isEqualTo(fooEntity);
+                assertThat(ofyTm().load(barEntity.key())).isEqualTo(barEntity);
+              });
+
+      // Verify that no transaction was persisted for the load transaction.
+      assertThat(
+              jpaTm()
+                  .transact(() -> jpaTm().checkExists(VKey.createSql(TransactionEntity.class, 2L))))
+          .isFalse();
+    } finally {
+      RegistryConfig.overrideCloudSqlReplicateTransactions(false);
+    }
+  }
+
+  @Test
+  public void testTransactionSerializationDisabledByDefault() {
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().saveNew(fooEntity);
+              jpaTm().saveNew(barEntity);
+            });
+    assertThat(
+            jpaTm()
+                .transact(() -> jpaTm().checkExists(VKey.createSql(TransactionEntity.class, 1L))))
+        .isFalse();
   }
 
   @Entity(name = "TxnTestEntity")

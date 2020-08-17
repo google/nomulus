@@ -17,27 +17,23 @@ package google.registry.model.eppcommon;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.EppXmlTransformer.unmarshal;
 import static google.registry.testing.TestDataHelper.loadBytes;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
-import google.registry.testing.ShardableTestCase;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.Test;
 
 /** Tests for {@link EppXmlTransformer}. */
-@RunWith(JUnit4.class)
-public class EppXmlTransformerTest extends ShardableTestCase {
+class EppXmlTransformerTest {
 
   @Test
-  public void testUnmarshalingEppInput() throws Exception {
+  void testUnmarshalingEppInput() throws Exception {
     EppInput input = unmarshal(EppInput.class, loadBytes(getClass(), "contact_info.xml").read());
     assertThat(input.getCommandType()).isEqualTo("info");
   }
 
   @Test
-  public void testUnmarshalingWrongClassThrows() {
+  void testUnmarshalingWrongClassThrows() {
     assertThrows(
         ClassCastException.class,
         () -> unmarshal(EppOutput.class, loadBytes(getClass(), "contact_info.xml").read()));

@@ -27,7 +27,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 /** Command to show allocation tokens. */
 @Parameters(separators = " =", commandDescription = "Show allocation token(s)")
@@ -55,11 +55,11 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
       if (loadedTokens.containsKey(token)) {
         AllocationToken loadedToken = loadedTokens.get(token);
         System.out.println(loadedToken.toString());
-        if (loadedToken.getRedemptionHistoryEntry() == null) {
+        if (!loadedToken.getRedemptionHistoryEntry().isPresent()) {
           System.out.printf("Token %s was not redeemed.\n", token);
         } else {
           DomainBase domain =
-              domains.get(loadedToken.getRedemptionHistoryEntry().<DomainBase>getParent());
+              domains.get(loadedToken.getRedemptionHistoryEntry().get().<DomainBase>getParent());
           if (domain == null) {
             System.out.printf("ERROR: Token %s was redeemed but domain can't be loaded.\n", token);
           } else {
@@ -80,7 +80,8 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
     ImmutableList<Key<DomainBase>> domainKeys =
         tokens.stream()
             .map(AllocationToken::getRedemptionHistoryEntry)
-            .filter(Objects::nonNull)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
             .map(Key::<DomainBase>getParent)
             .collect(toImmutableList());
     ImmutableMap.Builder<Key<DomainBase>, DomainBase> domainsBuilder = new ImmutableMap.Builder<>();
