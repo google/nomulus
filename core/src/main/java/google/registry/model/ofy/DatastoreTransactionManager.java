@@ -214,6 +214,9 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @SuppressWarnings("unchecked")
   private <T> T toChildHistoryEntryIfPossible(@Nullable T obj) {
+    // NB: The Key of the object in question may not necessarily be the resulting class that we
+    // wish to have. Because all *History classes are @EntitySubclasses, their Keys will have type
+    // HistoryEntry -- even if you create them based off the *History class.
     if (obj != null && HistoryEntry.class.isAssignableFrom(obj.getClass())) {
       return (T) ((HistoryEntry) obj).toChildHistoryEntity();
     }

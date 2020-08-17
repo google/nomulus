@@ -74,6 +74,8 @@ public class HostHistoryTest extends EntityTestCase {
     tm().transact(() -> tm().saveNew(hostHistory));
 
     // retrieving a HistoryEntry or a HostHistory with the same key should return the same object
+    // note: due to the @EntitySubclass annotation. all Keys for ContactHistory objects will have
+    // type HistoryEntry
     VKey<HostHistory> hostHistoryVKey = VKey.createOfy(HostHistory.class, Key.create(hostHistory));
     VKey<HistoryEntry> historyEntryVKey =
         VKey.createOfy(HistoryEntry.class, Key.create(hostHistory.asHistoryEntry()));

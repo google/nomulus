@@ -105,6 +105,8 @@ public class DomainHistoryTest extends EntityTestCase {
     tm().transact(() -> tm().saveNew(domainHistory));
 
     // retrieving a HistoryEntry or a DomainHistory with the same key should return the same object
+    // note: due to the @EntitySubclass annotation. all Keys for ContactHistory objects will have
+    // type HistoryEntry
     VKey<DomainHistory> domainHistoryVKey =
         VKey.createOfy(DomainHistory.class, Key.create(domainHistory));
     VKey<HistoryEntry> historyEntryVKey =
