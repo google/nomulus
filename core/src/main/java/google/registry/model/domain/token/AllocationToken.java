@@ -116,6 +116,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** Allowed registrar client IDs for this token, or null if all registrars are allowed. */
+  @Column(name = "allowedRegistrarIds")
   @Nullable Set<String> allowedClientIds;
 
   /** Allowed TLDs for this token, or null if all TLDs are allowed. */
@@ -196,7 +197,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
     return Optional.ofNullable(creationTime.getTimestamp());
   }
 
-  public ImmutableSet<String> getAllowedClientIds() {
+  public ImmutableSet<String> getAllowedRegistrarIds() {
     return nullToEmptyImmutableCopy(allowedClientIds);
   }
 
@@ -298,8 +299,8 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
       return this;
     }
 
-    public Builder setAllowedClientIds(Set<String> allowedClientIds) {
-      getInstance().allowedClientIds = forceEmptyToNull(allowedClientIds);
+    public Builder setAllowedRegistrarIds(Set<String> allowedRegistrarIds) {
+      getInstance().allowedClientIds = forceEmptyToNull(allowedRegistrarIds);
       return this;
     }
 

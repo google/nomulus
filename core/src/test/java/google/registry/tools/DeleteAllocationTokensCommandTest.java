@@ -172,13 +172,13 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
     if (redeemed) {
       String domainToPersist = domainName != null ? domainName : "example.foo";
       DomainBase domain = persistActiveDomain(domainToPersist);
-      Key<HistoryEntry> parentKey = Key.create(Key.create(domain), HistoryEntry.class, 1051L);
-      builder.setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1051L, parentKey));
+      Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1051L);
+      builder.setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1051L, historyEntryKey));
     }
     return persistResource(builder.build());
   }
 
-  private static Collection<AllocationToken> reloadTokens(AllocationToken ... tokens) {
+  private static Collection<AllocationToken> reloadTokens(AllocationToken... tokens) {
     return ofy().load().entities(tokens).values();
   }
 }

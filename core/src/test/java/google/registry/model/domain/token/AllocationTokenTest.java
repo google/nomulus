@@ -66,7 +66,7 @@ public class AllocationTokenTest extends EntityTestCase {
                 .setTokenType(UNLIMITED_USE)
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setAllowedTlds(ImmutableSet.of("dev", "app"))
-                .setAllowedClientIds(ImmutableSet.of("TheRegistrar, NewRegistrar"))
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar, NewRegistrar"))
                 .setDiscountFraction(0.5)
                 .setDiscountPremiums(true)
                 .setDiscountYears(3)
@@ -80,12 +80,12 @@ public class AllocationTokenTest extends EntityTestCase {
     assertThat(ofy().load().entity(unlimitedUseToken).now()).isEqualTo(unlimitedUseToken);
 
     DomainBase domain = persistActiveDomain("example.foo");
-    Key<HistoryEntry> parentKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
+    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
     AllocationToken singleUseToken =
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123Single")
-                .setRedemptionHistoryEntry(HistoryEntry.createVKey(parentKey))
+                .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
                 .setDomainName("example.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setTokenType(SINGLE_USE)
@@ -118,13 +118,13 @@ public class AllocationTokenTest extends EntityTestCase {
   @Test
   void testIndexing() throws Exception {
     DomainBase domain = persistActiveDomain("blahdomain.foo");
-    Key<HistoryEntry> parentKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
+    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
     verifyIndexing(
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(SINGLE_USE)
-                .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1L, parentKey))
+                .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1L, historyEntryKey))
                 .setDomainName("blahdomain.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .build()),

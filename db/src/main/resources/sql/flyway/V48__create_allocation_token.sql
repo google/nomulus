@@ -15,7 +15,7 @@
 CREATE TABLE "AllocationToken" (
    token text NOT NULL,
     update_timestamp timestamptz,
-    allowed_client_ids text[],
+    allowed_registrar_ids text[],
     allowed_tlds text[],
     creation_time timestamptz NOT NULL,
     discount_fraction float8 NOT NULL,

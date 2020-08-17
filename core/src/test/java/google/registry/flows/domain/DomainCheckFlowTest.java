@@ -419,7 +419,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
             .setDiscountFraction(0.5)
-            .setAllowedClientIds(ImmutableSet.of("someOtherClient"))
+            .setAllowedRegistrarIds(ImmutableSet.of("someOtherClient"))
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
                     .put(START_OF_TIME, TokenStatus.NOT_STARTED)

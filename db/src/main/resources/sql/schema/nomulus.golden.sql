@@ -41,7 +41,7 @@ SET default_with_oids = false;
 CREATE TABLE public."AllocationToken" (
     token text NOT NULL,
     update_timestamp timestamp with time zone,
-    allowed_client_ids text[],
+    allowed_registrar_ids text[],
     allowed_tlds text[],
     creation_time timestamp with time zone NOT NULL,
     discount_fraction double precision NOT NULL,

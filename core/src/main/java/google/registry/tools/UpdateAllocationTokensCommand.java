@@ -131,7 +131,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   private AllocationToken updateToken(AllocationToken original) {
     AllocationToken.Builder builder = original.asBuilder();
     Optional.ofNullable(allowedClientIds)
-        .ifPresent(clientIds -> builder.setAllowedClientIds(ImmutableSet.copyOf(clientIds)));
+        .ifPresent(clientIds -> builder.setAllowedRegistrarIds(ImmutableSet.copyOf(clientIds)));
     Optional.ofNullable(allowedTlds)
         .ifPresent(tlds -> builder.setAllowedTlds(ImmutableSet.copyOf(tlds)));
     Optional.ofNullable(discountFraction).ifPresent(builder::setDiscountFraction);

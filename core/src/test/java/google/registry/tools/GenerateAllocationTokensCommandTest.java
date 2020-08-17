@@ -168,7 +168,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         new AllocationToken.Builder()
             .setToken("promo123456789ABCDEFG")
             .setTokenType(UNLIMITED_USE)
-            .setAllowedClientIds(ImmutableSet.of("TheRegistrar", "NewRegistrar"))
+            .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar", "NewRegistrar"))
             .setAllowedTlds(ImmutableSet.of("tld", "example"))
             .setDiscountFraction(0.5)
             .setDiscountPremiums(true)

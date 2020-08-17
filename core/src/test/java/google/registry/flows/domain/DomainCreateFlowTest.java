@@ -1503,7 +1503,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
-            .setAllowedClientIds(ImmutableSet.of("someClientId"))
+            .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
             .setDiscountFraction(0.5)
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()

@@ -130,7 +130,7 @@ class AllocationTokenFlowUtilsTest {
   void test_validateToken_invalidForClientId() {
     persistResource(
         createOneMonthPromoTokenBuilder(DateTime.now(UTC).minusDays(1))
-            .setAllowedClientIds(ImmutableSet.of("NewRegistrar"))
+            .setAllowedRegistrarIds(ImmutableSet.of("NewRegistrar"))
             .build());
     assertValidateThrowsEppException(AllocationTokenNotValidForRegistrarException.class);
   }
@@ -193,12 +193,12 @@ class AllocationTokenFlowUtilsTest {
   @Test
   void test_checkDomainsWithToken_showsFailureMessageForRedeemedToken() {
     DomainBase domain = persistActiveDomain("example.tld");
-    Key<HistoryEntry> parentKey = Key.create(Key.create(domain), HistoryEntry.class, 1051L);
+    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1051L);
     persistResource(
         new AllocationToken.Builder()
             .setToken("tokeN")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 101L, parentKey))
+            .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 101L, historyEntryKey))
             .build());
     assertThat(
             flowUtils

@@ -26,7 +26,6 @@ import com.google.common.collect.Lists;
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
-import google.registry.model.reporting.HistoryEntry;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -60,8 +59,8 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
         if (!loadedToken.getRedemptionHistoryEntry().isPresent()) {
           System.out.printf("Token %s was not redeemed.\n", token);
         } else {
-          HistoryEntry historyEntry = tm().load(loadedToken.getRedemptionHistoryEntry().get());
-          DomainBase domain = domains.get(historyEntry.getParent());
+          DomainBase domain =
+              domains.get(loadedToken.getRedemptionHistoryEntry().get().getOfyKey().getParent());
           if (domain == null) {
             System.out.printf("ERROR: Token %s was redeemed but domain can't be loaded.\n", token);
           } else {

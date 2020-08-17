@@ -182,7 +182,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
                         new AllocationToken.Builder()
                             .setToken(t)
                             .setTokenType(tokenType == null ? SINGLE_USE : tokenType)
-                            .setAllowedClientIds(ImmutableSet.copyOf(nullToEmpty(allowedClientIds)))
+                            .setAllowedRegistrarIds(ImmutableSet.copyOf(nullToEmpty(allowedClientIds)))
                             .setAllowedTlds(ImmutableSet.copyOf(nullToEmpty(allowedTlds)));
                     Optional.ofNullable(discountFraction).ifPresent(token::setDiscountFraction);
                     Optional.ofNullable(discountPremiums).ifPresent(token::setDiscountPremiums);

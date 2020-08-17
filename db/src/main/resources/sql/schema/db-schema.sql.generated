@@ -16,7 +16,7 @@ create sequence history_id_sequence start 1 increment 1;
     create table "AllocationToken" (
        token text not null,
         update_timestamp timestamptz,
-        allowed_client_ids text[],
+        allowed_registrar_ids text[],
         allowed_tlds text[],
         creation_time timestamptz not null,
         discount_fraction float8 not null,
