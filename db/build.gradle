@@ -29,7 +29,7 @@ ext {
   def dbServer = findProperty(dbServerProperty).toString().toLowerCase()
   def dbName = findProperty(dbNameProperty)
 
-  isDbReadOnly = {
+  isRestricted = {
     return restrictedDbEnv.contains(dbServer)
   }
 
@@ -169,7 +169,7 @@ dependencies {
 flywayInfo.dependsOn('buildNeeded')
 flywayValidate.dependsOn('buildNeeded')
 
-if (ext.isDbReadOnly()) {
+if (ext.isRestricted()) {
   // Disable dangerous Flyway tasks in sandbox and production. Only allow info and validate.
   tasks.findAll { task -> task.group.equals('Flyway')}.each {
     if (it.name == 'flywayMigrate') {
