@@ -29,8 +29,8 @@ ext {
   def dbServer = findProperty(dbServerProperty).toString().toLowerCase()
   def dbName = findProperty(dbNameProperty)
 
-  isCloudSql = {
-    return allDbEnv.contains(dbServer)
+  isDbReadOnly = {
+    return restrictedDbEnv.contains(dbServer)
   }
 
   getAccessInfoByHostPort = { hostAndPort ->
@@ -169,8 +169,8 @@ dependencies {
 flywayInfo.dependsOn('buildNeeded')
 flywayValidate.dependsOn('buildNeeded')
 
-if (ext.isCloudSql()) {
-  // Disable dangerous Flyway tasks. Only allow info and validate.
+if (ext.isDbReadOnly()) {
+  // Disable dangerous Flyway tasks in sandbox and production. Only allow info and validate.
   tasks.findAll { task -> task.group.equals('Flyway')}.each {
     if (it.name == 'flywayMigrate') {
       it.doFirst {
