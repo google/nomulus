@@ -94,7 +94,7 @@ public class IcannHttpReporter {
         response.getContent().close();
       }
       logger.atInfo().log(
-          "Received response code %d with content %s\n\nResponse content in hex: %s",
+          "Received response code %d with content: %s\n\nResponse content in hex: %s",
           response.getStatusCode(),
           new String(content, UTF_8),
           BaseEncoding.base16().encode(content));
