@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
@@ -123,7 +124,8 @@ public class RelockDomainAction implements Runnable {
     response.setStatus(SC_NO_CONTENT);
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
 
-    jpaTm().transact(this::relockDomain);
+    // nb: DomainLockUtils relies on the JPA transaction being the outermost transaction
+    jpaTm().transact(() -> tm().transact(this::relockDomain));
   }
 
   private void relockDomain() {
