@@ -44,6 +44,7 @@ import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.OnLoad;
+import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
@@ -286,6 +287,11 @@ public class DomainContent extends EppResource
               .map(gracePeriod -> gracePeriod.cloneWithDomainRepoId(getRepoId()))
               .collect(toImmutableSet());
     }
+  }
+
+  @OnSave
+  void onSave() {
+    gracePeriods = gracePeriods != null && gracePeriods.isEmpty() ? null : gracePeriods;
   }
 
   @PostLoad
@@ -698,7 +704,13 @@ public class DomainContent extends EppResource
       }
       checkArgumentNotNull(instance.getRegistrant(), "Missing registrant");
       instance.tld = getTldFromDomainName(instance.fullyQualifiedDomainName);
-      return super.build();
+
+      T newDomain = super.build();
+      // Hibernate throws exception if gracePeriods is null because we enabled all cascadable
+      // operations and orphan removal.
+      newDomain.gracePeriods =
+          newDomain.gracePeriods == null ? ImmutableSet.of() : newDomain.gracePeriods;
+      return newDomain;
     }
 
     public B setDomainName(String domainName) {

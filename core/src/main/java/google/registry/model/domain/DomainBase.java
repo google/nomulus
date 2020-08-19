@@ -14,7 +14,6 @@
 
 package google.registry.model.domain;
 
-
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
@@ -87,7 +86,11 @@ public class DomainBase extends DomainContent
       cascade = {CascadeType.ALL},
       fetch = FetchType.EAGER,
       orphanRemoval = true)
-  @JoinColumn(name = "domainRepoId", referencedColumnName = "repoId")
+  @JoinColumn(
+      name = "domainRepoId",
+      referencedColumnName = "repoId",
+      insertable = false,
+      updatable = false)
   @SuppressWarnings("UnusedMethod")
   private Set<GracePeriod> getInternalGracePeriods() {
     return gracePeriods;
