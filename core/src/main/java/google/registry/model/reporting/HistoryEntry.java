@@ -50,7 +50,7 @@ import org.joda.time.DateTime;
 @ReportedOn
 @Entity
 @MappedSuperclass
-@WithStringVKey
+@WithStringVKey // TODO(b/162229294): This should be resolved during the course of that bug
 public class HistoryEntry extends ImmutableObject implements Buildable {
 
   /** Represents the type of history entry. */
