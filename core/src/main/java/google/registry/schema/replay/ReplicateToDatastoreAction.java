@@ -14,6 +14,7 @@
 
 package google.registry.schema.replay;
 
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.request.Action.Method.GET;
@@ -78,7 +79,7 @@ class ReplicateToDatastoreAction implements Runnable {
               newTransactionId = txnEntity.getId();
 
               // Write the updated last transaction id to datastore.
-              lastSqlTxn.withNewTransactionId(newTransactionId).store();
+              ofy().save().entity(lastSqlTxn.withNewTransactionId(newTransactionId));
               return true;
             });
   }

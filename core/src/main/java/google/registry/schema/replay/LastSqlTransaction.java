@@ -65,13 +65,4 @@ public class LastSqlTransaction extends ImmutableObject {
     LastSqlTransaction result = ofy().load().key(KEY).now();
     return result == null ? new LastSqlTransaction() : result;
   }
-
-  /**
-   * Stores the instance in datastore.
-   *
-   * <p>Must be called within the same transaction as load().
-   */
-  void store() {
-    ofy().save().entity(this);
-  }
 }
