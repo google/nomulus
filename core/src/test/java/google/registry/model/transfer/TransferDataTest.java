@@ -18,10 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
+import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
@@ -46,11 +49,33 @@ public class TransferDataTest {
 
   @BeforeEach
   void beforeEach() {
-    transferBillingEventKey = VKey.create(BillingEvent.OneTime.class, 12345);
-    otherServerApproveBillingEventKey = VKey.create(BillingEvent.Cancellation.class, 2468);
-    recurringBillingEventKey = VKey.create(BillingEvent.Recurring.class, 13579);
-    autorenewPollMessageKey = VKey.create(PollMessage.Autorenew.class, 67890);
-    otherServerApprovePollMessageKey = VKey.create(PollMessage.OneTime.class, 314159);
+    Key<HistoryEntry> historyEntryKey =
+        Key.create(Key.create(DomainBase.class, "4-TLD"), HistoryEntry.class, 1356L);
+    transferBillingEventKey =
+        VKey.create(
+            BillingEvent.OneTime.class,
+            12345,
+            Key.create(historyEntryKey, BillingEvent.OneTime.class, 12345));
+    otherServerApproveBillingEventKey =
+        VKey.create(
+            BillingEvent.Cancellation.class,
+            2468,
+            Key.create(historyEntryKey, BillingEvent.Cancellation.class, 2468));
+    recurringBillingEventKey =
+        VKey.create(
+            BillingEvent.Recurring.class,
+            13579,
+            Key.create(historyEntryKey, BillingEvent.Recurring.class, 13579));
+    autorenewPollMessageKey =
+        VKey.create(
+            PollMessage.Autorenew.class,
+            67890,
+            Key.create(historyEntryKey, PollMessage.Autorenew.class, 67890));
+    otherServerApprovePollMessageKey =
+        VKey.create(
+            PollMessage.OneTime.class,
+            314159,
+            Key.create(historyEntryKey, PollMessage.OneTime.class, 314159));
   }
 
   @Test

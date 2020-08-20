@@ -27,13 +27,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.model.EntityTestCase;
-import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,8 +60,6 @@ class HostResourceTest extends EntityTestCase {
                         .setGainingClientId("gaining")
                         .setLosingClientId("losing")
                         .setPendingTransferExpirationTime(fakeClock.nowUtc())
-                        .setServerApproveEntities(
-                            ImmutableSet.of(VKey.create(BillingEvent.OneTime.class, 1)))
                         .setTransferRequestTime(fakeClock.nowUtc())
                         .setTransferStatus(TransferStatus.SERVER_APPROVED)
                         .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
