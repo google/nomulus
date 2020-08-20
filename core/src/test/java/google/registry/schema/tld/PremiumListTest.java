@@ -27,10 +27,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PremiumList}. */
-public class PremiumListTest {
+class PremiumListTest {
 
   @RegisterExtension
-  public DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
+  DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   private static final ImmutableMap<String, BigDecimal> TEST_PRICES =
       ImmutableMap.of(
@@ -42,7 +42,7 @@ public class PremiumListTest {
           BigDecimal.valueOf(1552.78));
 
   @Test
-  public void bloomFilter_worksCorrectly() {
+  void bloomFilter_worksCorrectly() {
     BloomFilter<String> bloomFilter =
         new PremiumList.Builder()
             .setName("testname")
