@@ -705,8 +705,7 @@ public class Registrar extends ImmutableObject
   }
 
   public VKey<Registrar> createVKey() {
-    return VKey.create(
-        getClass(), clientIdentifier, Key.create(parent, getClass(), clientIdentifier));
+    return VKey.create(Registrar.class, clientIdentifier, Key.create(this));
   }
 
   /** A builder for constructing {@link Registrar}, since it is immutable. */
