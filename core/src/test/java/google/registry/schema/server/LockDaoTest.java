@@ -39,14 +39,14 @@ public class LockDaoTest {
 
   @RegisterExtension
   @Order(value = 1)
-  public DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
+  DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   @RegisterExtension
-  public final JpaIntegrationWithCoverageExtension jpa =
+  final JpaIntegrationWithCoverageExtension jpa =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   @Test
-  public void save_worksSuccessfully() {
+  void save_worksSuccessfully() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.save(lock);
@@ -56,7 +56,7 @@ public class LockDaoTest {
   }
 
   @Test
-  public void save_succeedsWhenLockAlreadyExists() {
+  void save_succeedsWhenLockAlreadyExists() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.save(lock);
@@ -67,7 +67,7 @@ public class LockDaoTest {
   }
 
   @Test
-  public void save_worksSuccesfullyGlobalLock() {
+  void save_worksSuccesfullyGlobalLock() {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.save(lock);
@@ -77,7 +77,7 @@ public class LockDaoTest {
   }
 
   @Test
-  public void load_worksSuccessfully() {
+  void load_worksSuccessfully() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.save(lock);
@@ -87,7 +87,7 @@ public class LockDaoTest {
   }
 
   @Test
-  public void load_worksSuccessfullyGlobalLock() {
+  void load_worksSuccessfullyGlobalLock() {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.save(lock);
@@ -97,13 +97,13 @@ public class LockDaoTest {
   }
 
   @Test
-  public void load_worksSuccesfullyLockDoesNotExist() {
+  void load_worksSuccesfullyLockDoesNotExist() {
     Optional<Lock> returnedLock = LockDao.load("testResource", "tld");
     assertThat(returnedLock.isPresent()).isFalse();
   }
 
   @Test
-  public void delete_worksSuccesfully() {
+  void delete_worksSuccesfully() {
     Lock lock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.save(lock);
@@ -115,7 +115,7 @@ public class LockDaoTest {
   }
 
   @Test
-  public void delete_worksSuccessfullyGlobalLock() {
+  void delete_worksSuccessfullyGlobalLock() {
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
     LockDao.save(lock);
@@ -127,12 +127,12 @@ public class LockDaoTest {
   }
 
   @Test
-  public void delete_succeedsLockDoesntExist() {
+  void delete_succeedsLockDoesntExist() {
     LockDao.delete("testResource");
   }
 
   @Test
-  public void compare_logsWarningWhenCloudSqlLockMissing() {
+  void compare_logsWarningWhenCloudSqlLockMissing() {
     loggerToIntercept.addHandler(logHandler);
     google.registry.model.server.Lock datastoreLock =
         google.registry.model.server.Lock.create(
@@ -146,7 +146,7 @@ public class LockDaoTest {
   }
 
   @Test
-  public void compare_logsWarningWhenCloudSqlLockExistsWhenItShouldNot() {
+  void compare_logsWarningWhenCloudSqlLockExistsWhenItShouldNot() {
     loggerToIntercept.addHandler(logHandler);
     Lock lock =
         Lock.createGlobal("testResource", "testLogId", fakeClock.nowUtc(), Duration.millis(2));
@@ -159,7 +159,7 @@ public class LockDaoTest {
   }
 
   @Test
-  public void compare_logsWarningWhenLocksDontMatch() {
+  void compare_logsWarningWhenLocksDontMatch() {
     loggerToIntercept.addHandler(logHandler);
     Lock cloudSqlLock =
         Lock.create("testResource", "tld", "testLogId", fakeClock.nowUtc(), Duration.millis(2));

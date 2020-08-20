@@ -51,7 +51,7 @@ class InitSqlPipelineGraphTest {
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(false);
 
   @Test
-  public void createPipeline_compareGraph() throws IOException {
+  void createPipeline_compareGraph() throws IOException {
     new InitSqlPipeline(options, testPipeline).setupPipeline();
     String dotString = PipelineDotRenderer.toDotString(testPipeline);
     URL goldenDotUrl = Resources.getResource(InitSqlPipelineGraphTest.class, GOLDEN_DOT_FILE);

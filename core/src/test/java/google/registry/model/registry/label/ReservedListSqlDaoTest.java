@@ -64,7 +64,7 @@ public class ReservedListSqlDaoTest {
   }
 
   @Test
-  public void save_worksSuccessfully() {
+  void save_worksSuccessfully() {
     ReservedListSqlDao.save(testReservedList);
     jpaTm()
         .transact(
@@ -82,14 +82,14 @@ public class ReservedListSqlDaoTest {
   }
 
   @Test
-  public void checkExists_worksSuccessfully() {
+  void checkExists_worksSuccessfully() {
     assertThat(ReservedListSqlDao.checkExists("testlist")).isFalse();
     ReservedListSqlDao.save(testReservedList);
     assertThat(ReservedListSqlDao.checkExists("testlist")).isTrue();
   }
 
   @Test
-  public void getLatestRevision_worksSuccessfully() {
+  void getLatestRevision_worksSuccessfully() {
     assertThat(ReservedListSqlDao.getLatestRevision("testlist").isPresent()).isFalse();
     ReservedListSqlDao.save(testReservedList);
     ReservedList persistedList = ReservedListSqlDao.getLatestRevision("testlist").get();
@@ -101,7 +101,7 @@ public class ReservedListSqlDaoTest {
   }
 
   @Test
-  public void getLatestRevision_returnsLatestRevision() {
+  void getLatestRevision_returnsLatestRevision() {
     ReservedListSqlDao.save(
         new ReservedList.Builder()
             .setName("testlist")
