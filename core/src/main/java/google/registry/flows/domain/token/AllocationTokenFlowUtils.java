@@ -125,7 +125,8 @@ public class AllocationTokenFlowUtils {
   private void validateToken(
       InternetDomainName domainName, AllocationToken token, String clientId, DateTime now)
       throws EppException {
-    if (!token.getAllowedRegistrarIds().isEmpty() && !token.getAllowedRegistrarIds().contains(clientId)) {
+    if (!token.getAllowedRegistrarIds().isEmpty()
+        && !token.getAllowedRegistrarIds().contains(clientId)) {
       throw new AllocationTokenNotValidForRegistrarException();
     }
     if (!token.getAllowedTlds().isEmpty()

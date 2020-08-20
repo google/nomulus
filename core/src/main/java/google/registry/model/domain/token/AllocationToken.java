@@ -102,8 +102,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
   }
 
   /** The allocation token string. */
-  @javax.persistence.Id
-  @Id String token;
+  @javax.persistence.Id @Id String token;
 
   /** The key of the history entry for which the token was used. Null if not yet used. */
   @Nullable @Index VKey<HistoryEntry> redemptionHistoryEntry;
@@ -117,7 +116,8 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
 
   /** Allowed registrar client IDs for this token, or null if all registrars are allowed. */
   @Column(name = "allowedRegistrarIds")
-  @Nullable Set<String> allowedClientIds;
+  @Nullable
+  Set<String> allowedClientIds;
 
   /** Allowed TLDs for this token, or null if all TLDs are allowed. */
   @Nullable Set<String> allowedTlds;
