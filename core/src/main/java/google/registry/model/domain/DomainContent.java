@@ -40,7 +40,6 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
@@ -253,11 +252,27 @@ public class DomainContent extends EppResource
    */
   DateTime lastTransferTime;
 
+  /**
+   * When the domain's autorenewal status will expire.
+   *
+   * <p>This will be null for the vast majority of domains because all domains autorenew
+   * indefinitely by default and autorenew can only be countermanded by administrators, typically
+   * for reasons of the URS process or termination of a registrar for nonpayment.
+   *
+   * <p>When a domain is scheduled to not autorenew, this field is set to the current value of its
+   * {@link #registrationExpirationTime}, after which point the next invocation of a periodic
+   * cronjob will explicitly delete the domain. This field is a DateTime and not a boolean because
+   * of edge cases that occur during the autorenew grace period. We need to be able to tell the
+   * difference domains that have reached their life and must be deleted now, and domains that
+   * happen to be in the autorenew grace period now but should be deleted in roughly a year.
+   */
+  @Nullable @Index DateTime autorenewEndTime;
+
   @OnLoad
   void load() {
     // Reconstitute all of the contacts so that they have VKeys.
     allContacts =
-        allContacts.stream().map(contact -> contact.reconstitute()).collect(toImmutableSet());
+        allContacts.stream().map(DesignatedContact::reconstitute).collect(toImmutableSet());
     setContactFields(allContacts, true);
 
     // We have to return the cloned object here because the original object's
@@ -276,8 +291,7 @@ public class DomainContent extends EppResource
   @PostLoad
   void postLoad() {
     // Reconstitute the contact list.
-    ImmutableSet.Builder<DesignatedContact> contactsBuilder =
-        new ImmutableSet.Builder<DesignatedContact>();
+    ImmutableSet.Builder<DesignatedContact> contactsBuilder = new ImmutableSet.Builder<>();
 
     if (registrantContact != null) {
       contactsBuilder.add(
@@ -322,6 +336,10 @@ public class DomainContent extends EppResource
 
   public String getSmdId() {
     return smdId;
+  }
+
+  public Optional<DateTime> getAutorenewEndTime() {
+    return Optional.ofNullable(autorenewEndTime);
   }
 
   @Override
@@ -419,7 +437,7 @@ public class DomainContent extends EppResource
    * parallels the logic in {@code DomainTransferApproveFlow} which handles explicit client
    * approvals.
    */
-  protected static <T extends DomainContent> T cloneDomainProjectedAtTime(T domain, DateTime now) {
+  static <T extends DomainContent> T cloneDomainProjectedAtTime(T domain, DateTime now) {
     DomainTransferData transferData = domain.getTransferData();
     DateTime transferExpirationTime = transferData.getPendingTransferExpirationTime();
 
@@ -608,7 +626,7 @@ public class DomainContent extends EppResource
    * <p>The registrant field is only set if {@code includeRegistrant} is true, as this field needs
    * to be set in some circumstances but not in others.
    */
-  protected void setContactFields(Set<DesignatedContact> contacts, boolean includeRegistrant) {
+  void setContactFields(Set<DesignatedContact> contacts, boolean includeRegistrant) {
     // Set the individual contact fields.
     for (DesignatedContact contact : contacts) {
       switch (contact.getType()) {
@@ -634,15 +652,13 @@ public class DomainContent extends EppResource
 
   @Override
   public VKey<DomainBase> createVKey() {
-    return VKey.create(DomainBase.class, getRepoId(), Key.create(this));
-  }
-
-  public static VKey<DomainBase> createVKey(Key key) {
-    return VKey.create(DomainBase.class, key.getName(), key);
+    throw new UnsupportedOperationException(
+        "DomainContent is not an actual persisted entity you can create a key to;"
+            + " use DomainBase instead");
   }
 
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */
-  protected static final Predicate<DesignatedContact> IS_REGISTRANT =
+  static final Predicate<DesignatedContact> IS_REGISTRANT =
       (DesignatedContact contact) -> DesignatedContact.Type.REGISTRANT.equals(contact.type);
 
   /** An override of {@link EppResource#asBuilder} with tighter typing. */
@@ -835,6 +851,11 @@ public class DomainContent extends EppResource
     public B removeGracePeriod(GracePeriod gracePeriod) {
       getInstance().gracePeriods =
           CollectionUtils.difference(getInstance().getGracePeriods(), gracePeriod);
+      return thisCastToDerived();
+    }
+
+    public B setAutorenewEndTime(Optional<DateTime> autorenewEndTime) {
+      getInstance().autorenewEndTime = autorenewEndTime.orElse(null);
       return thisCastToDerived();
     }
 

@@ -14,10 +14,8 @@ installation of the project:
 
 *   Create Google Cloud Storage buckets (see the [Architecture
     documentation](./architecture.md) for more information).
-*   Modify `ConfigModule.java` and set project-specific settings such as product
-    name (see below).
-*   Copy and edit `ProductionRegistryConfigExample.java` with your
-    project-specific settings (see below).
+*   Modify configuration files ("nomulus-config-*.yaml") for all environments
+    you wish to deploy.
 
 ## Environments
 
@@ -74,6 +72,7 @@ description of each option:
 appEngine:
   projectId: # Your App Engine project ID
   toolsServiceUrl: https://tools-dot-PROJECT-ID.appspot.com  # Insert your project ID
+  isLocal: false  # Causes saved credentials to be used.
 
 gSuite:
   domainName: # Your G Suite domain name
@@ -87,14 +86,10 @@ contains an exhaustive list of all settings to override.
 
 From a code perspective, all configuration settings ultimately come through the
 [`RegistryConfig`][registry-config] class. This includes a Dagger module called
-`ConfigModule` that provides injectable configuration options. Some legacy
-configuration options that can be changed in this class include timeout lengths
-and buffer sizes for various tasks, email addresses and URLs to use for various
-services, more Cloud Storage bucket names, and WHOIS disclaimer text. Currently,
-in order to configure custom configuration, you need to copy `ConfigModule`,
-make changes to it, and include your new version instead of the default one in
-all Dagger components. All of these options will be replaced with YAML
-configuration settings in the near future.
+`ConfigModule` that provides injectable configuration options. While most
+configuration options can be changed from within the yaml config file,
+certain derived options may still need to be overriden by changing the code in
+this module.
 
 ## OAuth 2 client id configuration
 
@@ -118,10 +113,10 @@ There are three steps to configuration.
     ["Credentials" page](https://console.developers.google.com/apis/credentials)
     in the Developer's Console. Click "Create credentials" and select "OAuth
     client ID" from the dropdown. In the create credentials window, select an
-    application type of "Other". After creating the client id, return to the
-    main Credentials page and click the download icon to the right of the client
-    id that you just created. This will download a json file called the *client
-    secret file*.
+    application type of "Desktop app". After creating the client id,
+    copy the client id and client secret which are displayed in the popup
+    window.  You may also obtain this information by downloading the json file
+    for the client id.
 
 *   **Copy the client secret information to the config file:** The *client
     secret file* contains both the client ID and the client secret. Copy the
@@ -161,15 +156,19 @@ an `InMemoryKeyring` populated with dummy values for all secret keys. This
 allows the codebase to compile and run, but of course any actions that attempt
 to connect to external services will fail because none of the keys are real.
 
-To configure a production registry system, you will need to write a replacement
-module for `DummyKeyringModule` that loads the credentials in a secure way, and
-provides them using either an instance of `InMemoryKeyring` or your own custom
-implementation of `Keyring`. You then need to replace all usages of
-`DummyKeyringModule` with your own module in all of the per-service components
-in which it is referenced. The functions in `PgpHelper` will likely prove useful
-for loading keys stored in PGP format into the PGP key classes that you'll need
-to provide from `Keyring`, and you can see examples of them in action in
-`DummyKeyringModule`.
+To configure a production registry system, you will need to either use the
+KmsKeyring or write your own replacement module using `DummyKeyringModule` for
+guidance.  Such a module should provide either an instance of
+`InMemoryKeyring` or your own custom implementation of `Keyring`.
+
+In either case, configure the `keyring` section of the config file with the
+appropriate parameters.  Use an `activeKeyring` of "KMS" with a project id for
+KMS to configure accordingly, for example:
+
+    keyring:
+      activeKeyring: KMS
+      kms:
+        projectId: acme-registry-keys
 
 ## Per-TLD configuration
 
@@ -187,3 +186,194 @@ and thus do not require code pushes to update.
 [app-engine-config]: https://cloud.google.com/appengine/docs/java/configuration-files
 [default-config]: https://github.com/google/nomulus/blob/master/java/google/registry/config/files/default-config.yaml
 [registry-config]: https://github.com/google/nomulus/blob/master/java/google/registry/config/RegistryConfig.java
+
+## Cloud SQL Configuration
+
+Nomulus is in the process of being ported to Cloud SQL.  As such, parts of the
+system already require access to Cloud SQL and the necessary configuration
+must be applied.
+
+### Create Postgres Cloud SQL Instance
+
+You can create a cloud SQL instance using the gcloud command:
+
+    $ gcloud sql instances create nomulus --database-version=POSTGRES_11 \
+       --cpu=1 --memory=4G
+
+Note that for a production instance, you will likely want to be far more
+generous with both CPU and memory resources.
+
+Now get the connection name for the new database:
+
+    $ gcloud sql instances describe nomulus | grep connectionName
+    connectionName: your-project:us-central1:nomulus
+
+Copy the connection name into your configuration (see below).
+
+Now set the password for the default user:
+
+    $ gcloud sql users set-password postgres \
+        --instance=nomulus --project=$PROJECT_ID \
+        --prompt-for-password
+
+Store this password somewhere secure.
+
+Now create database users for the tool and for the backend.  First, you'll
+need to create a password.  This can simply be a sequence of random
+characters.  Write it to the file `/tmp/server.pass` (we'll use a single
+password for the two user accounts here, you are encouraged to use different
+passwords for your production systems).  Make sure that this file does not
+contain a newline after the password.  Now create the two user accounts:
+
+    $ gcloud sql users create nomulus --instance=nomulus \
+      --project=$PROJECT_ID "--password=`cat /tmp/server.pass`"
+    $ gcloud sql users create tool --instance=nomulus \
+      --project=$PROJECT_ID "--password=`cat /tmp/server.pass`"
+
+Now enable access to the Cloud SQL admin APIs:
+
+    $ gcloud services enable sqladmin.googleapis.com \
+        --project=$PROJECT_ID
+
+### Installing the Schema
+
+Google's Nomulus team makes use of Spinnaker-based continuous integration to
+perform weekly pushes of both the Nomulus software and the SQL database
+schema.  Organizations wishing to use the Nomulus software will likely want to
+do something similar.  However, for purposes of this exercise we will push the
+schema from the build system.
+
+First, download the [Cloud SQL
+Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy).  This will allow
+you to connect to your database from a local workstation without a lot of
+additional configuration.
+
+Create a service account for use with the proxy:
+
+    $ gcloud iam service-accounts create sql-proxy \
+        --project=$PROJECT_ID \
+        --description="Service account for use with Cloud SQL Proxy" \
+        --display-name="Cloud SQL Proxy"
+
+Give the service account admin permissions:
+
+    $ gcloud projects add-iam-policy-binding $PROJECT_ID \
+        --member=serviceAccount:sql-proxy@$PROJECT_ID.iam.gserviceaccount.com \
+        --role=roles/cloudsql.admin
+
+Create a JSON key for the service account:
+
+    $ gcloud iam service-accounts keys create sql-admin.json \
+        --project=$PROJECT_ID \
+        --iam-account=sql-proxy@$PROJECT_ID.iam.gserviceaccount.com
+
+Now start the proxy:
+
+    $ PORT=3306   # Use a different value for this if you like.
+    $ ./cloud_sql_proxy -credential_file=sql-admin.json \
+        -instances=$PROJECT_ID:nomulus=tcp:$PORT
+    2020/07/01 12:11:20 current FDs rlimit set to 32768, wanted limit is 8500. Nothing to do here.
+    2020/07/01 12:11:20 using credential file for authentication; email=sql-proxy@pproject-id.iam.gserviceaccount.com
+    2020/07/01 12:11:20 Listening on 127.0.0.1:3306 for project-id:nomulus
+    2020/07/01 12:11:20 Ready for new connections
+
+Finally, upload the new database schema:
+
+    $ ./nom_build :db:flywayMigrate --dbServer=localhost:$PORT \
+        --dbName=postgres --dbUser=nomulus --dbPassword=`cat /tmp/server.pass`
+
+Now you'll need to give the "tool" user access to all tables.  You can do this
+either with a locally installed version of PostgreSQL or from the Cloud Shell.
+From local postgres, first, with your proxy is still running, connect using
+psql.
+
+    $ psql -h localhost -p 3306 postgres nomulus                                                                                                                         ~/w/nom.admin-docs
+    Password for user nomulus: <enter the password from /tmp/server.pass>
+    psql (12.2 (Debian 12.2-1+build2), server 11.6)
+    Type "help" for help.
+
+    postgres=>
+
+Enter the following command at the postgres prompt:
+
+    GRANT SELECT, INSERT, UPDATE, DELETE
+    ON ALL TABLES IN SCHEMA public
+    TO tool;
+
+From the [Google Cloud Console](https://console.developers.google.com), click
+the cloud shell icon in the toolbar (the ">_" icon).  You should be able to
+connect to your database with gcloud:
+
+    $ gcloud sql connect nomulus --user=nomulus
+
+From this, you should have a postgres prompt and be able to enter the "GRANT"
+command specified above.
+
+### Cloud KMS
+
+You'll need to choose a project to host the KMS keyring. Best practice is to
+create a separate project with a strict IAM policy. However, you can use your
+current project when experimenting.
+
+You need to create a KMS keyring in the chosen project. The default keyring
+name is 'nomulus', though you can override it in the config file.
+
+    $ gcloud kms keyrings create "nomulus" --location "global" \
+        --project $KEYS_PROJECT_ID
+
+Next, you need to create two keys in the keyring:
+
+    $ gcloud kms keys create "cloud-sql-password-string" \
+        --project $KEYS_PROJECT_ID \
+        --location "global" \
+        --keyring "nomulus" \
+        --purpose "encryption"
+
+    $ gcloud kms keys create "tools-cloud-sql-password-string" \
+        --project $KEYS_PROJECT_ID \
+        --location "global" \
+        --keyring "nomulus" \
+        --purpose "encryption"
+
+#### Install Cloud SQL Passwords in Nomulus Server
+
+Use the update_kms_keyring command to upload the Cloud SQL passwords to the
+Nomulus server.  We'll use the password same set of passwords we specified
+above when creating database user accounts.  These should currently be stored
+in `/tmp/server.pass`.
+
+Paste the password for the Registry server user to a file, say
+/tmp/server.pass. Make sure to avoid any trailing '\n' inserted by the editor.
+
+    $ set ENV=alpha
+    $ nomulus -e $ENV update_kms_keyring --keyname CLOUD_SQL_PASSWORD \
+        --input /tmp/server.pass
+
+Repeat the steps for the tools sql password:
+
+    $ nomulus -e $ENV update_kms_keyring --keyname TOOLS_CLOUD_SQL_PASSWORD \
+        --input /tmp/tools.pass
+
+Use get_keyring_secret command to verify the data you put in:
+
+    $ nomulus -e alpha -e alpha get_keyring_secret --keyname CLOUD_SQL_PASSWORD
+    [your password]
+    $ nomulus -e alpha -e alpha get_keyring_secret --keyname CLOUD_SQL_PASSWORD
+    [your password]
+
+#### The Relevant Parts of the Configuration File
+
+    cloudSql:
+      jdbcUrl: jdbc:postgresql://google/postgres
+      username: nomulus
+      instanceConnectionName: THE_NAME_SHOWN_ON_THE_DB_INFO_PAGE
+
+    keyring:
+      activeKeyring: KMS
+      kms:
+        projectId: KEYS_PROJECT_ID
+
+    registryTool:
+      clientId: TOOLS_OAUTH_CLIENT_ID
+      clientSecret: TOOLS_OAUTH_SECRET
+      username: tool

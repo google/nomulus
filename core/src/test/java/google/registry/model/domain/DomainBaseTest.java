@@ -55,6 +55,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,12 +67,11 @@ public class DomainBaseTest extends EntityTestCase {
   private DomainBase domain;
   private VKey<BillingEvent.OneTime> oneTimeBillKey;
   private VKey<BillingEvent.Recurring> recurringBillKey;
-  private VKey<DomainBase> domainKey;
 
   @BeforeEach
   void setUp() {
     createTld("com");
-    domainKey = VKey.from(Key.create(null, DomainBase.class, "4-COM"));
+    VKey<DomainBase> domainKey = VKey.from(Key.create(null, DomainBase.class, "4-COM"));
     VKey<HostResource> hostKey =
         persistResource(
                 new HostResource.Builder()
@@ -158,6 +158,7 @@ public class DomainBaseTest extends EntityTestCase {
                             fakeClock.nowUtc().plusDays(1),
                             "registrar",
                             null))
+                    .setAutorenewEndTime(Optional.of(fakeClock.nowUtc().plusYears(2)))
                     .build()));
   }
 
@@ -176,7 +177,8 @@ public class DomainBaseTest extends EntityTestCase {
         "nsHosts",
         "currentSponsorClientId",
         "deletionTime",
-        "tld");
+        "tld",
+        "autorenewEndTime");
   }
 
   @Test

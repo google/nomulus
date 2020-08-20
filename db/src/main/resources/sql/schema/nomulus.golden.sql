@@ -421,7 +421,8 @@ CREATE TABLE public."Domain" (
     update_timestamp timestamp with time zone,
     billing_recurrence_id bigint,
     autorenew_poll_message_id bigint,
-    deletion_poll_message_id bigint
+    deletion_poll_message_id bigint,
+    autorenew_end_time timestamp with time zone
 );
 
 
@@ -484,7 +485,8 @@ CREATE TABLE public."DomainHistory" (
     last_epp_update_time timestamp with time zone,
     statuses text[],
     update_timestamp timestamp with time zone,
-    domain_repo_id text NOT NULL
+    domain_repo_id text NOT NULL,
+    autorenew_end_time timestamp with time zone
 );
 
 
@@ -1419,6 +1421,13 @@ CREATE INDEX idxkjt9yaq92876dstimd93hwckh ON public."Domain" USING btree (curren
 --
 
 CREATE INDEX idxknk8gmj7s47q56cwpa6rmpt5l ON public."HostHistory" USING btree (history_type);
+
+
+--
+-- Name: idxlrq7v63pc21uoh3auq6eybyhl; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxlrq7v63pc21uoh3auq6eybyhl ON public."Domain" USING btree (autorenew_end_time);
 
 
 --

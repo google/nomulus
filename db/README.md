@@ -47,18 +47,19 @@ Below are the steps to submit a schema change:
     following the existing scripts in that folder. Note the double underscore in
     the naming pattern.
 
-4.  Run `./nom_build :nom:generate_golden_file`.  This is a pseudo-task
+4.  Run `./nom_build :nom:generate_golden_file`. This is a pseudo-task
     implemented in the `nom_build` script that does the following:
+
     -   Runs the `:db:test` task from the Gradle root project. The SchemaTest
         will fail because the new schema does not match the golden file.
 
-    -   Copies `db/build/resources/test/testcontainer/mount/dump.txt` to the golden
-        file `db/src/main/resources/sql/schema/nomulus.golden.sql`.
+    -   Copies `db/build/resources/test/testcontainer/mount/dump.txt` to the
+        golden file `db/src/main/resources/sql/schema/nomulus.golden.sql`.
 
     -   Re-runs the `:db:test` task. This time all tests should pass.
 
-    You'll want to have a look at the diffs in the golden schema to verify
-    that all changes are intentional.
+    You'll want to have a look at the diffs in the golden schema to verify that
+    all changes are intentional.
 
 Relevant files (under db/src/main/resources/sql/schema/):
 
@@ -100,6 +101,13 @@ gcloud builds submit --config=release/cloudbuild-schema-deploy.yaml \
     --project domain-registry-dev
 # Verify by checking Flyway Schema History:
 ./nom_build :db:flywayInfo --dbServer=${SQL_ENV}
+```
+
+To test unsubmitted schema changes in the alpha or crash environments, use the
+following command to deploy the local schema,
+
+```shell
+./nom_build :db:flywayMigrate --dbServer=[alpha|crash] --environment=[alpha|crash]
 ```
 
 #### Glass Breaking

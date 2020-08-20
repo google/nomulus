@@ -42,7 +42,7 @@ public class CursorDaoTest {
   private final Logger loggerToIntercept = Logger.getLogger(CursorDao.class.getCanonicalName());
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
+  final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .enableJpaEntityCoverageCheck(true)
@@ -50,7 +50,7 @@ public class CursorDaoTest {
           .build();
 
   @Test
-  public void save_worksSuccessfullyOnNewCursor() {
+  void save_worksSuccessfullyOnNewCursor() {
     Cursor cursor = Cursor.create(CursorType.BRDA, "tld", fakeClock.nowUtc());
     CursorDao.save(cursor);
     Cursor returnedCursor = CursorDao.load(CursorType.BRDA, "tld");
@@ -58,7 +58,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void save_worksSuccessfullyOnExistingCursor() {
+  void save_worksSuccessfullyOnExistingCursor() {
     Cursor cursor = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
     CursorDao.save(cursor);
     Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc().plusDays(3));
@@ -68,7 +68,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void save_worksSuccessfullyOnNewGlobalCursor() {
+  void save_worksSuccessfullyOnNewGlobalCursor() {
     Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
     CursorDao.save(cursor);
     Cursor returnedCursor = CursorDao.load(CursorType.RECURRING_BILLING);
@@ -76,7 +76,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void save_worksSuccessfullyOnExistingGlobalCursor() {
+  void save_worksSuccessfullyOnExistingGlobalCursor() {
     Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
     CursorDao.save(cursor);
     Cursor cursor2 =
@@ -87,7 +87,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void saveAll_worksSuccessfully() {
+  void saveAll_worksSuccessfully() {
     Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
     Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
     ImmutableSet<Cursor> cursors = ImmutableSet.<Cursor>builder().add(cursor, cursor2).build();
@@ -98,13 +98,13 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void saveAll_worksSuccessfullyEmptySet() {
+  void saveAll_worksSuccessfullyEmptySet() {
     CursorDao.saveAll(ImmutableSet.of());
     assertThat(CursorDao.loadAll()).isEmpty();
   }
 
   @Test
-  public void load_worksSuccessfully() {
+  void load_worksSuccessfully() {
     Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
     Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
     Cursor cursor3 = Cursor.create(CursorType.RDE_REPORT, "foo", fakeClock.nowUtc());
@@ -119,7 +119,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadAll_worksSuccessfully() {
+  void loadAll_worksSuccessfully() {
     Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
     Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
     Cursor cursor3 = Cursor.create(CursorType.RDE_REPORT, "foo", fakeClock.nowUtc());
@@ -130,13 +130,13 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadAll_worksSuccessfullyEmptyTable() {
+  void loadAll_worksSuccessfullyEmptyTable() {
     List<Cursor> returnedCursors = CursorDao.loadAll();
     assertThat(returnedCursors.size()).isEqualTo(0);
   }
 
   @Test
-  public void loadByType_worksSuccessfully() {
+  void loadByType_worksSuccessfully() {
     Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, fakeClock.nowUtc());
     Cursor cursor2 = Cursor.create(CursorType.RDE_REPORT, "tld", fakeClock.nowUtc());
     Cursor cursor3 = Cursor.create(CursorType.RDE_REPORT, "foo", fakeClock.nowUtc());
@@ -147,13 +147,13 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadByType_worksSuccessfullyNoneOfType() {
+  void loadByType_worksSuccessfullyNoneOfType() {
     List<Cursor> returnedCursors = CursorDao.loadByType(CursorType.RDE_REPORT);
     assertThat(returnedCursors.size()).isEqualTo(0);
   }
 
   @Test
-  public void saveCursor_worksSuccessfully() {
+  void saveCursor_worksSuccessfully() {
     createTld("tld");
     google.registry.model.common.Cursor cursor =
         google.registry.model.common.Cursor.create(
@@ -172,7 +172,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void saveCursor_worksSuccessfullyOnGlobalCursor() {
+  void saveCursor_worksSuccessfullyOnGlobalCursor() {
     google.registry.model.common.Cursor cursor =
         google.registry.model.common.Cursor.createGlobal(
             CursorType.RECURRING_BILLING, fakeClock.nowUtc());
@@ -188,7 +188,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void saveCursors_worksSuccessfully() {
+  void saveCursors_worksSuccessfully() {
     createTlds("tld", "foo");
     google.registry.model.common.Cursor cursor1 =
         google.registry.model.common.Cursor.create(
@@ -237,7 +237,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadAndCompare_worksSuccessfully() {
+  void loadAndCompare_worksSuccessfully() {
     loggerToIntercept.addHandler(logHandler);
     createTld("tld");
     google.registry.model.common.Cursor cursor =
@@ -249,7 +249,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadAndCompare_worksSuccessfullyGlobalCursor() {
+  void loadAndCompare_worksSuccessfullyGlobalCursor() {
     loggerToIntercept.addHandler(logHandler);
     google.registry.model.common.Cursor cursor =
         google.registry.model.common.Cursor.createGlobal(
@@ -260,7 +260,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadAndCompare_worksSuccessfullyCursorNotInCloudSql() {
+  void loadAndCompare_worksSuccessfullyCursorNotInCloudSql() {
     loggerToIntercept.addHandler(logHandler);
     createTld("tld");
     google.registry.model.common.Cursor cursor =
@@ -275,7 +275,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadAndCompare_worksSuccessfullyGlobalCursorNotInCloudSql() {
+  void loadAndCompare_worksSuccessfullyGlobalCursorNotInCloudSql() {
     loggerToIntercept.addHandler(logHandler);
     google.registry.model.common.Cursor cursor =
         google.registry.model.common.Cursor.createGlobal(
@@ -289,7 +289,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadAndCompare_worksSuccessfullyCursorsNotEqual() {
+  void loadAndCompare_worksSuccessfullyCursorsNotEqual() {
     loggerToIntercept.addHandler(logHandler);
     createTld("tld");
     google.registry.model.common.Cursor cursor =
@@ -310,7 +310,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadAndCompareAll_worksSuccessfully() {
+  void loadAndCompareAll_worksSuccessfully() {
     loggerToIntercept.addHandler(logHandler);
 
     // Create Datastore cursors
@@ -335,7 +335,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadAndCompareAll_worksSuccessfullyMissingOne() {
+  void loadAndCompareAll_worksSuccessfullyMissingOne() {
     loggerToIntercept.addHandler(logHandler);
 
     // Create Datastore cursors
@@ -371,7 +371,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadAndCompareAll_worksSuccessfullyOneWithWrongTime() {
+  void loadAndCompareAll_worksSuccessfullyOneWithWrongTime() {
     loggerToIntercept.addHandler(logHandler);
 
     // Create Datastore cursors
@@ -404,7 +404,7 @@ public class CursorDaoTest {
   }
 
   @Test
-  public void loadAndCompareAll_worksSuccessfullyEmptyMap() {
+  void loadAndCompareAll_worksSuccessfullyEmptyMap() {
     loggerToIntercept.addHandler(logHandler);
     CursorDao.loadAndCompareAll(ImmutableMap.of(), CursorType.ICANN_UPLOAD_ACTIVITY);
     assertAboutLogs().that(logHandler).hasNoLogsAtLevel(Level.WARNING);

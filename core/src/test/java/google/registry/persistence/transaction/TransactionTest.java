@@ -34,28 +34,26 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-public class TransactionTest {
+class TransactionTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
+  final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestEntity.class)
           .withJpaUnitTestEntities(TestEntity.class)
           .build();
 
-  TestEntity fooEntity, barEntity;
-
-  public TransactionTest() {}
+  private TestEntity fooEntity, barEntity;
 
   @BeforeEach
-  public void setUp() {
+  void beforeEach() {
     fooEntity = new TestEntity("foo");
     barEntity = new TestEntity("bar");
   }
 
   @Test
-  public void testTransactionReplay() {
+  void testTransactionReplay() {
     Transaction txn = new Transaction.Builder().addUpdate(fooEntity).addUpdate(barEntity).build();
     txn.writeToDatastore();
 
@@ -72,7 +70,7 @@ public class TransactionTest {
   }
 
   @Test
-  public void testSerialization() throws Exception {
+  void testSerialization() throws Exception {
     Transaction txn = new Transaction.Builder().addUpdate(barEntity).build();
     txn.writeToDatastore();
 
@@ -90,7 +88,7 @@ public class TransactionTest {
   }
 
   @Test
-  public void testDeserializationErrors() throws Exception {
+  void testDeserializationErrors() throws Exception {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ObjectOutputStream out = new ObjectOutputStream(baos);
     out.writeInt(12345);
@@ -103,7 +101,7 @@ public class TransactionTest {
   }
 
   @Test
-  public void testTransactionSerialization() throws IOException {
+  void testTransactionSerialization() throws IOException {
     RegistryConfig.overrideCloudSqlReplicateTransactions(true);
     try {
       jpaTm()
@@ -134,7 +132,7 @@ public class TransactionTest {
   }
 
   @Test
-  public void testTransactionSerializationDisabledByDefault() {
+  void testTransactionSerializationDisabledByDefault() {
     jpaTm()
         .transact(
             () -> {

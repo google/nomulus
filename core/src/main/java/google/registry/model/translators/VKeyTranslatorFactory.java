@@ -25,6 +25,7 @@ import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.persistence.VKey;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import javax.annotation.Nullable;
 
 /**
  * Translator factory for VKey.
@@ -38,7 +39,7 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
   // name, which is all the datastore key gives us.
   // Note that entities annotated with @EntitySubclass are removed because they share the same
   // kind of the key with their parent class.
-  private static final ImmutableMap<String, Class> CLASS_REGISTRY =
+  private static final ImmutableMap<String, Class<?>> CLASS_REGISTRY =
       ALL_CLASSES.stream()
           .filter(clazz -> !clazz.isAnnotationPresent(EntitySubclass.class))
           .collect(toImmutableMap(com.googlecode.objectify.Key::getKind, identity()));
@@ -49,18 +50,23 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
   }
 
   /** Create a VKey from a raw datastore key. */
-  public static VKey<?> createVKey(Key datastoreKey) {
+  @Nullable
+  public static VKey<?> createVKey(@Nullable Key datastoreKey) {
+    if (datastoreKey == null) {
+      return null;
+    }
     return createVKey(com.googlecode.objectify.Key.create(datastoreKey));
   }
 
   /** Create a VKey from an objectify Key. */
-  public static <T> VKey<T> createVKey(com.googlecode.objectify.Key<T> key) {
+  @Nullable
+  public static <T> VKey<T> createVKey(@Nullable com.googlecode.objectify.Key<T> key) {
     if (key == null) {
       return null;
     }
 
     // Try to create the VKey from its reference type.
-    Class clazz = CLASS_REGISTRY.get(key.getKind());
+    Class<T> clazz = (Class<T>) CLASS_REGISTRY.get(key.getKind());
     checkArgument(clazz != null, "Unknown Key type: %s", key.getKind());
     try {
       Method createVKeyMethod =
@@ -93,13 +99,16 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
   @Override
   public SimpleTranslator<VKey, Key> createTranslator() {
     return new SimpleTranslator<VKey, Key>() {
+
+      @Nullable
       @Override
-      public VKey loadValue(Key datastoreValue) {
+      public VKey loadValue(@Nullable Key datastoreValue) {
         return createVKey(datastoreValue);
       }
 
+      @Nullable
       @Override
-      public Key saveValue(VKey key) {
+      public Key saveValue(@Nullable VKey key) {
         return key == null ? null : key.getOfyKey().getRaw();
       }
     };

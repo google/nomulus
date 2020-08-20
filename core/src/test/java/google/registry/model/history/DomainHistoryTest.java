@@ -36,12 +36,12 @@ import org.junit.jupiter.api.Test;
 /** Tests for {@link DomainHistory}. */
 public class DomainHistoryTest extends EntityTestCase {
 
-  public DomainHistoryTest() {
+  DomainHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
   @Test
-  public void testPersistence() {
+  void testPersistence() {
     saveRegistrar("TheRegistrar");
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");

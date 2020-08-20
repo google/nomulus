@@ -28,6 +28,7 @@ import com.google.api.client.http.HttpTransport;
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.io.BaseEncoding;
 import com.google.common.io.ByteStreams;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeyModule.Key;
@@ -93,8 +94,10 @@ public class IcannHttpReporter {
         response.getContent().close();
       }
       logger.atInfo().log(
-          "Received response code %d with content %s",
-          response.getStatusCode(), new String(content, UTF_8));
+          "Received response code %d with content: %s\n\nResponse content in hex: %s",
+          response.getStatusCode(),
+          new String(content, UTF_8),
+          BaseEncoding.base16().encode(content));
       XjcIirdeaResult result = parseResult(content);
       if (result.getCode().getValue() != 1000) {
         success = false;
