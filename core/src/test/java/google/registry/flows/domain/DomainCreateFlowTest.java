@@ -162,6 +162,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.persistence.VKey;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.math.BigDecimal;
 import java.util.Map;
@@ -492,11 +493,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "domain_create_allocationtoken.xml",
         ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "2"));
     persistContactsAndHosts();
+    DomainBase domain = persistActiveDomain("foo.tld");
+    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 505L);
     persistResource(
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 505L))
+            .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 505L, historyEntryKey))
             .build());
     clock.advanceOneMilli();
     EppException thrown =
@@ -519,7 +522,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     HistoryEntry historyEntry =
         ofy().load().type(HistoryEntry.class).ancestor(reloadResourceByForeignKey()).first().now();
     assertThat(ofy().load().entity(token).now().getRedemptionHistoryEntry())
-        .hasValue(Key.create(historyEntry));
+        .hasValue(HistoryEntry.createVKey(Key.create(historyEntry)));
   }
 
   @Test
@@ -1263,7 +1266,9 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         ofy().load().key(Key.create(AllocationToken.class, token)).now();
     assertThat(reloadedToken.isRedeemed()).isTrue();
     assertThat(reloadedToken.getRedemptionHistoryEntry())
-        .hasValue(Key.create(getHistoryEntries(reloadResourceByForeignKey()).get(0)));
+        .hasValue(
+            HistoryEntry.createVKey(
+                Key.create(getHistoryEntries(reloadResourceByForeignKey()).get(0))));
   }
 
   private void assertAllocationTokenWasNotRedeemed(String token) {
@@ -1498,7 +1503,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new AllocationToken.Builder()
             .setToken("abc123")
             .setTokenType(UNLIMITED_USE)
-            .setAllowedClientIds(ImmutableSet.of("someClientId"))
+            .setAllowedRegistrarIds(ImmutableSet.of("someClientId"))
             .setDiscountFraction(0.5)
             .setTokenStatusTransitions(
                 ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()

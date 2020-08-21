@@ -370,7 +370,8 @@ public class DomainCreateFlow implements TransactionalFlow {
     if (allocationToken.isPresent()
         && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {
       entitiesToSave.add(
-          allocationTokenFlowUtils.redeemToken(allocationToken.get(), Key.create(historyEntry)));
+          allocationTokenFlowUtils.redeemToken(
+              allocationToken.get(), HistoryEntry.createVKey(Key.create(historyEntry))));
     }
     enqueueTasks(newDomain, hasSignedMarks, hasClaimsNotice);
 

@@ -55,9 +55,9 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   void testUpdateClientIds_setClientIds() throws Exception {
     AllocationToken token =
         persistResource(
-            builderWithPromo().setAllowedClientIds(ImmutableSet.of("toRemove")).build());
+            builderWithPromo().setAllowedRegistrarIds(ImmutableSet.of("toRemove")).build());
     runCommandForced("--prefix", "token", "--allowed_client_ids", "clientone,clienttwo");
-    assertThat(reloadResource(token).getAllowedClientIds())
+    assertThat(reloadResource(token).getAllowedRegistrarIds())
         .containsExactly("clientone", "clienttwo");
   }
 
@@ -65,9 +65,9 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
   void testUpdateClientIds_clearClientIds() throws Exception {
     AllocationToken token =
         persistResource(
-            builderWithPromo().setAllowedClientIds(ImmutableSet.of("toRemove")).build());
+            builderWithPromo().setAllowedRegistrarIds(ImmutableSet.of("toRemove")).build());
     runCommandForced("--prefix", "token", "--allowed_client_ids", "");
-    assertThat(reloadResource(token).getAllowedClientIds()).isEmpty();
+    assertThat(reloadResource(token).getAllowedRegistrarIds()).isEmpty();
   }
 
   @Test
@@ -175,14 +175,14 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     AllocationToken token =
         persistResource(
             builderWithPromo()
-                .setAllowedClientIds(ImmutableSet.of("clientid"))
+                .setAllowedRegistrarIds(ImmutableSet.of("clientid"))
                 .setAllowedTlds(ImmutableSet.of("tld"))
                 .setDiscountFraction(0.15)
                 .build());
     runCommandForced("--prefix", "token");
     AllocationToken reloaded = reloadResource(token);
     assertThat(reloaded.getAllowedTlds()).isEqualTo(token.getAllowedTlds());
-    assertThat(reloaded.getAllowedClientIds()).isEqualTo(token.getAllowedClientIds());
+    assertThat(reloaded.getAllowedRegistrarIds()).isEqualTo(token.getAllowedRegistrarIds());
     assertThat(reloaded.getDiscountFraction()).isEqualTo(token.getDiscountFraction());
   }
 
