@@ -59,6 +59,9 @@ public class HibernateSchemaExporter {
     settings.put(Environment.USER, username);
     settings.put(Environment.PASS, password);
     settings.put(Environment.HBM2DDL_AUTO, "none");
+    // Register driver explicitly to work around ServiceLoader change after Java 8.
+    // Driver self-registration only works if driver is declared in a module.
+    settings.put(Environment.DRIVER, "org.postgresql.Driver");
     settings.put(Environment.SHOW_SQL, "true");
     settings.put(
         Environment.PHYSICAL_NAMING_STRATEGY, NomulusNamingStrategy.class.getCanonicalName());
