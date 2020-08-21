@@ -126,26 +126,6 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              // Load the domain in its entirety.
-              EntityManager em = jpaTm().getEntityManager();
-              DomainBase result = em.find(DomainBase.class, "4-COM");
-
-              // Fix DS data, since we can't persist it yet.
-              result =
-                  result
-                      .asBuilder()
-                      .setDsData(
-                          ImmutableSet.of(
-                              DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
-                      .build();
-
-              // Fix the original creation timestamp (this gets initialized on first write)
-              DomainBase org = domain.asBuilder().setCreationTime(result.getCreationTime()).build();
-
-              // Note that the equality comparison forces a lazy load of all fields.
-              assertAboutImmutableObjects()
-                  .that(result)
-                  .isEqualExceptFields(org, "updateTimestamp");
               DomainBase result = jpaTm().load(domain.createVKey());
               assertEqualDomainExcept(result);
             });
@@ -416,7 +396,7 @@ public class DomainBaseSqlTest {
   }
 
   private void assertEqualDomainExcept(DomainBase thatDomain, String... excepts) {
-    // Fix DS data, since we can't persist them yet.
+    // Fix DS data, since we can't persist it yet.
     thatDomain =
         thatDomain
             .asBuilder()
