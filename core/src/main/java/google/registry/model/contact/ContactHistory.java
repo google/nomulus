@@ -26,7 +26,6 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.SequenceGenerator;
 
 /**
  * A persisted history entry representing an EPP modification to a contact.
@@ -54,10 +53,6 @@ public class ContactHistory extends HistoryEntry {
 
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "HistorySequenceGenerator")
-  @SequenceGenerator(
-      name = "HistorySequenceGenerator",
-      sequenceName = "history_id_sequence",
-      allocationSize = 1)
   @Column(name = "historyRevisionId")
   @Access(AccessType.PROPERTY)
   @Override

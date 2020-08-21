@@ -10,6 +10,10 @@
       <basic name="amount" access="FIELD"/>
     </attributes>
   </embeddable>
+
+  <sequence-generator name="HistorySequenceGenerator"
+      sequence-name="history_id_sequence" allocation-size="1" />
+
   <persistence-unit-metadata>
     <persistence-unit-defaults>
       <entity-listeners>

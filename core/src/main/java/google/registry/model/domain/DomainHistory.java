@@ -38,7 +38,6 @@ import javax.persistence.IdClass;
 import javax.persistence.Index;
 import javax.persistence.JoinTable;
 import javax.persistence.PostLoad;
-import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 /**
@@ -74,10 +73,6 @@ public class DomainHistory extends HistoryEntry {
 
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "HistorySequenceGenerator")
-  @SequenceGenerator(
-      name = "HistorySequenceGenerator",
-      sequenceName = "history_id_sequence",
-      allocationSize = 1)
   @Column(name = "historyRevisionId")
   @Access(AccessType.PROPERTY)
   @Override
@@ -118,6 +113,7 @@ public class DomainHistory extends HistoryEntry {
 
     private String domainRepoId;
 
+    /** Hibernate requires this default constructor. */
     private DomainHistoryId() {}
 
     DomainHistoryId(long id, String domainRepoId) {
