@@ -17,6 +17,7 @@ package google.registry.schema.replay;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -37,7 +38,8 @@ public class LastSqlTransaction extends ImmutableObject {
 
   LastSqlTransaction() {}
 
-  private LastSqlTransaction(long newTransactionId) {
+  @VisibleForTesting
+  LastSqlTransaction(long newTransactionId) {
     transactionId = newTransactionId;
   }
 

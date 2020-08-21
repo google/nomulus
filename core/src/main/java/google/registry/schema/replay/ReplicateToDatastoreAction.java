@@ -19,11 +19,15 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.request.Action.Method.GET;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import google.registry.persistence.transaction.Transaction;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import java.io.IOException;
+import java.util.List;
 import javax.persistence.NoResultException;
 
 /** Cron task to replicate from Cloud SQL to datastore. */
@@ -35,52 +39,90 @@ import javax.persistence.NoResultException;
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 class ReplicateToDatastoreAction implements Runnable {
   public static final String PATH = "/_dr/cron/replicateToDatastore";
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Override
-  public void run() {
-    // We're limited by the number of objects that can be in a single datastore transaction,
-    // therefore we have to do this one SQL transaction at a time.
-    while (processSingleTransaction()) {}
+  /**
+   * Number of transactions to fetch from SQL. The rationale for 200 is that we're processing these
+   * every minute and our production instance currently does about 2 mutations per second, so this
+   * should generally be enough to scoop up all of the transactions for the past minute.
+   */
+  public static final int BATCH_SIZE = 200;
+
+  @VisibleForTesting
+  List<TransactionEntity> getTransactionBatch() {
+    // Get the next batch of transactions that we haven't replicated.
+    LastSqlTransaction lastSqlTxnBeforeBatch =
+        ofyTm().doTransactionless(() -> LastSqlTransaction.load());
+    try {
+      return jpaTm()
+          .transact(
+              () ->
+                  jpaTm()
+                      .getEntityManager()
+                      .createQuery(
+                          "SELECT txn FROM TransactionEntity txn WHERE id >"
+                              + " :lastId ORDER BY id")
+                      .setParameter("lastId", lastSqlTxnBeforeBatch.getTransactionId())
+                      .setMaxResults(BATCH_SIZE)
+                      .getResultList());
+    } catch (NoResultException e) {
+      return ImmutableList.of();
+    }
   }
 
-  private boolean processSingleTransaction() {
+  /**
+   * Apply a transaction to datastore, returns true if there was a fatel error and the batch should
+   * be aborted.
+   */
+  @VisibleForTesting
+  boolean applyTransaction(TransactionEntity txnEntity) {
     return ofyTm()
         .transact(
             () -> {
+              // Reload the last transaction id, which could possibly have changed.
               LastSqlTransaction lastSqlTxn = LastSqlTransaction.load();
-
-              // Get the next entry that we haven't processed.
-              TransactionEntity txnEntity;
-              try {
-                txnEntity =
-                    (TransactionEntity)
-                        jpaTm()
-                            .transact(
-                                () ->
-                                    jpaTm()
-                                        .getEntityManager()
-                                        .createQuery(
-                                            "SELECT txn FROM TransactionEntity txn WHERE id >"
-                                                + " :lastId ORDER BY id")
-                                        .setParameter("lastId", lastSqlTxn.getTransactionId())
-                                        .setMaxResults(1)
-                                        .getSingleResult());
-              } catch (NoResultException e) {
+              long nextTxnId = lastSqlTxn.getTransactionId() + 1;
+              if (nextTxnId < txnEntity.getId()) {
+                // We're missing a transaction.  This is bad.  Transaction ids are supposed to
+                // increase monotonically, so we abort rather than applying anything out of
+                // order.
+                logger.atSevere().log(
+                    "Missing transaction: last transaction id = %s, next available transaction "
+                        + "= %s",
+                    nextTxnId - 1, txnEntity.getId());
+                return true;
+              } else if (nextTxnId > txnEntity.getId()) {
+                // We've already replayed this transaction.  This shouldn't happen, as GAE cron
+                // is supposed to avoid overruns and this action shouldn't be executed from any
+                // other context, but it's not harmful as we can just ignore the transaction.  Log
+                // it so that we know about it and move on.
+                logger.atWarning().log(
+                    "Ignoring transaction %s, which appears to have already been applied.",
+                    txnEntity.getId());
                 return false;
               }
 
-              // Write it to datastore.
-              long newTransactionId;
+              // At this point, we know txnEntity is the correct next transaction, so write it
+              // to datastore.
               try {
                 Transaction.deserialize(txnEntity.getContents()).writeToDatastore();
               } catch (IOException e) {
                 throw new RuntimeException(e);
               }
-              newTransactionId = txnEntity.getId();
 
-              // Write the updated last transaction id to datastore.
-              ofy().save().entity(lastSqlTxn.withNewTransactionId(newTransactionId));
-              return true;
+              // Write the updated last transaction id to datastore as part of this datastore
+              // transaction.
+              ofy().save().entity(lastSqlTxn.withNewTransactionId(nextTxnId));
+              return false;
             });
+  }
+
+  @Override
+  public void run() {
+    for (TransactionEntity txnEntity : getTransactionBatch()) {
+      if (applyTransaction(txnEntity)) {
+        break;
+      }
+    }
   }
 }

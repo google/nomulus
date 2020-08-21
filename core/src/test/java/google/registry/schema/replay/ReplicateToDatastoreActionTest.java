@@ -17,14 +17,20 @@ package google.registry.schema.replay;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static google.registry.testing.LogsSubject.assertAboutLogs;
 
+import com.google.common.testing.TestLogHandler;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.testing.AppEngineExtension;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,11 +48,15 @@ public class ReplicateToDatastoreActionTest {
 
   ReplicateToDatastoreAction task = new ReplicateToDatastoreAction();
 
+  TestLogHandler logHandler;
+
   public ReplicateToDatastoreActionTest() {}
 
   @BeforeEach
   public void setUp() {
     RegistryConfig.overrideCloudSqlReplicateTransactions(true);
+    logHandler = new TestLogHandler();
+    Logger.getLogger(ReplicateToDatastoreAction.class.getCanonicalName()).addHandler(logHandler);
   }
 
   @AfterEach
@@ -104,6 +114,60 @@ public class ReplicateToDatastoreActionTest {
     // If we replayed only the most recent transaction, we should have "bar" but not "foo".
     assertThat(ofyTm().transact(() -> ofyTm().load(bar.key()))).isEqualTo(bar);
     assertThat(ofyTm().transact(() -> ofyTm().maybeLoad(foo.key()).isPresent())).isFalse();
+  }
+
+  @Test
+  public void testUnintentionalConcurrency() {
+    TestEntity foo = new TestEntity("foo");
+    TestEntity bar = new TestEntity("bar");
+
+    // Write a transaction and run just the batch fetch.
+    jpaTm().transact(() -> jpaTm().saveNew(foo));
+    List<TransactionEntity> txns1 = task.getTransactionBatch();
+    assertThat(txns1).hasSize(1);
+
+    // Write a second transaction and do another batch fetch.
+    jpaTm().transact(() -> jpaTm().saveNew(bar));
+    List<TransactionEntity> txns2 = task.getTransactionBatch();
+    assertThat(txns2).hasSize(2);
+
+    // Apply the first batch.
+    assertThat(task.applyTransaction(txns1.get(0))).isFalse();
+
+    // Remove the foo record so we can ensure that this transaction doesn't get doublle-played.
+    ofyTm().transact(() -> ofyTm().delete(foo.key()));
+
+    // Apply the second batch.
+    for (TransactionEntity txn : txns2) {
+      assertThat(task.applyTransaction(txn)).isFalse();
+    }
+
+    // Verify that the first transaction didn't get replayed but the second one did.
+    assertThat(ofyTm().transact(() -> ofyTm().maybeLoad(foo.key()).isPresent())).isFalse();
+    assertThat(ofyTm().transact(() -> ofyTm().load(bar.key()))).isEqualTo(bar);
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.WARNING, "Ignoring transaction 1, which appears to have already been applied.");
+  }
+
+  @Test
+  public void testMissingTransactions() {
+    // Write a transaction (should have a transaction id of 1).
+    TestEntity foo = new TestEntity("foo");
+    jpaTm().transact(() -> jpaTm().saveNew(foo));
+
+    // Force the last transaction id back to -1 so that we look for transaction 0.
+    ofyTm().transact(() -> ofyTm().saveNew(new LastSqlTransaction(-1)));
+
+    List<TransactionEntity> txns = task.getTransactionBatch();
+    assertThat(txns).hasSize(1);
+    assertThat(task.applyTransaction(txns.get(0))).isTrue();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.SEVERE,
+            "Missing transaction: last transaction id = -1, next available transaction = 1");
   }
 
   @Entity(name = "ReplicationTestEntity")
