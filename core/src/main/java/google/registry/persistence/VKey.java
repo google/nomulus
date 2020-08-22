@@ -14,10 +14,12 @@
 
 package google.registry.persistence;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.googlecode.objectify.Key;
+import google.registry.model.BackupGroupRoot;
 import google.registry.model.ImmutableObject;
 import google.registry.model.translators.VKeyTranslatorFactory;
 import java.io.Serializable;
@@ -75,9 +77,40 @@ public class VKey<T> extends ImmutableObject implements Serializable {
     return new VKey<T>(kind, ofyKey, sqlKey);
   }
 
-  /** Creates a symmetric {@link VKey} in which both sql and ofy keys are {@code id}. */
+  /**
+   * Creates a symmetric {@link VKey} in which both sql and ofy keys are {@code id}.
+   *
+   * <p>IMPORTANT USAGE NOTE: Datastore entities that are not roots of entity groups (i.e. those
+   * that do not have a null parent in their Objectify keys) require the full entity group
+   * inheritance chain to be specified and thus cannot use this create method. You need to use
+   * {@link #create(Class, Object, Key)} instead and pass in the full, valid parent field in the
+   * Datastore key.
+   */
   public static <T> VKey<T> create(Class<T> kind, long id) {
+    checkArgument(
+        kind.isAssignableFrom(BackupGroupRoot.class),
+        "The kind %s is not a BackupGroupRoot and thus needs its entire entity group chain"
+            + " specified in a parent",
+        kind.getCanonicalName());
     return new VKey<T>(kind, Key.create(kind, id), id);
+  }
+
+  /**
+   * Creates a symmetric {@link VKey} in which both sql and ofy keys are {@code name}.
+   *
+   * <p>IMPORTANT USAGE NOTE: Datastore entities that are not roots of entity groups (i.e. those
+   * that do not have a null parent in their Objectify keys) require the full entity group
+   * inheritance chain to be specified and thus cannot use this create method. You need to use
+   * {@link #create(Class, Object, Key)} instead and pass in the full, valid parent field in the
+   * Datastore key.
+   */
+  public static <T> VKey<T> create(Class<T> kind, String name) {
+    checkArgument(
+        kind.isAssignableFrom(BackupGroupRoot.class),
+        "The kind %s is not a BackupGroupRoot and thus needs its entire entity group chain"
+            + " specified in a parent",
+        kind.getCanonicalName());
+    return new VKey<T>(kind, Key.create(kind, name), name);
   }
 
   /** Returns the type of the entity. */

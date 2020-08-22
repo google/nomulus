@@ -14,8 +14,12 @@
 package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
+import google.registry.model.billing.BillingEvent.OneTime;
+import google.registry.model.registrar.RegistrarContact;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TestObject;
 import org.junit.jupiter.api.Test;
@@ -37,7 +41,22 @@ class VKeyTest {
         VKey.create(TestObject.class, "foo", Key.create(TestObject.create("foo")));
     assertThat(key.maybeGetSqlKey().isPresent()).isTrue();
     assertThat(key.maybeGetOfyKey().isPresent()).isTrue();
+    assertThat(VKey.createSql(TestObject.class, "foo").maybeGetSqlKey()).hasValue("foo");
+  }
 
-    assertThat(VKey.createSql(TestObject.class, "foo").maybeGetSqlKey().get()).isEqualTo("foo");
+  @Test
+  void testCreateById_failsWhenParentIsNullButShouldntBe() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> VKey.create(OneTime.class, 134L));
+    assertThat(thrown).hasMessageThat().contains("BackupGroupRoot");
+  }
+
+  @Test
+  void testCreateByName_failsWhenParentIsNullButShouldntBe() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> VKey.create(RegistrarContact.class, "fake@example.com"));
+    assertThat(thrown).hasMessageThat().contains("BackupGroupRoot");
   }
 }

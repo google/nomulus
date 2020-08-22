@@ -31,7 +31,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
 import google.registry.model.ImmutableObjectSubject;
-import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.Disclose.PostalInfoChoice;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -46,6 +45,7 @@ import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactResource}. */
 public class ContactResourceTest extends EntityTestCase {
+
   private ContactResource originalContact;
   private ContactResource contactResource;
 
@@ -113,8 +113,6 @@ public class ContactResourceTest extends EntityTestCase {
                     .setGainingClientId("gaining")
                     .setLosingClientId("losing")
                     .setPendingTransferExpirationTime(fakeClock.nowUtc())
-                    .setServerApproveEntities(
-                        ImmutableSet.of(VKey.create(BillingEvent.OneTime.class, 1)))
                     .setTransferRequestTime(fakeClock.nowUtc())
                     .setTransferStatus(TransferStatus.SERVER_APPROVED)
                     .setTransferRequestTrid(Trid.create("client-trid", "server-trid"))
