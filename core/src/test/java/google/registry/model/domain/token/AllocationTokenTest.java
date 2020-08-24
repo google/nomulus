@@ -224,11 +224,13 @@ public class AllocationTokenTest extends EntityTestCase {
 
   @Test
   void testBuild_redemptionHistoryEntryOnlyInSingleUse() {
+    DomainBase domain = persistActiveDomain("blahdomain.foo");
+    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
     AllocationToken.Builder builder =
         new AllocationToken.Builder()
             .setToken("foobar")
             .setTokenType(TokenType.UNLIMITED_USE)
-            .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1L));
+            .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1L, historyEntryKey));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()
