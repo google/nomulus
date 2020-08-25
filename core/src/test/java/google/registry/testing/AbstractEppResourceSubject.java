@@ -17,6 +17,7 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Fact.fact;
 import static com.google.common.truth.Fact.simpleFact;
+import static com.google.common.truth.OptionalSubject.optionals;
 import static google.registry.model.EppResourceUtils.isActive;
 import static google.registry.testing.DatastoreHelper.getHistoryEntriesOfType;
 import static google.registry.testing.HistoryEntrySubject.historyEntries;
@@ -32,6 +33,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.TruthChainer.And;
 import google.registry.testing.TruthChainer.Which;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
@@ -187,6 +189,16 @@ abstract class AbstractEppResourceSubject<
 
   protected <E> And<S> hasValue(@Nullable E expected, @Nullable E actual, String name) {
     check(name).that(actual).isEqualTo(expected);
+    return andChainer();
+  }
+
+  protected <E> And<S> hasValue(E expected, Optional<E> actual, String name) {
+    check(name).about(optionals()).that(actual).hasValue(expected);
+    return andChainer();
+  }
+
+  protected <E> And<S> hasNoValue(Optional<E> actual, String name) {
+    check(name).about(optionals()).that(actual).isEmpty();
     return andChainer();
   }
 

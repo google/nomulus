@@ -68,6 +68,7 @@ import google.registry.model.domain.DomainCommand.Update.Change;
 import google.registry.model.domain.fee.FeeUpdateCommandExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.secdns.SecDnsUpdateExtension;
+import google.registry.model.domain.superuser.DomainUpdateSuperuserExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.EppInput;
@@ -152,7 +153,8 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     extensionManager.register(
         FeeUpdateCommandExtension.class,
         MetadataExtension.class,
-        SecDnsUpdateExtension.class);
+        SecDnsUpdateExtension.class,
+        DomainUpdateSuperuserExtension.class);
     flowCustomLogic.beforeValidation();
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
@@ -251,6 +253,15 @@ public final class DomainUpdateFlow implements TransactionalFlow {
             .removeContacts(remove.getContacts())
             .setRegistrant(firstNonNull(change.getRegistrant(), domain.getRegistrant()))
             .setAuthInfo(firstNonNull(change.getAuthInfo(), domain.getAuthInfo()));
+    Optional<DomainUpdateSuperuserExtension> superuserExt =
+        eppInput.getSingleExtension(DomainUpdateSuperuserExtension.class);
+    if (superuserExt.isPresent()) {
+      if (superuserExt.get().getAutorenews().isPresent()) {
+        boolean autorenews = superuserExt.get().getAutorenews().get();
+        domainBuilder.setAutorenewEndTime(
+            Optional.ofNullable(autorenews ? null : domain.getRegistrationExpirationTime()));
+      }
+    }
     return domainBuilder.build();
   }
 

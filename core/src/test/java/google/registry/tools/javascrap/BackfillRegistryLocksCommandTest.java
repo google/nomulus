@@ -15,6 +15,7 @@
 package google.registry.tools.javascrap;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
@@ -144,15 +145,15 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
         "--domain_roids", String.format("%s,%s", ursDomain.getRepoId(), nonUrsDomain.getRepoId()));
 
     RegistryLock ursLock = getMostRecentVerifiedRegistryLockByRepoId(ursDomain.getRepoId()).get();
-    assertThat(ursLock.getLockCompletionTimestamp().get()).isEqualTo(ursTime);
+    assertThat(ursLock.getLockCompletionTimestamp()).hasValue(ursTime);
     RegistryLock nonUrsLock =
         getMostRecentVerifiedRegistryLockByRepoId(nonUrsDomain.getRepoId()).get();
-    assertThat(nonUrsLock.getLockCompletionTimestamp().get()).isEqualTo(fakeClock.nowUtc());
+    assertThat(nonUrsLock.getLockCompletionTimestamp()).hasValue(fakeClock.nowUtc());
   }
 
   @Test
   void testFailure_mustProvideDomainRoids() {
-    assertThat(assertThrows(IllegalArgumentException.class, () -> runCommandForced()))
+    assertThat(assertThrows(IllegalArgumentException.class, this::runCommandForced))
         .hasMessageThat()
         .isEqualTo("Must provide non-empty domain_roids argument");
   }

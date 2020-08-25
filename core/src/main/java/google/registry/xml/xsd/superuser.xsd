@@ -47,4 +47,12 @@
     </all>
   </complexType>
 
+  <element name="domainUpdate" type="superuser:domainUpdateType" />
+
+  <complexType name="domainUpdateType">
+    <all>
+      <element name="autorenews" minOccurs="0" type="boolean" />
+    </all>
+  </complexType>
+
 </schema>

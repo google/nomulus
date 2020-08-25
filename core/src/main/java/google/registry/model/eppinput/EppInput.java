@@ -50,6 +50,7 @@ import google.registry.model.domain.secdns.SecDnsCreateExtension;
 import google.registry.model.domain.secdns.SecDnsUpdateExtension;
 import google.registry.model.domain.superuser.DomainDeleteSuperuserExtension;
 import google.registry.model.domain.superuser.DomainTransferRequestSuperuserExtension;
+import google.registry.model.domain.superuser.DomainUpdateSuperuserExtension;
 import google.registry.model.domain.token.AllocationTokenExtension;
 import google.registry.model.eppinput.ResourceCommand.ResourceCheck;
 import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
@@ -309,53 +310,62 @@ public class EppInput extends ImmutableObject {
   @XmlType(propOrder = {"command", "extension", "clTRID"})
   public static class CommandWrapper extends ImmutableObject {
     @XmlElements({
-        @XmlElement(name = "check", type = Check.class),
-        @XmlElement(name = "create", type = Create.class),
-        @XmlElement(name = "delete", type = Delete.class),
-        @XmlElement(name = "info", type = Info.class),
-        @XmlElement(name = "login", type = Login.class),
-        @XmlElement(name = "logout", type = Logout.class),
-        @XmlElement(name = "poll", type = Poll.class),
-        @XmlElement(name = "renew", type = Renew.class),
-        @XmlElement(name = "transfer", type = Transfer.class),
-        @XmlElement(name = "update", type = Update.class) })
+      @XmlElement(name = "check", type = Check.class),
+      @XmlElement(name = "create", type = Create.class),
+      @XmlElement(name = "delete", type = Delete.class),
+      @XmlElement(name = "info", type = Info.class),
+      @XmlElement(name = "login", type = Login.class),
+      @XmlElement(name = "logout", type = Logout.class),
+      @XmlElement(name = "poll", type = Poll.class),
+      @XmlElement(name = "renew", type = Renew.class),
+      @XmlElement(name = "transfer", type = Transfer.class),
+      @XmlElement(name = "update", type = Update.class)
+    })
     InnerCommand command;
 
     /** Zero or more command extensions. */
     @XmlElementRefs({
-        // allocation token extension
-        @XmlElementRef(type = AllocationTokenExtension.class),
-        // fee extension version 0.6
-        @XmlElementRef(type = FeeCheckCommandExtensionV06.class),
-        @XmlElementRef(type = FeeInfoCommandExtensionV06.class),
-        @XmlElementRef(type = FeeCreateCommandExtensionV06.class),
-        @XmlElementRef(type = FeeRenewCommandExtensionV06.class),
-        @XmlElementRef(type = FeeTransferCommandExtensionV06.class),
-        @XmlElementRef(type = FeeUpdateCommandExtensionV06.class),
-        // fee extension version 0.11
-        @XmlElementRef(type = FeeCheckCommandExtensionV11.class),
-        @XmlElementRef(type = FeeCreateCommandExtensionV11.class),
-        @XmlElementRef(type = FeeRenewCommandExtensionV11.class),
-        @XmlElementRef(type = FeeTransferCommandExtensionV11.class),
-        @XmlElementRef(type = FeeUpdateCommandExtensionV11.class),
-        // fee extension version 0.12
-        @XmlElementRef(type = FeeCheckCommandExtensionV12.class),
-        @XmlElementRef(type = FeeCreateCommandExtensionV12.class),
-        @XmlElementRef(type = FeeRenewCommandExtensionV12.class),
-        @XmlElementRef(type = FeeTransferCommandExtensionV12.class),
-        @XmlElementRef(type = FeeUpdateCommandExtensionV12.class),
-        // other extensions
-        @XmlElementRef(type = LaunchCheckExtension.class),
-        @XmlElementRef(type = LaunchCreateExtension.class),
-        @XmlElementRef(type = LaunchDeleteExtension.class),
-        @XmlElementRef(type = LaunchInfoExtension.class),
-        @XmlElementRef(type = LaunchUpdateExtension.class),
-        @XmlElementRef(type = MetadataExtension.class),
-        @XmlElementRef(type = RgpUpdateExtension.class),
-        @XmlElementRef(type = SecDnsCreateExtension.class),
-        @XmlElementRef(type = SecDnsUpdateExtension.class),
-        @XmlElementRef(type = DomainTransferRequestSuperuserExtension.class),
-        @XmlElementRef(type = DomainDeleteSuperuserExtension.class) })
+      // Fee extension version 0.6
+      @XmlElementRef(type = FeeCheckCommandExtensionV06.class),
+      @XmlElementRef(type = FeeInfoCommandExtensionV06.class),
+      @XmlElementRef(type = FeeCreateCommandExtensionV06.class),
+      @XmlElementRef(type = FeeRenewCommandExtensionV06.class),
+      @XmlElementRef(type = FeeTransferCommandExtensionV06.class),
+      @XmlElementRef(type = FeeUpdateCommandExtensionV06.class),
+
+      // Fee extension version 0.11
+      @XmlElementRef(type = FeeCheckCommandExtensionV11.class),
+      @XmlElementRef(type = FeeCreateCommandExtensionV11.class),
+      @XmlElementRef(type = FeeRenewCommandExtensionV11.class),
+      @XmlElementRef(type = FeeTransferCommandExtensionV11.class),
+      @XmlElementRef(type = FeeUpdateCommandExtensionV11.class),
+
+      // Fee extension version 0.12
+      @XmlElementRef(type = FeeCheckCommandExtensionV12.class),
+      @XmlElementRef(type = FeeCreateCommandExtensionV12.class),
+      @XmlElementRef(type = FeeRenewCommandExtensionV12.class),
+      @XmlElementRef(type = FeeTransferCommandExtensionV12.class),
+      @XmlElementRef(type = FeeUpdateCommandExtensionV12.class),
+
+      // Launch phase extensions
+      @XmlElementRef(type = LaunchCheckExtension.class),
+      @XmlElementRef(type = LaunchCreateExtension.class),
+      @XmlElementRef(type = LaunchDeleteExtension.class),
+      @XmlElementRef(type = LaunchInfoExtension.class),
+      @XmlElementRef(type = LaunchUpdateExtension.class),
+
+      // Superuser extensions
+      @XmlElementRef(type = DomainDeleteSuperuserExtension.class),
+      @XmlElementRef(type = DomainTransferRequestSuperuserExtension.class),
+      @XmlElementRef(type = DomainUpdateSuperuserExtension.class),
+
+      // Other extensions
+      @XmlElementRef(type = AllocationTokenExtension.class),
+      @XmlElementRef(type = MetadataExtension.class),
+      @XmlElementRef(type = RgpUpdateExtension.class),
+      @XmlElementRef(type = SecDnsCreateExtension.class),
+      @XmlElementRef(type = SecDnsUpdateExtension.class)
+    })
     @XmlElementWrapper
     List<CommandExtension> extension;
 

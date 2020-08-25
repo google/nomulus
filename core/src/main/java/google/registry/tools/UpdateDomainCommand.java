@@ -17,10 +17,11 @@ package google.registry.tools;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.domain.rgp.GracePeriodStatus.AUTO_RENEW;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
-import static org.joda.time.DateTimeZone.UTC;
+import static java.util.function.Predicate.isEqual;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -31,15 +32,19 @@ import com.google.common.flogger.FluentLogger;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.GracePeriodBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.tools.params.NameserversParameter;
 import google.registry.tools.soy.DomainUpdateSoyInfo;
+import google.registry.util.Clock;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import javax.annotation.Nullable;
+import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** A command to update a new domain via EPP. */
@@ -47,6 +52,8 @@ import org.joda.time.DateTime;
 final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  @Inject Clock clock;
 
   @Parameter(names = "--statuses", description = "Comma-separated list of statuses to set.")
   private List<String> statuses = new ArrayList<>();
@@ -123,6 +130,15 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
   )
   boolean clearDsRecords = false;
 
+  @Nullable
+  @Parameter(
+      names = "--autorenews",
+      arity = 1,
+      description =
+          "Whether the domain autorenews. If false, the domain will automatically be"
+              + " deleted at the end of its current registration period.")
+  Boolean autorenews;
+
   @Override
   protected void initMutatingEppToolCommand() {
     if (!nameservers.isEmpty()) {
@@ -159,7 +175,18 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       clearDsRecords = true;
     }
 
+    ImmutableSet.Builder<String> autorenewGracePeriodWarningDomains = new ImmutableSet.Builder<>();
+    DateTime now = clock.nowUtc();
     for (String domain : domains) {
+      Optional<DomainBase> domainOptional = loadByForeignKey(DomainBase.class, domain, now);
+      checkArgumentPresent(domainOptional, "Domain '%s' does not exist or is deleted", domain);
+      DomainBase domainBase = domainOptional.get();
+      checkArgument(
+          !domainBase.getStatusValues().contains(SERVER_UPDATE_PROHIBITED),
+          "The domain '%s' has status SERVER_UPDATE_PROHIBITED. Verify that you are allowed "
+              + "to make updates, and if so, use the domain_unlock command to enable updates.",
+          domain);
+
       // Use TreeSets so that the results are always in the same order (this makes testing easier).
       Set<String> addAdminsThisDomain = new TreeSet<>(addAdmins);
       Set<String> removeAdminsThisDomain = new TreeSet<>(removeAdmins);
@@ -171,16 +198,6 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       Set<String> removeStatusesThisDomain = new TreeSet<>(removeStatuses);
 
       if (!nameservers.isEmpty() || !admins.isEmpty() || !techs.isEmpty() || !statuses.isEmpty()) {
-        DateTime now = DateTime.now(UTC);
-        Optional<DomainBase> domainOptional =
-            loadByForeignKey(DomainBase.class, domain, now);
-        checkArgumentPresent(domainOptional, "Domain '%s' does not exist or is deleted", domain);
-        DomainBase domainBase = domainOptional.get();
-        checkArgument(
-            !domainBase.getStatusValues().contains(SERVER_UPDATE_PROHIBITED),
-            "The domain '%s' has status SERVER_UPDATE_PROHIBITED. Verify that you are allowed "
-                + "to make updates, and if so, use the domain_unlock command to enable updates.",
-            domain);
         if (!nameservers.isEmpty()) {
           ImmutableSortedSet<String> existingNameservers = domainBase.loadNameserverHostNames();
           populateAddRemoveLists(
@@ -232,33 +249,41 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       }
 
       boolean add =
-          !addNameserversThisDomain.isEmpty()
+          (!addNameserversThisDomain.isEmpty()
               || !addAdminsThisDomain.isEmpty()
               || !addTechsThisDomain.isEmpty()
-              || !addStatusesThisDomain.isEmpty();
+              || !addStatusesThisDomain.isEmpty());
 
       boolean remove =
-          !removeNameserversThisDomain.isEmpty()
+          (!removeNameserversThisDomain.isEmpty()
               || !removeAdminsThisDomain.isEmpty()
               || !removeTechsThisDomain.isEmpty()
-              || !removeStatusesThisDomain.isEmpty();
+              || !removeStatusesThisDomain.isEmpty());
 
-      boolean change = registrant != null || password != null;
-
-      boolean secdns =
-          !addDsRecords.isEmpty()
+      boolean change = (registrant != null || password != null);
+      boolean secDns =
+          (!addDsRecords.isEmpty()
               || !removeDsRecords.isEmpty()
               || !dsRecords.isEmpty()
-              || clearDsRecords;
+              || clearDsRecords);
 
-      if (!add && !remove && !change && !secdns) {
+      if (!add && !remove && !change && !secDns && autorenews == null) {
         logger.atInfo().log("No changes need to be made to domain %s", domain);
         continue;
       }
 
+      // If autorenew is being turned off and this domain is already in the autorenew grace period,
+      // then we want to warn the user that they might want to delete it instead.
+      if (Boolean.FALSE.equals(autorenews)) {
+        if (domainBase.getGracePeriods().stream()
+            .map(GracePeriodBase::getType)
+            .anyMatch(isEqual(AUTO_RENEW))) {
+          autorenewGracePeriodWarningDomains.add(domain);
+        }
+      }
+
       setSoyTemplate(DomainUpdateSoyInfo.getInstance(), DomainUpdateSoyInfo.DOMAINUPDATE);
-      addSoyRecord(
-          clientId,
+      SoyMapData soyMapData =
           new SoyMapData(
               "domain", domain,
               "add", add,
@@ -274,14 +299,27 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
               "change", change,
               "registrant", registrant,
               "password", password,
-              "secdns", secdns,
+              "secdns", secDns,
               "addDsRecords", DsRecord.convertToSoy(addDsRecords),
               "removeDsRecords", DsRecord.convertToSoy(removeDsRecords),
-              "removeAllDsRecords", clearDsRecords));
+              "removeAllDsRecords", clearDsRecords);
+      if (autorenews != null) {
+        soyMapData.put("autorenews", autorenews.toString());
+      }
+      addSoyRecord(clientId, soyMapData);
+    }
+
+    ImmutableSet<String> domainsToWarn = autorenewGracePeriodWarningDomains.build();
+    if (!domainsToWarn.isEmpty()) {
+      logger.atWarning().log(
+          "The following domains are in autorenew grace periods. Consider aborting this command"
+              + " and running `nomulus delete_domain` instead to terminate autorenewal immediately"
+              + " rather than in one year, if desired:\n%s",
+          String.join(", ", domainsToWarn));
     }
   }
 
-  protected void populateAddRemoveLists(
+  private void populateAddRemoveLists(
       Set<String> targetSet, Set<String> oldSet, Set<String> addSet, Set<String> removeSet) {
     addSet.addAll(Sets.difference(targetSet, oldSet));
     removeSet.addAll(Sets.difference(oldSet, targetSet));
