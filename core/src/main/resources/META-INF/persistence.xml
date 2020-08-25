@@ -82,5 +82,13 @@
 
     <!-- TODO(weiminyu): check out application-layer validation. -->
     <validation-mode>NONE</validation-mode>
+    <properties>
+      <!--
+        Custom entity scanner that works around Hibernate bug. See class Javadoc for more
+        information.
+      -->
+      <property name="hibernate.archive.scanner"
+          value="google.registry.persistence.JpaEntityScanner"/>
+    </properties>
   </persistence-unit>
 </persistence>
