@@ -61,7 +61,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeStagingReducer}. */
-public class RdeStagingReducerTest {
+class RdeStagingReducerTest {
 
   @RegisterExtension
   AppEngineExtension appEngineRule =
@@ -103,7 +103,7 @@ public class RdeStagingReducerTest {
           ValidationMode.STRICT);
 
   @BeforeEach
-  public void setUp() {
+  void beforeEach() {
     createTld("soy");
     CursorDao.saveCursor(Cursor.create(CursorType.BRDA, now, Registry.get("soy")), "soy");
     CursorDao.saveCursor(Cursor.create(CursorType.RDE_STAGING, now, Registry.get("soy")), "soy");
@@ -115,7 +115,7 @@ public class RdeStagingReducerTest {
   }
 
   @Test
-  public void testSuccess_BRDA() throws Exception {
+  void testSuccess_BRDA() throws Exception {
     key = PendingDeposit.create("soy", now, THIN, CursorType.BRDA, Duration.standardDays(1));
     reducer.reduce(key, brdaFragments);
     String outputFile = decryptGhostrydeGcsFile("soy_2000-01-01_thin_S1_R1.xml.ghostryde");
@@ -143,7 +143,7 @@ public class RdeStagingReducerTest {
   }
 
   @Test
-  public void testSuccess_BRDA_manual() throws Exception {
+  void testSuccess_BRDA_manual() throws Exception {
     key = PendingDeposit.createInManualOperation("soy", now, THIN, "", 0);
     reducer.reduce(key, brdaFragments);
     String outputFile = decryptGhostrydeGcsFile("manual/soy_2000-01-01_thin_S1_R0.xml.ghostryde");
@@ -167,7 +167,7 @@ public class RdeStagingReducerTest {
   }
 
   @Test
-  public void testSuccess_RDE() throws Exception {
+  void testSuccess_RDE() throws Exception {
     key = PendingDeposit.create("soy", now, FULL, CursorType.RDE_STAGING, Duration.standardDays(1));
     reducer.reduce(key, rdeFragments);
     String outputFile = decryptGhostrydeGcsFile("soy_2000-01-01_full_S1_R1.xml.ghostryde");
@@ -189,7 +189,7 @@ public class RdeStagingReducerTest {
   }
 
   @Test
-  public void testSuccess_RDE_manual() throws Exception {
+  void testSuccess_RDE_manual() throws Exception {
     key = PendingDeposit.createInManualOperation("soy", now, FULL, "", 0);
     reducer.reduce(key, rdeFragments);
     String outputFile = decryptGhostrydeGcsFile("manual/soy_2000-01-01_full_S1_R0.xml.ghostryde");

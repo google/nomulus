@@ -46,7 +46,7 @@ public class PremiumListDaoTest {
   private final FakeClock fakeClock = new FakeClock();
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
+  final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .enableJpaEntityCoverageCheck(true)
@@ -58,7 +58,7 @@ public class PremiumListDaoTest {
   private PremiumList testList;
 
   @BeforeEach
-  void setUp() {
+  void beforeEach() {
     testPrices =
         ImmutableMap.of(
             "silver",
@@ -77,7 +77,7 @@ public class PremiumListDaoTest {
   }
 
   @Test
-  public void saveNew_worksSuccessfully() {
+  void saveNew_worksSuccessfully() {
     PremiumListDao.saveNew(testList);
     jpaTm()
         .transact(
@@ -91,7 +91,7 @@ public class PremiumListDaoTest {
   }
 
   @Test
-  public void update_worksSuccessfully() {
+  void update_worksSuccessfully() {
     PremiumListDao.saveNew(testList);
     Optional<PremiumList> persistedList = PremiumListDao.getLatestRevision("testname");
     assertThat(persistedList).isPresent();
@@ -132,7 +132,7 @@ public class PremiumListDaoTest {
   }
 
   @Test
-  public void saveNew_throwsWhenPremiumListAlreadyExists() {
+  void saveNew_throwsWhenPremiumListAlreadyExists() {
     PremiumListDao.saveNew(testList);
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> PremiumListDao.saveNew(testList));
@@ -142,7 +142,7 @@ public class PremiumListDaoTest {
   // TODO(b/147246613): Un-ignore this.
   @Test
   @Disabled
-  public void update_throwsWhenListDoesntExist() {
+  void update_throwsWhenListDoesntExist() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> PremiumListDao.update(testList));
     assertThat(thrown)
@@ -151,19 +151,19 @@ public class PremiumListDaoTest {
   }
 
   @Test
-  public void checkExists_worksSuccessfully() {
+  void checkExists_worksSuccessfully() {
     assertThat(PremiumListDao.checkExists("testname")).isFalse();
     PremiumListDao.saveNew(testList);
     assertThat(PremiumListDao.checkExists("testname")).isTrue();
   }
 
   @Test
-  public void getLatestRevision_returnsEmptyForNonexistentList() {
+  void getLatestRevision_returnsEmptyForNonexistentList() {
     assertThat(PremiumListDao.getLatestRevision("nonexistentlist")).isEmpty();
   }
 
   @Test
-  public void getLatestRevision_worksSuccessfully() {
+  void getLatestRevision_worksSuccessfully() {
     PremiumListDao.saveNew(
         new PremiumList.Builder()
             .setName("list1")
@@ -191,13 +191,13 @@ public class PremiumListDaoTest {
   }
 
   @Test
-  public void getPremiumPrice_returnsNoneWhenNoPremiumListConfigured() {
+  void getPremiumPrice_returnsNoneWhenNoPremiumListConfigured() {
     persistResource(newRegistry("foobar", "FOOBAR").asBuilder().setPremiumList(null).build());
     assertThat(PremiumListDao.getPremiumPrice("rich", Registry.get("foobar"))).isEmpty();
   }
 
   @Test
-  public void getPremiumPrice_worksSuccessfully() {
+  void getPremiumPrice_worksSuccessfully() {
     persistResource(
         newRegistry("foobar", "FOOBAR")
             .asBuilder()
@@ -222,7 +222,7 @@ public class PremiumListDaoTest {
   }
 
   @Test
-  public void testGetPremiumPrice_throwsWhenPremiumListCantBeLoaded() {
+  void testGetPremiumPrice_throwsWhenPremiumListCantBeLoaded() {
     createTld("tld");
     IllegalStateException thrown =
         assertThrows(
@@ -232,7 +232,7 @@ public class PremiumListDaoTest {
   }
 
   @Test
-  public void testGetPremiumPrice_worksForJPY() {
+  void testGetPremiumPrice_worksForJPY() {
     persistResource(
         newRegistry("foobar", "FOOBAR")
             .asBuilder()

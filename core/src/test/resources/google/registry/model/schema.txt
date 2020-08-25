@@ -233,12 +233,12 @@ class google.registry.model.domain.secdns.DelegationSignerData {
 class google.registry.model.domain.token.AllocationToken {
   @Id java.lang.String token;
   boolean discountPremiums;
-  com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> redemptionHistoryEntry;
   double discountFraction;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
   google.registry.model.common.TimedTransitionProperty<google.registry.model.domain.token.AllocationToken$TokenStatus, google.registry.model.domain.token.AllocationToken$TokenStatusTransition> tokenStatusTransitions;
   google.registry.model.domain.token.AllocationToken$TokenType tokenType;
+  google.registry.persistence.VKey<google.registry.model.reporting.HistoryEntry> redemptionHistoryEntry;
   int discountYears;
   java.lang.String domainName;
   java.util.Set<java.lang.String> allowedClientIds;

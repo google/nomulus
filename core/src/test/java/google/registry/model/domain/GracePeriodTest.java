@@ -98,6 +98,11 @@ public class GracePeriodTest {
 
   @Test
   void testFailure_createForRecurring_notAutoRenew() {
+    Key<Recurring> recurringKey =
+        Key.create(
+            Key.create(Key.create(DomainBase.class, "1-TEST"), HistoryEntry.class, 343L),
+            Recurring.class,
+            12345);
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -107,7 +112,7 @@ public class GracePeriodTest {
                     "1-TEST",
                     now.plusDays(1),
                     "TheRegistrar",
-                    VKey.create(Recurring.class, 12345)));
+                    VKey.create(Recurring.class, 12345, recurringKey)));
     assertThat(thrown).hasMessageThat().contains("autorenew");
   }
 }

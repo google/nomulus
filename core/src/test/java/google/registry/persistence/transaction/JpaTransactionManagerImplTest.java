@@ -140,7 +140,7 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
-  public void transact_retriesOptimisticLockExceptions() {
+  void transact_retriesOptimisticLockExceptions() {
     JpaTransactionManager spyJpaTm = spy(jpaTm());
     doThrow(OptimisticLockException.class).when(spyJpaTm).delete(any(VKey.class));
     spyJpaTm.transact(() -> spyJpaTm.saveNew(theEntity));
@@ -159,7 +159,7 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
-  public void transactNoRetry_doesNotRetryOptimisticLockException() {
+  void transactNoRetry_doesNotRetryOptimisticLockException() {
     JpaTransactionManager spyJpaTm = spy(jpaTm());
     doThrow(OptimisticLockException.class).when(spyJpaTm).delete(any(VKey.class));
     spyJpaTm.transactNoRetry(() -> spyJpaTm.saveNew(theEntity));
@@ -178,7 +178,7 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
-  public void transact_retriesNestedOptimisticLockExceptions() {
+  void transact_retriesNestedOptimisticLockExceptions() {
     JpaTransactionManager spyJpaTm = spy(jpaTm());
     doThrow(new RuntimeException().initCause(new OptimisticLockException()))
         .when(spyJpaTm)
@@ -198,7 +198,7 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
-  public void transactNewReadOnly_retriesJdbcConnectionExceptions() {
+  void transactNewReadOnly_retriesJdbcConnectionExceptions() {
     JpaTransactionManager spyJpaTm = spy(jpaTm());
     doThrow(JDBCConnectionException.class).when(spyJpaTm).load(any(VKey.class));
     spyJpaTm.transact(() -> spyJpaTm.saveNew(theEntity));
@@ -217,7 +217,7 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
-  public void transactNewReadOnly_retriesNestedJdbcConnectionExceptions() {
+  void transactNewReadOnly_retriesNestedJdbcConnectionExceptions() {
     JpaTransactionManager spyJpaTm = spy(jpaTm());
     doThrow(
             new RuntimeException()
@@ -240,7 +240,7 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
-  public void doTransactionless_retriesJdbcConnectionExceptions() {
+  void doTransactionless_retriesJdbcConnectionExceptions() {
     JpaTransactionManager spyJpaTm = spy(jpaTm());
     doThrow(JDBCConnectionException.class).when(spyJpaTm).load(any(VKey.class));
     spyJpaTm.transact(() -> spyJpaTm.saveNew(theEntity));

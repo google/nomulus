@@ -31,15 +31,15 @@ public class ClaimsListDaoTest {
   private final FakeClock fakeClock = new FakeClock();
 
   @RegisterExtension
-  public final JpaIntegrationWithCoverageExtension jpa =
+  final JpaIntegrationWithCoverageExtension jpa =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   @RegisterExtension
   @Order(value = 1)
-  public final DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
+  final DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   @Test
-  public void trySave_insertsClaimsListSuccessfully() {
+  void trySave_insertsClaimsListSuccessfully() {
     ClaimsList claimsList =
         ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsListDao.trySave(claimsList);
@@ -49,7 +49,7 @@ public class ClaimsListDaoTest {
   }
 
   @Test
-  public void trySave_noExceptionThrownWhenSaveFail() {
+  void trySave_noExceptionThrownWhenSaveFail() {
     ClaimsList claimsList =
         ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsListDao.trySave(claimsList);
@@ -60,7 +60,7 @@ public class ClaimsListDaoTest {
   }
 
   @Test
-  public void trySave_claimsListWithNoEntries() {
+  void trySave_claimsListWithNoEntries() {
     ClaimsList claimsList = ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of());
     ClaimsListDao.trySave(claimsList);
     ClaimsList insertedClaimsList = ClaimsListDao.getLatestRevision().get();
@@ -69,12 +69,12 @@ public class ClaimsListDaoTest {
   }
 
   @Test
-  public void getCurrent_returnsEmptyListIfTableIsEmpty() {
+  void getCurrent_returnsEmptyListIfTableIsEmpty() {
     assertThat(ClaimsListDao.getLatestRevision().isPresent()).isFalse();
   }
 
   @Test
-  public void getCurrent_returnsLatestClaims() {
+  void getCurrent_returnsLatestClaims() {
     ClaimsList oldClaimsList =
         ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsList newClaimsList =

@@ -38,7 +38,7 @@ public class DurationConverterTest {
   private final DurationConverter converter = new DurationConverter();
 
   @Test
-  public void testNulls() {
+  void testNulls() {
     assertThat(converter.convertToDatabaseColumn(null)).isEqualTo(new PGInterval());
     assertThat(converter.convertToEntityAttribute(new PGInterval())).isNull();
   }

@@ -18,13 +18,16 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatastoreHelper.createTlds;
+import static google.registry.testing.DatastoreHelper.persistActiveDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import java.util.Collection;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -167,12 +170,15 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
             .setTokenType(SINGLE_USE)
             .setDomainName(domainName);
     if (redeemed) {
-      builder.setRedemptionHistoryEntry(Key.create(HistoryEntry.class, 1051L));
+      String domainToPersist = domainName != null ? domainName : "example.foo";
+      DomainBase domain = persistActiveDomain(domainToPersist);
+      Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1051L);
+      builder.setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1051L, historyEntryKey));
     }
     return persistResource(builder.build());
   }
 
-  private static Collection<AllocationToken> reloadTokens(AllocationToken ... tokens) {
+  private static Collection<AllocationToken> reloadTokens(AllocationToken... tokens) {
     return ofy().load().entities(tokens).values();
   }
 }

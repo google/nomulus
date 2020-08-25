@@ -35,6 +35,26 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: AllocationToken; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."AllocationToken" (
+    token text NOT NULL,
+    update_timestamp timestamp with time zone,
+    allowed_registrar_ids text[],
+    allowed_tlds text[],
+    creation_time timestamp with time zone NOT NULL,
+    discount_fraction double precision NOT NULL,
+    discount_premiums boolean NOT NULL,
+    discount_years integer NOT NULL,
+    domain_name text,
+    redemption_history_entry text,
+    token_status_transitions public.hstore,
+    token_type text
+);
+
+
+--
 -- Name: BillingCancellation; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -757,7 +777,8 @@ CREATE TABLE public."RegistrarPoc" (
     visible_in_domain_whois_as_abuse boolean NOT NULL,
     visible_in_whois_as_admin boolean NOT NULL,
     visible_in_whois_as_tech boolean NOT NULL,
-    registry_lock_email_address text
+    registry_lock_email_address text,
+    registrar_id text NOT NULL
 );
 
 
@@ -986,6 +1007,14 @@ ALTER TABLE ONLY public."Transaction" ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: AllocationToken AllocationToken_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."AllocationToken"
+    ADD CONSTRAINT "AllocationToken_pkey" PRIMARY KEY (token);
+
+
+--
 -- Name: BillingCancellation BillingCancellation_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1126,7 +1155,7 @@ ALTER TABLE ONLY public."PremiumList"
 --
 
 ALTER TABLE ONLY public."RegistrarPoc"
-    ADD CONSTRAINT "RegistrarPoc_pkey" PRIMARY KEY (email_address);
+    ADD CONSTRAINT "RegistrarPoc_pkey" PRIMARY KEY (registrar_id, email_address);
 
 
 --
@@ -1183,6 +1212,13 @@ ALTER TABLE ONLY public."Transaction"
 
 ALTER TABLE ONLY public."RegistryLock"
     ADD CONSTRAINT idx_registry_lock_repo_id_revision_id UNIQUE (repo_id, revision_id);
+
+
+--
+-- Name: allocation_token_domain_name_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX allocation_token_domain_name_idx ON public."AllocationToken" USING btree (domain_name);
 
 
 --
