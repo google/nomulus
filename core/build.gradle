@@ -635,131 +635,6 @@ artifacts {
   testRuntime testJar
 }
 
-/**
- * We have to break out the test suites because some of the tests conflict
- * with one another, but unfortunately this breaks the "--tests" flag.  The
- * --tests flag only applies to the task named on the command line (usually
- * just "test"), not for all tasks of type "Test".
- *
- * As a better solution, FilteringTest sets testNameIncludePatterns (the
- * internal property that --tests sets) from the value of the "testFilter"
- * property, allowing us to filter across all the tests in core without
- * explicitly specifying a test task or causing errors because there are no
- * matching tests in the main task.
- *
- * To use it, define "testFilter" to be a comma-separated collection of class
- * names (wildcards are allowed):
- *
- *   ./gradlew test -P testFilter=*.FooBar,google.registry.tools.ShellCommandTest
- */
-class FilteringTest extends Test {
-
-  FilteringTest() {
-    useJUnitPlatform();
-  }
-
-  private void applyTestFilter() {
-    if (project.testFilter) {
-      testNameIncludePatterns = project.testFilter.split(',')
-
-      // By default, gradle test tasks will produce a failure if no tests
-      // match the include/exclude/filter rules.  Since test filtering allows us
-      // to select a set of tests from a particular task, we don't want this
-      // behavior.
-      filter.failOnNoMatchingTests = false
-    }
-  }
-
-  /**
-   * Set to false if you also want to include TestCase and TestSuite classes.
-   *
-   * <p>Must be defined before "test", if at all.
-   */
-  boolean excludeTestCases = true
-
-  void setTests(List<String> tests) {
-    // Common exclude pattern. See README in parent directory for explanation.
-    if (excludeTestCases) {
-      exclude "**/*TestCase.*", "**/*TestSuite.*"
-    }
-    include tests
-    applyTestFilter()
-  }
-
-  /**
-   * Include all of the tests (except Test{Case,TestSuite}).  This actually
-   * doesn't explicitly "include" anything, in which cast the Test class tries
-   * to include everything that is not explicitly excluded.
-   */
-  void includeAllTests() {
-    exclude "**/*TestCase.*", "**/*TestSuite.*"
-    applyTestFilter()
-  }
-}
-
-task fragileTest(type: FilteringTest) {
-  // Common exclude pattern. See README in parent directory for explanation.
-  tests = fragileTestPatterns
-
-  if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
-    exclude dockerIncompatibleTestPatterns
-  }
-
-  // Run every test class in a freshly started process.
-  forkEvery 1
-
-  doFirst {
-    new File(screenshotsDir).deleteDir()
-  }
-}
-
-task outcastTest(type: FilteringTest) {
-  tests = outcastTestPatterns
-
-  // Sets the maximum number of test executors that may exist at the same time.
-  // Note that this number appears to contribute to NoClassDefFoundError
-  // exceptions on certain machines and distros. The root cause is unclear.
-  // Try reducing this number if you experience similar problems.
-  maxParallelForks 3
-}
-
-// Whitebox test verifying that RegistryTool can be instantiated. Note the
-// use of runtimeClasspath. This test emulates the logic in RegistryCli#run.
-// A to-do is added there to refactor.
-// TODO(weiminyu): Need a similar test for Registry server.
-task registryToolIntegrationTest {
-  dependsOn compileJava
-  doLast {
-    def classLoader =
-        new URLClassLoader(sourceSets.main.runtimeClasspath.collect {
-            it.toURI().toURL()
-        } as URL[])
-    def commandClasses =
-        (classLoader.loadClass('google.registry.tools.RegistryTool')
-            .getDeclaredField('COMMAND_MAP').get(null) as Map).values()
-
-    commandClasses.each {
-      try {
-        Constructor<?> c = ((Class<?>) it).getDeclaredConstructor()
-        c.setAccessible(true)
-        c.newInstance()
-      } catch (Throwable e) {
-        throw new RuntimeException("Failed to instantiate ${it}:\n ${e}")
-      }
-    }
-  }
-}
-
-// Dedicated test suite for schema-dependent tests.
-task sqlIntegrationTest(type: FilteringTest) {
-  // TestSuite still requires a JUnit 4 runner, which knows how to handle JUnit 5 tests.
-  // Here we need to override parent's choice of JUnit 5. If changing this, remember to
-  // change :integration:sqlIntegrationTest too.
-  useJUnit()
-  excludeTestCases = false
-  tests = ['google/registry/schema/integration/SqlIntegrationTestSuite.*']
-}
-
 task findGoldenImages(type: JavaExec) {
   classpath = sourceSets.test.runtimeClasspath
   main = 'google.registry.webdriver.GoldenImageFinder'
@@ -878,39 +753,6 @@ task generateGoldenImages(type: FilteringTest) {
   }
 }
 generateGoldenImages.finalizedBy(findGoldenImages)
-
-task standardTest(type: FilteringTest) {
-  includeAllTests()
-  exclude fragileTestPatterns
-  exclude outcastTestPatterns
-  // See SqlIntegrationTestSuite.java
-  exclude '**/*BeforeSuiteTest.*', '**/*AfterSuiteTest.*'
-
-  if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
-    exclude dockerIncompatibleTestPatterns
-  }
-
-  // Run every test class in its own process.
-  // Uncomment to unblock build while troubleshooting inexplicable test errors.
-  // This setting makes the build take 35 minutes, without it it takes about 10.
-  // forkEvery 1
-
-  // Sets the maximum number of test executors that may exist at the same time.
-  // Also, Gradle executes tests in 1 thread and some of our test infrastructures
-  // depend on that, e.g. DualDatabaseTestInvocationContextProvider injects
-  // different implementation of TransactionManager into TransactionManagerFactory.
-  maxParallelForks 5
-
-  systemProperty 'test.projectRoot', rootProject.projectRootDir
-  systemProperty 'test.resourcesDir', resourcesDir
-}
-
-test {
-  // Don't run any tests from this task, all testing gets done in the
-  // FilteringTest tasks.
-  exclude "**"
-  // TODO(weiminyu): Remove dependency on sqlIntegrationTest
-}.dependsOn(fragileTest, outcastTest, standardTest, registryToolIntegrationTest, sqlIntegrationTest)
 
 createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 
@@ -1045,6 +887,147 @@ task runTestServer(dependsOn: copyJsFilesForTestServer, type: JavaExec) {
   main = 'google.registry.server.RegistryTestServerMain'
   classpath = sourceSets.test.runtimeClasspath
 }
+
+/**
+ * We have to break out the test suites because some of the tests conflict
+ * with one another, but unfortunately this breaks the "--tests" flag.  The
+ * --tests flag only applies to the task named on the command line (usually
+ * just "test"), not for all tasks of type "Test".
+ *
+ * As a better solution, FilteringTest sets testNameIncludePatterns (the
+ * internal property that --tests sets) from the value of the "testFilter"
+ * property, allowing us to filter across all the tests in core without
+ * explicitly specifying a test task or causing errors because there are no
+ * matching tests in the main task.
+ *
+ * To use it, define "testFilter" to be a comma-separated collection of class
+ * names (wildcards are allowed):
+ *
+ *   ./gradlew test -P testFilter=*.FooBar,google.registry.tools.ShellCommandTest
+ */
+class FilteringTest extends Test {
+
+  FilteringTest() {
+    useJUnitPlatform();
+  }
+
+  private void applyTestFilter() {
+    if (project.testFilter) {
+      testNameIncludePatterns = project.testFilter.split(',')
+
+      // By default, gradle test tasks will produce a failure if no tests
+      // match the include/exclude/filter rules.  Since test filtering allows us
+      // to select a set of tests from a particular task, we don't want this
+      // behavior.
+      filter.failOnNoMatchingTests = false
+    }
+  }
+
+  /**
+   * Set to false if you also want to include TestCase and TestSuite classes.
+   *
+   * <p>Must be defined before "test", if at all.
+   */
+  boolean excludeTestCases = true
+
+  void setTests(List<String> tests) {
+    // Common exclude pattern. See README in parent directory for explanation.
+    if (excludeTestCases) {
+      exclude "**/*TestCase.*", "**/*TestSuite.*"
+    }
+    include tests
+    applyTestFilter()
+  }
+
+  /**
+   * Include all of the tests (except Test{Case,TestSuite}).  This actually
+   * doesn't explicitly "include" anything, in which cast the Test class tries
+   * to include everything that is not explicitly excluded.
+   */
+  void includeAllTests() {
+    exclude "**/*TestCase.*", "**/*TestSuite.*"
+    applyTestFilter()
+  }
+}
+
+task fragileTest(type: FilteringTest) {
+  // Common exclude pattern. See README in parent directory for explanation.
+  tests = fragileTestPatterns
+
+  if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
+    exclude dockerIncompatibleTestPatterns
+  }
+
+  // Run every test class in a freshly started process.
+  forkEvery 1
+
+  doFirst {
+    new File(screenshotsDir).deleteDir()
+  }
+}
+
+task outcastTest(type: FilteringTest) {
+  tests = outcastTestPatterns
+
+  // Sets the maximum number of test executors that may exist at the same time.
+  // Note that this number appears to contribute to NoClassDefFoundError
+  // exceptions on certain machines and distros. The root cause is unclear.
+  // Try reducing this number if you experience similar problems.
+  maxParallelForks 3
+}
+
+// Dedicated test suite for schema-dependent tests.
+task sqlIntegrationTest(type: FilteringTest) {
+  // TestSuite still requires a JUnit 4 runner, which knows how to handle JUnit 5 tests.
+  // Here we need to override parent's choice of JUnit 5. If changing this, remember to
+  // change :integration:sqlIntegrationTest too.
+  useJUnit()
+  excludeTestCases = false
+  tests = ['google/registry/schema/integration/SqlIntegrationTestSuite.*']
+}
+
+// Verifies that RegistryTool can be instantiated:
+// - All dependencies are packaged in nomulus.jar
+// - JPA setup succeeds.
+task registryToolIntegrationTest(dependsOn: nomulus, type: FilteringTest) {
+  tests = ['google/registry/tools/RegistryToolTest.*']
+  testClassesDirs = sourceSets.test.output.classesDirs
+  classpath = nomulus.outputs.files.plus(configurations.testRuntimeClasspath)
+      .plus(files(testClassesDirs))
+}
+
+task standardTest(type: FilteringTest) {
+  includeAllTests()
+  exclude fragileTestPatterns
+  exclude outcastTestPatterns
+  // See SqlIntegrationTestSuite.java
+  exclude '**/*BeforeSuiteTest.*', '**/*AfterSuiteTest.*'
+
+  if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
+    exclude dockerIncompatibleTestPatterns
+  }
+
+  // Run every test class in its own process.
+  // Uncomment to unblock build while troubleshooting inexplicable test errors.
+  // This setting makes the build take 35 minutes, without it it takes about 10.
+  // forkEvery 1
+
+  // Sets the maximum number of test executors that may exist at the same time.
+  // Also, Gradle executes tests in 1 thread and some of our test infrastructures
+  // depend on that, e.g. DualDatabaseTestInvocationContextProvider injects
+  // different implementation of TransactionManager into TransactionManagerFactory.
+  maxParallelForks 5
+
+  systemProperty 'test.projectRoot', rootProject.projectRootDir
+  systemProperty 'test.resourcesDir', resourcesDir
+}
+
+test {
+  // Don't run any tests from this task, all testing gets done in the
+  // FilteringTest tasks.
+  exclude "**"
+  // TODO(weiminyu): Remove dependency on sqlIntegrationTest
+}.dependsOn(fragileTest, outcastTest, standardTest, registryToolIntegrationTest, sqlIntegrationTest)
 
 project.build.dependsOn devtool
 project.build.dependsOn buildToolImage
