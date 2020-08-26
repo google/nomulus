@@ -15,6 +15,7 @@
 package google.registry.model.contact;
 
 import com.googlecode.objectify.Key;
+import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
@@ -36,6 +37,7 @@ import javax.persistence.Entity;
       @javax.persistence.Index(columnList = "historyType"),
       @javax.persistence.Index(columnList = "historyModificationTime")
     })
+@EntitySubclass
 public class ContactHistory extends HistoryEntry {
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
   ContactBase contactBase;

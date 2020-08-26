@@ -99,6 +99,46 @@ class google.registry.model.contact.ContactAddress {
 class google.registry.model.contact.ContactAuthInfo {
   google.registry.model.eppcommon.AuthInfo$PasswordAuth pw;
 }
+class google.registry.model.contact.ContactBase {
+  @Id java.lang.String repoId;
+  com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
+  google.registry.model.CreateAutoTimestamp creationTime;
+  google.registry.model.UpdateAutoTimestamp updateTimestamp;
+  google.registry.model.contact.ContactAuthInfo authInfo;
+  google.registry.model.contact.ContactPhoneNumber fax;
+  google.registry.model.contact.ContactPhoneNumber voice;
+  google.registry.model.contact.Disclose disclose;
+  google.registry.model.contact.PostalInfo internationalizedPostalInfo;
+  google.registry.model.contact.PostalInfo localizedPostalInfo;
+  google.registry.model.transfer.ContactTransferData transferData;
+  java.lang.String contactId;
+  java.lang.String creationClientId;
+  java.lang.String currentSponsorClientId;
+  java.lang.String email;
+  java.lang.String lastEppUpdateClientId;
+  java.lang.String searchName;
+  java.util.Set<google.registry.model.eppcommon.StatusValue> status;
+  org.joda.time.DateTime deletionTime;
+  org.joda.time.DateTime lastEppUpdateTime;
+  org.joda.time.DateTime lastTransferTime;
+}
+class google.registry.model.contact.ContactHistory {
+  @Id java.lang.Long id;
+  @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
+  boolean bySuperuser;
+  byte[] xmlBytes;
+  google.registry.model.contact.ContactBase contactBase;
+  google.registry.model.domain.Period period;
+  google.registry.model.eppcommon.Trid trid;
+  google.registry.model.reporting.HistoryEntry$Type type;
+  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> contactRepoId;
+  java.lang.Boolean requestedByRegistrar;
+  java.lang.String clientId;
+  java.lang.String otherClientId;
+  java.lang.String reason;
+  java.util.Set<google.registry.model.reporting.DomainTransactionRecord> domainTransactionRecords;
+  org.joda.time.DateTime modificationTime;
+}
 class google.registry.model.contact.ContactPhoneNumber {
   java.lang.String extension;
   java.lang.String phoneNumber;
@@ -190,6 +230,52 @@ class google.registry.model.domain.DomainBase {
   org.joda.time.DateTime lastEppUpdateTime;
   org.joda.time.DateTime lastTransferTime;
   org.joda.time.DateTime registrationExpirationTime;
+}
+class google.registry.model.domain.DomainContent {
+  @Id java.lang.String repoId;
+  com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
+  google.registry.model.CreateAutoTimestamp creationTime;
+  google.registry.model.UpdateAutoTimestamp updateTimestamp;
+  google.registry.model.domain.DomainAuthInfo authInfo;
+  google.registry.model.domain.launch.LaunchNotice launchNotice;
+  google.registry.model.transfer.DomainTransferData transferData;
+  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> autorenewBillingEvent;
+  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
+  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
+  java.lang.String creationClientId;
+  java.lang.String currentSponsorClientId;
+  java.lang.String fullyQualifiedDomainName;
+  java.lang.String idnTableName;
+  java.lang.String lastEppUpdateClientId;
+  java.lang.String smdId;
+  java.lang.String tld;
+  java.util.Set<google.registry.model.domain.DesignatedContact> allContacts;
+  java.util.Set<google.registry.model.domain.GracePeriod> gracePeriods;
+  java.util.Set<google.registry.model.domain.secdns.DelegationSignerData> dsData;
+  java.util.Set<google.registry.model.eppcommon.StatusValue> status;
+  java.util.Set<google.registry.persistence.VKey<google.registry.model.host.HostResource>> nsHosts;
+  java.util.Set<java.lang.String> subordinateHosts;
+  org.joda.time.DateTime deletionTime;
+  org.joda.time.DateTime lastEppUpdateTime;
+  org.joda.time.DateTime lastTransferTime;
+  org.joda.time.DateTime registrationExpirationTime;
+}
+class google.registry.model.domain.DomainHistory {
+  @Id java.lang.Long id;
+  @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
+  boolean bySuperuser;
+  byte[] xmlBytes;
+  google.registry.model.domain.DomainContent domainContent;
+  google.registry.model.domain.Period period;
+  google.registry.model.eppcommon.Trid trid;
+  google.registry.model.reporting.HistoryEntry$Type type;
+  google.registry.persistence.VKey<google.registry.model.domain.DomainBase> domainRepoId;
+  java.lang.Boolean requestedByRegistrar;
+  java.lang.String clientId;
+  java.lang.String otherClientId;
+  java.lang.String reason;
+  java.util.Set<google.registry.model.reporting.DomainTransactionRecord> domainTransactionRecords;
+  org.joda.time.DateTime modificationTime;
 }
 class google.registry.model.domain.GracePeriod {
   google.registry.model.domain.rgp.GracePeriodStatus type;
@@ -287,6 +373,40 @@ enum google.registry.model.eppcommon.StatusValue {
 class google.registry.model.eppcommon.Trid {
   java.lang.String clientTransactionId;
   java.lang.String serverTransactionId;
+}
+class google.registry.model.host.HostBase {
+  @Id java.lang.String repoId;
+  com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
+  google.registry.model.CreateAutoTimestamp creationTime;
+  google.registry.model.UpdateAutoTimestamp updateTimestamp;
+  google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
+  java.lang.String creationClientId;
+  java.lang.String currentSponsorClientId;
+  java.lang.String fullyQualifiedHostName;
+  java.lang.String lastEppUpdateClientId;
+  java.util.Set<google.registry.model.eppcommon.StatusValue> status;
+  java.util.Set<java.net.InetAddress> inetAddresses;
+  org.joda.time.DateTime deletionTime;
+  org.joda.time.DateTime lastEppUpdateTime;
+  org.joda.time.DateTime lastSuperordinateChange;
+  org.joda.time.DateTime lastTransferTime;
+}
+class google.registry.model.host.HostHistory {
+  @Id java.lang.Long id;
+  @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
+  boolean bySuperuser;
+  byte[] xmlBytes;
+  google.registry.model.domain.Period period;
+  google.registry.model.eppcommon.Trid trid;
+  google.registry.model.host.HostBase hostBase;
+  google.registry.model.reporting.HistoryEntry$Type type;
+  google.registry.persistence.VKey<google.registry.model.host.HostResource> hostRepoId;
+  java.lang.Boolean requestedByRegistrar;
+  java.lang.String clientId;
+  java.lang.String otherClientId;
+  java.lang.String reason;
+  java.util.Set<google.registry.model.reporting.DomainTransactionRecord> domainTransactionRecords;
+  org.joda.time.DateTime modificationTime;
 }
 class google.registry.model.host.HostResource {
   @Id java.lang.String repoId;

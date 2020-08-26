@@ -14,8 +14,10 @@
 
 package google.registry.model.reporting;
 
+import static com.googlecode.objectify.Key.getKind;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
@@ -28,8 +30,14 @@ import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.model.contact.ContactHistory;
+import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.HostHistory;
+import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import java.util.Set;
@@ -111,7 +119,8 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   @Id
   @javax.persistence.Id
   @Column(name = "historyRevisionId")
-  Long id;
+  @VisibleForTesting
+  public Long id;
 
   /** The resource this event mutated. */
   @Parent @Transient protected Key<? extends EppResource> parent;
@@ -259,6 +268,39 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
     return new Builder(clone(this));
   }
 
+  public HistoryEntry asHistoryEntry() {
+    return new Builder().copyFrom(this).build();
+  }
+
+  public HistoryEntry toChildHistoryEntity() {
+    String parentKind = getParent().getKind();
+    final HistoryEntry resultEntity;
+    // can't use a switch statement since we're calling getKind()
+    if (parentKind.equals(getKind(DomainBase.class))) {
+      resultEntity =
+          new DomainHistory.Builder()
+              .copyFrom(this)
+              .setDomainRepoId(VKey.create(DomainBase.class, parent.getName(), parent))
+              .build();
+    } else if (parentKind.equals(getKind(HostResource.class))) {
+      resultEntity =
+          new HostHistory.Builder()
+              .copyFrom(this)
+              .setHostRepoId(VKey.create(HostResource.class, parent.getName(), parent))
+              .build();
+    } else if (parentKind.equals(getKind(ContactResource.class))) {
+      resultEntity =
+          new ContactHistory.Builder()
+              .copyFrom(this)
+              .setContactRepoId(VKey.create(ContactResource.class, parent.getName(), parent))
+              .build();
+    } else {
+      throw new IllegalStateException(
+          String.format("Unknown kind of HistoryEntry parent %s", parentKind));
+    }
+    return resultEntity;
+  }
+
   /** A builder for {@link HistoryEntry} since it is immutable */
   public static class Builder<T extends HistoryEntry, B extends Builder<?, ?>>
       extends GenericBuilder<T, B> {
@@ -268,9 +310,33 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
       super(instance);
     }
 
+    // Used to fill out the fields in this object from an object which may not be exactly the same
+    // as the class T, where both classes still subclass HistoryEntry
+    public B copyFrom(HistoryEntry historyEntry) {
+      setId(historyEntry.id);
+      setParent(historyEntry.parent);
+      setType(historyEntry.type);
+      setPeriod(historyEntry.period);
+      setXmlBytes(historyEntry.xmlBytes);
+      setModificationTime(historyEntry.modificationTime);
+      setClientId(historyEntry.clientId);
+      setOtherClientId(historyEntry.otherClientId);
+      setTrid(historyEntry.trid);
+      setBySuperuser(historyEntry.bySuperuser);
+      setReason(historyEntry.reason);
+      setRequestedByRegistrar(historyEntry.requestedByRegistrar);
+      setDomainTransactionRecords(nullToEmptyImmutableCopy(historyEntry.domainTransactionRecords));
+      return thisCastToDerived();
+    }
+
     @Override
     public T build() {
       return super.build();
+    }
+
+    public B setId(long id) {
+      getInstance().id = id;
+      return thisCastToDerived();
     }
 
     public B setParent(EppResource parent) {
@@ -278,7 +344,6 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
       return thisCastToDerived();
     }
 
-    // Until we move completely to SQL, override this in subclasses (e.g. HostHistory) to set VKeys
     public B setParent(Key<? extends EppResource> parent) {
       getInstance().parent = parent;
       return thisCastToDerived();

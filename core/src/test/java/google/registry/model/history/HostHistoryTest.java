@@ -17,12 +17,15 @@ package google.registry.model.history;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
@@ -44,19 +47,8 @@ public class HostHistoryTest extends EntityTestCase {
     jpaTm().transact(() -> jpaTm().saveNew(host));
     VKey<HostResource> hostVKey = VKey.createSql(HostResource.class, "host1");
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().load(hostVKey));
-    HostHistory hostHistory =
-        new HostHistory.Builder()
-            .setType(HistoryEntry.Type.HOST_CREATE)
-            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-            .setModificationTime(fakeClock.nowUtc())
-            .setClientId("TheRegistrar")
-            .setTrid(Trid.create("ABC-123", "server-trid"))
-            .setBySuperuser(false)
-            .setReason("reason")
-            .setRequestedByRegistrar(true)
-            .setHostBase(hostFromDb)
-            .setHostRepoId(hostVKey)
-            .build();
+    HostHistory hostHistory = createHostHistory(hostFromDb, hostVKey);
+    hostHistory.id = null;
     jpaTm().transact(() -> jpaTm().saveNew(hostHistory));
     jpaTm()
         .transact(
@@ -69,10 +61,49 @@ public class HostHistoryTest extends EntityTestCase {
             });
   }
 
+  @Test
+  public void testOfySave() {
+    saveRegistrar("registrar1");
+
+    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    tm().transact(() -> tm().saveNew(host));
+    VKey<HostResource> hostVKey = VKey.create(HostResource.class, "host1", Key.create(host));
+    HostResource hostFromDb = tm().transact(() -> tm().load(hostVKey));
+    HostHistory hostHistory = createHostHistory(hostFromDb, hostVKey);
+    fakeClock.advanceOneMilli();
+    tm().transact(() -> tm().saveNew(hostHistory));
+
+    // retrieving a HistoryEntry or a HostHistory with the same key should return the same object
+    // note: due to the @EntitySubclass annotation. all Keys for ContactHistory objects will have
+    // type HistoryEntry
+    VKey<HostHistory> hostHistoryVKey = VKey.createOfy(HostHistory.class, Key.create(hostHistory));
+    VKey<HistoryEntry> historyEntryVKey =
+        VKey.createOfy(HistoryEntry.class, Key.create(hostHistory.asHistoryEntry()));
+    HostHistory hostHistoryFromDb = tm().transact(() -> tm().load(hostHistoryVKey));
+    HistoryEntry historyEntryFromDb = tm().transact(() -> tm().load(historyEntryVKey));
+
+    assertThat(hostHistoryFromDb).isEqualTo(historyEntryFromDb);
+  }
+
   private void assertHostHistoriesEqual(HostHistory one, HostHistory two) {
     assertAboutImmutableObjects().that(one).isEqualExceptFields(two, "hostBase");
     assertAboutImmutableObjects()
         .that(one.getHostBase())
         .isEqualExceptFields(two.getHostBase(), "repoId");
+  }
+
+  private HostHistory createHostHistory(HostBase hostBase, VKey<HostResource> hostVKey) {
+    return new HostHistory.Builder()
+        .setType(HistoryEntry.Type.HOST_CREATE)
+        .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+        .setModificationTime(fakeClock.nowUtc())
+        .setClientId("TheRegistrar")
+        .setTrid(Trid.create("ABC-123", "server-trid"))
+        .setBySuperuser(false)
+        .setReason("reason")
+        .setRequestedByRegistrar(true)
+        .setHostBase(hostBase)
+        .setHostRepoId(hostVKey)
+        .build();
   }
 }
