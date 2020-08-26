@@ -24,11 +24,11 @@
       hibernate-core:5.4.17.Final.
 
       When auto detection is enabled in Hibernate, we also need a separate
-      persistence.xml for test. See <a
+      persistence.xml for tests. See <a
       href="https://stackoverflow.com/questions/61127082/hibernate-doesnt-find-entities-in-test">
       this webpage</a> for an example.
 
-      Because of the two reasons above, we disable auto detection in Hibernate.
+      Because of the reasons above, we disable auto detection in Hibernate.
     -->
 
     <mapping-file>META-INF/orm.xml</mapping-file>
