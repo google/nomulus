@@ -19,9 +19,11 @@ import static java.util.stream.Collectors.joining;
 import static org.apache.commons.text.StringEscapeUtils.escapeEcmaScript;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicates;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -34,6 +36,7 @@ import org.openqa.selenium.Dimension;
 import org.openqa.selenium.HasCapabilities;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -55,7 +58,6 @@ public final class WebDriverPlusScreenDifferExtension
         HasCapabilities {
 
   private static final int WAIT_FOR_ELEMENTS_POLLING_INTERVAL_MS = 10;
-  private static final int WAIT_FOR_ELEMENTS_BONUS_DELAY_MS = 150;
 
   // The maximum difference between pixels that would be considered as "identical". Calculated as
   // the sum of the absolute difference between the values of the RGB channels. So a 120,30,200
@@ -121,28 +123,40 @@ public final class WebDriverPlusScreenDifferExtension
     driver.get(url.toString());
   }
 
-  /** Waits indefinitely for an element to appear on the page, then returns it. */
-  WebElement waitForElement(By by) throws InterruptedException {
-    while (true) {
-      List<WebElement> elements = findElements(by);
-      if (!elements.isEmpty()) {
-        Thread.sleep(WAIT_FOR_ELEMENTS_BONUS_DELAY_MS);
-        return elements.get(0);
-      }
-      Thread.sleep(WAIT_FOR_ELEMENTS_POLLING_INTERVAL_MS);
-    }
+  /** Waits indefinitely for a <em>visible</em> element matching {@code by}, then returns it. */
+  WebElement waitForDisplayedElement(By by) throws InterruptedException {
+    return waitForElementWithCondition(by, WebElement::isDisplayed);
   }
 
-  /** Waits for element matching {@code by} whose {@code attribute} satisfies {@code predicate}. */
-  public WebElement waitForAttribute(
-      By by, String attribute, Predicate</*@Nullable*/ ? super CharSequence> predicate)
+  /** Waits indefinitely for an element matching {@code by}, then returns it. */
+  WebElement waitForElement(By by) throws InterruptedException {
+    return waitForElementWithCondition(by, Predicates.alwaysTrue());
+  }
+
+  /**
+   * Executes an action and waits indefinitely for the replacement of an <em>existing</em> element.
+   */
+  WebElement waitForRefreshedElementAfterAction(ThrowingRunnable action, By by) throws Exception {
+    WebElement element = findElement(by);
+    action.run();
+    while (true) {
+      try {
+        element.isDisplayed(); // Eventually triggers StaleElementReferenceException
+        Thread.sleep(WAIT_FOR_ELEMENTS_POLLING_INTERVAL_MS);
+      } catch (StaleElementReferenceException e) {
+        break;
+      }
+    }
+    return waitForDisplayedElement(by);
+  }
+
+  /** Waits for an element matching {@code by} and satisfying {@code predicate}, then returns it. */
+  WebElement waitForElementWithCondition(By by, Predicate<WebElement> predicate)
       throws InterruptedException {
     while (true) {
-      for (WebElement element : findElements(by)) {
-        if (predicate.test(element.getAttribute(attribute))) {
-          Thread.sleep(WAIT_FOR_ELEMENTS_BONUS_DELAY_MS);
-          return element;
-        }
+      Optional<WebElement> firstMatch = findElements(by).stream().filter(predicate).findFirst();
+      if (firstMatch.isPresent()) {
+        return firstMatch.get();
       }
       Thread.sleep(WAIT_FOR_ELEMENTS_POLLING_INTERVAL_MS);
     }
@@ -302,5 +316,10 @@ public final class WebDriverPlusScreenDifferExtension
   private String getUniqueName(String imageKey) {
     Preconditions.checkNotNull(imageNamePrefix);
     return imageNamePrefix + "_" + imageKey;
+  }
+
+  public interface ThrowingRunnable {
+
+    void run() throws Exception;
   }
 }

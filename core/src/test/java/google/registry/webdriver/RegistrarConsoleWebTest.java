@@ -55,7 +55,7 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
 
   /** Checks that an element is visible. */
   void assertEltVisible(String eltId) throws Throwable {
-    assertThat(driver.waitForElement(By.id(eltId)).isDisplayed()).isTrue();
+    assertThat(driver.waitForDisplayedElement(By.id(eltId)).isDisplayed()).isTrue();
   }
 
   /** Checks that an element is invisible. */
@@ -141,7 +141,7 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
   @RetryingTest(3)
   void testWhoisSettingsEdit() throws Throwable {
     driver.get(server.getUrl("/registrar#whois-settings"));
-    driver.waitForElement(By.id("reg-app-btn-edit")).click();
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
     driver.setFormFieldsById(
         new ImmutableMap.Builder<String, String>()
             .put("emailAddress", "test1@example.com")
@@ -178,7 +178,7 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
   @RetryingTest(3)
   void testContactSettingsView() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-settings"));
-    driver.waitForElement(By.id("reg-app-btn-add"));
+    driver.waitForDisplayedElement(By.id("reg-app-btn-add"));
     ImmutableList<RegistrarContact> contacts =
         server.runInAppEngineEnvironment(
             () -> loadRegistrar("TheRegistrar").getContacts().asList());
@@ -192,7 +192,7 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
   @RetryingTest(3)
   void testSecuritySettingsView() throws Throwable {
     driver.get(server.getUrl("/registrar#security-settings"));
-    driver.waitForElement(By.id("reg-app-btn-edit"));
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit"));
     Registrar registrar = server.runInAppEngineEnvironment(() -> loadRegistrar("TheRegistrar"));
     assertThat(driver.findElement(By.id("phonePasscode")).getAttribute("value"))
         .isEqualTo(registrar.getPhonePasscode());

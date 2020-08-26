@@ -41,7 +41,7 @@ public class OteSetupConsoleScreenshotTest extends WebDriverTestCase {
   @RetryingTest(3)
   void get_owner_fails() throws Throwable {
     driver.get(server.getUrl("/registrar-ote-setup"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("unauthorized");
   }
 
@@ -49,14 +49,14 @@ public class OteSetupConsoleScreenshotTest extends WebDriverTestCase {
   void get_admin_succeeds() throws Throwable {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar-ote-setup"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("formEmpty");
     driver.findElement(By.id("clientId")).sendKeys("acmereg");
     driver.findElement(By.id("email")).sendKeys("acmereg@registry.example");
     driver.findElement(By.id("password")).sendKeys("StRoNgPaSsWoRd");
     driver.diffPage("formFilled");
     driver.findElement(By.id("submit-button")).click();
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("oteResult");
   }
 
@@ -64,11 +64,11 @@ public class OteSetupConsoleScreenshotTest extends WebDriverTestCase {
   void get_admin_fails_badEmail() throws Throwable {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar-ote-setup"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.findElement(By.id("clientId")).sendKeys("acmereg");
     driver.findElement(By.id("email")).sendKeys("bad email");
     driver.findElement(By.id("submit-button")).click();
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("oteResultFailed");
   }
 }
