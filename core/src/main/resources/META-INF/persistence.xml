@@ -11,14 +11,28 @@
     <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
     <!--
-      All JPA entities must be enumerated here. JPA does not support auto detection.
+      All JPA entity-mapping files and annotated classes must be enumerated
+      here. Automatic entity detection is not part of the JPA spec. Explicit
+      declaration makes it easier to migrate to another provider.
 
-      Note that Hibernate's auto detection functionality (hibernate.archive.autodection)
-      does not meet our needs. It only scans archives, not the 'classes' folders. So we
-      are left with two options:
-      *  Move tests to another (sub)project. This is not a big problem, but feels unnatural.
-      *  Use Hibernate's ServiceRegistry for bootstrapping (not JPA-compliant)
+      Although Hibernate provides the auto detection functionality (configured by
+      the hibernate.archive.autodetection property), it relies on a fragile
+      scanner that can be broken by certain classes. For example, in the uber jar
+      for the nomulus tool, a repackaged Guava class ( {@code
+      com.google.appengine.repackaged.com.google.common.html.LinkDetector})
+      from appengine-api-1.0-sdk:1.9.81 can break the scanner in
+      hibernate-core:5.4.17.Final.
+
+      When auto detection is enabled in Hibernate, we also need a separate
+      persistence.xml for test. See <a
+      href="https://stackoverflow.com/questions/61127082/hibernate-doesnt-find-entities-in-test">
+      this webpage</a> for an example.
+
+      Because of the two reasons above, we disable auto detection in Hibernate.
     -->
+
+    <mapping-file>META-INF/orm.xml</mapping-file>
+
     <class>google.registry.model.billing.BillingEvent$Cancellation</class>
     <class>google.registry.model.billing.BillingEvent$OneTime</class>
     <class>google.registry.model.billing.BillingEvent$Recurring</class>
@@ -83,12 +97,8 @@
     <!-- TODO(weiminyu): check out application-layer validation. -->
     <validation-mode>NONE</validation-mode>
     <properties>
-      <!--
-        Custom entity scanner that works around Hibernate bug. See class Javadoc for more
-        information.
-      -->
-      <property name="hibernate.archive.scanner"
-          value="google.registry.persistence.JpaEntityScanner"/>
+      <!-- Disables auto detection. -->
+      <property name="hibernate.archive.autodetection" value=""/>
     </properties>
   </persistence-unit>
 </persistence>
