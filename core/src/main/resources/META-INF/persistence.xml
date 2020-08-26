@@ -21,7 +21,8 @@
       for the Nomulus tool, a repackaged Guava class ( {@code
       com.google.appengine.repackaged.com.google.common.html.LinkDetector})
       from appengine-api-1.0-sdk:1.9.81 can break the scanner in
-      hibernate-core:5.4.17.Final.
+      hibernate-core:5.4.17.Final. The large number of third-party classes also
+      makes JPA setup noticeably slower in the tool.
 
       When auto detection is enabled in Hibernate, we also need a separate
       persistence.xml for tests. See <a
