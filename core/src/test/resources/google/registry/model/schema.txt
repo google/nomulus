@@ -255,6 +255,7 @@ class google.registry.model.domain.DomainContent {
   java.util.Set<google.registry.model.eppcommon.StatusValue> status;
   java.util.Set<google.registry.persistence.VKey<google.registry.model.host.HostResource>> nsHosts;
   java.util.Set<java.lang.String> subordinateHosts;
+  org.joda.time.DateTime autorenewEndTime;
   org.joda.time.DateTime deletionTime;
   org.joda.time.DateTime lastEppUpdateTime;
   org.joda.time.DateTime lastTransferTime;

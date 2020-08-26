@@ -272,6 +272,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
     return new Builder().copyFrom(this).build();
   }
 
+  @SuppressWarnings("unchecked")
   public HistoryEntry toChildHistoryEntity() {
     String parentKind = getParent().getKind();
     final HistoryEntry resultEntity;
@@ -280,19 +281,23 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
       resultEntity =
           new DomainHistory.Builder()
               .copyFrom(this)
-              .setDomainRepoId(VKey.create(DomainBase.class, parent.getName(), parent))
+              .setDomainRepoId(
+                  VKey.create(DomainBase.class, parent.getName(), (Key<DomainBase>) parent))
               .build();
     } else if (parentKind.equals(getKind(HostResource.class))) {
       resultEntity =
           new HostHistory.Builder()
               .copyFrom(this)
-              .setHostRepoId(VKey.create(HostResource.class, parent.getName(), parent))
+              .setHostRepoId(
+                  VKey.create(HostResource.class, parent.getName(), (Key<HostResource>) parent))
               .build();
     } else if (parentKind.equals(getKind(ContactResource.class))) {
       resultEntity =
           new ContactHistory.Builder()
               .copyFrom(this)
-              .setContactRepoId(VKey.create(ContactResource.class, parent.getName(), parent))
+              .setContactRepoId(
+                  VKey.create(
+                      ContactResource.class, parent.getName(), (Key<ContactResource>) parent))
               .build();
     } else {
       throw new IllegalStateException(
