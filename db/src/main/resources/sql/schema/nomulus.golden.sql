@@ -276,23 +276,11 @@ CREATE TABLE public."Contact" (
 
 
 --
--- Name: history_id_sequence; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.history_id_sequence
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
 -- Name: ContactHistory; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public."ContactHistory" (
-    history_revision_id bigint DEFAULT nextval('public.history_id_sequence'::regclass) NOT NULL,
+    history_revision_id bigint NOT NULL,
     history_by_superuser boolean NOT NULL,
     history_registrar_id text,
     history_modification_time timestamp with time zone NOT NULL,
@@ -431,7 +419,7 @@ CREATE TABLE public."Domain" (
 --
 
 CREATE TABLE public."DomainHistory" (
-    history_revision_id bigint DEFAULT nextval('public.history_id_sequence'::regclass) NOT NULL,
+    history_revision_id bigint NOT NULL,
     history_by_superuser boolean NOT NULL,
     history_registrar_id text,
     history_modification_time timestamp with time zone NOT NULL,
@@ -550,7 +538,7 @@ ALTER SEQUENCE public."GracePeriod_id_seq" OWNED BY public."GracePeriod".id;
 --
 
 CREATE TABLE public."HostHistory" (
-    history_revision_id bigint DEFAULT nextval('public.history_id_sequence'::regclass) NOT NULL,
+    history_revision_id bigint NOT NULL,
     history_by_superuser boolean NOT NULL,
     history_registrar_id text NOT NULL,
     history_modification_time timestamp with time zone NOT NULL,
@@ -928,6 +916,18 @@ CREATE SEQUENCE public."Transaction_id_seq"
 --
 
 ALTER SEQUENCE public."Transaction_id_seq" OWNED BY public."Transaction".id;
+
+
+--
+-- Name: history_id_sequence; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.history_id_sequence
+    START WITH 1
+    INCREMENT BY 50
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 --

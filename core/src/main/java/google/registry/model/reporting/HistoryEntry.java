@@ -34,7 +34,6 @@ import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostHistory;
@@ -117,9 +116,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
    * DomainHistory}, uses a composite primary key which the id is part of, and Hibernate requires
    * that all the {@link javax.persistence.Id} fields must be put in the exact same class.
    */
-  @Id @Transient
-  @VisibleForTesting
-  public Long id;
+  @Id @Transient @VisibleForTesting public Long id;
 
   /** The resource this event mutated. */
   @Parent @Transient protected Key<? extends EppResource> parent;
@@ -284,10 +281,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
     // can't use a switch statement since we're calling getKind()
     if (parentKind.equals(getKind(DomainBase.class))) {
       resultEntity =
-          new DomainHistory.Builder()
-              .copyFrom(this)
-              .setDomainRepoId(parent.getName())
-              .build();
+          new DomainHistory.Builder().copyFrom(this).setDomainRepoId(parent.getName()).build();
     } else if (parentKind.equals(getKind(HostResource.class))) {
       resultEntity =
           new HostHistory.Builder()

@@ -11,8 +11,7 @@
     </attributes>
   </embeddable>
 
-  <sequence-generator name="HistorySequenceGenerator"
-      sequence-name="history_id_sequence" allocation-size="1" />
+  <sequence-generator name="HistorySequenceGenerator" sequence-name="history_id_sequence" />
 
   <persistence-unit-metadata>
     <persistence-unit-defaults>
