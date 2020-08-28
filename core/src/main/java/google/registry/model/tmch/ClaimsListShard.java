@@ -117,7 +117,16 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreEntity 
   @Column(nullable = false)
   CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
 
-  /** When the claims list was last updated. */
+  /**
+   * When the claims list was last updated.
+   *
+   * <p>Note that the value of this field is parsed from the claims list file(See this <a
+   * href="https://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.1">RFC</>), it is
+   * the DNL List creation datetime from the rfc. Since this field has been used by Datastore, we
+   * cannot change its name until we finish the migration.
+   *
+   * <p>TODO(b/166784536): Rename this field to tmdbGenerationTime.
+   */
   @Column(name = "tmdb_generation_time", nullable = false)
   DateTime creationTime;
 
