@@ -18,6 +18,7 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
+import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
@@ -66,6 +67,8 @@ public class DomainHistory extends HistoryEntry {
 
   // We could have reused domainContent.nsHosts here, but Hibernate throws a weird exception after
   // we change to use a composite primary key.
+  // TODO(b/166776754): Investigate if we can reuse domainContent.nsHosts for storing host keys.
+  @Ignore
   @ElementCollection
   @JoinTable(name = "DomainHistoryHost")
   @Column(name = "host_repo_id")

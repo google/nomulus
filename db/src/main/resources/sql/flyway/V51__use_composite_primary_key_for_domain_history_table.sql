@@ -12,6 +12,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+alter sequence "history_id_sequence" increment 50;
+
+alter table "DomainHistory" alter column history_revision_id drop default;
+alter table "ContactHistory" alter column history_revision_id drop default;
+alter table "HostHistory" alter column history_revision_id drop default;
+
 alter table if exists "DomainHistoryHost"
     drop constraint fk6b8eqdxwe3guc56tgpm89atx;
 
