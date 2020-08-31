@@ -15,7 +15,8 @@
 # This file declares shell functions used by other scripts in this folder.
 
 # Fetch the tag of the currently deployed release of Nomulus server
-# or SQL schema.
+# or SQL schema. The caller is responsible for fetching relevant git
+# tags to the local repo.
 function fetchVersion() {
   local deployed_system=${1}
   local env=${2}
