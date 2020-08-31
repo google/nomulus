@@ -26,9 +26,14 @@ Checks for post-deployment change to Flyway scripts.
 
 With Flyway, once an incremental change script is deployed, it must not be
 changed. Even changes to comments or whitespaces would cause validation
-failures during future deployment. This script checks for changes to scripts
-that have already been deployed to Sandbox. The assumption is that the schema
-in Sandbox is always newer than that in production.
+failures during future deployment. This script checks for changes (including
+removal and renaming which may happen due to incorrect merge conflict
+resolution) to scripts that have already been deployed to Sandbox. The
+assumption is that the schema in Sandbox is always newer than that in
+production.
+
+A side-effect of this check is that old branches missing recently deployed
+scripts must update first.
 
 Options:
     -h, --help  show this help text
@@ -61,7 +66,7 @@ fi
 sandbox_tag=$(fetchVersion sql sandbox ${DEV_PROJECT})
 echo "Checking Flyway scripts against schema in Sandbox (${sandbox_tag})."
 modified_sqls=$(git diff --name-status ${sandbox_tag} \
-    db/src/main/resources/sql/flyway | grep ^M | grep \.sql$ | wc -l)
+    db/src/main/resources/sql/flyway | grep "^M\|^D\|^R" | grep \.sql$ | wc -l)
 
 if [[ ${modified_sqls} = 0 ]]; then
   echo "No illegal change to deployed schema scripts."
@@ -69,6 +74,7 @@ if [[ ${modified_sqls} = 0 ]]; then
 else
   echo "Changes to the following files are not allowed:"
   echo $(git diff --name-status ${sandbox_tag} \
-      db/src/main/resources/sql/flyway | grep ^M | grep \.sql$)
+      db/src/main/resources/sql/flyway | grep "^M\|^D\|^R" | grep \.sql$)
+  echo "Make sure your branch is up to date with HEAD of master."
   exit 1
 fi
