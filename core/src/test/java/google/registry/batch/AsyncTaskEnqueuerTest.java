@@ -31,7 +31,7 @@ import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardHours;
 import static org.joda.time.Duration.standardSeconds;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSortedSet;
@@ -159,7 +159,7 @@ public class AsyncTaskEnqueuerTest {
                 .setRegistrarPocId("someone@example.com")
                 .setVerificationCode("hi")
                 .build());
-    asyncTaskEnqueuer.enqueueDomainRelock(lock);
+    asyncTaskEnqueuer.enqueueDomainRelock(lock.getRelockDuration().get(), lock.getRevisionId(), 0);
     assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
@@ -169,6 +169,7 @@ public class AsyncTaskEnqueuerTest {
             .param(
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))
+            .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, "0")
             .etaDelta(
                 standardHours(6).minus(standardSeconds(30)),
                 standardHours(6).plus(standardSeconds(30))));
@@ -188,9 +189,9 @@ public class AsyncTaskEnqueuerTest {
                 .setVerificationCode("hi")
                 .build());
     assertThat(
-            assertThrows(
-                IllegalArgumentException.class,
-                () -> asyncTaskEnqueuer.enqueueDomainRelock(lockWithoutDuration)))
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> asyncTaskEnqueuer.enqueueDomainRelock(lockWithoutDuration)))
         .hasMessageThat()
         .isEqualTo(
             String.format(

@@ -16,6 +16,7 @@ package google.registry.util;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
 import java.util.Collection;
 import java.util.Optional;
@@ -27,10 +28,10 @@ public abstract class EmailMessage {
 
   public abstract String subject();
   public abstract String body();
-  public abstract ImmutableList<InternetAddress> recipients();
+  public abstract ImmutableSet<InternetAddress> recipients();
   public abstract InternetAddress from();
 
-  public abstract ImmutableList<InternetAddress> bccs();
+  public abstract ImmutableSet<InternetAddress> bccs();
 
   public abstract Optional<MediaType> contentType();
   public abstract Optional<Attachment> attachment();
@@ -63,9 +64,9 @@ public abstract class EmailMessage {
     public abstract Builder setContentType(MediaType contentType);
     public abstract Builder setAttachment(Attachment attachment);
 
-    abstract ImmutableList.Builder<InternetAddress> recipientsBuilder();
+    abstract ImmutableSet.Builder<InternetAddress> recipientsBuilder();
 
-    abstract ImmutableList.Builder<InternetAddress> bccsBuilder();
+    abstract ImmutableSet.Builder<InternetAddress> bccsBuilder();
 
     public Builder addRecipient(InternetAddress value) {
       recipientsBuilder().add(value);

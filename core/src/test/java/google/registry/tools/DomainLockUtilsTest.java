@@ -271,6 +271,7 @@ public final class DomainLockUtilsTest {
             .param(
                 RelockDomainAction.OLD_UNLOCK_REVISION_ID_PARAM,
                 String.valueOf(lock.getRevisionId()))
+            .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, "0")
             .etaDelta(
                 standardHours(6).minus(standardSeconds(30)),
                 standardDays(6).plus(standardSeconds(30))));
