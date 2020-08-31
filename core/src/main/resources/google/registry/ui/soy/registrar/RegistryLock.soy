@@ -163,5 +163,7 @@
 
 /** Content if the registrar is not allowed to use registry lock. */
 {template .lockNotAllowedOnRegistrar}
-  <h2>Registry Lock is coming soon; please stay tuned for updates.</h2>
+  {@param supportEmail: string}
+  <h2>Sorry, your registrar hasn't enrolled in registry lock yet. To do so, please
+    contact {$supportEmail}.</h2>
 {/template}
