@@ -41,7 +41,7 @@ class RegistrarCreateConsoleScreenshotTest extends WebDriverTestCase {
   @RetryingTest(3)
   void get_owner_fails() throws Throwable {
     driver.get(server.getUrl("/registrar-create"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("unauthorized");
   }
 
@@ -49,7 +49,7 @@ class RegistrarCreateConsoleScreenshotTest extends WebDriverTestCase {
   void get_admin_succeeds() throws Throwable {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar-create"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("formEmpty");
     driver.findElement(By.id("clientId")).sendKeys("my-name");
     driver.findElement(By.id("name")).sendKeys("registrar name");
@@ -69,7 +69,7 @@ class RegistrarCreateConsoleScreenshotTest extends WebDriverTestCase {
     driver.findElement(By.id("passcode")).sendKeys("01234");
     driver.diffPage("formFilled");
     driver.findElement(By.id("submit-button")).click();
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("createResult");
   }
 
@@ -77,7 +77,7 @@ class RegistrarCreateConsoleScreenshotTest extends WebDriverTestCase {
   void get_admin_fails_badEmail() throws Throwable {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar-create"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.findElement(By.id("clientId")).sendKeys("my-name");
     driver.findElement(By.id("name")).sendKeys("registrar name");
     driver
@@ -93,7 +93,7 @@ class RegistrarCreateConsoleScreenshotTest extends WebDriverTestCase {
     driver.findElement(By.id("city")).sendKeys("Citysville");
     driver.findElement(By.id("countryCode")).sendKeys("fr");
     driver.findElement(By.id("submit-button")).click();
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("createResultFailed");
   }
 }

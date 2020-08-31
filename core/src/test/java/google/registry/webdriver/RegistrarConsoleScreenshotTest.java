@@ -68,7 +68,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   @RetryingTest(3)
   void index_owner() throws Throwable {
     driver.get(server.getUrl("/registrar"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
@@ -77,7 +77,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   void index_adminAndOwner() throws Throwable {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
@@ -88,22 +88,21 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     // To make sure we're only ADMIN (and not also "OWNER"), we switch to the NewRegistrar we
     // aren't in the contacts of
     driver.get(server.getUrl("/registrar?clientId=NewRegistrar"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
   @RetryingTest(3)
   void contactUs() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-us"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
   @RetryingTest(3)
   void settingsContact() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-settings"));
-    Thread.sleep(1000);
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
@@ -112,16 +111,14 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   void settingsContact_asAdmin() throws Throwable {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar?clientId=NewRegistrar#contact-settings"));
-    Thread.sleep(1000);
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
   @RetryingTest(3)
   void settingsContactItem() throws Throwable {
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
-    Thread.sleep(1000);
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
@@ -132,8 +129,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.get(
         server.getUrl(
             "/registrar?clientId=NewRegistrar#contact-settings/janedoe@theregistrar.com"));
-    Thread.sleep(1000);
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
@@ -141,9 +137,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   void settingsContactEdit() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
-    Thread.sleep(1000);
-    driver.waitForElement(By.tagName("h1"));
-    driver.waitForElement(By.id("reg-app-btn-edit")).click();
+    driver.waitForDisplayedElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
     driver.diffPage("page");
   }
 
@@ -162,9 +157,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         });
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
-    Thread.sleep(1000);
-    driver.waitForElement(By.tagName("h1"));
-    driver.waitForElement(By.id("reg-app-btn-edit")).click();
+    driver.waitForDisplayedElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
     // The password should show as dots when the user types it in
     driver.findElement(By.id("contacts[1].registryLockPassword")).sendKeys("password");
     driver.diffPage("page_with_password");
@@ -179,9 +173,10 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     Thread.sleep(5);
     driver.diffPage("page_with_password_after_hide");
 
-    // now actually set the password
-    driver.waitForElement(By.id("reg-app-btn-save")).click();
-    Thread.sleep(500);
+    // Now click the Save button and wait for another Edit button to show up
+    driver.waitForRefreshedElementAfterAction(
+        () -> driver.waitForDisplayedElement(By.id("reg-app-btn-save")).click(),
+        By.id("reg-app-btn-edit"));
     driver.diffPage("contact_view");
 
     server.runInAppEngineEnvironment(
@@ -213,9 +208,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         });
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
-    Thread.sleep(1000);
-    driver.waitForElement(By.tagName("h1"));
-    driver.waitForElement(By.id("reg-app-btn-edit")).click();
+    driver.waitForDisplayedElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
     driver.diffPage("page");
   }
 
@@ -225,9 +219,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         () -> persistResource(makeRegistrar2().asBuilder().setRegistryLockAllowed(true).build()));
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings/johndoe@theregistrar.com"));
-    Thread.sleep(1000);
-    driver.waitForElement(By.tagName("h1"));
-    driver.waitForElement(By.id("reg-app-btn-edit")).click();
+    driver.waitForDisplayedElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
     driver.diffPage("page");
   }
 
@@ -235,9 +228,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   void settingsContactAdd() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#contact-settings"));
-    Thread.sleep(1000);
-    driver.waitForElement(By.tagName("h1"));
-    driver.waitForElement(By.id("reg-app-btn-add")).click();
+    driver.waitForDisplayedElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.id("reg-app-btn-add")).click();
     // Attempt to fix flaky tests. The going theory is that the click button CSS animation needs to
     // finish before the screenshot is captured.
     Thread.sleep(250);
@@ -251,10 +243,10 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     // To make sure we're only ADMIN (and not also "OWNER"), we switch to the NewRegistrar we
     // aren't in the contacts of
     driver.get(server.getUrl("/registrar?clientId=NewRegistrar#admin-settings"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("view");
-    driver.waitForElement(By.id("reg-app-btn-edit")).click();
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("edit");
   }
 
@@ -272,7 +264,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   void settingsAdmin_whenNotAdmin_showsHome() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#admin-settings"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("view");
   }
 
@@ -280,7 +272,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   void getOteStatus_noButtonWhenReal() throws Exception {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar#admin-settings"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("result");
   }
 
@@ -299,7 +291,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   void getOteStatus_completed() throws Exception {
     server.setIsAdmin(true);
     driver.get(server.getUrl("/registrar?clientId=otefinished-1#admin-settings"));
-    driver.waitForElement(By.id("btn-ote-status"));
+    driver.waitForDisplayedElement(By.id("btn-ote-status"));
     driver.diffPage("before_click");
     driver.findElement(By.id("btn-ote-status")).click();
     driver.findElement(By.id("ote-results-table")).click();
@@ -312,10 +304,10 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   void settingsSecurity() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#security-settings"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("view");
-    driver.waitForElement(By.id("reg-app-btn-edit")).click();
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("edit");
   }
 
@@ -325,7 +317,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     server.setIsAdmin(true);
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar?clientId=NewRegistrar#security-settings"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("view");
   }
 
@@ -343,10 +335,10 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         });
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#security-settings"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("view");
-    driver.waitForElement(By.id("reg-app-btn-edit")).click();
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("edit");
   }
 
@@ -363,10 +355,10 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         });
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#security-settings"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("view");
-    driver.waitForElement(By.id("reg-app-btn-edit")).click();
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("edit");
   }
 
@@ -377,14 +369,14 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
             persistResource(
                 loadRegistrar("TheRegistrar").asBuilder().setState(State.DISABLED).build()));
     driver.get(server.getUrl("/registrar"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("view");
   }
 
   @RetryingTest(3)
   void settingsWhois() throws Throwable {
     driver.get(server.getUrl("/registrar#whois-settings"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.diffPage("page");
   }
 
@@ -392,8 +384,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   void settingsWhoisEdit() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#whois-settings"));
-    driver.waitForElement(By.id("reg-app-btn-edit")).click();
-    Thread.sleep(1000);
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
+    driver.waitForDisplayedElement(By.id("reg-app-btn-save"));
     driver.diffPage("page");
   }
 
@@ -401,10 +393,12 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   void settingsWhoisEditError() throws Throwable {
     driver.manage().window().setSize(new Dimension(1050, 2000));
     driver.get(server.getUrl("/registrar#whois-settings"));
-    driver.waitForElement(By.id("reg-app-btn-edit")).click();
+    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
     driver.setFormFieldsById(ImmutableMap.of("faxNumber", "cat"));
-    driver.waitForElement(By.id("reg-app-btn-save")).click();
-    Thread.sleep(1000);
+    driver.waitForDisplayedElement(By.id("reg-app-btn-save")).click();
+    // After the click, a div element without id would show up with an error message.
+    driver.waitForElementWithCondition(
+        By.tagName("div"), e -> e.getText().startsWith("Must be a valid +E.164 phone number,"));
     driver.diffPage("page");
   }
 
@@ -412,7 +406,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   void indexPage_smallScrolledDown() throws Throwable {
     driver.manage().window().setSize(new Dimension(600, 300));
     driver.get(server.getUrl("/registrar"));
-    driver.waitForElement(By.tagName("h1"));
+    driver.waitForDisplayedElement(By.tagName("h1"));
     driver.executeScript("document.getElementById('reg-content-and-footer').scrollTop = 200");
     Thread.sleep(500);
     driver.diffPage("page");
@@ -439,21 +433,21 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
     driver.get(
         server.getUrl(
             "/registry-lock-verify?isLock=true&lockVerificationCode=" + lockVerificationCode));
-    driver.waitForElement(By.id("reg-content"));
+    driver.waitForDisplayedElement(By.id("reg-content"));
     driver.diffPage("page");
   }
 
   @RetryingTest(3)
   void registryLockVerify_unknownLock() throws Throwable {
     driver.get(server.getUrl("/registry-lock-verify?isLock=true&lockVerificationCode=asdfasdf"));
-    driver.waitForElement(By.id("reg-content"));
+    driver.waitForDisplayedElement(By.id("reg-content"));
     driver.diffPage("page");
   }
 
   @RetryingTest(3)
   void registryLock_empty() throws Throwable {
     driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
-    driver.waitForElement(By.tagName("h2"));
+    driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
   }
 
@@ -465,7 +459,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           return null;
         });
     driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
-    driver.waitForElement(By.tagName("h2"));
+    driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
   }
 
@@ -477,7 +471,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           return null;
         });
     driver.get(server.getUrl("/registrar#registry-lock"));
-    driver.waitForElement(By.tagName("h2"));
+    driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
   }
 
@@ -530,7 +524,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           return null;
         });
     driver.get(server.getUrl("/registrar#registry-lock"));
-    driver.waitForElement(By.tagName("h2"));
+    driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
   }
 
@@ -542,9 +536,9 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           return null;
         });
     driver.get(server.getUrl("/registrar#registry-lock"));
-    driver.waitForElement(By.tagName("h2"));
+    driver.waitForDisplayedElement(By.tagName("h2"));
     driver.findElement(By.id("button-unlock-example.tld")).click();
-    driver.waitForElement(By.className("modal-content"));
+    driver.waitForDisplayedElement(By.className("modal-content"));
     driver.findElement(By.id("domain-lock-password")).sendKeys("password");
     driver.diffPage("page");
   }
@@ -559,9 +553,9 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           return null;
         });
     driver.get(server.getUrl("/registrar#registry-lock"));
-    driver.waitForElement(By.tagName("h2"));
+    driver.waitForDisplayedElement(By.tagName("h2"));
     driver.findElement(By.id("button-lock-domain")).click();
-    driver.waitForElement(By.className("modal-content"));
+    driver.waitForDisplayedElement(By.className("modal-content"));
     driver.findElement(By.id("domain-lock-input-value")).sendKeys("somedomain.tld");
     driver.diffPage("page");
   }
@@ -578,7 +572,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           return null;
         });
     driver.get(server.getUrl("/registrar?clientId=TheRegistrar#registry-lock"));
-    driver.waitForElement(By.tagName("h2"));
+    driver.waitForDisplayedElement(By.tagName("h2"));
     driver.diffPage("page");
   }
 
