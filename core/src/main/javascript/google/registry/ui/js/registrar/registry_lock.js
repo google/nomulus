@@ -56,7 +56,8 @@ registry.registrar.RegistryLock.prototype.runAfterRender = function(objArgs) {
   } else {
     goog.soy.renderElement(
         goog.dom.getRequiredElement('locks-content'),
-        registry.soy.registrar.registrylock.lockNotAllowedOnRegistrar);
+        registry.soy.registrar.registrylock.lockNotAllowedOnRegistrar,
+        {supportEmail: objArgs.supportEmail});
   }
 };
 
