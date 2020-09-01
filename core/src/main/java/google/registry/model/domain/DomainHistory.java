@@ -79,7 +79,7 @@ public class DomainHistory extends HistoryEntry {
   @Column(name = "historyRevisionId")
   @Access(AccessType.PROPERTY)
   @Override
-  public Long getId() {
+  public long getId() {
     return super.getId();
   }
 
@@ -99,7 +99,7 @@ public class DomainHistory extends HistoryEntry {
   }
 
   public VKey<DomainHistory> createVKey() {
-    return VKey.createSql(DomainHistory.class, new DomainHistoryId(getId(), domainRepoId));
+    return VKey.createSql(DomainHistory.class, new DomainHistoryId(domainRepoId, getId()));
   }
 
   @PostLoad
@@ -112,23 +112,15 @@ public class DomainHistory extends HistoryEntry {
   /** Class to represent the composite primary key of {@link DomainHistory} entity. */
   static class DomainHistoryId extends ImmutableObject implements Serializable {
 
-    private Long id;
-
     private String domainRepoId;
+
+    private Long id;
 
     /** Hibernate requires this default constructor. */
     private DomainHistoryId() {}
 
-    DomainHistoryId(long id, String domainRepoId) {
-      this.id = id;
+    DomainHistoryId(String domainRepoId, long id) {
       this.domainRepoId = domainRepoId;
-    }
-
-    Long getId() {
-      return id;
-    }
-
-    void setId(Long id) {
       this.id = id;
     }
 
@@ -138,6 +130,14 @@ public class DomainHistory extends HistoryEntry {
 
     void setDomainRepoId(String domainRepoId) {
       this.domainRepoId = domainRepoId;
+    }
+
+    long getId() {
+      return id;
+    }
+
+    void setId(long id) {
+      this.id = id;
     }
   }
 

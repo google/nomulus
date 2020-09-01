@@ -192,13 +192,16 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   @Transient // domain-specific
   Set<DomainTransactionRecord> domainTransactionRecords;
 
-  public Long getId() {
-    return id;
+  public long getId() {
+    // For some reason, Hibernate throws NPE during some initialization phase if we don't deal with
+    // the null case. Setting the id to 0L when it is null should be fine because 0L for primitive
+    // type is considered as null for wrapper class in the Hibernate context.
+    return id == null ? 0L : id;
   }
 
   // This method is required by Hibernate.
   @SuppressWarnings("UnusedMethod")
-  private void setId(Long id) {
+  private void setId(long id) {
     this.id = id;
   }
 

@@ -58,7 +58,7 @@ public class HostHistory extends HistoryEntry {
   @Column(name = "historyRevisionId")
   @Access(AccessType.PROPERTY)
   @Override
-  public Long getId() {
+  public long getId() {
     return super.getId();
   }
 

@@ -77,7 +77,7 @@ public class DomainHistoryTest extends EntityTestCase {
               assertThat(fromDatabase.getDomainRepoId().getSqlKey())
                   .isEqualTo(domainHistory.getDomainRepoId().getSqlKey());
               assertThat(fromDatabase.getNsHosts())
-                  .isEqualTo(
+                  .containsExactlyElementsIn(
                       domainHistory.getNsHosts().stream()
                           .map(key -> VKey.createSql(HostResource.class, key.getSqlKey()))
                           .collect(toImmutableSet()));

@@ -12,7 +12,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-alter sequence "history_id_sequence" increment 50;
+alter sequence "history_id_sequence" increment 50 cache 30;
 
 alter table "DomainHistory" alter column history_revision_id drop default;
 alter table "ContactHistory" alter column history_revision_id drop default;

@@ -927,7 +927,7 @@ CREATE SEQUENCE public.history_id_sequence
     INCREMENT BY 50
     NO MINVALUE
     NO MAXVALUE
-    CACHE 1;
+    CACHE 30;
 
 
 --
