@@ -51,6 +51,7 @@
     <class>google.registry.model.registrar.Registrar</class>
     <class>google.registry.model.registrar.RegistrarContact</class>
     <class>google.registry.model.registry.label.PremiumList</class>
+    <class>google.registry.model.reporting.DomainTransactionRecord</class>
     <class>google.registry.model.reporting.Spec11ThreatMatch</class>
     <class>google.registry.persistence.transaction.TransactionEntity</class>
     <class>google.registry.model.tmch.ClaimsListShard</class>

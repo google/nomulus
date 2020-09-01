@@ -474,7 +474,10 @@ CREATE TABLE public."DomainHistory" (
     statuses text[],
     update_timestamp timestamp with time zone,
     domain_repo_id text NOT NULL,
-    autorenew_end_time timestamp with time zone
+    autorenew_end_time timestamp with time zone,
+    history_other_registrar_id text,
+    history_period_unit text,
+    history_period_value integer
 );
 
 
@@ -490,6 +493,17 @@ CREATE TABLE public."DomainHistoryHost" (
 
 
 --
+-- Name: DomainHistoryTransactionRecord; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainHistoryTransactionRecord" (
+    domain_history_domain_repo_id text NOT NULL,
+    domain_history_history_revision_id bigint NOT NULL,
+    domain_transaction_records_id bigint NOT NULL
+);
+
+
+--
 -- Name: DomainHost; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -497,6 +511,38 @@ CREATE TABLE public."DomainHost" (
     domain_repo_id text NOT NULL,
     host_repo_id text
 );
+
+
+--
+-- Name: DomainTransactionRecord; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainTransactionRecord" (
+    id bigint NOT NULL,
+    report_amount integer NOT NULL,
+    report_field text NOT NULL,
+    reporting_time timestamp with time zone NOT NULL,
+    tld text NOT NULL
+);
+
+
+--
+-- Name: DomainTransactionRecord_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."DomainTransactionRecord_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: DomainTransactionRecord_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."DomainTransactionRecord_id_seq" OWNED BY public."DomainTransactionRecord".id;
 
 
 --
@@ -971,6 +1017,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
+-- Name: DomainTransactionRecord id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainTransactionRecord" ALTER COLUMN id SET DEFAULT nextval('public."DomainTransactionRecord_id_seq"'::regclass);
+
+
+--
 -- Name: GracePeriod id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1092,11 +1145,27 @@ ALTER TABLE ONLY public."Cursor"
 
 
 --
+-- Name: DomainHistoryTransactionRecord DomainHistoryTransactionRecord_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHistoryTransactionRecord"
+    ADD CONSTRAINT "DomainHistoryTransactionRecord_pkey" PRIMARY KEY (domain_history_domain_repo_id, domain_history_history_revision_id, domain_transaction_records_id);
+
+
+--
 -- Name: DomainHistory DomainHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."DomainHistory"
     ADD CONSTRAINT "DomainHistory_pkey" PRIMARY KEY (domain_repo_id, history_revision_id);
+
+
+--
+-- Name: DomainTransactionRecord DomainTransactionRecord_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainTransactionRecord"
+    ADD CONSTRAINT "DomainTransactionRecord_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1225,6 +1294,14 @@ ALTER TABLE ONLY public."Transaction"
 
 ALTER TABLE ONLY public."RegistryLock"
     ADD CONSTRAINT idx_registry_lock_repo_id_revision_id UNIQUE (repo_id, revision_id);
+
+
+--
+-- Name: DomainHistoryTransactionRecord uk_i2obyd9bbrtfx2vm9ipwhvd0b; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHistoryTransactionRecord"
+    ADD CONSTRAINT uk_i2obyd9bbrtfx2vm9ipwhvd0b UNIQUE (domain_transaction_records_id);
 
 
 --
@@ -1631,6 +1708,22 @@ ALTER TABLE ONLY public."HostHistory"
 
 ALTER TABLE ONLY public."ClaimsEntry"
     ADD CONSTRAINT fk6sc6at5hedffc0nhdcab6ivuq FOREIGN KEY (revision_id) REFERENCES public."ClaimsList"(revision_id);
+
+
+--
+-- Name: DomainHistoryTransactionRecord fk80mpb1lv7m0fjif65jdcwais2; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHistoryTransactionRecord"
+    ADD CONSTRAINT fk80mpb1lv7m0fjif65jdcwais2 FOREIGN KEY (domain_history_domain_repo_id, domain_history_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+
+
+--
+-- Name: DomainHistoryTransactionRecord fk8hf011yrspsho4nwgvydfyidr; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHistoryTransactionRecord"
+    ADD CONSTRAINT fk8hf011yrspsho4nwgvydfyidr FOREIGN KEY (domain_transaction_records_id) REFERENCES public."DomainTransactionRecord"(id);
 
 
 --

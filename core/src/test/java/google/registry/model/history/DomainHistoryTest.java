@@ -17,6 +17,7 @@ package google.registry.model.history;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
@@ -25,14 +26,18 @@ import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
+import google.registry.model.reporting.DomainTransactionRecord;
+import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import org.junit.jupiter.api.Test;
@@ -125,10 +130,24 @@ public class DomainHistoryTest extends EntityTestCase {
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
     assertAboutImmutableObjects()
         .that(one)
-        .isEqualExceptFields(two, "domainContent", "domainRepoId", "parent", "nsHosts");
+        .isEqualExceptFields(
+            two, "domainContent", "domainRepoId", "parent", "nsHosts", "domainTransactionRecords");
+    // NB: the record's ID gets reset by Hibernate, causing the hash code to differ so we have to
+    // compare it separately
+    assertThat(one.getDomainTransactionRecords())
+        .comparingElementsUsing(immutableObjectCorrespondence())
+        .containsExactlyElementsIn(two.getDomainTransactionRecords());
   }
 
   private DomainHistory createDomainHistory(DomainContent domain) {
+    DomainTransactionRecord transactionRecord =
+        new DomainTransactionRecord.Builder()
+            .setTld("tld")
+            .setReportingTime(fakeClock.nowUtc())
+            .setReportField(TransactionReportField.NET_ADDS_1_YR)
+            .setReportAmount(1)
+            .build();
+
     return new DomainHistory.Builder()
         .setType(HistoryEntry.Type.DOMAIN_CREATE)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
@@ -140,6 +159,9 @@ public class DomainHistoryTest extends EntityTestCase {
         .setRequestedByRegistrar(true)
         .setDomainContent(domain)
         .setDomainRepoId(domain.getRepoId())
+        .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
+        .setOtherClientId("otherClient")
+        .setPeriod(Period.create(1, Period.Unit.YEARS))
         .build();
   }
 }

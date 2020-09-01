@@ -342,6 +342,9 @@ create sequence temp_history_id_sequence start 1 increment 50;
         last_epp_update_time timestamptz,
         statuses text[],
         update_timestamp timestamptz,
+        history_other_registrar_id text,
+        history_period_unit text,
+        history_period_value int4,
         primary key (domain_repo_id, history_revision_id)
     );
 
@@ -351,9 +354,25 @@ create sequence temp_history_id_sequence start 1 increment 50;
         host_repo_id text
     );
 
+    create table "DomainHistoryTransactionRecord" (
+       domain_history_domain_repo_id text not null,
+        domain_history_history_revision_id int8 not null,
+        domain_transaction_records_id int8 not null,
+        primary key (domain_history_domain_repo_id, domain_history_history_revision_id, domain_transaction_records_id)
+    );
+
     create table "DomainHost" (
        domain_repo_id text not null,
         host_repo_id text
+    );
+
+    create table "DomainTransactionRecord" (
+       id  bigserial not null,
+        report_amount int4 not null,
+        report_field text not null,
+        reporting_time timestamptz not null,
+        tld text not null,
+        primary key (id)
     );
 
     create table "GracePeriod" (
@@ -617,6 +636,9 @@ create index IDXrh4xmrot9bd63o382ow9ltfig on "DomainHistory" (creation_time);
 create index IDXaro1omfuaxjwmotk3vo00trwm on "DomainHistory" (history_registrar_id);
 create index IDXsu1nam10cjes9keobapn5jvxj on "DomainHistory" (history_type);
 create index IDX6w3qbtgce93cal2orjg1tw7b7 on "DomainHistory" (history_modification_time);
+
+    alter table if exists "DomainHistoryTransactionRecord" 
+       add constraint UK_i2obyd9bbrtfx2vm9ipwhvd0b unique (domain_transaction_records_id);
 create index IDXj1mtx98ndgbtb1bkekahms18w on "GracePeriod" (domain_repo_id);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
 create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
@@ -646,6 +668,16 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
 
     alter table if exists "DomainHistoryHost" 
        add constraint FKa9woh3hu8gx5x0vly6bai327n 
+       foreign key (domain_history_domain_repo_id, domain_history_history_revision_id) 
+       references "DomainHistory";
+
+    alter table if exists "DomainHistoryTransactionRecord" 
+       add constraint FK8hf011yrspsho4nwgvydfyidr 
+       foreign key (domain_transaction_records_id) 
+       references "DomainTransactionRecord";
+
+    alter table if exists "DomainHistoryTransactionRecord" 
+       add constraint FK80mpb1lv7m0fjif65jdcwais2 
        foreign key (domain_history_domain_repo_id, domain_history_history_revision_id) 
        references "DomainHistory";
 

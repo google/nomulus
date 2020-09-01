@@ -254,8 +254,26 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
     return requestedByRegistrar;
   }
 
-  public ImmutableSet<DomainTransactionRecord> getDomainTransactionRecords() {
+  public Set<DomainTransactionRecord> getDomainTransactionRecords() {
     return nullToEmptyImmutableCopy(domainTransactionRecords);
+  }
+
+  // Hibernate needs this in order to populate the period but no one else should ever use it
+  @SuppressWarnings("UnusedMethod")
+  private void setPeriod(Period period) {
+    this.period = period;
+  }
+
+  // Hibernate needs this in order to populate the other registrar ID
+  @SuppressWarnings("UnusedMethod")
+  private void setOtherRegistrarId(String otherRegistrarId) {
+    this.otherClientId = otherRegistrarId;
+  }
+
+  // Hibernate needs this in order to populate the domain transaction records
+  @SuppressWarnings("UnusedMethod")
+  private void setDomainTransactionRecords(Set<DomainTransactionRecord> domainTransactionRecords) {
+    this.domainTransactionRecords = ImmutableSet.copyOf(domainTransactionRecords);
   }
 
   public static VKey<HistoryEntry> createVKey(Key<HistoryEntry> key) {
