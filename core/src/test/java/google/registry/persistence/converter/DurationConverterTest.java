@@ -51,22 +51,37 @@ public class DurationConverterTest {
             .plus(Duration.standardMinutes(30))
             .plus(Duration.standardSeconds(15))
             .plus(Duration.millis(7));
-    DurationTestEntity entity = new DurationTestEntity(testDuration);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
-    DurationTestEntity persisted =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(DurationTestEntity.class, "id"));
-    assertThat(persisted.duration.getMillis()).isEqualTo(testDuration.getMillis());
+    assertPersistedEntityHasSameDuration(testDuration);
   }
 
   @Test
   void testRoundTripLargeNumberOfDays() {
     Duration testDuration =
         Duration.standardDays(10001).plus(Duration.standardHours(100)).plus(Duration.millis(790));
-    DurationTestEntity entity = new DurationTestEntity(testDuration);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    assertPersistedEntityHasSameDuration(testDuration);
+  }
+
+  @Test
+  void testRoundTripLessThanOneDay() {
+    Duration testDuration =
+        Duration.standardHours(15)
+            .plus(Duration.standardMinutes(40))
+            .plus(Duration.standardSeconds(50));
+    assertPersistedEntityHasSameDuration(testDuration);
+  }
+
+  @Test
+  void testRoundTripExactOneDay() {
+    Duration testDuration = Duration.standardDays(1);
+    assertPersistedEntityHasSameDuration(testDuration);
+  }
+
+  private void assertPersistedEntityHasSameDuration(Duration duration) {
+    DurationTestEntity entity = new DurationTestEntity(duration);
+    jpaTm().transact(() -> jpaTm().saveNew(entity));
     DurationTestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(DurationTestEntity.class, "id"));
-    assertThat(persisted.duration.getMillis()).isEqualTo(testDuration.getMillis());
+    assertThat(persisted.duration.getMillis()).isEqualTo(duration.getMillis());
   }
 
   @Entity(name = "TestEntity") // Override entity name to avoid the nested class reference.

@@ -40,11 +40,17 @@ public class DurationConverter implements AttributeConverter<Duration, PGInterva
     if (duration == null) {
       return new PGInterval();
     }
+    // When the period is created from duration by calling duration.toPeriod(), only precise fields
+    // in the period type will be used. Thus, only the hour, minute, second and millisecond fields
+    // on the period will be used. The year, month, week and day fields will not be populated:
+    //   1. If the duration is small, less than one day, then this method will just set
+    //      hours/minutes/seconds correctly.
+    //   2. If the duration is larger than one day then all the remaining duration will
+    //      be stored in the largest available field, hours in this case.
+    // So, when we convert the period to a PGInterval instance, we set the days field by extracting
+    // it from period's hours field.
+    Period period = duration.toPeriod();
     PGInterval interval = new PGInterval();
-    Period period = new Period(duration);
-    // For some reason when the period is created from the duration, it does not set days, but
-    // instead just a total number of hours. Years and months are not created because those can
-    // differ in length of milliseconds.
     interval.setDays(period.getHours() / 24);
     interval.setHours(period.getHours() % 24);
     interval.setMinutes(period.getMinutes());
