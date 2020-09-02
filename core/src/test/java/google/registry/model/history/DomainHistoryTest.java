@@ -46,26 +46,26 @@ public class DomainHistoryTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    saveRegistrar("TheRegistrar");
-
-    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
-    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+    DomainBase domain = createDomainWithContactsAndHosts();
+    DomainHistory domainHistory = createDomainHistory(domain);
+    domainHistory.id = null;
+    jpaTm().transact(() -> jpaTm().saveNew(domainHistory));
 
     jpaTm()
         .transact(
             () -> {
-              jpaTm().saveNew(host);
-              jpaTm().saveNew(contact);
+              DomainHistory fromDatabase = jpaTm().load(domainHistory.createVKey());
+              assertDomainHistoriesEqual(fromDatabase, domainHistory);
+              assertThat(fromDatabase.getDomainRepoId().getSqlKey())
+                  .isEqualTo(domainHistory.getDomainRepoId().getSqlKey());
             });
+  }
 
-    DomainBase domain =
-        newDomainBase("example.tld", "domainRepoId", contact)
-            .asBuilder()
-            .setNameservers(host.createVKey())
-            .build();
-    jpaTm().transact(() -> jpaTm().saveNew(domain));
-
-    DomainHistory domainHistory = createDomainHistory(domain);
+  @Test
+  void testLegacyPersistence_nullResource() {
+    DomainBase domain = createDomainWithContactsAndHosts();
+    DomainHistory domainHistory =
+        createDomainHistory(domain).asBuilder().setDomainContent(null).build();
     domainHistory.id = null;
     jpaTm().transact(() -> jpaTm().saveNew(domainHistory));
 
@@ -110,7 +110,7 @@ public class DomainHistoryTest extends EntityTestCase {
     tm().transact(() -> tm().saveNew(domainHistory));
 
     // retrieving a HistoryEntry or a DomainHistory with the same key should return the same object
-    // note: due to the @EntitySubclass annotation. all Keys for ContactHistory objects will have
+    // note: due to the @EntitySubclass annotation. all Keys for DomainHistory objects will have
     // type HistoryEntry
     VKey<DomainHistory> domainHistoryVKey =
         VKey.createOfy(DomainHistory.class, Key.create(domainHistory));
@@ -122,10 +122,34 @@ public class DomainHistoryTest extends EntityTestCase {
     assertThat(domainHistoryFromDb).isEqualTo(historyEntryFromDb);
   }
 
+  DomainBase createDomainWithContactsAndHosts() {
+    saveRegistrar("TheRegistrar");
+
+    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().saveNew(host);
+              jpaTm().saveNew(contact);
+            });
+
+    DomainBase domain =
+        newDomainBase("example.tld", "domainRepoId", contact)
+            .asBuilder()
+            .setNameservers(host.createVKey())
+            .build();
+    jpaTm().transact(() -> jpaTm().saveNew(domain));
+    return domain;
+  }
+
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
     assertAboutImmutableObjects()
         .that(one)
         .isEqualExceptFields(two, "domainContent", "domainRepoId", "parent", "nsHosts");
+    assertThat(one.getDomainContent().map(DomainContent::getDomainName))
+        .isEqualTo(two.getDomainContent().map(DomainContent::getDomainName));
   }
 
   private DomainHistory createDomainHistory(DomainContent domain) {

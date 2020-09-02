@@ -19,6 +19,8 @@ import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -26,6 +28,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.PostLoad;
 
 /**
  * A persisted history entry representing an EPP modification to a contact.
@@ -45,7 +48,9 @@ import javax.persistence.Id;
 @EntitySubclass
 @Access(AccessType.FIELD)
 public class ContactHistory extends HistoryEntry {
+
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
+  @Nullable
   ContactBase contactBase;
 
   @Column(nullable = false)
@@ -61,13 +66,22 @@ public class ContactHistory extends HistoryEntry {
   }
 
   /** The state of the {@link ContactBase} object at this point in time. */
-  public ContactBase getContactBase() {
-    return contactBase;
+  public Optional<ContactBase> getContactBase() {
+    return Optional.ofNullable(contactBase);
   }
 
   /** The key to the {@link ContactResource} this is based off of. */
   public VKey<ContactResource> getContactRepoId() {
     return contactRepoId;
+  }
+
+  @PostLoad
+  void postLoad() {
+    // Normally Hibernate would see that the contact fields are all null and would fill contactBase
+    // with a null object. Unfortunately, the updateTimestamp is never null in SQL.
+    if (contactBase != null && contactBase.getContactId() == null) {
+      contactBase = null;
+    }
   }
 
   @Override

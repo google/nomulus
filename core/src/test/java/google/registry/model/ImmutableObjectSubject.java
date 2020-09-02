@@ -32,17 +32,25 @@ import javax.annotation.Nullable;
 /** Truth subject for asserting things about ImmutableObjects that are not built in. */
 public final class ImmutableObjectSubject extends Subject {
 
-  private final ImmutableObject actual;
+  @Nullable private final ImmutableObject actual;
 
-  protected ImmutableObjectSubject(FailureMetadata failureMetadata, ImmutableObject actual) {
+  protected ImmutableObjectSubject(
+      FailureMetadata failureMetadata, @Nullable ImmutableObject actual) {
     super(failureMetadata, actual);
     this.actual = actual;
   }
 
-  public void isEqualExceptFields(ImmutableObject expected, String... ignoredFields) {
-    Map<Field, Object> actualFields = filterFields(actual, ignoredFields);
-    Map<Field, Object> expectedFields = filterFields(expected, ignoredFields);
-    assertThat(actualFields).containsExactlyEntriesIn(expectedFields);
+  public void isEqualExceptFields(@Nullable ImmutableObject expected, String... ignoredFields) {
+    if (actual == null) {
+      assertThat(expected).isNull();
+    } else {
+      assertThat(expected).isNotNull();
+    }
+    if (actual != null) {
+      Map<Field, Object> actualFields = filterFields(actual, ignoredFields);
+      Map<Field, Object> expectedFields = filterFields(expected, ignoredFields);
+      assertThat(actualFields).containsExactlyEntriesIn(expectedFields);
+    }
   }
 
   public static Correspondence<ImmutableObject, ImmutableObject> immutableObjectCorrespondence(

@@ -74,11 +74,13 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
   /** The ID of the registrar that is currently sponsoring this resource. */
   @Index
-  @Column(name = "currentSponsorRegistrarId", nullable = false)
+  // This would be non-null if not for legacy History objects that have null resource fields
+  @Column(name = "currentSponsorRegistrarId")
   String currentSponsorClientId;
 
   /** The ID of the registrar that created this resource. */
-  @Column(name = "creationRegistrarId", nullable = false)
+  // This would be non-null if not for legacy History objects that have null resource fields
+  @Column(name = "creationRegistrarId")
   String creationClientId;
 
   /**
@@ -95,7 +97,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   // Map the method to XML, not the field, because if we map the field (with an adaptor class) it
   // will never be omitted from the xml even if the timestamp inside creationTime is null and we
   // return null from the adaptor. (Instead it gets written as an empty tag.)
-  @Column(nullable = false)
+  // This would be non-null if not for legacy History objects that have null resource fields
   @Index
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 

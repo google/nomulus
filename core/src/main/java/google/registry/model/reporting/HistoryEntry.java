@@ -175,7 +175,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable {
   boolean bySuperuser;
 
   /** Reason for the change. */
-  @Column(nullable = false, name = "historyReason")
+  @Column(name = "historyReason")
   String reason;
 
   /** Whether this change was requested by a registrar. */

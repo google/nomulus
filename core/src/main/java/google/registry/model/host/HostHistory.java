@@ -19,6 +19,8 @@ import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -26,6 +28,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.PostLoad;
 
 /**
  * A persisted history entry representing an EPP modification to a host.
@@ -48,7 +51,7 @@ import javax.persistence.Id;
 public class HostHistory extends HistoryEntry {
 
   // Store HostBase instead of HostResource so we don't pick up its @Id
-  HostBase hostBase;
+  @Nullable HostBase hostBase;
 
   @Column(nullable = false)
   VKey<HostResource> hostRepoId;
@@ -63,13 +66,22 @@ public class HostHistory extends HistoryEntry {
   }
 
   /** The state of the {@link HostBase} object at this point in time. */
-  public HostBase getHostBase() {
-    return hostBase;
+  public Optional<HostBase> getHostBase() {
+    return Optional.ofNullable(hostBase);
   }
 
   /** The key to the {@link google.registry.model.host.HostResource} this is based off of. */
   public VKey<HostResource> getHostRepoId() {
     return hostRepoId;
+  }
+
+  @PostLoad
+  void postLoad() {
+    // Normally Hibernate would see that the host fields are all null and would fill hostBase
+    // with a null object. Unfortunately, the updateTimestamp is never null in SQL.
+    if (hostBase != null && hostBase.getHostName() == null) {
+      hostBase = null;
+    }
   }
 
   @Override
