@@ -281,11 +281,9 @@ public class DomainContent extends EppResource
     // when its hashCode() is invoked.
     // TODO(b/162739503): Remove this after fully migrating to Cloud SQL.
     gracePeriods =
-        gracePeriods == null
-            ? ImmutableSet.of()
-            : gracePeriods.stream()
-                .map(gracePeriod -> gracePeriod.cloneWithDomainRepoId(getRepoId()))
-                .collect(toImmutableSet());
+        nullToEmptyImmutableCopy(gracePeriods).stream()
+            .map(gracePeriod -> gracePeriod.cloneWithDomainRepoId(getRepoId()))
+            .collect(toImmutableSet());
   }
 
   @PostLoad

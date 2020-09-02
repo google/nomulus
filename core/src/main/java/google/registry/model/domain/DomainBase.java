@@ -81,9 +81,16 @@ public class DomainBase extends DomainContent
     return super.nsHosts;
   }
 
-  // Note that we need to set `insertable = false, updatable = false` for @JoinColumn, otherwise
-  // Hibernate would try to set the foreign key to null(through an UPDATE TABLE sql) instead of
-  // deleting the whole entry from the table when the GracePeriod is removed from the set.
+  /**
+   * Returns the set of {@link GracePeriod} associated with the domain.
+   *
+   * <p>This is the getter method specific for Hibernate to access the field so it is set to
+   * private. The caller can use the public {@link #getGracePeriods()} to get the grace periods.
+   *
+   * <p>Note that we need to set `insertable = false, updatable = false` for @JoinColumn, otherwise
+   * Hibernate would try to set the foreign key to null(through an UPDATE TABLE sql) instead of
+   * deleting the whole entry from the table when the {@link GracePeriod} is removed from the set.
+   */
   @Access(AccessType.PROPERTY)
   @OneToMany(
       cascade = {CascadeType.ALL},
