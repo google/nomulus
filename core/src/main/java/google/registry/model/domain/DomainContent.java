@@ -44,7 +44,6 @@ import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.OnLoad;
-import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
@@ -281,17 +280,12 @@ public class DomainContent extends EppResource
     // object will have a null hashcode so that it can get a recalculated hashcode
     // when its hashCode() is invoked.
     // TODO(b/162739503): Remove this after fully migrating to Cloud SQL.
-    if (gracePeriods != null) {
-      gracePeriods =
-          gracePeriods.stream()
-              .map(gracePeriod -> gracePeriod.cloneWithDomainRepoId(getRepoId()))
-              .collect(toImmutableSet());
-    }
-  }
-
-  @OnSave
-  void onSave() {
-    gracePeriods = gracePeriods != null && gracePeriods.isEmpty() ? null : gracePeriods;
+    gracePeriods =
+        gracePeriods == null
+            ? ImmutableSet.of()
+            : gracePeriods.stream()
+                .map(gracePeriod -> gracePeriod.cloneWithDomainRepoId(getRepoId()))
+                .collect(toImmutableSet());
   }
 
   @PostLoad
