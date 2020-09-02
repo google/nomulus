@@ -345,7 +345,7 @@ public class Registry extends ImmutableObject implements Buildable {
    * <p>Note that this boolean is the sole determiner on whether invoices should be generated for a
    * TLD. This applies to {@link TldType#TEST} TLDs as well.
    */
-  boolean enableInvoicing = false;
+  boolean invoicingEnabled = false;
 
   /**
    * A property that transitions to different TldStates at different times. Stored as a list of
@@ -646,8 +646,8 @@ public class Registry extends ImmutableObject implements Buildable {
       return this;
     }
 
-    public Builder setEnableInvoicing(boolean enableInvoicing) {
-      getInstance().enableInvoicing = enableInvoicing;
+    public Builder setInvoicingEnabled(boolean invoicingEnabled) {
+      getInstance().invoicingEnabled = invoicingEnabled;
       return this;
     }
 

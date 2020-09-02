@@ -55,7 +55,7 @@ FROM (
     FROM
       `%PROJECT_ID%.%DATASTORE_EXPORT_DATA_SET%.%REGISTRY_TABLE%`
     WHERE
-      enableInvoicing = TRUE) ) AS BillingEvent
+      enableInvoicing IS TRUE) ) AS BillingEvent
   -- Gather billing ID from registrar table
   -- This is a 'JOIN' as opposed to 'LEFT JOIN' to filter out
   -- non-billable registrars
