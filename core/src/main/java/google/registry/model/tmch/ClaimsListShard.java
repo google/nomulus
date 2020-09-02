@@ -254,7 +254,12 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreEntity 
     return revisionId;
   }
 
-  /** Returns the TMDB generation time of this claims list. */
+  /**
+   * Returns the time when the external TMDB service generated this revision of the claims list.
+   *
+   * @see <a href="https://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.1">DNL List
+   *     creation datetime</a>
+   */
   public DateTime getTmdbGenerationTime() {
     return creationTime;
   }
