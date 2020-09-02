@@ -6,9 +6,9 @@ aopalliance:aopalliance:1.0
 args4j:args4j:2.33
 cglib:cglib-nodep:2.2
 com.beust:jcommander:1.60
-com.fasterxml.jackson.core:jackson-annotations:2.10.2
-com.fasterxml.jackson.core:jackson-core:2.10.2
-com.fasterxml.jackson.core:jackson-databind:2.10.2
+com.fasterxml.jackson.core:jackson-annotations:2.11.2
+com.fasterxml.jackson.core:jackson-core:2.11.2
+com.fasterxml.jackson.core:jackson-databind:2.11.2
 com.fasterxml:classmate:1.5.1
 com.github.jnr:jffi:1.2.23
 com.github.jnr:jnr-a64asm:1.0.0
