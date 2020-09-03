@@ -131,7 +131,7 @@ ext {
       'org.bouncycastle:bcpg-jdk15on:1.61',
       'org.bouncycastle:bcpkix-jdk15on:1.61',
       'org.bouncycastle:bcprov-jdk15on:1.61',
-      'com.fasterxml.jackson.core:jackson-databind:2.9.10',
+      'com.fasterxml.jackson.core:jackson-databind:2.11.2',
       'org.flywaydb:flyway-core:5.2.4',
       'org.glassfish.jaxb:jaxb-runtime:2.3.0',
       'org.hamcrest:hamcrest-all:1.3',
