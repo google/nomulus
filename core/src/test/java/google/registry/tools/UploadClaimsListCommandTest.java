@@ -37,7 +37,8 @@ class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsListComman
     runCommand("--force", filename);
 
     ClaimsListShard claimsList = ClaimsListShard.get();
-    assertThat(claimsList.getCreationTime()).isEqualTo(DateTime.parse("2012-08-16T00:00:00.0Z"));
+    assertThat(claimsList.getTmdbGenerationTime())
+        .isEqualTo(DateTime.parse("2012-08-16T00:00:00.0Z"));
     assertThat(claimsList.getClaimKey("example"))
         .hasValue("2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001");
     assertThat(claimsList.getClaimKey("another-example"))

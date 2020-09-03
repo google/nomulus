@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.tmch;
+package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -40,20 +40,22 @@ public class ClaimsListDaoTest {
 
   @Test
   void trySave_insertsClaimsListSuccessfully() {
-    ClaimsList claimsList =
-        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
+    ClaimsListShard claimsList =
+        ClaimsListShard.create(
+            fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsListDao.trySave(claimsList);
-    ClaimsList insertedClaimsList = ClaimsListDao.getLatestRevision().get();
+    ClaimsListShard insertedClaimsList = ClaimsListDao.getLatestRevision().get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     assertThat(insertedClaimsList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
   }
 
   @Test
   void trySave_noExceptionThrownWhenSaveFail() {
-    ClaimsList claimsList =
-        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
+    ClaimsListShard claimsList =
+        ClaimsListShard.create(
+            fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
     ClaimsListDao.trySave(claimsList);
-    ClaimsList insertedClaimsList = ClaimsListDao.getLatestRevision().get();
+    ClaimsListShard insertedClaimsList = ClaimsListDao.getLatestRevision().get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     // Save ClaimsList with existing revisionId should fail because revisionId is the primary key.
     ClaimsListDao.trySave(insertedClaimsList);
@@ -61,9 +63,9 @@ public class ClaimsListDaoTest {
 
   @Test
   void trySave_claimsListWithNoEntries() {
-    ClaimsList claimsList = ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of());
+    ClaimsListShard claimsList = ClaimsListShard.create(fakeClock.nowUtc(), ImmutableMap.of());
     ClaimsListDao.trySave(claimsList);
-    ClaimsList insertedClaimsList = ClaimsListDao.getLatestRevision().get();
+    ClaimsListShard insertedClaimsList = ClaimsListDao.getLatestRevision().get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     assertThat(insertedClaimsList.getLabelsToKeys()).isEmpty();
   }
@@ -75,16 +77,18 @@ public class ClaimsListDaoTest {
 
   @Test
   void getCurrent_returnsLatestClaims() {
-    ClaimsList oldClaimsList =
-        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
-    ClaimsList newClaimsList =
-        ClaimsList.create(fakeClock.nowUtc(), ImmutableMap.of("label3", "key3", "label4", "key4"));
+    ClaimsListShard oldClaimsList =
+        ClaimsListShard.create(
+            fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
+    ClaimsListShard newClaimsList =
+        ClaimsListShard.create(
+            fakeClock.nowUtc(), ImmutableMap.of("label3", "key3", "label4", "key4"));
     ClaimsListDao.trySave(oldClaimsList);
     ClaimsListDao.trySave(newClaimsList);
     assertClaimsListEquals(newClaimsList, ClaimsListDao.getLatestRevision().get());
   }
 
-  private void assertClaimsListEquals(ClaimsList left, ClaimsList right) {
+  private void assertClaimsListEquals(ClaimsListShard left, ClaimsListShard right) {
     assertThat(left.getRevisionId()).isEqualTo(right.getRevisionId());
     assertThat(left.getTmdbGenerationTime()).isEqualTo(right.getTmdbGenerationTime());
     assertThat(left.getLabelsToKeys()).isEqualTo(right.getLabelsToKeys());

@@ -86,8 +86,8 @@ create sequence history_id_sequence start 1 increment 50;
 
     create table "ClaimsList" (
        revision_id  bigserial not null,
-        creation_timestamp timestamptz not null,
         tmdb_generation_time timestamptz not null,
+        creation_timestamp timestamptz not null,
         primary key (revision_id)
     );
 
