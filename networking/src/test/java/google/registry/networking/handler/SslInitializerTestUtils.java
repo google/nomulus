@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
-import google.registry.networking.util.SelfSignedCaCertificate;
+import google.registry.util.SelfSignedCaCertificate;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.ssl.SslHandler;

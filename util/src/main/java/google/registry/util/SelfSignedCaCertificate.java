@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.networking.util;
+package google.registry.util;
 
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -96,8 +96,14 @@ public class SelfSignedCaCertificate {
   static X509Certificate createCaCert(KeyPair keyPair, String fqdn, Date from, Date to)
       throws Exception {
     X500Name owner = new X500Name("CN=" + fqdn);
-    ContentSigner signer =
-        new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(keyPair.getPrivate());
+    ContentSigner signer;
+    if (keyPair.getPublic().getAlgorithm().equals("EC")) {
+      signer = new JcaContentSignerBuilder("SHA256WithECDSA").build(keyPair.getPrivate());
+    } else if (keyPair.getPublic().getAlgorithm().equals("DSA")) {
+      signer = new JcaContentSignerBuilder("SHA256WithDSA").build(keyPair.getPrivate());
+    } else {
+      signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(keyPair.getPrivate());
+    }
     X509v3CertificateBuilder builder =
         new JcaX509v3CertificateBuilder(
             owner, new BigInteger(64, RANDOM), from, to, owner, keyPair.getPublic());

@@ -21,7 +21,7 @@ import static google.registry.networking.handler.SslInitializerTestUtils.signKey
 import static google.registry.networking.handler.SslInitializerTestUtils.verifySslException;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.networking.util.SelfSignedCaCertificate;
+import google.registry.util.SelfSignedCaCertificate;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;

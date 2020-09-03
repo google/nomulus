@@ -26,7 +26,7 @@ import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.networking.module.CertificateSupplierModule.Mode;
-import google.registry.networking.util.SelfSignedCaCertificate;
+import google.registry.util.SelfSignedCaCertificate;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.security.KeyPair;
