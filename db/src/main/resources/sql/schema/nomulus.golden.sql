@@ -276,23 +276,11 @@ CREATE TABLE public."Contact" (
 
 
 --
--- Name: history_id_sequence; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.history_id_sequence
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
 -- Name: ContactHistory; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public."ContactHistory" (
-    history_revision_id bigint DEFAULT nextval('public.history_id_sequence'::regclass) NOT NULL,
+    history_revision_id bigint NOT NULL,
     history_by_superuser boolean NOT NULL,
     history_registrar_id text,
     history_modification_time timestamp with time zone NOT NULL,
@@ -431,7 +419,7 @@ CREATE TABLE public."Domain" (
 --
 
 CREATE TABLE public."DomainHistory" (
-    history_revision_id bigint DEFAULT nextval('public.history_id_sequence'::regclass) NOT NULL,
+    history_revision_id bigint NOT NULL,
     history_by_superuser boolean NOT NULL,
     history_registrar_id text,
     history_modification_time timestamp with time zone NOT NULL,
@@ -496,7 +484,8 @@ CREATE TABLE public."DomainHistory" (
 
 CREATE TABLE public."DomainHistoryHost" (
     domain_history_history_revision_id bigint NOT NULL,
-    host_repo_id text
+    host_repo_id text,
+    domain_history_domain_repo_id text NOT NULL
 );
 
 
@@ -549,7 +538,7 @@ ALTER SEQUENCE public."GracePeriod_id_seq" OWNED BY public."GracePeriod".id;
 --
 
 CREATE TABLE public."HostHistory" (
-    history_revision_id bigint DEFAULT nextval('public.history_id_sequence'::regclass) NOT NULL,
+    history_revision_id bigint NOT NULL,
     history_by_superuser boolean NOT NULL,
     history_registrar_id text NOT NULL,
     history_modification_time timestamp with time zone NOT NULL,
@@ -930,6 +919,18 @@ ALTER SEQUENCE public."Transaction_id_seq" OWNED BY public."Transaction".id;
 
 
 --
+-- Name: history_id_sequence; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.history_id_sequence
+    START WITH 1
+    INCREMENT BY 50
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
 -- Name: BillingCancellation billing_cancellation_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1083,7 +1084,7 @@ ALTER TABLE ONLY public."Cursor"
 --
 
 ALTER TABLE ONLY public."DomainHistory"
-    ADD CONSTRAINT "DomainHistory_pkey" PRIMARY KEY (history_revision_id);
+    ADD CONSTRAINT "DomainHistory_pkey" PRIMARY KEY (domain_repo_id, history_revision_id);
 
 
 --
@@ -1613,14 +1614,6 @@ ALTER TABLE ONLY public."HostHistory"
 
 
 --
--- Name: DomainHistoryHost fk6b8eqdxwe3guc56tgpm89atx; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DomainHistoryHost"
-    ADD CONSTRAINT fk6b8eqdxwe3guc56tgpm89atx FOREIGN KEY (domain_history_history_revision_id) REFERENCES public."DomainHistory"(history_revision_id);
-
-
---
 -- Name: ClaimsEntry fk6sc6at5hedffc0nhdcab6ivuq; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1914,6 +1907,14 @@ ALTER TABLE ONLY public."PollMessage"
 
 ALTER TABLE ONLY public."PollMessage"
     ADD CONSTRAINT fk_poll_message_transfer_response_losing_registrar_id FOREIGN KEY (transfer_response_losing_registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: DomainHistoryHost fka9woh3hu8gx5x0vly6bai327n; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHistoryHost"
+    ADD CONSTRAINT fka9woh3hu8gx5x0vly6bai327n FOREIGN KEY (domain_history_domain_repo_id, domain_history_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
 
 
 --

@@ -19,8 +19,13 @@ import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
 /**
  * A persisted history entry representing an EPP modification to a host.
@@ -39,6 +44,7 @@ import javax.persistence.Entity;
       @javax.persistence.Index(columnList = "historyModificationTime")
     })
 @EntitySubclass
+@Access(AccessType.FIELD)
 public class HostHistory extends HistoryEntry {
 
   // Store HostBase instead of HostResource so we don't pick up its @Id
@@ -46,6 +52,15 @@ public class HostHistory extends HistoryEntry {
 
   @Column(nullable = false)
   VKey<HostResource> hostRepoId;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "HistorySequenceGenerator")
+  @Column(name = "historyRevisionId")
+  @Access(AccessType.PROPERTY)
+  @Override
+  public long getId() {
+    return super.getId();
+  }
 
   /** The state of the {@link HostBase} object at this point in time. */
   public HostBase getHostBase() {

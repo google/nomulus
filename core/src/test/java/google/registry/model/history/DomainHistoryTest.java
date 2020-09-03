@@ -14,6 +14,7 @@
 
 package google.registry.model.history;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
@@ -71,11 +72,15 @@ public class DomainHistoryTest extends EntityTestCase {
     jpaTm()
         .transact(
             () -> {
-              DomainHistory fromDatabase =
-                  jpaTm().load(VKey.createSql(DomainHistory.class, domainHistory.getId()));
+              DomainHistory fromDatabase = jpaTm().load(domainHistory.createVKey());
               assertDomainHistoriesEqual(fromDatabase, domainHistory);
               assertThat(fromDatabase.getDomainRepoId().getSqlKey())
                   .isEqualTo(domainHistory.getDomainRepoId().getSqlKey());
+              assertThat(fromDatabase.getNsHosts())
+                  .containsExactlyElementsIn(
+                      domainHistory.getNsHosts().stream()
+                          .map(key -> VKey.createSql(HostResource.class, key.getSqlKey()))
+                          .collect(toImmutableSet()));
             });
   }
 
@@ -120,7 +125,7 @@ public class DomainHistoryTest extends EntityTestCase {
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
     assertAboutImmutableObjects()
         .that(one)
-        .isEqualExceptFields(two, "domainContent", "domainRepoId", "parent");
+        .isEqualExceptFields(two, "domainContent", "domainRepoId", "parent", "nsHosts");
   }
 
   private DomainHistory createDomainHistory(DomainContent domain) {
@@ -134,7 +139,7 @@ public class DomainHistoryTest extends EntityTestCase {
         .setReason("reason")
         .setRequestedByRegistrar(true)
         .setDomainContent(domain)
-        .setDomainRepoId(domain.createVKey())
+        .setDomainRepoId(domain.getRepoId())
         .build();
   }
 }

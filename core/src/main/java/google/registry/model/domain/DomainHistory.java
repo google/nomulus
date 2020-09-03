@@ -14,20 +14,32 @@
 
 package google.registry.model.domain;
 
+import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
+
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
+import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.EppResource;
-import google.registry.model.contact.ContactResource;
+import google.registry.model.ImmutableObject;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import java.io.Serializable;
 import java.util.Set;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.IdClass;
+import javax.persistence.Index;
 import javax.persistence.JoinTable;
+import javax.persistence.PostLoad;
+import javax.persistence.Table;
 
 /**
  * A persisted history entry representing an EPP modification to a domain.
@@ -37,27 +49,43 @@ import javax.persistence.JoinTable;
  * the foreign-keyed fields in that class can refer to this object.
  */
 @Entity
-@javax.persistence.Table(
+@Table(
     indexes = {
-      @javax.persistence.Index(columnList = "creationTime"),
-      @javax.persistence.Index(columnList = "historyRegistrarId"),
-      @javax.persistence.Index(columnList = "historyType"),
-      @javax.persistence.Index(columnList = "historyModificationTime")
+      @Index(columnList = "creationTime"),
+      @Index(columnList = "historyRegistrarId"),
+      @Index(columnList = "historyType"),
+      @Index(columnList = "historyModificationTime")
     })
 @EntitySubclass
+@Access(AccessType.FIELD)
+@IdClass(DomainHistoryId.class)
 public class DomainHistory extends HistoryEntry {
   // Store DomainContent instead of DomainBase so we don't pick up its @Id
   DomainContent domainContent;
 
-  @Column(nullable = false)
-  VKey<DomainBase> domainRepoId;
+  @Id String domainRepoId;
 
+  // We could have reused domainContent.nsHosts here, but Hibernate throws a weird exception after
+  // we change to use a composite primary key.
+  // TODO(b/166776754): Investigate if we can reuse domainContent.nsHosts for storing host keys.
+  @Ignore
   @ElementCollection
   @JoinTable(name = "DomainHistoryHost")
-  @Access(AccessType.PROPERTY)
   @Column(name = "host_repo_id")
+  Set<VKey<HostResource>> nsHosts;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "HistorySequenceGenerator")
+  @Column(name = "historyRevisionId")
+  @Access(AccessType.PROPERTY)
+  @Override
+  public long getId() {
+    return super.getId();
+  }
+
+  /** Returns keys to the {@link HostResource} that are the nameservers for the domain. */
   public Set<VKey<HostResource>> getNsHosts() {
-    return domainContent.nsHosts;
+    return nsHosts;
   }
 
   /** The state of the {@link DomainContent} object at this point in time. */
@@ -65,16 +93,51 @@ public class DomainHistory extends HistoryEntry {
     return domainContent;
   }
 
-  /** The key to the {@link ContactResource} this is based off of. */
+  /** The key to the {@link DomainBase} this is based off of. */
   public VKey<DomainBase> getDomainRepoId() {
-    return domainRepoId;
+    return VKey.create(DomainBase.class, domainRepoId, Key.create(DomainBase.class, domainRepoId));
   }
 
-  // Hibernate needs this in order to populate nsHosts but no one else should ever use it
-  @SuppressWarnings("UnusedMethod")
-  private void setNsHosts(Set<VKey<HostResource>> nsHosts) {
+  public VKey<DomainHistory> createVKey() {
+    return VKey.createSql(DomainHistory.class, new DomainHistoryId(domainRepoId, getId()));
+  }
+
+  @PostLoad
+  void postLoad() {
     if (domainContent != null) {
-      domainContent.nsHosts = nsHosts;
+      domainContent.nsHosts = nullToEmptyImmutableCopy(nsHosts);
+    }
+  }
+
+  /** Class to represent the composite primary key of {@link DomainHistory} entity. */
+  static class DomainHistoryId extends ImmutableObject implements Serializable {
+
+    private String domainRepoId;
+
+    private Long id;
+
+    /** Hibernate requires this default constructor. */
+    private DomainHistoryId() {}
+
+    DomainHistoryId(String domainRepoId, long id) {
+      this.domainRepoId = domainRepoId;
+      this.id = id;
+    }
+
+    String getDomainRepoId() {
+      return domainRepoId;
+    }
+
+    void setDomainRepoId(String domainRepoId) {
+      this.domainRepoId = domainRepoId;
+    }
+
+    long getId() {
+      return id;
+    }
+
+    void setId(long id) {
+      this.id = id;
     }
   }
 
@@ -93,12 +156,15 @@ public class DomainHistory extends HistoryEntry {
 
     public Builder setDomainContent(DomainContent domainContent) {
       getInstance().domainContent = domainContent;
+      if (domainContent != null) {
+        getInstance().nsHosts = nullToEmptyImmutableCopy(domainContent.nsHosts);
+      }
       return this;
     }
 
-    public Builder setDomainRepoId(VKey<DomainBase> domainRepoId) {
+    public Builder setDomainRepoId(String domainRepoId) {
       getInstance().domainRepoId = domainRepoId;
-      domainRepoId.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
+      getInstance().parent = Key.create(DomainBase.class, domainRepoId);
       return this;
     }
 
@@ -106,8 +172,7 @@ public class DomainHistory extends HistoryEntry {
     @Override
     public Builder setParent(Key<? extends EppResource> parent) {
       super.setParent(parent);
-      getInstance().domainRepoId =
-          VKey.create(DomainBase.class, parent.getName(), (Key<DomainBase>) parent);
+      getInstance().domainRepoId = parent.getName();
       return this;
     }
   }
