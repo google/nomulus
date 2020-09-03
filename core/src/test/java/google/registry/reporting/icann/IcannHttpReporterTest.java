@@ -21,6 +21,8 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.api.client.http.HttpResponseException;
+import com.google.api.client.http.HttpStatusCodes;
 import com.google.api.client.http.LowLevelHttpRequest;
 import com.google.api.client.http.LowLevelHttpResponse;
 import com.google.api.client.testing.http.MockHttpTransport;
@@ -50,7 +52,8 @@ class IcannHttpReporterTest {
   AppEngineExtension appEngineRule =
       new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
 
-  private MockHttpTransport createMockTransport(final ByteSource iirdeaResponse) {
+  private MockHttpTransport createMockTransport(
+      int statusCode, final ByteSource iirdeaResponse) {
     return new MockHttpTransport() {
       @Override
       public LowLevelHttpRequest buildRequest(String method, String url) {
@@ -59,7 +62,7 @@ class IcannHttpReporterTest {
               @Override
               public LowLevelHttpResponse execute() throws IOException {
                 MockLowLevelHttpResponse response = new MockLowLevelHttpResponse();
-                response.setStatusCode(200);
+                response.setStatusCode(statusCode);
                 response.setContentType(PLAIN_TEXT_UTF_8.toString());
                 response.setContent(iirdeaResponse.read());
                 return response;
@@ -69,6 +72,10 @@ class IcannHttpReporterTest {
         return mockRequest;
       }
     };
+  }
+
+  private MockHttpTransport createMockTransport(final ByteSource iirdeaResponse) {
+    return createMockTransport(HttpStatusCodes.STATUS_CODE_OK, iirdeaResponse);
   }
 
   @BeforeEach
@@ -117,8 +124,19 @@ class IcannHttpReporterTest {
   @Test
   void testFail_BadIirdeaResponse() throws Exception {
     IcannHttpReporter reporter = createReporter();
-    reporter.httpTransport = createMockTransport(IIRDEA_BAD_XML);
+    reporter.httpTransport =
+        createMockTransport(HttpStatusCodes.STATUS_CODE_BAD_REQUEST, IIRDEA_BAD_XML);
     assertThat(reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv")).isFalse();
+  }
+
+  @Test
+  void testFail_transportException() throws Exception {
+    IcannHttpReporter reporter = createReporter();
+    reporter.httpTransport =
+        createMockTransport(HttpStatusCodes.STATUS_CODE_FORBIDDEN, ByteSource.empty());
+    assertThrows(
+        HttpResponseException.class,
+        () -> reporter.send(FAKE_PAYLOAD, "test-transactions-201706.csv"));
   }
 
   @Test
