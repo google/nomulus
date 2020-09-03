@@ -280,12 +280,10 @@ public class DomainContent extends EppResource
     // object will have a null hashcode so that it can get a recalculated hashcode
     // when its hashCode() is invoked.
     // TODO(b/162739503): Remove this after fully migrating to Cloud SQL.
-    if (gracePeriods != null) {
-      gracePeriods =
-          gracePeriods.stream()
-              .map(gracePeriod -> gracePeriod.cloneWithDomainRepoId(getRepoId()))
-              .collect(toImmutableSet());
-    }
+    gracePeriods =
+        nullToEmptyImmutableCopy(gracePeriods).stream()
+            .map(gracePeriod -> gracePeriod.cloneWithDomainRepoId(getRepoId()))
+            .collect(toImmutableSet());
   }
 
   @PostLoad
@@ -698,7 +696,13 @@ public class DomainContent extends EppResource
       }
       checkArgumentNotNull(instance.getRegistrant(), "Missing registrant");
       instance.tld = getTldFromDomainName(instance.fullyQualifiedDomainName);
-      return super.build();
+
+      T newDomain = super.build();
+      // Hibernate throws exception if gracePeriods is null because we enabled all cascadable
+      // operations and orphan removal.
+      newDomain.gracePeriods =
+          newDomain.gracePeriods == null ? ImmutableSet.of() : newDomain.gracePeriods;
+      return newDomain;
     }
 
     public B setDomainName(String domainName) {
