@@ -50,6 +50,30 @@ public class CertificateCheckerTest {
   }
 
   @Test
+  void test_certificateWithSeveralIssues() throws Exception {
+    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+    AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
+    apParam.init(new ECGenParameterSpec("secp128r1"));
+    ECParameterSpec spec = apParam.getParameterSpec(ECParameterSpec.class);
+    keyGen.initialize(spec, new SecureRandom());
+
+    X509Certificate certificate =
+        SelfSignedCaCertificate.create(
+                keyGen.generateKeyPair(),
+                SSL_HOST,
+                DateTime.now(UTC).plusDays(5).toDate(),
+                DateTime.now(UTC).plusDays(1000).toDate())
+            .cert();
+
+    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+        .isEqualTo(
+            ImmutableSet.of(
+                CertificateViolation.NOT_YET_VALID,
+                CertificateViolation.EC_KEY_LENGTH,
+                CertificateViolation.VALIDITY_LENGTH));
+  }
+
+  @Test
   void test_expiredCertificate() throws Exception {
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
@@ -59,6 +83,30 @@ public class CertificateCheckerTest {
             .cert();
     assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
         .isEqualTo(ImmutableSet.of(CertificateViolation.EXPIRED));
+  }
+
+  @Test
+  void test_notYetValid() throws Exception {
+    X509Certificate certificate =
+        SelfSignedCaCertificate.create(
+                SSL_HOST,
+                DateTime.now(UTC).plusDays(10).toDate(),
+                DateTime.now(UTC).plusDays(50).toDate())
+            .cert();
+    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+        .isEqualTo(ImmutableSet.of(CertificateViolation.NOT_YET_VALID));
+  }
+
+  @Test
+  void test_checkValidityLength() throws Exception {
+    X509Certificate certificate =
+        SelfSignedCaCertificate.create(
+                SSL_HOST,
+                DateTime.now(UTC).minusDays(10).toDate(),
+                DateTime.now(UTC).plusDays(1000).toDate())
+            .cert();
+    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+        .isEqualTo(ImmutableSet.of(CertificateViolation.VALIDITY_LENGTH));
   }
 
   @Test
