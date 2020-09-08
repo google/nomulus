@@ -24,6 +24,7 @@ import java.util.Date;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.joda.time.DateTime;
+import org.joda.time.Days;
 
 /** An utility to check that a given certificate meets our requirements */
 public class CertificateChecker {
@@ -37,7 +38,9 @@ public class CertificateChecker {
     NEARING_EXPIRATION, // less than 30 days to expiration
     RSA_KEY_LENGTH, // key length is too low
     EC_KEY_LENGTH, // key length is too low
-    DSA_KEY_LENGTH // key length is too low
+    DSA_KEY_LENGTH, // key length is too low
+    NOT_YET_VALID, // certificate start date has not passed yet
+    VALIDITY_LENGTH // validity length is too long
   }
 
   /**
@@ -51,8 +54,16 @@ public class CertificateChecker {
     // Check Expiration
     if (isExpired(certificate, now)) {
       violations.add(CertificateViolation.EXPIRED);
-    } else if (isNearingExpiration(certificate, now)) {
-      violations.add(CertificateViolation.NEARING_EXPIRATION);
+    } else {
+      if (!isValidNow(certificate, now)) {
+        violations.add(CertificateViolation.NOT_YET_VALID);
+      }
+      if (!checkValidityLength(certificate)) {
+        violations.add(CertificateViolation.VALIDITY_LENGTH);
+      }
+      if (isNearingExpiration(certificate, now)) {
+        violations.add(CertificateViolation.NEARING_EXPIRATION);
+      }
     }
 
     // Check Key Lengths
@@ -82,6 +93,18 @@ public class CertificateChecker {
 
   private static boolean isExpired(X509Certificate certificate, Date now) {
     return certificate.getNotAfter().before(now);
+  }
+
+  private static boolean isValidNow(X509Certificate certificate, Date now) {
+    return certificate.getNotBefore().before(now);
+  }
+
+  /** Returns true if the validity period is 825 days or less. */
+  private static boolean checkValidityLength(X509Certificate certificate) {
+    DateTime start = DateTime.parse(certificate.getNotBefore().toInstant().toString());
+    DateTime end = DateTime.parse(certificate.getNotAfter().toInstant().toString());
+    return Days.daysBetween(start.withTimeAtStartOfDay(), end.withTimeAtStartOfDay())
+        .isLessThan(Days.days(826));
   }
 
   /** Returns true if the certificate is less than 30 days from expiration. */
