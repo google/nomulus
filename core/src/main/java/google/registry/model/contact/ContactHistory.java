@@ -53,7 +53,7 @@ public class ContactHistory extends HistoryEntry {
   VKey<ContactResource> contactRepoId;
 
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "HistorySequenceGenerator")
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TempHistorySequenceGenerator")
   @Column(name = "historyRevisionId")
   @Access(AccessType.PROPERTY)
   @Override
