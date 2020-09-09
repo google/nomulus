@@ -18,7 +18,6 @@
 ALTER TABLE "ContactHistory" ALTER COLUMN creation_registrar_id DROP NOT NULL;
 ALTER TABLE "ContactHistory" ALTER COLUMN creation_time DROP NOT NULL;
 ALTER TABLE "ContactHistory" ALTER COLUMN current_sponsor_registrar_id DROP NOT NULL;
-ALTER TABLE "ContactHistory" ALTER COLUMN contact_repo_id DROP NOT NULL;
 ALTER TABLE "ContactHistory" ALTER COLUMN history_reason DROP NOT NULL;
 
 ALTER TABLE "DomainHistory" ALTER COLUMN creation_registrar_id DROP NOT NULL;
@@ -30,4 +29,3 @@ ALTER TABLE "HostHistory" ALTER COLUMN creation_registrar_id DROP NOT NULL;
 ALTER TABLE "HostHistory" ALTER COLUMN creation_time DROP NOT NULL;
 ALTER TABLE "HostHistory" ALTER COLUMN current_sponsor_registrar_id DROP NOT NULL;
 ALTER TABLE "HostHistory" ALTER COLUMN history_reason DROP NOT NULL;
-ALTER TABLE "HostHistory" ALTER COLUMN host_repo_id DROP NOT NULL;

@@ -343,7 +343,7 @@ CREATE TABLE public."ContactHistory" (
     last_epp_update_registrar_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
-    contact_repo_id text,
+    contact_repo_id text NOT NULL,
     update_timestamp timestamp with time zone
 );
 
@@ -560,7 +560,7 @@ CREATE TABLE public."HostHistory" (
     last_epp_update_registrar_id text,
     last_epp_update_time timestamp with time zone,
     statuses text[],
-    host_repo_id text,
+    host_repo_id text NOT NULL,
     update_timestamp timestamp with time zone
 );
 
