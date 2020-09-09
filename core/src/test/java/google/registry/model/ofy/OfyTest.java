@@ -45,6 +45,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.schema.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.FakeClock;
@@ -69,13 +70,14 @@ public class OfyTest {
   @BeforeEach
   void beforeEach() {
     createTld("tld");
-    someObject = new HistoryEntry.Builder()
-        .setClientId("client id")
-        .setModificationTime(START_OF_TIME)
-        .setParent(persistActiveContact("parentContact"))
-        .setTrid(Trid.create("client", "server"))
-        .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-        .build();
+    someObject =
+        new HistoryEntry.Builder()
+            .setClientId("client id")
+            .setModificationTime(START_OF_TIME)
+            .setParent(persistActiveContact("parentContact"))
+            .setTrid(Trid.create("client", "server"))
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .build();
     // This can't be initialized earlier because namespaces need the AppEngineRule to work.
   }
 
@@ -111,8 +113,7 @@ public class OfyTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                tm()
-                    .transact(
+                tm().transact(
                         () -> {
                           ofy().save().entity(someObject);
                           ofy().save().entity(someObject);
@@ -126,8 +127,7 @@ public class OfyTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                tm()
-                    .transact(
+                tm().transact(
                         () -> {
                           ofy().delete().entity(someObject);
                           ofy().delete().entity(someObject);
@@ -141,8 +141,7 @@ public class OfyTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                tm()
-                    .transact(
+                tm().transact(
                         () -> {
                           ofy().save().entity(someObject);
                           ofy().delete().entity(someObject);
@@ -156,8 +155,7 @@ public class OfyTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                tm()
-                    .transact(
+                tm().transact(
                         () -> {
                           ofy().delete().entity(someObject);
                           ofy().save().entity(someObject);
@@ -174,13 +172,12 @@ public class OfyTest {
 
   /** Simple entity class with lifecycle callbacks. */
   @com.googlecode.objectify.annotation.Entity
+  @EntityForTesting
   public static class LifecycleObject extends ImmutableObject {
 
-    @Parent
-    Key<?> parent = getCrossTldKey();
+    @Parent Key<?> parent = getCrossTldKey();
 
-    @Id
-    long id = 1;
+    @Id long id = 1;
 
     boolean onLoadCalled;
     boolean onSaveCalled;
@@ -218,20 +215,22 @@ public class OfyTest {
   /** Avoid regressions of b/21309102 where transaction time did not change on each retry. */
   @Test
   void testTransact_getsNewTimestampOnEachTry() {
-    tm().transact(new Runnable() {
+    tm().transact(
+            new Runnable() {
 
-      DateTime firstAttemptTime;
+              DateTime firstAttemptTime;
 
-      @Override
-      public void run() {
-        if (firstAttemptTime == null) {
-          // Sleep a bit to ensure that the next attempt is at a new millisecond.
-          firstAttemptTime = tm().getTransactionTime();
-          sleepUninterruptibly(10, MILLISECONDS);
-          throw new ConcurrentModificationException();
-        }
-        assertThat(tm().getTransactionTime()).isGreaterThan(firstAttemptTime);
-      }});
+              @Override
+              public void run() {
+                if (firstAttemptTime == null) {
+                  // Sleep a bit to ensure that the next attempt is at a new millisecond.
+                  firstAttemptTime = tm().getTransactionTime();
+                  sleepUninterruptibly(10, MILLISECONDS);
+                  throw new ConcurrentModificationException();
+                }
+                assertThat(tm().getTransactionTime()).isGreaterThan(firstAttemptTime);
+              }
+            });
   }
 
   @Test
@@ -319,17 +318,19 @@ public class OfyTest {
           }
         };
     // A commit logged work that throws on the first attempt to get its result.
-    CommitLoggedWork<Void> commitLoggedWork = new CommitLoggedWork<Void>(work, new SystemClock()) {
-      boolean firstCallToGetResult = true;
+    CommitLoggedWork<Void> commitLoggedWork =
+        new CommitLoggedWork<Void>(work, new SystemClock()) {
+          boolean firstCallToGetResult = true;
 
-      @Override
-      public Void getResult() {
-        if (firstCallToGetResult) {
-          firstCallToGetResult = false;
-          throw new DatastoreTimeoutException("");
-        }
-        return null;
-      }};
+          @Override
+          public Void getResult() {
+            if (firstCallToGetResult) {
+              firstCallToGetResult = false;
+              throw new DatastoreTimeoutException("");
+            }
+            return null;
+          }
+        };
     // Despite the DatastoreTimeoutException in the first call to getResult(), this should succeed
     // without retrying. If a retry is triggered, the test should fail due to the call to fail().
     ofy().transactCommitLoggedWork(commitLoggedWork);
@@ -381,8 +382,7 @@ public class OfyTest {
   void test_getBaseEntityClassFromEntityOrKey_subclassEntity() {
     DomainBase domain = DatastoreHelper.newDomainBase("test.tld");
     assertThat(getBaseEntityClassFromEntityOrKey(domain)).isEqualTo(DomainBase.class);
-    assertThat(getBaseEntityClassFromEntityOrKey(Key.create(domain)))
-        .isEqualTo(DomainBase.class);
+    assertThat(getBaseEntityClassFromEntityOrKey(Key.create(domain))).isEqualTo(DomainBase.class);
   }
 
   @Test

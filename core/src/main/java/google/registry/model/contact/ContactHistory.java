@@ -45,6 +45,7 @@ import javax.persistence.Id;
 @EntitySubclass
 @Access(AccessType.FIELD)
 public class ContactHistory extends HistoryEntry {
+
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
   ContactBase contactBase;
 

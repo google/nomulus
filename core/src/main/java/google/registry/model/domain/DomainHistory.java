@@ -60,6 +60,7 @@ import javax.persistence.Table;
 @Access(AccessType.FIELD)
 @IdClass(DomainHistoryId.class)
 public class DomainHistory extends HistoryEntry {
+
   // Store DomainContent instead of DomainBase so we don't pick up its @Id
   DomainContent domainContent;
 

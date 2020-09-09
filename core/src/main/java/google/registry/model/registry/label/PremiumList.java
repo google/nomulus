@@ -114,7 +114,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   /** Virtual parent entity for premium list entry entities associated with a single revision. */
   @ReportedOn
   @Entity
-  public static class PremiumListRevision extends ImmutableObject {
+  public static class PremiumListRevision extends ImmutableObject implements DatastoreEntity {
 
     @Parent Key<PremiumList> parent;
 
@@ -170,6 +170,11 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
         throw new IllegalStateException("Could not serialize premium labels Bloom filter", e);
       }
       return revision;
+    }
+
+    @Override
+    public ImmutableList<SqlEntity> toSqlEntities() {
+      return ImmutableList.of(); // not persisted in SQL
     }
   }
 
