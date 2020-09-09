@@ -27,6 +27,7 @@ import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.Ofy;
+import google.registry.schema.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
@@ -42,6 +43,7 @@ public class CommitLogRevisionsTranslatorFactoryTest {
   private static final DateTime START_TIME = DateTime.parse("2000-01-01TZ");
 
   @Entity(name = "ClrtfTestEntity")
+  @EntityForTesting
   public static class TestObject extends CrossTldSingleton {
     ImmutableSortedMap<DateTime, Key<CommitLogManifest>> revisions = ImmutableSortedMap.of();
   }
@@ -73,11 +75,11 @@ public class CommitLogRevisionsTranslatorFactoryTest {
 
   @Test
   void testSave_doesNotMutateOriginalResource() {
-     TestObject object = new TestObject();
-     save(object);
-     assertThat(object.revisions).isEmpty();
-     assertThat(reload().revisions).isNotEmpty();
-   }
+    TestObject object = new TestObject();
+    save(object);
+    assertThat(object.revisions).isEmpty();
+    assertThat(reload().revisions).isNotEmpty();
+  }
 
   @Test
   void testSave_translatorAddsKeyToCommitLogToField() {
@@ -149,8 +151,10 @@ public class CommitLogRevisionsTranslatorFactoryTest {
     com.google.appengine.api.datastore.Entity entity =
         tm().transactNewReadOnly(() -> ofy().save().toEntity(reload()));
     assertThat(entity.getProperties().keySet()).containsExactly("revisions.key", "revisions.value");
-    assertThat(entity.getProperties()).containsEntry(
-        "revisions.key", ImmutableList.of(START_TIME.toDate(), START_TIME.plusDays(1).toDate()));
+    assertThat(entity.getProperties())
+        .containsEntry(
+            "revisions.key",
+            ImmutableList.of(START_TIME.toDate(), START_TIME.plusDays(1).toDate()));
     assertThat(entity.getProperty("revisions.value")).isInstanceOf(List.class);
     assertThat(((List<Object>) entity.getProperty("revisions.value")).get(0))
         .isInstanceOf(com.google.appengine.api.datastore.Key.class);

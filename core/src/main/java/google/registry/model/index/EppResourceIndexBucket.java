@@ -24,15 +24,22 @@ import com.googlecode.objectify.annotation.Id;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.VirtualEntity;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 
 /** A virtual entity to represent buckets to which EppResourceIndex objects are randomly added. */
 @Entity
 @VirtualEntity
-public class EppResourceIndexBucket extends ImmutableObject {
+public class EppResourceIndexBucket extends ImmutableObject implements DatastoreEntity {
 
   @SuppressWarnings("unused")
   @Id
   private long bucketId;
+
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of(); // not relevant in SQL
+  }
 
   /**
    * Deterministic function that returns a bucket id based on the resource's roid.

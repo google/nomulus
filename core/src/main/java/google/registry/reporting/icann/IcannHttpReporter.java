@@ -24,6 +24,8 @@ import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpResponse;
+import com.google.api.client.http.HttpResponseException;
+import com.google.api.client.http.HttpStatusCodes;
 import com.google.api.client.http.HttpTransport;
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
@@ -80,6 +82,7 @@ public class IcannHttpReporter {
     headers.setContentType(CSV_UTF_8.toString());
     request.setHeaders(headers);
     request.setFollowRedirects(false);
+    request.setThrowExceptionOnExecuteError(false);
 
     HttpResponse response = null;
     logger.atInfo().log(
@@ -87,6 +90,12 @@ public class IcannHttpReporter {
     boolean success = true;
     try {
       response = request.execute();
+      // Only responses with a 200 or 400 status have a body. For everything else, throw so that
+      // the caller catches it and prints the stack trace.
+      if (response.getStatusCode() != HttpStatusCodes.STATUS_CODE_OK
+          && response.getStatusCode() != HttpStatusCodes.STATUS_CODE_BAD_REQUEST) {
+        throw new HttpResponseException(response);
+      }
       byte[] content;
       try {
         content = ByteStreams.toByteArray(response.getContent());
@@ -94,13 +103,24 @@ public class IcannHttpReporter {
         response.getContent().close();
       }
       logger.atInfo().log(
-          "Received response code %d with content: %s\n\nResponse content in hex: %s",
+          "Received response code %d\n\n"
+              + "Response headers: %s\n\n"
+              + "Response content in UTF-8: %s\n\n"
+              + "Response content in HEX: %s",
           response.getStatusCode(),
+          response.getHeaders(),
           new String(content, UTF_8),
           BaseEncoding.base16().encode(content));
-      XjcIirdeaResult result = parseResult(content);
-      if (result.getCode().getValue() != 1000) {
+      // For reasons unclear at the moment, when we parse the response content using UTF-8 we get
+      // garbled texts. Since we know that an HTTP 200 response can only contain a result code of
+      // 1000 (i. e. success), there is no need to parse it.
+      if (response.getStatusCode() == HttpStatusCodes.STATUS_CODE_BAD_REQUEST) {
         success = false;
+        // To debug if there is a problem with our parsing, we wrap the response and print the stack
+        // trace of it. As far as we can tell, the stack trace for such an exception contains the
+        // response content that is decoded correctly using the expected charset.
+        new HttpResponseException(response).printStackTrace();
+        XjcIirdeaResult result = parseResult(content);
         logger.atWarning().log(
             "PUT rejected, status code %s:\n%s\n%s",
             result.getCode(), result.getMsg(), result.getDescription());

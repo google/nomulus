@@ -14,6 +14,9 @@
 
 package google.registry.persistence.transaction;
 
+import com.google.common.collect.ImmutableList;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -27,7 +30,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "Transaction")
-public class TransactionEntity {
+public class TransactionEntity implements SqlEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,5 +42,10 @@ public class TransactionEntity {
 
   TransactionEntity(byte[] contents) {
     this.contents = contents;
+  }
+
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // not stored in Datastore per se
   }
 }

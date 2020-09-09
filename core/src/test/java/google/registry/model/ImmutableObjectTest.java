@@ -29,6 +29,7 @@ import com.google.common.collect.Iterables;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import google.registry.schema.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
 import java.util.ArrayDeque;
@@ -279,6 +280,7 @@ public class ImmutableObjectTest {
 
   /** Simple subclass of ImmutableObject. */
   @Entity
+  @EntityForTesting
   public static class ValueObject extends ImmutableObject {
     @Id
     long id;
