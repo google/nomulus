@@ -19,13 +19,10 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.util.CertificateChecker.CertificateViolation;
-import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.security.spec.DSAGenParameterSpec;
-import java.security.spec.DSAParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -37,6 +34,8 @@ public class CertificateCheckerTest {
 
   private static final String SSL_HOST = "www.example.tld";
 
+  private static CertificateChecker certificateChecker = new CertificateChecker(825, 30, 2048);
+
   @Test
   void test_compliantCertificate() throws Exception {
     X509Certificate certificate =
@@ -45,7 +44,7 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).minusDays(5).toDate(),
                 DateTime.now(UTC).plusDays(80).toDate())
             .cert();
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
         .isEqualTo(ImmutableSet.of());
   }
 
@@ -65,11 +64,11 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(1000).toDate())
             .cert();
 
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
         .isEqualTo(
             ImmutableSet.of(
                 CertificateViolation.NOT_YET_VALID,
-                CertificateViolation.EC_KEY_LENGTH,
+                CertificateViolation.EC_CURVE,
                 CertificateViolation.VALIDITY_LENGTH));
   }
 
@@ -81,7 +80,7 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).minusDays(50).toDate(),
                 DateTime.now(UTC).minusDays(10).toDate())
             .cert();
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
         .isEqualTo(ImmutableSet.of(CertificateViolation.EXPIRED));
   }
 
@@ -93,7 +92,7 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(10).toDate(),
                 DateTime.now(UTC).plusDays(50).toDate())
             .cert();
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
         .isEqualTo(ImmutableSet.of(CertificateViolation.NOT_YET_VALID));
   }
 
@@ -105,7 +104,7 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).minusDays(10).toDate(),
                 DateTime.now(UTC).plusDays(1000).toDate())
             .cert();
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
         .isEqualTo(ImmutableSet.of(CertificateViolation.VALIDITY_LENGTH));
   }
 
@@ -117,7 +116,7 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).minusDays(50).toDate(),
                 DateTime.now(UTC).plusDays(10).toDate())
             .cert();
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
         .isEqualTo(ImmutableSet.of(CertificateViolation.NEARING_EXPIRATION));
   }
 
@@ -135,7 +134,7 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(100).toDate())
             .cert();
 
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
         .isEqualTo(ImmutableSet.of(CertificateViolation.RSA_KEY_LENGTH));
 
     // Key length higher than required
@@ -150,13 +149,13 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(100).toDate())
             .cert();
 
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
         .isEqualTo(ImmutableSet.of());
   }
 
   @Test
   void test_checkEcKeyLength() throws Exception {
-    // Key length too low
+    // Key lower than P-256
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
     AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
     apParam.init(new ECGenParameterSpec("secp128r1"));
@@ -171,10 +170,10 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(100).toDate())
             .cert();
 
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.EC_KEY_LENGTH));
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+        .isEqualTo(ImmutableSet.of(CertificateViolation.EC_CURVE));
 
-    // Key length higher than required
+    // Curve higher than P-256
     keyGen = KeyPairGenerator.getInstance("EC");
     apParam = AlgorithmParameters.getInstance("EC");
     apParam.init(new ECGenParameterSpec("secp521r1"));
@@ -189,35 +188,14 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(100).toDate())
             .cert();
 
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of());
-  }
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+        .isEqualTo(ImmutableSet.of(CertificateViolation.EC_CURVE));
 
-  @Test
-  void test_checkDsaKeyLength() throws Exception {
-    // Key length too low
-    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA");
-    AlgorithmParameterGenerator apg = AlgorithmParameterGenerator.getInstance("DSA");
-    apg.init(new DSAGenParameterSpec(1024, 160));
-    DSAParameterSpec spec = apg.generateParameters().getParameterSpec(DSAParameterSpec.class);
-    keyGen.initialize(spec, new SecureRandom());
-
-    X509Certificate certificate =
-        SelfSignedCaCertificate.create(
-                keyGen.generateKeyPair(),
-                SSL_HOST,
-                DateTime.now(UTC).minusDays(5).toDate(),
-                DateTime.now(UTC).plusDays(100).toDate())
-            .cert();
-
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.DSA_KEY_LENGTH));
-
-    // Key length higher than required
-    keyGen = KeyPairGenerator.getInstance("DSA");
-    apg = AlgorithmParameterGenerator.getInstance("DSA");
-    apg.init(new DSAGenParameterSpec(3072, 256));
-    spec = apg.generateParameters().getParameterSpec(DSAParameterSpec.class);
+    // Curve is P-256
+    keyGen = KeyPairGenerator.getInstance("EC");
+    apParam = AlgorithmParameters.getInstance("EC");
+    apParam.init(new ECGenParameterSpec("secp256r1"));
+    spec = apParam.getParameterSpec(ECParameterSpec.class);
     keyGen.initialize(spec, new SecureRandom());
 
     certificate =
@@ -228,7 +206,7 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(100).toDate())
             .cert();
 
-    assertThat(CertificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
         .isEqualTo(ImmutableSet.of());
   }
 }
