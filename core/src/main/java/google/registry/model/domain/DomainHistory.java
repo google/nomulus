@@ -115,6 +115,7 @@ public class DomainHistory extends HistoryEntry {
         domainContent = null;
       }
     }
+    parent = Key.create(DomainBase.class, domainRepoId);
   }
 
   /** Class to represent the composite primary key of {@link DomainHistory} entity. */

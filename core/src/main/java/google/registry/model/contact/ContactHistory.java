@@ -50,8 +50,7 @@ import javax.persistence.PostLoad;
 public class ContactHistory extends HistoryEntry {
 
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
-  @Nullable
-  ContactBase contactBase;
+  @Nullable ContactBase contactBase;
 
   @Column(nullable = false)
   VKey<ContactResource> contactRepoId;
@@ -82,6 +81,11 @@ public class ContactHistory extends HistoryEntry {
     if (contactBase != null && contactBase.getContactId() == null) {
       contactBase = null;
     }
+    // Fill in the full, symmetric, parent repo ID key, since SQL
+    Key<ContactResource> parentKey =
+        Key.create(ContactResource.class, (String) contactRepoId.getSqlKey());
+    parent = parentKey;
+    contactRepoId = VKey.create(ContactResource.class, contactRepoId.getSqlKey(), parentKey);
   }
 
   @Override

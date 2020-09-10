@@ -82,6 +82,10 @@ public class HostHistory extends HistoryEntry {
     if (hostBase != null && hostBase.getHostName() == null) {
       hostBase = null;
     }
+    // Fill in the full, symmetric, parent repo ID key
+    Key<HostResource> parentKey = Key.create(HostResource.class, (String) hostRepoId.getSqlKey());
+    parent = parentKey;
+    hostRepoId = VKey.create(HostResource.class, hostRepoId.getSqlKey(), parentKey);
   }
 
   @Override

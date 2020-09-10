@@ -35,6 +35,7 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Tests for {@link DomainHistory}. */
@@ -42,6 +43,11 @@ public class DomainHistoryTest extends EntityTestCase {
 
   DomainHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
+  }
+
+  @BeforeEach
+  void beforeEach() {
+    saveRegistrar("TheRegistrar");
   }
 
   @Test
@@ -86,8 +92,6 @@ public class DomainHistoryTest extends EntityTestCase {
 
   @Test
   void testOfyPersistence() {
-    saveRegistrar("TheRegistrar");
-
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
 
@@ -122,9 +126,7 @@ public class DomainHistoryTest extends EntityTestCase {
     assertThat(domainHistoryFromDb).isEqualTo(historyEntryFromDb);
   }
 
-  DomainBase createDomainWithContactsAndHosts() {
-    saveRegistrar("TheRegistrar");
-
+  static DomainBase createDomainWithContactsAndHosts() {
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
 

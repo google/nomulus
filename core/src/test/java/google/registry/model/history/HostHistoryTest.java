@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,7 +45,8 @@ public class HostHistoryTest extends EntityTestCase {
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     jpaTm().transact(() -> jpaTm().saveNew(host));
-    VKey<HostResource> hostVKey = VKey.createSql(HostResource.class, "host1");
+    VKey<HostResource> hostVKey =
+        VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().load(hostVKey));
     HostHistory hostHistory = createHostHistory(hostFromDb, hostVKey);
     hostHistory.id = null;
@@ -66,7 +67,9 @@ public class HostHistoryTest extends EntityTestCase {
     saveRegistrar("TheRegistrar");
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     jpaTm().transact(() -> jpaTm().saveNew(host));
-    VKey<HostResource> hostVKey = VKey.createSql(HostResource.class, "host1");
+
+    VKey<HostResource> hostVKey =
+        VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().load(hostVKey));
 
     HostHistory hostHistory =
@@ -91,7 +94,8 @@ public class HostHistoryTest extends EntityTestCase {
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     tm().transact(() -> tm().saveNew(host));
-    VKey<HostResource> hostVKey = VKey.create(HostResource.class, "host1", Key.create(host));
+    VKey<HostResource> hostVKey =
+        VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
     HostResource hostFromDb = tm().transact(() -> tm().load(hostVKey));
     HostHistory hostHistory = createHostHistory(hostFromDb, hostVKey);
     fakeClock.advanceOneMilli();

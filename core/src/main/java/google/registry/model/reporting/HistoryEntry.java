@@ -346,7 +346,10 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
       setBySuperuser(historyEntry.bySuperuser);
       setReason(historyEntry.reason);
       setRequestedByRegistrar(historyEntry.requestedByRegistrar);
-      setDomainTransactionRecords(nullToEmptyImmutableCopy(historyEntry.domainTransactionRecords));
+      setDomainTransactionRecords(
+          historyEntry.domainTransactionRecords == null
+              ? null
+              : ImmutableSet.copyOf(historyEntry.domainTransactionRecords));
       return thisCastToDerived();
     }
 
