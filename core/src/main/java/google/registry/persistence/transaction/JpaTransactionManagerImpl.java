@@ -391,7 +391,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private static ImmutableSet<EntityId> getEntityIdsFromEntity(
       EntityType<?> entityType, Object entity) {
     if (entityType.hasSingleIdAttribute()) {
-      String idName = entityType.getDeclaredId(entityType.getIdType().getJavaType()).getName();
+      String idName = entityType.getId(entityType.getIdType().getJavaType()).getName();
       Object idValue = getFieldValue(entity, idName);
       return ImmutableSet.of(new EntityId(idName, idValue));
     } else {
@@ -402,7 +402,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private static ImmutableSet<EntityId> getEntityIdsFromSqlKey(
       EntityType<?> entityType, Object sqlKey) {
     if (entityType.hasSingleIdAttribute()) {
-      String idName = entityType.getDeclaredId(entityType.getIdType().getJavaType()).getName();
+      String idName = entityType.getId(entityType.getIdType().getJavaType()).getName();
       return ImmutableSet.of(new EntityId(idName, sqlKey));
     } else {
       return getEntityIdsFromIdContainer(entityType, sqlKey);
@@ -429,11 +429,26 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private static Object getFieldValue(Object object, String fieldName) {
     try {
-      Field field = object.getClass().getDeclaredField(fieldName);
+      Field field = getField(object.getClass(), fieldName);
       field.setAccessible(true);
       return field.get(object);
     } catch (NoSuchFieldException | IllegalAccessException e) {
       throw new IllegalArgumentException(e);
+    }
+  }
+
+  /** Gets the field definition from clazz or any superclass. */
+  private static Field getField(Class clazz, String fieldName) throws NoSuchFieldException {
+    try {
+      // Note that we have to use getDeclaredField() for this, getField() just finds public fields.
+      return clazz.getDeclaredField(fieldName);
+    } catch (NoSuchFieldException e) {
+      Class base = clazz.getSuperclass();
+      if (base != null) {
+        return getField(base, fieldName);
+      } else {
+        throw e;
+      }
     }
   }
 

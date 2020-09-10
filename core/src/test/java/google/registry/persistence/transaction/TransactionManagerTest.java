@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Stream;
+import javax.persistence.Embeddable;
+import javax.persistence.MappedSuperclass;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -65,7 +67,7 @@ public class TransactionManagerTest {
           .withClock(fakeClock)
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestEntity.class)
-          .withJpaUnitTestEntities(TestEntity.class)
+          .withJpaUnitTestEntities(TestEntity.class, TestEntityBase.class)
           .build();
 
   TransactionManagerTest() {}
@@ -324,17 +326,31 @@ public class TransactionManagerTest {
     entities.forEach(TransactionManagerTest::assertEntityNotExist);
   }
 
+  /**
+   * We put the id field into a base class to test that id fields can be discovered in a base class.
+   */
+  @MappedSuperclass
+  @Embeddable
+  private static class TestEntityBase extends ImmutableObject {
+    @Id @javax.persistence.Id protected String name;
+
+    TestEntityBase(String name) {
+      this.name = name;
+    }
+
+    TestEntityBase() {}
+  }
+
   @Entity(name = "TxnMgrTestEntity")
   @javax.persistence.Entity(name = "TestEntity")
-  private static class TestEntity extends ImmutableObject {
-    @Id @javax.persistence.Id private String name;
+  private static class TestEntity extends TestEntityBase {
 
     private String data;
 
     private TestEntity() {}
 
     private TestEntity(String name, String data) {
-      this.name = name;
+      super(name);
       this.data = data;
     }
 
