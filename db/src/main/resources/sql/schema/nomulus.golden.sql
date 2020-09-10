@@ -1738,7 +1738,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingEvent"(billing_event_id);
+    ADD CONSTRAINT fk_domain_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
 
 
 --
