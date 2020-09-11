@@ -42,13 +42,13 @@ public class Period extends ImmutableObject {
     return value;
   }
 
-  // for Hibernate
+  /** This method exists solely to satisfy Hibernate. Use {@link #create(int, Unit)} instead. */
   @SuppressWarnings("UnusedMethod")
   private void setUnit(Unit unit) {
     this.unit = unit;
   }
 
-  // for Hibernate
+  /** This method exists solely to satisfy Hibernate. Use {@link #create(int, Unit)} instead. */
   @SuppressWarnings("UnusedMethod")
   private void setValue(Integer value) {
     this.value = value;
