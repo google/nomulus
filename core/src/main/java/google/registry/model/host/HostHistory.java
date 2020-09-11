@@ -54,7 +54,7 @@ public class HostHistory extends HistoryEntry {
   VKey<HostResource> hostRepoId;
 
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "HistorySequenceGenerator")
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TempHistorySequenceGenerator")
   @Column(name = "historyRevisionId")
   @Access(AccessType.PROPERTY)
   @Override

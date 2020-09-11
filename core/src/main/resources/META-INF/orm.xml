@@ -11,7 +11,10 @@
     </attributes>
   </embeddable>
 
-  <sequence-generator name="HistorySequenceGenerator" sequence-name="history_id_sequence" />
+  <sequence-generator name="HistorySequenceGenerator" sequence-name="history_id_sequence"/>
+
+  <!-- TODO(shicong): Drop this sequence and change all history tables to use the above one. -->
+  <sequence-generator name="TempHistorySequenceGenerator" sequence-name="temp_history_id_sequence"/>
 
   <persistence-unit-metadata>
     <persistence-unit-defaults>
