@@ -640,6 +640,7 @@ class google.registry.model.registry.Registry {
   java.util.Set<java.lang.String> dnsWriters;
   org.joda.money.CurrencyUnit currency;
   org.joda.money.Money createBillingCost;
+  org.joda.money.Money registryLockOrUnlockBillingCost;
   org.joda.money.Money restoreBillingCost;
   org.joda.money.Money serverStatusChangeBillingCost;
   org.joda.time.DateTime claimsPeriodEnd;

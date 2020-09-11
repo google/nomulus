@@ -69,6 +69,8 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
     assertThat(registry.getRedemptionGracePeriodLength())
         .isEqualTo(Registry.DEFAULT_REDEMPTION_GRACE_PERIOD);
     assertThat(registry.getPendingDeleteLength()).isEqualTo(Registry.DEFAULT_PENDING_DELETE_LENGTH);
+    assertThat(registry.getRegistryLockOrUnlockBillingCost())
+        .isEqualTo(Registry.DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST);
   }
 
   @Test
@@ -231,12 +233,24 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
   }
 
   @Test
+  void testSuccess_registryLockOrUnlockCostFlag() throws Exception {
+    runCommandForced(
+        "--registry_lock_or_unlock_cost=\"USD 42.42\"",
+        "--roid_suffix=Q9JYB4C",
+        "--dns_writers=VoidDnsWriter",
+        "xn--q9jyb4c");
+    assertThat(Registry.get("xn--q9jyb4c").getRegistryLockOrUnlockBillingCost())
+        .isEqualTo(Money.of(USD, 42.42));
+  }
+
+  @Test
   void testSuccess_nonUsdBillingCostFlag() throws Exception {
     runCommandForced(
         "--create_billing_cost=\"JPY 12345\"",
         "--restore_billing_cost=\"JPY 67890\"",
         "--initial_renew_billing_cost=\"JPY 101112\"",
         "--server_status_change_cost=\"JPY 97865\"",
+        "--registry_lock_or_unlock_cost=\"JPY 9001\"",
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
