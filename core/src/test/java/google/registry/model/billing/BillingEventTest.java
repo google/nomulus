@@ -39,7 +39,6 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.persistence.VKey;
 import google.registry.util.DateTimeUtils;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -57,7 +56,6 @@ public class BillingEventTest extends EntityTestCase {
   private HistoryEntry historyEntry;
   private HistoryEntry historyEntry2;
   private DomainBase domain;
-  private BillingEvent.OneTime sqlOneTime;
   private BillingEvent.OneTime oneTime;
   private BillingEvent.OneTime oneTimeSynthetic;
   private BillingEvent.Recurring recurring;
@@ -106,16 +104,6 @@ public class BillingEventTest extends EntityTestCase {
                     .setEventTime(now)
                     .setBillingTime(now.plusDays(5))
                     .setAllocationToken(allocationToken.createVKey())));
-
-    sqlOneTime =
-        oneTime
-            .asBuilder()
-            .setDomainRepoId(domain.getRepoId())
-            .setDomainHistoryRevisionId(1L)
-            .setAllocationToken(
-                VKey.create(
-                    AllocationToken.class, allocationToken.getToken(), Key.create(allocationToken)))
-            .build();
 
     recurring =
         persistResource(
@@ -179,80 +167,43 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   private void saveNewBillingEvent(BillingEvent billingEvent) {
-    billingEvent.id = null;
     jpaTm().transact(() -> jpaTm().insert(billingEvent));
   }
 
   @Test
   void testCloudSqlPersistence_OneTime() {
     saveRegistrar("a registrar");
-    saveNewBillingEvent(sqlOneTime);
+    saveNewBillingEvent(oneTime);
 
-    BillingEvent.OneTime persisted =
-        jpaTm()
-            .transact(
-                () -> jpaTm().load(VKey.createSql(BillingEvent.OneTime.class, sqlOneTime.id)));
-    // TODO(shicong): Remove these fixes after the entities are fully compatible
+    BillingEvent.OneTime persisted = jpaTm().transact(() -> jpaTm().load(oneTime.createVKey()));
+    // TODO(b/168325240): Remove this fix after VKeyConverter generates symmetric key for
+    // AllocationToken.
     BillingEvent.OneTime fixed =
-        persisted
-            .asBuilder()
-            .setParent(sqlOneTime.getParentKey())
-            .setAllocationToken(sqlOneTime.getAllocationToken().get())
-            .build();
-    assertThat(fixed).isEqualTo(sqlOneTime);
+        persisted.asBuilder().setAllocationToken(oneTime.getAllocationToken().get()).build();
+    assertThat(fixed).isEqualTo(oneTime);
   }
 
   @Test
   void testCloudSqlPersistence_Cancellation() {
     saveRegistrar("a registrar");
-    saveNewBillingEvent(sqlOneTime);
-    VKey<BillingEvent.OneTime> sqlVKey = VKey.createSql(BillingEvent.OneTime.class, sqlOneTime.id);
-    BillingEvent sqlCancellationOneTime =
-        cancellationOneTime
-            .asBuilder()
-            .setOneTimeEventKey(sqlVKey)
-            .setDomainRepoId(domain.getRepoId())
-            .setDomainHistoryRevisionId(1L)
-            .build();
-    saveNewBillingEvent(sqlCancellationOneTime);
+    saveNewBillingEvent(oneTime);
+    saveNewBillingEvent(cancellationOneTime);
 
     BillingEvent.Cancellation persisted =
-        jpaTm()
-            .transact(
-                () ->
-                    jpaTm()
-                        .load(
-                            VKey.createSql(
-                                BillingEvent.Cancellation.class, sqlCancellationOneTime.id)));
-    // TODO(shicong): Remove these fixes after the entities are fully compatible
+        jpaTm().transact(() -> jpaTm().load(cancellationOneTime.createVKey()));
+    // TODO(b/168537779): Remove this fix after VKey<OneTime> can be reconstructed correctly.
     BillingEvent.Cancellation fixed =
-        persisted
-            .asBuilder()
-            .setParent(sqlCancellationOneTime.getParentKey())
-            .setOneTimeEventKey(sqlVKey)
-            .build();
-    assertThat(fixed).isEqualTo(sqlCancellationOneTime);
+        persisted.asBuilder().setOneTimeEventKey(oneTime.createVKey()).build();
+    assertThat(fixed).isEqualTo(cancellationOneTime);
   }
 
   @Test
   void testCloudSqlPersistence_Recurring() {
     saveRegistrar("a registrar");
-    BillingEvent.Recurring sqlRecurring =
-        recurring
-            .asBuilder()
-            .setDomainRepoId(domain.getRepoId())
-            .setDomainHistoryRevisionId(1L)
-            .build();
-    saveNewBillingEvent(sqlRecurring);
+    saveNewBillingEvent(recurring);
 
-    BillingEvent.Recurring persisted =
-        jpaTm()
-            .transact(
-                () -> jpaTm().load(VKey.createSql(BillingEvent.Recurring.class, sqlRecurring.id)));
-    // TODO(shicong): Remove these fixes after the entities are fully compatible
-    BillingEvent.Recurring fixed =
-        persisted.asBuilder().setParent(sqlRecurring.getParentKey()).build();
-    assertThat(fixed).isEqualTo(sqlRecurring);
+    BillingEvent.Recurring persisted = jpaTm().transact(() -> jpaTm().load(recurring.createVKey()));
+    assertThat(persisted).isEqualTo(recurring);
   }
 
   @Test

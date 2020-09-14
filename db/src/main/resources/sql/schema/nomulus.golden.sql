@@ -74,25 +74,6 @@ CREATE TABLE public."BillingCancellation" (
 
 
 --
--- Name: BillingCancellation_billing_cancellation_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."BillingCancellation_billing_cancellation_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: BillingCancellation_billing_cancellation_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."BillingCancellation_billing_cancellation_id_seq" OWNED BY public."BillingCancellation".billing_cancellation_id;
-
-
---
 -- Name: BillingEvent; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -116,25 +97,6 @@ CREATE TABLE public."BillingEvent" (
 
 
 --
--- Name: BillingEvent_billing_event_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."BillingEvent_billing_event_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: BillingEvent_billing_event_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."BillingEvent_billing_event_id_seq" OWNED BY public."BillingEvent".billing_event_id;
-
-
---
 -- Name: BillingRecurrence; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -150,25 +112,6 @@ CREATE TABLE public."BillingRecurrence" (
     recurrence_end_time timestamp with time zone,
     recurrence_time_of_year text
 );
-
-
---
--- Name: BillingRecurrence_billing_recurrence_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."BillingRecurrence_billing_recurrence_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: BillingRecurrence_billing_recurrence_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."BillingRecurrence_billing_recurrence_id_seq" OWNED BY public."BillingRecurrence".billing_recurrence_id;
 
 
 --
@@ -1023,27 +966,6 @@ CREATE SEQUENCE public.temp_history_id_sequence
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
---
--- Name: BillingCancellation billing_cancellation_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingCancellation" ALTER COLUMN billing_cancellation_id SET DEFAULT nextval('public."BillingCancellation_billing_cancellation_id_seq"'::regclass);
-
-
---
--- Name: BillingEvent billing_event_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingEvent" ALTER COLUMN billing_event_id SET DEFAULT nextval('public."BillingEvent_billing_event_id_seq"'::regclass);
-
-
---
--- Name: BillingRecurrence billing_recurrence_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingRecurrence" ALTER COLUMN billing_recurrence_id SET DEFAULT nextval('public."BillingRecurrence_billing_recurrence_id_seq"'::regclass);
 
 
 --

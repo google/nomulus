@@ -33,12 +33,14 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
+import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Parent;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.TimeOfYear;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
@@ -57,9 +59,8 @@ import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -108,10 +109,7 @@ public abstract class BillingEvent extends ImmutableObject
   }
 
   /** Entity id. */
-  @Id
-  @javax.persistence.Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  Long id;
+  @Id @javax.persistence.Id Long id;
 
   @Parent @DoNotHydrate @Transient Key<HistoryEntry> parent;
 
@@ -148,6 +146,21 @@ public abstract class BillingEvent extends ImmutableObject
 
   @Nullable
   Set<Flag> flags;
+
+  @PostLoad
+  void postLoad() {
+    parent =
+        Key.create(
+            Key.create(DomainBase.class, domainRepoId),
+            HistoryEntry.class,
+            domainHistoryRevisionId);
+  }
+
+  @OnLoad
+  void onLoad() {
+    domainHistoryRevisionId = parent.getId();
+    domainRepoId = parent.getParent().getName();
+  }
 
   public String getClientId() {
     return clientId;
@@ -245,7 +258,6 @@ public abstract class BillingEvent extends ImmutableObject
     }
 
     public B setParent(Key<HistoryEntry> parentKey) {
-      // TODO(shicong): Figure out how to set domainHistoryRevisionId and domainRepoId
       getInstance().parent = parentKey;
       return thisCastToDerived();
     }
@@ -258,6 +270,11 @@ public abstract class BillingEvent extends ImmutableObject
       checkNotNull(instance.eventTime, "Event time must be set");
       checkNotNull(instance.targetId, "Target ID must be set");
       checkNotNull(instance.parent, "Parent must be set");
+      checkNotNull(instance.parent.getParent(), "parent.getParent() must be set");
+      checkNotNull(
+          instance.parent.getParent().getName(), "parent.getParent().getName() must be set");
+      instance.domainHistoryRevisionId = instance.parent.getId();
+      instance.domainRepoId = instance.parent.getParent().getName();
       return super.build();
     }
   }
