@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableSet;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECFieldFp;
 import java.util.Date;
 import javax.inject.Inject;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -75,7 +76,7 @@ public class CertificateChecker {
       violations.add(CertificateViolation.VALIDITY_LENGTH);
     }
 
-    // Check Key Lengths
+    // Check Key Strengths
     PublicKey key = certificate.getPublicKey();
     switch (key.getAlgorithm()) {
       case "RSA":
@@ -84,7 +85,7 @@ public class CertificateChecker {
         }
         break;
       case "EC":
-        if (!checkEcKeyLength((ECPublicKey) key)) {
+        if (!checkEcCurveType((ECPublicKey) key)) {
           violations.add(CertificateViolation.EC_CURVE);
         }
         break;
@@ -127,12 +128,12 @@ public class CertificateChecker {
   }
 
   /** Returns true if a P-256 curve is used. */
-  private static boolean checkEcKeyLength(ECPublicKey key) {
+  private static boolean checkEcCurveType(ECPublicKey key) {
     ECParameterSpec spec = key.getParameters();
     if (spec != null) {
-      return spec.getCurve().getOrder().bitLength() == 256
-          && spec.getCurve().getField().getCharacteristic().isProbablePrime(1);
+      ECFieldFp field = new ECFieldFp(spec.getCurve().getField().getCharacteristic());
+      return spec.getCurve().getOrder().bitLength() == 256 && field.getP().isProbablePrime(1);
     }
-    return false; // Return false if we were unable to determine the key length
+    return false; // Return false if we were unable to determine the curve
   }
 }
