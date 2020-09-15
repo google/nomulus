@@ -194,7 +194,7 @@ public class CertificateCheckerTest {
     // Curve is P-256
     keyGen = KeyPairGenerator.getInstance("EC");
     apParam = AlgorithmParameters.getInstance("EC");
-    apParam.init(new ECGenParameterSpec("secp256r1"));
+    apParam.init(new ECGenParameterSpec("secp256k1"));
     spec = apParam.getParameterSpec(ECParameterSpec.class);
     keyGen.initialize(spec, new SecureRandom());
 
