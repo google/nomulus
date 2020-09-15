@@ -1,23 +1,23 @@
 # Registry: Charleston Road Registry Inc.
-# Script: Traditional Chinese
+# Language: Traditional Chinese
 # Version: 1.0
 # Effective Date: 04-12-2012
-# Contact: tas-contact.google.com
+# Contact: iana-contact@google.com
 # Address: 1600 Amphitheatre Parkway Mountain View, CA 94043, USA
 # Telephone: +1 (650) 253-0000
 # Website: www.google.com
 # Notes: This table describes codepoints allowed for the Traditional Chinese script.
 
-Reference 0 Unicode 3.2
-Reference 1 A Complete Set of Simplified Chinese Characters
-Reference 2 Chinese Variants Collation Table
-Reference 3 Chinese Big Dictionary
-Reference 4 Chinese Relationship Table for Unihan Project
-Reference 5 GB2312
-Reference 6 General Table for Modern Chinese
-Reference 7 International Chinese Standard Big Dictionary
-Reference 8 Unihan Database
-Reference 9 BIG5
+# Reference 0 Unicode 3.2
+# Reference 1 A Complete Set of Simplified Chinese Characters
+# Reference 2 Chinese Variants Collation Table
+# Reference 3 Chinese Big Dictionary
+# Reference 4 Chinese Relationship Table for Unihan Project
+# Reference 5 GB2312
+# Reference 6 General Table for Modern Chinese
+# Reference 7 International Chinese Standard Big Dictionary
+# Reference 8 Unihan Database
+# Reference 9 BIG5
 
 U+002D(0);U+002D(0);
 U+0030(0);U+0030(0);
