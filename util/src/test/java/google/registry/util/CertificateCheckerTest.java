@@ -68,8 +68,8 @@ public class CertificateCheckerTest {
         .isEqualTo(
             ImmutableSet.of(
                 CertificateViolation.NOT_YET_VALID,
-                CertificateViolation.EC_CURVE,
-                CertificateViolation.VALIDITY_LENGTH));
+                CertificateViolation.ELLIPTIC_CURVE_NOT_ALLOWED,
+                CertificateViolation.VALIDITY_PERIOD_TOO_LONG));
   }
 
   @Test
@@ -105,7 +105,7 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(1000).toDate())
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.VALIDITY_LENGTH));
+        .isEqualTo(ImmutableSet.of(CertificateViolation.VALIDITY_PERIOD_TOO_LONG));
   }
 
   @Test
@@ -135,7 +135,7 @@ public class CertificateCheckerTest {
             .cert();
 
     assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.RSA_KEY_LENGTH));
+        .isEqualTo(ImmutableSet.of(CertificateViolation.RSA_KEY_LENGTH_TOO_SMALL));
 
     // Key length higher than required
     keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
@@ -171,7 +171,7 @@ public class CertificateCheckerTest {
             .cert();
 
     assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.EC_CURVE));
+        .isEqualTo(ImmutableSet.of(CertificateViolation.ELLIPTIC_CURVE_NOT_ALLOWED));
 
     // Curve higher than P-256
     keyGen = KeyPairGenerator.getInstance("EC");
@@ -189,7 +189,7 @@ public class CertificateCheckerTest {
             .cert();
 
     assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.EC_CURVE));
+        .isEqualTo(ImmutableSet.of(CertificateViolation.ELLIPTIC_CURVE_NOT_ALLOWED));
 
     // Curve is P-256
     keyGen = KeyPairGenerator.getInstance("EC");

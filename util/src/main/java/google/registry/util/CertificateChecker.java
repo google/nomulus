@@ -20,7 +20,6 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECFieldFp;
 import java.util.Date;
-import javax.inject.Inject;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.joda.time.DateTime;
@@ -33,7 +32,6 @@ public class CertificateChecker {
   private final int daysToExpiration;
   private final int minimumRsaKeyLength;
 
-  @Inject
   public CertificateChecker(int maxValidityDays, int daysToExpiration, int minimumRsaKeyLength) {
     this.maxValidityDays = maxValidityDays;
     this.daysToExpiration = daysToExpiration;
@@ -47,10 +45,11 @@ public class CertificateChecker {
   public enum CertificateViolation {
     EXPIRED,
     NEARING_EXPIRATION, // less than 30 days to expiration
-    RSA_KEY_LENGTH, // key length is too low
-    EC_CURVE, // uses a curve other than P-256
+    RSA_KEY_LENGTH_TOO_SMALL, // key length is too low
+    ELLIPTIC_CURVE_NOT_ALLOWED, // uses a curve other than P-256
     NOT_YET_VALID, // certificate start date has not passed yet
-    VALIDITY_LENGTH // validity length is too long
+    VALIDITY_PERIOD_TOO_LONG, // validity length is too long
+    DISALLOWED_CERTIFICATE_ALGORITHM // certificate is not RSA or ECDSA
   }
 
   /**
@@ -59,53 +58,46 @@ public class CertificateChecker {
    */
   public ImmutableSet<CertificateViolation> checkCertificate(
       X509Certificate certificate, Date now) {
-    ImmutableSet.Builder<CertificateViolation> violations = ImmutableSet.builder();
+    ImmutableSet.Builder<CertificateViolation> violations = new ImmutableSet.Builder<>();
 
     // Check Expiration
-    if (isExpired(certificate, now)) {
+    if (certificate.getNotAfter().before(now)) {
       violations.add(CertificateViolation.EXPIRED);
     } else {
       if (isNearingExpiration(certificate, now, daysToExpiration)) {
         violations.add(CertificateViolation.NEARING_EXPIRATION);
       }
-      if (isNotYetValid(certificate, now)) {
+      if (certificate.getNotBefore().after(now)) {
         violations.add(CertificateViolation.NOT_YET_VALID);
       }
     }
-    if (!checkValidityLength(certificate, maxValidityDays)) {
-      violations.add(CertificateViolation.VALIDITY_LENGTH);
+    if (!isValidityLengthValid(certificate, maxValidityDays)) {
+      violations.add(CertificateViolation.VALIDITY_PERIOD_TOO_LONG);
     }
 
     // Check Key Strengths
     PublicKey key = certificate.getPublicKey();
     switch (key.getAlgorithm()) {
       case "RSA":
-        if (!checkRsaKeyLength((RSAPublicKey) key, minimumRsaKeyLength)) {
-          violations.add(CertificateViolation.RSA_KEY_LENGTH);
+        RSAPublicKey rsaPublicKey = (RSAPublicKey) key;
+        if (rsaPublicKey.getModulus().bitLength() < minimumRsaKeyLength) {
+          violations.add(CertificateViolation.RSA_KEY_LENGTH_TOO_SMALL);
         }
         break;
       case "EC":
-        if (!checkEcCurveType((ECPublicKey) key)) {
-          violations.add(CertificateViolation.EC_CURVE);
+        if (!isEcCurveTypeValid((ECPublicKey) key)) {
+          violations.add(CertificateViolation.ELLIPTIC_CURVE_NOT_ALLOWED);
         }
         break;
       default:
+        violations.add(CertificateViolation.DISALLOWED_CERTIFICATE_ALGORITHM);
         break;
     }
-
     return violations.build();
   }
 
-  private static boolean isExpired(X509Certificate certificate, Date now) {
-    return certificate.getNotAfter().before(now);
-  }
-
-  private static boolean isNotYetValid(X509Certificate certificate, Date now) {
-    return certificate.getNotBefore().after(now);
-  }
-
   /** Returns true if the validity period is 825 days or less. */
-  private static boolean checkValidityLength(X509Certificate certificate, int maxValidityDays) {
+  private static boolean isValidityLengthValid(X509Certificate certificate, int maxValidityDays) {
     DateTime start = DateTime.parse(certificate.getNotBefore().toInstant().toString());
     DateTime end = DateTime.parse(certificate.getNotAfter().toInstant().toString());
     return Days.daysBetween(start.withTimeAtStartOfDay(), end.withTimeAtStartOfDay())
@@ -122,13 +114,8 @@ public class CertificateChecker {
     return now.after(nearingExpirationDate);
   }
 
-  /** Returns true if the key length is greater than or equal to the minimum RSA key length. */
-  private static boolean checkRsaKeyLength(RSAPublicKey key, int minimumRsaKeyLength) {
-    return key.getModulus().bitLength() >= minimumRsaKeyLength;
-  }
-
   /** Returns true if a P-256 curve is used. */
-  private static boolean checkEcCurveType(ECPublicKey key) {
+  private static boolean isEcCurveTypeValid(ECPublicKey key) {
     ECParameterSpec spec = key.getParameters();
     if (spec != null) {
       ECFieldFp field = new ECFieldFp(spec.getCurve().getField().getCharacteristic());
