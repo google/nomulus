@@ -64,7 +64,11 @@ public class ContactHistory extends HistoryEntry {
     return super.getId();
   }
 
-  /** The state of the {@link ContactBase} object at this point in time. */
+  /**
+   * The {@link ContactBase} object at the point in time this history object was created.
+   *
+   * <p>May be absent for objects created prior to the SQL migration.
+   */
   public Optional<ContactBase> getContactBase() {
     return Optional.ofNullable(contactBase);
   }
@@ -81,7 +85,7 @@ public class ContactHistory extends HistoryEntry {
     if (contactBase != null && contactBase.getContactId() == null) {
       contactBase = null;
     }
-    // Fill in the full, symmetric, parent repo ID key, since SQL
+    // Fill in the full, symmetric, parent repo ID key
     Key<ContactResource> parentKey =
         Key.create(ContactResource.class, (String) contactRepoId.getSqlKey());
     parent = parentKey;

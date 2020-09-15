@@ -32,6 +32,7 @@ public class CreateAutoTimestampConverter
     implements AttributeConverter<CreateAutoTimestamp, Timestamp> {
 
   @Override
+  @Nullable
   public Timestamp convertToDatabaseColumn(@Nullable CreateAutoTimestamp entity) {
     if (entity == null) {
       return null;

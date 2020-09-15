@@ -65,7 +65,11 @@ public class HostHistory extends HistoryEntry {
     return super.getId();
   }
 
-  /** The state of the {@link HostBase} object at this point in time. */
+  /**
+   * The {@link HostBase} object at the point in time this history object was created.
+   *
+   * <p>May be absent for objects created prior to the SQL migration.
+   */
   public Optional<HostBase> getHostBase() {
     return Optional.ofNullable(hostBase);
   }

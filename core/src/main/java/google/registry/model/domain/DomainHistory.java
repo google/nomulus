@@ -91,7 +91,11 @@ public class DomainHistory extends HistoryEntry {
     return nsHosts;
   }
 
-  /** The state of the {@link DomainContent} object at this point in time. */
+  /**
+   * The {@link DomainContent} object at the point in time this history object was created.
+   *
+   * <p>May be absent for objects created prior to the SQL migration.
+   */
   public Optional<DomainContent> getDomainContent() {
     return Optional.ofNullable(domainContent);
   }
