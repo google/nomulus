@@ -43,7 +43,7 @@ metadata:
     app: proxy-canary
 spec:
   scaleTargetRef:
-    apiVersion: extensions/v1beta1
+    apiVersion: apps/v1
     kind: Deployment
     name: proxy-deployment-canary
   maxReplicas: 10
