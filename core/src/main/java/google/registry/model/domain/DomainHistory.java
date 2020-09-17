@@ -28,6 +28,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import java.io.Serializable;
 import java.util.Set;
+import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
@@ -82,6 +83,7 @@ public class DomainHistory extends HistoryEntry {
   Set<VKey<HostResource>> nsHosts;
 
   @Override
+  @Nullable
   @Access(AccessType.PROPERTY)
   @AttributeOverrides({
       @AttributeOverride(
@@ -102,6 +104,7 @@ public class DomainHistory extends HistoryEntry {
    * sending the EPP transfer command is the gaining party). For approves and rejects, the other
    * registrar is the gaining party.
    */
+  @Nullable
   @Access(AccessType.PROPERTY)
   @Column(name = "historyOtherRegistrarId")
   public String getOtherRegistrarId() {
@@ -111,7 +114,8 @@ public class DomainHistory extends HistoryEntry {
   /**
    * Logging field for transaction reporting.
    *
-   * <p>This will be empty for any HistoryEntry generated before this field was added.
+   * <p>This will be empty for any DomainHistory/HistoryEntry generated before this field was added,
+   * mid-2017, as well as any action that does not generate billable events (e.g. updates).
    */
   @Access(AccessType.PROPERTY)
   @OneToMany(cascade = {CascadeType.ALL})
