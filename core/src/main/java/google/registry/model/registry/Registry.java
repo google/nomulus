@@ -877,7 +877,7 @@ public class Registry extends ImmutableObject implements Buildable {
     }
 
     public Builder setRegistryLockOrUnlockBillingCost(Money amount) {
-      checkArgument(amount.isPositiveOrZero(), "Registry lock/unlock cost cannot be negative.");
+      checkArgument(amount.isPositiveOrZero(), "Registry lock/unlock cost cannot be negative");
       getInstance().registryLockOrUnlockBillingCost = amount;
       return this;
     }
