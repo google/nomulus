@@ -41,6 +41,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Index;
+import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
@@ -113,14 +114,13 @@ public class DomainHistory extends HistoryEntry {
    * <p>This will be empty for any HistoryEntry generated before this field was added.
    */
   @Access(AccessType.PROPERTY)
-  @ElementCollection
-  @JoinTable(name = "DomainHistoryTransactionRecord")
   @OneToMany(cascade = {CascadeType.ALL})
+  @JoinColumn(name = "historyRevisionId", referencedColumnName = "historyRevisionId")
+  @JoinColumn(name = "domainRepoId", referencedColumnName = "domainRepoId")
   @Override
   public Set<DomainTransactionRecord> getDomainTransactionRecords() {
     return super.getDomainTransactionRecords();
   }
-
 
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TempHistorySequenceGenerator")

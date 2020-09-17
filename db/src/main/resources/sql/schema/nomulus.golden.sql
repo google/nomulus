@@ -493,17 +493,6 @@ CREATE TABLE public."DomainHistoryHost" (
 
 
 --
--- Name: DomainHistoryTransactionRecord; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."DomainHistoryTransactionRecord" (
-    domain_history_domain_repo_id text NOT NULL,
-    domain_history_history_revision_id bigint NOT NULL,
-    domain_transaction_records_id bigint NOT NULL
-);
-
-
---
 -- Name: DomainHost; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -522,7 +511,9 @@ CREATE TABLE public."DomainTransactionRecord" (
     report_amount integer NOT NULL,
     report_field text NOT NULL,
     reporting_time timestamp with time zone NOT NULL,
-    tld text NOT NULL
+    tld text NOT NULL,
+    domain_repo_id text,
+    history_revision_id bigint
 );
 
 
@@ -1145,14 +1136,6 @@ ALTER TABLE ONLY public."Cursor"
 
 
 --
--- Name: DomainHistoryTransactionRecord DomainHistoryTransactionRecord_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DomainHistoryTransactionRecord"
-    ADD CONSTRAINT "DomainHistoryTransactionRecord_pkey" PRIMARY KEY (domain_history_domain_repo_id, domain_history_history_revision_id, domain_transaction_records_id);
-
-
---
 -- Name: DomainHistory DomainHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1294,14 +1277,6 @@ ALTER TABLE ONLY public."Transaction"
 
 ALTER TABLE ONLY public."RegistryLock"
     ADD CONSTRAINT idx_registry_lock_repo_id_revision_id UNIQUE (repo_id, revision_id);
-
-
---
--- Name: DomainHistoryTransactionRecord uk_i2obyd9bbrtfx2vm9ipwhvd0b; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DomainHistoryTransactionRecord"
-    ADD CONSTRAINT uk_i2obyd9bbrtfx2vm9ipwhvd0b UNIQUE (domain_transaction_records_id);
 
 
 --
@@ -1711,22 +1686,6 @@ ALTER TABLE ONLY public."ClaimsEntry"
 
 
 --
--- Name: DomainHistoryTransactionRecord fk80mpb1lv7m0fjif65jdcwais2; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DomainHistoryTransactionRecord"
-    ADD CONSTRAINT fk80mpb1lv7m0fjif65jdcwais2 FOREIGN KEY (domain_history_domain_repo_id, domain_history_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
-
-
---
--- Name: DomainHistoryTransactionRecord fk8hf011yrspsho4nwgvydfyidr; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DomainHistoryTransactionRecord"
-    ADD CONSTRAINT fk8hf011yrspsho4nwgvydfyidr FOREIGN KEY (domain_transaction_records_id) REFERENCES public."DomainTransactionRecord"(id);
-
-
---
 -- Name: Contact fk93c185fx7chn68uv7nl6uv2s0; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2020,6 +1979,14 @@ ALTER TABLE ONLY public."PollMessage"
 
 ALTER TABLE ONLY public."DomainHistoryHost"
     ADD CONSTRAINT fka9woh3hu8gx5x0vly6bai327n FOREIGN KEY (domain_history_domain_repo_id, domain_history_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+
+
+--
+-- Name: DomainTransactionRecord fkcjqe54u72kha71vkibvxhjye7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainTransactionRecord"
+    ADD CONSTRAINT fkcjqe54u72kha71vkibvxhjye7 FOREIGN KEY (domain_repo_id, history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
 
 
 --
