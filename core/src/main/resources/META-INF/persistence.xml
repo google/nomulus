@@ -51,6 +51,7 @@
     <class>google.registry.model.registrar.Registrar</class>
     <class>google.registry.model.registrar.RegistrarContact</class>
     <class>google.registry.model.registry.label.PremiumList</class>
+    <class>google.registry.model.registry.Registry</class>
     <class>google.registry.model.reporting.Spec11ThreatMatch</class>
     <class>google.registry.persistence.transaction.TransactionEntity</class>
     <class>google.registry.model.tmch.ClaimsListShard</class>
@@ -81,7 +82,7 @@
     <class>google.registry.persistence.converter.PostalInfoChoiceListConverter</class>
     <class>google.registry.persistence.converter.PremiumListKeyConverter</class>
     <class>google.registry.persistence.converter.RegistrarPocSetConverter</class>
-    <class>google.registry.persistence.converter.ReservedListKeyConverter</class>
+    <class>google.registry.persistence.converter.ReservedListKeySetConverter</class>
     <class>google.registry.persistence.converter.Spec11ThreatMatchThreatTypeSetConverter</class>
     <class>google.registry.persistence.converter.StatusValueSetConverter</class>
     <class>google.registry.persistence.converter.StringListConverter</class>

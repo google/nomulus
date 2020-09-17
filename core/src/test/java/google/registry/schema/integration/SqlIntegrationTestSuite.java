@@ -25,6 +25,7 @@ import google.registry.model.history.DomainHistoryTest;
 import google.registry.model.history.HostHistoryTest;
 import google.registry.model.poll.PollMessageTest;
 import google.registry.model.registry.RegistryLockDaoTest;
+import google.registry.model.registry.RegistryTest;
 import google.registry.model.registry.label.ReservedListSqlDaoTest;
 import google.registry.model.reporting.Spec11ThreatMatchTest;
 import google.registry.model.tmch.ClaimsListDaoTest;
@@ -86,6 +87,7 @@ import org.junit.runner.RunWith;
   PollMessageTest.class,
   PremiumListDaoTest.class,
   RegistrarDaoTest.class,
+  RegistryTest.class,
   ReservedListSqlDaoTest.class,
   RegistryLockDaoTest.class,
   Spec11ThreatMatchTest.class,
