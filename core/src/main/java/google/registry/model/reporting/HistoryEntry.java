@@ -308,19 +308,10 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
           new DomainHistory.Builder().copyFrom(this).setDomainRepoId(parent.getName()).build();
     } else if (parentKind.equals(getKind(HostResource.class))) {
       resultEntity =
-          new HostHistory.Builder()
-              .copyFrom(this)
-              .setHostRepoId(
-                  VKey.create(HostResource.class, parent.getName(), (Key<HostResource>) parent))
-              .build();
+          new HostHistory.Builder().copyFrom(this).setHostRepoId(parent.getName()).build();
     } else if (parentKind.equals(getKind(ContactResource.class))) {
       resultEntity =
-          new ContactHistory.Builder()
-              .copyFrom(this)
-              .setContactRepoId(
-                  VKey.create(
-                      ContactResource.class, parent.getName(), (Key<ContactResource>) parent))
-              .build();
+          new ContactHistory.Builder().copyFrom(this).setContactRepoId(parent.getName()).build();
     } else {
       throw new IllegalStateException(
           String.format("Unknown kind of HistoryEntry parent %s", parentKind));

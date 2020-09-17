@@ -156,8 +156,10 @@ public class DomainHistory extends HistoryEntry {
     return VKey.create(DomainBase.class, domainRepoId, Key.create(DomainBase.class, domainRepoId));
   }
 
+  /** Creates a {@link VKey} instance for this entity. */
   public VKey<DomainHistory> createVKey() {
-    return VKey.createSql(DomainHistory.class, new DomainHistoryId(domainRepoId, getId()));
+    return VKey.create(
+        DomainHistory.class, new DomainHistoryId(domainRepoId, getId()), Key.create(this));
   }
 
   @PostLoad
@@ -188,19 +190,23 @@ public class DomainHistory extends HistoryEntry {
       this.id = id;
     }
 
+    // The following getters/setters are required by Hibernate, and the setters should not be used
+    // externally to keep immutability so they are marked as private methods.
     String getDomainRepoId() {
       return domainRepoId;
-    }
-
-    void setDomainRepoId(String domainRepoId) {
-      this.domainRepoId = domainRepoId;
     }
 
     long getId() {
       return id;
     }
 
-    void setId(long id) {
+    @SuppressWarnings("unused")
+    private void setDomainRepoId(String domainRepoId) {
+      this.domainRepoId = domainRepoId;
+    }
+
+    @SuppressWarnings("unused")
+    private void setId(long id) {
       this.id = id;
     }
   }

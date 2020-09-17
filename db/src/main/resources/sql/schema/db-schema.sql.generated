@@ -151,7 +151,8 @@ create sequence temp_history_id_sequence start 1 increment 50;
     );
 
     create table "ContactHistory" (
-       history_revision_id int8 not null,
+       contact_repo_id text not null,
+        history_revision_id int8 not null,
         history_by_superuser boolean not null,
         history_registrar_id text,
         history_modification_time timestamptz not null,
@@ -215,8 +216,7 @@ create sequence temp_history_id_sequence start 1 increment 50;
         last_epp_update_time timestamptz,
         statuses text[],
         update_timestamp timestamptz,
-        contact_repo_id text not null,
-        primary key (history_revision_id)
+        primary key (contact_repo_id, history_revision_id)
     );
 
     create table "Cursor" (
@@ -400,7 +400,8 @@ create sequence temp_history_id_sequence start 1 increment 50;
     );
 
     create table "HostHistory" (
-       history_revision_id int8 not null,
+       host_repo_id text not null,
+        history_revision_id int8 not null,
         history_by_superuser boolean not null,
         history_registrar_id text,
         history_modification_time timestamptz not null,
@@ -423,8 +424,7 @@ create sequence temp_history_id_sequence start 1 increment 50;
         last_epp_update_time timestamptz,
         statuses text[],
         update_timestamp timestamptz,
-        host_repo_id text not null,
-        primary key (history_revision_id)
+        primary key (host_repo_id, history_revision_id)
     );
 
     create table "Lock" (

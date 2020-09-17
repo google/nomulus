@@ -88,11 +88,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
               jpaTm().insert(legacyContactHistory);
             });
     ContactHistory legacyHistoryFromSql =
-        jpaTm()
-            .transact(
-                () ->
-                    jpaTm()
-                        .load(VKey.createSql(ContactHistory.class, legacyContactHistory.getId())));
+        jpaTm().transact(() -> jpaTm().load(legacyContactHistory.createVKey()));
     assertAboutImmutableObjects()
         .that(legacyContactHistory)
         .isEqualExceptFields(legacyHistoryFromSql);
@@ -172,9 +168,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
               jpaTm().insert(legacyHostHistory);
             });
     HostHistory legacyHistoryFromSql =
-        jpaTm()
-            .transact(
-                () -> jpaTm().load(VKey.createSql(HostHistory.class, legacyHostHistory.getId())));
+        jpaTm().transact(() -> jpaTm().load(legacyHostHistory.createVKey()));
     assertAboutImmutableObjects().that(legacyHostHistory).isEqualExceptFields(legacyHistoryFromSql);
     // can't compare hostRepoId directly since it doesn't save the ofy key in SQL
     assertThat(legacyHostHistory.getHostRepoId().getSqlKey())
