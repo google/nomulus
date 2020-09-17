@@ -18,20 +18,19 @@ import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.label.ReservedList;
-import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-/** JPA converter for a {@link Key} containing a {@link ReservedList} */
+/** JPA converter for a set of {@link Key} containing a {@link ReservedList} */
 @Converter(autoApply = true)
-public class ReservedListKeyConverter implements AttributeConverter<Key<ReservedList>, String> {
+public class ReservedListKeySetConverter extends StringSetConverterBase<Key<ReservedList>> {
 
   @Override
-  public String convertToDatabaseColumn(Key<ReservedList> attribute) {
-    return (attribute == null) ? null : attribute.getName();
+  String toString(Key<ReservedList> key) {
+    return key.getName();
   }
 
   @Override
-  public Key<ReservedList> convertToEntityAttribute(String dbData) {
-    return (dbData == null) ? null : Key.create(getCrossTldKey(), ReservedList.class, dbData);
+  Key<ReservedList> fromString(String value) {
+    return Key.create(getCrossTldKey(), ReservedList.class, value);
   }
 }
