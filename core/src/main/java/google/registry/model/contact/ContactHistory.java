@@ -65,9 +65,10 @@ public class ContactHistory extends HistoryEntry {
   }
 
   /**
-   * The {@link ContactBase} object at the point in time this history object was created.
+   * The values of all the fields on the {@link ContactBase} object after the action represented by
+   * this history object was executed.
    *
-   * <p>May be absent for objects created prior to the SQL migration.
+   * <p>Will be absent for objects created prior to the Registry 3.0 SQL migration.
    */
   public Optional<ContactBase> getContactBase() {
     return Optional.ofNullable(contactBase);

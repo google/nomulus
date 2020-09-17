@@ -66,9 +66,10 @@ public class HostHistory extends HistoryEntry {
   }
 
   /**
-   * The {@link HostBase} object at the point in time this history object was created.
+   * The values of all the fields on the {@link HostBase} object after the action represented by
+   * this history object was executed.
    *
-   * <p>May be absent for objects created prior to the SQL migration.
+   * <p>Will be absent for objects created prior to the Registry 3.0 SQL migration.
    */
   public Optional<HostBase> getHostBase() {
     return Optional.ofNullable(hostBase);

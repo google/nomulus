@@ -74,7 +74,8 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   /**
    * The ID of the registrar that is currently sponsoring this resource.
    *
-   * <p>This would be a non-null column if not for legacy History objects with null resource fields.
+   * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
+   * resource fields.
    */
   @Index
   @Column(name = "currentSponsorRegistrarId")
@@ -83,7 +84,8 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   /**
    * The ID of the registrar that created this resource.
    *
-   * <p>This would be a non-null column if not for legacy History objects with null resource fields.
+   * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
+   * resource fields.
    */
   @Column(name = "creationRegistrarId")
   String creationClientId;
@@ -105,7 +107,8 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * will never be omitted from the xml even if the timestamp inside creationTime is null and we
    * return null from the adaptor (instead it gets written as an empty tag).
    *
-   * <p>This would be a non-null column if not for legacy History objects with null resource fields.
+   * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
+   * resource fields.
    */
   @Index CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 

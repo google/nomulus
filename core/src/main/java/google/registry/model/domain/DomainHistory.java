@@ -92,9 +92,10 @@ public class DomainHistory extends HistoryEntry {
   }
 
   /**
-   * The {@link DomainContent} object at the point in time this history object was created.
+   * The values of all the fields on the {@link DomainContent} object after the action represented
+   * by this history object was executed.
    *
-   * <p>May be absent for objects created prior to the SQL migration.
+   * <p>Will be absent for objects created prior to the Registry 3.0 SQL migration.
    */
   public Optional<DomainContent> getDomainContent() {
     return Optional.ofNullable(domainContent);
