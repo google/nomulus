@@ -37,6 +37,8 @@
         premium_list_name text,
         pricing_engine_class_name text,
         redemption_grace_period_length interval not null,
+        registry_lock_or_unlock_cost_amount numeric(19, 2),
+        registry_lock_or_unlock_cost_currency text,
         renew_billing_cost_transitions hstore not null,
         renew_grace_period_length interval not null,
         reserved_list_names text[] not null,
