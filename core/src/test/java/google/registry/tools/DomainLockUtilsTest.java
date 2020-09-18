@@ -528,7 +528,7 @@ public final class DomainLockUtilsTest {
                         .setReason(Reason.SERVER_STATUS)
                         .setTargetId(domain.getForeignKey())
                         .setClientId(domain.getCurrentSponsorClientId())
-                        .setCost(Registry.get(domain.getTld()).getServerStatusChangeCost())
+                        .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
                         .setEventTime(clock.nowUtc())
                         .setBillingTime(clock.nowUtc())
                         .setParent(entry)

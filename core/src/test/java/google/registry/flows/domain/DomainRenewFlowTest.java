@@ -597,6 +597,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .setRestoreBillingCost(Money.of(EUR, 11))
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 7)))
             .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
+            .setRegistryLockOrUnlockBillingCost(Money.of(EUR, 20))
             .setServerStatusChangeBillingCost(Money.of(EUR, 19))
             .build());
     persistDomain();
@@ -615,6 +616,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .setRestoreBillingCost(Money.of(EUR, 11))
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 7)))
             .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
+            .setRegistryLockOrUnlockBillingCost(Money.of(EUR, 20))
             .setServerStatusChangeBillingCost(Money.of(EUR, 19))
             .build());
     persistDomain();
@@ -633,6 +635,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .setRestoreBillingCost(Money.of(EUR, 11))
             .setRenewBillingCostTransitions(ImmutableSortedMap.of(START_OF_TIME, Money.of(EUR, 7)))
             .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(EUR)))
+            .setRegistryLockOrUnlockBillingCost(Money.of(EUR, 20))
             .setServerStatusChangeBillingCost(Money.of(EUR, 19))
             .build());
     persistDomain();

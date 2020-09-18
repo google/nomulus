@@ -317,7 +317,7 @@ final class RegistryLockVerifyActionTest {
             .setReason(Reason.SERVER_STATUS)
             .setTargetId(domain.getForeignKey())
             .setClientId(domain.getCurrentSponsorClientId())
-            .setCost(Registry.get(domain.getTld()).getServerStatusChangeCost())
+            .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
             .setEventTime(fakeClock.nowUtc())
             .setBillingTime(fakeClock.nowUtc())
             .setParent(historyEntry)

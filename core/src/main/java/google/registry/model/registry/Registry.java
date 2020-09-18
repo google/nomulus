@@ -133,6 +133,7 @@ public class Registry extends ImmutableObject implements Buildable {
   public static final Money DEFAULT_RENEW_BILLING_COST = Money.of(USD, 8);
   public static final Money DEFAULT_RESTORE_BILLING_COST = Money.of(USD, 100);
   public static final Money DEFAULT_SERVER_STATUS_CHANGE_BILLING_COST = Money.of(USD, 20);
+  public static final Money DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST = Money.of(USD, 0);
 
   /** The type of TLD, which determines things like backups and escrow policy. */
   public enum TldType {
@@ -478,6 +479,9 @@ public class Registry extends ImmutableObject implements Buildable {
   })
   Money serverStatusChangeBillingCost = DEFAULT_SERVER_STATUS_CHANGE_BILLING_COST;
 
+  /** The one-time billing cost for a registry lock/unlock action initiated by a registrar. */
+  Money registryLockOrUnlockBillingCost = DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST;
+
   /**
    * A property that transitions to different renew billing costs at different times. Stored as a
    * list of BillingCostTransition embedded objects using the @Mapify annotation.
@@ -629,6 +633,11 @@ public class Registry extends ImmutableObject implements Buildable {
   /** Returns the cost of a server status change (i.e. lock). */
   public Money getServerStatusChangeCost() {
     return serverStatusChangeBillingCost;
+  }
+
+  /** Returns the cost of a registry lock/unlock. */
+  public Money getRegistryLockOrUnlockBillingCost() {
+    return registryLockOrUnlockBillingCost;
   }
 
   public ImmutableSortedMap<DateTime, TldState> getTldStateTransitions() {
@@ -932,6 +941,12 @@ public class Registry extends ImmutableObject implements Buildable {
       return this;
     }
 
+    public Builder setRegistryLockOrUnlockBillingCost(Money amount) {
+      checkArgument(amount.isPositiveOrZero(), "Registry lock/unlock cost cannot be negative");
+      getInstance().registryLockOrUnlockBillingCost = amount;
+      return this;
+    }
+
     public Builder setLordnUsername(String username) {
       getInstance().lordnUsername = username;
       return this;
@@ -983,6 +998,9 @@ public class Registry extends ImmutableObject implements Buildable {
       checkArgument(
           instance.getServerStatusChangeCost().getCurrencyUnit().equals(instance.currency),
           "Server status change cost must be in the registry's currency");
+      checkArgument(
+          instance.getRegistryLockOrUnlockBillingCost().getCurrencyUnit().equals(instance.currency),
+          "Registry lock/unlock cost must be in the registry's currency");
       Predicate<Money> currencyCheck =
           (Money money) -> money.getCurrencyUnit().equals(instance.currency);
       checkArgument(
