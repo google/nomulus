@@ -955,6 +955,8 @@ CREATE TABLE public."Tld" (
     premium_list_name text,
     pricing_engine_class_name text,
     redemption_grace_period_length interval NOT NULL,
+    registry_lock_or_unlock_cost_amount numeric(19,2),
+    registry_lock_or_unlock_cost_currency text,
     renew_billing_cost_transitions public.hstore NOT NULL,
     renew_grace_period_length interval NOT NULL,
     reserved_list_names text[] NOT NULL,

@@ -480,6 +480,14 @@ public class Registry extends ImmutableObject implements Buildable {
   Money serverStatusChangeBillingCost = DEFAULT_SERVER_STATUS_CHANGE_BILLING_COST;
 
   /** The one-time billing cost for a registry lock/unlock action initiated by a registrar. */
+  @AttributeOverrides({
+      @AttributeOverride(
+          name = "money.amount",
+          column = @Column(name = "registry_lock_or_unlock_cost_amount")),
+      @AttributeOverride(
+          name = "money.currency",
+          column = @Column(name = "registry_lock_or_unlock_cost_currency"))
+  })
   Money registryLockOrUnlockBillingCost = DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST;
 
   /**
