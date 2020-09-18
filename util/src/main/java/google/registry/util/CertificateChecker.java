@@ -18,7 +18,6 @@ import com.google.common.collect.ImmutableSet;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.ECFieldFp;
 import java.util.Date;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.spec.ECParameterSpec;
@@ -43,13 +42,23 @@ public class CertificateChecker {
    * (go/registry-proxy-security).
    */
   public enum CertificateViolation {
-    EXPIRED,
-    NEARING_EXPIRATION, // less than 30 days to expiration
-    RSA_KEY_LENGTH_TOO_SMALL, // key length is too low
-    ELLIPTIC_CURVE_NOT_ALLOWED, // uses a curve other than P-256
-    NOT_YET_VALID, // certificate start date has not passed yet
-    VALIDITY_PERIOD_TOO_LONG, // validity length is too long
-    DISALLOWED_CERTIFICATE_ALGORITHM // certificate is not RSA or ECDSA
+    EXPIRED("This certificate is expired."),
+    NEARING_EXPIRATION("This certificate is expiring soon."),
+    RSA_KEY_LENGTH_TOO_SMALL("RSA key length must have a larger length."),
+    ELLIPTIC_CURVE_NOT_ALLOWED("Only the P-256 curve can be used for ECDSA keys"),
+    NOT_YET_VALID("THis certificate's start date has not yet passed."),
+    VALIDITY_PERIOD_TOO_LONG("This certificate has a validity length that is too long."),
+    DISALLOWED_CERTIFICATE_ALGORITHM("Only RSA and ECDSA keys are accepted.");
+
+    private final String displayMessage;
+
+    public String getDisplayMessage() {
+      return displayMessage;
+    }
+
+    CertificateViolation(String displayMessage) {
+      this.displayMessage = displayMessage;
+    }
   }
 
   /**
@@ -77,26 +86,22 @@ public class CertificateChecker {
 
     // Check Key Strengths
     PublicKey key = certificate.getPublicKey();
-    switch (key.getAlgorithm()) {
-      case "RSA":
-        RSAPublicKey rsaPublicKey = (RSAPublicKey) key;
-        if (rsaPublicKey.getModulus().bitLength() < minimumRsaKeyLength) {
-          violations.add(CertificateViolation.RSA_KEY_LENGTH_TOO_SMALL);
-        }
-        break;
-      case "EC":
-        if (!isEcCurveTypeValid((ECPublicKey) key)) {
-          violations.add(CertificateViolation.ELLIPTIC_CURVE_NOT_ALLOWED);
-        }
-        break;
-      default:
-        violations.add(CertificateViolation.DISALLOWED_CERTIFICATE_ALGORITHM);
-        break;
+    if (key.getAlgorithm().equals("RSA")) {
+      RSAPublicKey rsaPublicKey = (RSAPublicKey) key;
+      if (rsaPublicKey.getModulus().bitLength() < minimumRsaKeyLength) {
+        violations.add(CertificateViolation.RSA_KEY_LENGTH_TOO_SMALL);
+      }
+    } else if (key.getAlgorithm().equals("EC")) {
+      if (!isEcCurveTypeValid((ECPublicKey) key)) {
+        violations.add(CertificateViolation.ELLIPTIC_CURVE_NOT_ALLOWED);
+      }
+    } else {
+      violations.add(CertificateViolation.DISALLOWED_CERTIFICATE_ALGORITHM);
     }
     return violations.build();
   }
 
-  /** Returns true if the validity period is 825 days or less. */
+  /** Returns true if the validity period is less than the maxValidityDays. */
   private static boolean isValidityLengthValid(X509Certificate certificate, int maxValidityDays) {
     DateTime start = DateTime.parse(certificate.getNotBefore().toInstant().toString());
     DateTime end = DateTime.parse(certificate.getNotAfter().toInstant().toString());
@@ -118,8 +123,8 @@ public class CertificateChecker {
   private static boolean isEcCurveTypeValid(ECPublicKey key) {
     ECParameterSpec spec = key.getParameters();
     if (spec != null) {
-      ECFieldFp field = new ECFieldFp(spec.getCurve().getField().getCharacteristic());
-      return spec.getCurve().getOrder().bitLength() == 256 && field.getP().isProbablePrime(1);
+      return spec.getCurve().getField().getDimension() == 1
+          && spec.getCurve().getOrder().bitLength() == 256;
     }
     return false; // Return false if we were unable to determine the curve
   }
