@@ -212,19 +212,21 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
                 ImmutableSortedMap.of(START_OF_TIME, Money.ofMajor(JPY, 1)))
             .setEapFeeSchedule(ImmutableSortedMap.of(START_OF_TIME, Money.zero(JPY)))
             .setServerStatusChangeBillingCost(Money.ofMajor(JPY, 1))
+            .setRegistryLockOrUnlockBillingCost(Money.ofMajor(JPY, 1))
             .build());
     runCommandForced(
         "--create_billing_cost=\"JPY 12345\"",
         "--restore_billing_cost=\"JPY 67890\"",
         "--renew_billing_cost_transitions=\"0=JPY 101112\"",
         "--server_status_change_cost=\"JPY 97865\"",
+        "--registry_lock_or_unlock_cost=\"JPY 9001\"",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getStandardCreateCost())
-        .isEqualTo(Money.ofMajor(JPY, 12345));
-    assertThat(Registry.get("xn--q9jyb4c").getStandardRestoreCost())
-        .isEqualTo(Money.ofMajor(JPY, 67890));
-    assertThat(Registry.get("xn--q9jyb4c").getStandardRenewCost(START_OF_TIME))
-        .isEqualTo(Money.ofMajor(JPY, 101112));
+    Registry registry = Registry.get("xn--q9jyb4c");
+    assertThat(registry.getStandardCreateCost()).isEqualTo(Money.ofMajor(JPY, 12345));
+    assertThat(registry.getStandardRestoreCost()).isEqualTo(Money.ofMajor(JPY, 67890));
+    assertThat(registry.getStandardRenewCost(START_OF_TIME)).isEqualTo(Money.ofMajor(JPY, 101112));
+    assertThat(registry.getServerStatusChangeCost()).isEqualTo(Money.ofMajor(JPY, 97865));
+    assertThat(registry.getRegistryLockOrUnlockBillingCost()).isEqualTo(Money.ofMajor(JPY, 9001));
   }
 
   @Test

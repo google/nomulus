@@ -112,6 +112,12 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
+      names = "--registry_lock_or_unlock_cost",
+      description = "One-time billing cost for a registry lock or unlock")
+  private Money registryLockOrUnlockCost;
+
+  @Nullable
+  @Parameter(
       names = "--tld_type",
       description = "Tld type (REAL or TEST)")
   private TldType tldType;
@@ -326,6 +332,8 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
       Optional.ofNullable(roidSuffix).ifPresent(builder::setRoidSuffix);
       Optional.ofNullable(serverStatusChangeCost)
           .ifPresent(builder::setServerStatusChangeBillingCost);
+      Optional.ofNullable(registryLockOrUnlockCost)
+          .ifPresent(builder::setRegistryLockOrUnlockBillingCost);
       Optional.ofNullable(tldType).ifPresent(builder::setTldType);
       Optional.ofNullable(invoicingEnabled).ifPresent(builder::setInvoicingEnabled);
       Optional.ofNullable(lordnUsername).ifPresent(u -> builder.setLordnUsername(u.orElse(null)));
