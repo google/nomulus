@@ -14,6 +14,9 @@
 
 package google.registry.util;
 
+import static com.google.appengine.repackaged.com.google.common.base.Preconditions.checkArgument;
+
+import com.google.common.collect.ImmutableMap;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -47,6 +50,9 @@ public class SelfSignedCaCertificate {
   private static final Random RANDOM = new Random();
   private static final BouncyCastleProvider PROVIDER = new BouncyCastleProvider();
   private static final KeyPairGenerator keyGen = createKeyPairGenerator();
+  private static final ImmutableMap<String, String> KEY_SIGNATURE_ALGS =
+      ImmutableMap.of(
+          "EC", "SHA256WithECDSA", "DSA", "SHA256WithDSA", "RSA", "SHA256WithRSAEncryption");
 
   private final PrivateKey privateKey;
   private final X509Certificate cert;
@@ -98,20 +104,8 @@ public class SelfSignedCaCertificate {
     X500Name owner = new X500Name("CN=" + fqdn);
     ContentSigner signer;
     String publicKeyAlg = keyPair.getPublic().getAlgorithm();
-    String signatureAlgorithm;
-    switch (publicKeyAlg) {
-      case "EC":
-        signatureAlgorithm = "SHA256WithECDSA";
-        break;
-      case "DSA":
-        signatureAlgorithm = "SHA256WithDSA";
-        break;
-      case "RSA":
-        signatureAlgorithm = "SHA256WithRSAEncryption";
-        break;
-      default:
-        throw new RuntimeException("Unecpected public key algorithm");
-    }
+    checkArgument(KEY_SIGNATURE_ALGS.containsKey(publicKeyAlg), "Unexpected public key algorithm");
+    String signatureAlgorithm = KEY_SIGNATURE_ALGS.get(publicKeyAlg);
     signer = new JcaContentSignerBuilder(signatureAlgorithm).build(keyPair.getPrivate());
     X509v3CertificateBuilder builder =
         new JcaX509v3CertificateBuilder(

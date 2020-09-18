@@ -154,7 +154,7 @@ public class CertificateCheckerTest {
   }
 
   @Test
-  void test_checkEcKeyLength() throws Exception {
+  void test_checkEcCurve() throws Exception {
     // Key lower than P-256
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
     AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
@@ -177,6 +177,24 @@ public class CertificateCheckerTest {
     keyGen = KeyPairGenerator.getInstance("EC");
     apParam = AlgorithmParameters.getInstance("EC");
     apParam.init(new ECGenParameterSpec("secp521r1"));
+    spec = apParam.getParameterSpec(ECParameterSpec.class);
+    keyGen.initialize(spec, new SecureRandom());
+
+    certificate =
+        SelfSignedCaCertificate.create(
+                keyGen.generateKeyPair(),
+                SSL_HOST,
+                DateTime.now(UTC).minusDays(5).toDate(),
+                DateTime.now(UTC).plusDays(100).toDate())
+            .cert();
+
+    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+        .isEqualTo(ImmutableSet.of(CertificateViolation.ELLIPTIC_CURVE_NOT_ALLOWED));
+
+    // Curve over 2^m field
+    keyGen = KeyPairGenerator.getInstance("EC");
+    apParam = AlgorithmParameters.getInstance("EC");
+    apParam.init(new ECGenParameterSpec("sect163k1"));
     spec = apParam.getParameterSpec(ECParameterSpec.class);
     keyGen.initialize(spec, new SecureRandom());
 
