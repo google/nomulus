@@ -474,7 +474,10 @@ CREATE TABLE public."DomainHistory" (
     statuses text[],
     update_timestamp timestamp with time zone,
     domain_repo_id text NOT NULL,
-    autorenew_end_time timestamp with time zone
+    autorenew_end_time timestamp with time zone,
+    history_other_registrar_id text,
+    history_period_unit text,
+    history_period_value integer
 );
 
 
@@ -497,6 +500,40 @@ CREATE TABLE public."DomainHost" (
     domain_repo_id text NOT NULL,
     host_repo_id text
 );
+
+
+--
+-- Name: DomainTransactionRecord; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainTransactionRecord" (
+    id bigint NOT NULL,
+    report_amount integer NOT NULL,
+    report_field text NOT NULL,
+    reporting_time timestamp with time zone NOT NULL,
+    tld text NOT NULL,
+    domain_repo_id text,
+    history_revision_id bigint
+);
+
+
+--
+-- Name: DomainTransactionRecord_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."DomainTransactionRecord_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: DomainTransactionRecord_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."DomainTransactionRecord_id_seq" OWNED BY public."DomainTransactionRecord".id;
 
 
 --
@@ -1017,6 +1054,13 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 
 
 --
+-- Name: DomainTransactionRecord id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainTransactionRecord" ALTER COLUMN id SET DEFAULT nextval('public."DomainTransactionRecord_id_seq"'::regclass);
+
+
+--
 -- Name: GracePeriod id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1143,6 +1187,14 @@ ALTER TABLE ONLY public."Cursor"
 
 ALTER TABLE ONLY public."DomainHistory"
     ADD CONSTRAINT "DomainHistory_pkey" PRIMARY KEY (domain_repo_id, history_revision_id);
+
+
+--
+-- Name: DomainTransactionRecord DomainTransactionRecord_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainTransactionRecord"
+    ADD CONSTRAINT "DomainTransactionRecord_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1981,6 +2033,14 @@ ALTER TABLE ONLY public."PollMessage"
 
 ALTER TABLE ONLY public."DomainHistoryHost"
     ADD CONSTRAINT fka9woh3hu8gx5x0vly6bai327n FOREIGN KEY (domain_history_domain_repo_id, domain_history_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+
+
+--
+-- Name: DomainTransactionRecord fkcjqe54u72kha71vkibvxhjye7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainTransactionRecord"
+    ADD CONSTRAINT fkcjqe54u72kha71vkibvxhjye7 FOREIGN KEY (domain_repo_id, history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
 
 
 --

@@ -202,7 +202,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
     return id == null ? 0L : id;
   }
 
-  // This method is required by Hibernate.
+  /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
   @SuppressWarnings("UnusedMethod")
   private void setId(long id) {
     this.id = id;
@@ -254,8 +254,26 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
     return requestedByRegistrar;
   }
 
-  public ImmutableSet<DomainTransactionRecord> getDomainTransactionRecords() {
+  public Set<DomainTransactionRecord> getDomainTransactionRecords() {
     return nullToEmptyImmutableCopy(domainTransactionRecords);
+  }
+
+  /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
+  @SuppressWarnings("UnusedMethod")
+  private void setPeriod(Period period) {
+    this.period = period;
+  }
+
+  /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
+  @SuppressWarnings("UnusedMethod")
+  private void setOtherRegistrarId(String otherRegistrarId) {
+    this.otherClientId = otherRegistrarId;
+  }
+
+  /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
+  @SuppressWarnings("UnusedMethod")
+  private void setDomainTransactionRecords(Set<DomainTransactionRecord> domainTransactionRecords) {
+    this.domainTransactionRecords = ImmutableSet.copyOf(domainTransactionRecords);
   }
 
   public static VKey<HistoryEntry> createVKey(Key<HistoryEntry> key) {
