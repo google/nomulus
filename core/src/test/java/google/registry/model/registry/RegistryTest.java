@@ -23,6 +23,7 @@ import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABIL
 import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
 import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newRegistry;
 import static google.registry.testing.DatastoreHelper.persistPremiumList;
@@ -43,18 +44,38 @@ import google.registry.model.registry.Registry.RegistryNotFoundException;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Registry}. */
-class RegistryTest extends EntityTestCase {
+public class RegistryTest extends EntityTestCase {
 
   @BeforeEach
   void beforeEach() {
     createTld("tld");
+  }
+
+  @RegisterExtension
+  JpaIntegrationWithCoverageExtension jpa =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
+
+  @Test
+  public void testCloudSqlPersistence() {
+    ReservedList rl15 = persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED");
+    PremiumList pl = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
+    Registry registry =
+        Registry.get("tld").asBuilder().setReservedLists(rl15).setPremiumList(pl).build();
+    jpaTm().transact(() -> jpaTm().saveNew(registry));
+    Registry persisted =
+        jpaTm().transact(() -> jpaTm().load(VKey.createSql(Registry.class, registry.tldStrId)));
+    assertThat(persisted).isEqualTo(registry);
   }
 
   @Test

@@ -23,6 +23,7 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.host.HostResource;
+import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import java.io.Serializable;
@@ -31,6 +32,9 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -39,7 +43,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Index;
+import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
 import javax.persistence.Table;
 
@@ -77,8 +83,52 @@ public class DomainHistory extends HistoryEntry {
   @Column(name = "host_repo_id")
   Set<VKey<HostResource>> nsHosts;
 
+  @Override
+  @Nullable
+  @Access(AccessType.PROPERTY)
+  @AttributeOverrides({
+      @AttributeOverride(
+          name = "unit",
+          column = @Column(name = "historyPeriodUnit")),
+      @AttributeOverride(
+          name = "value",
+          column = @Column(name = "historyPeriodValue"))
+  })
+  public Period getPeriod() {
+    return super.getPeriod();
+  }
+
+  /**
+   * For transfers, the id of the other registrar.
+   *
+   * <p>For requests and cancels, the other registrar is the losing party (because the registrar
+   * sending the EPP transfer command is the gaining party). For approves and rejects, the other
+   * registrar is the gaining party.
+   */
+  @Nullable
+  @Access(AccessType.PROPERTY)
+  @Column(name = "historyOtherRegistrarId")
+  public String getOtherRegistrarId() {
+    return super.getOtherClientId();
+  }
+
+  /**
+   * Logging field for transaction reporting.
+   *
+   * <p>This will be empty for any DomainHistory/HistoryEntry generated before this field was added,
+   * mid-2017, as well as any action that does not generate billable events (e.g. updates).
+   */
+  @Access(AccessType.PROPERTY)
+  @OneToMany(cascade = {CascadeType.ALL})
+  @JoinColumn(name = "historyRevisionId", referencedColumnName = "historyRevisionId")
+  @JoinColumn(name = "domainRepoId", referencedColumnName = "domainRepoId")
+  @Override
+  public Set<DomainTransactionRecord> getDomainTransactionRecords() {
+    return super.getDomainTransactionRecords();
+  }
+
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "HistorySequenceGenerator")
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TempHistorySequenceGenerator")
   @Column(name = "historyRevisionId")
   @Access(AccessType.PROPERTY)
   @Override

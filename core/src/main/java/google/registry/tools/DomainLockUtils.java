@@ -380,7 +380,7 @@ public final class DomainLockUtils {
               .setReason(Reason.SERVER_STATUS)
               .setTargetId(domain.getForeignKey())
               .setClientId(domain.getCurrentSponsorClientId())
-              .setCost(Registry.get(domain.getTld()).getServerStatusChangeCost())
+              .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
               .setEventTime(now)
               .setBillingTime(now)
               .setParent(historyEntry)

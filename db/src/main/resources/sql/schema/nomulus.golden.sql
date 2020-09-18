@@ -474,7 +474,10 @@ CREATE TABLE public."DomainHistory" (
     statuses text[],
     update_timestamp timestamp with time zone,
     domain_repo_id text NOT NULL,
-    autorenew_end_time timestamp with time zone
+    autorenew_end_time timestamp with time zone,
+    history_other_registrar_id text,
+    history_period_unit text,
+    history_period_value integer
 );
 
 
@@ -497,6 +500,40 @@ CREATE TABLE public."DomainHost" (
     domain_repo_id text NOT NULL,
     host_repo_id text
 );
+
+
+--
+-- Name: DomainTransactionRecord; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainTransactionRecord" (
+    id bigint NOT NULL,
+    report_amount integer NOT NULL,
+    report_field text NOT NULL,
+    reporting_time timestamp with time zone NOT NULL,
+    tld text NOT NULL,
+    domain_repo_id text,
+    history_revision_id bigint
+);
+
+
+--
+-- Name: DomainTransactionRecord_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."DomainTransactionRecord_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: DomainTransactionRecord_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."DomainTransactionRecord_id_seq" OWNED BY public."DomainTransactionRecord".id;
 
 
 --
@@ -890,6 +927,52 @@ ALTER SEQUENCE public."SafeBrowsingThreat_id_seq" OWNED BY public."Spec11ThreatM
 
 
 --
+-- Name: Tld; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Tld" (
+    tld_name text NOT NULL,
+    add_grace_period_length interval NOT NULL,
+    allowed_fully_qualified_host_names text[],
+    allowed_registrant_contact_ids text[],
+    anchor_tenant_add_grace_period_length interval NOT NULL,
+    auto_renew_grace_period_length interval NOT NULL,
+    automatic_transfer_length interval NOT NULL,
+    claims_period_end timestamp with time zone NOT NULL,
+    create_billing_cost_amount numeric(19,2),
+    create_billing_cost_currency text,
+    creation_time timestamp with time zone NOT NULL,
+    currency text NOT NULL,
+    dns_paused boolean NOT NULL,
+    dns_writers text[] NOT NULL,
+    drive_folder_id text,
+    eap_fee_schedule public.hstore NOT NULL,
+    escrow_enabled boolean NOT NULL,
+    invoicing_enabled boolean NOT NULL,
+    lordn_username text,
+    num_dns_publish_locks integer NOT NULL,
+    pending_delete_length interval NOT NULL,
+    premium_list_name text,
+    pricing_engine_class_name text,
+    redemption_grace_period_length interval NOT NULL,
+    registry_lock_or_unlock_cost_amount numeric(19,2),
+    registry_lock_or_unlock_cost_currency text,
+    renew_billing_cost_transitions public.hstore NOT NULL,
+    renew_grace_period_length interval NOT NULL,
+    reserved_list_names text[] NOT NULL,
+    restore_billing_cost_amount numeric(19,2),
+    restore_billing_cost_currency text,
+    roid_suffix text,
+    server_status_change_billing_cost_amount numeric(19,2),
+    server_status_change_billing_cost_currency text,
+    tld_state_transitions public.hstore NOT NULL,
+    tld_type text NOT NULL,
+    tld_unicode text NOT NULL,
+    transfer_grace_period_length interval NOT NULL
+);
+
+
+--
 -- Name: Transaction; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -931,6 +1014,18 @@ CREATE SEQUENCE public.history_id_sequence
 
 
 --
+-- Name: temp_history_id_sequence; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.temp_history_id_sequence
+    START WITH 1
+    INCREMENT BY 50
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
 -- Name: BillingCancellation billing_cancellation_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -956,6 +1051,13 @@ ALTER TABLE ONLY public."BillingRecurrence" ALTER COLUMN billing_recurrence_id S
 --
 
 ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextval('public."ClaimsList_revision_id_seq"'::regclass);
+
+
+--
+-- Name: DomainTransactionRecord id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainTransactionRecord" ALTER COLUMN id SET DEFAULT nextval('public."DomainTransactionRecord_id_seq"'::regclass);
 
 
 --
@@ -1088,6 +1190,14 @@ ALTER TABLE ONLY public."DomainHistory"
 
 
 --
+-- Name: DomainTransactionRecord DomainTransactionRecord_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainTransactionRecord"
+    ADD CONSTRAINT "DomainTransactionRecord_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: Domain Domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1197,6 +1307,14 @@ ALTER TABLE ONLY public."ReservedList"
 
 ALTER TABLE ONLY public."Spec11ThreatMatch"
     ADD CONSTRAINT "SafeBrowsingThreat_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Tld Tld_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Tld"
+    ADD CONSTRAINT "Tld_pkey" PRIMARY KEY (tld_name);
 
 
 --
@@ -1738,7 +1856,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingEvent"(billing_event_id);
+    ADD CONSTRAINT fk_domain_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
 
 
 --
@@ -1915,6 +2033,14 @@ ALTER TABLE ONLY public."PollMessage"
 
 ALTER TABLE ONLY public."DomainHistoryHost"
     ADD CONSTRAINT fka9woh3hu8gx5x0vly6bai327n FOREIGN KEY (domain_history_domain_repo_id, domain_history_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+
+
+--
+-- Name: DomainTransactionRecord fkcjqe54u72kha71vkibvxhjye7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainTransactionRecord"
+    ADD CONSTRAINT fkcjqe54u72kha71vkibvxhjye7 FOREIGN KEY (domain_repo_id, history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
 
 
 --

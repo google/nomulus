@@ -2,7 +2,7 @@
 # Script: Deva
 # Version: 1.0
 # Effective Date: 04-12-2012
-# Contact: tas-contact.google.com
+# Contact: iana-contact@google.com
 # Address: 1600 Amphitheatre Parkway Mountain View, CA 94043, USA
 # Telephone: +1 (650) 253-0000
 # Website: www.google.com

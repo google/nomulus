@@ -116,14 +116,10 @@ public class IcannHttpReporter {
       // 1000 (i. e. success), there is no need to parse it.
       if (response.getStatusCode() == HttpStatusCodes.STATUS_CODE_BAD_REQUEST) {
         success = false;
-        // To debug if there is a problem with our parsing, we wrap the response and print the stack
-        // trace of it. As far as we can tell, the stack trace for such an exception contains the
-        // response content that is decoded correctly using the expected charset.
-        new HttpResponseException(response).printStackTrace();
         XjcIirdeaResult result = parseResult(content);
         logger.atWarning().log(
             "PUT rejected, status code %s:\n%s\n%s",
-            result.getCode(), result.getMsg(), result.getDescription());
+            result.getCode().getValue(), result.getMsg(), result.getDescription());
       }
     } finally {
       if (response != null) {

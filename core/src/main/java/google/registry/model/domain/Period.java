@@ -31,15 +31,27 @@ public class Period extends ImmutableObject {
   @XmlAttribute
   Unit unit;
 
-  @XmlValue
-  Integer value;
+  @XmlValue Integer value;
 
+  @Enumerated(EnumType.STRING)
   public Unit getUnit() {
     return unit;
   }
 
   public Integer getValue() {
     return value;
+  }
+
+  /** This method exists solely to satisfy Hibernate. Use {@link #create(int, Unit)} instead. */
+  @SuppressWarnings("UnusedMethod")
+  private void setUnit(Unit unit) {
+    this.unit = unit;
+  }
+
+  /** This method exists solely to satisfy Hibernate. Use {@link #create(int, Unit)} instead. */
+  @SuppressWarnings("UnusedMethod")
+  private void setValue(Integer value) {
+    this.value = value;
   }
 
   /** The unit enum. */

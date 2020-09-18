@@ -11,7 +11,7 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
-create sequence history_id_sequence start 1 increment 50;
+create sequence temp_history_id_sequence start 1 increment 50;
 
     create table "AllocationToken" (
        token text not null,
@@ -342,6 +342,9 @@ create sequence history_id_sequence start 1 increment 50;
         last_epp_update_time timestamptz,
         statuses text[],
         update_timestamp timestamptz,
+        history_other_registrar_id text,
+        history_period_unit text,
+        history_period_value int4,
         primary key (domain_repo_id, history_revision_id)
     );
 
@@ -354,6 +357,17 @@ create sequence history_id_sequence start 1 increment 50;
     create table "DomainHost" (
        domain_repo_id text not null,
         host_repo_id text
+    );
+
+    create table "DomainTransactionRecord" (
+       id  bigserial not null,
+        report_amount int4 not null,
+        report_field text not null,
+        reporting_time timestamptz not null,
+        tld text not null,
+        domain_repo_id text,
+        history_revision_id int8,
+        primary key (id)
     );
 
     create table "GracePeriod" (
@@ -580,6 +594,48 @@ create sequence history_id_sequence start 1 increment 50;
         primary key (id)
     );
 
+    create table "Tld" (
+       tld_name text not null,
+        add_grace_period_length interval not null,
+        allowed_fully_qualified_host_names text[],
+        allowed_registrant_contact_ids text[],
+        anchor_tenant_add_grace_period_length interval not null,
+        auto_renew_grace_period_length interval not null,
+        automatic_transfer_length interval not null,
+        claims_period_end timestamptz not null,
+        create_billing_cost_amount numeric(19, 2),
+        create_billing_cost_currency text,
+        creation_time timestamptz not null,
+        currency text not null,
+        dns_paused boolean not null,
+        dns_writers text[] not null,
+        drive_folder_id text,
+        eap_fee_schedule hstore not null,
+        escrow_enabled boolean not null,
+        invoicing_enabled boolean not null,
+        lordn_username text,
+        num_dns_publish_locks int4 not null,
+        pending_delete_length interval not null,
+        premium_list_name text,
+        pricing_engine_class_name text,
+        redemption_grace_period_length interval not null,
+        registry_lock_or_unlock_cost_amount numeric(19, 2),
+        registry_lock_or_unlock_cost_currency text,
+        renew_billing_cost_transitions hstore not null,
+        renew_grace_period_length interval not null,
+        reserved_list_names text[] not null,
+        restore_billing_cost_amount numeric(19, 2),
+        restore_billing_cost_currency text,
+        roid_suffix text,
+        server_status_change_billing_cost_amount numeric(19, 2),
+        server_status_change_billing_cost_currency text,
+        tld_state_transitions hstore not null,
+        tld_type text not null,
+        tld_unicode text not null,
+        transfer_grace_period_length interval not null,
+        primary key (tld_name)
+    );
+
     create table "Transaction" (
        id  bigserial not null,
         contents bytea,
@@ -653,6 +709,11 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        add constraint FKeq1guccbre1yk3oosgp2io554 
        foreign key (domain_repo_id) 
        references "Domain";
+
+    alter table if exists "DomainTransactionRecord" 
+       add constraint FKcjqe54u72kha71vkibvxhjye7 
+       foreign key (domain_repo_id, history_revision_id) 
+       references "DomainHistory";
 
     alter table if exists "GracePeriod" 
        add constraint FK2mys4hojm6ev2g9tmy5aq6m7g 
