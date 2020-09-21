@@ -53,7 +53,32 @@ public class ContactHistoryTest extends EntityTestCase {
     jpaTm()
         .transact(
             () -> {
-              ContactHistory fromDatabase = jpaTm().load(VKey.createSql(ContactHistory.class, 1L));
+              ContactHistory fromDatabase =
+                  jpaTm().load(VKey.createSql(ContactHistory.class, contactHistory.getId()));
+              assertContactHistoriesEqual(fromDatabase, contactHistory);
+              assertThat(fromDatabase.getContactRepoId().getSqlKey())
+                  .isEqualTo(contactHistory.getContactRepoId().getSqlKey());
+            });
+  }
+
+  @Test
+  void testLegacyPersistence_nullContactBase() {
+    saveRegistrar("TheRegistrar");
+
+    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+    jpaTm().transact(() -> jpaTm().insert(contact));
+    VKey<ContactResource> contactVKey = contact.createVKey();
+    ContactResource contactFromDb = jpaTm().transact(() -> jpaTm().load(contactVKey));
+    ContactHistory contactHistory =
+        createContactHistory(contactFromDb, contactVKey).asBuilder().setContactBase(null).build();
+    contactHistory.id = null;
+    jpaTm().transact(() -> jpaTm().insert(contactHistory));
+
+    jpaTm()
+        .transact(
+            () -> {
+              ContactHistory fromDatabase =
+                  jpaTm().load(VKey.createSql(ContactHistory.class, contactHistory.getId()));
               assertContactHistoriesEqual(fromDatabase, contactHistory);
               assertThat(fromDatabase.getContactRepoId().getSqlKey())
                   .isEqualTo(contactHistory.getContactRepoId().getSqlKey());
@@ -106,7 +131,7 @@ public class ContactHistoryTest extends EntityTestCase {
         .that(one)
         .isEqualExceptFields(two, "contactBase", "contactRepoId", "parent");
     assertAboutImmutableObjects()
-        .that(one.getContactBase())
-        .isEqualExceptFields(two.getContactBase(), "repoId");
+        .that(one.getContactBase().orElse(null))
+        .isEqualExceptFields(two.getContactBase().orElse(null), "repoId");
   }
 }

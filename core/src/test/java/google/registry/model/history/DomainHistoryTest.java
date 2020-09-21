@@ -40,6 +40,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Tests for {@link DomainHistory}. */
@@ -49,28 +50,33 @@ public class DomainHistoryTest extends EntityTestCase {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
+  @BeforeEach
+  void beforeEach() {
+    saveRegistrar("TheRegistrar");
+  }
+
   @Test
   void testPersistence() {
-    saveRegistrar("TheRegistrar");
-
-    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
-    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+    DomainBase domain = createDomainWithContactsAndHosts();
+    DomainHistory domainHistory = createDomainHistory(domain);
+    domainHistory.id = null;
+    jpaTm().transact(() -> jpaTm().insert(domainHistory));
 
     jpaTm()
         .transact(
             () -> {
-              jpaTm().insert(host);
-              jpaTm().insert(contact);
+              DomainHistory fromDatabase = jpaTm().load(domainHistory.createVKey());
+              assertDomainHistoriesEqual(fromDatabase, domainHistory);
+              assertThat(fromDatabase.getDomainRepoId().getSqlKey())
+                  .isEqualTo(domainHistory.getDomainRepoId().getSqlKey());
             });
+  }
 
-    DomainBase domain =
-        newDomainBase("example.tld", "domainRepoId", contact)
-            .asBuilder()
-            .setNameservers(host.createVKey())
-            .build();
-    jpaTm().transact(() -> jpaTm().insert(domain));
-
-    DomainHistory domainHistory = createDomainHistory(domain);
+  @Test
+  void testLegacyPersistence_nullResource() {
+    DomainBase domain = createDomainWithContactsAndHosts();
+    DomainHistory domainHistory =
+        createDomainHistory(domain).asBuilder().setDomainContent(null).build();
     domainHistory.id = null;
     jpaTm().transact(() -> jpaTm().insert(domainHistory));
 
@@ -91,8 +97,6 @@ public class DomainHistoryTest extends EntityTestCase {
 
   @Test
   void testOfyPersistence() {
-    saveRegistrar("TheRegistrar");
-
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
 
@@ -115,7 +119,7 @@ public class DomainHistoryTest extends EntityTestCase {
     tm().transact(() -> tm().insert(domainHistory));
 
     // retrieving a HistoryEntry or a DomainHistory with the same key should return the same object
-    // note: due to the @EntitySubclass annotation. all Keys for ContactHistory objects will have
+    // note: due to the @EntitySubclass annotation. all Keys for DomainHistory objects will have
     // type HistoryEntry
     VKey<DomainHistory> domainHistoryVKey =
         VKey.createOfy(DomainHistory.class, Key.create(domainHistory));
@@ -127,11 +131,33 @@ public class DomainHistoryTest extends EntityTestCase {
     assertThat(domainHistoryFromDb).isEqualTo(historyEntryFromDb);
   }
 
+  static DomainBase createDomainWithContactsAndHosts() {
+    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().insert(host);
+              jpaTm().insert(contact);
+            });
+
+    DomainBase domain =
+        newDomainBase("example.tld", "domainRepoId", contact)
+            .asBuilder()
+            .setNameservers(host.createVKey())
+            .build();
+    jpaTm().transact(() -> jpaTm().insert(domain));
+    return domain;
+  }
+
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
     assertAboutImmutableObjects()
         .that(one)
         .isEqualExceptFields(
             two, "domainContent", "domainRepoId", "parent", "nsHosts", "domainTransactionRecords");
+    assertThat(one.getDomainContent().map(DomainContent::getDomainName))
+        .isEqualTo(two.getDomainContent().map(DomainContent::getDomainName));
     // NB: the record's ID gets reset by Hibernate, causing the hash code to differ so we have to
     // compare it separately
     assertThat(one.getDomainTransactionRecords())

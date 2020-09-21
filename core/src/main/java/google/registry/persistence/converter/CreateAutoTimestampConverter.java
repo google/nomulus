@@ -32,7 +32,11 @@ public class CreateAutoTimestampConverter
     implements AttributeConverter<CreateAutoTimestamp, Timestamp> {
 
   @Override
-  public Timestamp convertToDatabaseColumn(CreateAutoTimestamp entity) {
+  @Nullable
+  public Timestamp convertToDatabaseColumn(@Nullable CreateAutoTimestamp entity) {
+    if (entity == null) {
+      return null;
+    }
     DateTime dateTime = firstNonNull(entity.getTimestamp(), jpaTm().getTransactionTime());
     return Timestamp.from(DateTimeUtils.toZonedDateTime(dateTime).toInstant());
   }

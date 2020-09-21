@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,7 +45,8 @@ public class HostHistoryTest extends EntityTestCase {
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     jpaTm().transact(() -> jpaTm().insert(host));
-    VKey<HostResource> hostVKey = VKey.createSql(HostResource.class, "host1");
+    VKey<HostResource> hostVKey =
+        VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().load(hostVKey));
     HostHistory hostHistory = createHostHistory(hostFromDb, hostVKey);
     hostHistory.id = null;
@@ -62,19 +63,46 @@ public class HostHistoryTest extends EntityTestCase {
   }
 
   @Test
-  public void testOfySave() {
+  void testLegacyPersistence_nullHostBase() {
+    saveRegistrar("TheRegistrar");
+    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    jpaTm().transact(() -> jpaTm().insert(host));
+
+    VKey<HostResource> hostVKey =
+        VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
+    HostResource hostFromDb = jpaTm().transact(() -> jpaTm().load(hostVKey));
+
+    HostHistory hostHistory =
+        createHostHistory(hostFromDb, hostVKey).asBuilder().setHostBase(null).build();
+    hostHistory.id = null;
+    jpaTm().transact(() -> jpaTm().insert(hostHistory));
+
+    jpaTm()
+        .transact(
+            () -> {
+              HostHistory fromDatabase =
+                  jpaTm().load(VKey.createSql(HostHistory.class, hostHistory.getId()));
+              assertHostHistoriesEqual(fromDatabase, hostHistory);
+              assertThat(fromDatabase.getHostRepoId().getSqlKey())
+                  .isEqualTo(hostHistory.getHostRepoId().getSqlKey());
+            });
+  }
+
+  @Test
+  void testOfySave() {
     saveRegistrar("registrar1");
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     tm().transact(() -> tm().insert(host));
-    VKey<HostResource> hostVKey = VKey.create(HostResource.class, "host1", Key.create(host));
+    VKey<HostResource> hostVKey =
+        VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
     HostResource hostFromDb = tm().transact(() -> tm().load(hostVKey));
     HostHistory hostHistory = createHostHistory(hostFromDb, hostVKey);
     fakeClock.advanceOneMilli();
     tm().transact(() -> tm().insert(hostHistory));
 
     // retrieving a HistoryEntry or a HostHistory with the same key should return the same object
-    // note: due to the @EntitySubclass annotation. all Keys for ContactHistory objects will have
+    // note: due to the @EntitySubclass annotation. all Keys for HostHistory objects will have
     // type HistoryEntry
     VKey<HostHistory> hostHistoryVKey = VKey.createOfy(HostHistory.class, Key.create(hostHistory));
     VKey<HistoryEntry> historyEntryVKey =
@@ -88,8 +116,8 @@ public class HostHistoryTest extends EntityTestCase {
   private void assertHostHistoriesEqual(HostHistory one, HostHistory two) {
     assertAboutImmutableObjects().that(one).isEqualExceptFields(two, "hostBase");
     assertAboutImmutableObjects()
-        .that(one.getHostBase())
-        .isEqualExceptFields(two.getHostBase(), "repoId");
+        .that(one.getHostBase().orElse(null))
+        .isEqualExceptFields(two.getHostBase().orElse(null), "repoId");
   }
 
   private HostHistory createHostHistory(HostBase hostBase, VKey<HostResource> hostVKey) {

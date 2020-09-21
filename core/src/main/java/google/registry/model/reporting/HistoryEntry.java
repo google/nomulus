@@ -178,7 +178,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   boolean bySuperuser;
 
   /** Reason for the change. */
-  @Column(nullable = false, name = "historyReason")
+  @Column(name = "historyReason")
   String reason;
 
   /** Whether this change was requested by a registrar. */
@@ -364,7 +364,10 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
       setBySuperuser(historyEntry.bySuperuser);
       setReason(historyEntry.reason);
       setRequestedByRegistrar(historyEntry.requestedByRegistrar);
-      setDomainTransactionRecords(nullToEmptyImmutableCopy(historyEntry.domainTransactionRecords));
+      setDomainTransactionRecords(
+          historyEntry.domainTransactionRecords == null
+              ? null
+              : ImmutableSet.copyOf(historyEntry.domainTransactionRecords));
       return thisCastToDerived();
     }
 

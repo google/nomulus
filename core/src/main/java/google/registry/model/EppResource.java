@@ -62,23 +62,32 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   /**
    * Unique identifier in the registry for this resource.
    *
+   * <p>Not persisted so that we can store these in references to other objects. Subclasses that
+   * wish to use this as the primary key should create a getter method annotated with @Id
+   *
    * <p>This is in the (\w|_){1,80}-\w{1,8} format specified by RFC 5730 for roidType.
    *
    * @see <a href="https://tools.ietf.org/html/rfc5730">RFC 5730</a>
    */
-  @Id
-  // not persisted so that we can store these in references to other objects. Subclasses that wish
-  // to use this as the primary key should create a getter method annotated with @Id
-  @Transient
-  String repoId;
+  @Id @Transient String repoId;
 
-  /** The ID of the registrar that is currently sponsoring this resource. */
+  /**
+   * The ID of the registrar that is currently sponsoring this resource.
+   *
+   * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
+   * resource fields.
+   */
   @Index
-  @Column(name = "currentSponsorRegistrarId", nullable = false)
+  @Column(name = "currentSponsorRegistrarId")
   String currentSponsorClientId;
 
-  /** The ID of the registrar that created this resource. */
-  @Column(name = "creationRegistrarId", nullable = false)
+  /**
+   * The ID of the registrar that created this resource.
+   *
+   * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
+   * resource fields.
+   */
+  @Column(name = "creationRegistrarId")
   String creationClientId;
 
   /**
@@ -91,13 +100,17 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   @Column(name = "lastEppUpdateRegistrarId")
   String lastEppUpdateClientId;
 
-  /** The time when this resource was created. */
-  // Map the method to XML, not the field, because if we map the field (with an adaptor class) it
-  // will never be omitted from the xml even if the timestamp inside creationTime is null and we
-  // return null from the adaptor. (Instead it gets written as an empty tag.)
-  @Column(nullable = false)
-  @Index
-  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  /**
+   * The time when this resource was created.
+   *
+   * <p>Map the method to XML, not the field, because if we map the field (with an adaptor class) it
+   * will never be omitted from the xml even if the timestamp inside creationTime is null and we
+   * return null from the adaptor (instead it gets written as an empty tag).
+   *
+   * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
+   * resource fields.
+   */
+  @Index CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /**
    * The time when this resource was or will be deleted.
@@ -112,8 +125,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * out of the index at that time, as long as we query for resources whose deletion time is before
    * now.
    */
-  @Index
-  DateTime deletionTime;
+  @Index DateTime deletionTime;
 
   /**
    * The time that this resource was last updated.
@@ -144,7 +156,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     return repoId;
   }
 
-  // Hibernate needs this to populate the repo ID, but no one else should ever use it
+  /** This method exists solely to satisfy Hibernate. Use {@link Builder} instead. */
   @SuppressWarnings("UnusedMethod")
   private void setRepoId(String repoId) {
     this.repoId = repoId;

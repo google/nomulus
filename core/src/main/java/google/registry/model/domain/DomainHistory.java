@@ -27,6 +27,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import java.io.Serializable;
+import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
@@ -69,7 +70,7 @@ import javax.persistence.Table;
 public class DomainHistory extends HistoryEntry {
 
   // Store DomainContent instead of DomainBase so we don't pick up its @Id
-  DomainContent domainContent;
+  @Nullable DomainContent domainContent;
 
   @Id String domainRepoId;
 
@@ -140,9 +141,14 @@ public class DomainHistory extends HistoryEntry {
     return nsHosts;
   }
 
-  /** The state of the {@link DomainContent} object at this point in time. */
-  public DomainContent getDomainContent() {
-    return domainContent;
+  /**
+   * The values of all the fields on the {@link DomainContent} object after the action represented
+   * by this history object was executed.
+   *
+   * <p>Will be absent for objects created prior to the Registry 3.0 SQL migration.
+   */
+  public Optional<DomainContent> getDomainContent() {
+    return Optional.ofNullable(domainContent);
   }
 
   /** The key to the {@link DomainBase} this is based off of. */
@@ -158,7 +164,13 @@ public class DomainHistory extends HistoryEntry {
   void postLoad() {
     if (domainContent != null) {
       domainContent.nsHosts = nullToEmptyImmutableCopy(nsHosts);
+      // Normally Hibernate would see that the domain fields are all null and would fill
+      // domainContent with a null object. Unfortunately, the updateTimestamp is never null in SQL.
+      if (domainContent.getDomainName() == null) {
+        domainContent = null;
+      }
     }
+    parent = Key.create(DomainBase.class, domainRepoId);
   }
 
   /** Class to represent the composite primary key of {@link DomainHistory} entity. */

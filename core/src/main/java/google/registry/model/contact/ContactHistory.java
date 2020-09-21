@@ -19,6 +19,8 @@ import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -26,6 +28,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.PostLoad;
 
 /**
  * A persisted history entry representing an EPP modification to a contact.
@@ -47,7 +50,7 @@ import javax.persistence.Id;
 public class ContactHistory extends HistoryEntry {
 
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
-  ContactBase contactBase;
+  @Nullable ContactBase contactBase;
 
   @Column(nullable = false)
   VKey<ContactResource> contactRepoId;
@@ -61,14 +64,33 @@ public class ContactHistory extends HistoryEntry {
     return super.getId();
   }
 
-  /** The state of the {@link ContactBase} object at this point in time. */
-  public ContactBase getContactBase() {
-    return contactBase;
+  /**
+   * The values of all the fields on the {@link ContactBase} object after the action represented by
+   * this history object was executed.
+   *
+   * <p>Will be absent for objects created prior to the Registry 3.0 SQL migration.
+   */
+  public Optional<ContactBase> getContactBase() {
+    return Optional.ofNullable(contactBase);
   }
 
   /** The key to the {@link ContactResource} this is based off of. */
   public VKey<ContactResource> getContactRepoId() {
     return contactRepoId;
+  }
+
+  @PostLoad
+  void postLoad() {
+    // Normally Hibernate would see that the contact fields are all null and would fill contactBase
+    // with a null object. Unfortunately, the updateTimestamp is never null in SQL.
+    if (contactBase != null && contactBase.getContactId() == null) {
+      contactBase = null;
+    }
+    // Fill in the full, symmetric, parent repo ID key
+    Key<ContactResource> parentKey =
+        Key.create(ContactResource.class, (String) contactRepoId.getSqlKey());
+    parent = parentKey;
+    contactRepoId = VKey.create(ContactResource.class, contactRepoId.getSqlKey(), parentKey);
   }
 
   @Override
