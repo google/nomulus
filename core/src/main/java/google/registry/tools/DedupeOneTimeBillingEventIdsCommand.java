@@ -68,8 +68,7 @@ public class DedupeOneTimeBillingEventIdsCommand extends DedupeEntityIdsCommand<
 
     // By setting id to 0L, Buildable.build() will assign an application wide unique id to it.
     BillingEvent.OneTime uniqIdBillingEvent = entity.asBuilder().setId(0L).build();
-    deleteOldAndSaveNewEntity(entity, uniqIdBillingEvent);
-    setKeyChangeMessage(key, Key.create(uniqIdBillingEvent));
+    stageEntityKeyChange(entity, uniqIdBillingEvent);
   }
 
   private static void assertNotInDomainTransferData(DomainBase domainBase, Key<?> key) {

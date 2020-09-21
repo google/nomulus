@@ -46,7 +46,7 @@ abstract class DedupeEntityIdsCommand<T> extends MutatingCommand {
 
   @NonFinalForTesting private static InputStream stdin = System.in;
 
-  private String keyChangeMessage;
+  private StringBuilder changeMessage = new StringBuilder();
 
   abstract void dedupe(T entity);
 
@@ -79,16 +79,19 @@ abstract class DedupeEntityIdsCommand<T> extends MutatingCommand {
 
   @Override
   protected void postBatchExecute() {
-    System.out.println(keyChangeMessage);
+    System.out.println(changeMessage);
   }
 
-  void setKeyChangeMessage(Key<?> oldKey, Key<?> newKey) {
-    keyChangeMessage = String.format("Old Entity Key: %s New Entity Key: %s", oldKey, newKey);
-  }
-
-  void deleteOldAndSaveNewEntity(ImmutableObject oldEntity, ImmutableObject newEntity) {
+  void stageEntityKeyChange(ImmutableObject oldEntity, ImmutableObject newEntity) {
     stageEntityChange(oldEntity, null);
     stageEntityChange(null, newEntity);
+    appendChangeMessage(
+        String.format(
+            "Changed entity key from: %s to: %s", Key.create(oldEntity), Key.create(newEntity)));
+  }
+
+  void appendChangeMessage(String message) {
+    changeMessage.append(message);
   }
 
   private static boolean isKind(Key<?> key, Class<?> clazz) {

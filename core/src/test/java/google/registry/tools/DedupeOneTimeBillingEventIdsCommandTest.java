@@ -48,7 +48,7 @@ class DedupeOneTimeBillingEventIdsCommandTest
   BillingEvent.OneTime billingEventToResave;
 
   @BeforeEach
-  void setUp() {
+  void beforeEach() {
     createTld("foobar");
     domain = persistActiveDomain("foo.foobar");
     historyEntry = persistHistoryEntry(domain);
