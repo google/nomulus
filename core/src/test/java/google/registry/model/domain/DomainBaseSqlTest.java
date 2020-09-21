@@ -139,9 +139,9 @@ public class DomainBaseSqlTest {
                 .transact(
                     () -> {
                       // Persist the domain without the associated host object.
-                      jpaTm().saveNew(contact);
-                      jpaTm().saveNew(contact2);
-                      jpaTm().saveNew(domain);
+                      jpaTm().insert(contact);
+                      jpaTm().insert(contact2);
+                      jpaTm().insert(domain);
                     }));
   }
 
@@ -153,8 +153,8 @@ public class DomainBaseSqlTest {
                 .transact(
                     () -> {
                       // Persist the domain without the associated contact objects.
-                      jpaTm().saveNew(domain);
-                      jpaTm().saveNew(host);
+                      jpaTm().insert(domain);
+                      jpaTm().insert(host);
                     }));
   }
 
@@ -165,7 +165,7 @@ public class DomainBaseSqlTest {
         .transact(
             () -> {
               DomainBase persisted = jpaTm().load(domain.createVKey());
-              jpaTm().saveNewOrUpdate(persisted.asBuilder().build());
+              jpaTm().put(persisted.asBuilder().build());
             });
     jpaTm()
         .transact(
@@ -185,7 +185,7 @@ public class DomainBaseSqlTest {
               DomainBase persisted = jpaTm().load(domain.createVKey());
               DomainBase modified =
                   persisted.asBuilder().setGracePeriods(ImmutableSet.of()).build();
-              jpaTm().saveNewOrUpdate(modified);
+              jpaTm().put(modified);
             });
 
     jpaTm()
@@ -204,7 +204,7 @@ public class DomainBaseSqlTest {
             () -> {
               DomainBase persisted = jpaTm().load(domain.createVKey());
               DomainBase modified = persisted.asBuilder().setGracePeriods(null).build();
-              jpaTm().saveNewOrUpdate(modified);
+              jpaTm().put(modified);
             });
 
     jpaTm()
@@ -229,7 +229,7 @@ public class DomainBaseSqlTest {
                           GracePeriod.create(
                               GracePeriodStatus.RENEW, "4-COM", END_OF_TIME, "registrar1", null))
                       .build();
-              jpaTm().saveNewOrUpdate(modified);
+              jpaTm().put(modified);
             });
 
     jpaTm()
@@ -281,7 +281,7 @@ public class DomainBaseSqlTest {
                   builder.removeGracePeriod(gracePeriod);
                 }
               }
-              jpaTm().saveNewOrUpdate(builder.build());
+              jpaTm().put(builder.build());
             });
 
     jpaTm()
@@ -301,7 +301,7 @@ public class DomainBaseSqlTest {
               DomainBase persisted = jpaTm().load(domain.createVKey());
               DomainBase modified =
                   persisted.asBuilder().setGracePeriods(ImmutableSet.of()).build();
-              jpaTm().saveNewOrUpdate(modified);
+              jpaTm().put(modified);
             });
 
     jpaTm()
@@ -316,7 +316,7 @@ public class DomainBaseSqlTest {
                           GracePeriod.create(
                               GracePeriodStatus.ADD, "4-COM", END_OF_TIME, "registrar1", null))
                       .build();
-              jpaTm().saveNewOrUpdate(modified);
+              jpaTm().put(modified);
             });
 
     jpaTm()
@@ -339,13 +339,13 @@ public class DomainBaseSqlTest {
     jpaTm()
         .transact(
             () -> {
-              jpaTm().saveNew(contact);
-              jpaTm().saveNew(contact2);
-              jpaTm().saveNew(domain);
-              jpaTm().saveNew(host);
+              jpaTm().insert(contact);
+              jpaTm().insert(contact2);
+              jpaTm().insert(domain);
+              jpaTm().insert(host);
             });
     domain = domain.asBuilder().setNameservers(ImmutableSet.of()).build();
-    jpaTm().transact(() -> jpaTm().saveNewOrUpdate(domain));
+    jpaTm().transact(() -> jpaTm().put(domain));
     jpaTm()
         .transact(
             () -> {
@@ -382,16 +382,16 @@ public class DomainBaseSqlTest {
               // Persist the contacts.  Note that these need to be persisted before the domain
               // otherwise we get a foreign key constraint error.  If we ever decide to defer the
               // relevant foreign key checks to commit time, then the order would not matter.
-              jpaTm().saveNew(contact);
-              jpaTm().saveNew(contact2);
+              jpaTm().insert(contact);
+              jpaTm().insert(contact2);
 
               // Persist the domain.
-              jpaTm().saveNew(domain);
+              jpaTm().insert(domain);
 
               // Persist the host.  This does _not_ need to be persisted before the domain,
               // because only the row in the join table (DomainHost) is subject to foreign key
               // constraints, and Hibernate knows to insert it after domain and host.
-              jpaTm().saveNew(host);
+              jpaTm().insert(host);
             });
   }
 

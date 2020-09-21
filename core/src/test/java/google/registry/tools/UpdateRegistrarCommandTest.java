@@ -47,7 +47,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   @Test
   void testSuccess_alsoUpdateInCloudSql() throws Exception {
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isFalse();
-    jpaTm().transact(() -> jpaTm().saveNew(loadRegistrar("NewRegistrar")));
+    jpaTm().transact(() -> jpaTm().insert(loadRegistrar("NewRegistrar")));
     runCommand("--password=some_password", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isTrue();
     assertThat(

@@ -120,7 +120,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().verifyPassword("some_password")).isTrue();
-    assertThat(jpaTm().transact(() -> jpaTm().checkExists(registrar.get()))).isTrue();
+    assertThat(jpaTm().transact(() -> jpaTm().exists(registrar.get()))).isTrue();
   }
 
   @Test

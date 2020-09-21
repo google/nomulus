@@ -124,7 +124,7 @@ public class ContactResourceTest extends EntityTestCase {
 
   @Test
   void testCloudSqlPersistence_failWhenViolateForeignKeyConstraint() {
-    assertThrowForeignKeyViolation(() -> jpaTm().transact(() -> jpaTm().saveNew(originalContact)));
+    assertThrowForeignKeyViolation(() -> jpaTm().transact(() -> jpaTm().insert(originalContact)));
   }
 
   @Test
@@ -134,7 +134,7 @@ public class ContactResourceTest extends EntityTestCase {
     saveRegistrar("registrar3");
     saveRegistrar("gaining");
     saveRegistrar("losing");
-    jpaTm().transact(() -> jpaTm().saveNew(originalContact));
+    jpaTm().transact(() -> jpaTm().insert(originalContact));
     ContactResource persisted =
         jpaTm()
             .transact(

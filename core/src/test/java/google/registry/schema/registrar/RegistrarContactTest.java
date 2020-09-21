@@ -65,7 +65,7 @@ class RegistrarContactTest {
 
   @Test
   void testPersistence_succeeds() {
-    jpaTm().transact(() -> jpaTm().saveNew(testRegistrarPoc));
+    jpaTm().transact(() -> jpaTm().insert(testRegistrarPoc));
     RegistrarContact persisted =
         jpaTm().transact(() -> jpaTm().load(testRegistrarPoc.createVKey()));
     assertThat(persisted).isEqualTo(testRegistrarPoc);

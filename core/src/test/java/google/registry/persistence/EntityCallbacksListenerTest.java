@@ -49,7 +49,7 @@ class EntityCallbacksListenerTest {
   @Test
   void verifyAllCallbacks_executedExpectedTimes() {
     TestEntity testPersist = new TestEntity();
-    jpaTm().transact(() -> jpaTm().saveNew(testPersist));
+    jpaTm().transact(() -> jpaTm().insert(testPersist));
     checkAll(testPersist, 1, 0, 0, 0);
 
     TestEntity testUpdate = new TestEntity();

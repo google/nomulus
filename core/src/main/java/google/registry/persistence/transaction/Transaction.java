@@ -208,7 +208,7 @@ public class Transaction extends ImmutableObject implements Buildable {
 
     @Override
     public void writeToDatastore() {
-      ofyTm().saveNewOrUpdate(entity);
+      ofyTm().put(entity);
     }
 
     @Override

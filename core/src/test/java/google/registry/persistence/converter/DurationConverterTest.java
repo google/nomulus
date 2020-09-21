@@ -78,7 +78,7 @@ public class DurationConverterTest {
 
   private void assertPersistedEntityHasSameDuration(Duration duration) {
     DurationTestEntity entity = new DurationTestEntity(duration);
-    jpaTm().transact(() -> jpaTm().saveNew(entity));
+    jpaTm().transact(() -> jpaTm().insert(entity));
     DurationTestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(DurationTestEntity.class, "id"));
     assertThat(persisted.duration.getMillis()).isEqualTo(duration.getMillis());

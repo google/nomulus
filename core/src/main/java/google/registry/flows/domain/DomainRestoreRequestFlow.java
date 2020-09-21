@@ -173,7 +173,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
             existingDomain, newExpirationTime, autorenewEvent, autorenewPollMessage, now, clientId);
     updateForeignKeyIndexDeletionTime(newDomain);
     entitiesToSave.add(newDomain, historyEntry, autorenewEvent, autorenewPollMessage);
-    tm().saveNewOrUpdateAll(entitiesToSave.build());
+    tm().putAll(entitiesToSave.build());
     tm().delete(existingDomain.getDeletePollMessage());
     dnsQueue.addDomainRefreshTask(existingDomain.getDomainName());
     return responseBuilder

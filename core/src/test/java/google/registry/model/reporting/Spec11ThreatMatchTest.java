@@ -107,10 +107,10 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
     jpaTm()
         .transact(
             () -> {
-              jpaTm().saveNew(registrantContact);
-              jpaTm().saveNew(domain);
-              jpaTm().saveNew(host);
-              jpaTm().saveNew(threat);
+              jpaTm().insert(registrantContact);
+              jpaTm().insert(domain);
+              jpaTm().insert(host);
+              jpaTm().insert(threat);
             });
 
     VKey<Spec11ThreatMatch> threatVKey = VKey.createSql(Spec11ThreatMatch.class, threat.getId());
@@ -130,10 +130,10 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
               .transact(
                   () -> {
                     // Persist the threat without the associated registrar.
-                    jpaTm().saveNew(host);
-                    jpaTm().saveNew(registrantContact);
-                    jpaTm().saveNew(domain);
-                    jpaTm().saveNew(threat);
+                    jpaTm().insert(host);
+                    jpaTm().insert(registrantContact);
+                    jpaTm().insert(domain);
+                    jpaTm().insert(threat);
                   });
         });
 
@@ -145,9 +145,9 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
               .transact(
                   () -> {
                     // Persist the threat without the associated domain.
-                    jpaTm().saveNew(registrantContact);
-                    jpaTm().saveNew(host);
-                    jpaTm().saveNew(threat);
+                    jpaTm().insert(registrantContact);
+                    jpaTm().insert(host);
+                    jpaTm().insert(threat);
                   });
         });
   }

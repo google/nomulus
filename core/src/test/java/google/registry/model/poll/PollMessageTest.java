@@ -84,7 +84,7 @@ public class PollMessageTest extends EntityTestCase {
   @Test
   void testCloudSqlPersistenceOneTime() {
     saveRegistrar("TheRegistrar");
-    jpaTm().transact(() -> jpaTm().saveNew(oneTime));
+    jpaTm().transact(() -> jpaTm().insert(oneTime));
     PollMessage.OneTime persisted =
         jpaTm().transact(() -> jpaTm().load(VKey.createSql(PollMessage.OneTime.class, oneTime.id)));
     persisted.parent = oneTime.parent;
@@ -94,7 +94,7 @@ public class PollMessageTest extends EntityTestCase {
   @Test
   void testCloudSqlPersistenceAutorenew() {
     saveRegistrar("TheRegistrar");
-    jpaTm().transact(() -> jpaTm().saveNew(autoRenew));
+    jpaTm().transact(() -> jpaTm().insert(autoRenew));
     PollMessage.Autorenew persisted =
         jpaTm()
             .transact(
@@ -107,14 +107,14 @@ public class PollMessageTest extends EntityTestCase {
   void testCloudSqlSupportForPolymorphicVKey() {
     saveRegistrar("TheRegistrar");
 
-    jpaTm().transact(() -> jpaTm().saveNew(oneTime));
+    jpaTm().transact(() -> jpaTm().insert(oneTime));
     PollMessage persistedOneTime =
         jpaTm().transact(() -> jpaTm().load(VKey.createSql(PollMessage.class, oneTime.getId())));
     assertThat(persistedOneTime).isInstanceOf(PollMessage.OneTime.class);
     persistedOneTime.parent = oneTime.parent;
     assertThat(persistedOneTime).isEqualTo(oneTime);
 
-    jpaTm().transact(() -> jpaTm().saveNew(autoRenew));
+    jpaTm().transact(() -> jpaTm().insert(autoRenew));
     PollMessage persistedAutoRenew =
         jpaTm().transact(() -> jpaTm().load(VKey.createSql(PollMessage.class, autoRenew.getId())));
     assertThat(persistedAutoRenew).isInstanceOf(PollMessage.Autorenew.class);

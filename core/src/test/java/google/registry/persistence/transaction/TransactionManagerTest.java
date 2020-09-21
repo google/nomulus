@@ -107,7 +107,7 @@ public class TransactionManagerTest {
         () ->
             tm().transact(
                     () -> {
-                      tm().saveNew(theEntity);
+                      tm().insert(theEntity);
                       throw new RuntimeException();
                     }));
     assertEntityNotExist(theEntity);
@@ -116,21 +116,21 @@ public class TransactionManagerTest {
   @TestTemplate
   void transact_reusesExistingTransaction() {
     assertEntityNotExist(theEntity);
-    tm().transact(() -> tm().transact(() -> tm().saveNew(theEntity)));
+    tm().transact(() -> tm().transact(() -> tm().insert(theEntity)));
     assertEntityExists(theEntity);
   }
 
   @TestTemplate
   void transactNew_succeeds() {
     assertEntityNotExist(theEntity);
-    tm().transactNew(() -> tm().saveNew(theEntity));
+    tm().transactNew(() -> tm().insert(theEntity));
     assertEntityExists(theEntity);
   }
 
   @TestTemplate
   void transactNewReadOnly_succeeds() {
     assertEntityNotExist(theEntity);
-    tm().transact(() -> tm().saveNew(theEntity));
+    tm().transact(() -> tm().insert(theEntity));
     assertEntityExists(theEntity);
     TestEntity persisted = tm().transactNewReadOnly(() -> tm().load(theEntity.key()));
     assertThat(persisted).isEqualTo(theEntity);
@@ -140,14 +140,14 @@ public class TransactionManagerTest {
   void transactNewReadOnly_throwsWhenWritingEntity() {
     assertEntityNotExist(theEntity);
     assertThrows(
-        RuntimeException.class, () -> tm().transactNewReadOnly(() -> tm().saveNew(theEntity)));
+        RuntimeException.class, () -> tm().transactNewReadOnly(() -> tm().insert(theEntity)));
     assertEntityNotExist(theEntity);
   }
 
   @TestTemplate
   void saveNew_succeeds() {
     assertEntityNotExist(theEntity);
-    tm().transact(() -> tm().saveNew(theEntity));
+    tm().transact(() -> tm().insert(theEntity));
     assertEntityExists(theEntity);
     assertThat(tm().transact(() -> tm().load(theEntity.key()))).isEqualTo(theEntity);
   }
@@ -155,26 +155,26 @@ public class TransactionManagerTest {
   @TestTemplate
   void saveAllNew_succeeds() {
     assertAllEntitiesNotExist(moreEntities);
-    tm().transact(() -> tm().saveAllNew(moreEntities));
+    tm().transact(() -> tm().insertAll(moreEntities));
     assertAllEntitiesExist(moreEntities);
   }
 
   @TestTemplate
   void saveNewOrUpdate_persistsNewEntity() {
     assertEntityNotExist(theEntity);
-    tm().transact(() -> tm().saveNewOrUpdate(theEntity));
+    tm().transact(() -> tm().put(theEntity));
     assertEntityExists(theEntity);
     assertThat(tm().transact(() -> tm().load(theEntity.key()))).isEqualTo(theEntity);
   }
 
   @TestTemplate
   void saveNewOrUpdate_updatesExistingEntity() {
-    tm().transact(() -> tm().saveNew(theEntity));
+    tm().transact(() -> tm().insert(theEntity));
     TestEntity persisted = tm().transact(() -> tm().load(theEntity.key()));
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
     fakeClock.advanceOneMilli();
-    tm().transact(() -> tm().saveNewOrUpdate(theEntity));
+    tm().transact(() -> tm().put(theEntity));
     persisted = tm().transact(() -> tm().load(theEntity.key()));
     assertThat(persisted.data).isEqualTo("bar");
   }
@@ -182,13 +182,13 @@ public class TransactionManagerTest {
   @TestTemplate
   void saveNewOrUpdateAll_succeeds() {
     assertAllEntitiesNotExist(moreEntities);
-    tm().transact(() -> tm().saveNewOrUpdateAll(moreEntities));
+    tm().transact(() -> tm().putAll(moreEntities));
     assertAllEntitiesExist(moreEntities);
   }
 
   @TestTemplate
   void update_succeeds() {
-    tm().transact(() -> tm().saveNew(theEntity));
+    tm().transact(() -> tm().insert(theEntity));
     TestEntity persisted =
         tm().transact(
                 () ->
@@ -205,7 +205,7 @@ public class TransactionManagerTest {
   @TestTemplate
   void load_succeeds() {
     assertEntityNotExist(theEntity);
-    tm().transact(() -> tm().saveNew(theEntity));
+    tm().transact(() -> tm().insert(theEntity));
     TestEntity persisted = tm().transact(() -> tm().load(theEntity.key()));
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
@@ -221,7 +221,7 @@ public class TransactionManagerTest {
   @TestTemplate
   void maybeLoad_succeeds() {
     assertEntityNotExist(theEntity);
-    tm().transact(() -> tm().saveNew(theEntity));
+    tm().transact(() -> tm().insert(theEntity));
     TestEntity persisted = tm().transact(() -> tm().maybeLoad(theEntity.key()).get());
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
@@ -235,7 +235,7 @@ public class TransactionManagerTest {
 
   @TestTemplate
   void delete_succeeds() {
-    tm().transact(() -> tm().saveNew(theEntity));
+    tm().transact(() -> tm().insert(theEntity));
     assertEntityExists(theEntity);
     fakeClock.advanceOneMilli();
     tm().transact(() -> tm().delete(theEntity.key()));
@@ -252,7 +252,7 @@ public class TransactionManagerTest {
   @TestTemplate
   void delete_succeedsForEntitySet() {
     assertAllEntitiesNotExist(moreEntities);
-    tm().transact(() -> tm().saveAllNew(moreEntities));
+    tm().transact(() -> tm().insertAll(moreEntities));
     Set<VKey<TestEntity>> keys =
         moreEntities.stream().map(TestEntity::key).collect(toImmutableSet());
     assertAllEntitiesExist(moreEntities);
@@ -264,7 +264,7 @@ public class TransactionManagerTest {
   @TestTemplate
   void delete_ignoreNonExistentEntity() {
     assertAllEntitiesNotExist(moreEntities);
-    tm().transact(() -> tm().saveAllNew(moreEntities));
+    tm().transact(() -> tm().insertAll(moreEntities));
     List<VKey<TestEntity>> keys =
         moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
     assertAllEntitiesExist(moreEntities);
@@ -279,7 +279,7 @@ public class TransactionManagerTest {
   @TestTemplate
   void load_multi() {
     assertAllEntitiesNotExist(moreEntities);
-    tm().transact(() -> tm().saveAllNew(moreEntities));
+    tm().transact(() -> tm().insertAll(moreEntities));
     List<VKey<TestEntity>> keys =
         moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
     assertThat(tm().transact(() -> tm().load(keys)))
@@ -289,7 +289,7 @@ public class TransactionManagerTest {
   @TestTemplate
   void load_multiWithDuplicateKeys() {
     assertAllEntitiesNotExist(moreEntities);
-    tm().transact(() -> tm().saveAllNew(moreEntities));
+    tm().transact(() -> tm().insertAll(moreEntities));
     ImmutableList<VKey<TestEntity>> keys =
         moreEntities.stream().map(TestEntity::key).collect(toImmutableList());
     ImmutableList<VKey<TestEntity>> doubleKeys =
@@ -301,7 +301,7 @@ public class TransactionManagerTest {
   @TestTemplate
   void load_multiMissingKeys() {
     assertAllEntitiesNotExist(moreEntities);
-    tm().transact(() -> tm().saveAllNew(moreEntities));
+    tm().transact(() -> tm().insertAll(moreEntities));
     List<VKey<TestEntity>> keys =
         Stream.concat(moreEntities.stream(), Stream.of(new TestEntity("dark", "matter")))
             .map(TestEntity::key)
@@ -311,11 +311,11 @@ public class TransactionManagerTest {
   }
 
   private static void assertEntityExists(TestEntity entity) {
-    assertThat(tm().transact(() -> tm().checkExists(entity))).isTrue();
+    assertThat(tm().transact(() -> tm().exists(entity))).isTrue();
   }
 
   private static void assertEntityNotExist(TestEntity entity) {
-    assertThat(tm().transact(() -> tm().checkExists(entity))).isFalse();
+    assertThat(tm().transact(() -> tm().exists(entity))).isFalse();
   }
 
   private static void assertAllEntitiesExist(ImmutableList<TestEntity> entities) {

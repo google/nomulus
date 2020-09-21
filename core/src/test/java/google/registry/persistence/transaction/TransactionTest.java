@@ -66,7 +66,7 @@ class TransactionTest {
 
     txn = new Transaction.Builder().addDelete(barEntity.key()).build();
     txn.writeToDatastore();
-    assertThat(ofyTm().checkExists(barEntity.key())).isEqualTo(false);
+    assertThat(ofyTm().exists(barEntity.key())).isEqualTo(false);
   }
 
   @Test
@@ -83,7 +83,7 @@ class TransactionTest {
         .transact(
             () -> {
               assertThat(ofyTm().load(fooEntity.key())).isEqualTo(fooEntity);
-              assertThat(ofyTm().checkExists(barEntity.key())).isEqualTo(false);
+              assertThat(ofyTm().exists(barEntity.key())).isEqualTo(false);
             });
   }
 
@@ -107,8 +107,8 @@ class TransactionTest {
       jpaTm()
           .transact(
               () -> {
-                jpaTm().saveNew(fooEntity);
-                jpaTm().saveNew(barEntity);
+                jpaTm().insert(fooEntity);
+                jpaTm().insert(barEntity);
               });
       TransactionEntity txnEnt =
           jpaTm().transact(() -> jpaTm().load(VKey.createSql(TransactionEntity.class, 1L)));
@@ -123,8 +123,7 @@ class TransactionTest {
 
       // Verify that no transaction was persisted for the load transaction.
       assertThat(
-              jpaTm()
-                  .transact(() -> jpaTm().checkExists(VKey.createSql(TransactionEntity.class, 2L))))
+              jpaTm().transact(() -> jpaTm().exists(VKey.createSql(TransactionEntity.class, 2L))))
           .isFalse();
     } finally {
       RegistryConfig.overrideCloudSqlReplicateTransactions(false);
@@ -136,12 +135,10 @@ class TransactionTest {
     jpaTm()
         .transact(
             () -> {
-              jpaTm().saveNew(fooEntity);
-              jpaTm().saveNew(barEntity);
+              jpaTm().insert(fooEntity);
+              jpaTm().insert(barEntity);
             });
-    assertThat(
-            jpaTm()
-                .transact(() -> jpaTm().checkExists(VKey.createSql(TransactionEntity.class, 1L))))
+    assertThat(jpaTm().transact(() -> jpaTm().exists(VKey.createSql(TransactionEntity.class, 1L))))
         .isFalse();
   }
 

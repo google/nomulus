@@ -224,7 +224,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void saveNew(Object entity) {
+  public void insert(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
     getEntityManager().persist(entity);
@@ -232,14 +232,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void saveAllNew(ImmutableCollection<?> entities) {
+  public void insertAll(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
     assertInTransaction();
-    entities.forEach(this::saveNew);
+    entities.forEach(this::insert);
   }
 
   @Override
-  public void saveNewOrUpdate(Object entity) {
+  public void put(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
     getEntityManager().merge(entity);
@@ -247,17 +247,17 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void saveNewOrUpdateAll(ImmutableCollection<?> entities) {
+  public void putAll(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
     assertInTransaction();
-    entities.forEach(this::saveNewOrUpdate);
+    entities.forEach(this::put);
   }
 
   @Override
   public void update(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
-    checkArgument(checkExists(entity), "Given entity does not exist");
+    checkArgument(exists(entity), "Given entity does not exist");
     getEntityManager().merge(entity);
     transactionInfo.get().addUpdate(entity);
   }
@@ -270,22 +270,22 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> boolean checkExists(VKey<T> key) {
+  public <T> boolean exists(VKey<T> key) {
     checkArgumentNotNull(key, "key must be specified");
     EntityType<?> entityType = getEntityType(key.getKind());
     ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getSqlKey());
-    return checkExists(entityType.getName(), entityIds);
+    return exists(entityType.getName(), entityIds);
   }
 
   @Override
-  public boolean checkExists(Object entity) {
+  public boolean exists(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     EntityType<?> entityType = getEntityType(entity.getClass());
     ImmutableSet<EntityId> entityIds = getEntityIdsFromEntity(entityType, entity);
-    return checkExists(entityType.getName(), entityIds);
+    return exists(entityType.getName(), entityIds);
   }
 
-  private boolean checkExists(String entityName, ImmutableSet<EntityId> entityIds) {
+  private boolean exists(String entityName, ImmutableSet<EntityId> entityIds) {
     assertInTransaction();
     TypedQuery<Integer> query =
         getEntityManager()

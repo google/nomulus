@@ -31,7 +31,7 @@ public class ReservedListSqlDao {
   /** Persist a new reserved list to Cloud SQL. */
   public static void save(ReservedList reservedList) {
     checkArgumentNotNull(reservedList, "Must specify reservedList");
-    jpaTm().transact(() -> jpaTm().saveNew(reservedList));
+    jpaTm().transact(() -> jpaTm().insert(reservedList));
   }
 
   /**
