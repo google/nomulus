@@ -60,7 +60,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     // Create+save an old contact HistoryEntry, reload it, and verify it's a proper ContactHistory
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
     HistoryEntry legacyHistoryEntry = historyEntryBuilderFor(contact).build();
-    tm().transact(() -> tm().saveNew(legacyHistoryEntry));
+    tm().transact(() -> tm().insert(legacyHistoryEntry));
 
     // In Datastore, we will save it as HistoryEntry but retrieve it as ContactHistory
     long historyEntryId = legacyHistoryEntry.getId();
@@ -84,8 +84,8 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     jpaTm()
         .transact(
             () -> {
-              jpaTm().saveNew(contact);
-              jpaTm().saveNew(legacyContactHistory);
+              jpaTm().insert(contact);
+              jpaTm().insert(legacyContactHistory);
             });
     ContactHistory legacyHistoryFromSql =
         jpaTm()
@@ -106,7 +106,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     // Create+save an old domain HistoryEntry, reload it, and verify it's a proper DomainHistory
     DomainBase domain = DomainHistoryTest.createDomainWithContactsAndHosts();
     HistoryEntry legacyHistoryEntry = historyEntryForDomain(domain);
-    tm().transact(() -> tm().saveNew(legacyHistoryEntry));
+    tm().transact(() -> tm().insert(legacyHistoryEntry));
 
     // In Datastore, we will save it as HistoryEntry but retrieve it as DomainHistory
     long historyEntryId = legacyHistoryEntry.getId();
@@ -126,7 +126,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     DomainHistory legacyDomainHistory = (DomainHistory) fromObjectify;
 
     // Next, save that from-Datastore object in SQL and verify we can load it back in
-    jpaTm().transact(() -> jpaTm().saveNew(legacyDomainHistory));
+    jpaTm().transact(() -> jpaTm().insert(legacyDomainHistory));
     DomainHistory legacyHistoryFromSql =
         jpaTm().transact(() -> jpaTm().load(legacyDomainHistory.createVKey()));
     // Don't compare nsHosts directly because one is null and the other is empty
@@ -144,7 +144,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     // Create+save an old host HistoryEntry, reload it, and verify it's a proper HostHistory
     HostResource host = newHostResourceWithRoid("hs1.example.com", "host1");
     HistoryEntry legacyHistoryEntry = historyEntryBuilderFor(host).build();
-    tm().transact(() -> tm().saveNew(legacyHistoryEntry));
+    tm().transact(() -> tm().insert(legacyHistoryEntry));
 
     // In Datastore, we will save it as HistoryEntry but retrieve it as HostHistory
     long historyEntryId = legacyHistoryEntry.getId();
@@ -168,8 +168,8 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     jpaTm()
         .transact(
             () -> {
-              jpaTm().saveNew(host);
-              jpaTm().saveNew(legacyHostHistory);
+              jpaTm().insert(host);
+              jpaTm().insert(legacyHostHistory);
             });
     HostHistory legacyHistoryFromSql =
         jpaTm()

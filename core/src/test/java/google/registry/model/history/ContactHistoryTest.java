@@ -66,13 +66,13 @@ public class ContactHistoryTest extends EntityTestCase {
     saveRegistrar("TheRegistrar");
 
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
-    jpaTm().transact(() -> jpaTm().saveNew(contact));
+    jpaTm().transact(() -> jpaTm().insert(contact));
     VKey<ContactResource> contactVKey = contact.createVKey();
     ContactResource contactFromDb = jpaTm().transact(() -> jpaTm().load(contactVKey));
     ContactHistory contactHistory =
         createContactHistory(contactFromDb, contactVKey).asBuilder().setContactBase(null).build();
     contactHistory.id = null;
-    jpaTm().transact(() -> jpaTm().saveNew(contactHistory));
+    jpaTm().transact(() -> jpaTm().insert(contactHistory));
 
     jpaTm()
         .transact(
