@@ -60,7 +60,7 @@ public class DomainHistoryTest extends EntityTestCase {
     DomainBase domain = createDomainWithContactsAndHosts();
     DomainHistory domainHistory = createDomainHistory(domain);
     domainHistory.id = null;
-    jpaTm().transact(() -> jpaTm().saveNew(domainHistory));
+    jpaTm().transact(() -> jpaTm().insert(domainHistory));
 
     jpaTm()
         .transact(
@@ -78,7 +78,7 @@ public class DomainHistoryTest extends EntityTestCase {
     DomainHistory domainHistory =
         createDomainHistory(domain).asBuilder().setDomainContent(null).build();
     domainHistory.id = null;
-    jpaTm().transact(() -> jpaTm().saveNew(domainHistory));
+    jpaTm().transact(() -> jpaTm().insert(domainHistory));
 
     jpaTm()
         .transact(
@@ -102,8 +102,8 @@ public class DomainHistoryTest extends EntityTestCase {
 
     tm().transact(
             () -> {
-              tm().saveNew(host);
-              tm().saveNew(contact);
+              tm().insert(host);
+              tm().insert(contact);
             });
     fakeClock.advanceOneMilli();
 
@@ -112,11 +112,11 @@ public class DomainHistoryTest extends EntityTestCase {
             .asBuilder()
             .setNameservers(host.createVKey())
             .build();
-    tm().transact(() -> tm().saveNew(domain));
+    tm().transact(() -> tm().insert(domain));
 
     fakeClock.advanceOneMilli();
     DomainHistory domainHistory = createDomainHistory(domain);
-    tm().transact(() -> tm().saveNew(domainHistory));
+    tm().transact(() -> tm().insert(domainHistory));
 
     // retrieving a HistoryEntry or a DomainHistory with the same key should return the same object
     // note: due to the @EntitySubclass annotation. all Keys for DomainHistory objects will have
@@ -138,8 +138,8 @@ public class DomainHistoryTest extends EntityTestCase {
     jpaTm()
         .transact(
             () -> {
-              jpaTm().saveNew(host);
-              jpaTm().saveNew(contact);
+              jpaTm().insert(host);
+              jpaTm().insert(contact);
             });
 
     DomainBase domain =
@@ -147,7 +147,7 @@ public class DomainHistoryTest extends EntityTestCase {
             .asBuilder()
             .setNameservers(host.createVKey())
             .build();
-    jpaTm().transact(() -> jpaTm().saveNew(domain));
+    jpaTm().transact(() -> jpaTm().insert(domain));
     return domain;
   }
 

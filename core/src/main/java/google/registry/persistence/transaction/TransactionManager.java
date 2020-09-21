@@ -86,16 +86,16 @@ public interface TransactionManager {
   DateTime getTransactionTime();
 
   /** Persists a new entity in the database, throws exception if the entity already exists. */
-  void saveNew(Object entity);
+  void insert(Object entity);
 
   /** Persists all new entities in the database, throws exception if any entity already exists. */
-  void saveAllNew(ImmutableCollection<?> entities);
+  void insertAll(ImmutableCollection<?> entities);
 
   /** Persists a new entity or update the existing entity in the database. */
-  void saveNewOrUpdate(Object entity);
+  void put(Object entity);
 
   /** Persists all new entities or update the existing entities in the database. */
-  void saveNewOrUpdateAll(ImmutableCollection<?> entities);
+  void putAll(ImmutableCollection<?> entities);
 
   /** Updates an entity in the database, throws exception if the entity does not exist. */
   void update(Object entity);
@@ -104,10 +104,10 @@ public interface TransactionManager {
   void updateAll(ImmutableCollection<?> entities);
 
   /** Returns whether the given entity with same ID exists. */
-  boolean checkExists(Object entity);
+  boolean exists(Object entity);
 
   /** Returns whether the entity of given key exists. */
-  <T> boolean checkExists(VKey<T> key);
+  <T> boolean exists(VKey<T> key);
 
   /** Loads the entity by its id, returns empty if the entity doesn't exist. */
   <T> Optional<T> maybeLoad(VKey<T> key);

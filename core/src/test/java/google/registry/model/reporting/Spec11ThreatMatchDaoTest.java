@@ -37,8 +37,8 @@ public class Spec11ThreatMatchDaoTest extends EntityTestCase {
     jpaTm()
         .transact(
             () -> {
-              jpaTm().saveAllNew(getThreatMatchesToday());
-              jpaTm().saveAllNew(getThreatMatchesYesterday());
+              jpaTm().insertAll(getThreatMatchesToday());
+              jpaTm().insertAll(getThreatMatchesYesterday());
             });
   }
 

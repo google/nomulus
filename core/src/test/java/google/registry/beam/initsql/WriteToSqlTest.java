@@ -85,7 +85,7 @@ class WriteToSqlTest implements Serializable {
       // Required for contacts created below.
       Registrar ofyRegistrar = AppEngineExtension.makeRegistrar2();
       store.insertOrUpdate(ofyRegistrar);
-      jpaTm().transact(() -> jpaTm().saveNewOrUpdate(store.loadAsOfyEntity(ofyRegistrar)));
+      jpaTm().transact(() -> jpaTm().put(store.loadAsOfyEntity(ofyRegistrar)));
 
       ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
 

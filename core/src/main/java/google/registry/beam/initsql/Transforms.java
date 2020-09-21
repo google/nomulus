@@ -437,7 +437,7 @@ public final class Transforms {
                 .map(Optional::get)
                 .map(ofy::toPojo)
                 .collect(ImmutableList.toImmutableList());
-        retry(() -> jpaTm().transact(() -> jpaTm().saveNewOrUpdateAll(ofyEntities)));
+        retry(() -> jpaTm().transact(() -> jpaTm().putAll(ofyEntities)));
       }
     }
 

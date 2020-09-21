@@ -44,13 +44,13 @@ public class HostHistoryTest extends EntityTestCase {
     saveRegistrar("TheRegistrar");
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
-    jpaTm().transact(() -> jpaTm().saveNew(host));
+    jpaTm().transact(() -> jpaTm().insert(host));
     VKey<HostResource> hostVKey =
         VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().load(hostVKey));
     HostHistory hostHistory = createHostHistory(hostFromDb, hostVKey);
     hostHistory.id = null;
-    jpaTm().transact(() -> jpaTm().saveNew(hostHistory));
+    jpaTm().transact(() -> jpaTm().insert(hostHistory));
     jpaTm()
         .transact(
             () -> {
@@ -66,7 +66,7 @@ public class HostHistoryTest extends EntityTestCase {
   void testLegacyPersistence_nullHostBase() {
     saveRegistrar("TheRegistrar");
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
-    jpaTm().transact(() -> jpaTm().saveNew(host));
+    jpaTm().transact(() -> jpaTm().insert(host));
 
     VKey<HostResource> hostVKey =
         VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
@@ -75,7 +75,7 @@ public class HostHistoryTest extends EntityTestCase {
     HostHistory hostHistory =
         createHostHistory(hostFromDb, hostVKey).asBuilder().setHostBase(null).build();
     hostHistory.id = null;
-    jpaTm().transact(() -> jpaTm().saveNew(hostHistory));
+    jpaTm().transact(() -> jpaTm().insert(hostHistory));
 
     jpaTm()
         .transact(
@@ -93,13 +93,13 @@ public class HostHistoryTest extends EntityTestCase {
     saveRegistrar("registrar1");
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
-    tm().transact(() -> tm().saveNew(host));
+    tm().transact(() -> tm().insert(host));
     VKey<HostResource> hostVKey =
         VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
     HostResource hostFromDb = tm().transact(() -> tm().load(hostVKey));
     HostHistory hostHistory = createHostHistory(hostFromDb, hostVKey);
     fakeClock.advanceOneMilli();
-    tm().transact(() -> tm().saveNew(hostHistory));
+    tm().transact(() -> tm().insert(hostHistory));
 
     // retrieving a HistoryEntry or a HostHistory with the same key should return the same object
     // note: due to the @EntitySubclass annotation. all Keys for HostHistory objects will have

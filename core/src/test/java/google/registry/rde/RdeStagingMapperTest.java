@@ -73,7 +73,7 @@ class RdeStagingMapperTest {
     // Set Registrar states which are required for reporting.
     tm().transact(
             () ->
-                tm().saveNewOrUpdateAll(
+                tm().putAll(
                         ImmutableList.of(
                             externalMonitoringRegistrar.asBuilder().setState(State.ACTIVE).build(),
                             testRegistrar.asBuilder().setState(State.ACTIVE).build(),

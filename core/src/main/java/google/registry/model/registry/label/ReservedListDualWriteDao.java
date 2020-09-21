@@ -43,7 +43,7 @@ public class ReservedListDualWriteDao {
 
   /** Persist a new reserved list to Cloud SQL. */
   public static void save(ReservedList reservedList) {
-    ofyTm().transact(() -> ofyTm().saveNewOrUpdate(reservedList));
+    ofyTm().transact(() -> ofyTm().put(reservedList));
     try {
       logger.atInfo().log("Saving reserved list %s to Cloud SQL", reservedList.getName());
       ReservedListSqlDao.save(reservedList);

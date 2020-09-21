@@ -285,7 +285,7 @@ class Spec11PipelineTest {
             .build();
 
     verify(mockJpaTm).transact(any(Runnable.class));
-    verify(mockJpaTm).saveNew(expected);
+    verify(mockJpaTm).insert(expected);
     verifyNoMoreInteractions(mockJpaTm);
   }
 

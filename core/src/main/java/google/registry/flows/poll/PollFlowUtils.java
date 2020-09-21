@@ -64,7 +64,7 @@ public final class PollFlowUtils {
       // and re-save it for future autorenew poll messages to be delivered. Otherwise, this
       // autorenew poll message has no more events to deliver and should be deleted.
       if (nextEventTime.isBefore(autorenewPollMessage.getAutorenewEndTime())) {
-        tm().saveNewOrUpdate(autorenewPollMessage.asBuilder().setEventTime(nextEventTime).build());
+        tm().put(autorenewPollMessage.asBuilder().setEventTime(nextEventTime).build());
         includeAckedMessageInCount = isBeforeOrAt(nextEventTime, tm().getTransactionTime());
       } else {
         tm().delete(autorenewPollMessage.createVKey());

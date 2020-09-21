@@ -95,8 +95,8 @@ public class AllocationTokenTest extends EntityTestCase {
     jpaTm()
         .transact(
             () -> {
-              jpaTm().saveNew(unlimitedUseToken);
-              jpaTm().saveNew(singleUseToken);
+              jpaTm().insert(unlimitedUseToken);
+              jpaTm().insert(singleUseToken);
             });
     jpaTm()
         .transact(

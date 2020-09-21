@@ -44,12 +44,12 @@ public class ContactHistoryTest extends EntityTestCase {
     saveRegistrar("TheRegistrar");
 
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
-    jpaTm().transact(() -> jpaTm().saveNew(contact));
+    jpaTm().transact(() -> jpaTm().insert(contact));
     VKey<ContactResource> contactVKey = contact.createVKey();
     ContactResource contactFromDb = jpaTm().transact(() -> jpaTm().load(contactVKey));
     ContactHistory contactHistory = createContactHistory(contactFromDb, contactVKey);
     contactHistory.id = null;
-    jpaTm().transact(() -> jpaTm().saveNew(contactHistory));
+    jpaTm().transact(() -> jpaTm().insert(contactHistory));
     jpaTm()
         .transact(
             () -> {
@@ -90,12 +90,12 @@ public class ContactHistoryTest extends EntityTestCase {
     saveRegistrar("TheRegistrar");
 
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
-    tm().transact(() -> tm().saveNew(contact));
+    tm().transact(() -> tm().insert(contact));
     VKey<ContactResource> contactVKey = contact.createVKey();
     ContactResource contactFromDb = tm().transact(() -> tm().load(contactVKey));
     fakeClock.advanceOneMilli();
     ContactHistory contactHistory = createContactHistory(contactFromDb, contactVKey);
-    tm().transact(() -> tm().saveNew(contactHistory));
+    tm().transact(() -> tm().insert(contactHistory));
 
     // retrieving a HistoryEntry or a ContactHistory with the same key should return the same object
     // note: due to the @EntitySubclass annotation. all Keys for ContactHistory objects will have

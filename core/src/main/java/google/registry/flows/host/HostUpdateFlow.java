@@ -285,7 +285,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
         && newHost.isSubordinate()
         && Objects.equals(
             existingHost.getSuperordinateDomain(), newHost.getSuperordinateDomain())) {
-      tm().saveNewOrUpdate(
+      tm().put(
               tm().load(existingHost.getSuperordinateDomain())
                   .asBuilder()
                   .removeSubordinateHost(existingHost.getHostName())
@@ -294,14 +294,14 @@ public final class HostUpdateFlow implements TransactionalFlow {
       return;
     }
     if (existingHost.isSubordinate()) {
-      tm().saveNewOrUpdate(
+      tm().put(
               tm().load(existingHost.getSuperordinateDomain())
                   .asBuilder()
                   .removeSubordinateHost(existingHost.getHostName())
                   .build());
     }
     if (newHost.isSubordinate()) {
-      tm().saveNewOrUpdate(
+      tm().put(
               tm().load(newHost.getSuperordinateDomain())
                   .asBuilder()
                   .addSubordinateHost(newHost.getHostName())

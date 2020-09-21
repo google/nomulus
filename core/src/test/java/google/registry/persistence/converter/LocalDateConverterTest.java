@@ -54,7 +54,7 @@ public class LocalDateConverterTest {
 
   private LocalDateConverterTestEntity persistAndLoadTestEntity(LocalDate date) {
     LocalDateConverterTestEntity entity = new LocalDateConverterTestEntity(date);
-    jpaTm().transact(() -> jpaTm().saveNew(entity));
+    jpaTm().transact(() -> jpaTm().insert(entity));
     LocalDateConverterTestEntity retrievedEntity =
         jpaTm()
             .transact(() -> jpaTm().load(VKey.createSql(LocalDateConverterTestEntity.class, "id")));

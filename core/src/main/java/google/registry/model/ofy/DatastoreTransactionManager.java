@@ -101,22 +101,22 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public void saveNew(Object entity) {
+  public void insert(Object entity) {
     saveEntity(entity);
   }
 
   @Override
-  public void saveAllNew(ImmutableCollection<?> entities) {
+  public void insertAll(ImmutableCollection<?> entities) {
     getOfy().save().entities(entities);
   }
 
   @Override
-  public void saveNewOrUpdate(Object entity) {
+  public void put(Object entity) {
     saveEntity(entity);
   }
 
   @Override
-  public void saveNewOrUpdateAll(ImmutableCollection<?> entities) {
+  public void putAll(ImmutableCollection<?> entities) {
     getOfy().save().entities(entities);
   }
 
@@ -131,12 +131,12 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public boolean checkExists(Object entity) {
+  public boolean exists(Object entity) {
     return getOfy().load().key(Key.create(entity)).now() != null;
   }
 
   @Override
-  public <T> boolean checkExists(VKey<T> key) {
+  public <T> boolean exists(VKey<T> key) {
     return loadNullable(key) != null;
   }
 

@@ -180,7 +180,7 @@ public class BillingEventTest extends EntityTestCase {
 
   private void saveNewBillingEvent(BillingEvent billingEvent) {
     billingEvent.id = null;
-    jpaTm().transact(() -> jpaTm().saveNew(billingEvent));
+    jpaTm().transact(() -> jpaTm().insert(billingEvent));
   }
 
   @Test

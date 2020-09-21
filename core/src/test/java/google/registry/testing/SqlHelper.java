@@ -62,7 +62,7 @@ public class SqlHelper {
 
   public static Registrar saveRegistrar(String clientId) {
     Registrar registrar = makeRegistrar1().asBuilder().setClientId(clientId).build();
-    jpaTm().transact(() -> jpaTm().saveNew(registrar));
+    jpaTm().transact(() -> jpaTm().insert(registrar));
     return jpaTm().transact(() -> jpaTm().load(registrar.createVKey()));
   }
 

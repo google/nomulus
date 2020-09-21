@@ -571,6 +571,28 @@ ALTER SEQUENCE public."GracePeriod_id_seq" OWNED BY public."GracePeriod".id;
 
 
 --
+-- Name: Host; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Host" (
+    repo_id text NOT NULL,
+    creation_registrar_id text,
+    creation_time timestamp with time zone,
+    current_sponsor_registrar_id text,
+    deletion_time timestamp with time zone,
+    last_epp_update_registrar_id text,
+    last_epp_update_time timestamp with time zone,
+    statuses text[],
+    host_name text,
+    last_superordinate_change timestamp with time zone,
+    last_transfer_time timestamp with time zone,
+    superordinate_domain text,
+    inet_addresses text[],
+    update_timestamp timestamp with time zone
+);
+
+
+--
 -- Name: HostHistory; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -598,28 +620,6 @@ CREATE TABLE public."HostHistory" (
     last_epp_update_time timestamp with time zone,
     statuses text[],
     host_repo_id text NOT NULL,
-    update_timestamp timestamp with time zone
-);
-
-
---
--- Name: HostResource; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."HostResource" (
-    repo_id text NOT NULL,
-    creation_registrar_id text,
-    creation_time timestamp with time zone,
-    current_sponsor_registrar_id text,
-    deletion_time timestamp with time zone,
-    last_epp_update_registrar_id text,
-    last_epp_update_time timestamp with time zone,
-    statuses text[],
-    host_name text,
-    last_superordinate_change timestamp with time zone,
-    last_transfer_time timestamp with time zone,
-    superordinate_domain text,
-    inet_addresses text[],
     update_timestamp timestamp with time zone
 );
 
@@ -1222,11 +1222,11 @@ ALTER TABLE ONLY public."HostHistory"
 
 
 --
--- Name: HostResource HostResource_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: Host Host_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."HostResource"
-    ADD CONSTRAINT "HostResource_pkey" PRIMARY KEY (repo_id);
+ALTER TABLE ONLY public."Host"
+    ADD CONSTRAINT "Host_pkey" PRIMARY KEY (repo_id);
 
 
 --
@@ -1944,7 +1944,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."DomainHost"
-    ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (host_repo_id) REFERENCES public."HostResource"(repo_id);
+    ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (host_repo_id) REFERENCES public."Host"(repo_id);
 
 
 --
@@ -1964,19 +1964,19 @@ ALTER TABLE ONLY public."GracePeriod"
 
 
 --
--- Name: HostResource fk_host_resource_superordinate_domain; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: Host fk_host_superordinate_domain; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public."HostResource"
-    ADD CONSTRAINT fk_host_resource_superordinate_domain FOREIGN KEY (superordinate_domain) REFERENCES public."Domain"(repo_id);
+ALTER TABLE ONLY public."Host"
+    ADD CONSTRAINT fk_host_superordinate_domain FOREIGN KEY (superordinate_domain) REFERENCES public."Domain"(repo_id);
 
 
 --
--- Name: HostHistory fk_hosthistory_hostresource; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: HostHistory fk_hosthistory_host; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT fk_hosthistory_hostresource FOREIGN KEY (host_repo_id) REFERENCES public."HostResource"(repo_id);
+    ADD CONSTRAINT fk_hosthistory_host FOREIGN KEY (host_repo_id) REFERENCES public."Host"(repo_id);
 
 
 --
@@ -2000,7 +2000,7 @@ ALTER TABLE ONLY public."PollMessage"
 --
 
 ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_host_repo_id FOREIGN KEY (host_repo_id) REFERENCES public."HostResource"(repo_id);
+    ADD CONSTRAINT fk_poll_message_host_repo_id FOREIGN KEY (host_repo_id) REFERENCES public."Host"(repo_id);
 
 
 --

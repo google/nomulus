@@ -70,14 +70,14 @@ public class RegistrarDaoTest {
 
   @Test
   void saveNew_worksSuccessfully() {
-    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
-    jpaTm().transact(() -> jpaTm().saveNew(testRegistrar));
-    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isTrue();
+    assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isFalse();
+    jpaTm().transact(() -> jpaTm().insert(testRegistrar));
+    assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isTrue();
   }
 
   @Test
   void update_worksSuccessfully() {
-    jpaTm().transact(() -> jpaTm().saveNew(testRegistrar));
+    jpaTm().transact(() -> jpaTm().insert(testRegistrar));
     Registrar persisted = jpaTm().transact(() -> jpaTm().load(registrarKey));
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
     jpaTm()
@@ -92,7 +92,7 @@ public class RegistrarDaoTest {
 
   @Test
   void update_throwsExceptionWhenEntityDoesNotExist() {
-    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
+    assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isFalse();
     assertThrows(
         IllegalArgumentException.class,
         () -> jpaTm().transact(() -> jpaTm().update(testRegistrar)));
@@ -100,8 +100,8 @@ public class RegistrarDaoTest {
 
   @Test
   void load_worksSuccessfully() {
-    assertThat(jpaTm().transact(() -> jpaTm().checkExists(testRegistrar))).isFalse();
-    jpaTm().transact(() -> jpaTm().saveNew(testRegistrar));
+    assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isFalse();
+    jpaTm().transact(() -> jpaTm().insert(testRegistrar));
     Registrar persisted = jpaTm().transact(() -> jpaTm().load(registrarKey));
 
     assertThat(persisted.getClientId()).isEqualTo("registrarId");

@@ -464,7 +464,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
         HostResource host = (HostResource) existingResource;
         if (host.isSubordinate()) {
           dnsQueue.addHostRefreshTask(host.getHostName());
-          tm().saveNewOrUpdate(
+          tm().put(
                   tm().load(host.getSuperordinateDomain())
                       .asBuilder()
                       .removeSubordinateHost(host.getHostName())
