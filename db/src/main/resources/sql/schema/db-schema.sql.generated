@@ -381,6 +381,24 @@ create sequence temp_history_id_sequence start 1 increment 50;
         primary key (id)
     );
 
+    create table "Host" (
+       repo_id text not null,
+        update_timestamp timestamptz,
+        creation_registrar_id text not null,
+        creation_time timestamptz not null,
+        current_sponsor_registrar_id text not null,
+        deletion_time timestamptz,
+        last_epp_update_registrar_id text,
+        last_epp_update_time timestamptz,
+        statuses text[],
+        host_name text,
+        inet_addresses text[],
+        last_superordinate_change timestamptz,
+        last_transfer_time timestamptz,
+        superordinate_domain text,
+        primary key (repo_id)
+    );
+
     create table "HostHistory" (
        history_revision_id int8 not null,
         history_by_superuser boolean not null,
@@ -407,24 +425,6 @@ create sequence temp_history_id_sequence start 1 increment 50;
         update_timestamp timestamptz,
         host_repo_id text not null,
         primary key (history_revision_id)
-    );
-
-    create table "HostResource" (
-       repo_id text not null,
-        update_timestamp timestamptz,
-        creation_registrar_id text not null,
-        creation_time timestamptz not null,
-        current_sponsor_registrar_id text not null,
-        deletion_time timestamptz,
-        last_epp_update_registrar_id text,
-        last_epp_update_time timestamptz,
-        statuses text[],
-        host_name text,
-        inet_addresses text[],
-        last_superordinate_change timestamptz,
-        last_transfer_time timestamptz,
-        superordinate_domain text,
-        primary key (repo_id)
     );
 
     create table "Lock" (

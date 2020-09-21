@@ -32,7 +32,7 @@ import javax.persistence.AccessType;
  */
 @ReportedOn
 @Entity
-@javax.persistence.Entity
+@javax.persistence.Entity(name = "Host")
 @ExternalMessagingName("host")
 @WithStringVKey
 @Access(AccessType.FIELD) // otherwise it'll use the default if the repoId (property)
