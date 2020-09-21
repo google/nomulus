@@ -1,5 +1,5 @@
 # Registry: Charleston Road Registry Inc.
-# Language: Chinese
+# Script: zh-Hans
 # Version: 1.0
 # Effective Date: 04-12-2012
 #
