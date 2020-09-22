@@ -1,5 +1,5 @@
 # Registry: Charleston Road Registry Inc.
-# Language: Traditional Chinese
+# Script: zh-Hant
 # Version: 1.0
 # Effective Date: 04-12-2012
 # Contact: iana-contact@google.com
