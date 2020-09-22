@@ -23,9 +23,10 @@ users/roles are defined:
 ### Schema DDL Scripts
 
 Currently we use Flyway for schema deployment. Versioned incremental update
-scripts are organized in the src/main/resources/sql/flyway folder. A Flyway
-'migration' task examines the target database instance, and makes sure that only
-changes not yet deployed are pushed.
+scripts are stored concatenated together in the
+src/main/resources/sql/flyway.dat file. A Flyway 'migration' task examines
+the target database instance, and makes sure that only changes not yet
+deployed are pushed.
 
 Below are the steps to submit a schema change:
 
@@ -36,16 +37,18 @@ Below are the steps to submit a schema change:
 
     `./nom_build generateSqlSchema`
 
-3.  Write an incremental DDL script that changes the existing schema to your new
-    one. The generated SQL file from the previous step should help. New create
-    table statements can be used as is, whereas alter table statements should be
-    written to change any existing tables.
+3.  Append an incremental DDL script that changes the existing schema to your
+    new one to `flyway.dat`. The generated SQL file from the previous step should
+    help. New create table statements can be used as is, whereas alter table
+    statements should be written to change any existing tables.
 
-    This script should be stored in a new file in the
-    `db/src/main/resources/sql/flyway` folder using the naming pattern
-    `V{id}__{description text}.sql`, where `{id}` is the next highest number
-    following the existing scripts in that folder. Note the double underscore in
-    the naming pattern.
+    This script should be appended to the end of
+    `db/src/main/resources/sql/flyway.dat`, prefixed by a `#file` line
+    definining the basename of the file.  For example, the line
+
+        #file add_foo_table
+
+    Would produce a flyway file of the form `V{id}__add_foo_table.sql`.
 
 4.  Run `./nom_build :nom:generate_golden_file`. This is a pseudo-task
     implemented in the `nom_build` script that does the following:

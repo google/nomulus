@@ -133,6 +133,54 @@ publishing {
   }
 }
 
+// Task and function definition to create the set of flyway files from a single flyway.dat file.
+
+task extractFlywayFiles {
+
+  def flywayDir = "$buildDir/resources/main/sql/flyway"
+  def flywaySourceFile = "$projectDir/src/main/resources/sql/flyway.dat"
+
+  def processFlywayFile = { String sourceFile, boolean generateOutputFiles ->
+    if (generateOutputFiles) {
+      mkdir flywayDir
+    }
+    def output
+    def version = 0
+    def result = []
+    new File(sourceFile).withReader { reader ->
+      def line;
+      while ((line = reader.readLine()) != null) {
+        if (line.startsWith("#file")) {
+          def basename = line.split()[1]
+          def fullName = "$flywayDir/V${++version}__${basename}.sql"
+          result.add(new File(fullName))
+
+          if (generateOutputFiles) {
+            // Initialize the output file.
+            output = new File(fullName)
+            output.write ''
+          }
+
+        // Checking if "output" has been set lets the script ignore any text before the first #file
+        // statement, which is useful for the initial copyright and instructions.
+        } else if (output != null) {
+          output << "$line\n"
+        }
+      }
+    }
+
+    return result
+  }
+
+  inputs.files(flywaySourceFile).withPropertyName("sourceFile")
+  outputs.files(processFlywayFile(flywaySourceFile, false))
+  doLast {
+    delete flywayDir
+    processFlywayFile(flywaySourceFile, true);
+  }
+}
+
+
 flyway {
   def accessInfo = project.ext.getJdbcAccessInfo()
 
@@ -166,8 +214,13 @@ dependencies {
   testCompile project(path: ':common', configuration: 'testing')
 }
 
-flywayInfo.dependsOn('buildNeeded')
-flywayValidate.dependsOn('buildNeeded')
+flywayInfo.dependsOn 'buildNeeded', extractFlywayFiles
+flywayValidate.dependsOn 'buildNeeded', extractFlywayFiles
+flywayMigrate.dependsOn extractFlywayFiles
+flywayRepair.dependsOn extractFlywayFiles
+flywayUndo.dependsOn extractFlywayFiles
+flywayValidate.dependsOn extractFlywayFiles
+test.dependsOn extractFlywayFiles
 
 if (ext.isRestricted()) {
   // Disable dangerous Flyway tasks in sandbox and production. Only allow info and validate.

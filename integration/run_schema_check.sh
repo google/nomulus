@@ -65,16 +65,39 @@ fi
 
 sandbox_tag=$(fetchVersion sql sandbox ${DEV_PROJECT})
 echo "Checking Flyway scripts against schema in Sandbox (${sandbox_tag})."
-modified_sqls=$(git diff --name-status ${sandbox_tag} \
-    db/src/main/resources/sql/flyway | grep "^M\|^D\|^R" | grep \.sql$ | wc -l)
 
-if [[ ${modified_sqls} = 0 ]]; then
+if git diff ${sandbox_tag} db/src/main/resources/sql/flyway.dat | \
+   awk -e 'BEGIN { exit 1; got_addition = 0 }
+             /^-/ { exit 1 }
+             /^+/ {
+                # To be added back after initial commit gets tagged for
+                # sandbox.
+                #if (!got_addition && substr($0, 1, 6) != "#file ") {
+                #  exit 1
+                #}
+                got_addition = 1;
+             }
+             /^ / { if (got_addition) exit 1 }
+             END { exit 0 }'
+then
   echo "No illegal change to deployed schema scripts."
-  exit 0
 else
-  echo "Changes to the following files are not allowed:"
-  echo $(git diff --name-status ${sandbox_tag} \
-      db/src/main/resources/sql/flyway | grep "^M\|^D\|^R" | grep \.sql$)
+  echo "This change is not allows:"
+  git diff ${sandbox_tag} db/src/main/resources/sql/flyway.dat
   echo "Make sure your branch is up to date with HEAD of master."
   exit 1
+fi
+
+echo "Checking that no flyway scripts have been added to the original source "
+echo "directory."
+if git diff --name-status ${sandbox_tag} \
+       db/src/main/resources/sql/flyway/* | \
+   grep '^[AM]'; then
+  echo 'Adding files directly to the flyway directory is not allowed.  ' \
+       'Please add your file contents to the end of ' \
+       'db/src/main/resources/sql/flyway.dat instead.'
+  exit 1
+else
+  echo 'No scripts added to original source dir.'
+  exit 0
 fi

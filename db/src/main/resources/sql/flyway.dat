@@ -1,0 +1,2009 @@
+Copyright 2020 The Nomulus Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+
+These are all of the flyway files (incremental SQL scripts) that are used to
+create the nomulus SQL database concatenated into a single file.  It is only
+valid to add new file fragments to the end of this file: any other changes
+will likely break flyway deployment.
+
+To add a new file fragment, prefix it with a line of the form:
+
+    #file file_base_name
+
+Text beneath that (up until the next #file line) will be expanded to a flyway
+file named V${N}__file_base_name.sql (where ${N} is a unique sequence number
+based on the order of the fragment in this master file).
+
+Text in this file is ignored up to the first #file line below.
+
+#file create_claims_list_and_entry
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+    create table "ClaimsEntry" (
+       revision_id int8 not null,
+        claim_key text not null,
+        domain_label text not null,
+        primary key (revision_id, domain_label)
+    );
+
+    create table "ClaimsList" (
+       revision_id  bigserial not null,
+        creation_timestamp timestamptz not null,
+        primary key (revision_id)
+    );
+
+    alter table if exists "ClaimsEntry"
+       add constraint FK6sc6at5hedffc0nhdcab6ivuq
+       foreign key (revision_id) 
+       references "ClaimsList";
+#file create_premium_list_and_entry
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+    create table "PremiumEntry" (
+       revision_id int8 not null,
+        price numeric(19, 2) not null,
+        domain_label text not null,
+        primary key (revision_id, domain_label)
+    );
+
+    create table "PremiumList" (
+       revision_id  bigserial not null,
+        creation_timestamp timestamptz not null,
+        currency bytea not null,
+        primary key (revision_id)
+    );
+
+    alter table if exists "PremiumEntry"
+       add constraint FKo0gw90lpo1tuee56l0nb6y6g5
+       foreign key (revision_id)
+       references "PremiumList";
+#file create_registry_lock
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+    create table "RegistryLock" (
+       revision_id  bigserial not null,
+        action text not null,
+        completion_timestamp timestamptz,
+        creation_timestamp timestamptz not null,
+        domain_name text not null,
+        is_superuser boolean not null,
+        registrar_id text not null,
+        registrar_poc_id text,
+        repo_id text not null,
+        verification_code text not null,
+        primary key (revision_id)
+    );
+
+    alter table if exists "RegistryLock" 
+       add constraint idx_registry_lock_repo_id_revision_id unique (repo_id, revision_id);
+#file registry_lock_add_index_on_verification_code
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+    create index if not exists idx_registry_lock_verification_code ON "RegistryLock"
+       using btree (verification_code);
+#file update_premium_list
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+alter table "PremiumList" add column if not exists name text not null;
+
+create index if not exists premiumlist_name_idx ON "PremiumList" (name);
+#file premium_list_bloom_filter
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+alter table "PremiumList" add column if not exists bloom_filter bytea not null;
+#file update_claims_list
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+alter table "ClaimsList" add column if not exists tmdb_generation_time timestamp with time zone not null;
+#file registry_lock_registrar_index
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create index if not exists idx_registry_lock_registrar_id ON "RegistryLock"
+   using btree (registrar_id);
+#file premium_list_currency_type
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+-- Note: We're OK with dropping this data since it's not live in production yet.
+alter table "PremiumList" drop column if exists currency;
+
+-- Note: This default was removed in V11.
+alter table "PremiumList" add column currency text not null default 'USD';
+#file create_reserved_list_and_entry
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+    create table "ReservedEntry" (
+       revision_id int8 not null,
+        comment text,
+        reservation_type int4 not null,
+        domain_label text not null,
+        primary key (revision_id, domain_label)
+    );
+
+    create table "ReservedList" (
+       revision_id  bigserial not null,
+        creation_timestamp timestamptz not null,
+        name text not null,
+        should_publish boolean not null,
+        primary key (revision_id)
+    );
+
+create index reservedlist_name_idx on "ReservedList" (name);
+
+    alter table if exists "ReservedEntry"
+       add constraint FKgq03rk0bt1hb915dnyvd3vnfc
+       foreign key (revision_id)
+       references "ReservedList";
+#file premium_entry_reorder_column
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+-- Remove default set in V9 that we no longer need.
+alter table "PremiumList" alter column currency drop default;
+#file create_cursor
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+  create table "Cursor" (
+       scope text not null,
+        type text not null,
+        cursor_time timestamptz not null,
+        last_update_time timestamptz not null,
+        primary key (scope, type)
+    );
+#file refactor_registry_lock
+-- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "RegistryLock" DROP COLUMN action;
+
+ALTER TABLE "RegistryLock" ADD COLUMN unlock_request_timestamp timestamptz;
+ALTER TABLE "RegistryLock" ADD COLUMN unlock_completion_timestamp timestamptz;
+ALTER TABLE "RegistryLock" ADD COLUMN last_update_timestamp timestamptz;
+
+ALTER TABLE "RegistryLock" RENAME creation_timestamp TO lock_request_timestamp;
+ALTER TABLE "RegistryLock" RENAME completion_timestamp TO lock_completion_timestamp;
+#file load_extension_for_hstore
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+CREATE EXTENSION IF NOT EXISTS hstore WITH SCHEMA public;
+#file add_epp_resources
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+    create table "Domain" (
+       repo_id text not null,
+        creation_client_id text,
+        creation_time timestamptz,
+        current_sponsor_client_id text,
+        deletion_time timestamptz,
+        last_epp_update_client_id text,
+        last_epp_update_time timestamptz,
+        statuses text[],
+        auth_info_repo_id text,
+        auth_info_value text,
+        fully_qualified_domain_name text,
+        idn_table_name text,
+        last_transfer_time timestamptz,
+        launch_notice_accepted_time timestamptz,
+        launch_notice_expiration_time timestamptz,
+        launch_notice_tcn_id text,
+        launch_notice_validator_id text,
+        registration_expiration_time timestamptz,
+        smd_id text,
+        subordinate_hosts text[],
+        tld text,
+        primary key (repo_id)
+    );
+
+create index IDX8nr0ke9mrrx4ewj6pd2ag4rmr on "Domain" (creation_time);
+create index IDX8ffrqm27qtj20jac056j7yq07 on "Domain" (current_sponsor_client_id);
+create index IDX5mnf0wn20tno4b9do88j61klr on "Domain" (deletion_time);
+create index IDX1rcgkdd777bpvj0r94sltwd5y on "Domain" (fully_qualified_domain_name);
+create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
+#file create_registrar
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create table "Registrar" (
+       client_id text not null,
+        allowed_tlds text[],
+        billing_account_map hstore,
+        billing_identifier int8,
+        block_premium_names boolean not null,
+        client_certificate text,
+        client_certificate_hash text,
+        contacts_require_syncing boolean not null,
+        creation_time timestamptz,
+        drive_folder_id text,
+        email_address text,
+        failover_client_certificate text,
+        failover_client_certificate_hash text,
+        fax_number text,
+        iana_identifier int8,
+        icann_referral_email text,
+        i18n_address_city text,
+        i18n_address_country_code text,
+        i18n_address_state text,
+        i18n_address_street_line1 text,
+        i18n_address_street_line2 text,
+        i18n_address_street_line3 text,
+        i18n_address_zip text,
+        ip_address_whitelist text[],
+        last_certificate_update_time timestamptz,
+        last_update_time timestamptz,
+        localized_address_city text,
+        localized_address_country_code text,
+        localized_address_state text,
+        localized_address_street_line1 text,
+        localized_address_street_line2 text,
+        localized_address_street_line3 text,
+        localized_address_zip text,
+        password_hash text,
+        phone_number text,
+        phone_passcode text,
+        po_number text,
+        rdap_base_urls text[],
+        registrar_name text not null,
+        registry_lock_allowed boolean not null,
+        password_salt text,
+        state text,
+        type text not null,
+        url text,
+        whois_server text,
+        primary key (client_id)
+    );
+
+create index registrar_name_idx on "Registrar" (registrar_name);
+create index registrar_iana_identifier_idx on "Registrar" (iana_identifier);
+#file create_registrar_poc
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create table "RegistrarPoc" (
+       email_address text not null,
+        allowed_to_set_registry_lock_password boolean not null,
+        fax_number text,
+        gae_user_id text,
+        name text,
+        phone_number text,
+        registry_lock_password_hash text,
+        registry_lock_password_salt text,
+        types text[],
+        visible_in_domain_whois_as_abuse boolean not null,
+        visible_in_whois_as_admin boolean not null,
+        visible_in_whois_as_tech boolean not null,
+        primary key (email_address)
+    );
+
+create index registrarpoc_gae_user_id_idx on "RegistrarPoc" (gae_user_id);
+#file create_lock
+ -- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ create table "Lock" (
+       resource_name text not null,
+        tld text not null,
+        acquired_time timestamptz not null,
+        expiration_time timestamptz not null,
+        request_log_id text not null,
+        primary key (resource_name, tld)
+    );
+#file add_registry_relock_reference
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "RegistryLock" ADD COLUMN relock_revision_id bigint;
+
+ALTER TABLE IF EXISTS "RegistryLock"
+  ADD CONSTRAINT FK2lhcwpxlnqijr96irylrh1707
+  FOREIGN KEY (relock_revision_id)
+  REFERENCES "RegistryLock";
+#file add_relock_duration
+ -- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "RegistryLock" ADD COLUMN relock_duration bigint;
+#file add_registry_lock_email_to_poc
+ -- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "RegistrarPoc" ADD COLUMN registry_lock_email_address text;
+#file update_ns_hosts
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create table "DomainHost" (
+   domain_repo_id text not null,
+    ns_host_v_keys text
+);
+
+create table "HostResource" (
+   repo_id text not null,
+    creation_client_id text,
+    creation_time timestamptz,
+    current_sponsor_client_id text,
+    deletion_time timestamptz,
+    last_epp_update_client_id text,
+    last_epp_update_time timestamptz,
+    statuses text[],
+    fully_qualified_host_name text,
+    last_superordinate_change timestamptz,
+    last_transfer_time timestamptz,
+    superordinate_domain bytea,
+    primary key (repo_id)
+);
+
+create table "HostResource_inetAddresses" (
+   host_resource_repo_id text not null,
+    inet_addresses bytea
+);
+
+alter table if exists "DomainHost"
+   add constraint FKfmi7bdink53swivs390m2btxg
+   foreign key (domain_repo_id)
+   references "Domain";
+
+alter table if exists "DomainHost"
+  add constraint FK_DomainHost_host_valid
+  foreign key (ns_host_v_keys)
+  references "HostResource";
+
+alter table if exists "HostResource_inetAddresses"
+   add constraint FK6unwhfkcu3oq6q347fxvpagv
+   foreign key (host_resource_repo_id)
+   references "HostResource";
+#file create_contact
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create table "Contact" (
+   repo_id text not null,
+    creation_client_id text not null,
+    creation_time timestamptz not null,
+    current_sponsor_client_id text not null,
+    deletion_time timestamptz,
+    last_epp_update_client_id text,
+    last_epp_update_time timestamptz,
+    statuses text[],
+    auth_info_repo_id text,
+    auth_info_value text,
+    contact_id text,
+    disclose_types_addr text[],
+    disclose_show_email boolean,
+    disclose_show_fax boolean,
+    disclose_mode_flag boolean,
+    disclose_types_name text[],
+    disclose_types_org text[],
+    disclose_show_voice boolean,
+    email text,
+    fax_phone_extension text,
+    fax_phone_number text,
+    addr_i18n_city text,
+    addr_i18n_country_code text,
+    addr_i18n_state text,
+    addr_i18n_street_line1 text,
+    addr_i18n_street_line2 text,
+    addr_i18n_street_line3 text,
+    addr_i18n_zip text,
+    addr_i18n_name text,
+    addr_i18n_org text,
+    addr_i18n_type text,
+    last_transfer_time timestamptz,
+    addr_local_city text,
+    addr_local_country_code text,
+    addr_local_state text,
+    addr_local_street_line1 text,
+    addr_local_street_line2 text,
+    addr_local_street_line3 text,
+    addr_local_zip text,
+    addr_local_name text,
+    addr_local_org text,
+    addr_local_type text,
+    search_name text,
+    voice_phone_extension text,
+    voice_phone_number text,
+    primary key (repo_id)
+);
+
+create index IDX3y752kr9uh4kh6uig54vemx0l on "Contact" (creation_time);
+create index IDXbn8t4wp85fgxjl8q4ctlscx55 on "Contact" (current_sponsor_client_id);
+create index IDXn1f711wicdnooa2mqb7g1m55o on "Contact" (deletion_time);
+create index IDX1p3esngcwwu6hstyua6itn6ff on "Contact" (search_name);
+
+alter table if exists "Contact"
+    add constraint UKoqd7n4hbx86hvlgkilq75olas unique (contact_id);
+
+alter table "Domain" alter column creation_time set not null;
+alter table "Domain" alter column creation_client_id set not null;
+alter table "Domain" alter column current_sponsor_client_id set not null;
+
+drop index IDX8ffrqm27qtj20jac056j7yq07;
+create index IDXkjt9yaq92876dstimd93hwckh on "Domain" (current_sponsor_client_id);
+
+alter table if exists "Contact"
+   add constraint FK1sfyj7o7954prbn1exk7lpnoe
+   foreign key (creation_client_id)
+   references "Registrar";
+
+alter table if exists "Contact"
+   add constraint FK93c185fx7chn68uv7nl6uv2s0
+   foreign key (current_sponsor_client_id)
+   references "Registrar";
+
+alter table if exists "Contact"
+   add constraint FKmb7tdiv85863134w1wogtxrb2
+   foreign key (last_epp_update_client_id)
+   references "Registrar";
+
+alter table if exists "Domain"
+   add constraint FK2jc69qyg2tv9hhnmif6oa1cx1
+   foreign key (creation_client_id)
+   references "Registrar";
+
+alter table if exists "Domain"
+   add constraint FK2u3srsfbei272093m3b3xwj23
+   foreign key (current_sponsor_client_id)
+   references "Registrar";
+
+alter table if exists "Domain"
+   add constraint FKjc0r9r5y1lfbt4gpbqw4wsuvq
+   foreign key (last_epp_update_client_id)
+   references "Registrar";
+#file domain_base_contacts
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "Domain" ADD COLUMN admin_contact text;
+ALTER TABLE "Domain" ADD COLUMN billing_contact text;
+ALTER TABLE "Domain" ADD COLUMN registrant_contact text;
+ALTER TABLE "Domain" ADD COLUMN tech_contact text;
+
+alter table if exists "Domain"
+   add constraint fk_domain_admin_contact
+   foreign key (admin_contact)
+   references "Contact";
+
+alter table if exists "Domain"
+   add constraint fk_domain_billing_contact
+   foreign key (billing_contact)
+   references "Contact";
+
+alter table if exists "Domain"
+   add constraint fk_domain_registrant_contact
+   foreign key (registrant_contact)
+   references "Contact";
+
+alter table if exists "Domain"
+   add constraint fk_domain_tech_contact
+   foreign key (tech_contact)
+   references "Contact";
+#file rename_vkey_fields
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "DomainHost" DROP CONSTRAINT FK_DomainHost_host_valid;
+ALTER TABLE "DomainHost" ADD COLUMN ns_hosts text;
+ALTER TABLE "DomainHost" DROP COLUMN ns_host_v_keys;
+ALTER TABLE "DomainHost"
+  ADD CONSTRAINT FK_DomainHost_host_valid
+  FOREIGN KEY (ns_hosts)
+  REFERENCES "HostResource";
+
+#file create_billing_event
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create table "BillingCancellation" (
+    billing_cancellation_id  bigserial not null,
+    client_id text not null,
+    domain_history_revision_id int8 not null,
+    domain_repo_id text not null,
+    event_time timestamptz not null,
+    flags text[],
+    reason text not null,
+    domain_name text not null,
+    billing_time timestamptz,
+    billing_event_id int8,
+    billing_recurrence_id int8,
+    primary key (billing_cancellation_id)
+);
+
+create table "BillingEvent" (
+    billing_event_id  bigserial not null,
+    client_id text not null,
+    domain_history_revision_id int8 not null,
+    domain_repo_id text not null,
+    event_time timestamptz not null,
+    flags text[],
+    reason text not null,
+    domain_name text not null,
+    allocation_token_id text,
+    billing_time timestamptz,
+    cancellation_matching_billing_recurrence_id int8,
+    cost_amount numeric(19, 2),
+    cost_currency text,
+    period_years int4,
+    synthetic_creation_time timestamptz,
+    primary key (billing_event_id)
+);
+
+create table "BillingRecurrence" (
+    billing_recurrence_id  bigserial not null,
+    client_id text not null,
+    domain_history_revision_id int8 not null,
+    domain_repo_id text not null,
+    event_time timestamptz not null,
+    flags text[],
+    reason text not null,
+    domain_name text not null,
+    recurrence_end_time timestamptz,
+    recurrence_time_of_year text,
+    primary key (billing_recurrence_id)
+);
+
+create index IDXeokttmxtpq2hohcioe5t2242b on "BillingCancellation" (client_id);
+create index IDX2exdfbx6oiiwnhr8j6gjpqt2j on "BillingCancellation" (event_time);
+create index IDXqa3g92jc17e8dtiaviy4fet4x on "BillingCancellation" (billing_time);
+create index IDX73l103vc5900ig3p4odf0cngt on "BillingEvent" (client_id);
+create index IDX5yfbr88439pxw0v3j86c74fp8 on "BillingEvent" (event_time);
+create index IDX6py6ocrab0ivr76srcd2okpnq on "BillingEvent" (billing_time);
+create index IDXplxf9v56p0wg8ws6qsvd082hk on "BillingEvent" (synthetic_creation_time);
+create index IDXhmv411mdqo5ibn4vy7ykxpmlv on "BillingEvent" (allocation_token_id);
+create index IDXn898pb9mwcg359cdwvolb11ck on "BillingRecurrence" (client_id);
+create index IDX6syykou4nkc7hqa5p8r92cpch on "BillingRecurrence" (event_time);
+create index IDXp3usbtvk0v1m14i5tdp4xnxgc on "BillingRecurrence" (recurrence_end_time);
+create index IDXjny8wuot75b5e6p38r47wdawu on "BillingRecurrence" (recurrence_time_of_year);
+
+alter table if exists "BillingEvent"
+   add constraint fk_billing_event_client_id
+   foreign key (client_id)
+   references "Registrar";
+
+alter table if exists "BillingEvent"
+   add constraint fk_billing_event_cancellation_matching_billing_recurrence_id
+   foreign key (cancellation_matching_billing_recurrence_id)
+   references "BillingRecurrence";
+
+alter table if exists "BillingCancellation"
+   add constraint fk_billing_cancellation_client_id
+   foreign key (client_id)
+   references "Registrar";
+
+alter table if exists "BillingCancellation"
+   add constraint fk_billing_cancellation_billing_event_id
+   foreign key (billing_event_id)
+   references "BillingEvent";
+
+alter table if exists "BillingCancellation"
+   add constraint fk_billing_cancellation_billing_recurrence_id
+   foreign key (billing_recurrence_id)
+   references "BillingRecurrence";
+
+alter table if exists "BillingRecurrence"
+   add constraint fk_billing_recurrence_client_id
+   foreign key (client_id)
+   references "Registrar";
+#file create_pollmessage
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create table "PollMessage" (
+    type text not null,
+    poll_message_id  bigserial not null,
+    registrar_id text not null,
+    contact_repo_id text,
+    contact_revision_id int8,
+    domain_repo_id text,
+    domain_revision_id int8,
+    event_time timestamptz not null,
+    host_repo_id text,
+    host_revision_id int8,
+    message text,
+    transfer_response_contact_id text,
+    transfer_response_domain_expiration_time timestamptz,
+    transfer_response_domain_name text,
+    pending_action_response_action_result boolean,
+    pending_action_response_name_or_id text,
+    pending_action_response_processed_date timestamptz,
+    pending_action_response_client_txn_id text,
+    pending_action_response_server_txn_id text,
+    transfer_response_gaining_registrar_id text,
+    transfer_response_losing_registrar_id text,
+    transfer_response_pending_transfer_expiration_time timestamptz,
+    transfer_response_transfer_request_time timestamptz,
+    transfer_response_transfer_status text,
+    autorenew_end_time timestamptz,
+    autorenew_domain_name text,
+    primary key (poll_message_id)
+);
+
+create index IDXe7wu46c7wpvfmfnj4565abibp on "PollMessage" (registrar_id);
+create index IDXaydgox62uno9qx8cjlj5lauye on "PollMessage" (event_time);
+
+alter table if exists "PollMessage"
+   add constraint fk_poll_message_registrar_id
+   foreign key (registrar_id)
+   references "Registrar";
+
+alter table if exists "PollMessage"
+   add constraint fk_poll_message_contact_repo_id
+   foreign key (contact_repo_id)
+   references "Contact";
+
+alter table if exists "PollMessage"
+   add constraint fk_poll_message_domain_repo_id
+   foreign key (domain_repo_id)
+   references "Domain";
+
+alter table if exists "PollMessage"
+   add constraint fk_poll_message_host_repo_id
+   foreign key (host_repo_id)
+   references "HostResource";
+
+alter table if exists "PollMessage"
+   add constraint fk_poll_message_transfer_response_gaining_registrar_id
+   foreign key (transfer_response_gaining_registrar_id)
+   references "Registrar";
+
+alter table if exists "PollMessage"
+   add constraint fk_poll_message_transfer_response_losing_registrar_id
+   foreign key (transfer_response_losing_registrar_id)
+   references "Registrar";
+#file superordinate_domain_vkey
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "HostResource" ALTER COLUMN superordinate_domain TYPE text;
+
+ALTER TABLE IF EXISTS "HostResource"
+   ADD CONSTRAINT fk_host_resource_superordinate_domain
+   FOREIGN KEY (superordinate_domain) REFERENCES "Domain"(repo_id);
+#file add_columns_for_transfer_data
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+alter table "Contact"
+    add column transfer_gaining_poll_message_id int8,
+    add column transfer_losing_poll_message_id int8,
+    add column transfer_billing_cancellation_id int8,
+    add column transfer_billing_event_id int8,
+    add column transfer_billing_recurrence_id int8,
+    add column transfer_autorenew_poll_message_id int8,
+    add column transfer_renew_period_unit text,
+    add column transfer_renew_period_value int4,
+    add column transfer_client_txn_id text,
+    add column transfer_server_txn_id text,
+    add column transfer_registration_expiration_time timestamptz,
+    add column transfer_gaining_registrar_id text,
+    add column transfer_losing_registrar_id text,
+    add column transfer_pending_expiration_time timestamptz,
+    add column transfer_request_time timestamptz,
+    add column transfer_status text;
+
+alter table "Domain"
+    add column transfer_gaining_poll_message_id int8,
+    add column transfer_losing_poll_message_id int8,
+    add column transfer_billing_cancellation_id int8,
+    add column transfer_billing_event_id int8,
+    add column transfer_billing_recurrence_id int8,
+    add column transfer_autorenew_poll_message_id int8,
+    add column transfer_renew_period_unit text,
+    add column transfer_renew_period_value int4,
+    add column transfer_client_txn_id text,
+    add column transfer_server_txn_id text,
+    add column transfer_registration_expiration_time timestamptz,
+    add column transfer_gaining_registrar_id text,
+    add column transfer_losing_registrar_id text,
+    add column transfer_pending_expiration_time timestamptz,
+    add column transfer_request_time timestamptz,
+    add column transfer_status text;
+
+alter table if exists "Contact"
+   add constraint fk_contact_transfer_gaining_registrar_id
+   foreign key (transfer_gaining_registrar_id)
+   references "Registrar";
+
+alter table if exists "Contact"
+   add constraint fk_contact_transfer_losing_registrar_id
+   foreign key (transfer_losing_registrar_id)
+   references "Registrar";
+
+alter table if exists "Domain"
+   add constraint fk_domain_transfer_gaining_registrar_id
+   foreign key (transfer_gaining_registrar_id)
+   references "Registrar";
+
+alter table if exists "Domain"
+   add constraint fk_domain_transfer_losing_registrar_id
+   foreign key (transfer_losing_registrar_id)
+   references "Registrar";
+
+alter table if exists "Domain"
+   add constraint fk_domain_transfer_billing_cancellation_id
+   foreign key (transfer_billing_cancellation_id)
+   references "BillingCancellation";
+
+alter table if exists "Domain"
+   add constraint fk_domain_transfer_billing_event_id
+   foreign key (transfer_billing_event_id)
+   references "BillingEvent";
+
+alter table if exists "Domain"
+   add constraint fk_domain_transfer_billing_recurrence_id
+   foreign key (transfer_billing_recurrence_id)
+   references "BillingRecurrence";
+#file inet_address_converter
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+AlTER TABLE "HostResource" ADD COLUMN inet_addresses text[];
+
+DROP TABLE IF EXISTS "HostResource_inetAddresses";
+#file client_id_to_registrar_id
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE IF EXISTS "Domain" RENAME creation_client_id TO creation_registrar_id;
+ALTER TABLE IF EXISTS "Domain" RENAME current_sponsor_client_id TO current_sponsor_registrar_id;
+ALTER TABLE IF EXISTS "Domain" RENAME last_epp_update_client_id TO last_epp_update_registrar_id;
+
+ALTER TABLE IF EXISTS "Contact" RENAME creation_client_id TO creation_registrar_id;
+ALTER TABLE IF EXISTS "Contact" RENAME current_sponsor_client_id TO current_sponsor_registrar_id;
+ALTER TABLE IF EXISTS "Contact" RENAME last_epp_update_client_id TO last_epp_update_registrar_id;
+
+ALTER TABLE IF EXISTS "HostResource" RENAME creation_client_id TO creation_registrar_id;
+ALTER TABLE IF EXISTS "HostResource" RENAME current_sponsor_client_id TO current_sponsor_registrar_id;
+ALTER TABLE IF EXISTS "HostResource" RENAME last_epp_update_client_id TO last_epp_update_registrar_id;
+
+ALTER TABLE IF EXISTS "Registrar" RENAME client_id TO registrar_id;
+
+ALTER TABLE IF EXISTS "BillingCancellation" RENAME client_id TO registrar_id;
+ALTER TABLE IF EXISTS "BillingCancellation" RENAME CONSTRAINT fk_billing_cancellation_client_id TO fk_billing_cancellation_registrar_id;
+ALTER TABLE IF EXISTS "BillingEvent" RENAME client_id TO registrar_id;
+ALTER TABLE IF EXISTS "BillingEvent" RENAME CONSTRAINT fk_billing_event_client_id TO fk_billing_event_registrar_id;
+ALTER TABLE IF EXISTS "BillingRecurrence" RENAME client_id TO registrar_id;
+ALTER TABLE IF EXISTS "BillingRecurrence" RENAME CONSTRAINT fk_billing_recurrence_client_id TO fk_billing_recurrence_registrar_id;
+#file drop_unused_transafer_data_columns_in_contact
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "Contact" DROP COLUMN transfer_billing_cancellation_id;
+ALTER TABLE "Contact" DROP COLUMN transfer_billing_recurrence_id;
+ALTER TABLE "Contact" DROP COLUMN transfer_autorenew_poll_message_id;
+ALTER TABLE "Contact" DROP COLUMN transfer_billing_event_id;
+ALTER TABLE "Contact" DROP COLUMN transfer_renew_period_unit;
+ALTER TABLE "Contact" DROP COLUMN transfer_renew_period_value;
+ALTER TABLE "Contact" DROP COLUMN transfer_registration_expiration_time;
+#file create_host_history
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+CREATE TABLE "HostHistory" (
+   history_revision_id int8 NOT NULL,
+    history_by_superuser boolean NOT NULL,
+    history_registrar_id text NOT NULL,
+    history_modification_time timestamptz NOT NULL,
+    history_reason text NOT NULL,
+    history_requested_by_registrar boolean NOT NULL,
+    history_client_transaction_id text,
+    history_server_transaction_id text,
+    history_type text NOT NULL,
+    history_xml_bytes bytea NOT NULL,
+    fully_qualified_host_name text,
+    inet_addresses text[],
+    last_superordinate_change timestamptz,
+    last_transfer_time timestamptz,
+    superordinate_domain text,
+    creation_registrar_id text NOT NULL,
+    creation_time timestamptz NOT NULL,
+    current_sponsor_registrar_id text NOT NULL,
+    deletion_time timestamptz,
+    last_epp_update_registrar_id text,
+    last_epp_update_time timestamptz,
+    statuses text[],
+    host_repo_id text NOT NULL,
+    primary key (history_revision_id)
+);
+
+CREATE INDEX IDXfg2nnjlujxo6cb9fha971bq2n ON "HostHistory" (creation_time);
+CREATE INDEX IDX1iy7njgb7wjmj9piml4l2g0qi ON "HostHistory" (history_registrar_id);
+CREATE INDEX IDXj77pfwhui9f0i7wjq6lmibovj ON "HostHistory" (fully_qualified_host_name);
+CREATE INDEX IDXknk8gmj7s47q56cwpa6rmpt5l ON "HostHistory" (history_type);
+CREATE INDEX IDX67qwkjtlq5q8dv6egtrtnhqi7 ON "HostHistory" (history_modification_time);
+
+ALTER TABLE IF EXISTS "HostHistory"
+   ADD CONSTRAINT FK3d09knnmxrt6iniwnp8j2ykga
+   FOREIGN KEY (history_registrar_id)
+   REFERENCES "Registrar";
+
+ALTER TABLE IF EXISTS "HostHistory"
+   ADD CONSTRAINT FK_HostHistory_HostResource
+   FOREIGN KEY (host_repo_id)
+   REFERENCES "HostResource";
+
+CREATE SEQUENCE public."history_id_sequence"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER TABLE ONLY public."HostHistory" ALTER COLUMN history_revision_id
+   SET DEFAULT nextval('public."history_id_sequence"'::regclass);
+#file rename_fully_qualified_names
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "Domain" RENAME COLUMN "fully_qualified_domain_name" TO "domain_name";
+ALTER TABLE "HostResource" RENAME COLUMN "fully_qualified_host_name" TO "host_name";
+ALTER TABLE "HostHistory" RENAME COLUMN "fully_qualified_host_name" TO "host_name";
+#file rename_allow_list
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "Registrar" RENAME COLUMN "ip_address_whitelist" TO "ip_address_allow_list";
+#file create_safebrowsing_threats
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create table "SafeBrowsingThreat" (
+       id  bigserial not null,
+        check_date text not null,
+        domain_name text not null,
+        domain_repo_id text not null,
+        registrar_id text not null,
+        threat_type text not null,
+        tld text not null,
+        primary key (id)
+    );
+
+create index safebrowsing_threat_registrar_id_idx on "SafeBrowsingThreat" (registrar_id);
+create index safebrowsing_threat_tld_idx on "SafeBrowsingThreat" (tld);
+create index safebrowsing_threat_check_date_idx on "SafeBrowsingThreat" (check_date);
+
+alter table if exists "SafeBrowsingThreat"
+    add constraint fk_safebrowsing_threat_registrar_id
+    foreign key (registrar_id)
+    references "Registrar";
+
+alter table if exists "SafeBrowsingThreat"
+    add constraint fk_safebrowsing_threat_domain_repo_id
+    foreign key (domain_repo_id)
+    references "Domain";
+#file update_spec11threatmatch
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+alter table if exists "SafeBrowsingThreat"
+  rename to "Spec11ThreatMatch";
+
+alter table if exists "Spec11ThreatMatch"
+  alter column "threat_type" type text[] using threat_type::text[];
+
+alter table if exists "Spec11ThreatMatch"
+  rename column "threat_type" to "threat_types";
+
+alter index if exists "safebrowsing_threat_registrar_id_idx"
+  rename to "spec11threatmatch_registrar_id_idx";
+
+alter index if exists "safebrowsing_threat_tld_idx"
+  rename to "spec11threatmatch_tld_idx";
+
+alter index if exists "safebrowsing_threat_check_date_idx"
+  rename to "spec11threatmatch_check_date_idx";
+#file create_contact_history
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+CREATE TABLE "ContactHistory" (
+   history_revision_id int8 NOT NULL,
+    history_by_superuser boolean NOT NULL,
+    history_registrar_id text,
+    history_modification_time timestamptz NOT NULL,
+    history_reason text NOT NULL,
+    history_requested_by_registrar boolean NOT NULL,
+    history_client_transaction_id text,
+    history_server_transaction_id text,
+    history_type text NOT NULL,
+    history_xml_bytes bytea NOT NULL,
+    auth_info_repo_id text,
+    auth_info_value text,
+    contact_id text,
+    disclose_types_addr text[],
+    disclose_show_email boolean,
+    disclose_show_fax boolean,
+    disclose_mode_flag boolean,
+    disclose_types_name text[],
+    disclose_types_org text[],
+    disclose_show_voice boolean,
+    email text,
+    fax_phone_extension text,
+    fax_phone_number text,
+    addr_i18n_city text,
+    addr_i18n_country_code text,
+    addr_i18n_state text,
+    addr_i18n_street_line1 text,
+    addr_i18n_street_line2 text,
+    addr_i18n_street_line3 text,
+    addr_i18n_zip text,
+    addr_i18n_name text,
+    addr_i18n_org text,
+    addr_i18n_type text,
+    last_transfer_time timestamptz,
+    addr_local_city text,
+    addr_local_country_code text,
+    addr_local_state text,
+    addr_local_street_line1 text,
+    addr_local_street_line2 text,
+    addr_local_street_line3 text,
+    addr_local_zip text,
+    addr_local_name text,
+    addr_local_org text,
+    addr_local_type text,
+    search_name text,
+    transfer_gaining_poll_message_id int8,
+    transfer_losing_poll_message_id int8,
+    transfer_client_txn_id text,
+    transfer_server_txn_id text,
+    transfer_gaining_registrar_id text,
+    transfer_losing_registrar_id text,
+    transfer_pending_expiration_time timestamptz,
+    transfer_request_time timestamptz,
+    transfer_status text,
+    voice_phone_extension text,
+    voice_phone_number text,
+    creation_registrar_id text NOT NULL,
+    creation_time timestamptz NOT NULL,
+    current_sponsor_registrar_id text NOT NULL,
+    deletion_time timestamptz,
+    last_epp_update_registrar_id text,
+    last_epp_update_time timestamptz,
+    statuses text[],
+    contact_repo_id text NOT NULL,
+    primary key (history_revision_id)
+);
+
+create index IDXo1xdtpij2yryh0skxe9v91sep on "ContactHistory" (creation_time);
+create index IDXhp33wybmb6tbpr1bq7ttwk8je on "ContactHistory" (history_registrar_id);
+create index IDX9q53px6r302ftgisqifmc6put on "ContactHistory" (history_type);
+create index IDXsudwswtwqnfnx2o1hx4s0k0g5 on "ContactHistory" (history_modification_time);
+
+ALTER TABLE IF EXISTS "ContactHistory"
+   ADD CONSTRAINT fk_contact_history_registrar_id
+   FOREIGN KEY (history_registrar_id)
+   REFERENCES "Registrar";
+
+ALTER TABLE IF EXISTS "ContactHistory"
+   ADD CONSTRAINT fk_contact_history_contact_repo_id
+   FOREIGN KEY (contact_repo_id)
+   REFERENCES "Contact";
+
+ALTER TABLE ONLY public."ContactHistory" ALTER COLUMN history_revision_id
+   SET DEFAULT nextval('public."history_id_sequence"'::regclass);
+#file add_updatetime_column
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "Contact" ADD COLUMN update_timestamp timestamptz;
+
+ALTER TABLE "ContactHistory" ADD COLUMN update_timestamp timestamptz;
+
+ALTER TABLE "Domain" ADD COLUMN update_timestamp timestamptz;
+
+ALTER TABLE "HostHistory" ADD COLUMN update_timestamp timestamptz;
+
+ALTER TABLE "HostResource" ADD COLUMN update_timestamp timestamptz;
+#file spec11threatmatch_remove_registrar_foreign_key
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+alter table if exists "Spec11ThreatMatch"
+  drop constraint "fk_safebrowsing_threat_registrar_id";
+#file add_columns_to_domain
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "Domain" ADD COLUMN billing_recurrence_id int8;
+ALTER TABLE "Domain" ADD COLUMN autorenew_poll_message_id int8;
+ALTER TABLE "Domain" ADD COLUMN deletion_poll_message_id int8;
+
+ALTER TABLE IF EXISTS "Domain"
+   ADD CONSTRAINT fk_domain_billing_recurrence_id
+   FOREIGN KEY (billing_recurrence_id)
+   REFERENCES "BillingEvent";
+
+ALTER TABLE IF EXISTS "Domain"
+   ADD CONSTRAINT fk_domain_autorenew_poll_message_id
+   FOREIGN KEY (autorenew_poll_message_id)
+   REFERENCES "PollMessage";
+
+ALTER TABLE IF EXISTS "Domain"
+   ADD CONSTRAINT fk_domain_deletion_poll_message_id
+   FOREIGN KEY (deletion_poll_message_id)
+   REFERENCES "PollMessage";
+#file add_txn_table
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create table "Transaction" (
+   id  bigserial not null,
+    contents bytea,
+    primary key (id)
+);
+#file update_relock_duration_type
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "RegistryLock" DROP COLUMN relock_duration;
+
+ALTER TABLE "RegistryLock" ADD COLUMN relock_duration interval;
+
+#file create_domain_history
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+CREATE TABLE "DomainHistory" (
+   history_revision_id int8 NOT NULL,
+    history_by_superuser boolean NOT NULL,
+    history_registrar_id text,
+    history_modification_time timestamptz NOT NULL,
+    history_reason text NOT NULL,
+    history_requested_by_registrar boolean NOT NULL,
+    history_client_transaction_id text,
+    history_server_transaction_id text,
+    history_type text NOT NULL,
+    history_xml_bytes bytea NOT NULL,
+    admin_contact text,
+    auth_info_repo_id text,
+    auth_info_value text,
+    billing_recurrence_id int8,
+    autorenew_poll_message_id int8,
+    billing_contact text,
+    deletion_poll_message_id int8,
+    domain_name text,
+    idn_table_name text,
+    last_transfer_time timestamptz,
+    launch_notice_accepted_time timestamptz,
+    launch_notice_expiration_time timestamptz,
+    launch_notice_tcn_id text,
+    launch_notice_validator_id text,
+    registrant_contact text,
+    registration_expiration_time timestamptz,
+    smd_id text,
+    subordinate_hosts text[],
+    tech_contact text,
+    tld text,
+    transfer_billing_cancellation_id int8,
+    transfer_billing_recurrence_id int8,
+    transfer_autorenew_poll_message_id int8,
+    transfer_billing_event_id int8,
+    transfer_renew_period_unit text,
+    transfer_renew_period_value int4,
+    transfer_registration_expiration_time timestamptz,
+    transfer_gaining_poll_message_id int8,
+    transfer_losing_poll_message_id int8,
+    transfer_client_txn_id text,
+    transfer_server_txn_id text,
+    transfer_gaining_registrar_id text,
+    transfer_losing_registrar_id text,
+    transfer_pending_expiration_time timestamptz,
+    transfer_request_time timestamptz,
+    transfer_status text,
+    creation_registrar_id text NOT NULL,
+    creation_time timestamptz NOT NULL,
+    current_sponsor_registrar_id text NOT NULL,
+    deletion_time timestamptz,
+    last_epp_update_registrar_id text,
+    last_epp_update_time timestamptz,
+    statuses text[],
+    update_timestamp timestamptz,
+    domain_repo_id text NOT NULL,
+    PRIMARY KEY (history_revision_id)
+);
+
+CREATE TABLE "DomainHistoryHost" (
+   domain_history_history_revision_id int8 NOT NULL,
+   host_repo_id text
+);
+
+ALTER TABLE IF EXISTS "DomainHost" RENAME ns_hosts TO host_repo_id;
+
+CREATE INDEX IDXrh4xmrot9bd63o382ow9ltfig ON "DomainHistory" (creation_time);
+CREATE INDEX IDXaro1omfuaxjwmotk3vo00trwm ON "DomainHistory" (history_registrar_id);
+CREATE INDEX IDXsu1nam10cjes9keobapn5jvxj ON "DomainHistory" (history_type);
+CREATE INDEX IDX6w3qbtgce93cal2orjg1tw7b7 ON "DomainHistory" (history_modification_time);
+
+ALTER TABLE IF EXISTS "DomainHistory"
+   ADD CONSTRAINT fk_domain_history_registrar_id
+   FOREIGN KEY (history_registrar_id)
+   REFERENCES "Registrar";
+
+ALTER TABLE IF EXISTS "DomainHistory"
+   ADD CONSTRAINT fk_domain_history_domain_repo_id
+   FOREIGN KEY (domain_repo_id)
+   REFERENCES "Domain";
+
+ALTER TABLE ONLY public."DomainHistory" ALTER COLUMN history_revision_id
+   SET DEFAULT nextval('public."history_id_sequence"'::regclass);
+
+ALTER TABLE IF EXISTS "DomainHistoryHost"
+   ADD CONSTRAINT FK6b8eqdxwe3guc56tgpm89atx
+   FOREIGN KEY (domain_history_history_revision_id)
+   REFERENCES "DomainHistory";
+#file add_grace_period_table
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create table "GracePeriod" (
+    id  bigserial not null,
+    billing_event_id int8,
+    billing_recurrence_id int8,
+    registrar_id text not null,
+    domain_repo_id text not null,
+    expiration_time timestamptz not null,
+    type text not null,
+    primary key (id)
+);
+
+alter table if exists "GracePeriod"
+   add constraint FK2mys4hojm6ev2g9tmy5aq6m7g
+   foreign key (domain_repo_id)
+   references "Domain";
+
+alter table if exists "GracePeriod"
+   add constraint fk_grace_period_billing_event_id
+   foreign key (billing_event_id)
+   references "BillingEvent";
+
+alter table if exists "GracePeriod"
+   add constraint fk_grace_period_billing_recurrence_id
+   foreign key (billing_recurrence_id)
+   references "BillingRecurrence";
+
+create index IDXj1mtx98ndgbtb1bkekahms18w on "GracePeriod" (domain_repo_id);
+#file Contact_contactId_index_to_non_unique
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create index IDXoqd7n4hbx86hvlgkilq75olas on "Contact" (contact_id);
+
+alter table if exists "Contact"
+    drop constraint if exists ukoqd7n4hbx86hvlgkilq75olas cascade;
+#file remove_spec11_domain_foreign_key
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+-- We want this in general, but not until we've migrated
+ALTER TABLE IF EXISTS "Spec11ThreatMatch" DROP CONSTRAINT "fk_safebrowsing_threat_domain_repo_id";
+#file domain_add_autorenew_end_time_column
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE "Domain" ADD COLUMN autorenew_end_time timestamptz;
+ALTER TABLE "DomainHistory" ADD COLUMN autorenew_end_time timestamptz;
+CREATE INDEX IDXlrq7v63pc21uoh3auq6eybyhl ON "Domain" (autorenew_end_time);
+#file create_allocation_token
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+CREATE TABLE "AllocationToken" (
+   token text NOT NULL,
+    update_timestamp timestamptz,
+    allowed_registrar_ids text[],
+    allowed_tlds text[],
+    creation_time timestamptz NOT NULL,
+    discount_fraction float8 NOT NULL,
+    discount_premiums boolean NOT NULL,
+    discount_years int4 NOT NULL,
+    domain_name text,
+    redemption_history_entry text,
+    token_status_transitions hstore,
+    token_type text,
+    PRIMARY KEY (token)
+);
+
+CREATE INDEX allocation_token_domain_name_idx ON "AllocationToken" (domain_name);
+#file use_composite_key_for_registrar_poc
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+alter table "RegistrarPoc" add column registrar_id text;
+
+alter table "RegistrarPoc" drop constraint "RegistrarPoc_pkey";
+
+alter table "RegistrarPoc"
+    add constraint "RegistrarPoc_pkey" primary key (registrar_id, email_address);
+#file use_composite_primary_key_for_domain_history_table
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+alter sequence "history_id_sequence" increment 50;
+
+alter table "DomainHistory" alter column history_revision_id drop default;
+alter table "ContactHistory" alter column history_revision_id drop default;
+alter table "HostHistory" alter column history_revision_id drop default;
+
+alter table if exists "DomainHistoryHost"
+    drop constraint fk6b8eqdxwe3guc56tgpm89atx;
+
+alter table "DomainHistory" drop constraint "DomainHistory_pkey";
+
+alter table "DomainHistory"
+    add constraint "DomainHistory_pkey" primary key (domain_repo_id, history_revision_id);
+
+alter table "DomainHistoryHost" add column domain_history_domain_repo_id text not null;
+
+alter table if exists "DomainHistoryHost"
+    add constraint FKa9woh3hu8gx5x0vly6bai327n
+    foreign key (domain_history_domain_repo_id, domain_history_history_revision_id)
+    references "DomainHistory";
+#file update_billing_constraint
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+ALTER TABLE ONLY public."Domain"
+    DROP CONSTRAINT fk_domain_billing_recurrence_id;
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_billing_recurrence_id FOREIGN KEY (billing_recurrence_id)
+    REFERENCES public."BillingRecurrence"(billing_recurrence_id);
+#file add_temp_history_id_sequence
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+create sequence "temp_history_id_sequence"
+    start with 1
+    increment by 50
+    no minvalue
+    no maxvalue
+    cache 1;
+#file add_tld_table
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+  create table "Tld" (
+       tld_name text not null,
+        add_grace_period_length interval not null,
+        allowed_fully_qualified_host_names text[],
+        allowed_registrant_contact_ids text[],
+        anchor_tenant_add_grace_period_length interval not null,
+        auto_renew_grace_period_length interval not null,
+        automatic_transfer_length interval not null,
+        claims_period_end timestamptz not null,
+        create_billing_cost_amount numeric(19, 2),
+        create_billing_cost_currency text,
+        creation_time timestamptz not null,
+        currency text not null,
+        dns_paused boolean not null,
+        dns_writers text[] not null,
+        drive_folder_id text,
+        eap_fee_schedule hstore not null,
+        escrow_enabled boolean not null,
+        invoicing_enabled boolean not null,
+        lordn_username text,
+        num_dns_publish_locks int4 not null,
+        pending_delete_length interval not null,
+        premium_list_name text,
+        pricing_engine_class_name text,
+        redemption_grace_period_length interval not null,
+        registry_lock_or_unlock_cost_amount numeric(19, 2),
+        registry_lock_or_unlock_cost_currency text,
+        renew_billing_cost_transitions hstore not null,
+        renew_grace_period_length interval not null,
+        reserved_list_names text[] not null,
+        restore_billing_cost_amount numeric(19, 2),
+        restore_billing_cost_currency text,
+        roid_suffix text,
+        server_status_change_billing_cost_amount numeric(19, 2),
+        server_status_change_billing_cost_currency text,
+        tld_state_transitions hstore not null,
+        tld_type text not null,
+        tld_unicode text not null,
+        transfer_grace_period_length interval not null,
+        primary key (tld_name)
+    );
+#file domain_history_fields
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+
+ALTER TABLE "DomainHistory" ADD COLUMN history_other_registrar_id text;
+ALTER TABLE "DomainHistory" ADD COLUMN history_period_unit text;
+ALTER TABLE "DomainHistory" ADD COLUMN history_period_value int4;
+
+CREATE TABLE "DomainTransactionRecord" (
+   id bigserial NOT NULL,
+    report_amount int4 NOT NULL,
+    report_field text NOT NULL,
+    reporting_time timestamptz NOT NULL,
+    tld text NOT NULL,
+    domain_repo_id text,
+    history_revision_id int8,
+    PRIMARY KEY (id)
+);
+
+ALTER TABLE IF EXISTS "DomainTransactionRecord"
+   ADD CONSTRAINT FKcjqe54u72kha71vkibvxhjye7
+   FOREIGN KEY (domain_repo_id, history_revision_id)
+   REFERENCES "DomainHistory";
+#file rename_host_table
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+
+ALTER TABLE "HostResource" RENAME TO "Host";
+
+ALTER TABLE "HostHistory" RENAME CONSTRAINT fk_hosthistory_hostresource TO fk_hosthistory_host;
+ALTER TABLE "Host"
+   RENAME CONSTRAINT fk_host_resource_superordinate_domain TO fk_host_superordinate_domain;
+ALTER TABLE "Host" RENAME CONSTRAINT "HostResource_pkey" TO "Host_pkey";
+#file history_null_content
+-- Copyright 2020 The Nomulus Authors. All Rights Reserved.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+-- Note: we drop the not-null constraints from the history tables but we keep them in the
+-- EPP resource tables since nothing inserted there should be null
+
+ALTER TABLE "ContactHistory" ALTER COLUMN creation_registrar_id DROP NOT NULL;
+ALTER TABLE "ContactHistory" ALTER COLUMN creation_time DROP NOT NULL;
+ALTER TABLE "ContactHistory" ALTER COLUMN current_sponsor_registrar_id DROP NOT NULL;
+ALTER TABLE "ContactHistory" ALTER COLUMN history_reason DROP NOT NULL;
+
+ALTER TABLE "DomainHistory" ALTER COLUMN creation_registrar_id DROP NOT NULL;
+ALTER TABLE "DomainHistory" ALTER COLUMN creation_time DROP NOT NULL;
+ALTER TABLE "DomainHistory" ALTER COLUMN current_sponsor_registrar_id DROP NOT NULL;
+ALTER TABLE "DomainHistory" ALTER COLUMN history_reason DROP NOT NULL;
+
+ALTER TABLE "HostHistory" ALTER COLUMN creation_registrar_id DROP NOT NULL;
+ALTER TABLE "HostHistory" ALTER COLUMN creation_time DROP NOT NULL;
+ALTER TABLE "HostHistory" ALTER COLUMN current_sponsor_registrar_id DROP NOT NULL;
+ALTER TABLE "HostHistory" ALTER COLUMN history_reason DROP NOT NULL;
