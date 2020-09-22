@@ -19,6 +19,9 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.util.CertificateChecker.CertificateViolation;
+import google.registry.util.CertificateChecker.EllipticCurveViolation;
+import google.registry.util.CertificateChecker.NotYetValidViolation;
+import google.registry.util.CertificateChecker.ValidityPeriodViolation;
 import java.security.AlgorithmParameters;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
@@ -34,7 +37,8 @@ public class CertificateCheckerTest {
 
   private static final String SSL_HOST = "www.example.tld";
 
-  private static CertificateChecker certificateChecker = new CertificateChecker(825, 30, 2048);
+  private static CertificateChecker certificateChecker =
+      new CertificateChecker(825, 30, 2048, ImmutableSet.of(256, 384));
 
   @Test
   void test_compliantCertificate() throws Exception {
@@ -64,12 +68,15 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(1000).toDate())
             .cert();
 
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
+    ImmutableSet<CertificateViolation> violations =
+        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
+    assertThat(violations).hasSize(3);
+    assertThat(violations)
         .isEqualTo(
             ImmutableSet.of(
-                CertificateViolation.NOT_YET_VALID,
-                CertificateViolation.ELLIPTIC_CURVE_NOT_ALLOWED,
-                CertificateViolation.VALIDITY_PERIOD_TOO_LONG));
+                new NotYetValidViolation(),
+                new ValidityPeriodViolation(825, 995),
+                new EllipticCurveViolation()));
   }
 
   @Test
@@ -80,8 +87,10 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).minusDays(50).toDate(),
                 DateTime.now(UTC).minusDays(10).toDate())
             .cert();
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.EXPIRED));
+    ImmutableSet<CertificateViolation> violations =
+        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
+    assertThat(violations).hasSize(1);
+    assertThat(violations.iterator().next().getName()).isEqualTo("Expired Certificate");
   }
 
   @Test
@@ -92,8 +101,10 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(10).toDate(),
                 DateTime.now(UTC).plusDays(50).toDate())
             .cert();
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.NOT_YET_VALID));
+    ImmutableSet<CertificateViolation> violations =
+        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
+    assertThat(violations).hasSize(1);
+    assertThat(violations.iterator().next().getName()).isEqualTo("Not Yet Valid");
   }
 
   @Test
@@ -104,8 +115,14 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).minusDays(10).toDate(),
                 DateTime.now(UTC).plusDays(1000).toDate())
             .cert();
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.VALIDITY_PERIOD_TOO_LONG));
+    ImmutableSet<CertificateViolation> violations =
+        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
+    assertThat(violations).hasSize(1);
+    assertThat(violations.iterator().next().getName()).isEqualTo("Validity Period Too Long");
+    assertThat(violations.iterator().next().getDisplayMessage())
+        .isEqualTo(
+            "The certificate must have a validity length of less than 825 days. This certificate"
+                + " has a validity length of 1010 days.");
   }
 
   @Test
@@ -116,8 +133,17 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).minusDays(50).toDate(),
                 DateTime.now(UTC).plusDays(10).toDate())
             .cert();
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.NEARING_EXPIRATION));
+    assertThat(certificateChecker.checkNearingExpiration(certificate, DateTime.now(UTC).toDate()))
+        .isTrue();
+
+    certificate =
+        SelfSignedCaCertificate.create(
+                SSL_HOST,
+                DateTime.now(UTC).minusDays(50).toDate(),
+                DateTime.now(UTC).plusDays(100).toDate())
+            .cert();
+    assertThat(certificateChecker.checkNearingExpiration(certificate, DateTime.now(UTC).toDate()))
+        .isFalse();
   }
 
   @Test
@@ -134,8 +160,10 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(100).toDate())
             .cert();
 
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.RSA_KEY_LENGTH_TOO_SMALL));
+    ImmutableSet<CertificateViolation> violations =
+        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
+    assertThat(violations).hasSize(1);
+    assertThat(violations.iterator().next().getName()).isEqualTo("RSA Key Length Too Long");
 
     // Key length higher than required
     keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
@@ -170,8 +198,10 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(100).toDate())
             .cert();
 
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.ELLIPTIC_CURVE_NOT_ALLOWED));
+    ImmutableSet<CertificateViolation> violations =
+        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
+    assertThat(violations).hasSize(1);
+    assertThat(violations.iterator().next().getName()).isEqualTo("Elliptic Curve Not Allowed");
 
     // Curve higher than P-256
     keyGen = KeyPairGenerator.getInstance("EC");
@@ -188,8 +218,9 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(100).toDate())
             .cert();
 
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.ELLIPTIC_CURVE_NOT_ALLOWED));
+    violations = certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
+    assertThat(violations).hasSize(1);
+    assertThat(violations.iterator().next().getName()).isEqualTo("Elliptic Curve Not Allowed");
 
     // Curve over 2^m field
     keyGen = KeyPairGenerator.getInstance("EC");
@@ -206,8 +237,9 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).plusDays(100).toDate())
             .cert();
 
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of(CertificateViolation.ELLIPTIC_CURVE_NOT_ALLOWED));
+    violations = certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
+    assertThat(violations).hasSize(1);
+    assertThat(violations.iterator().next().getName()).isEqualTo("Elliptic Curve Not Allowed");
 
     // Curve is P-256
     keyGen = KeyPairGenerator.getInstance("EC");
