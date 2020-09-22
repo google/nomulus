@@ -18,6 +18,9 @@ spec:
       containers:
       - name: proxy
         image: gcr.io/GCP_PROJECT/proxy
+        resources:
+          requests:
+            cpu: "101m"
         ports:
         - containerPort: 30000
           name: health-check
