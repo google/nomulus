@@ -34,7 +34,9 @@ ext {
   }
 
   getAccessInfoByHostPort = { hostAndPort ->
-    println "Database set to ${hostAndPort}."
+    if (!hostAndPort.isEmpty()) {
+      println "Database set to ${hostAndPort}."
+    }
     return [
         url: "jdbc:postgresql://${hostAndPort}/${dbName}",
         user: findProperty('dbUser'),
@@ -110,6 +112,7 @@ task compileApiJar(type: Jar) {
 configurations {
   compileApi
   schema
+  integration
 }
 
 artifacts {
@@ -185,5 +188,37 @@ if (ext.isRestricted()) {
             "${it.name} from commandline is not allowed.")
       }
     }
+  }
+}
+
+def testDbBaseSchemaTagProperty = 'baseSchemaTag'
+
+if (project.hasProperty(testDbBaseSchemaTagProperty)) {
+  repositories {
+    maven {
+      url project.publish_repo
+    }
+  }
+  dependencies {
+    integration "google.registry:schema:${project.findProperty(testDbBaseSchemaTagProperty)}"
+  }
+
+  // Checks if Flyway scripts can be deployed to an existing database with
+  // an older release. Please refer to SchemaTest.java for more information.
+  task schemaIncrementalDeployTest(dependsOn: processResources, type: Test) {
+    useJUnitPlatform()
+    include 'google/registry/sql/flyway/SchemaTest.*'
+    classpath = configurations.testRuntimeClasspath
+        .plus(configurations.integration)
+        .plus(files(sourceSets.test.output.classesDirs))
+        .plus(files(sourceSets.test.output.resourcesDir))
+        .plus(files(sourceSets.main.output.classesDirs))
+
+    // Declare test-runtime dependency on Flyway scripts in the resources dir.
+    // They are not on classpath since they conflict with the base schema.
+    inputs.dir sourceSets.main.output.resourcesDir
+
+    // Specifies which test to run using the following property
+    systemProperty 'deploy_to_existing_db', 'true'
   }
 }

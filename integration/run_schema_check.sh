@@ -25,12 +25,13 @@ $(basename "$0") OPTIONS
 Checks for post-deployment change to Flyway scripts.
 
 With Flyway, once an incremental change script is deployed, it must not be
-changed. Even changes to comments or whitespaces would cause validation
-failures during future deployment. This script checks for changes (including
-removal and renaming which may happen due to incorrect merge conflict
-resolution) to scripts that have already been deployed to Sandbox. The
-assumption is that the schema in Sandbox is always newer than that in
-production.
+edited, renamed, or deleted. This script checks for changes to scripts that have
+already been deployed to Sandbox. The assumption is that the schema in Sandbox
+is always newer than that in production. Please refer to Gradle task
+:db:schemaIncrementalDeployTest for more information.
+
+Note that this test MAY fail to catch forbidden changes during the period when
+a new schema release is created but not yet deployed to Sandbox.
 
 A side-effect of this check is that old branches missing recently deployed
 scripts must update first.
@@ -65,16 +66,13 @@ fi
 
 sandbox_tag=$(fetchVersion sql sandbox ${DEV_PROJECT})
 echo "Checking Flyway scripts against schema in Sandbox (${sandbox_tag})."
-modified_sqls=$(git diff --name-status ${sandbox_tag} \
-    db/src/main/resources/sql/flyway | grep "^M\|^D\|^R" | grep \.sql$ | wc -l)
 
-if [[ ${modified_sqls} = 0 ]]; then
-  echo "No illegal change to deployed schema scripts."
-  exit 0
-else
-  echo "Changes to the following files are not allowed:"
-  echo $(git diff --name-status ${sandbox_tag} \
-      db/src/main/resources/sql/flyway | grep "^M\|^D\|^R" | grep \.sql$)
-  echo "Make sure your branch is up to date with HEAD of master."
-  exit 1
-fi
+# Do not use the 'gcs:' scheme in the Maven repo URL on the command line. It
+# does not work on Kokoro. A GCP credential is needed when 'gcs:' is used.
+# The default credential on Kokoro VM does not have the scopes needed to access
+# any GCS bucket, including public ones.
+# Incidentally, 'gcs:' can be used on Cloud Build.
+(cd ${SCRIPT_DIR}/..; \
+    ./gradlew :db:schemaIncrementalDeployTest \
+        -PbaseSchemaTag=${sandbox_tag} \
+        -Ppublish_repo=https://storage.googleapis.com/${DEV_PROJECT}-deployed-tags/maven)
