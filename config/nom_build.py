@@ -75,6 +75,7 @@ Pseudo-commands:
 """
 
 # Define all of our special gradle properties here.
+# TODO(b/169318491): use consistent naming style for properties and variables.
 PROPERTIES = [
     Property('mavenUrl',
              'URL to use for the main maven repository (defaults to maven '
@@ -124,6 +125,9 @@ PROPERTIES = [
              'server/schema integration tests. Please refer to <a '
              'href="./integration/README.md">integration project</a> for more '
              'information.'),
+    Property('baseSchemaTag',
+             'The nomulus version tag of the schema for use in the schema'
+             'deployment integration test (:db:schemaIncrementalDeployTest)'),
     Property('schema_version',
              'The nomulus version tag of the schema for use in a database'
              'integration test.'),

@@ -260,7 +260,7 @@ subprojects {
       // in the 'configurations' block, the following code must run after
       // project evaluation, when all configurations have been created.
       configurations.each {
-        if (it.name != 'dependencyLicenseReport') {
+        if (it.name != 'dependencyLicenseReport' && it.name != 'integration') {
           it.resolutionStrategy.activateDependencyLocking()
         }
       }
