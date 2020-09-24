@@ -67,18 +67,35 @@ sandbox_tag=$(fetchVersion sql sandbox ${DEV_PROJECT})
 echo "Checking Flyway scripts against schema in Sandbox (${sandbox_tag})."
 
 if git diff ${sandbox_tag} db/src/main/resources/sql/flyway.dat | \
-   awk -e 'BEGIN { exit 1; got_addition = 0 }
-             /^-/ { exit 1 }
-             /^+/ {
-                # To be added back after initial commit gets tagged for
-                # sandbox.
-                #if (!got_addition && substr($0, 1, 6) != "#file ") {
-                #  exit 1
-                #}
-                got_addition = 1;
-             }
-             /^ / { if (got_addition) exit 1 }
-             END { exit 0 }'
+   awk -e '
+       # Script to verify that the only changes since the last version are
+       # file additions.
+       BEGIN { got_addition = 0 }
+
+       # If the line starts with a hypen, something has been removed.  That
+       # should never happen.
+       /^-/ { exit 1 }
+
+       # If the line starts with a plus, something has been added.  That is ok
+       # as long as the first thing added is a #file line and it was added to
+       # the end of the file, so we check for the former and record the fact
+       # that we got an addition.
+       /^+/ {
+          # To be added back after initial commit gets tagged for
+          # sandbox (verifies that the first addition is a #file line)
+          #if (!got_addition && substr($0, 1, 6) != "#file ") {
+          #  exit 1
+          #}
+          got_addition = 1;
+       }
+
+       # If the line starts with a space, it is a context line (i.e. not a
+       # changed line).  We should only see context lines before an addition.
+       # If we ever see it after an addition, that means that lines have been
+       # inserted into the existing files rather than appended.
+       /^ / { if (got_addition) exit 1 }
+
+       END { exit 0 }'
 then
   echo "No illegal change to deployed schema scripts."
 else
