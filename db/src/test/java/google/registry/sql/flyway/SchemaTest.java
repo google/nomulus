@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.truth.TextDiffSubject.assertThat;
 
 import com.google.common.base.Joiner;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.io.Resources;
 import google.registry.persistence.NomulusPostgreSql;
 import java.io.File;
@@ -26,15 +27,40 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container.ExecResult;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** Unit tests about Cloud SQL schema. */
+/**
+ * Schema deployment tests using Flyway.
+ *
+ * <p>This class has two test methods:
+ *
+ * <ul>
+ *   <li>{@link #deploySchema_emptyDb()} is invoked only in UNIT tests (:db:test in Gradle). It
+ *       deploys the entire set of Flyway scripts (found on classpath) to an empty database and
+ *       compares the resulting schema with the golden schema.
+ *   <li>{@link #deploySchema_existingDb()} is invoked only in an integration test
+ *       (:db:schemaIncrementalDeployTest in Gradle). It first populates the test database with an
+ *       earlier release of the schema (found on the classpath), then deploys the latest Flyway
+ *       scripts (found on local filesystem under the resources directory) to that database. This
+ *       test detects all forbidden changes to deployed scripts including content change, file
+ *       renaming, and file deletion.
+ *       <p>This test also checks for out-of-order version numbers, i.e., new scripts with lower
+ *       numbers than that of the last deployed script. Out-of-order versions are confusing to
+ *       maintainers, however, Flyway does not provide ways to check before schema deployment. In
+ *       this test, out-of-order scripts are ignored in the incremental-deployment phase (default
+ *       Flyway behavior). The final validate call will fail on them.
+ * </ul>
+ */
 @Testcontainers
 class SchemaTest {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // Resource path that is mapped to the testcontainer instance.
   private static final String MOUNTED_RESOURCE_PATH = "testcontainer/mount";
@@ -57,7 +83,8 @@ class SchemaTest {
               MOUNTED_RESOURCE_PATH, CONTAINER_MOUNT_POINT, BindMode.READ_WRITE);
 
   @Test
-  void deploySchema_success() throws Exception {
+  @DisabledIfSystemProperty(named = "deploy_to_existing_db", matches = ".*")
+  void deploySchema_emptyDb() throws Exception {
     Flyway flyway =
         Flyway.configure()
             .locations("sql/flyway")
@@ -84,6 +111,32 @@ class SchemaTest {
 
     assertThat(dumpedSchema)
         .hasSameContentAs(Resources.getResource("sql/schema/nomulus.golden.sql"));
+  }
+
+  @Test
+  @EnabledIfSystemProperty(named = "deploy_to_existing_db", matches = ".*")
+  void deploySchema_existingDb() {
+    // Initialize database with the base schema, which is on the classpath.
+    Flyway flyway =
+        Flyway.configure()
+            .locations("sql/flyway")
+            .dataSource(
+                sqlContainer.getJdbcUrl(), sqlContainer.getUsername(), sqlContainer.getPassword())
+            .load();
+    flyway.migrate();
+    logger.atInfo().log("Base schema version: %s", flyway.info().current().getVersion().toString());
+
+    // Deploy latest scripts from resources directory.
+    flyway =
+        Flyway.configure()
+            .locations("filesystem:build/resources/main/sql/flyway")
+            .dataSource(
+                sqlContainer.getJdbcUrl(), sqlContainer.getUsername(), sqlContainer.getPassword())
+            .load();
+    flyway.migrate();
+    flyway.validate();
+    logger.atInfo().log(
+        "Latest schema version: %s", flyway.info().current().getVersion().toString());
   }
 
   private static String[] getSchemaDumpCommand(String username, String dbName) {

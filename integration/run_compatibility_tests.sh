@@ -79,6 +79,8 @@ function runTest() {
   echo "Running test with -Pnomulus_version=${nomulus_version}" \
       "-Pschema_version=${schema_version}"
 
+  # The https scheme in the Maven repo URL below is required for Kokoro. See
+  # ./run_schema_check.sh for more information.
   (cd ${SCRIPT_DIR}/..; \
       ./gradlew :integration:sqlIntegrationTest \
           -PdevProject=${dev_project} \
