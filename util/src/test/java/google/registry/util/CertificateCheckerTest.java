@@ -75,7 +75,7 @@ public class CertificateCheckerTest {
         .isEqualTo(
             ImmutableSet.of(
                 new NotYetValidViolation(),
-                new ValidityPeriodViolation(825, 995),
+                new ValidityPeriodViolation(825),
                 new EllipticCurveViolation()));
   }
 
@@ -120,9 +120,7 @@ public class CertificateCheckerTest {
     assertThat(violations).hasSize(1);
     assertThat(violations.iterator().next().getName()).isEqualTo("Validity Period Too Long");
     assertThat(violations.iterator().next().getDisplayMessage())
-        .isEqualTo(
-            "The certificate must have a validity length of less than 825 days. This certificate"
-                + " has a validity length of 1010 days.");
+        .isEqualTo("The certificate must have a validity length of less than 825 days.");
   }
 
   @Test
@@ -133,7 +131,7 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).minusDays(50).toDate(),
                 DateTime.now(UTC).plusDays(10).toDate())
             .cert();
-    assertThat(certificateChecker.checkNearingExpiration(certificate, DateTime.now(UTC).toDate()))
+    assertThat(certificateChecker.isNearingExpiration(certificate, DateTime.now(UTC).toDate()))
         .isTrue();
 
     certificate =
@@ -142,7 +140,7 @@ public class CertificateCheckerTest {
                 DateTime.now(UTC).minusDays(50).toDate(),
                 DateTime.now(UTC).plusDays(100).toDate())
             .cert();
-    assertThat(certificateChecker.checkNearingExpiration(certificate, DateTime.now(UTC).toDate()))
+    assertThat(certificateChecker.isNearingExpiration(certificate, DateTime.now(UTC).toDate()))
         .isFalse();
   }
 

@@ -58,9 +58,9 @@ public class CertificateChecker {
     } else if (certificate.getNotBefore().after(now)) {
       violations.add(new NotYetValidViolation());
     }
-    int validityLength = getValidityLength(certificate);
+    int validityLength = getValidityLengthInDays(certificate);
     if (validityLength > maxValidityDays) {
-      violations.add(new ValidityPeriodViolation(maxValidityDays, validityLength));
+      violations.add(new ValidityPeriodViolation(maxValidityDays));
     }
 
     // Check Key Strengths
@@ -68,8 +68,7 @@ public class CertificateChecker {
     if (key.getAlgorithm().equals("RSA")) {
       RSAPublicKey rsaPublicKey = (RSAPublicKey) key;
       if (rsaPublicKey.getModulus().bitLength() < minimumRsaKeyLength) {
-        violations.add(
-            new RsaKeyLengthViolation(minimumRsaKeyLength, rsaPublicKey.getModulus().bitLength()));
+        violations.add(new RsaKeyLengthViolation(minimumRsaKeyLength));
       }
     } else if (key.getAlgorithm().equals("EC")) {
       if (!isEcCurveTypeValid((ECPublicKey) key, curves)) {
@@ -82,7 +81,7 @@ public class CertificateChecker {
   }
 
   /** Returns true if the certificate is nearing expiration. */
-  public boolean checkNearingExpiration(X509Certificate certificate, Date now) {
+  public boolean isNearingExpiration(X509Certificate certificate, Date now) {
     Date nearingExpirationDate =
         DateTime.parse(certificate.getNotAfter().toInstant().toString())
             .minusDays(daysToExpiration)
@@ -90,7 +89,7 @@ public class CertificateChecker {
     return now.after(nearingExpirationDate);
   }
 
-  private static int getValidityLength(X509Certificate certificate) {
+  private static int getValidityLengthInDays(X509Certificate certificate) {
     DateTime start = DateTime.parse(certificate.getNotBefore().toInstant().toString());
     DateTime end = DateTime.parse(certificate.getNotAfter().toInstant().toString());
     return Days.daysBetween(start.withTimeAtStartOfDay(), end.withTimeAtStartOfDay()).getDays();
@@ -157,20 +156,12 @@ public class CertificateChecker {
   }
 
   public static class ValidityPeriodViolation extends CertificateViolation {
-    int validityLength;
-
-    ValidityPeriodViolation(int maxValidityDays, int validityLength) {
+    ValidityPeriodViolation(int maxValidityDays) {
       super(
           "Validity Period Too Long",
           String.format(
-              "The certificate must have a validity length of less than %d days. This certificate"
-                  + " has a validity length of %d days.",
-              maxValidityDays, validityLength));
-      this.validityLength = validityLength;
-    }
-
-    int getValidityLength() {
-      return validityLength;
+              "The certificate must have a validity length of less than %d days.",
+              maxValidityDays));
     }
   }
 
@@ -181,19 +172,10 @@ public class CertificateChecker {
   }
 
   public static class RsaKeyLengthViolation extends CertificateViolation {
-    int keyLength;
-
-    RsaKeyLengthViolation(int minimumRsaKeyLength, int keyLength) {
+    RsaKeyLengthViolation(int minimumRsaKeyLength) {
       super(
           "RSA Key Length Too Long",
-          String.format(
-              "The minimum RSA key length is %d. This certificate has a key length of %d.",
-              minimumRsaKeyLength, keyLength));
-      this.keyLength = keyLength;
-    }
-
-    int getKeyLength() {
-      return keyLength;
+          String.format("The minimum RSA key length is %d.", minimumRsaKeyLength));
     }
   }
 
