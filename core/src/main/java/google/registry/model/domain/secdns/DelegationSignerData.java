@@ -117,13 +117,19 @@ public class DelegationSignerData extends ImmutableObject {
   }
 
   public static DelegationSignerData create(
-      int keyTag, int algorithm, int digestType, byte[] digest) {
+      int keyTag, int algorithm, int digestType, byte[] digest, String domainRepoId) {
     DelegationSignerData instance = new DelegationSignerData();
     instance.keyTag = keyTag;
     instance.algorithm = algorithm;
     instance.digestType = digestType;
     instance.digest = digest;
+    instance.domainRepoId = domainRepoId;
     return instance;
+  }
+
+  public static DelegationSignerData create(
+      int keyTag, int algorithm, int digestType, byte[] digest) {
+    return create(keyTag, algorithm, digestType, digest, null);
   }
 
   public static DelegationSignerData create(
