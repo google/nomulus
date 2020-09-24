@@ -27,7 +27,7 @@ Checks for post-deployment change to Flyway scripts.
 With Flyway, once an incremental change script is deployed, it must not be
 edited, renamed, or deleted. This script checks for changes to scripts that have
 already been deployed to Sandbox. The assumption is that the schema in Sandbox
-is always newer than that in production. Please refer to Gradle task
+is always at least as recent as that in production. Please refer to Gradle task
 :db:schemaIncrementalDeployTest for more information.
 
 Note that this test MAY fail to catch forbidden changes during the period when
@@ -67,11 +67,12 @@ fi
 sandbox_tag=$(fetchVersion sql sandbox ${DEV_PROJECT})
 echo "Checking Flyway scripts against schema in Sandbox (${sandbox_tag})."
 
-# Do not use the 'gcs:' scheme in the Maven repo URL on the command line. It
-# does not work on Kokoro. A GCP credential is needed when 'gcs:' is used.
-# The default credential on Kokoro VM does not have the scopes needed to access
-# any GCS bucket, including public ones.
-# Incidentally, 'gcs:' can be used on Cloud Build.
+# The URL of the Maven repo on GCS for the publish_repo parameter must use the
+# https scheme (https://storage.googleapis.com/{BUCKET}/{PATH}) in order to work
+# with Kokoro. Gradle's alternative gcs scheme does not work on Kokoro: a GCP
+# credential with proper scopes for GCS access is required even for public
+# buckets, however, Kokoro VM instances are not set up with such credentials.
+# Incidentally, gcs can be used on Cloud Build.
 (cd ${SCRIPT_DIR}/..; \
     ./gradlew :db:schemaIncrementalDeployTest \
         -PbaseSchemaTag=${sandbox_tag} \

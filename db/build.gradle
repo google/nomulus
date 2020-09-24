@@ -34,9 +34,7 @@ ext {
   }
 
   getAccessInfoByHostPort = { hostAndPort ->
-    if (!hostAndPort.isEmpty()) {
-      println "Database set to ${hostAndPort}."
-    }
+    println "Database set to ${hostAndPort}."
     return [
         url: "jdbc:postgresql://${hostAndPort}/${dbName}",
         user: findProperty('dbUser'),
@@ -61,8 +59,11 @@ ext {
   getJdbcAccessInfo = {
     if (allDbEnv.contains(dbServer)) {
       return getSocketFactoryAccessInfo(dbServer)
-    } else {
+    } else if (!dbServer.isEmpty()) {
       return getAccessInfoByHostPort(dbServer)
+    } else {
+      // Not connecting to a database. Return a dummy object for Flyway config.
+      return [ url: '', user: '', password: '' ]
     }
   }
 
@@ -191,16 +192,14 @@ if (ext.isRestricted()) {
   }
 }
 
-def testDbBaseSchemaTagProperty = 'baseSchemaTag'
-
-if (project.hasProperty(testDbBaseSchemaTagProperty)) {
+if (project.baseSchemaTag != '') {
   repositories {
     maven {
       url project.publish_repo
     }
   }
   dependencies {
-    integration "google.registry:schema:${project.findProperty(testDbBaseSchemaTagProperty)}"
+    integration "google.registry:schema:${project.baseSchemaTag}"
   }
 
   // Checks if Flyway scripts can be deployed to an existing database with

@@ -116,7 +116,7 @@ class SchemaTest {
   @Test
   @EnabledIfSystemProperty(named = "deploy_to_existing_db", matches = ".*")
   void deploySchema_existingDb() {
-    // Initialize databse with the base schema, which is on the classpath.
+    // Initialize database with the base schema, which is on the classpath.
     Flyway flyway =
         Flyway.configure()
             .locations("sql/flyway")
