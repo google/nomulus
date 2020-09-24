@@ -200,7 +200,8 @@ org.apache.commons:commons-compress:1.20
 org.apache.commons:commons-lang3:3.5
 org.apache.httpcomponents:httpclient:4.5.11
 org.apache.httpcomponents:httpcore:4.4.13
-org.apache.logging.log4j:log4j-api:2.6.2
+org.apache.logging.log4j:log4j-api:2.13.3
+org.apache.logging.log4j:log4j-core:2.13.3
 org.bouncycastle:bcpg-jdk15on:1.61
 org.bouncycastle:bcprov-jdk15on:1.61
 org.checkerframework:checker-compat-qual:2.5.5

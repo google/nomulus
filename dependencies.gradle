@@ -124,6 +124,7 @@ ext {
       'org.apache.ftpserver:ftpserver-core:1.0.6',
       'org.apache.httpcomponents:httpclient:4.5.11',
       'org.apache.httpcomponents:httpcore:4.4.13',
+      'org.apache.logging.log4j:log4j-core:2.13.3',
       'org.apache.sshd:sshd-core:2.0.0',
       'org.apache.sshd:sshd-scp:2.0.0',
       'org.apache.sshd:sshd-sftp:2.0.0',
