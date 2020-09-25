@@ -18,6 +18,7 @@ Error Prone) so we must write them manually.
 """
 
 import os
+from typing import List, Tuple
 import sys
 import re
 
@@ -178,6 +179,91 @@ PRESUBMITS = {
         "JavaScript files should not include console logging."
 }
 
+# Note that this regex only works for one kind of flyway file.  If we want to
+# start using "R" and "U" files we'll need to update this script.
+FLYWAY_FILE_RX = re.compile(r'V(\d+)__.*')
+
+
+def get_seqnum(filename: str, location: str) -> int:
+  """Extracts the sequence number from a filename."""
+  m = FLYWAY_FILE_RX.match(filename)
+  if m is None:
+    raise ValueError(f'Illegal flyway filename: {filename} in {location}')
+  return int(m.group(1))
+
+
+def files_by_seqnum(files: List[str], location: str) -> List[Tuple[int, str]]:
+  """Returns the list of seqnum, filename sorted by sequence number."""
+  return [(get_seqnum(filename, location), filename) for filename in files]
+
+
+def has_valid_order(indexed_files: List[Tuple[int, str]], location: str) -> bool:
+  """Verify that sequence numbers are in order without gaps or duplicates.
+
+  Args:
+    files: List of seqnum, filename for a list of flyway files.
+    location: Where the list of files came from (for error reporting).
+
+  Returns:
+    True if the file list is valid.
+  """
+  last_index = 0
+  valid = True
+  for seqnum, filename in indexed_files:
+    if seqnum == last_index:
+      print(f'duplicate flyway file sequence number found in {location}: '
+            f'{filename}')
+      valid = False
+    elif seqnum < last_index:
+      print(f'File {filename} in {location} is out of order.')
+      valid = False
+    elif seqnum != last_index + 1:
+      print(f'Missing flyway sequence number {last_index + 1} in {location}.  '
+            f'Next file is {filename}')
+      valid = False
+    last_index = seqnum
+  return valid
+
+
+def verify_flyway_index():
+  """Verifies that the flyway index file is in sync with the directory."""
+  fail = False
+
+  # Sort the files in the flyway directory by their sequence number.
+  files = sorted(
+      files_by_seqnum(os.listdir('db/src/main/resources/sql/flyway'),
+                      'flyway directory'))
+
+  # Make sure that there are no gaps and no duplicate sequence numbers in the
+  # files themselves.
+  if not has_valid_order(files, 'flyway directory'):
+    fail = True
+
+  # Remove the sequence numbers and compare against the index file contents.
+  files = [filename[1] for filename in sorted(files)]
+  with open('db/src/main/resources/sql/flyway.idx') as index:
+    indexed_files = index.read().splitlines()
+  if files != indexed_files:
+    unindexed = set(files) - set(indexed_files)
+    if unindexed:
+      print(f'The following flyway files are not in flyway.idx: {unindexed}')
+
+    nonexistent = set(indexed_files) - set(files)
+    if nonexistent:
+      print('The following files are in flyway.idx but not in the flyway '
+            f'directory: {nonexistent}')
+
+    # Do an ordering check on the index file (ignore the result, we're failing
+    # anyway).
+    has_valid_order(files_by_seqnum(indexed_files, 'flyway.idx'), 'flyway.idx')
+    fail = True
+
+  if fail:
+    print('Please fix any conflicts and run "./nom_build '
+          ':db:generateFlywayIndex"')
+
+  return fail
+
 
 def get_files():
   for root, dirnames, filenames in os.walk("."):
@@ -196,6 +282,11 @@ if __name__ == "__main__":
     if error_messages:
       failed = True
       print("%s had errors: \n  %s" % (file, "\n  ".join(error_messages)))
+
+  # And now for something completely different: check to see if the flyway
+  # index is up-to-date.  It's quicker to do it here than in the unit tests:
+  # when we put it here it fails fast before all of the tests are run.
+  failed |= verify_flyway_index()
 
   if failed:
     sys.exit(1)
