@@ -188,7 +188,7 @@ def get_seqnum(filename: str, location: str) -> int:
   """Extracts the sequence number from a filename."""
   m = FLYWAY_FILE_RX.match(filename)
   if m is None:
-    raise ValueError(f'Illegal flyway filename: {filename} in {location}')
+    raise ValueError('Illegal flyway filename: %s in %s' % (filename, location))
   return int(m.group(1))
 
 
@@ -211,15 +211,15 @@ def has_valid_order(indexed_files: List[Tuple[int, str]], location: str) -> bool
   valid = True
   for seqnum, filename in indexed_files:
     if seqnum == last_index:
-      print(f'duplicate flyway file sequence number found in {location}: '
-            f'{filename}')
+      print('duplicate flyway file sequence number found in %s: %s' %
+            (location, filename))
       valid = False
     elif seqnum < last_index:
-      print(f'File {filename} in {location} is out of order.')
+      print('File %s in %s is out of order.' % (filename, location))
       valid = False
     elif seqnum != last_index + 1:
-      print(f'Missing flyway sequence number {last_index + 1} in {location}.  '
-            f'Next file is {filename}')
+      print('Missing flyway sequence number %d in %s.  Next file is %s' %
+            (last_index + 1, location, filename))
       valid = False
     last_index = seqnum
   return valid
@@ -246,12 +246,12 @@ def verify_flyway_index():
   if files != indexed_files:
     unindexed = set(files) - set(indexed_files)
     if unindexed:
-      print(f'The following flyway files are not in flyway.idx: {unindexed}')
+      print('The following flyway files are not in flyway.idx: %s' % unindexed)
 
     nonexistent = set(indexed_files) - set(files)
     if nonexistent:
       print('The following files are in flyway.idx but not in the flyway '
-            f'directory: {nonexistent}')
+            'directory: %s' % nonexistent)
 
     # Do an ordering check on the index file (ignore the result, we're failing
     # anyway).
