@@ -118,11 +118,13 @@ public class ContactHistory extends HistoryEntry {
 
     // The following getters/setters are required by Hibernate, and the setters should not be used
     // externally to keep immutability so they are marked as private methods.
-    String getContactRepoId() {
+    @SuppressWarnings("unused")
+    private String getContactRepoId() {
       return contactRepoId;
     }
 
-    long getId() {
+    @SuppressWarnings("unused")
+    private long getId() {
       return id;
     }
 
