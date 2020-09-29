@@ -191,7 +191,7 @@ allprojects {
 }
 
 task runPresubmits(type: Exec) {
-  executable '/usr/bin/python'
+  executable '/usr/bin/python3'
   args('config/presubmits.py')
 }
 

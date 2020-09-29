@@ -61,6 +61,11 @@ Below are the steps to submit a schema change:
     You'll want to have a look at the diffs in the golden schema to verify that
     all changes are intentional.
 
+5.  Run ./nom_build :db:generateFlywayIndex to regenerate the Flyway index.
+    This is a file listing all of the current Flyway files.  Its purpose is to
+    produce a merge conflict when more than one person adds a Flyway file with
+    the same sequence number.
+
 Relevant files (under db/src/main/resources/sql/schema/):
 
 *   nomulus.golden.sql is the schema dump (pg_dump for postgres) of the final

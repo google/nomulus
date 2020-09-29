@@ -170,6 +170,28 @@ dependencies {
   testCompile project(path: ':common', configuration: 'testing')
 }
 
+task generateFlywayIndex {
+  def flywayBase = "$projectDir/src/main/resources/sql/flyway"
+  def filenamePattern = /V(\d+)__.*\.sql/
+
+  def getSeqNum = { file ->
+    def match = file.getName() =~ filenamePattern
+    if (match.size() != 1) {
+      throw new IllegalArgumentException("Bad Flyway filename: $file")
+    }
+    return match[0][1] as int
+  }
+
+  doLast {
+    def files = new File(flywayBase).listFiles()
+    def indexFile = new File("${flywayBase}.txt")
+    indexFile.write ''
+    for (def file : files.sort{a, b -> getSeqNum(a) <=> getSeqNum(b)}) {
+      indexFile << "${file.name}\n"
+    }
+  }
+}
+
 flywayInfo.dependsOn('buildNeeded')
 flywayValidate.dependsOn('buildNeeded')
 
