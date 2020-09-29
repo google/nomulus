@@ -24,8 +24,6 @@ import google.registry.persistence.VKey;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.MappedSuperclass;
 import org.joda.time.DateTime;
 
@@ -36,9 +34,8 @@ public class GracePeriodBase extends ImmutableObject {
 
   /** Unique id required for hibernate representation. */
   @javax.persistence.Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Ignore
-  Long id;
+  Long gracePeriodId;
 
   /** Repository id for the domain which this grace period belongs to. */
   @Ignore

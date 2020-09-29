@@ -14,6 +14,7 @@
 
 package google.registry.model.domain;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableList;
@@ -23,6 +24,7 @@ import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
+import google.registry.model.domain.GracePeriod.GracePeriodHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
@@ -41,10 +43,12 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Index;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinColumns;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
@@ -83,6 +87,24 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @JoinTable(name = "DomainHistoryHost")
   @Column(name = "host_repo_id")
   Set<VKey<HostResource>> nsHosts;
+
+  @OneToMany(
+      cascade = {CascadeType.ALL},
+      fetch = FetchType.EAGER,
+      orphanRemoval = true)
+  @JoinColumns({
+    @JoinColumn(
+        name = "historyRevisionId",
+        referencedColumnName = "historyRevisionId",
+        insertable = false,
+        updatable = false),
+    @JoinColumn(
+        name = "domainRepoId",
+        referencedColumnName = "domainRepoId",
+        insertable = false,
+        updatable = false)
+  })
+  Set<GracePeriodHistory> gracePeriodHistories;
 
   @Override
   @Nullable
@@ -156,7 +178,10 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
     return VKey.create(DomainBase.class, domainRepoId, Key.create(DomainBase.class, domainRepoId));
   }
 
-  /** Creates a {@link VKey} instance for this entity. */
+  public Set<GracePeriodHistory> getGracePeriodHistories() {
+    return nullToEmptyImmutableCopy(gracePeriodHistories);
+  }
+
   public VKey<DomainHistory> createVKey() {
     return VKey.create(
         DomainHistory.class, new DomainHistoryId(domainRepoId, getId()), Key.create(this));
@@ -256,9 +281,6 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
 
     public Builder setDomainContent(DomainContent domainContent) {
       getInstance().domainContent = domainContent;
-      if (domainContent != null) {
-        getInstance().nsHosts = nullToEmptyImmutableCopy(domainContent.nsHosts);
-      }
       return this;
     }
 
@@ -274,6 +296,19 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
       super.setParent(parent);
       getInstance().domainRepoId = parent.getName();
       return this;
+    }
+
+    @Override
+    public DomainHistory build() {
+      DomainHistory instance = super.build();
+      if (instance.domainContent != null) {
+        instance.nsHosts = nullToEmptyImmutableCopy(instance.domainContent.nsHosts);
+        instance.gracePeriodHistories =
+            nullToEmptyImmutableCopy(instance.domainContent.getGracePeriods()).stream()
+                .map(gracePeriod -> GracePeriodHistory.createFrom(instance.id, gracePeriod))
+                .collect(toImmutableSet());
+      }
+      return instance;
     }
   }
 }

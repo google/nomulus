@@ -12,21 +12,28 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+alter table "GracePeriod" alter column id drop default;
+
+drop sequence "GracePeriod_id_seq";
+
+alter table "GracePeriod" rename column "id" to "grace_period_id";
+
 create table "GracePeriodHistory" (
-    id  bigserial not null,
+    grace_period_id int8 not null,
     billing_event_id int8,
     billing_recurrence_id int8,
     registrar_id text not null,
     domain_repo_id text not null,
     expiration_time timestamptz not null,
     type text not null,
+    domain_history_revision_id int8,
     history_revision_id int8,
-    primary key (id)
+    primary key (grace_period_id)
 );
 
 alter table if exists "GracePeriodHistory"
-   add constraint FKd0ac6a7xw17itq006bww30vnb
-   foreign key (history_revision_id)
+   add constraint FK82u1hqvbds1cxti0y26mxfoos
+   foreign key (domain_repo_id, history_revision_id)
    references "DomainHistory";
 
 alter table if exists "GracePeriodHistory"

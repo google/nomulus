@@ -24,6 +24,7 @@ import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
@@ -33,7 +34,9 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
+import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -57,7 +60,7 @@ public class DomainHistoryTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    DomainBase domain = createDomainWithContactsAndHosts();
+    DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
     DomainHistory domainHistory = createDomainHistory(domain);
     jpaTm().transact(() -> jpaTm().insert(domainHistory));
 
@@ -73,7 +76,7 @@ public class DomainHistoryTest extends EntityTestCase {
 
   @Test
   void testLegacyPersistence_nullResource() {
-    DomainBase domain = createDomainWithContactsAndHosts();
+    DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
     DomainHistory domainHistory =
         createDomainHistory(domain).asBuilder().setDomainContent(null).build();
     jpaTm().transact(() -> jpaTm().insert(domainHistory));
@@ -146,6 +149,17 @@ public class DomainHistoryTest extends EntityTestCase {
             .build();
     jpaTm().transact(() -> jpaTm().insert(domain));
     return domain;
+  }
+
+  private static DomainBase addGracePeriodForSql(DomainBase domainBase) {
+    return domainBase
+        .asBuilder()
+        .setGracePeriods(
+            ImmutableSet.of(
+                GracePeriod.create(
+                        GracePeriodStatus.ADD, "domainRepoId", END_OF_TIME, "clientId", null)
+                    .cloneWithPrepopulatedId()))
+        .build();
   }
 
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
