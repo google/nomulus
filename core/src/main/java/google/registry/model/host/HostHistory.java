@@ -116,23 +116,43 @@ public class HostHistory extends HistoryEntry {
       this.id = id;
     }
 
-    // The following getters/setters are required by Hibernate, and the setters should not be used
-    // externally to keep immutability so they are marked as private methods.
+    /**
+     * Returns the host repository id.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
     @SuppressWarnings("unused")
     private String getHostRepoId() {
       return hostRepoId;
     }
 
+    /**
+     * Returns the history revision id.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
     @SuppressWarnings("unused")
     private long getId() {
       return id;
     }
 
+    /**
+     * Sets the host repository id.
+     *
+     * <p>This method is private because it is only used by Hibernate and should not be used
+     * externally to keep immutability.
+     */
     @SuppressWarnings("unused")
     private void setHostRepoId(String hostRepoId) {
       this.hostRepoId = hostRepoId;
     }
 
+    /**
+     * Sets the history revision id.
+     *
+     * <p>This method is private because it is only used by Hibernate and should not be used
+     * externally to keep immutability.
+     */
     @SuppressWarnings("unused")
     private void setId(long id) {
       this.id = id;

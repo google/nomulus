@@ -116,23 +116,43 @@ public class ContactHistory extends HistoryEntry {
       this.id = id;
     }
 
-    // The following getters/setters are required by Hibernate, and the setters should not be used
-    // externally to keep immutability so they are marked as private methods.
+    /**
+     * Returns the contact repository id.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
     @SuppressWarnings("unused")
     private String getContactRepoId() {
       return contactRepoId;
     }
 
+    /**
+     * Returns the history revision id.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
     @SuppressWarnings("unused")
     private long getId() {
       return id;
     }
 
+    /**
+     * Sets the contact repository id.
+     *
+     * <p>This method is private because it is only used by Hibernate and should not be used
+     * externally to keep immutability.
+     */
     @SuppressWarnings("unused")
     private void setContactRepoId(String contactRepoId) {
       this.contactRepoId = contactRepoId;
     }
 
+    /**
+     * Sets the history revision id.
+     *
+     * <p>This method is private because it is only used by Hibernate and should not be used
+     * externally to keep immutability.
+     */
     @SuppressWarnings("unused")
     private void setId(long id) {
       this.id = id;
