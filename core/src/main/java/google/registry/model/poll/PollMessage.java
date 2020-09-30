@@ -27,14 +27,18 @@ import com.googlecode.objectify.annotation.EntitySubclass;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
+import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainRenewData;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
+import google.registry.model.host.HostResource;
 import google.registry.model.poll.PendingActionNotificationResponse.ContactPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PendingActionNotificationResponse.HostPendingActionNotificationResponse;
@@ -54,10 +58,9 @@ import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Embedded;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
+import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
@@ -98,7 +101,6 @@ public abstract class PollMessage extends ImmutableObject
   /** Entity id. */
   @Id
   @javax.persistence.Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "poll_message_id")
   Long id;
 
@@ -124,11 +126,11 @@ public abstract class PollMessage extends ImmutableObject
 
   @Ignore String hostRepoId;
 
-  @Ignore Long domainRevisionId;
+  @Ignore Long domainHistoryRevisionId;
 
-  @Ignore Long contactRevisionId;
+  @Ignore Long contactHistoryRevisionId;
 
-  @Ignore Long hostRevisionId;
+  @Ignore Long hostHistoryRevisionId;
 
   public Key<HistoryEntry> getParentKey() {
     return parent;
@@ -151,6 +153,31 @@ public abstract class PollMessage extends ImmutableObject
   }
 
   public abstract ImmutableList<ResponseData> getResponseData();
+
+  @PostLoad
+  void postLoad() {
+    if (domainRepoId != null) {
+      parent =
+          Key.create(
+              Key.create(DomainBase.class, domainRepoId), HistoryEntry.class,
+              domainHistoryRevisionId);
+    } else if (contactRepoId != null) {
+      parent =
+          Key.create(
+              Key.create(ContactResource.class, contactRepoId),
+              HistoryEntry.class,
+              contactHistoryRevisionId);
+    } else if (hostHistoryRevisionId != null) {
+      parent =
+          Key.create(
+              Key.create(HostResource.class, hostRepoId), HistoryEntry.class, hostHistoryRevisionId);
+    }
+  }
+
+  @OnLoad
+  void onLoad() {
+    setSqlForeignKeys(this);
+  }
 
   @Override
   public abstract VKey<? extends PollMessage> createVKey();
@@ -217,7 +244,27 @@ public abstract class PollMessage extends ImmutableObject
       checkArgumentNotNull(instance.clientId, "clientId must be specified");
       checkArgumentNotNull(instance.eventTime, "eventTime must be specified");
       checkArgumentNotNull(instance.parent, "parent must be specified");
+      checkArgumentNotNull(instance.parent.getParent(), "parent.getParent() must be specified");
+      setSqlForeignKeys(instance);
       return super.build();
+    }
+  }
+
+  private static void setSqlForeignKeys(PollMessage pollMessage) {
+    String grandparentKind = pollMessage.parent.getParent().getKind();
+    String repoId = pollMessage.parent.getParent().getName();
+    long historyRevisionId = pollMessage.parent.getId();
+    if (Key.getKind(DomainBase.class).equals(grandparentKind)) {
+      pollMessage.domainRepoId = repoId;
+      pollMessage.domainHistoryRevisionId = historyRevisionId;
+    } else if (Key.getKind(ContactResource.class).equals(grandparentKind)) {
+      pollMessage.contactRepoId = repoId;
+      pollMessage.contactHistoryRevisionId = historyRevisionId;
+    } else if (Key.getKind(HostResource.class).equals(grandparentKind)) {
+      pollMessage.hostRepoId = repoId;
+      pollMessage.hostHistoryRevisionId = historyRevisionId;
+    } else {
+      throw new IllegalArgumentException("Unknown grandparent kind: " + grandparentKind);
     }
   }
 
