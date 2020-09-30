@@ -113,6 +113,83 @@ public class VKey<T> extends ImmutableObject implements Serializable {
     return new VKey<T>(kind, Key.create(kind, name), name);
   }
 
+  /**
+   * Returns a clone with an ofy key restored from {@code ancestors}.
+   *
+   * <p>The arguments should generally consist of pairs of Class and value, where the Class is the
+   * kind of the ancestor key and the value is either a String or a Long.
+   *
+   * <p>For example, to restore the objectify key for
+   * DomainBase("COM-1234")/HistoryEntry(123)/PollEvent(567), one might use:
+   *
+   * <pre>{@code
+   * pollEvent.restoreOfy(DomainBase.class, "COM-1234", HistoryEntry.class, 567)
+   * }</pre>
+   *
+   * <p>The final key id or name is obtained from the SQL key. It is assumed that this value must be
+   * either a long integer or a {@code String} and that this proper identifier for the objectify
+   * key.
+   *
+   * <p>As a special case, an objectify Key may be used as the first ancestor instead of a Class,
+   * value pair.
+   */
+  public VKey<T> restoreOfy(Object... ancestors) {
+    Class lastClass = null;
+    Key<?> lastKey = null;
+    for (Object ancestor : ancestors) {
+      if (ancestor instanceof Class) {
+        if (lastClass != null) {
+          throw new IllegalArgumentException(ancestor + " used as a key value.");
+        }
+        lastClass = (Class) ancestor;
+        continue;
+      } else if (ancestor instanceof Key) {
+        if (lastKey != null) {
+          throw new IllegalArgumentException(
+              "Objectify keys may only be used for the first argument");
+        }
+        lastKey = (Key) ancestor;
+        continue;
+      }
+
+      // The argument should be a value.
+      if (lastClass == null) {
+        throw new IllegalArgumentException("Argument " + ancestor + " should be a class.");
+      }
+      if (ancestor instanceof Long) {
+        lastKey = Key.create(lastKey, lastClass, (Long) ancestor);
+      } else if (ancestor instanceof String) {
+        lastKey = Key.create(lastKey, lastClass, (String) ancestor);
+      } else {
+        throw new IllegalArgumentException("Key value " + ancestor + " must be a string or long.");
+      }
+      lastClass = null;
+    }
+
+    // Make sure we didn't end up with a dangling class with no value.
+    if (lastClass != null) {
+      throw new IllegalArgumentException("Missing value for last key of type " + lastClass);
+    }
+
+    Object sqlKey = getSqlKey();
+    Key<T> ofyKey =
+        sqlKey instanceof Long
+            ? Key.create(lastKey, getKind(), (Long) sqlKey)
+            : Key.create(lastKey, getKind(), (String) sqlKey);
+
+    return VKey.create((Class<T>) getKind(), sqlKey, ofyKey);
+  }
+
+  /**
+   * Returns a clone of {@code key} with an ofy key restored from {@code ancestors}.
+   *
+   * <p>This is the static form of the method restoreOfy() above. If {@code key} is null, it returns
+   * null.
+   */
+  public static <T> VKey<T> restoreOfyFrom(@Nullable VKey<T> key, Object... ancestors) {
+    return key == null ? null : key.restoreOfy(ancestors);
+  }
+
   /** Returns the type of the entity. */
   public Class<? extends T> getKind() {
     return this.kind;
