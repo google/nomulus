@@ -35,6 +35,7 @@ import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
+import javax.persistence.PostLoad;
 import javax.persistence.Table;
 import org.joda.time.DateTime;
 
@@ -104,6 +105,12 @@ public class DomainBase extends DomainContent
   @SuppressWarnings("UnusedMethod")
   private Set<GracePeriod> getInternalGracePeriods() {
     return gracePeriods;
+  }
+
+  @PostLoad
+  @SuppressWarnings("UnusedMethod")
+  private final void postLoad() {
+    restoreOfyKeys(getRepoId());
   }
 
   @Override

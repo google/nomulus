@@ -54,8 +54,6 @@ import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Embedded;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Transient;
@@ -98,7 +96,6 @@ public abstract class PollMessage extends ImmutableObject
   /** Entity id. */
   @Id
   @javax.persistence.Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "poll_message_id")
   Long id;
 
