@@ -19,3 +19,18 @@ drop sequence "PollMessage_poll_message_id_seq";
 alter table "PollMessage" rename column "domain_revision_id" to "domain_history_revision_id";
 alter table "PollMessage" rename column "contact_revision_id" to "contact_history_revision_id";
 alter table "PollMessage" rename column "host_revision_id" to "host_history_revision_id";
+
+alter table if exists "PollMessage"
+   add constraint fk_poll_message_domain_history
+   foreign key (domain_repo_id, domain_history_revision_id)
+   references "DomainHistory";
+
+alter table if exists "PollMessage"
+   add constraint fk_poll_message_contact_history
+   foreign key (contact_repo_id, contact_history_revision_id)
+   references "ContactHistory";
+
+alter table if exists "PollMessage"
+   add constraint fk_poll_message_host_history
+   foreign key (host_repo_id, host_history_revision_id)
+   references "HostHistory";
