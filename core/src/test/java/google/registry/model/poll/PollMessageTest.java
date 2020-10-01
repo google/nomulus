@@ -61,6 +61,7 @@ public class PollMessageTest extends EntityTestCase {
                 .build());
     oneTime =
         new PollMessage.OneTime.Builder()
+            .setId(100L)
             .setClientId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
@@ -68,6 +69,7 @@ public class PollMessageTest extends EntityTestCase {
             .build();
     autoRenew =
         new PollMessage.Autorenew.Builder()
+            .setId(200L)
             .setClientId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
@@ -75,10 +77,6 @@ public class PollMessageTest extends EntityTestCase {
             .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
             .setTargetId("foobar.foo")
             .build();
-    // TODO(shicong): Remove these two lines after we use symmetric vkey and change the cloud sql
-    //  schema
-    oneTime.id = null;
-    autoRenew.id = null;
   }
 
   @Test
