@@ -59,7 +59,6 @@ public class DomainHistoryTest extends EntityTestCase {
   void testPersistence() {
     DomainBase domain = createDomainWithContactsAndHosts();
     DomainHistory domainHistory = createDomainHistory(domain);
-    domainHistory.id = null;
     jpaTm().transact(() -> jpaTm().insert(domainHistory));
 
     jpaTm()
@@ -77,7 +76,6 @@ public class DomainHistoryTest extends EntityTestCase {
     DomainBase domain = createDomainWithContactsAndHosts();
     DomainHistory domainHistory =
         createDomainHistory(domain).asBuilder().setDomainContent(null).build();
-    domainHistory.id = null;
     jpaTm().transact(() -> jpaTm().insert(domainHistory));
 
     jpaTm()

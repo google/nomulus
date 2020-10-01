@@ -159,7 +159,8 @@ public abstract class PollMessage extends ImmutableObject
     if (domainRepoId != null) {
       parent =
           Key.create(
-              Key.create(DomainBase.class, domainRepoId), HistoryEntry.class,
+              Key.create(DomainBase.class, domainRepoId),
+              HistoryEntry.class,
               domainHistoryRevisionId);
     } else if (contactRepoId != null) {
       parent =
@@ -170,7 +171,9 @@ public abstract class PollMessage extends ImmutableObject
     } else if (hostHistoryRevisionId != null) {
       parent =
           Key.create(
-              Key.create(HostResource.class, hostRepoId), HistoryEntry.class, hostHistoryRevisionId);
+              Key.create(HostResource.class, hostRepoId),
+              HistoryEntry.class,
+              hostHistoryRevisionId);
     }
   }
 
