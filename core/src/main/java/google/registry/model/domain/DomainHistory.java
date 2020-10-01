@@ -170,6 +170,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
       // domainContent with a null object. Unfortunately, the updateTimestamp is never null in SQL.
       if (domainContent.getDomainName() == null) {
         domainContent = null;
+      } else {
+        domainContent.restoreOfyKeys(domainRepoId);
       }
     }
     parent = Key.create(DomainBase.class, domainRepoId);
