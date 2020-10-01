@@ -131,9 +131,9 @@ class google.registry.model.contact.ContactHistory {
   google.registry.model.domain.Period period;
   google.registry.model.eppcommon.Trid trid;
   google.registry.model.reporting.HistoryEntry$Type type;
-  google.registry.persistence.VKey<google.registry.model.contact.ContactResource> contactRepoId;
   java.lang.Boolean requestedByRegistrar;
   java.lang.String clientId;
+  java.lang.String contactRepoId;
   java.lang.String otherClientId;
   java.lang.String reason;
   java.util.Set<google.registry.model.reporting.DomainTransactionRecord> domainTransactionRecords;
@@ -401,9 +401,9 @@ class google.registry.model.host.HostHistory {
   google.registry.model.eppcommon.Trid trid;
   google.registry.model.host.HostBase hostBase;
   google.registry.model.reporting.HistoryEntry$Type type;
-  google.registry.persistence.VKey<google.registry.model.host.HostResource> hostRepoId;
   java.lang.Boolean requestedByRegistrar;
   java.lang.String clientId;
+  java.lang.String hostRepoId;
   java.lang.String otherClientId;
   java.lang.String reason;
   java.util.Set<google.registry.model.reporting.DomainTransactionRecord> domainTransactionRecords;

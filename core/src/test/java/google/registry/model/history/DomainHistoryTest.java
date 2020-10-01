@@ -121,8 +121,7 @@ public class DomainHistoryTest extends EntityTestCase {
     // retrieving a HistoryEntry or a DomainHistory with the same key should return the same object
     // note: due to the @EntitySubclass annotation. all Keys for DomainHistory objects will have
     // type HistoryEntry
-    VKey<DomainHistory> domainHistoryVKey =
-        VKey.createOfy(DomainHistory.class, Key.create(domainHistory));
+    VKey<DomainHistory> domainHistoryVKey = domainHistory.createVKey();
     VKey<HistoryEntry> historyEntryVKey =
         VKey.createOfy(HistoryEntry.class, Key.create(domainHistory.asHistoryEntry()));
     DomainHistory domainHistoryFromDb = tm().transact(() -> tm().load(domainHistoryVKey));
@@ -155,7 +154,7 @@ public class DomainHistoryTest extends EntityTestCase {
     assertAboutImmutableObjects()
         .that(one)
         .isEqualExceptFields(
-            two, "domainContent", "domainRepoId", "parent", "nsHosts", "domainTransactionRecords");
+            two, "domainContent", "domainRepoId", "nsHosts", "domainTransactionRecords");
     assertThat(one.getDomainContent().map(DomainContent::getDomainName))
         .isEqualTo(two.getDomainContent().map(DomainContent::getDomainName));
     // NB: the record's ID gets reset by Hibernate, causing the hash code to differ so we have to

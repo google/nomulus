@@ -14,11 +14,15 @@
 
 package google.registry.model.host;
 
+
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
+import google.registry.model.ImmutableObject;
+import google.registry.model.host.HostHistory.HostHistoryId;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
@@ -28,6 +32,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.PostLoad;
 
 /**
@@ -48,13 +53,13 @@ import javax.persistence.PostLoad;
     })
 @EntitySubclass
 @Access(AccessType.FIELD)
+@IdClass(HostHistoryId.class)
 public class HostHistory extends HistoryEntry {
 
   // Store HostBase instead of HostResource so we don't pick up its @Id
   @Nullable HostBase hostBase;
 
-  @Column(nullable = false)
-  VKey<HostResource> hostRepoId;
+  @Id String hostRepoId;
 
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TempHistorySequenceGenerator")
@@ -77,7 +82,12 @@ public class HostHistory extends HistoryEntry {
 
   /** The key to the {@link google.registry.model.host.HostResource} this is based off of. */
   public VKey<HostResource> getHostRepoId() {
-    return hostRepoId;
+    return VKey.create(HostResource.class, hostRepoId, Key.create(HostResource.class, hostRepoId));
+  }
+
+  /** Creates a {@link VKey} instance for this entity. */
+  public VKey<HostHistory> createVKey() {
+    return VKey.create(HostHistory.class, new HostHistoryId(hostRepoId, getId()), Key.create(this));
   }
 
   @PostLoad
@@ -88,9 +98,65 @@ public class HostHistory extends HistoryEntry {
       hostBase = null;
     }
     // Fill in the full, symmetric, parent repo ID key
-    Key<HostResource> parentKey = Key.create(HostResource.class, (String) hostRepoId.getSqlKey());
-    parent = parentKey;
-    hostRepoId = VKey.create(HostResource.class, hostRepoId.getSqlKey(), parentKey);
+    parent = Key.create(HostResource.class, hostRepoId);
+  }
+
+  /** Class to represent the composite primary key of {@link HostHistory} entity. */
+  static class HostHistoryId extends ImmutableObject implements Serializable {
+
+    private String hostRepoId;
+
+    private Long id;
+
+    /** Hibernate requires this default constructor. */
+    private HostHistoryId() {}
+
+    HostHistoryId(String hostRepoId, long id) {
+      this.hostRepoId = hostRepoId;
+      this.id = id;
+    }
+
+    /**
+     * Returns the host repository id.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private String getHostRepoId() {
+      return hostRepoId;
+    }
+
+    /**
+     * Returns the history revision id.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private long getId() {
+      return id;
+    }
+
+    /**
+     * Sets the host repository id.
+     *
+     * <p>This method is private because it is only used by Hibernate and should not be used
+     * externally to keep immutability.
+     */
+    @SuppressWarnings("unused")
+    private void setHostRepoId(String hostRepoId) {
+      this.hostRepoId = hostRepoId;
+    }
+
+    /**
+     * Sets the history revision id.
+     *
+     * <p>This method is private because it is only used by Hibernate and should not be used
+     * externally to keep immutability.
+     */
+    @SuppressWarnings("unused")
+    private void setId(long id) {
+      this.id = id;
+    }
   }
 
   @Override
@@ -111,9 +177,9 @@ public class HostHistory extends HistoryEntry {
       return this;
     }
 
-    public Builder setHostRepoId(VKey<HostResource> hostRepoId) {
+    public Builder setHostRepoId(String hostRepoId) {
       getInstance().hostRepoId = hostRepoId;
-      hostRepoId.maybeGetOfyKey().ifPresent(parent -> getInstance().parent = parent);
+      getInstance().parent = Key.create(HostResource.class, hostRepoId);
       return this;
     }
 
@@ -121,8 +187,7 @@ public class HostHistory extends HistoryEntry {
     @Override
     public Builder setParent(Key<? extends EppResource> parent) {
       super.setParent(parent);
-      getInstance().hostRepoId =
-          VKey.create(HostResource.class, parent.getName(), (Key<HostResource>) parent);
+      getInstance().hostRepoId = parent.getName();
       return this;
     }
   }

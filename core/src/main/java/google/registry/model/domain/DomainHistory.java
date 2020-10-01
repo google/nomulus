@@ -156,8 +156,10 @@ public class DomainHistory extends HistoryEntry {
     return VKey.create(DomainBase.class, domainRepoId, Key.create(DomainBase.class, domainRepoId));
   }
 
+  /** Creates a {@link VKey} instance for this entity. */
   public VKey<DomainHistory> createVKey() {
-    return VKey.createSql(DomainHistory.class, new DomainHistoryId(domainRepoId, getId()));
+    return VKey.create(
+        DomainHistory.class, new DomainHistoryId(domainRepoId, getId()), Key.create(this));
   }
 
   @PostLoad
@@ -188,19 +190,45 @@ public class DomainHistory extends HistoryEntry {
       this.id = id;
     }
 
-    String getDomainRepoId() {
+    /**
+     * Returns the domain repository id.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private String getDomainRepoId() {
       return domainRepoId;
     }
 
-    void setDomainRepoId(String domainRepoId) {
-      this.domainRepoId = domainRepoId;
-    }
-
-    long getId() {
+    /**
+     * Returns the history revision id.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private long getId() {
       return id;
     }
 
-    void setId(long id) {
+    /**
+     * Sets the domain repository id.
+     *
+     * <p>This method is private because it is only used by Hibernate and should not be used
+     * externally to keep immutability.
+     */
+    @SuppressWarnings("unused")
+    private void setDomainRepoId(String domainRepoId) {
+      this.domainRepoId = domainRepoId;
+    }
+
+    /**
+     * Sets the history revision id.
+     *
+     * <p>This method is private because it is only used by Hibernate and should not be used
+     * externally to keep immutability.
+     */
+    @SuppressWarnings("unused")
+    private void setId(long id) {
       this.id = id;
     }
   }

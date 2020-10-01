@@ -1084,7 +1084,7 @@ ALTER TABLE ONLY public."ClaimsList"
 --
 
 ALTER TABLE ONLY public."ContactHistory"
-    ADD CONSTRAINT "ContactHistory_pkey" PRIMARY KEY (history_revision_id);
+    ADD CONSTRAINT "ContactHistory_pkey" PRIMARY KEY (contact_repo_id, history_revision_id);
 
 
 --
@@ -1140,7 +1140,7 @@ ALTER TABLE ONLY public."GracePeriod"
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (history_revision_id);
+    ADD CONSTRAINT "HostHistory_pkey" PRIMARY KEY (host_repo_id, history_revision_id);
 
 
 --
