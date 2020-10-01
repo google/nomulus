@@ -15,6 +15,7 @@
 package google.registry.model.host;
 
 
+import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
@@ -22,6 +23,8 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.host.HostHistory.HostHistoryId;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -54,7 +57,7 @@ import javax.persistence.PostLoad;
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(HostHistoryId.class)
-public class HostHistory extends HistoryEntry {
+public class HostHistory extends HistoryEntry implements SqlEntity {
 
   // Store HostBase instead of HostResource so we don't pick up its @Id
   @Nullable HostBase hostBase;
@@ -99,6 +102,12 @@ public class HostHistory extends HistoryEntry {
     }
     // Fill in the full, symmetric, parent repo ID key
     parent = Key.create(HostResource.class, hostRepoId);
+  }
+
+  @Override
+  // In Datastore, save as a HistoryEntry object regardless of this object's type
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(asHistoryEntry());
   }
 
   /** Class to represent the composite primary key of {@link HostHistory} entity. */

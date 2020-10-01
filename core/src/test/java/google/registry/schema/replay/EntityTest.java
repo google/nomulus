@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableSet;
+import com.googlecode.objectify.annotation.Embed;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
@@ -72,6 +73,7 @@ public class EntityTest {
         .filter(ClassInfo::isStandardClass)
         .map(ClassInfo::loadClass)
         .filter(clazz -> !clazz.isAnnotationPresent(EntityForTesting.class))
+        .filter(clazz -> !clazz.isAnnotationPresent(Embed.class))
         .map(Class::getName)
         .collect(toImmutableSet());
   }

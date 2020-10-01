@@ -14,6 +14,7 @@
 
 package google.registry.model.contact;
 
+import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
@@ -21,6 +22,8 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -52,7 +55,7 @@ import javax.persistence.PostLoad;
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(ContactHistoryId.class)
-public class ContactHistory extends HistoryEntry {
+public class ContactHistory extends HistoryEntry implements SqlEntity {
 
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
   @Nullable ContactBase contactBase;
@@ -99,6 +102,12 @@ public class ContactHistory extends HistoryEntry {
     }
     // Fill in the full, symmetric, parent repo ID key
     parent = Key.create(ContactResource.class, contactRepoId);
+  }
+
+  @Override
+  // In Datastore, save as a HistoryEntry object regardless of this object's type
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(asHistoryEntry());
   }
 
   /** Class to represent the composite primary key of {@link ContactHistory} entity. */

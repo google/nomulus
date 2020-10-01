@@ -62,6 +62,7 @@ import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.util.Idn;
 import java.util.Map;
 import java.util.Optional;
@@ -86,7 +87,7 @@ import org.joda.time.Duration;
 @ReportedOn
 @Entity
 @javax.persistence.Entity(name = "Tld")
-public class Registry extends ImmutableObject implements Buildable {
+public class Registry extends ImmutableObject implements Buildable, DatastoreAndSqlEntity {
 
   @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
 

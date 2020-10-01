@@ -16,6 +16,7 @@ package google.registry.model.domain.secdns;
 
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
@@ -31,7 +32,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @Embed
 @XmlType(name = "dsData")
 @javax.persistence.Entity
-public class DelegationSignerData extends ImmutableObject {
+public class DelegationSignerData extends ImmutableObject implements DatastoreAndSqlEntity {
 
   private DelegationSignerData() {}
 
