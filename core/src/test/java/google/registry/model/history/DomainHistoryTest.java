@@ -60,7 +60,7 @@ public class DomainHistoryTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
-    DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
+    DomainBase domain = createDomainWithContactsAndHosts();
     DomainHistory domainHistory = createDomainHistory(domain);
     jpaTm().transact(() -> jpaTm().insert(domainHistory));
 
@@ -76,7 +76,7 @@ public class DomainHistoryTest extends EntityTestCase {
 
   @Test
   void testLegacyPersistence_nullResource() {
-    DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
+    DomainBase domain = createDomainWithContactsAndHosts();
     DomainHistory domainHistory =
         createDomainHistory(domain).asBuilder().setDomainContent(null).build();
     jpaTm().transact(() -> jpaTm().insert(domainHistory));
@@ -146,20 +146,13 @@ public class DomainHistoryTest extends EntityTestCase {
         newDomainBase("example.tld", "domainRepoId", contact)
             .asBuilder()
             .setNameservers(host.createVKey())
+            .setGracePeriods(
+                ImmutableSet.of(
+                    GracePeriod.create(
+                        GracePeriodStatus.ADD, "domainRepoId", END_OF_TIME, "clientId", null)))
             .build();
     jpaTm().transact(() -> jpaTm().insert(domain));
     return domain;
-  }
-
-  private static DomainBase addGracePeriodForSql(DomainBase domainBase) {
-    return domainBase
-        .asBuilder()
-        .setGracePeriods(
-            ImmutableSet.of(
-                GracePeriod.create(
-                        GracePeriodStatus.ADD, "domainRepoId", END_OF_TIME, "clientId", null)
-                    .cloneWithPrepopulatedId()))
-        .build();
   }
 
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {

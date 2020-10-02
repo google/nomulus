@@ -808,7 +808,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatCommand("poll.xml")
         .atTime("2001-01-01T00:01:00Z")
         .hasResponse("poll_response_domain_transfer_request.xml");
-    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-C-EXAMPLE-17-23-2001"))
+    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-C-EXAMPLE-18-24-2001"))
         .atTime("2001-01-01T00:01:00Z")
         .hasResponse("poll_ack_response_empty.xml");
 
@@ -816,7 +816,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     assertThatCommand("poll.xml")
         .atTime("2001-01-06T00:01:00Z")
         .hasResponse("poll_response_domain_transfer_server_approve_loser.xml");
-    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-C-EXAMPLE-17-22-2001"))
+    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-C-EXAMPLE-18-23-2001"))
         .atTime("2001-01-06T00:01:00Z")
         .hasResponse("poll_ack_response_empty.xml");
     assertThatLogoutSucceeds();
@@ -828,7 +828,7 @@ class EppLifecycleDomainTest extends EppTestCase {
         .hasResponse(
             "poll_response_domain_transfer_server_approve_winner.xml",
             ImmutableMap.of("SERVER_TRID", transferRequestTrid));
-    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-C-EXAMPLE-17-21-2001"))
+    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-C-EXAMPLE-18-22-2001"))
         .atTime("2001-01-06T00:02:00Z")
         .hasResponse("poll_ack_response_empty.xml");
     assertThatLogoutSucceeds();

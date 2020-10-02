@@ -183,7 +183,8 @@ public abstract class FlowTestCase<F extends Flow> {
               entry.getKey().getDomainRepoId(),
               entry.getKey().getExpirationTime(),
               entry.getKey().getClientId(),
-              null),
+              null,
+              1L),
           stripBillingEventId(entry.getValue()));
     }
     return builder.build();
