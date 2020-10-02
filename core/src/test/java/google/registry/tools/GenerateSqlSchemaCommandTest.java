@@ -86,7 +86,7 @@ class GenerateSqlSchemaCommandTest extends CommandTestCase<GenerateSqlSchemaComm
   @Test
   void validateGeneratedSchemaIsSameAsSchemaInFile() throws Exception {
     Path schemaFile = tmpDir.resolve("schema.sql");
-    runCommand("--start_postgresql", "--out_file=/tmp/schema.sql");
+    runCommand("--start_postgresql", "--out_file=" + schemaFile.toString());
     assertThat(schemaFile.toFile().toURI().toURL())
         .hasSameContentAs(Resources.getResource("sql/schema/db-schema.sql.generated"));
   }

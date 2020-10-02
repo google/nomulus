@@ -91,7 +91,7 @@ public class DomainHistory extends HistoryEntry {
       orphanRemoval = true)
   @JoinColumns({
     @JoinColumn(
-        name = "historyRevisionId",
+        name = "domainHistoryRevisionId",
         referencedColumnName = "historyRevisionId",
         insertable = false,
         updatable = false),

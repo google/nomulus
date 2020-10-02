@@ -27,13 +27,12 @@ create table "GracePeriodHistory" (
     expiration_time timestamptz not null,
     type text not null,
     domain_history_revision_id int8,
-    history_revision_id int8,
     primary key (grace_period_id)
 );
 
 alter table if exists "GracePeriodHistory"
-   add constraint FK82u1hqvbds1cxti0y26mxfoos
-   foreign key (domain_repo_id, history_revision_id)
+   add constraint FK7w3cx8d55q8bln80e716tr7b8
+   foreign key (domain_repo_id, domain_history_revision_id)
    references "DomainHistory";
 
 alter table if exists "GracePeriodHistory"

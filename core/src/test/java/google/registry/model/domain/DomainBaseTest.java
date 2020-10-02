@@ -25,6 +25,7 @@ import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.newHostResource;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
+import static google.registry.testing.GracePeriodCollectionSubject.assertAboutGracePeriodCollection;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
@@ -385,8 +386,9 @@ public class DomainBaseTest extends EntityTestCase {
     VKey<BillingEvent.Recurring> serverApproveAutorenewEvent =
         domain.getTransferData().getServerApproveAutorenewEvent();
     assertTransferred(afterTransfer, newExpirationTime, serverApproveAutorenewEvent);
-    assertThat(afterTransfer.getGracePeriods())
-        .containsExactly(
+    assertAboutGracePeriodCollection()
+        .that(afterTransfer.getGracePeriods())
+        .containsExactlyExceptId(
             GracePeriod.create(
                 GracePeriodStatus.TRANSFER,
                 domain.getRepoId(),
@@ -626,8 +628,9 @@ public class DomainBaseTest extends EntityTestCase {
     assertThat(renewedThreeTimes.getRegistrationExpirationTime())
         .isEqualTo(oldExpirationTime.plusYears(3));
     assertThat(renewedThreeTimes.getLastEppUpdateTime()).isEqualTo(oldExpirationTime.plusYears(2));
-    assertThat(renewedThreeTimes.getGracePeriods())
-        .containsExactly(
+    assertAboutGracePeriodCollection()
+        .that(renewedThreeTimes.getGracePeriods())
+        .containsExactlyExceptId(
             GracePeriod.createForRecurring(
                 GracePeriodStatus.AUTO_RENEW,
                 domain.getRepoId(),

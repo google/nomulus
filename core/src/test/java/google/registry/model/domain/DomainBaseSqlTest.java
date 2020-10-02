@@ -17,6 +17,8 @@ package google.registry.model.domain;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.GracePeriodCollectionSubject.assertAboutGracePeriodCollection;
+import static google.registry.testing.GracePeriodSubject.assertAboutGracePeriods;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -105,8 +107,7 @@ public class DomainBaseSqlTest {
                 LaunchNotice.create("tcnid", "validatorId", START_OF_TIME, START_OF_TIME))
             .setSmdId("smdid")
             .addGracePeriod(
-                GracePeriod.create(GracePeriodStatus.ADD, "4-COM", END_OF_TIME, "registrar1", null)
-                    .cloneWithPrepopulatedId())
+                GracePeriod.create(GracePeriodStatus.ADD, "4-COM", END_OF_TIME, "registrar1", null))
             .build();
 
     host =
@@ -228,8 +229,7 @@ public class DomainBaseSqlTest {
                       .asBuilder()
                       .addGracePeriod(
                           GracePeriod.create(
-                                  GracePeriodStatus.RENEW, "4-COM", END_OF_TIME, "registrar1", null)
-                              .cloneWithPrepopulatedId())
+                              GracePeriodStatus.RENEW, "4-COM", END_OF_TIME, "registrar1", null))
                       .build();
               jpaTm().put(modified);
             });
@@ -245,27 +245,25 @@ public class DomainBaseSqlTest {
                       gracePeriod -> {
                         assertThat(gracePeriod.gracePeriodId).isNotNull();
                         if (gracePeriod.getType() == GracePeriodStatus.ADD) {
-                          assertAboutImmutableObjects()
+                          assertAboutGracePeriods()
                               .that(gracePeriod)
-                              .isEqualExceptFields(
+                              .isEqualExceptId(
                                   GracePeriod.create(
                                       GracePeriodStatus.ADD,
                                       "4-COM",
                                       END_OF_TIME,
                                       "registrar1",
-                                      null),
-                                  "id");
+                                      null));
                         } else if (gracePeriod.getType() == GracePeriodStatus.RENEW) {
-                          assertAboutImmutableObjects()
+                          assertAboutGracePeriods()
                               .that(gracePeriod)
-                              .isEqualExceptFields(
+                              .isEqualExceptId(
                                   GracePeriod.create(
                                       GracePeriodStatus.RENEW,
                                       "4-COM",
                                       END_OF_TIME,
                                       "registrar1",
-                                      null),
-                                  "id");
+                                      null));
                         } else {
                           fail("Unexpected GracePeriod: " + gracePeriod);
                         }
@@ -316,8 +314,7 @@ public class DomainBaseSqlTest {
                       .asBuilder()
                       .addGracePeriod(
                           GracePeriod.create(
-                                  GracePeriodStatus.ADD, "4-COM", END_OF_TIME, "registrar1", null)
-                              .cloneWithPrepopulatedId())
+                              GracePeriodStatus.ADD, "4-COM", END_OF_TIME, "registrar1", null))
                       .build();
               jpaTm().put(modified);
             });
@@ -326,13 +323,11 @@ public class DomainBaseSqlTest {
         .transact(
             () -> {
               DomainBase persisted = jpaTm().load(domain.createVKey());
-              assertThat(persisted.getGracePeriods().size()).isEqualTo(1);
-              assertAboutImmutableObjects()
-                  .that(persisted.getGracePeriods().iterator().next())
-                  .isEqualExceptFields(
+              assertAboutGracePeriodCollection()
+                  .that(persisted.getGracePeriods())
+                  .containsExactlyExceptId(
                       GracePeriod.create(
-                          GracePeriodStatus.ADD, "4-COM", END_OF_TIME, "registrar1", null),
-                      "id");
+                          GracePeriodStatus.ADD, "4-COM", END_OF_TIME, "registrar1", null));
               assertEqualDomainExcept(persisted, "gracePeriods");
             });
   }

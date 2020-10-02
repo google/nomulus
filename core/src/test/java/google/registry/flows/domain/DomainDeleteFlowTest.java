@@ -50,6 +50,7 @@ import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static google.registry.testing.GracePeriodCollectionSubject.assertAboutGracePeriodCollection;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
 import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
@@ -429,8 +430,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertAutorenewClosedAndCancellationCreatedFor(
         renewBillingEvent, getOnlyHistoryEntryOfType(resource, DOMAIN_DELETE));
     // All existing grace periods should be gone, and a new REDEMPTION one should be added.
-    assertThat(resource.getGracePeriods())
-        .containsExactly(
+    assertAboutGracePeriodCollection()
+        .that(resource.getGracePeriods())
+        .containsExactlyExceptId(
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
                 domain.getRepoId(),
@@ -630,8 +632,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .and()
         .hasOneHistoryEntryEachOfTypes(DOMAIN_CREATE, DOMAIN_TRANSFER_REQUEST, DOMAIN_DELETE);
     // All existing grace periods should be gone, and a new REDEMPTION one should be added.
-    assertThat(domain.getGracePeriods())
-        .containsExactly(
+    assertAboutGracePeriodCollection()
+        .that(domain.getGracePeriods())
+        .containsExactlyExceptId(
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
                 domain.getRepoId(),
@@ -1097,8 +1100,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .hasExactlyStatusValues(StatusValue.INACTIVE, StatusValue.PENDING_DELETE)
         .and()
         .hasDeletionTime(clock.nowUtc().plus(standardDays(19)));
-    assertThat(resource.getGracePeriods())
-        .containsExactly(
+    assertAboutGracePeriodCollection()
+        .that(resource.getGracePeriods())
+        .containsExactlyExceptId(
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
                 domain.getRepoId(),
@@ -1144,8 +1148,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .hasExactlyStatusValues(StatusValue.INACTIVE, StatusValue.PENDING_DELETE)
         .and()
         .hasDeletionTime(clock.nowUtc().plus(standardDays(15)));
-    assertThat(resource.getGracePeriods())
-        .containsExactly(
+    assertAboutGracePeriodCollection()
+        .that(resource.getGracePeriods())
+        .containsExactlyExceptId(
             GracePeriod.create(
                 GracePeriodStatus.REDEMPTION,
                 domain.getRepoId(),

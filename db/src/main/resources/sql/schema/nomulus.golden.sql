@@ -506,8 +506,7 @@ CREATE TABLE public."GracePeriodHistory" (
     domain_repo_id text NOT NULL,
     expiration_time timestamp with time zone NOT NULL,
     type text NOT NULL,
-    domain_history_revision_id bigint,
-    history_revision_id bigint
+    domain_history_revision_id bigint
 );
 
 
@@ -1668,11 +1667,11 @@ ALTER TABLE ONLY public."ClaimsEntry"
 
 
 --
--- Name: GracePeriodHistory fk82u1hqvbds1cxti0y26mxfoos; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: GracePeriodHistory fk7w3cx8d55q8bln80e716tr7b8; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."GracePeriodHistory"
-    ADD CONSTRAINT fk82u1hqvbds1cxti0y26mxfoos FOREIGN KEY (domain_repo_id, history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+    ADD CONSTRAINT fk7w3cx8d55q8bln80e716tr7b8 FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
 
 
 --
