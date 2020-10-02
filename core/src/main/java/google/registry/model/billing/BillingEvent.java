@@ -67,7 +67,6 @@ import org.joda.time.DateTime;
 
 /** A billable event in a domain's lifecycle. */
 @MappedSuperclass
-@WithLongVKey
 public abstract class BillingEvent extends ImmutableObject
     implements Buildable, TransferServerApproveEntity {
 
@@ -292,6 +291,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "allocation_token_id")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_event_id"))
+  @WithLongVKey
   public static class OneTime extends BillingEvent implements DatastoreAndSqlEntity {
 
     /** The billable value. */
@@ -327,7 +327,7 @@ public abstract class BillingEvent extends ImmutableObject
      * Cancellation}s.
      */
     @Column(name = "cancellation_matching_billing_recurrence_id")
-    VKey<? extends BillingEvent> cancellationMatchingBillingEvent;
+    VKey<Recurring> cancellationMatchingBillingEvent;
 
     /**
      * The {@link AllocationToken} used in the creation of this event, or null if one was not used.
@@ -409,7 +409,7 @@ public abstract class BillingEvent extends ImmutableObject
       }
 
       public Builder setCancellationMatchingBillingEvent(
-          VKey<? extends BillingEvent> cancellationMatchingBillingEvent) {
+          VKey<Recurring> cancellationMatchingBillingEvent) {
         getInstance().cancellationMatchingBillingEvent = cancellationMatchingBillingEvent;
         return this;
       }
@@ -468,6 +468,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "recurrence_time_of_year")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_recurrence_id"))
+  @WithLongVKey
   public static class Recurring extends BillingEvent implements DatastoreAndSqlEntity {
 
     /**
@@ -562,6 +563,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "billingTime")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_cancellation_id"))
+  @WithLongVKey
   public static class Cancellation extends BillingEvent implements DatastoreAndSqlEntity {
 
     /** The billing time of the charge that is being cancelled. */
@@ -682,6 +684,7 @@ public abstract class BillingEvent extends ImmutableObject
   /** An event representing a modification of an existing one-time billing event. */
   @ReportedOn
   @Entity
+  @WithLongVKey
   public static class Modification extends BillingEvent implements DatastoreAndSqlEntity {
 
     /** The change in cost that should be applied to the original billing event. */
