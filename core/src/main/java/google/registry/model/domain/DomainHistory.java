@@ -38,8 +38,6 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Index;
@@ -128,7 +126,6 @@ public class DomainHistory extends HistoryEntry {
   }
 
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TempHistorySequenceGenerator")
   @Column(name = "historyRevisionId")
   @Access(AccessType.PROPERTY)
   @Override
