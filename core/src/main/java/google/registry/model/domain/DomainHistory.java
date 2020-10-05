@@ -178,8 +178,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
     parent = Key.create(DomainBase.class, domainRepoId);
   }
 
-  @Override
   // In Datastore, save as a HistoryEntry object regardless of this object's type
+  @Override
   public ImmutableList<DatastoreEntity> toDatastoreEntities() {
     return ImmutableList.of(asHistoryEntry());
   }

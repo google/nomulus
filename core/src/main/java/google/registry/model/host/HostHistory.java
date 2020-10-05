@@ -104,8 +104,8 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
     parent = Key.create(HostResource.class, hostRepoId);
   }
 
-  @Override
   // In Datastore, save as a HistoryEntry object regardless of this object's type
+  @Override
   public ImmutableList<DatastoreEntity> toDatastoreEntities() {
     return ImmutableList.of(asHistoryEntry());
   }

@@ -104,8 +104,8 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
     parent = Key.create(ContactResource.class, contactRepoId);
   }
 
-  @Override
   // In Datastore, save as a HistoryEntry object regardless of this object's type
+  @Override
   public ImmutableList<DatastoreEntity> toDatastoreEntities() {
     return ImmutableList.of(asHistoryEntry());
   }
