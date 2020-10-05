@@ -29,6 +29,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.launch.LaunchNotice;
@@ -480,6 +481,94 @@ public class DomainBaseSqlTest {
         .isEqualTo(domain.getAutorenewBillingEvent());
     assertThat(persistedHistoryEntry.getDomainContent().get().getDeletePollMessage())
         .isEqualTo(domain.getDeletePollMessage());
+  }
+
+  @Test
+  void persistDomainWithLegacyVKeys() {
+    jpaTm()
+        .transact(
+            () -> {
+              historyEntry =
+                  new DomainHistory.Builder()
+                      .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                      .setPeriod(Period.create(1, Period.Unit.YEARS))
+                      .setModificationTime(DateTime.now(UTC))
+                      .setParent(Key.create(DomainBase.class, "4-COM"))
+                      .setDomainRepoId("4-COM")
+
+                      // These are non-null, but I don't think some tests set them.
+                      .setReason("felt like it")
+                      .setRequestedByRegistrar(false)
+                      .setXmlBytes(new byte[0])
+                      .build();
+              BillingEvent.Recurring billEvent =
+                  new BillingEvent.Recurring.Builder()
+                      .setReason(Reason.RENEW)
+                      .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                      .setTargetId("example.com")
+                      .setClientId("registrar1")
+                      .setDomainRepoId("4-COM")
+                      .setDomainHistoryRevisionId(1L)
+                      .setEventTime(DateTime.now(UTC).plusYears(1))
+                      .setRecurrenceEndTime(END_OF_TIME)
+                      .setParent(historyEntry)
+                      .build();
+              PollMessage.Autorenew autorenewPollMessage =
+                  new PollMessage.Autorenew.Builder()
+                      .setClientId("registrar1")
+                      .setEventTime(DateTime.now(UTC).plusYears(1))
+                      .setParent(historyEntry)
+                      .build();
+              PollMessage.OneTime deletePollMessage =
+                  new PollMessage.OneTime.Builder()
+                      .setClientId("registrar1")
+                      .setEventTime(DateTime.now(UTC).plusYears(1))
+                      .setParent(historyEntry)
+                      .build();
+
+              jpaTm().insert(contact);
+              jpaTm().insert(contact2);
+              jpaTm().insert(host);
+              jpaTm().insert(billEvent);
+              jpaTm().insert(autorenewPollMessage);
+              jpaTm().insert(deletePollMessage);
+              domain =
+                  domain
+                      .asBuilder()
+                      .setAutorenewBillingEvent(
+                          createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId()))
+                      .setAutorenewPollMessage(
+                          createLegacyVKey(PollMessage.Autorenew.class, deletePollMessage.getId()))
+                      .setDeletePollMessage(
+                          createLegacyVKey(PollMessage.OneTime.class, autorenewPollMessage.getId()))
+                      .build();
+              historyEntry = historyEntry.asBuilder().setDomainContent(domain).build();
+              jpaTm().insert(domain);
+              jpaTm().insert(historyEntry);
+            });
+
+    // Store the existing BillingRecurrence VKey.  This happens after the event has been persisted.
+    DomainBase persisted = jpaTm().transact(() -> jpaTm().load(domain.createVKey()));
+
+    // Verify that the domain data has been persisted.
+    // dsData still isn't persisted.  gracePeriods appears to have the same values but for some
+    // reason is showing up as different.
+    assertEqualDomainExcept(persisted, "creationTime", "dsData", "gracePeriods");
+
+    // Verify that the DomainContent object from the history record sets the fields correctly.
+    DomainHistory persistedHistoryEntry =
+        jpaTm().transact(() -> jpaTm().load(historyEntry.createVKey()));
+    assertThat(persistedHistoryEntry.getDomainContent().get().getAutorenewPollMessage())
+        .isEqualTo(domain.getAutorenewPollMessage());
+    assertThat(persistedHistoryEntry.getDomainContent().get().getAutorenewBillingEvent())
+        .isEqualTo(domain.getAutorenewBillingEvent());
+    assertThat(persistedHistoryEntry.getDomainContent().get().getDeletePollMessage())
+        .isEqualTo(domain.getDeletePollMessage());
+  }
+
+  private <T> VKey<T> createLegacyVKey(Class<T> clazz, long id) {
+    return VKey.create(
+        clazz, id, Key.create(Key.create(EntityGroupRoot.class, "per-tld"), clazz, id));
   }
 
   private void assertEqualDomainExcept(DomainBase thatDomain, String... excepts) {

@@ -50,6 +50,7 @@ import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -256,9 +257,7 @@ public class DomainContent extends EppResource
    *
    * <p>Here so we can restore the original ofy key from sql.
    */
-  @Column(name = "autorenew_poll_message_history_id")
-  @Ignore
-  Long autorenewPollMessageHistoryId;
+  @Ignore Long autorenewPollMessageHistoryId;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
   @Transient Set<GracePeriod> gracePeriods;
@@ -315,14 +314,9 @@ public class DomainContent extends EppResource
             .collect(toImmutableSet());
 
     // Restore history record ids.
-    autorenewPollMessageHistoryId =
-        autorenewPollMessage != null ? autorenewPollMessage.getOfyKey().getParent().getId() : null;
-    autorenewBillingEventHistoryId =
-        autorenewBillingEvent != null
-            ? autorenewBillingEvent.getOfyKey().getParent().getId()
-            : null;
-    deletePollMessageHistoryId =
-        deletePollMessage != null ? deletePollMessage.getOfyKey().getParent().getId() : null;
+    autorenewPollMessageHistoryId = getHistoryId(autorenewPollMessage);
+    autorenewBillingEventHistoryId = getHistoryId(autorenewBillingEvent);
+    deletePollMessageHistoryId = getHistoryId(deletePollMessage);
   }
 
   /**
@@ -357,8 +351,8 @@ public class DomainContent extends EppResource
   /**
    * Restores the composite ofy keys from SQL data.
    *
-   * <p>MUST ONLY BE CALLED FROM A PostLoad method. This is a public method that effectively mutates
-   * an immutable object.
+   * <p>MUST ONLY BE CALLED FROM A PostLoad method. This is a package-visible method that
+   * effectively mutates an immutable object.
    *
    * <p>We have to do this because:
    *
@@ -377,18 +371,23 @@ public class DomainContent extends EppResource
    *       different field in {@link DomainHistory}.
    * </ul>
    */
-  public void restoreOfyKeys(String repoId) {
+  void restoreOfyKeys(String repoId) {
     // Reconstitute the ofy keys.
     Key<DomainBase> myKey = Key.create(DomainBase.class, repoId);
-    deletePollMessage =
-        VKey.restoreOfyFrom(
-            deletePollMessage, myKey, HistoryEntry.class, deletePollMessageHistoryId);
+    deletePollMessage = restoreOfyFrom(myKey, deletePollMessage, deletePollMessageHistoryId);
     autorenewBillingEvent =
-        VKey.restoreOfyFrom(
-            autorenewBillingEvent, myKey, HistoryEntry.class, autorenewBillingEventHistoryId);
+        restoreOfyFrom(myKey, autorenewBillingEvent, autorenewBillingEventHistoryId);
     autorenewPollMessage =
-        VKey.restoreOfyFrom(
-            autorenewPollMessage, myKey, HistoryEntry.class, autorenewPollMessageHistoryId);
+        restoreOfyFrom(myKey, autorenewPollMessage, autorenewPollMessageHistoryId);
+  }
+
+  private <T> VKey<T> restoreOfyFrom(Key<DomainBase> domainKey, VKey<T> key, Long historyId) {
+    if (historyId == null) {
+      // This is a legacy key (or a null key, in which case this works too)
+      return VKey.restoreOfyFrom(key, EntityGroupRoot.class, "per-tld");
+    } else {
+      return VKey.restoreOfyFrom(key, domainKey, HistoryEntry.class, historyId);
+    }
   }
 
   public ImmutableSet<String> getSubordinateHosts() {
@@ -738,6 +737,17 @@ public class DomainContent extends EppResource
             + " use DomainBase instead");
   }
 
+  private static Long getHistoryId(VKey<?> key) {
+    if (key == null) {
+      return null;
+    }
+    Key<?> parent = key.getOfyKey().getParent();
+    if (parent == null || parent.getKind().equals("EntityGroupRoot")) {
+      return null;
+    }
+    return parent.getId();
+  }
+
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */
   static final Predicate<DesignatedContact> IS_REGISTRANT =
       (DesignatedContact contact) -> DesignatedContact.Type.REGISTRANT.equals(contact.type);
@@ -907,26 +917,19 @@ public class DomainContent extends EppResource
 
     public B setDeletePollMessage(VKey<PollMessage.OneTime> deletePollMessage) {
       getInstance().deletePollMessage = deletePollMessage;
-      getInstance().deletePollMessageHistoryId =
-          deletePollMessage != null ? deletePollMessage.getOfyKey().getParent().getId() : null;
+      getInstance().deletePollMessageHistoryId = getHistoryId(deletePollMessage);
       return thisCastToDerived();
     }
 
     public B setAutorenewBillingEvent(VKey<BillingEvent.Recurring> autorenewBillingEvent) {
       getInstance().autorenewBillingEvent = autorenewBillingEvent;
-      getInstance().autorenewBillingEventHistoryId =
-          autorenewBillingEvent != null
-              ? autorenewBillingEvent.getOfyKey().getParent().getId()
-              : null;
+      getInstance().autorenewBillingEventHistoryId = getHistoryId(autorenewBillingEvent);
       return thisCastToDerived();
     }
 
     public B setAutorenewPollMessage(VKey<PollMessage.Autorenew> autorenewPollMessage) {
       getInstance().autorenewPollMessage = autorenewPollMessage;
-      getInstance().autorenewPollMessageHistoryId =
-          autorenewPollMessage != null
-              ? autorenewPollMessage.getOfyKey().getParent().getId()
-              : null;
+      getInstance().autorenewPollMessageHistoryId = getHistoryId(autorenewPollMessage);
       return thisCastToDerived();
     }
 
