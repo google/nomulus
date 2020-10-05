@@ -94,7 +94,10 @@
     <class>google.registry.persistence.converter.ZonedDateTimeConverter</class>
 
     <!-- Generated converters for VKey -->
-    <class>google.registry.model.billing.VKeyConverter_BillingEvent</class>
+    <class>google.registry.model.billing.VKeyConverter_Cancellation</class>
+    <class>google.registry.model.billing.VKeyConverter_Modification</class>
+    <class>google.registry.model.billing.VKeyConverter_OneTime</class>
+    <class>google.registry.model.billing.VKeyConverter_Recurring</class>
     <class>google.registry.model.contact.VKeyConverter_ContactResource</class>
     <class>google.registry.model.domain.VKeyConverter_DomainBase</class>
     <class>google.registry.model.domain.token.VKeyConverter_AllocationToken</class>

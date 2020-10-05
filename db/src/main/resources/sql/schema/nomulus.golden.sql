@@ -589,12 +589,12 @@ CREATE TABLE public."PollMessage" (
     poll_message_id bigint NOT NULL,
     registrar_id text NOT NULL,
     contact_repo_id text,
-    contact_revision_id bigint,
+    contact_history_revision_id bigint,
     domain_repo_id text,
-    domain_revision_id bigint,
+    domain_history_revision_id bigint,
     event_time timestamp with time zone NOT NULL,
     host_repo_id text,
-    host_revision_id bigint,
+    host_history_revision_id bigint,
     message text,
     transfer_response_contact_id text,
     transfer_response_domain_expiration_time timestamp with time zone,
@@ -612,25 +612,6 @@ CREATE TABLE public."PollMessage" (
     autorenew_end_time timestamp with time zone,
     autorenew_domain_name text
 );
-
-
---
--- Name: PollMessage_poll_message_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."PollMessage_poll_message_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: PollMessage_poll_message_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."PollMessage_poll_message_id_seq" OWNED BY public."PollMessage".poll_message_id;
 
 
 --
@@ -987,13 +968,6 @@ ALTER TABLE ONLY public."DomainTransactionRecord" ALTER COLUMN id SET DEFAULT ne
 --
 
 ALTER TABLE ONLY public."GracePeriod" ALTER COLUMN id SET DEFAULT nextval('public."GracePeriod_id_seq"'::regclass);
-
-
---
--- Name: PollMessage poll_message_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."PollMessage" ALTER COLUMN poll_message_id SET DEFAULT nextval('public."PollMessage_poll_message_id_seq"'::regclass);
 
 
 --
@@ -1902,6 +1876,14 @@ ALTER TABLE ONLY public."HostHistory"
 
 
 --
+-- Name: PollMessage fk_poll_message_contact_history; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_contact_history FOREIGN KEY (contact_repo_id, contact_history_revision_id) REFERENCES public."ContactHistory"(contact_repo_id, history_revision_id);
+
+
+--
 -- Name: PollMessage fk_poll_message_contact_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1910,11 +1892,27 @@ ALTER TABLE ONLY public."PollMessage"
 
 
 --
+-- Name: PollMessage fk_poll_message_domain_history; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_domain_history FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+
+
+--
 -- Name: PollMessage fk_poll_message_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."PollMessage"
     ADD CONSTRAINT fk_poll_message_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
+
+
+--
+-- Name: PollMessage fk_poll_message_host_history; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."PollMessage"
+    ADD CONSTRAINT fk_poll_message_host_history FOREIGN KEY (host_repo_id, host_history_revision_id) REFERENCES public."HostHistory"(host_repo_id, history_revision_id);
 
 
 --
