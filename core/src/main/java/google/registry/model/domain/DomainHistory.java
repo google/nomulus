@@ -16,6 +16,7 @@ package google.registry.model.domain;
 
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
+import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import com.googlecode.objectify.annotation.Ignore;
@@ -26,6 +27,8 @@ import google.registry.model.host.HostResource;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
 import java.util.Optional;
 import java.util.Set;
@@ -65,7 +68,7 @@ import javax.persistence.Table;
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(DomainHistoryId.class)
-public class DomainHistory extends HistoryEntry {
+public class DomainHistory extends HistoryEntry implements SqlEntity {
 
   // Store DomainContent instead of DomainBase so we don't pick up its @Id
   @Nullable DomainContent domainContent;
@@ -170,6 +173,12 @@ public class DomainHistory extends HistoryEntry {
       }
     }
     parent = Key.create(DomainBase.class, domainRepoId);
+  }
+
+  // In Datastore, save as a HistoryEntry object regardless of this object's type
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(asHistoryEntry());
   }
 
   /** Class to represent the composite primary key of {@link DomainHistory} entity. */

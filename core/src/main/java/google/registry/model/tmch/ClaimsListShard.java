@@ -46,6 +46,7 @@ import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.common.CrossTldSingleton;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import google.registry.util.CollectionUtils;
@@ -97,7 +98,7 @@ import org.joda.time.DateTime;
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 @javax.persistence.Entity(name = "ClaimsList")
 @Table
-public class ClaimsListShard extends ImmutableObject implements DatastoreEntity {
+public class ClaimsListShard extends ImmutableObject implements DatastoreAndSqlEntity {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -352,11 +353,6 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreEntity 
     if (!isShard) {
       throw new UnshardedSaveException();
     }
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // ClaimsLists are dually written
   }
 
   /** Virtual parent entity for claims list shards of a specific revision. */

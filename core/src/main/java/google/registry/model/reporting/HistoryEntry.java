@@ -62,7 +62,7 @@ import org.joda.time.DateTime;
 @MappedSuperclass
 @WithStringVKey // TODO(b/162229294): This should be resolved during the course of that bug
 @Access(AccessType.FIELD)
-public class HistoryEntry extends ImmutableObject implements Buildable, DatastoreEntity, SqlEntity {
+public class HistoryEntry extends ImmutableObject implements Buildable, DatastoreEntity {
 
   /** Represents the type of history entry. */
   public enum Type {
@@ -322,13 +322,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   // In SQL, save the child type
   @Override
   public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(toChildHistoryEntity());
-  }
-
-  // In Datastore, save as a HistoryEntry object regardless of this object's type
-  @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(asHistoryEntry());
+    return ImmutableList.of((SqlEntity) toChildHistoryEntity());
   }
 
   /** A builder for {@link HistoryEntry} since it is immutable */

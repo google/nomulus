@@ -22,6 +22,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import javax.annotation.Nullable;
 import javax.persistence.Entity;
 import javax.persistence.Index;
@@ -37,7 +38,7 @@ import org.joda.time.DateTime;
 @Embed
 @Entity
 @Table(indexes = @Index(columnList = "domainRepoId"))
-public class GracePeriod extends GracePeriodBase {
+public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntity {
 
   private static GracePeriod createInternal(
       GracePeriodStatus type,

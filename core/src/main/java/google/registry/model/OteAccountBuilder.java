@@ -252,7 +252,8 @@ public final class OteAccountBuilder {
   private void saveAllEntities() {
     tm().assertInTransaction();
 
-    ImmutableList<Registry> registries = ImmutableList.of(sunriseTld, gaTld, eapTld);
+    // use ImmutableObject instead of Registry so that the Key generation doesn't break
+    ImmutableList<ImmutableObject> registries = ImmutableList.of(sunriseTld, gaTld, eapTld);
     ImmutableList<RegistrarContact> contacts = contactsBuilder.build();
 
     if (!replaceExisting) {
