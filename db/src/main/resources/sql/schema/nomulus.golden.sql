@@ -1774,7 +1774,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."DomainHistory"
-    ADD CONSTRAINT fk_domain_history_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
+    ADD CONSTRAINT fk_domain_history_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1910,7 +1910,7 @@ ALTER TABLE ONLY public."PollMessage"
 --
 
 ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
+    ADD CONSTRAINT fk_poll_message_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

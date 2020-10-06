@@ -449,9 +449,6 @@ public class DomainBaseSqlTest {
               jpaTm().insert(contact);
               jpaTm().insert(contact2);
               jpaTm().insert(host);
-              jpaTm().insert(billEvent);
-              jpaTm().insert(autorenewPollMessage);
-              jpaTm().insert(deletePollMessage);
               domain =
                   domain
                       .asBuilder()
@@ -460,8 +457,11 @@ public class DomainBaseSqlTest {
                       .setDeletePollMessage(deletePollMessage.createVKey())
                       .build();
               historyEntry = historyEntry.asBuilder().setDomainContent(domain).build();
-              jpaTm().insert(domain);
               jpaTm().insert(historyEntry);
+              jpaTm().insert(autorenewPollMessage);
+              jpaTm().insert(billEvent);
+              jpaTm().insert(deletePollMessage);
+              jpaTm().insert(domain);
             });
 
     // Store the existing BillingRecurrence VKey.  This happens after the event has been persisted.
@@ -529,9 +529,6 @@ public class DomainBaseSqlTest {
               jpaTm().insert(contact);
               jpaTm().insert(contact2);
               jpaTm().insert(host);
-              jpaTm().insert(billEvent);
-              jpaTm().insert(autorenewPollMessage);
-              jpaTm().insert(deletePollMessage);
               domain =
                   domain
                       .asBuilder()
@@ -543,8 +540,11 @@ public class DomainBaseSqlTest {
                           createLegacyVKey(PollMessage.OneTime.class, autorenewPollMessage.getId()))
                       .build();
               historyEntry = historyEntry.asBuilder().setDomainContent(domain).build();
-              jpaTm().insert(domain);
               jpaTm().insert(historyEntry);
+              jpaTm().insert(autorenewPollMessage);
+              jpaTm().insert(billEvent);
+              jpaTm().insert(deletePollMessage);
+              jpaTm().insert(domain);
             });
 
     // Store the existing BillingRecurrence VKey.  This happens after the event has been persisted.
