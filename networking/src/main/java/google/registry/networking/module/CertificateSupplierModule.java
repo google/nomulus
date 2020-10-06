@@ -25,7 +25,7 @@ import com.google.common.collect.ImmutableList;
 import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.networking.util.SelfSignedCaCertificate;
+import google.registry.util.SelfSignedCaCertificate;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;

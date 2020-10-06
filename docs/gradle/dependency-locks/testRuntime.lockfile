@@ -208,6 +208,7 @@ org.apache.logging.log4j:log4j-api:2.13.3
 org.apache.logging.log4j:log4j-core:2.13.3
 org.apiguardian:apiguardian-api:1.1.0
 org.bouncycastle:bcpg-jdk15on:1.61
+org.bouncycastle:bcpkix-jdk15on:1.61
 org.bouncycastle:bcprov-jdk15on:1.61
 org.checkerframework:checker-compat-qual:2.5.5
 org.checkerframework:checker-qual:2.11.1

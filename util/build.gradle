@@ -32,6 +32,8 @@ dependencies {
   compile deps['javax.xml.bind:jaxb-api']
   compile deps['joda-time:joda-time']
   compile deps['org.yaml:snakeyaml']
+  compile deps['org.bouncycastle:bcpkix-jdk15on']
+  compile deps['org.bouncycastle:bcprov-jdk15on']
   compile project(':common')
   runtime deps['com.google.auto.value:auto-value']
   testCompile deps['com.google.appengine:appengine-api-stubs']

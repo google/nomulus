@@ -42,6 +42,8 @@ net.bytebuddy:byte-buddy:1.10.5
 org.apache.httpcomponents:httpclient:4.5.11
 org.apache.httpcomponents:httpcore:4.4.13
 org.apiguardian:apiguardian-api:1.1.0
+org.bouncycastle:bcpkix-jdk15on:1.61
+org.bouncycastle:bcprov-jdk15on:1.61
 org.checkerframework:checker-compat-qual:2.5.5
 org.checkerframework:checker-qual:2.11.1
 org.hamcrest:hamcrest-all:1.3

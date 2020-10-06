@@ -27,10 +27,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.base.Throwables;
-import google.registry.networking.util.SelfSignedCaCertificate;
 import google.registry.proxy.TestUtils;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
 import google.registry.proxy.metric.FrontendMetrics;
+import google.registry.util.SelfSignedCaCertificate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInitializer;
