@@ -15,9 +15,15 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.joda.time.DateTimeZone.UTC;
+import static google.registry.util.CertificateChecker.CertificateViolation.ALGORITHM_CONSTRAINED;
+import static google.registry.util.CertificateChecker.CertificateViolation.EXPIRED;
+import static google.registry.util.CertificateChecker.CertificateViolation.NOT_YET_VALID;
+import static google.registry.util.CertificateChecker.CertificateViolation.RSA_KEY_LENGTH_TOO_SHORT;
+import static google.registry.util.CertificateChecker.CertificateViolation.VALIDITY_LENGTH_TOO_LONG;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
+import google.registry.testing.FakeClock;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -26,26 +32,33 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link CertificateChecker} */
-public class CertificateCheckerTest {
+class CertificateCheckerTest {
 
   private static final String SSL_HOST = "www.example.tld";
 
-  private static CertificateChecker certificateChecker = new CertificateChecker(398, 30, 2048);
+  private FakeClock fakeClock = new FakeClock();
+  private CertificateChecker certificateChecker =
+      new CertificateChecker(
+          ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+          30,
+          2048,
+          fakeClock);
 
   @Test
-  void test_compliantCertificate() throws Exception {
+  void test_checkCertificate_compliantCertPasses() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.now(UTC).minusDays(5).toDate(),
-                DateTime.now(UTC).plusDays(80).toDate())
+                DateTime.parse("2020-09-02T00:00:00Z"),
+                DateTime.parse("2021-10-01T00:00:00Z"))
             .cert();
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of());
+    assertThat(certificateChecker.checkCertificate(certificate)).isEmpty();
   }
 
   @Test
-  void test_certificateWithSeveralIssues() throws Exception {
+  void test_checkCertificate_severalViolations() throws Exception {
+    fakeClock.setTo(DateTime.parse("2010-01-01T00:00:00Z"));
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
     keyGen.initialize(1024, new SecureRandom());
 
@@ -53,104 +66,79 @@ public class CertificateCheckerTest {
         SelfSignedCaCertificate.create(
                 keyGen.generateKeyPair(),
                 SSL_HOST,
-                DateTime.now(UTC).plusDays(5).toDate(),
-                DateTime.now(UTC).plusDays(1000).toDate())
+                DateTime.parse("2010-04-01T00:00:00Z"),
+                DateTime.parse("2014-07-01T00:00:00Z"))
             .cert();
 
-    ImmutableSet<CertificateViolation> violations =
-        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).hasSize(3);
-    assertThat(violations)
-        .isEqualTo(
-            ImmutableSet.of(
-                certificateChecker.certificateNotYetValidViolation,
-                certificateChecker.certificateValidityLengthViolation,
-                certificateChecker.certificateRsaKeyLengthViolation));
-    ;
+    assertThat(certificateChecker.checkCertificate(certificate))
+        .containsExactly(NOT_YET_VALID, VALIDITY_LENGTH_TOO_LONG, RSA_KEY_LENGTH_TOO_SHORT);
   }
 
   @Test
-  void test_expiredCertificate() throws Exception {
+  void test_checkCertificate_expiredCertificate() throws Exception {
+    fakeClock.setTo(DateTime.parse("2014-01-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.now(UTC).minusDays(50).toDate(),
-                DateTime.now(UTC).minusDays(10).toDate())
+                DateTime.parse("2010-04-01T00:00:00Z"),
+                DateTime.parse("2012-07-01T00:00:00Z"))
             .cert();
-    ImmutableSet<CertificateViolation> violations =
-        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).containsExactly(certificateChecker.certificateExpiredViolation);
+    assertThat(certificateChecker.checkCertificate(certificate)).containsExactly(EXPIRED);
   }
 
   @Test
-  void test_notYetValid() throws Exception {
+  void test_checkCertificate_notYetValid() throws Exception {
+    fakeClock.setTo(DateTime.parse("2010-01-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.now(UTC).plusDays(10).toDate(),
-                DateTime.now(UTC).plusDays(50).toDate())
+                DateTime.parse("2010-04-01T00:00:00Z"),
+                DateTime.parse("2012-07-01T00:00:00Z"))
             .cert();
-    ImmutableSet<CertificateViolation> violations =
-        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).containsExactly(certificateChecker.certificateNotYetValidViolation);
+    assertThat(certificateChecker.checkCertificate(certificate)).containsExactly(NOT_YET_VALID);
   }
 
   @Test
-  void test_checkValidityLength() throws Exception {
+  void test_checkCertificate_validityLengthWayTooLong() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.now(UTC).minusDays(10).toDate(),
-                DateTime.now(UTC).plusDays(1000).toDate())
+                DateTime.parse("2016-04-01T00:00:00Z"),
+                DateTime.parse("2021-07-01T00:00:00Z"))
             .cert();
-    ImmutableSet<CertificateViolation> violations =
-        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).containsExactly(certificateChecker.certificateValidityLengthViolation);
-
-    certificate =
-        SelfSignedCaCertificate.create(
-                SSL_HOST,
-                DateTime.parse("2020-08-01T00:00:00Z").toDate(),
-                DateTime.parse("2023-11-01T00:00:00Z").toDate())
-            .cert();
-    violations = certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations)
-        .containsExactly(certificateChecker.certificateOldValidityLengthValidViolation);
-
-    certificate =
-        SelfSignedCaCertificate.create(
-                SSL_HOST,
-                DateTime.parse("2020-08-01T00:00:00Z").toDate(),
-                DateTime.parse("2021-11-01T00:00:00Z").toDate())
-            .cert();
-    violations = certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).isEmpty();
+    assertThat(certificateChecker.checkCertificate(certificate))
+        .containsExactly(VALIDITY_LENGTH_TOO_LONG);
   }
 
   @Test
-  void test_nearingExpiration() throws Exception {
+  void test_checkCertificate_olderValidityLengthIssuedAfterCutoff() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 SSL_HOST,
-                DateTime.now(UTC).minusDays(50).toDate(),
-                DateTime.now(UTC).plusDays(10).toDate())
+                DateTime.parse("2020-09-02T00:00:00Z"),
+                DateTime.parse("2022-10-01T00:00:00Z"))
             .cert();
-    assertThat(certificateChecker.isNearingExpiration(certificate, DateTime.now(UTC).toDate()))
-        .isTrue();
-
-    certificate =
-        SelfSignedCaCertificate.create(
-                SSL_HOST,
-                DateTime.now(UTC).minusDays(50).toDate(),
-                DateTime.now(UTC).plusDays(100).toDate())
-            .cert();
-    assertThat(certificateChecker.isNearingExpiration(certificate, DateTime.now(UTC).toDate()))
-        .isFalse();
+    assertThat(certificateChecker.checkCertificate(certificate))
+        .containsExactly(VALIDITY_LENGTH_TOO_LONG);
   }
 
   @Test
-  void test_checkRsaKeyLength() throws Exception {
-    // Key length too low
+  void test_checkCertificate_olderValidityLengthIssuedBeforeCutoff() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    X509Certificate certificate =
+        SelfSignedCaCertificate.create(
+                SSL_HOST,
+                DateTime.parse("2019-09-01T00:00:00Z"),
+                DateTime.parse("2021-10-01T00:00:00Z"))
+            .cert();
+    assertThat(certificateChecker.checkCertificate(certificate)).isEmpty();
+  }
+
+  @Test
+  void test_checkCertificate_rsaKeyLengthTooShort() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
     keyGen.initialize(1024, new SecureRandom());
 
@@ -158,27 +146,83 @@ public class CertificateCheckerTest {
         SelfSignedCaCertificate.create(
                 keyGen.generateKeyPair(),
                 SSL_HOST,
-                DateTime.now(UTC).minusDays(5).toDate(),
-                DateTime.now(UTC).plusDays(100).toDate())
+                DateTime.parse("2020-09-02T00:00:00Z"),
+                DateTime.parse("2021-10-01T00:00:00Z"))
             .cert();
 
-    ImmutableSet<CertificateViolation> violations =
-        certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate());
-    assertThat(violations).containsExactly(certificateChecker.certificateRsaKeyLengthViolation);
+    assertThat(certificateChecker.checkCertificate(certificate))
+        .containsExactly(RSA_KEY_LENGTH_TOO_SHORT);
+  }
 
-    // Key length higher than required
-    keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
+  @Test
+  void test_checkCertificate_rsaKeyLengthLongerThanRequired() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
     keyGen.initialize(4096, new SecureRandom());
 
-    certificate =
+    X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 keyGen.generateKeyPair(),
                 SSL_HOST,
-                DateTime.now(UTC).minusDays(5).toDate(),
-                DateTime.now(UTC).plusDays(100).toDate())
+                DateTime.parse("2020-09-02T00:00:00Z"),
+                DateTime.parse("2021-10-01T00:00:00Z"))
             .cert();
 
-    assertThat(certificateChecker.checkCertificate(certificate, DateTime.now(UTC).toDate()))
-        .isEqualTo(ImmutableSet.of());
+    assertThat(certificateChecker.checkCertificate(certificate)).isEmpty();
+  }
+
+  @Test
+  void test_checkCertificate_invalidAlgorithm() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA", new BouncyCastleProvider());
+    keyGen.initialize(2048, new SecureRandom());
+
+    X509Certificate certificate =
+        SelfSignedCaCertificate.create(
+                keyGen.generateKeyPair(),
+                SSL_HOST,
+                DateTime.parse("2020-09-02T00:00:00Z"),
+                DateTime.parse("2021-10-01T00:00:00Z"))
+            .cert();
+
+    assertThat(certificateChecker.checkCertificate(certificate))
+        .containsExactly(ALGORITHM_CONSTRAINED);
+  }
+
+  @Test
+  void test_isNearingExpiration_yesItIs() throws Exception {
+    fakeClock.setTo(DateTime.parse("2021-09-20T00:00:00Z"));
+    X509Certificate certificate =
+        SelfSignedCaCertificate.create(
+                SSL_HOST,
+                DateTime.parse("2020-09-02T00:00:00Z"),
+                DateTime.parse("2021-10-01T00:00:00Z"))
+            .cert();
+    assertThat(certificateChecker.isNearingExpiration(certificate)).isTrue();
+  }
+
+  @Test
+  void test_isNearingExpiration_noItsNot() throws Exception {
+    fakeClock.setTo(DateTime.parse("2021-07-20T00:00:00Z"));
+    X509Certificate certificate =
+        SelfSignedCaCertificate.create(
+                SSL_HOST,
+                DateTime.parse("2020-09-02T00:00:00Z"),
+                DateTime.parse("2021-10-01T00:00:00Z"))
+            .cert();
+    assertThat(certificateChecker.isNearingExpiration(certificate)).isFalse();
+  }
+
+  @Test
+  void test_CertificateViolation_RsaKeyLengthDisplayMessageFormatsCorrectly() {
+    assertThat(RSA_KEY_LENGTH_TOO_SHORT.getDisplayMessage(certificateChecker))
+        .isEqualTo("RSA key length is too short; the minimum allowed length is 2048 bits.");
+  }
+
+  @Test
+  void test_CertificateViolation_validityLengthDisplayMessageFormatsCorrectly() {
+    assertThat(VALIDITY_LENGTH_TOO_LONG.getDisplayMessage(certificateChecker))
+        .isEqualTo(
+            "Certificate validity period is too long; it must be less than or equal to 398 days.");
   }
 }

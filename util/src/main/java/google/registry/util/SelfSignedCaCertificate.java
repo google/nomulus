@@ -37,6 +37,7 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.joda.time.DateTime;
 
 /** A self-signed certificate authority (CA) cert for use in tests. */
 // TODO(weiminyu): make this class test-only. Requires refactor in proxy and prober.
@@ -83,9 +84,20 @@ public class SelfSignedCaCertificate {
     return create(keyGen.generateKeyPair(), fqdn, from, to);
   }
 
+  public static SelfSignedCaCertificate create(String fqdn, DateTime from, DateTime to)
+      throws Exception {
+    return create(keyGen.generateKeyPair(), fqdn, from.toDate(), to.toDate());
+  }
+
   public static SelfSignedCaCertificate create(KeyPair keyPair, String fqdn, Date from, Date to)
       throws Exception {
     return new SelfSignedCaCertificate(keyPair.getPrivate(), createCaCert(keyPair, fqdn, from, to));
+  }
+
+  public static SelfSignedCaCertificate create(
+      KeyPair keyPair, String fqdn, DateTime from, DateTime to) throws Exception {
+    return new SelfSignedCaCertificate(
+        keyPair.getPrivate(), createCaCert(keyPair, fqdn, from.toDate(), to.toDate()));
   }
 
   static KeyPairGenerator createKeyPairGenerator() {
