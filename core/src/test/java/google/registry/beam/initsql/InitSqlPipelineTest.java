@@ -273,8 +273,11 @@ class InitSqlPipelineTest {
             "revisions",
             "updateTimestamp",
             "autorenewBillingEvent",
+            "autorenewBillingEventHistoryId",
             "autorenewPollMessage",
+            "autorenewPollMessageHistoryId",
             "deletePollMessage",
+            "deletePollMessageHistoryId",
             "nsHosts",
             "transferData");
     assertThat(actual.getAdminContact().getSqlKey())

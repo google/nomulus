@@ -40,6 +40,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
@@ -49,6 +50,7 @@ import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -57,6 +59,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
@@ -210,6 +213,15 @@ public class DomainContent extends EppResource
   VKey<PollMessage.OneTime> deletePollMessage;
 
   /**
+   * History record for the delete poll message.
+   *
+   * <p>Here so we can restore the original ofy key from sql.
+   */
+  @Column(name = "deletion_poll_message_history_id")
+  @Ignore
+  Long deletePollMessageHistoryId;
+
+  /**
    * The recurring billing event associated with this domain's autorenewals.
    *
    * <p>The recurrence should be open ended unless the domain is in pending delete or fully deleted,
@@ -221,6 +233,15 @@ public class DomainContent extends EppResource
   VKey<BillingEvent.Recurring> autorenewBillingEvent;
 
   /**
+   * History record for the autorenew billing event.
+   *
+   * <p>Here so we can restore the original ofy key from sql.
+   */
+  @Column(name = "billing_recurrence_history_id")
+  @Ignore
+  Long autorenewBillingEventHistoryId;
+
+  /**
    * The recurring poll message associated with this domain's autorenewals.
    *
    * <p>The recurrence should be open ended unless the domain is in pending delete or fully deleted,
@@ -230,6 +251,13 @@ public class DomainContent extends EppResource
    */
   @Column(name = "autorenew_poll_message_id")
   VKey<PollMessage.Autorenew> autorenewPollMessage;
+
+  /**
+   * History record for the autorenew poll message.
+   *
+   * <p>Here so we can restore the original ofy key from sql.
+   */
+  @Ignore Long autorenewPollMessageHistoryId;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
   @Transient Set<GracePeriod> gracePeriods;
@@ -284,10 +312,22 @@ public class DomainContent extends EppResource
         nullToEmptyImmutableCopy(gracePeriods).stream()
             .map(gracePeriod -> gracePeriod.cloneWithDomainRepoId(getRepoId()))
             .collect(toImmutableSet());
+
+    // Restore history record ids.
+    autorenewPollMessageHistoryId = getHistoryId(autorenewPollMessage);
+    autorenewBillingEventHistoryId = getHistoryId(autorenewBillingEvent);
+    deletePollMessageHistoryId = getHistoryId(deletePollMessage);
   }
 
+  /**
+   * The {@link javax.persistence.PostLoad} method for {@link DomainContent}.
+   *
+   * <p>We name this domainContentPostLoad to distinguish it from the {@link PostLoad} method in
+   * DomainBase (if they share the same name, this one is never called).
+   */
   @PostLoad
-  void postLoad() {
+  @SuppressWarnings("UnusedMethod")
+  private final void domainContentPostLoad() {
     // Reconstitute the contact list.
     ImmutableSet.Builder<DesignatedContact> contactsBuilder = new ImmutableSet.Builder<>();
 
@@ -306,6 +346,48 @@ public class DomainContent extends EppResource
     }
 
     allContacts = contactsBuilder.build();
+  }
+
+  /**
+   * Restores the composite ofy keys from SQL data.
+   *
+   * <p>MUST ONLY BE CALLED FROM A PostLoad method. This is a package-visible method that
+   * effectively mutates an immutable object.
+   *
+   * <p>We have to do this because:
+   *
+   * <ul>
+   *   <li>We've changed the {@link PostLoad} method behavior to make all {@link PostLoad} calls in
+   *       the class hierarchy (and not merely the most specific one) be called after an object is
+   *       loaded.
+   *   <li>When restoring a {@link DomainBase} object (which is a subclass) the repo id is not
+   *       populated until after our {@link PostLoad} method is called. Therefore, we need to
+   *       restore these ofy keys (which depend on the repo id) from {@link DomainBase}'s {@link
+   *       PostLoad} method.
+   *   <li>When restoring a {@link DomainHistory} object, hibernate restores a {@link DomainContent}
+   *       instance, therefore we need our own {@link PostLoad} method to restore the other fields.
+   *       In order to restore the ofy keys, we need to invoke this method separately from {@link
+   *       DomainHistory}'s {@link PostLoad} method and pass in the repo id, which is stored in a
+   *       different field in {@link DomainHistory}.
+   * </ul>
+   */
+  void restoreOfyKeys(String repoId) {
+    // Reconstitute the ofy keys.
+    Key<DomainBase> myKey = Key.create(DomainBase.class, repoId);
+    deletePollMessage = restoreOfyFrom(myKey, deletePollMessage, deletePollMessageHistoryId);
+    autorenewBillingEvent =
+        restoreOfyFrom(myKey, autorenewBillingEvent, autorenewBillingEventHistoryId);
+    autorenewPollMessage =
+        restoreOfyFrom(myKey, autorenewPollMessage, autorenewPollMessageHistoryId);
+  }
+
+  private <T> VKey<T> restoreOfyFrom(Key<DomainBase> domainKey, VKey<T> key, Long historyId) {
+    if (historyId == null) {
+      // This is a legacy key (or a null key, in which case this works too)
+      return VKey.restoreOfyFrom(key, EntityGroupRoot.class, "per-tld");
+    } else {
+      return VKey.restoreOfyFrom(key, domainKey, HistoryEntry.class, historyId);
+    }
   }
 
   public ImmutableSet<String> getSubordinateHosts() {
@@ -655,6 +737,17 @@ public class DomainContent extends EppResource
             + " use DomainBase instead");
   }
 
+  private static Long getHistoryId(VKey<?> key) {
+    if (key == null) {
+      return null;
+    }
+    Key<?> parent = key.getOfyKey().getParent();
+    if (parent == null || parent.getKind().equals("EntityGroupRoot")) {
+      return null;
+    }
+    return parent.getId();
+  }
+
   /** Predicate to determine if a given {@link DesignatedContact} is the registrant. */
   static final Predicate<DesignatedContact> IS_REGISTRANT =
       (DesignatedContact contact) -> DesignatedContact.Type.REGISTRANT.equals(contact.type);
@@ -824,16 +917,19 @@ public class DomainContent extends EppResource
 
     public B setDeletePollMessage(VKey<PollMessage.OneTime> deletePollMessage) {
       getInstance().deletePollMessage = deletePollMessage;
+      getInstance().deletePollMessageHistoryId = getHistoryId(deletePollMessage);
       return thisCastToDerived();
     }
 
     public B setAutorenewBillingEvent(VKey<BillingEvent.Recurring> autorenewBillingEvent) {
       getInstance().autorenewBillingEvent = autorenewBillingEvent;
+      getInstance().autorenewBillingEventHistoryId = getHistoryId(autorenewBillingEvent);
       return thisCastToDerived();
     }
 
     public B setAutorenewPollMessage(VKey<PollMessage.Autorenew> autorenewPollMessage) {
       getInstance().autorenewPollMessage = autorenewPollMessage;
+      getInstance().autorenewPollMessageHistoryId = getHistoryId(autorenewPollMessage);
       return thisCastToDerived();
     }
 

@@ -353,7 +353,10 @@ CREATE TABLE public."Domain" (
     billing_recurrence_id bigint,
     autorenew_poll_message_id bigint,
     deletion_poll_message_id bigint,
-    autorenew_end_time timestamp with time zone
+    autorenew_end_time timestamp with time zone,
+    billing_recurrence_history_id bigint,
+    autorenew_poll_message_history_id bigint,
+    deletion_poll_message_history_id bigint
 );
 
 
@@ -420,7 +423,10 @@ CREATE TABLE public."DomainHistory" (
     autorenew_end_time timestamp with time zone,
     history_other_registrar_id text,
     history_period_unit text,
-    history_period_value integer
+    history_period_value integer,
+    billing_recurrence_history_id bigint,
+    autorenew_poll_message_history_id bigint,
+    deletion_poll_message_history_id bigint
 );
 
 
@@ -1768,7 +1774,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."DomainHistory"
-    ADD CONSTRAINT fk_domain_history_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
+    ADD CONSTRAINT fk_domain_history_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1904,7 +1910,7 @@ ALTER TABLE ONLY public."PollMessage"
 --
 
 ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
+    ADD CONSTRAINT fk_poll_message_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
