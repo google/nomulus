@@ -28,7 +28,7 @@
   <!-- For finding non-autorenewing domains to be deleted. -->
   <datastore-index kind="DomainBase" ancestor="false" source="manual">
     <property name="autorenewEndTime" direction="asc"/>
-    <property name="deletionTime" direction="asc"/>
+    <property name="deletionTime" direction="desc"/>
   </datastore-index>
   <!-- For finding host resources by registrar. -->
   <datastore-index kind="HostResource" ancestor="false" source="manual">
