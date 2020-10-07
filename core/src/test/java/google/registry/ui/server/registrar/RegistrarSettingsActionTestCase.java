@@ -14,7 +14,7 @@
 
 package google.registry.ui.server.registrar;
 
-import static com.google.appengine.repackaged.com.google.common.collect.Iterables.getOnlyElement;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat;
 import static google.registry.config.RegistryConfig.getGSuiteOutgoingEmailAddress;
 import static google.registry.config.RegistryConfig.getGSuiteOutgoingEmailDisplayName;
