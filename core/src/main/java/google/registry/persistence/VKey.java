@@ -88,7 +88,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    */
   public static <T> VKey<T> create(Class<T> kind, long id) {
     checkArgument(
-        kind.isAssignableFrom(BackupGroupRoot.class),
+        BackupGroupRoot.class.isAssignableFrom(kind),
         "The kind %s is not a BackupGroupRoot and thus needs its entire entity group chain"
             + " specified in a parent",
         kind.getCanonicalName());
@@ -106,7 +106,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    */
   public static <T> VKey<T> create(Class<T> kind, String name) {
     checkArgument(
-        kind.isAssignableFrom(BackupGroupRoot.class),
+        BackupGroupRoot.class.isAssignableFrom(kind),
         "The kind %s is not a BackupGroupRoot and thus needs its entire entity group chain"
             + " specified in a parent",
         kind.getCanonicalName());
