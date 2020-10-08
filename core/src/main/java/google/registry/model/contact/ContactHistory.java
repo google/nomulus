@@ -92,10 +92,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
 
   /** The key to the {@link ContactResource} this is based off of. */
   public VKey<ContactResource> getParentVKey() {
-    return VKey.create(
-        ContactResource.class,
-        getContactRepoId(),
-        Key.create(ContactResource.class, getContactRepoId()));
+    return VKey.create(ContactResource.class, getContactRepoId());
   }
 
   /** Creates a {@link VKey} instance for this entity. */

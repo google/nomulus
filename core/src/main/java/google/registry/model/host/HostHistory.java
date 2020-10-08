@@ -93,8 +93,7 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
 
   /** The key to the {@link google.registry.model.host.HostResource} this is based off of. */
   public VKey<HostResource> getParentVKey() {
-    return VKey.create(
-        HostResource.class, getHostRepoId(), Key.create(HostResource.class, getHostRepoId()));
+    return VKey.create(HostResource.class, getHostRepoId());
   }
 
   /** Creates a {@link VKey} instance for this entity. */

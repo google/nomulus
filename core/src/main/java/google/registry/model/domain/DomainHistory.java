@@ -162,8 +162,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
 
   /** The key to the {@link DomainBase} this is based off of. */
   public VKey<DomainBase> getParentVKey() {
-    return VKey.create(
-        DomainBase.class, getDomainRepoId(), Key.create(DomainBase.class, getDomainRepoId()));
+    return VKey.create(DomainBase.class, getDomainRepoId());
   }
 
   /** Creates a {@link VKey} instance for this entity. */
