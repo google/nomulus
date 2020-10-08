@@ -87,8 +87,7 @@ public final class ImmutableObjectSubject extends Subject {
     }
   }
 
-  private static Map<Field, Object> filterFields(
-      ImmutableObject original, String... ignoredFields) {
+  public static Map<Field, Object> filterFields(ImmutableObject original, String... ignoredFields) {
     ImmutableSet<String> ignoredFieldSet = ImmutableSet.copyOf(ignoredFields);
     Map<Field, Object> originalFields = ModelUtils.getFieldValues(original);
     // don't use ImmutableMap or a stream->collect model since we can have nulls

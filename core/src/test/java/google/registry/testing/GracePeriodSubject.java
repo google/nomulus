@@ -15,8 +15,8 @@
 package google.registry.testing;
 
 import static com.google.common.truth.Truth.assertAbout;
-import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.testing.TruthHelper.assertBothNullOrNonnull;
 
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
@@ -38,16 +38,17 @@ public class GracePeriodSubject extends Subject {
     this.actual = actual;
   }
 
-  public static SimpleSubjectBuilder<GracePeriodSubject, GracePeriod> assertAboutGracePeriods() {
+  /** Creates a {@link SimpleSubjectBuilder} for {@link GracePeriodSubject}. */
+  public static SimpleSubjectBuilder<GracePeriodSubject, GracePeriod> assertAboutGracePeriod() {
     return assertAbout(GracePeriodSubject::new);
   }
 
+  /**
+   * Asserts that this subject's {@link GracePeriod} is equal to the given {@link GracePeriod}
+   * except the {@link GracePeriod#gracePeriodId} field.
+   */
   public void isEqualExceptId(@Nullable GracePeriod expected) {
-    if (actual == null) {
-      assertThat(expected).isNull();
-    } else {
-      assertThat(expected).isNotNull();
-    }
+    assertBothNullOrNonnull(actual, expected);
     if (actual != null) {
       assertAboutImmutableObjects().that(actual).isEqualExceptFields(expected, "gracePeriodId");
     }

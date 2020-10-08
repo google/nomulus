@@ -17,8 +17,8 @@ package google.registry.model.domain;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.testing.GracePeriodCollectionSubject.assertAboutGracePeriodCollection;
-import static google.registry.testing.GracePeriodSubject.assertAboutGracePeriods;
+import static google.registry.testing.GracePeriodSubject.assertAboutGracePeriod;
+import static google.registry.testing.GracePeriodsSubject.assertAboutGracePeriods;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -253,7 +253,7 @@ public class DomainBaseSqlTest {
                       gracePeriod -> {
                         assertThat(gracePeriod.gracePeriodId).isNotNull();
                         if (gracePeriod.getType() == GracePeriodStatus.ADD) {
-                          assertAboutGracePeriods()
+                          assertAboutGracePeriod()
                               .that(gracePeriod)
                               .isEqualExceptId(
                                   GracePeriod.create(
@@ -263,7 +263,7 @@ public class DomainBaseSqlTest {
                                       "registrar1",
                                       null));
                         } else if (gracePeriod.getType() == GracePeriodStatus.RENEW) {
-                          assertAboutGracePeriods()
+                          assertAboutGracePeriod()
                               .that(gracePeriod)
                               .isEqualExceptId(
                                   GracePeriod.create(
@@ -331,7 +331,7 @@ public class DomainBaseSqlTest {
         .transact(
             () -> {
               DomainBase persisted = jpaTm().load(domain.createVKey());
-              assertAboutGracePeriodCollection()
+              assertAboutGracePeriods()
                   .that(persisted.getGracePeriods())
                   .containsExactlyExceptId(
                       GracePeriod.create(
