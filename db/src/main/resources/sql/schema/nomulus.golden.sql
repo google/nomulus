@@ -932,30 +932,6 @@ ALTER SEQUENCE public."Transaction_id_seq" OWNED BY public."Transaction".id;
 
 
 --
--- Name: history_id_sequence; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.history_id_sequence
-    START WITH 1
-    INCREMENT BY 50
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: temp_history_id_sequence; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.temp_history_id_sequence
-    START WITH 1
-    INCREMENT BY 50
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
 -- Name: ClaimsList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 

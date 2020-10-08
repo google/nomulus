@@ -48,7 +48,6 @@ public class ContactHistoryTest extends EntityTestCase {
     VKey<ContactResource> contactVKey = contact.createVKey();
     ContactResource contactFromDb = jpaTm().transact(() -> jpaTm().load(contactVKey));
     ContactHistory contactHistory = createContactHistory(contactFromDb, contact.getRepoId());
-    contactHistory.id = null;
     jpaTm().transact(() -> jpaTm().insert(contactHistory));
     jpaTm()
         .transact(
@@ -73,7 +72,6 @@ public class ContactHistoryTest extends EntityTestCase {
             .asBuilder()
             .setContactBase(null)
             .build();
-    contactHistory.id = null;
     jpaTm().transact(() -> jpaTm().insert(contactHistory));
 
     jpaTm()
