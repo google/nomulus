@@ -19,8 +19,8 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
-import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.model.domain.secdns.DelegationSignerData.DelegationSignerDataId;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -42,12 +42,10 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  */
 @Embed
 @XmlType(name = "dsData")
-@javax.persistence.Entity
-public class DelegationSignerData extends ImmutableObject implements DatastoreAndSqlEntity {
 @Entity
 @Table(indexes = @Index(columnList = "domainRepoId"))
 @IdClass(DelegationSignerDataId.class)
-public class DelegationSignerData extends ImmutableObject {
+public class DelegationSignerData extends ImmutableObject implements DatastoreAndSqlEntity {
 
   private DelegationSignerData() {}
 
