@@ -14,11 +14,9 @@
 # limitations under the License.
 #
 # This script runs the sqlIntegrationTestSuite in a given server release
-# against a specific Cloud SQL schema release. The target use case is the
-# presubmit test, where the server code in the branch to be merged is
-# tested against the schemas currently deployed in the production environments,
-# and the schema in the branch to be merged is tested against the server code
-# in the production environments.
+# against a specific Cloud SQL schema release. When invoked during presubmit
+# tests, it detects code or schema changes that are incompatible with current
+# deployments in production.
 
 USAGE="
 $(basename "$0") [--help]
@@ -36,7 +34,9 @@ If sut is sql, the schema in local branch must not break the currently
 deployed servers. This is verified by running the sqlIntegrationTestSuite
 in appropriate releases against the SQL schema in the local branch.
 
-Caller must ensure that the branch to be tested has been checked out.
+This script needs to fetch Github tags of deployed systems. On platforms
+that performs shallow clone, such as Travis-ci, caller may need to invoke
+'git fetch --tags'.
 
 Options:
     -h, --help  show this help text
