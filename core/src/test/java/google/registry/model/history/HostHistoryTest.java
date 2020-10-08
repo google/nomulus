@@ -56,8 +56,8 @@ public class HostHistoryTest extends EntityTestCase {
             () -> {
               HostHistory fromDatabase = jpaTm().load(hostHistory.createVKey());
               assertHostHistoriesEqual(fromDatabase, hostHistory);
-              assertThat(fromDatabase.getHostRepoId().getSqlKey())
-                  .isEqualTo(hostHistory.getHostRepoId().getSqlKey());
+              assertThat(fromDatabase.getParentVKey().getSqlKey())
+                  .isEqualTo(hostHistory.getParentVKey().getSqlKey());
             });
   }
 
@@ -78,8 +78,8 @@ public class HostHistoryTest extends EntityTestCase {
             () -> {
               HostHistory fromDatabase = jpaTm().load(hostHistory.createVKey());
               assertHostHistoriesEqual(fromDatabase, hostHistory);
-              assertThat(fromDatabase.getHostRepoId().getSqlKey())
-                  .isEqualTo(hostHistory.getHostRepoId().getSqlKey());
+              assertThat(fromDatabase.getParentVKey().getSqlKey())
+                  .isEqualTo(hostHistory.getParentVKey().getSqlKey());
             });
   }
 

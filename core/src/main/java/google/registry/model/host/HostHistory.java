@@ -14,11 +14,9 @@
 
 package google.registry.model.host;
 
-
 import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
-import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.host.HostHistory.HostHistoryId;
 import google.registry.model.reporting.HistoryEntry;
@@ -62,7 +60,20 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
   // Store HostBase instead of HostResource so we don't pick up its @Id
   @Nullable HostBase hostBase;
 
-  @Id String hostRepoId;
+  @Id
+  @Access(AccessType.PROPERTY)
+  public String getHostRepoId() {
+    if (hostBase != null && hostBase.getRepoId() != null) {
+      return hostBase.getRepoId();
+    }
+    return parent.getName();
+  }
+
+  /** This method is private because it is only used by Hibernate. */
+  @SuppressWarnings("unused")
+  private void setHostRepoId(String hostRepoId) {
+    parent = Key.create(HostResource.class, hostRepoId);
+  }
 
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TempHistorySequenceGenerator")
@@ -84,13 +95,15 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
   }
 
   /** The key to the {@link google.registry.model.host.HostResource} this is based off of. */
-  public VKey<HostResource> getHostRepoId() {
-    return VKey.create(HostResource.class, hostRepoId, Key.create(HostResource.class, hostRepoId));
+  public VKey<HostResource> getParentVKey() {
+    return VKey.create(
+        HostResource.class, getHostRepoId(), Key.create(HostResource.class, getHostRepoId()));
   }
 
   /** Creates a {@link VKey} instance for this entity. */
   public VKey<HostHistory> createVKey() {
-    return VKey.create(HostHistory.class, new HostHistoryId(hostRepoId, getId()), Key.create(this));
+    return VKey.create(
+        HostHistory.class, new HostHistoryId(getHostRepoId(), getId()), Key.create(this));
   }
 
   @PostLoad
@@ -100,8 +113,6 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
     if (hostBase != null && hostBase.getHostName() == null) {
       hostBase = null;
     }
-    // Fill in the full, symmetric, parent repo ID key
-    parent = Key.create(HostResource.class, hostRepoId);
   }
 
   // In Datastore, save as a HistoryEntry object regardless of this object's type
@@ -187,16 +198,7 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
     }
 
     public Builder setHostRepoId(String hostRepoId) {
-      getInstance().hostRepoId = hostRepoId;
       getInstance().parent = Key.create(HostResource.class, hostRepoId);
-      return this;
-    }
-
-    // We can remove this once all HistoryEntries are converted to History objects
-    @Override
-    public Builder setParent(Key<? extends EppResource> parent) {
-      super.setParent(parent);
-      getInstance().hostRepoId = parent.getName();
       return this;
     }
   }

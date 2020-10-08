@@ -35,6 +35,7 @@ import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Ordering;
@@ -68,7 +69,6 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -319,15 +319,9 @@ public class DomainContent extends EppResource
     deletePollMessageHistoryId = getHistoryId(deletePollMessage);
   }
 
-  /**
-   * The {@link javax.persistence.PostLoad} method for {@link DomainContent}.
-   *
-   * <p>We name this domainContentPostLoad to distinguish it from the {@link PostLoad} method in
-   * DomainBase (if they share the same name, this one is never called).
-   */
   @PostLoad
   @SuppressWarnings("UnusedMethod")
-  private final void domainContentPostLoad() {
+  private final void postLoad() {
     // Reconstitute the contact list.
     ImmutableSet.Builder<DesignatedContact> contactsBuilder = new ImmutableSet.Builder<>();
 
@@ -346,34 +340,9 @@ public class DomainContent extends EppResource
     }
 
     allContacts = contactsBuilder.build();
-  }
 
-  /**
-   * Restores the composite ofy keys from SQL data.
-   *
-   * <p>MUST ONLY BE CALLED FROM A PostLoad method. This is a package-visible method that
-   * effectively mutates an immutable object.
-   *
-   * <p>We have to do this because:
-   *
-   * <ul>
-   *   <li>We've changed the {@link PostLoad} method behavior to make all {@link PostLoad} calls in
-   *       the class hierarchy (and not merely the most specific one) be called after an object is
-   *       loaded.
-   *   <li>When restoring a {@link DomainBase} object (which is a subclass) the repo id is not
-   *       populated until after our {@link PostLoad} method is called. Therefore, we need to
-   *       restore these ofy keys (which depend on the repo id) from {@link DomainBase}'s {@link
-   *       PostLoad} method.
-   *   <li>When restoring a {@link DomainHistory} object, hibernate restores a {@link DomainContent}
-   *       instance, therefore we need our own {@link PostLoad} method to restore the other fields.
-   *       In order to restore the ofy keys, we need to invoke this method separately from {@link
-   *       DomainHistory}'s {@link PostLoad} method and pass in the repo id, which is stored in a
-   *       different field in {@link DomainHistory}.
-   * </ul>
-   */
-  void restoreOfyKeys(String repoId) {
-    // Reconstitute the ofy keys.
-    Key<DomainBase> myKey = Key.create(DomainBase.class, repoId);
+    // Reconstitute the composite ofy keys from the SQL data.
+    Key<DomainBase> myKey = Key.create(DomainBase.class, getRepoId());
     deletePollMessage = restoreOfyFrom(myKey, deletePollMessage, deletePollMessageHistoryId);
     autorenewBillingEvent =
         restoreOfyFrom(myKey, autorenewBillingEvent, autorenewBillingEventHistoryId);
@@ -754,7 +723,7 @@ public class DomainContent extends EppResource
 
   /** An override of {@link EppResource#asBuilder} with tighter typing. */
   @Override
-  public Builder asBuilder() {
+  public Builder<? extends DomainContent, ?> asBuilder() {
     return new Builder<>(clone(this));
   }
 
