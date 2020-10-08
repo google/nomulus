@@ -63,9 +63,6 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
   @Id
   @Access(AccessType.PROPERTY)
   public String getHostRepoId() {
-    if (hostBase != null && hostBase.getRepoId() != null) {
-      return hostBase.getRepoId();
-    }
     return parent.getName();
   }
 

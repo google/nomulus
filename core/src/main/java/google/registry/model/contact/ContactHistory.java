@@ -62,9 +62,6 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
   @Id
   @Access(AccessType.PROPERTY)
   public String getContactRepoId() {
-    if (contactBase != null && contactBase.getRepoId() != null) {
-      return contactBase.getRepoId();
-    }
     return parent.getName();
   }
 

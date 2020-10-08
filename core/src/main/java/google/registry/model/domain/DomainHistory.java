@@ -75,9 +75,6 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @Id
   @Access(AccessType.PROPERTY)
   public String getDomainRepoId() {
-    if (domainContent != null && domainContent.getRepoId() != null) {
-      return domainContent.getRepoId();
-    }
     return parent.getName();
   }
 
