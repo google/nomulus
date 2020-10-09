@@ -16,7 +16,7 @@
 """
 
 import argparse
-import attr
+import dataclasses
 import io
 import os
 import shutil
@@ -25,7 +25,7 @@ import sys
 from typing import List, Union
 
 
-@attr.s(auto_attribs=True)
+@dataclasses.dataclass
 class Property:
     name : str = ''
     desc : str = ''
@@ -39,7 +39,7 @@ class Property:
                 raise ValidationError('value of {self.name} must be "true" or '
                                       '"false".')
 
-@attr.s(auto_attribs=True)
+@dataclasses.dataclass
 class GradleFlag:
     flags : Union[str, List[str]]
     desc : str
