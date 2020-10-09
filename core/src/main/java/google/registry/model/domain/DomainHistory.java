@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import com.googlecode.objectify.annotation.Ignore;
-import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.host.HostResource;
@@ -73,7 +72,17 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   // Store DomainContent instead of DomainBase so we don't pick up its @Id
   @Nullable DomainContent domainContent;
 
-  @Id String domainRepoId;
+  @Id
+  @Access(AccessType.PROPERTY)
+  public String getDomainRepoId() {
+    return parent.getName();
+  }
+
+  /** This method is private because it is only used by Hibernate. */
+  @SuppressWarnings("unused")
+  private void setDomainRepoId(String domainRepoId) {
+    parent = Key.create(DomainBase.class, domainRepoId);
+  }
 
   // We could have reused domainContent.nsHosts here, but Hibernate throws a weird exception after
   // we change to use a composite primary key.
@@ -152,14 +161,14 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   }
 
   /** The key to the {@link DomainBase} this is based off of. */
-  public VKey<DomainBase> getDomainRepoId() {
-    return VKey.create(DomainBase.class, domainRepoId, Key.create(DomainBase.class, domainRepoId));
+  public VKey<DomainBase> getParentVKey() {
+    return VKey.create(DomainBase.class, getDomainRepoId());
   }
 
   /** Creates a {@link VKey} instance for this entity. */
   public VKey<DomainHistory> createVKey() {
     return VKey.create(
-        DomainHistory.class, new DomainHistoryId(domainRepoId, getId()), Key.create(this));
+        DomainHistory.class, new DomainHistoryId(getDomainRepoId(), getId()), Key.create(this));
   }
 
   @PostLoad
@@ -171,10 +180,11 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
       if (domainContent.getDomainName() == null) {
         domainContent = null;
       } else {
-        domainContent.restoreOfyKeys(domainRepoId);
+        if (domainContent.getRepoId() == null) {
+          domainContent = domainContent.asBuilder().setRepoId(parent.getName()).build();
+        }
       }
     }
-    parent = Key.create(DomainBase.class, domainRepoId);
   }
 
   // In Datastore, save as a HistoryEntry object regardless of this object's type
@@ -263,16 +273,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
     }
 
     public Builder setDomainRepoId(String domainRepoId) {
-      getInstance().domainRepoId = domainRepoId;
       getInstance().parent = Key.create(DomainBase.class, domainRepoId);
-      return this;
-    }
-
-    // We can remove this once all HistoryEntries are converted to History objects
-    @Override
-    public Builder setParent(Key<? extends EppResource> parent) {
-      super.setParent(parent);
-      getInstance().domainRepoId = parent.getName();
       return this;
     }
   }

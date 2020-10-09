@@ -54,8 +54,7 @@ public class ContactHistoryTest extends EntityTestCase {
             () -> {
               ContactHistory fromDatabase = jpaTm().load(contactHistory.createVKey());
               assertContactHistoriesEqual(fromDatabase, contactHistory);
-              assertThat(fromDatabase.getContactRepoId().getSqlKey())
-                  .isEqualTo(contactHistory.getContactRepoId().getSqlKey());
+              assertThat(fromDatabase.getParentVKey()).isEqualTo(contactHistory.getParentVKey());
             });
   }
 
@@ -79,8 +78,7 @@ public class ContactHistoryTest extends EntityTestCase {
             () -> {
               ContactHistory fromDatabase = jpaTm().load(contactHistory.createVKey());
               assertContactHistoriesEqual(fromDatabase, contactHistory);
-              assertThat(fromDatabase.getContactRepoId().getSqlKey())
-                  .isEqualTo(contactHistory.getContactRepoId().getSqlKey());
+              assertThat(fromDatabase.getParentVKey()).isEqualTo(contactHistory.getParentVKey());
             });
   }
 

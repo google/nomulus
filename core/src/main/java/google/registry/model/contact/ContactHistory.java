@@ -17,7 +17,6 @@ package google.registry.model.contact;
 import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
-import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.reporting.HistoryEntry;
@@ -58,7 +57,17 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
   @Nullable ContactBase contactBase;
 
-  @Id String contactRepoId;
+  @Id
+  @Access(AccessType.PROPERTY)
+  public String getContactRepoId() {
+    return parent.getName();
+  }
+
+  /** This method is private because it is only used by Hibernate. */
+  @SuppressWarnings("unused")
+  private void setContactRepoId(String contactRepoId) {
+    parent = Key.create(ContactResource.class, contactRepoId);
+  }
 
   @Id
   @Column(name = "historyRevisionId")
@@ -79,15 +88,14 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
   }
 
   /** The key to the {@link ContactResource} this is based off of. */
-  public VKey<ContactResource> getContactRepoId() {
-    return VKey.create(
-        ContactResource.class, contactRepoId, Key.create(ContactResource.class, contactRepoId));
+  public VKey<ContactResource> getParentVKey() {
+    return VKey.create(ContactResource.class, getContactRepoId());
   }
 
   /** Creates a {@link VKey} instance for this entity. */
   public VKey<ContactHistory> createVKey() {
     return VKey.create(
-        ContactHistory.class, new ContactHistoryId(contactRepoId, getId()), Key.create(this));
+        ContactHistory.class, new ContactHistoryId(getContactRepoId(), getId()), Key.create(this));
   }
 
   @PostLoad
@@ -97,8 +105,6 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
     if (contactBase != null && contactBase.getContactId() == null) {
       contactBase = null;
     }
-    // Fill in the full, symmetric, parent repo ID key
-    parent = Key.create(ContactResource.class, contactRepoId);
   }
 
   // In Datastore, save as a HistoryEntry object regardless of this object's type
@@ -184,16 +190,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
     }
 
     public Builder setContactRepoId(String contactRepoId) {
-      getInstance().contactRepoId = contactRepoId;
       getInstance().parent = Key.create(ContactResource.class, contactRepoId);
-      return this;
-    }
-
-    // We can remove this once all HistoryEntries are converted to History objects
-    @Override
-    public Builder setParent(Key<? extends EppResource> parent) {
-      super.setParent(parent);
-      getInstance().contactRepoId = parent.getName();
       return this;
     }
   }

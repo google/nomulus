@@ -66,8 +66,7 @@ public class DomainHistoryTest extends EntityTestCase {
             () -> {
               DomainHistory fromDatabase = jpaTm().load(domainHistory.createVKey());
               assertDomainHistoriesEqual(fromDatabase, domainHistory);
-              assertThat(fromDatabase.getDomainRepoId().getSqlKey())
-                  .isEqualTo(domainHistory.getDomainRepoId().getSqlKey());
+              assertThat(fromDatabase.getParentVKey()).isEqualTo(domainHistory.getParentVKey());
             });
   }
 
@@ -83,8 +82,7 @@ public class DomainHistoryTest extends EntityTestCase {
             () -> {
               DomainHistory fromDatabase = jpaTm().load(domainHistory.createVKey());
               assertDomainHistoriesEqual(fromDatabase, domainHistory);
-              assertThat(fromDatabase.getDomainRepoId().getSqlKey())
-                  .isEqualTo(domainHistory.getDomainRepoId().getSqlKey());
+              assertThat(fromDatabase.getParentVKey()).isEqualTo(domainHistory.getParentVKey());
               assertThat(fromDatabase.getNsHosts())
                   .containsExactlyElementsIn(
                       domainHistory.getNsHosts().stream()
