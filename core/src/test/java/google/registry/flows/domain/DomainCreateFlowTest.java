@@ -821,10 +821,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     setEppInput("domain_create_dsdata_no_maxsiglife.xml");
     persistContactsAndHosts("tld"); // For some reason this sample uses "tld".
     doSuccessfulTest("tld");
+    DomainBase domain = reloadResourceByForeignKey();
     assertAboutDomains()
-        .that(reloadResourceByForeignKey())
+        .that(domain)
         .hasExactlyDsData(
-            DelegationSignerData.create(12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC")));
+            DelegationSignerData.create(12345, 3, 1, base16().decode("49FD46E6C4B45C55D4AC"))
+                .cloneWithDomainRepoId(domain.getRepoId()));
   }
 
   @Test

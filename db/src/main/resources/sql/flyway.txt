@@ -60,3 +60,4 @@ V59__use_composite_primary_key_for_contact_and_host_history_table.sql
 V60__remove_pollmessage_sequence.sql
 V61__domain_hist_columns.sql
 V62__disable_key_auto_generation_for_history_tables.sql
+V63__add_schema_for_ds_data.sql

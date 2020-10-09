@@ -317,6 +317,10 @@ public class DomainContent extends EppResource
     autorenewPollMessageHistoryId = getHistoryId(autorenewPollMessage);
     autorenewBillingEventHistoryId = getHistoryId(autorenewBillingEvent);
     deletePollMessageHistoryId = getHistoryId(deletePollMessage);
+    dsData =
+        nullToEmptyImmutableCopy(dsData).stream()
+            .map(dsData -> dsData.cloneWithDomainRepoId(getRepoId()))
+            .collect(toImmutableSet());
   }
 
   /**
@@ -467,6 +471,12 @@ public class DomainContent extends EppResource
   @SuppressWarnings("UnusedMethod")
   private void setInternalGracePeriods(Set<GracePeriod> gracePeriods) {
     this.gracePeriods = gracePeriods;
+  }
+
+  // Hibernate needs this in order to populate dsData but no one else should ever use it
+  @SuppressWarnings("UnusedMethod")
+  private void setInternalDelegationSignerData(Set<DelegationSignerData> dsData) {
+    this.dsData = dsData;
   }
 
   public final String getCurrentSponsorClientId() {
@@ -791,10 +801,16 @@ public class DomainContent extends EppResource
       instance.tld = getTldFromDomainName(instance.fullyQualifiedDomainName);
 
       T newDomain = super.build();
-      // Hibernate throws exception if gracePeriods is null because we enabled all cascadable
-      // operations and orphan removal.
+      // Hibernate throws exception if gracePeriods or dsData is null because we enabled all
+      // cascadable operations and orphan removal.
       newDomain.gracePeriods =
           newDomain.gracePeriods == null ? ImmutableSet.of() : newDomain.gracePeriods;
+      newDomain.dsData =
+          newDomain.dsData == null
+              ? ImmutableSet.of()
+              : newDomain.dsData.stream()
+                  .map(ds -> ds.cloneWithDomainRepoId(instance.getRepoId()))
+                  .collect(toImmutableSet());
       return newDomain;
     }
 
