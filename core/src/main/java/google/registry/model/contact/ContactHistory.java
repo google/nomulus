@@ -30,8 +30,6 @@ import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.PostLoad;
@@ -72,7 +70,6 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
   }
 
   @Id
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TempHistorySequenceGenerator")
   @Column(name = "historyRevisionId")
   @Access(AccessType.PROPERTY)
   @Override

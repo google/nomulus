@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.union;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
@@ -470,7 +471,11 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         .that(resource)
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.DOMAIN_UPDATE);
-    assertThat(resource.getDsData()).isEqualTo(expectedDsData);
+    assertThat(resource.getDsData())
+        .isEqualTo(
+            expectedDsData.stream()
+                .map(ds -> ds.cloneWithDomainRepoId(resource.getRepoId()))
+                .collect(toImmutableSet()));
     assertDnsTasksEnqueued("example.tld");
   }
 

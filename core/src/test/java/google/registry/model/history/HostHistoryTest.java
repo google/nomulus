@@ -49,7 +49,6 @@ public class HostHistoryTest extends EntityTestCase {
         VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().load(hostVKey));
     HostHistory hostHistory = createHostHistory(hostFromDb, host.getRepoId());
-    hostHistory.id = null;
     jpaTm().transact(() -> jpaTm().insert(hostHistory));
     jpaTm()
         .transact(
@@ -69,7 +68,6 @@ public class HostHistoryTest extends EntityTestCase {
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().load(host.createVKey()));
     HostHistory hostHistory =
         createHostHistory(hostFromDb, host.getRepoId()).asBuilder().setHostBase(null).build();
-    hostHistory.id = null;
     jpaTm().transact(() -> jpaTm().insert(hostHistory));
 
     jpaTm()

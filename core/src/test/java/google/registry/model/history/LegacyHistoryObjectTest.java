@@ -80,7 +80,6 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     ContactHistory legacyContactHistory = (ContactHistory) fromObjectify;
 
     // Next, save that from-Datastore object in SQL and verify we can load it back in
-    legacyContactHistory.id = null;
     jpaTm()
         .transact(
             () -> {
@@ -160,7 +159,6 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     HostHistory legacyHostHistory = (HostHistory) fromObjectify;
 
     // Next, save that from-Datastore object in SQL and verify we can load it back in
-    legacyHostHistory.id = null;
     jpaTm()
         .transact(
             () -> {

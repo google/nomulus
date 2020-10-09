@@ -19,6 +19,7 @@ import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
@@ -104,6 +105,32 @@ public class DomainBase extends DomainContent
   @SuppressWarnings("UnusedMethod")
   private Set<GracePeriod> getInternalGracePeriods() {
     return gracePeriods;
+  }
+
+  /**
+   * Returns the set of {@link DelegationSignerData} associated with the domain.
+   *
+   * <p>This is the getter method specific for Hibernate to access the field so it is set to
+   * private. The caller can use the public {@link #getDsData()} to get the DS data.
+   *
+   * <p>Note that we need to set `insertable = false, updatable = false` for @JoinColumn, otherwise
+   * Hibernate would try to set the foreign key to null(through an UPDATE TABLE sql) instead of
+   * deleting the whole entry from the table when the {@link DelegationSignerData} is removed from
+   * the set.
+   */
+  @Access(AccessType.PROPERTY)
+  @OneToMany(
+      cascade = {CascadeType.ALL},
+      fetch = FetchType.EAGER,
+      orphanRemoval = true)
+  @JoinColumn(
+      name = "domainRepoId",
+      referencedColumnName = "repoId",
+      insertable = false,
+      updatable = false)
+  @SuppressWarnings("UnusedMethod")
+  private Set<DelegationSignerData> getInternalDelegationSignerData() {
+    return dsData;
   }
 
   @Override

@@ -304,6 +304,19 @@ CREATE TABLE public."Cursor" (
 
 
 --
+-- Name: DelegationSignerData; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DelegationSignerData" (
+    domain_repo_id text NOT NULL,
+    key_tag integer NOT NULL,
+    algorithm integer NOT NULL,
+    digest bytea NOT NULL,
+    digest_type integer NOT NULL
+);
+
+
+--
 -- Name: Domain; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -932,30 +945,6 @@ ALTER SEQUENCE public."Transaction_id_seq" OWNED BY public."Transaction".id;
 
 
 --
--- Name: history_id_sequence; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.history_id_sequence
-    START WITH 1
-    INCREMENT BY 50
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: temp_history_id_sequence; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.temp_history_id_sequence
-    START WITH 1
-    INCREMENT BY 50
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
 -- Name: ClaimsList revision_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1081,6 +1070,14 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."Cursor"
     ADD CONSTRAINT "Cursor_pkey" PRIMARY KEY (scope, type);
+
+
+--
+-- Name: DelegationSignerData DelegationSignerData_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DelegationSignerData"
+    ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (domain_repo_id, key_tag);
 
 
 --
@@ -1394,6 +1391,13 @@ CREATE INDEX idxeokttmxtpq2hohcioe5t2242b ON public."BillingCancellation" USING 
 --
 
 CREATE INDEX idxfg2nnjlujxo6cb9fha971bq2n ON public."HostHistory" USING btree (creation_time);
+
+
+--
+-- Name: idxhlqqd5uy98cjyos72d81x9j95; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxhlqqd5uy98cjyos72d81x9j95 ON public."DelegationSignerData" USING btree (domain_repo_id);
 
 
 --
@@ -2007,6 +2011,14 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
+
+
+--
+-- Name: DelegationSignerData fktr24j9v14ph2mfuw2gsmt12kq; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DelegationSignerData"
+    ADD CONSTRAINT fktr24j9v14ph2mfuw2gsmt12kq FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
 
 
 --

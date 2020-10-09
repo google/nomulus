@@ -25,6 +25,7 @@ import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
@@ -343,6 +344,50 @@ public class DomainBaseSqlTest {
   }
 
   @Test
+  void testModifyDsData_addThenRemoveSuccessfully() {
+    persistDomain();
+    DelegationSignerData extraDsData =
+        DelegationSignerData.create(2, 2, 3, new byte[] {0, 1, 2}, "4-COM");
+    ImmutableSet<DelegationSignerData> unionDsData =
+        Sets.union(domain.getDsData(), ImmutableSet.of(extraDsData)).immutableCopy();
+
+    // Add an extra DelegationSignerData to dsData set.
+    jpaTm()
+        .transact(
+            () -> {
+              DomainBase persisted = jpaTm().load(domain.createVKey());
+              assertThat(persisted.getDsData()).containsExactlyElementsIn(domain.getDsData());
+              DomainBase modified = persisted.asBuilder().setDsData(unionDsData).build();
+              jpaTm().put(modified);
+            });
+
+    // Verify that the persisted domain entity contains both DelegationSignerData records.
+    jpaTm()
+        .transact(
+            () -> {
+              DomainBase persisted = jpaTm().load(domain.createVKey());
+              assertThat(persisted.getDsData()).containsExactlyElementsIn(unionDsData);
+              assertEqualDomainExcept(persisted, "dsData");
+            });
+
+    // Remove the extra DelegationSignerData record from dsData set.
+    jpaTm()
+        .transact(
+            () -> {
+              DomainBase persisted = jpaTm().load(domain.createVKey());
+              jpaTm().put(persisted.asBuilder().setDsData(domain.getDsData()).build());
+            });
+
+    // Verify that the persisted domain is equal to the original domain.
+    jpaTm()
+        .transact(
+            () -> {
+              DomainBase persisted = jpaTm().load(domain.createVKey());
+              assertEqualDomainExcept(persisted);
+            });
+  }
+
+  @Test
   void testUpdates() {
     jpaTm()
         .transact(
@@ -358,16 +403,6 @@ public class DomainBaseSqlTest {
         .transact(
             () -> {
               DomainBase result = jpaTm().load(domain.createVKey());
-
-              // Fix DS data, since we can't persist that yet.
-              result =
-                  result
-                      .asBuilder()
-                      .setDsData(
-                          ImmutableSet.of(
-                              DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
-                      .build();
-
               assertAboutImmutableObjects()
                   .that(result)
                   .isEqualExceptFields(domain, "updateTimestamp", "creationTime");
@@ -572,13 +607,6 @@ public class DomainBaseSqlTest {
   }
 
   private void assertEqualDomainExcept(DomainBase thatDomain, String... excepts) {
-    // Fix DS data, since we can't persist it yet.
-    thatDomain =
-        thatDomain
-            .asBuilder()
-            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
-            .build();
-
     // Fix the original creation timestamp (this gets initialized on first write)
     DomainBase org = domain.asBuilder().setCreationTime(thatDomain.getCreationTime()).build();
 
