@@ -63,17 +63,6 @@ steps:
   - --credential
   - tool-credential.json
   - deploy_invoicing_pipeline
-# Save the deployed tag for the current environment on GCS. Because of b/137891685
-# which causes the for-loop in the next step to fail, this may not be the last step.
-# TODO(weiminyu): do this in last step.
-- name: 'gcr.io/$PROJECT_ID/builder:latest'
-  entrypoint: /bin/bash
-  args:
-  - -c
-  - |
-    set -e
-    echo ${TAG_NAME} | \
-      gsutil cp - gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.tag
 # Deploy the GAE config files.
 # First authorize the gcloud tool to use the credential json file, then
 # download and unzip the tarball that contains the relevant config files
@@ -97,6 +86,39 @@ steps:
       gcloud -q --project $project_id app deploy \
         default/WEB-INF/appengine-generated/$filename.yaml
     done
+# Save the deployed tag for the current environment on GCS, and update the
+# mappings from Nomulus releases to Appengine versions.
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    set -e
+    echo ${TAG_NAME} | \
+      gsutil cp - gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.tag
+    # Update the release to AppEngine version mapping.
+    if [ ${_ENV} == production ]; then
+      project_id="domain-registry"
+    else
+      project_id="domain-registry-${_ENV}"
+    fi
+    local_map="nomulus.${_ENV}.tmp"
+    gcloud app versions list \
+      --project $project_id --hide-no-traffic \
+      --format="csv[no-heading](SERVICE,VERSION.ID)" | \
+      grep -e "^backend\|^default\|^pubapi\|^tools" |\
+      while read line; do echo "${TAG_NAME},$line"; done | tee "$local_map"
+    num_versions=$(cat "$local_map" | wc -l)
+    if [ "$num_versions" -ne 4 ]; then
+      echo "Expecting exactly four active services. Found $num_versions"
+      exit 1
+    fi
+    gsutil cp "$local_map" gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.tmp
+    # Atomically append uploaded tmp file to nomulus.${_ENV}.versions
+    gsutil compose \
+      gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.versions \
+      gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.tmp \
+      gs://$PROJECT_ID-deployed-tags/nomulus.${_ENV}.versions
 
 timeout: 3600s
 options:
