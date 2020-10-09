@@ -11,6 +11,7 @@ You will need the following programs installed on your local machine:
 *   [Google App Engine SDK for Java][app-engine-sdk], and configure aliases to
     to the `gcloud` and `appcfg.sh` utilities (you'll use them a lot).
 *   [Git](https://git-scm.com/) version control system.
+*   Python version 3.7 or newer.
 
 **Note:** App Engine does not yet support Java 9. Also, the instructions in this
 document have only been tested on Linux. They might work with some alterations
