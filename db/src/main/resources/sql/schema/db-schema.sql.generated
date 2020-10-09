@@ -488,6 +488,13 @@
         primary key (revision_id)
     );
 
+    create table "RdeRevision" (
+       id text not null,
+        update_timestamp timestamptz,
+        revision int4 not null,
+        primary key (id)
+    );
+
     create table "Registrar" (
        registrar_id text not null,
         allowed_tlds text[],

@@ -15,16 +15,17 @@
 package google.registry.model.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Verify.verify;
-import static com.google.common.base.Verify.verifyNotNull;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeNamingUtils.makePartialName;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.VerifyException;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import google.registry.model.ImmutableObject;
+import google.registry.model.BackupGroupRoot;
+import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
+import java.util.Optional;
+import javax.persistence.Column;
 import org.joda.time.DateTime;
 
 /**
@@ -35,17 +36,18 @@ import org.joda.time.DateTime;
  * flag is included in the generated XML.
  */
 @Entity
-public final class RdeRevision extends ImmutableObject {
+@javax.persistence.Entity
+public final class RdeRevision extends BackupGroupRoot implements DatastoreAndSqlEntity {
 
   /** String triplet of tld, date, and mode, e.g. {@code soy_2015-09-01_full}. */
-  @Id
-  String id;
+  @Id @javax.persistence.Id String id;
 
   /**
    * Number of last revision successfully staged to GCS.
    *
    * <p>This values begins at zero upon object creation and thenceforth incremented transactionally.
    */
+  @Column(nullable = false)
   int revision;
 
   public int getRevision() {
@@ -58,9 +60,9 @@ public final class RdeRevision extends ImmutableObject {
    * @return {@code 0} for first deposit generation and {@code >0} for resends
    */
   public static int getNextRevision(String tld, DateTime date, RdeMode mode) {
-    RdeRevision object =
-        ofy().load().type(RdeRevision.class).id(makePartialName(tld, date, mode)).now();
-    return object == null ? 0 : object.revision + 1;
+    String id = makePartialName(tld, date, mode);
+    Optional<RdeRevision> maybeObject = tm().maybeLoad(VKey.create(RdeRevision.class, id));
+    return maybeObject.map(object -> object.revision + 1).orElse(0);
   }
 
   /**
@@ -76,17 +78,28 @@ public final class RdeRevision extends ImmutableObject {
     checkArgument(revision >= 0, "Negative revision: %s", revision);
     String triplet = makePartialName(tld, date, mode);
     tm().assertInTransaction();
-    RdeRevision object = ofy().load().type(RdeRevision.class).id(triplet).now();
+    Optional<RdeRevision> maybeObject = tm().maybeLoad(VKey.create(RdeRevision.class, triplet));
     if (revision == 0) {
-      verify(object == null, "RdeRevision object already created: %s", object);
+      maybeObject.ifPresent(
+          obj -> {
+            throw new IllegalArgumentException(
+                String.format("RdeRevision object already created: %s", obj));
+          });
     } else {
-      verifyNotNull(object, "RDE revision object missing for %s?! revision=%s", triplet, revision);
-      verify(object.revision == revision - 1,
-          "RDE revision object should be at %s but was: %s", revision - 1, object);
+      checkArgument(
+          maybeObject.isPresent(),
+          "RDE revision object missing for %s?! revision=%s",
+          triplet,
+          revision);
+      checkArgument(
+          maybeObject.get().revision == revision - 1,
+          "RDE revision object should be at %s but was: %s",
+          revision - 1,
+          maybeObject.get());
     }
-    object = new RdeRevision();
+    RdeRevision object = new RdeRevision();
     object.id = triplet;
     object.revision = revision;
-    ofy().save().entity(object);
+    tm().put(object);
   }
 }

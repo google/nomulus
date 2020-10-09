@@ -523,6 +523,7 @@ class google.registry.model.poll.PollMessage$OneTime {
 }
 class google.registry.model.rde.RdeRevision {
   @Id java.lang.String id;
+  google.registry.model.UpdateAutoTimestamp updateTimestamp;
   int revision;
 }
 class google.registry.model.registrar.Registrar {

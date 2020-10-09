@@ -677,6 +677,17 @@ ALTER SEQUENCE public."PremiumList_revision_id_seq" OWNED BY public."PremiumList
 
 
 --
+-- Name: RdeRevision; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."RdeRevision" (
+    id text NOT NULL,
+    update_timestamp timestamp with time zone,
+    revision integer NOT NULL
+);
+
+
+--
 -- Name: Registrar; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1158,6 +1169,14 @@ ALTER TABLE ONLY public."PremiumEntry"
 
 ALTER TABLE ONLY public."PremiumList"
     ADD CONSTRAINT "PremiumList_pkey" PRIMARY KEY (revision_id);
+
+
+--
+-- Name: RdeRevision RdeRevision_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RdeRevision"
+    ADD CONSTRAINT "RdeRevision_pkey" PRIMARY KEY (id);
 
 
 --
