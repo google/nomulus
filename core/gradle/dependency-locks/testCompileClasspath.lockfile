@@ -297,5 +297,10 @@ org.tukaani:xz:1.8
 org.w3c.css:sac:1.3
 org.xerial.snappy:snappy-java:1.1.4
 org.yaml:snakeyaml:1.17
+us.fatehi:schemacrawler-api:16.10.1
+us.fatehi:schemacrawler-diagram:16.10.1
+us.fatehi:schemacrawler-tools:16.10.1
+us.fatehi:schemacrawler-utility:16.10.1
+us.fatehi:schemacrawler:16.10.1
 xerces:xmlParserAPIs:2.6.2
 xpp3:xpp3:1.1.4c

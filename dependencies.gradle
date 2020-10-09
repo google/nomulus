@@ -157,6 +157,8 @@ ext {
       'org.testcontainers:selenium:1.14.3',
       'org.testcontainers:testcontainers:1.14.3',
       'org.yaml:snakeyaml:1.17',
+      'us.fatehi:schemacrawler:16.10.1',
+      'us.fatehi:schemacrawler-diagram:16.10.1',
       'xerces:xmlParserAPIs:2.6.2',
       'xpp3:xpp3:1.1.4c'
     ]

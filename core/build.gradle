@@ -270,6 +270,8 @@ dependencies {
   compile deps['org.testcontainers:postgresql']
   testCompile deps['org.testcontainers:selenium']
   testCompile deps['org.testcontainers:testcontainers']
+  compile deps['us.fatehi:schemacrawler']
+  compile deps['us.fatehi:schemacrawler-diagram']
   compile deps['xerces:xmlParserAPIs']
   compile deps['xpp3:xpp3']
   // This dependency must come after javax.mail:mail as it would otherwise
