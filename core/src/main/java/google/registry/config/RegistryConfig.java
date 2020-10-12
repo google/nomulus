@@ -27,8 +27,12 @@ import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.util.CertificateChecker;
+import google.registry.util.Clock;
+import google.registry.util.SystemClock;
 import google.registry.util.TaskQueueUtils;
 import google.registry.util.YamlUtils;
 import java.lang.annotation.Documented;
@@ -46,6 +50,7 @@ import javax.inject.Qualifier;
 import javax.inject.Singleton;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.Duration;
 
@@ -1344,6 +1349,22 @@ public final class RegistryConfig {
     @Nullable
     public static String provideRdapTosStaticUrl(RegistryConfigSettings config) {
       return config.registryPolicy.rdapTosStaticUrl;
+    }
+
+    @Provides
+    @Config("certificateChecker")
+    public static CertificateChecker provideCertificateChecker(RegistryConfigSettings config) {
+      Map<String, Integer> stringMap = config.certChecker.maxValidityDays;
+      ImmutableSortedMap.Builder<DateTime, Integer> validityDaysMap =
+          ImmutableSortedMap.naturalOrder();
+      for (String key : stringMap.keySet()) {
+        validityDaysMap.put(DateTime.parse(key), stringMap.get(key));
+      }
+      return new CertificateChecker(
+          ImmutableSortedMap.copyOf(validityDaysMap.build()),
+          config.certChecker.daysToExpiration,
+          config.certChecker.minimumRsaKeyLength,
+          new SystemClock());
     }
   }
 

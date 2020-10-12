@@ -19,9 +19,11 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
+import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -31,11 +33,14 @@ import static org.mockito.Mockito.when;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Range;
 import com.google.common.net.MediaType;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.CertificateSamples;
+import google.registry.util.CertificateChecker;
 import java.io.IOException;
+import java.security.cert.CertificateException;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
@@ -52,6 +57,12 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @BeforeEach
   void beforeEach() {
     command.setConnection(connection);
+    command.certificateChecker =
+        new CertificateChecker(
+            ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+            30,
+            2048,
+            fakeClock);
   }
 
   @Test
@@ -359,7 +370,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--password=some_password",
         "--registrar_type=REAL",
         "--iana_id=8",
-        "--cert_file=" + getCertFilename(),
+        "--cert_file=" + getCertFilename(SAMPLE_CERT3),
         "--passcode=01234",
         "--icann_referral_email=foo@bar.test",
         "--street=\"123 Fake St\"",
@@ -372,7 +383,36 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getClientCertificateHash())
-        .isEqualTo(CertificateSamples.SAMPLE_CERT_HASH);
+        .isEqualTo(CertificateSamples.SAMPLE_CERT3_HASH);
+  }
+
+  @Test
+  void testFail_clientCertFileFlagWithViolations() throws Exception {
+    CertificateException thrown =
+        assertThrows(
+            CertificateException.class,
+            () ->
+                runCommandForced(
+                    "--name=blobio",
+                    "--password=some_password",
+                    "--registrar_type=REAL",
+                    "--iana_id=8",
+                    "--cert_file=" + getCertFilename(SAMPLE_CERT),
+                    "--passcode=01234",
+                    "--icann_referral_email=foo@bar.test",
+                    "--street=\"123 Fake St\"",
+                    "--city Fakington",
+                    "--state MA",
+                    "--zip 00351",
+                    "--cc US",
+                    "clientz"));
+
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "Certificate validity period is too long; it must be less than or equal to 398"
+                + " days.\n");
+    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    assertThat(registrar).isEmpty();
   }
 
   @Test
@@ -1094,7 +1134,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFailure_certHashAndCertFile() {
     assertThrows(
-        IllegalArgumentException.class,
+        CertificateException.class,
         () ->
             runCommandForced(
                 "--name=blobio",

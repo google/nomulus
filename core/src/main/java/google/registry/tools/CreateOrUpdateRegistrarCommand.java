@@ -22,6 +22,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.RegistrarUtils.normalizeRegistrarName;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
@@ -30,6 +31,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
+import com.google.inject.Inject;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registry.Registry;
@@ -38,9 +41,15 @@ import google.registry.tools.params.OptionalLongParameter;
 import google.registry.tools.params.OptionalPhoneNumberParameter;
 import google.registry.tools.params.OptionalStringParameter;
 import google.registry.tools.params.PathParameter;
+import google.registry.util.CertificateChecker;
+import google.registry.util.CertificateChecker.CertificateViolation;
 import google.registry.util.CidrAddressBlock;
+import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -57,9 +66,11 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Parameter(
-      description = "Client identifier of the registrar account",
-      required = true)
+  @Inject
+  @Config("certificateChecker")
+  CertificateChecker certificateChecker;
+
+  @Parameter(description = "Client identifier of the registrar account", required = true)
   List<String> mainParameters;
 
   @Parameter(
@@ -356,8 +367,25 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       }
       if (clientCertificateFilename != null) {
         String asciiCert = new String(Files.readAllBytes(clientCertificateFilename), US_ASCII);
+        if (!asciiCert.equals("")) {
+          X509Certificate certificate =
+              (X509Certificate)
+                  CertificateFactory.getInstance("X509")
+                      .generateCertificate(new ByteArrayInputStream(asciiCert.getBytes(UTF_8)));
+          ImmutableSet<CertificateViolation> violations =
+              certificateChecker.checkCertificate(certificate);
+          if (!violations.isEmpty()) {
+            ImmutableSet<String> displayMessages =
+                violations.stream()
+                    .map(violation -> violation.getDisplayMessage(certificateChecker))
+                    .collect(toImmutableSet());
+            throw new CertificateException(
+                displayMessages.toString().replace("[", "").replace("]", "\n"));
+          }
+        }
         builder.setClientCertificate(asciiCert, now);
       }
+
       if (failoverClientCertificateFilename != null) {
         String asciiCert =
             new String(Files.readAllBytes(failoverClientCertificateFilename), US_ASCII);
