@@ -60,6 +60,7 @@ import javax.inject.Singleton;
       BatchModule.class,
       BeamJpaModule.class,
       BigqueryModule.class,
+      CertificateCheckerModule.class,
       ConfigModule.class,
       CloudDnsWriterModule.class,
       DatastoreAdminModule.class,

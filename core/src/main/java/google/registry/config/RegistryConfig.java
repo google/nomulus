@@ -30,9 +30,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.util.CertificateChecker;
-import google.registry.util.Clock;
-import google.registry.util.SystemClock;
 import google.registry.util.TaskQueueUtils;
 import google.registry.util.YamlUtils;
 import java.lang.annotation.Documented;
@@ -1351,20 +1348,45 @@ public final class RegistryConfig {
       return config.registryPolicy.rdapTosStaticUrl;
     }
 
+    // @Provides
+    // @Config("certificateChecker")
+    // public static CertificateChecker provideCertificateChecker(RegistryConfigSettings config) {
+    //   Map<String, Integer> stringMap = config.certChecker.maxValidityDays;
+    //   ImmutableSortedMap.Builder<DateTime, Integer> validityDaysMap =
+    //       ImmutableSortedMap.naturalOrder();
+    //   for (String key : stringMap.keySet()) {
+    //     validityDaysMap.put(DateTime.parse(key), stringMap.get(key));
+    //   }
+    //   return new CertificateChecker(
+    //       ImmutableSortedMap.copyOf(validityDaysMap.build()),
+    //       config.certChecker.daysToExpiration,
+    //       config.certChecker.minimumRsaKeyLength,
+    //       new SystemClock());
+    // }
+
     @Provides
-    @Config("certificateChecker")
-    public static CertificateChecker provideCertificateChecker(RegistryConfigSettings config) {
+    @Config("validityDaysMap")
+    public static ImmutableSortedMap<DateTime, Integer> provideValidityDaysMap(
+        RegistryConfigSettings config) {
       Map<String, Integer> stringMap = config.certChecker.maxValidityDays;
       ImmutableSortedMap.Builder<DateTime, Integer> validityDaysMap =
           ImmutableSortedMap.naturalOrder();
       for (String key : stringMap.keySet()) {
         validityDaysMap.put(DateTime.parse(key), stringMap.get(key));
       }
-      return new CertificateChecker(
-          ImmutableSortedMap.copyOf(validityDaysMap.build()),
-          config.certChecker.daysToExpiration,
-          config.certChecker.minimumRsaKeyLength,
-          new SystemClock());
+      return validityDaysMap.build();
+    }
+
+    @Provides
+    @Config("daysToExpiration")
+    public static int provideDaysToExpiration(RegistryConfigSettings config) {
+      return config.certChecker.daysToExpiration;
+    }
+
+    @Provides
+    @Config("minimumRsaKeyLength")
+    public static int provideMinimumRsaKeyLength(RegistryConfigSettings config) {
+      return config.certChecker.minimumRsaKeyLength;
     }
   }
 
