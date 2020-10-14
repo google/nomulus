@@ -17,6 +17,7 @@ package google.registry.config;
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.config.ConfigUtils.makeUrl;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
@@ -1356,7 +1357,8 @@ public final class RegistryConfig {
       ImmutableSortedMap.Builder<DateTime, Integer> validityDaysMap =
           ImmutableSortedMap.naturalOrder();
       for (String key : stringMap.keySet()) {
-        validityDaysMap.put(DateTime.parse(key), stringMap.get(key));
+        validityDaysMap.put(
+            key.equals("START_OF_TIME") ? START_OF_TIME : DateTime.parse(key), stringMap.get(key));
       }
       return validityDaysMap.build();
     }

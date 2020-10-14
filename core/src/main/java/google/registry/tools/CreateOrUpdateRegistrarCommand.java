@@ -31,7 +31,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
-import com.google.inject.Inject;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registry.Registry;
@@ -56,10 +55,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Singleton;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
@@ -296,7 +294,6 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   @Override
   protected final void init() throws Exception {
-    logger.at(Level.INFO).log("in init");
     initRegistrarCommand();
     DateTime now = DateTime.now(UTC);
     for (String clientId : mainParameters) {

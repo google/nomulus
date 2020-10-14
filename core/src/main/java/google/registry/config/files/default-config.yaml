@@ -449,7 +449,7 @@ registryTool:
 
 certChecker:
   maxValidityDays :
-    "0000-01-01T00:00:00Z": 825
+    "START_OF_TIME": 825
     "2020-09-01T00:00:00Z": 398
   daysToExpiration: 30
   minimumRsaKeyLength: 2048
