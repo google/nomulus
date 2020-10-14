@@ -76,7 +76,8 @@ public class GenerateSqlErDiagramCommand implements Command {
 
   @Parameter(
       names = "--diagram_type",
-      description = "Type of the generated ER diagram (defaults to ALL).")
+      description =
+          "Type of the generated ER diagram, can be FULL, BRIEF and ALL (defaults to ALL).")
   private DiagramType diagramType = ALL;
 
   /** The type of ER diagram. */

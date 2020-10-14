@@ -85,6 +85,7 @@ ext {
       'com.sun.xml.bind:jaxb-xjc:2.2.11',
       'com.thoughtworks.qdox:qdox:1.12.1',
       'dnsjava:dnsjava:2.1.7',
+      'guru.nidi:graphviz-java-all-j2v8:0.17.0',
       'io.github.classgraph:classgraph:4.8.52',
       'io.github.java-diff-utils:java-diff-utils:4.0',
       'io.netty:netty-buffer:4.1.50.Final',
