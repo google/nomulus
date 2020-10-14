@@ -21,14 +21,17 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.util.CertificateChecker;
 import google.registry.util.SystemClock;
 import javax.inject.Named;
+import javax.inject.Singleton;
+import org.joda.time.DateTime;
 
 @Module
 public abstract class CertificateCheckerModule {
 
   @Provides
+  @Singleton
   @Named("certificateChecker")
   static CertificateChecker provideCertificateChecker(
-      @Config("validityDaysMap") ImmutableSortedMap validityDaysMap,
+      @Config("validityDaysMap") ImmutableSortedMap<DateTime, Integer> validityDaysMap,
       @Config("daysToExpiration") int daysToExpiration,
       @Config("minimumRsaKeyLength") int minimumRsaKeyLength) {
     return new CertificateChecker(
