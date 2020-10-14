@@ -258,6 +258,7 @@ dependencies {
   compile deps['org.hibernate:hibernate-core']
   compile deps['org.joda:joda-money']
   compile deps['org.json:json']
+  compile deps['org.jsoup:jsoup']
   testCompile deps['org.mortbay.jetty:jetty']
   compile deps['org.postgresql:postgresql']
   testCompile deps['org.seleniumhq.selenium:selenium-api']
@@ -271,7 +272,9 @@ dependencies {
   testCompile deps['org.testcontainers:selenium']
   testCompile deps['org.testcontainers:testcontainers']
   compile deps['us.fatehi:schemacrawler']
+  compile deps['us.fatehi:schemacrawler-api']
   compile deps['us.fatehi:schemacrawler-diagram']
+  compile deps['us.fatehi:schemacrawler-tools']
   compile deps['xerces:xmlParserAPIs']
   compile deps['xpp3:xpp3']
   // This dependency must come after javax.mail:mail as it would otherwise

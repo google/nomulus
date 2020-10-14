@@ -226,6 +226,7 @@ org.jboss:jandex:2.1.3.Final
 org.jetbrains:annotations:19.0.0
 org.joda:joda-money:1.0.1
 org.json:json:20160810
+org.jsoup:jsoup:1.13.1
 org.jvnet.staxex:stax-ex:1.8
 org.mortbay.jetty:jetty-util:6.1.26
 org.mortbay.jetty:jetty:6.1.26

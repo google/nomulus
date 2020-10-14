@@ -142,6 +142,7 @@ ext {
       'org.hibernate:hibernate-hikaricp:5.4.17.Final',
       'org.joda:joda-money:1.0.1',
       'org.json:json:20160810',
+      'org.jsoup:jsoup:1.13.1',
       'org.mockito:mockito-core:3.3.3',
       'org.mockito:mockito-junit-jupiter:3.3.3',
       'org.mortbay.jetty:jetty:6.1.26',
@@ -158,7 +159,9 @@ ext {
       'org.testcontainers:testcontainers:1.14.3',
       'org.yaml:snakeyaml:1.17',
       'us.fatehi:schemacrawler:16.10.1',
+      'us.fatehi:schemacrawler-api:16.10.1',
       'us.fatehi:schemacrawler-diagram:16.10.1',
+      'us.fatehi:schemacrawler-tools:16.10.1',
       'xerces:xmlParserAPIs:2.6.2',
       'xpp3:xpp3:1.1.4c'
     ]
