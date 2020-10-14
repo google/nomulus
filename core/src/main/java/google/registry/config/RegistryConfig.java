@@ -1348,22 +1348,6 @@ public final class RegistryConfig {
       return config.registryPolicy.rdapTosStaticUrl;
     }
 
-    // @Provides
-    // @Config("certificateChecker")
-    // public static CertificateChecker provideCertificateChecker(RegistryConfigSettings config) {
-    //   Map<String, Integer> stringMap = config.certChecker.maxValidityDays;
-    //   ImmutableSortedMap.Builder<DateTime, Integer> validityDaysMap =
-    //       ImmutableSortedMap.naturalOrder();
-    //   for (String key : stringMap.keySet()) {
-    //     validityDaysMap.put(DateTime.parse(key), stringMap.get(key));
-    //   }
-    //   return new CertificateChecker(
-    //       ImmutableSortedMap.copyOf(validityDaysMap.build()),
-    //       config.certChecker.daysToExpiration,
-    //       config.certChecker.minimumRsaKeyLength,
-    //       new SystemClock());
-    // }
-
     @Provides
     @Config("validityDaysMap")
     public static ImmutableSortedMap<DateTime, Integer> provideValidityDaysMap(
