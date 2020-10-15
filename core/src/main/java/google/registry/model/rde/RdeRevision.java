@@ -55,17 +55,11 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreAndSq
   /** String triplet of tld, date, and mode, e.g. {@code soy_2015-09-01_full}. */
   @Id @Transient String id;
 
-  @javax.persistence.Id
-  @Ignore
-  String tld;
+  @javax.persistence.Id @Ignore String tld;
 
-  @javax.persistence.Id
-  @Ignore
-  LocalDate date;
+  @javax.persistence.Id @Ignore LocalDate date;
 
-  @javax.persistence.Id
-  @Ignore
-  RdeMode mode;
+  @javax.persistence.Id @Ignore RdeMode mode;
 
   /**
    * Number of last revision successfully staged to GCS.
@@ -119,25 +113,25 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreAndSq
     tm().assertInTransaction();
     RdeRevisionId sqlKey = new RdeRevisionId(tld, date.toLocalDate(), mode);
     Key<RdeRevision> ofyKey = Key.create(RdeRevision.class, triplet);
-    Optional<RdeRevision> maybeObject =
+    Optional<RdeRevision> revisionOptional =
         tm().maybeLoad(VKey.create(RdeRevision.class, sqlKey, ofyKey));
     if (revision == 0) {
-      maybeObject.ifPresent(
-          obj -> {
+      revisionOptional.ifPresent(
+          rdeRevision -> {
             throw new IllegalArgumentException(
-                String.format("RdeRevision object already created: %s", obj));
+                String.format("RdeRevision object already created: %s", rdeRevision));
           });
     } else {
       checkArgument(
-          maybeObject.isPresent(),
+          revisionOptional.isPresent(),
           "RDE revision object missing for %s?! revision=%s",
           triplet,
           revision);
       checkArgument(
-          maybeObject.get().revision == revision - 1,
+          revisionOptional.get().revision == revision - 1,
           "RDE revision object should be at %s but was: %s",
           revision - 1,
-          maybeObject.get());
+          revisionOptional.get());
     }
     RdeRevision object = new RdeRevision(triplet, tld, date.toLocalDate(), mode, revision);
     tm().put(object);
