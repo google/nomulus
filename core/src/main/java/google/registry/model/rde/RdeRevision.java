@@ -19,6 +19,7 @@ import static google.registry.model.rde.RdeNamingUtils.makePartialName;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.VerifyException;
+import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -28,7 +29,8 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.LocalDateConverter;
-import google.registry.schema.replay.DatastoreAndSqlEntity;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.persistence.Column;
@@ -50,7 +52,7 @@ import org.joda.time.LocalDate;
 @Entity
 @javax.persistence.Entity
 @IdClass(RdeRevisionId.class)
-public final class RdeRevision extends BackupGroupRoot implements DatastoreAndSqlEntity {
+public final class RdeRevision extends BackupGroupRoot implements DatastoreEntity, SqlEntity {
 
   /** String triplet of tld, date, and mode, e.g. {@code soy_2015-09-01_full}. */
   @Id @Transient String id;
@@ -82,6 +84,16 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreAndSq
 
   public int getRevision() {
     return revision;
+  }
+
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of(); // we don't care about RdeRevision history
+  }
+
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // we don't care about RdeRevision history
   }
 
   /**
