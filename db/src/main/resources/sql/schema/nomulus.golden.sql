@@ -681,7 +681,9 @@ ALTER SEQUENCE public."PremiumList_revision_id_seq" OWNED BY public."PremiumList
 --
 
 CREATE TABLE public."RdeRevision" (
-    id text NOT NULL,
+    tld text NOT NULL,
+    mode text NOT NULL,
+    date text NOT NULL,
     update_timestamp timestamp with time zone,
     revision integer NOT NULL
 );
@@ -1176,7 +1178,7 @@ ALTER TABLE ONLY public."PremiumList"
 --
 
 ALTER TABLE ONLY public."RdeRevision"
-    ADD CONSTRAINT "RdeRevision_pkey" PRIMARY KEY (id);
+    ADD CONSTRAINT "RdeRevision_pkey" PRIMARY KEY (tld, mode, date);
 
 
 --

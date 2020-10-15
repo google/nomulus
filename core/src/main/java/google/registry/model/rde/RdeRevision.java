@@ -19,14 +19,26 @@ import static google.registry.model.rde.RdeNamingUtils.makePartialName;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.VerifyException;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.BackupGroupRoot;
+import google.registry.model.ImmutableObject;
+import google.registry.model.rde.RdeRevision.RdeRevisionId;
 import google.registry.persistence.VKey;
+import google.registry.persistence.converter.LocalDateConverter;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
+import java.io.Serializable;
 import java.util.Optional;
 import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.IdClass;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 
 /**
  * Datastore entity for tracking RDE revisions.
@@ -37,10 +49,23 @@ import org.joda.time.DateTime;
  */
 @Entity
 @javax.persistence.Entity
+@IdClass(RdeRevisionId.class)
 public final class RdeRevision extends BackupGroupRoot implements DatastoreAndSqlEntity {
 
   /** String triplet of tld, date, and mode, e.g. {@code soy_2015-09-01_full}. */
-  @Id @javax.persistence.Id String id;
+  @Id @Transient String id;
+
+  @javax.persistence.Id
+  @Ignore
+  String tld;
+
+  @javax.persistence.Id
+  @Ignore
+  LocalDate date;
+
+  @javax.persistence.Id
+  @Ignore
+  RdeMode mode;
 
   /**
    * Number of last revision successfully staged to GCS.
@@ -49,6 +74,17 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreAndSq
    */
   @Column(nullable = false)
   int revision;
+
+  /** Hibernate requires an empty constructor. */
+  private RdeRevision() {}
+
+  public RdeRevision(String id, String tld, LocalDate date, RdeMode mode, int revision) {
+    this.id = id;
+    this.tld = tld;
+    this.date = date;
+    this.mode = mode;
+    this.revision = revision;
+  }
 
   public int getRevision() {
     return revision;
@@ -61,7 +97,10 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreAndSq
    */
   public static int getNextRevision(String tld, DateTime date, RdeMode mode) {
     String id = makePartialName(tld, date, mode);
-    Optional<RdeRevision> maybeObject = tm().maybeLoad(VKey.create(RdeRevision.class, id));
+    RdeRevisionId sqlKey = new RdeRevisionId(tld, date.toLocalDate(), mode);
+    Key<RdeRevision> ofyKey = Key.create(RdeRevision.class, id);
+    Optional<RdeRevision> maybeObject =
+        tm().maybeLoad(VKey.create(RdeRevision.class, sqlKey, ofyKey));
     return maybeObject.map(object -> object.revision + 1).orElse(0);
   }
 
@@ -78,7 +117,10 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreAndSq
     checkArgument(revision >= 0, "Negative revision: %s", revision);
     String triplet = makePartialName(tld, date, mode);
     tm().assertInTransaction();
-    Optional<RdeRevision> maybeObject = tm().maybeLoad(VKey.create(RdeRevision.class, triplet));
+    RdeRevisionId sqlKey = new RdeRevisionId(tld, date.toLocalDate(), mode);
+    Key<RdeRevision> ofyKey = Key.create(RdeRevision.class, triplet);
+    Optional<RdeRevision> maybeObject =
+        tm().maybeLoad(VKey.create(RdeRevision.class, sqlKey, ofyKey));
     if (revision == 0) {
       maybeObject.ifPresent(
           obj -> {
@@ -97,9 +139,66 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreAndSq
           revision - 1,
           maybeObject.get());
     }
-    RdeRevision object = new RdeRevision();
-    object.id = triplet;
-    object.revision = revision;
+    RdeRevision object = new RdeRevision(triplet, tld, date.toLocalDate(), mode, revision);
     tm().put(object);
+  }
+
+  /** Class to represent the composite primary key of {@link RdeRevision} entity. */
+  static class RdeRevisionId extends ImmutableObject implements Serializable {
+
+    private String tld;
+
+    // Auto-conversion doesn't work for ID classes, we must specify @Column and @Convert
+    @Column
+    @Convert(converter = LocalDateConverter.class)
+    private LocalDate date;
+
+    @Enumerated(EnumType.STRING)
+    private RdeMode mode;
+
+    /** Hibernate requires this default constructor. */
+    private RdeRevisionId() {}
+
+    RdeRevisionId(String tld, LocalDate date, RdeMode mode) {
+      this.tld = tld;
+      this.date = date;
+      this.mode = mode;
+    }
+
+    /** Private, only used by Hibernate. */
+    @SuppressWarnings("unused")
+    private String getTld() {
+      return tld;
+    }
+
+    /** Private, only used by Hibernate. */
+    @SuppressWarnings("unused")
+    private LocalDate getDate() {
+      return date;
+    }
+
+    /** Private, only used by Hibernate. */
+    @SuppressWarnings("unused")
+    private RdeMode getMode() {
+      return mode;
+    }
+
+    /** Required by Hibernate, should not be used in order to maintain immutability. */
+    @SuppressWarnings("unused")
+    private void setTld(String tld) {
+      this.tld = tld;
+    }
+
+    /** Required by Hibernate, should not be used in order to maintain immutability. */
+    @SuppressWarnings("unused")
+    private void setDate(LocalDate date) {
+      this.date = date;
+    }
+
+    /** Required by Hibernate, should not be used in order to maintain immutability. */
+    @SuppressWarnings("unused")
+    private void setMode(RdeMode mode) {
+      this.mode = mode;
+    }
   }
 }

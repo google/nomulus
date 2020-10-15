@@ -13,8 +13,10 @@
 -- limitations under the License.
 
 CREATE TABLE "RdeRevision" (
-   id TEXT NOT NULL,
+   tld TEXT NOT NULL,
+   mode TEXT NOT NULL,
+   date TEXT NOT NULL,
    update_timestamp timestamptz,
    revision int4 NOT NULL,
-   PRIMARY KEY (id)
+   PRIMARY KEY (tld, mode, date)
 );

@@ -489,10 +489,12 @@
     );
 
     create table "RdeRevision" (
-       id text not null,
+       date text not null,
+        mode text not null,
+        tld text not null,
         update_timestamp timestamptz,
         revision int4 not null,
-        primary key (id)
+        primary key (date, mode, tld)
     );
 
     create table "Registrar" (
