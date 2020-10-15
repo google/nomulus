@@ -93,9 +93,9 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreAndSq
     String id = makePartialName(tld, date, mode);
     RdeRevisionId sqlKey = new RdeRevisionId(tld, date.toLocalDate(), mode);
     Key<RdeRevision> ofyKey = Key.create(RdeRevision.class, id);
-    Optional<RdeRevision> maybeObject =
+    Optional<RdeRevision> revisionOptional =
         tm().maybeLoad(VKey.create(RdeRevision.class, sqlKey, ofyKey));
-    return maybeObject.map(object -> object.revision + 1).orElse(0);
+    return revisionOptional.map(rdeRevision -> rdeRevision.revision + 1).orElse(0);
   }
 
   /**
