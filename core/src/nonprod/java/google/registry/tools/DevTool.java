@@ -28,6 +28,7 @@ public class DevTool {
   public static final ImmutableMap<String, Class<? extends Command>> COMMAND_MAP =
       ImmutableMap.of(
           "dump_golden_schema", DumpGoldenSchemaCommand.class,
+          "generate_sql_er_diagram", GenerateSqlErDiagramCommand.class,
           "generate_sql_schema", GenerateSqlSchemaCommand.class);
 
   public static void main(String[] args) throws Exception {
