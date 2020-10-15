@@ -20,6 +20,7 @@ import dagger.Lazy;
 import google.registry.batch.BatchModule;
 import google.registry.beam.initsql.BeamJpaModule;
 import google.registry.bigquery.BigqueryModule;
+import google.registry.config.CertificateCheckerModule;
 import google.registry.config.CredentialModule.LocalCredentialJson;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;

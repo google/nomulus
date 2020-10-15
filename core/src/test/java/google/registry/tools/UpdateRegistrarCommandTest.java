@@ -249,6 +249,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
 
   @Test
   void testSuccess_certFile() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getClientCertificate()).isNull();
     assertThat(registrar.getClientCertificateHash()).isNull();
@@ -261,7 +262,8 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   }
 
   @Test
-  void testFail_certFileWithViolations() throws Exception {
+  void testFail_certFileWithViolation() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getClientCertificate()).isNull();
     assertThat(registrar.getClientCertificateHash()).isNull();
@@ -273,6 +275,23 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
         .isEqualTo(
             "Certificate validity period is too long; it must be less than or equal to 398"
                 + " days.\n");
+    assertThat(registrar.getClientCertificate()).isNull();
+  }
+
+  @Test
+  void testFail_certFileWithMultipleViolations() throws Exception {
+    fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
+    Registrar registrar = loadRegistrar("NewRegistrar");
+    assertThat(registrar.getClientCertificate()).isNull();
+    assertThat(registrar.getClientCertificateHash()).isNull();
+    CertificateException thrown =
+        assertThrows(
+            CertificateException.class,
+            () -> runCommand("--cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "Certificate is expired., Certificate validity period is too long; it must be less"
+                + " than or equal to 398 days.\n");
     assertThat(registrar.getClientCertificate()).isNull();
   }
 

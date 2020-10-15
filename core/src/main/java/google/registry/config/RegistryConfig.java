@@ -1356,10 +1356,10 @@ public final class RegistryConfig {
       Map<String, Integer> stringMap = config.certChecker.maxValidityDays;
       ImmutableSortedMap.Builder<DateTime, Integer> validityDaysMap =
           ImmutableSortedMap.naturalOrder();
-      for (String key : stringMap.keySet()) {
-        validityDaysMap.put(
-            key.equals("START_OF_TIME") ? START_OF_TIME : DateTime.parse(key), stringMap.get(key));
-      }
+      stringMap.forEach(
+          (k, v) ->
+              validityDaysMap.put(
+                  k.equals("START_OF_TIME") ? START_OF_TIME : DateTime.parse(k), v));
       return validityDaysMap.build();
     }
 

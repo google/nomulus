@@ -57,7 +57,6 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import javax.inject.Named;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
 
@@ -66,9 +65,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Inject
-  @Named("certificateChecker")
-  CertificateChecker certificateChecker;
+  @Inject CertificateChecker certificateChecker;
 
   @Parameter(description = "Client identifier of the registrar account", required = true)
   List<String> mainParameters;

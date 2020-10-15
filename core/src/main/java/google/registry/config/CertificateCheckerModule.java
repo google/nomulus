@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.tools;
+package google.registry.config;
 
 import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
@@ -20,7 +20,6 @@ import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.CertificateChecker;
 import google.registry.util.SystemClock;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import org.joda.time.DateTime;
 
@@ -29,7 +28,6 @@ public abstract class CertificateCheckerModule {
 
   @Provides
   @Singleton
-  @Named("certificateChecker")
   static CertificateChecker provideCertificateChecker(
       @Config("validityDaysMap") ImmutableSortedMap<DateTime, Integer> validityDaysMap,
       @Config("daysToExpiration") int daysToExpiration,

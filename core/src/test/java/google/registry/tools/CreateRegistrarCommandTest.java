@@ -365,6 +365,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
   @Test
   void testSuccess_clientCertFileFlag() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     runCommandForced(
         "--name=blobio",
         "--password=some_password",
@@ -387,7 +388,8 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   }
 
   @Test
-  void testFail_clientCertFileFlagWithViolations() throws Exception {
+  void testFail_clientCertFileFlagWithViolation() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
     CertificateException thrown =
         assertThrows(
             CertificateException.class,
@@ -411,6 +413,36 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         .isEqualTo(
             "Certificate validity period is too long; it must be less than or equal to 398"
                 + " days.\n");
+    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    assertThat(registrar).isEmpty();
+  }
+
+  @Test
+  void testFail_clientCertFileFlagWithMultipleViolations() throws Exception {
+    fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
+    CertificateException thrown =
+        assertThrows(
+            CertificateException.class,
+            () ->
+                runCommandForced(
+                    "--name=blobio",
+                    "--password=some_password",
+                    "--registrar_type=REAL",
+                    "--iana_id=8",
+                    "--cert_file=" + getCertFilename(SAMPLE_CERT),
+                    "--passcode=01234",
+                    "--icann_referral_email=foo@bar.test",
+                    "--street=\"123 Fake St\"",
+                    "--city Fakington",
+                    "--state MA",
+                    "--zip 00351",
+                    "--cc US",
+                    "clientz"));
+
+    assertThat(thrown.getMessage())
+        .isEqualTo(
+            "Certificate is expired., Certificate validity period is too long; it must be less"
+                + " than or equal to 398 days.\n");
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isEmpty();
   }
