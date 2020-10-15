@@ -14,12 +14,16 @@
 
 package google.registry.model.transfer;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.googlecode.objectify.Key;
+import com.googlecode.objectify.annotation.AlsoLoad;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Unindex;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.poll.PollMessage;
@@ -86,6 +90,10 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @Column(name = "transfer_billing_event_id")
   VKey<BillingEvent.OneTime> serverApproveBillingEvent;
 
+  @Ignore
+  @Column(name = "transfer_billing_event_history_id")
+  Long serverApproveBillingEventHistoryId;
+
   /**
    * The autorenew billing event that should be associated with this resource after the transfer.
    *
@@ -95,6 +103,10 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @IgnoreSave(IfNull.class)
   @Column(name = "transfer_billing_recurrence_id")
   VKey<BillingEvent.Recurring> serverApproveAutorenewEvent;
+
+  @Ignore
+  @Column(name = "transfer_billing_recurrence_history_id")
+  Long serverApproveAutorenewEventHistoryId;
 
   /**
    * The autorenew poll message that should be associated with this resource after the transfer.
@@ -106,9 +118,45 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @Column(name = "transfer_autorenew_poll_message_id")
   VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage;
 
+  @Ignore
+  @Column(name = "transfer_autorenew_poll_message_history_id")
+  Long serverApproveAutorenewPollMessageHistoryId;
+
   @Override
   public Builder copyConstantFieldsToBuilder() {
     return super.copyConstantFieldsToBuilder().setTransferPeriod(this.transferPeriod);
+  }
+
+  /**
+   * Restores the set of ofy keys after loading from SQL using the specified {@code rootKey}.
+   *
+   * <p>This is for use by DomainBase/DomainHistory PostLoad methods ONLY.
+   */
+  public void restoreOfyKeys(Key<DomainBase> rootKey) {
+    serverApproveBillingEvent =
+        DomainBase.restoreOfyFrom(
+            rootKey, serverApproveBillingEvent, serverApproveBillingEventHistoryId);
+    serverApproveAutorenewEvent =
+        DomainBase.restoreOfyFrom(
+            rootKey, serverApproveAutorenewEvent, serverApproveAutorenewEventHistoryId);
+    serverApproveAutorenewPollMessage =
+        DomainBase.restoreOfyFrom(
+            rootKey, serverApproveAutorenewPollMessage, serverApproveAutorenewPollMessageHistoryId);
+  }
+
+  private void loadServerApproveBillingEventHistoryId(
+      @AlsoLoad("serverApproveBillingEvent") VKey<BillingEvent.OneTime> val) {
+    serverApproveBillingEventHistoryId = DomainBase.getHistoryId(val);
+  }
+
+  private void loadServerApproveAutorenewEventHistoryId(
+      @AlsoLoad("serverApproveAutorenewEvent") VKey<BillingEvent.Recurring> val) {
+    serverApproveAutorenewEventHistoryId = DomainBase.getHistoryId(val);
+  }
+
+  private void loadServerApproveAutorenewPollMessageHistoryId(
+      @AlsoLoad("serverApproveAutorenewPollMessage") VKey<PollMessage.Autorenew> val) {
+    serverApproveAutorenewPollMessageHistoryId = DomainBase.getHistoryId(val);
   }
 
   public Period getTransferPeriod() {
@@ -125,14 +173,32 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     return serverApproveBillingEvent;
   }
 
+  @VisibleForTesting
+  @Nullable
+  public Long getServerApproveBillingEventHistoryId() {
+    return serverApproveBillingEventHistoryId;
+  }
+
   @Nullable
   public VKey<BillingEvent.Recurring> getServerApproveAutorenewEvent() {
     return serverApproveAutorenewEvent;
   }
 
+  @VisibleForTesting
+  @Nullable
+  public Long getServerApproveAutorenewEventHistoryId() {
+    return serverApproveAutorenewEventHistoryId;
+  }
+
   @Nullable
   public VKey<PollMessage.Autorenew> getServerApproveAutorenewPollMessage() {
     return serverApproveAutorenewPollMessage;
+  }
+
+  @VisibleForTesting
+  @Nullable
+  public Long getServerApproveAutorenewPollMessageHistoryId() {
+    return serverApproveAutorenewPollMessageHistoryId;
   }
 
   @Override
@@ -168,18 +234,24 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     public Builder setServerApproveBillingEvent(
         VKey<BillingEvent.OneTime> serverApproveBillingEvent) {
       getInstance().serverApproveBillingEvent = serverApproveBillingEvent;
+      getInstance().serverApproveBillingEventHistoryId =
+          DomainBase.getHistoryId(serverApproveBillingEvent);
       return this;
     }
 
     public Builder setServerApproveAutorenewEvent(
         VKey<BillingEvent.Recurring> serverApproveAutorenewEvent) {
       getInstance().serverApproveAutorenewEvent = serverApproveAutorenewEvent;
+      getInstance().serverApproveAutorenewEventHistoryId =
+          DomainBase.getHistoryId(serverApproveAutorenewEvent);
       return this;
     }
 
     public Builder setServerApproveAutorenewPollMessage(
         VKey<PollMessage.Autorenew> serverApproveAutorenewPollMessage) {
       getInstance().serverApproveAutorenewPollMessage = serverApproveAutorenewPollMessage;
+      getInstance().serverApproveAutorenewPollMessageHistoryId =
+          DomainBase.getHistoryId(serverApproveAutorenewPollMessage);
       return this;
     }
   }

@@ -352,9 +352,13 @@ public class DomainContent extends EppResource
         restoreOfyFrom(myKey, autorenewBillingEvent, autorenewBillingEventHistoryId);
     autorenewPollMessage =
         restoreOfyFrom(myKey, autorenewPollMessage, autorenewPollMessageHistoryId);
+
+    if (transferData != null) {
+      transferData.restoreOfyKeys(myKey);
+    }
   }
 
-  private <T> VKey<T> restoreOfyFrom(Key<DomainBase> domainKey, VKey<T> key, Long historyId) {
+  public static <T> VKey<T> restoreOfyFrom(Key<DomainBase> domainKey, VKey<T> key, Long historyId) {
     if (historyId == null) {
       // This is a legacy key (or a null key, in which case this works too)
       return VKey.restoreOfyFrom(key, EntityGroupRoot.class, "per-tld");
@@ -716,7 +720,14 @@ public class DomainContent extends EppResource
             + " use DomainBase instead");
   }
 
-  private static Long getHistoryId(VKey<?> key) {
+  /**
+   * Obtains a history id from the given key.
+   *
+   * <p>The key must be a composite key either of the form domain-key/history-key/long-event-key or
+   * EntityGroupRoot/long-event-key (for legacy keys). In the latter case or for a null key returns
+   * a history id of null.
+   */
+  public static Long getHistoryId(VKey<?> key) {
     if (key == null) {
       return null;
     }

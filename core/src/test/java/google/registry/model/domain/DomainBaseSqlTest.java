@@ -21,6 +21,7 @@ import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -42,12 +43,14 @@ import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.ContactTransferData;
+import google.registry.model.transfer.DomainTransferData;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import java.util.Arrays;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -445,6 +448,7 @@ public class DomainBaseSqlTest {
             () -> {
               historyEntry =
                   new DomainHistory.Builder()
+                      .setId(100L)
                       .setType(HistoryEntry.Type.DOMAIN_CREATE)
                       .setPeriod(Period.create(1, Period.Unit.YEARS))
                       .setModificationTime(DateTime.now(UTC))
@@ -458,6 +462,7 @@ public class DomainBaseSqlTest {
                       .build();
               BillingEvent.Recurring billEvent =
                   new BillingEvent.Recurring.Builder()
+                      .setId(200L)
                       .setReason(Reason.RENEW)
                       .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                       .setTargetId("example.com")
@@ -470,15 +475,36 @@ public class DomainBaseSqlTest {
                       .build();
               PollMessage.Autorenew autorenewPollMessage =
                   new PollMessage.Autorenew.Builder()
+                      .setId(300L)
                       .setClientId("registrar1")
                       .setEventTime(DateTime.now(UTC).plusYears(1))
                       .setParent(historyEntry)
                       .build();
               PollMessage.OneTime deletePollMessage =
                   new PollMessage.OneTime.Builder()
+                      .setId(400L)
                       .setClientId("registrar1")
                       .setEventTime(DateTime.now(UTC).plusYears(1))
                       .setParent(historyEntry)
+                      .build();
+              BillingEvent.OneTime oneTimeBillingEvent =
+                  new BillingEvent.OneTime.Builder()
+                      .setId(500L)
+                      // Use SERVER_STATUS so we don't have to add a period.
+                      .setReason(Reason.SERVER_STATUS)
+                      .setTargetId("example.com")
+                      .setClientId("registrar1")
+                      .setDomainRepoId("4-COM")
+                      .setBillingTime(DateTime.now(UTC))
+                      .setCost(Money.of(USD, 100))
+                      .setEventTime(DateTime.now(UTC).plusYears(1))
+                      .setParent(historyEntry)
+                      .build();
+              DomainTransferData transferData =
+                  new DomainTransferData.Builder()
+                      .setServerApproveBillingEvent(oneTimeBillingEvent.createVKey())
+                      .setServerApproveAutorenewEvent(billEvent.createVKey())
+                      .setServerApproveAutorenewPollMessage(autorenewPollMessage.createVKey())
                       .build();
 
               jpaTm().insert(contact);
@@ -490,12 +516,14 @@ public class DomainBaseSqlTest {
                       .setAutorenewBillingEvent(billEvent.createVKey())
                       .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                       .setDeletePollMessage(deletePollMessage.createVKey())
+                      .setTransferData(transferData)
                       .build();
               historyEntry = historyEntry.asBuilder().setDomainContent(domain).build();
               jpaTm().insert(historyEntry);
               jpaTm().insert(autorenewPollMessage);
               jpaTm().insert(billEvent);
               jpaTm().insert(deletePollMessage);
+              jpaTm().insert(oneTimeBillingEvent);
               jpaTm().insert(domain);
             });
 
@@ -516,6 +544,15 @@ public class DomainBaseSqlTest {
         .isEqualTo(domain.getAutorenewBillingEvent());
     assertThat(persistedHistoryEntry.getDomainContent().get().getDeletePollMessage())
         .isEqualTo(domain.getDeletePollMessage());
+    DomainTransferData persistedTransferData =
+        persistedHistoryEntry.getDomainContent().get().getTransferData();
+    DomainTransferData originalTransferData = domain.getTransferData();
+    assertThat(persistedTransferData.getServerApproveBillingEvent())
+        .isEqualTo(originalTransferData.getServerApproveBillingEvent());
+    assertThat(persistedTransferData.getServerApproveAutorenewEvent())
+        .isEqualTo(originalTransferData.getServerApproveAutorenewEvent());
+    assertThat(persistedTransferData.getServerApproveAutorenewPollMessage())
+        .isEqualTo(originalTransferData.getServerApproveAutorenewPollMessage());
   }
 
   @Test
@@ -525,6 +562,7 @@ public class DomainBaseSqlTest {
             () -> {
               historyEntry =
                   new DomainHistory.Builder()
+                      .setId(100L)
                       .setType(HistoryEntry.Type.DOMAIN_CREATE)
                       .setPeriod(Period.create(1, Period.Unit.YEARS))
                       .setModificationTime(DateTime.now(UTC))
@@ -538,6 +576,7 @@ public class DomainBaseSqlTest {
                       .build();
               BillingEvent.Recurring billEvent =
                   new BillingEvent.Recurring.Builder()
+                      .setId(200L)
                       .setReason(Reason.RENEW)
                       .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                       .setTargetId("example.com")
@@ -550,15 +589,40 @@ public class DomainBaseSqlTest {
                       .build();
               PollMessage.Autorenew autorenewPollMessage =
                   new PollMessage.Autorenew.Builder()
+                      .setId(300L)
                       .setClientId("registrar1")
                       .setEventTime(DateTime.now(UTC).plusYears(1))
                       .setParent(historyEntry)
                       .build();
               PollMessage.OneTime deletePollMessage =
                   new PollMessage.OneTime.Builder()
+                      .setId(400L)
                       .setClientId("registrar1")
                       .setEventTime(DateTime.now(UTC).plusYears(1))
                       .setParent(historyEntry)
+                      .build();
+              BillingEvent.OneTime oneTimeBillingEvent =
+                  new BillingEvent.OneTime.Builder()
+                      .setId(500L)
+                      // Use SERVER_STATUS so we don't have to add a period.
+                      .setReason(Reason.SERVER_STATUS)
+                      .setTargetId("example.com")
+                      .setClientId("registrar1")
+                      .setDomainRepoId("4-COM")
+                      .setBillingTime(DateTime.now(UTC))
+                      .setCost(Money.of(USD, 100))
+                      .setEventTime(DateTime.now(UTC).plusYears(1))
+                      .setParent(historyEntry)
+                      .build();
+              DomainTransferData transferData =
+                  new DomainTransferData.Builder()
+                      .setServerApproveBillingEvent(
+                          createLegacyVKey(BillingEvent.OneTime.class, oneTimeBillingEvent.getId()))
+                      .setServerApproveAutorenewEvent(
+                          createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId()))
+                      .setServerApproveAutorenewPollMessage(
+                          createLegacyVKey(
+                              PollMessage.Autorenew.class, autorenewPollMessage.getId()))
                       .build();
 
               jpaTm().insert(contact);
@@ -570,15 +634,18 @@ public class DomainBaseSqlTest {
                       .setAutorenewBillingEvent(
                           createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId()))
                       .setAutorenewPollMessage(
-                          createLegacyVKey(PollMessage.Autorenew.class, deletePollMessage.getId()))
+                          createLegacyVKey(
+                              PollMessage.Autorenew.class, autorenewPollMessage.getId()))
                       .setDeletePollMessage(
-                          createLegacyVKey(PollMessage.OneTime.class, autorenewPollMessage.getId()))
+                          createLegacyVKey(PollMessage.OneTime.class, deletePollMessage.getId()))
+                      .setTransferData(transferData)
                       .build();
               historyEntry = historyEntry.asBuilder().setDomainContent(domain).build();
               jpaTm().insert(historyEntry);
               jpaTm().insert(autorenewPollMessage);
               jpaTm().insert(billEvent);
               jpaTm().insert(deletePollMessage);
+              jpaTm().insert(oneTimeBillingEvent);
               jpaTm().insert(domain);
             });
 
@@ -599,6 +666,15 @@ public class DomainBaseSqlTest {
         .isEqualTo(domain.getAutorenewBillingEvent());
     assertThat(persistedHistoryEntry.getDomainContent().get().getDeletePollMessage())
         .isEqualTo(domain.getDeletePollMessage());
+    DomainTransferData persistedTransferData =
+        persistedHistoryEntry.getDomainContent().get().getTransferData();
+    DomainTransferData originalTransferData = domain.getTransferData();
+    assertThat(persistedTransferData.getServerApproveBillingEvent())
+        .isEqualTo(originalTransferData.getServerApproveBillingEvent());
+    assertThat(persistedTransferData.getServerApproveAutorenewEvent())
+        .isEqualTo(originalTransferData.getServerApproveAutorenewEvent());
+    assertThat(persistedTransferData.getServerApproveAutorenewPollMessage())
+        .isEqualTo(originalTransferData.getServerApproveAutorenewPollMessage());
   }
 
   private <T> VKey<T> createLegacyVKey(Class<T> clazz, long id) {

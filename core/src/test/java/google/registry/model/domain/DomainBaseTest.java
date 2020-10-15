@@ -67,6 +67,7 @@ public class DomainBaseTest extends EntityTestCase {
   private DomainBase domain;
   private VKey<BillingEvent.OneTime> oneTimeBillKey;
   private VKey<BillingEvent.Recurring> recurringBillKey;
+  private Key<HistoryEntry> historyEntryKey;
 
   @BeforeEach
   void setUp() {
@@ -94,7 +95,7 @@ public class DomainBaseTest extends EntityTestCase {
                     .setRepoId("3-COM")
                     .build())
             .createVKey();
-    Key<HistoryEntry> historyEntryKey =
+    historyEntryKey =
         Key.create(
             persistResource(new HistoryEntry.Builder().setParent(domainKey.getOfyKey()).build()));
     oneTimeBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.OneTime.class, 1));
@@ -164,8 +165,24 @@ public class DomainBaseTest extends EntityTestCase {
 
   @Test
   void testPersistence() {
+    // Note that this only verifies that the value stored under the foreign key is the same as that
+    // stored under the primary key ("domain" is the domain loaded from the datastore, not the
+    // original domain object).
     assertThat(loadByForeignKey(DomainBase.class, domain.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(domain);
+  }
+
+  @Test
+  void testVKeyRestoration() {
+    assertThat(domain.deletePollMessageHistoryId).isEqualTo(historyEntryKey.getId());
+    assertThat(domain.autorenewBillingEventHistoryId).isEqualTo(historyEntryKey.getId());
+    assertThat(domain.autorenewPollMessageHistoryId).isEqualTo(historyEntryKey.getId());
+    assertThat(domain.getTransferData().getServerApproveBillingEventHistoryId())
+        .isEqualTo(historyEntryKey.getId());
+    assertThat(domain.getTransferData().getServerApproveAutorenewEventHistoryId())
+        .isEqualTo(historyEntryKey.getId());
+    assertThat(domain.getTransferData().getServerApproveAutorenewPollMessageHistoryId())
+        .isEqualTo(historyEntryKey.getId());
   }
 
   @Test

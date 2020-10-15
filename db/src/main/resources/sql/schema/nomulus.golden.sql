@@ -369,7 +369,10 @@ CREATE TABLE public."Domain" (
     autorenew_end_time timestamp with time zone,
     billing_recurrence_history_id bigint,
     autorenew_poll_message_history_id bigint,
-    deletion_poll_message_history_id bigint
+    deletion_poll_message_history_id bigint,
+    transfer_billing_recurrence_history_id bigint,
+    transfer_autorenew_poll_message_history_id bigint,
+    transfer_billing_event_history_id bigint
 );
 
 
@@ -439,7 +442,10 @@ CREATE TABLE public."DomainHistory" (
     history_period_value integer,
     billing_recurrence_history_id bigint,
     autorenew_poll_message_history_id bigint,
-    deletion_poll_message_history_id bigint
+    deletion_poll_message_history_id bigint,
+    transfer_billing_recurrence_history_id bigint,
+    transfer_autorenew_poll_message_history_id bigint,
+    transfer_billing_event_history_id bigint
 );
 
 
