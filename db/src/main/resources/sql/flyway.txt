@@ -64,3 +64,4 @@ V63__add_schema_for_ds_data.sql
 V64__transfer_history_columns.sql
 V65__local_date_date_type.sql
 V66__create_rde_revision.sql
+V67__create_kms_secret.sql
