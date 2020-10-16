@@ -227,12 +227,23 @@
     );
 
     create table "DelegationSignerData" (
-       domain_repo_id text not null,
+       algorithm int4 not null,
+        digest bytea not null,
+        digest_type int4 not null,
         key_tag int4 not null,
+        domain_repo_id text,
+        primary key (algorithm, digest, digest_type, key_tag)
+    );
+
+    create table "DelegationSignerDataHistory" (
+       ds_data_history_revision_id int8 not null,
+        domain_repo_id text,
         algorithm int4 not null,
         digest bytea not null,
         digest_type int4 not null,
-        primary key (domain_repo_id, key_tag)
+        domain_history_revision_id int8 not null,
+        key_tag int4 not null,
+        primary key (ds_data_history_revision_id)
     );
 
     create table "Domain" (
@@ -728,6 +739,11 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        add constraint FKtr24j9v14ph2mfuw2gsmt12kq 
        foreign key (domain_repo_id) 
        references "Domain";
+
+    alter table if exists "DelegationSignerDataHistory" 
+       add constraint FKb6xm1thr4tys3s664yhj7cd9g 
+       foreign key (domain_repo_id, domain_history_revision_id) 
+       references "DomainHistory";
 
     alter table if exists "DomainHistoryHost" 
        add constraint FKa9woh3hu8gx5x0vly6bai327n 

@@ -317,6 +317,21 @@ CREATE TABLE public."DelegationSignerData" (
 
 
 --
+-- Name: DelegationSignerDataHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DelegationSignerDataHistory" (
+    ds_data_history_revision_id bigint NOT NULL,
+    domain_repo_id text,
+    algorithm integer NOT NULL,
+    digest bytea NOT NULL,
+    digest_type integer NOT NULL,
+    domain_history_revision_id bigint NOT NULL,
+    key_tag integer NOT NULL
+);
+
+
+--
 -- Name: Domain; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1068,11 +1083,19 @@ ALTER TABLE ONLY public."Cursor"
 
 
 --
+-- Name: DelegationSignerDataHistory DelegationSignerDataHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DelegationSignerDataHistory"
+    ADD CONSTRAINT "DelegationSignerDataHistory_pkey" PRIMARY KEY (ds_data_history_revision_id);
+
+
+--
 -- Name: DelegationSignerData DelegationSignerData_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."DelegationSignerData"
-    ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (domain_repo_id, key_tag);
+    ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (key_tag, algorithm, digest_type, digest);
 
 
 --
@@ -1966,6 +1989,14 @@ ALTER TABLE ONLY public."PollMessage"
 
 ALTER TABLE ONLY public."DomainHistoryHost"
     ADD CONSTRAINT fka9woh3hu8gx5x0vly6bai327n FOREIGN KEY (domain_history_domain_repo_id, domain_history_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+
+
+--
+-- Name: DelegationSignerDataHistory fkb6xm1thr4tys3s664yhj7cd9g; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DelegationSignerDataHistory"
+    ADD CONSTRAINT fkb6xm1thr4tys3s664yhj7cd9g FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
 
 
 --

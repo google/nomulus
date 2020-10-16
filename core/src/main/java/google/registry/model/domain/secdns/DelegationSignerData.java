@@ -17,22 +17,18 @@ package google.registry.model.domain.secdns;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.secdns.DelegationSignerData.DelegationSignerDataId;
-import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.io.Serializable;
-import javax.persistence.Column;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.Index;
 import javax.persistence.Table;
 import javax.xml.bind.DatatypeConverter;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 /**
  * Holds the data necessary to construct a single Delegation Signer (DS) record for a domain.
@@ -43,63 +39,38 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @Embed
 @XmlType(name = "dsData")
 @Entity
-@Table(indexes = @Index(columnList = "domainRepoId"))
 @IdClass(DelegationSignerDataId.class)
-public class DelegationSignerData extends ImmutableObject implements DatastoreAndSqlEntity {
+@Table(indexes = @Index(columnList = "domainRepoId"))
+public class DelegationSignerData extends DelegationSignerDataBase {
 
   private DelegationSignerData() {}
 
-  @Ignore @XmlTransient @javax.persistence.Id String domainRepoId;
-
-  /** The identifier for this particular key in the domain. */
-  @javax.persistence.Id
-  @Column(nullable = false)
-  int keyTag;
-
-  /**
-   * The algorithm used by this key.
-   *
-   * @see <a href="http://tools.ietf.org/html/rfc4034#appendix-A.1">RFC 4034 Appendix A.1</a>
-   */
-  @Column(nullable = false)
-  @XmlElement(name = "alg")
-  int algorithm;
-
-  /**
-   * The algorithm used to generate the digest.
-   *
-   * @see <a href="http://tools.ietf.org/html/rfc4034#appendix-A.2">RFC 4034 Appendix A.2</a>
-   */
-  @Column(nullable = false)
-  int digestType;
-
-  /**
-   * The hexBinary digest of the public key.
-   *
-   * @see <a href="http://tools.ietf.org/html/rfc4034#section-5.1.4">RFC 4034 Section 5.1.4</a>
-   */
-  @Column(nullable = false)
-  @XmlJavaTypeAdapter(HexBinaryAdapter.class)
-  byte[] digest;
-
+  @Override
+  @Id
+  @Access(AccessType.PROPERTY)
   public int getKeyTag() {
-    return keyTag;
+    return super.getKeyTag();
   }
 
+  @Override
+  @Id
+  @Access(AccessType.PROPERTY)
   public int getAlgorithm() {
-    return algorithm;
+    return super.getAlgorithm();
   }
 
+  @Override
+  @Id
+  @Access(AccessType.PROPERTY)
   public int getDigestType() {
-    return digestType;
+    return super.getDigestType();
   }
 
+  @Override
+  @Id
+  @Access(AccessType.PROPERTY)
   public byte[] getDigest() {
-    return digest;
-  }
-
-  public String getDigestAsString() {
-    return digest == null ? "" : DatatypeConverter.printHexBinary(digest);
+    return super.getDigest();
   }
 
   public DelegationSignerData cloneWithDomainRepoId(String domainRepoId) {
@@ -135,30 +106,111 @@ public class DelegationSignerData extends ImmutableObject implements DatastoreAn
     return create(keyTag, algorithm, digestType, DatatypeConverter.parseHexBinary(digestAsHex));
   }
 
-  /**
-   * Returns the presentation format of this DS record.
-   *
-   * @see <a href="https://tools.ietf.org/html/rfc4034#section-5.3">RFC 4034 Section 5.3</a>
-   */
-  public String toRrData() {
-    return String.format(
-        "%d %d %d %s",
-        this.keyTag, this.algorithm, this.digestType, DatatypeConverter.printHexBinary(digest));
-  }
-
+  /** Class to represent the composite primary key of {@link DelegationSignerData} entity. */
   static class DelegationSignerDataId extends ImmutableObject implements Serializable {
-    String domainRepoId;
     int keyTag;
 
+    int algorithm;
+
+    int digestType;
+
+    byte[] digest;
+
+    /** Hibernate requires this default constructor. */
     private DelegationSignerDataId() {}
 
-    private DelegationSignerDataId(String domainRepoId, int keyTag) {
-      this.domainRepoId = domainRepoId;
+    /** Constructs a {link DelegationSignerDataId} instance. */
+    DelegationSignerDataId(int keyTag, int algorithm, int digestType, byte[] digest) {
+      this.keyTag = keyTag;
+      this.algorithm = algorithm;
+      this.digestType = digestType;
+      this.digest = digest;
+    }
+
+    /**
+     * Returns the key tag.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private int getKeyTag() {
+      return keyTag;
+    }
+
+    /**
+     * Returns the algorithm.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private int getAlgorithm() {
+      return algorithm;
+    }
+
+    /**
+     * Returns the digest type.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private int getDigestType() {
+      return digestType;
+    }
+
+    /**
+     * Returns the digest.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private byte[] getDigest() {
+      return digest;
+    }
+
+    /**
+     * Sets the key tag.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private void setKeyTag(int keyTag) {
       this.keyTag = keyTag;
     }
 
-    public static DelegationSignerDataId create(String domainRepoId, int keyTag) {
-      return new DelegationSignerDataId(checkArgumentNotNull(domainRepoId), keyTag);
+    /**
+     * Sets the algorithm.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private void setAlgorithm(int algorithm) {
+      this.algorithm = algorithm;
+    }
+
+    /**
+     * Sets the digest type.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private void setDigestType(int digestType) {
+      this.digestType = digestType;
+    }
+
+    /**
+     * Sets the digest.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private void setDigest(byte[] digest) {
+      this.digest = digest;
+    }
+
+    public static DelegationSignerDataId create(
+        int keyTag, int algorithm, int digestType, byte[] digest) {
+      return new DelegationSignerDataId(
+          keyTag, algorithm, digestType, checkArgumentNotNull(digest));
     }
   }
 }

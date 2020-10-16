@@ -116,7 +116,8 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     // The objects will be mostly the same, but the DomainHistory object has a couple extra fields
     assertAboutImmutableObjects()
         .that(legacyHistoryEntry)
-        .isEqualExceptFields(fromObjectify, "domainContent", "domainRepoId", "nsHosts");
+        .isEqualExceptFields(
+            fromObjectify, "domainContent", "domainRepoId", "nsHosts", "dsDataHistories");
     assertThat(fromObjectify instanceof DomainHistory).isTrue();
     DomainHistory legacyDomainHistory = (DomainHistory) fromObjectify;
 
@@ -129,7 +130,12 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
         .that(legacyDomainHistory)
         .isEqualExceptFields(
             // NB: period, transaction records, and other client ID are added in #794
-            legacyHistoryFromSql, "period", "domainTransactionRecords", "otherClientId", "nsHosts");
+            legacyHistoryFromSql,
+            "period",
+            "domainTransactionRecords",
+            "otherClientId",
+            "nsHosts",
+            "dsDataHistories");
     assertThat(nullToEmpty(legacyDomainHistory.getNsHosts()))
         .isEqualTo(nullToEmpty(legacyHistoryFromSql.getNsHosts()));
   }
