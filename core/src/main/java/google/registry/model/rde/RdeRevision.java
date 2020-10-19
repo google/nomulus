@@ -74,12 +74,17 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreEntit
   /** Hibernate requires an empty constructor. */
   private RdeRevision() {}
 
-  public RdeRevision(String id, String tld, LocalDate date, RdeMode mode, int revision) {
+  private RdeRevision(String id, String tld, LocalDate date, RdeMode mode, int revision) {
     this.id = id;
     this.tld = tld;
     this.date = date;
     this.mode = mode;
     this.revision = revision;
+  }
+
+  public static RdeRevision create(
+      String id, String tld, LocalDate date, RdeMode mode, int revision) {
+    return new RdeRevision(id, tld, date, mode, revision);
   }
 
   public int getRevision() {
@@ -103,7 +108,7 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreEntit
    */
   public static int getNextRevision(String tld, DateTime date, RdeMode mode) {
     String id = makePartialName(tld, date, mode);
-    RdeRevisionId sqlKey = new RdeRevisionId(tld, date.toLocalDate(), mode);
+    RdeRevisionId sqlKey = RdeRevisionId.create(tld, date.toLocalDate(), mode);
     Key<RdeRevision> ofyKey = Key.create(RdeRevision.class, id);
     Optional<RdeRevision> revisionOptional =
         tm().maybeLoad(VKey.create(RdeRevision.class, sqlKey, ofyKey));
@@ -123,7 +128,7 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreEntit
     checkArgument(revision >= 0, "Negative revision: %s", revision);
     String triplet = makePartialName(tld, date, mode);
     tm().assertInTransaction();
-    RdeRevisionId sqlKey = new RdeRevisionId(tld, date.toLocalDate(), mode);
+    RdeRevisionId sqlKey = RdeRevisionId.create(tld, date.toLocalDate(), mode);
     Key<RdeRevision> ofyKey = Key.create(RdeRevision.class, triplet);
     Optional<RdeRevision> revisionOptional =
         tm().maybeLoad(VKey.create(RdeRevision.class, sqlKey, ofyKey));
@@ -131,17 +136,19 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreEntit
       revisionOptional.ifPresent(
           rdeRevision -> {
             throw new IllegalArgumentException(
-                String.format("RdeRevision object already created: %s", rdeRevision));
+                String.format(
+                    "RdeRevision object already created and revision 0 specified: %s",
+                    rdeRevision));
           });
     } else {
       checkArgument(
           revisionOptional.isPresent(),
-          "RDE revision object missing for %s?! revision=%s",
+          "Couldn't find existing RDE revision %s when trying to save new revision %s",
           triplet,
           revision);
       checkArgument(
           revisionOptional.get().revision == revision - 1,
-          "RDE revision object should be at %s but was: %s",
+          "RDE revision object should be at revision %s but was: %s",
           revision - 1,
           revisionOptional.get());
     }
@@ -152,59 +159,27 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreEntit
   /** Class to represent the composite primary key of {@link RdeRevision} entity. */
   static class RdeRevisionId extends ImmutableObject implements Serializable {
 
-    private String tld;
+    String tld;
 
     // Auto-conversion doesn't work for ID classes, we must specify @Column and @Convert
     @Column
     @Convert(converter = LocalDateConverter.class)
-    private LocalDate date;
+    LocalDate date;
 
     @Enumerated(EnumType.STRING)
-    private RdeMode mode;
+    RdeMode mode;
 
     /** Hibernate requires this default constructor. */
     private RdeRevisionId() {}
 
-    RdeRevisionId(String tld, LocalDate date, RdeMode mode) {
+    private RdeRevisionId(String tld, LocalDate date, RdeMode mode) {
       this.tld = tld;
       this.date = date;
       this.mode = mode;
     }
 
-    /** Private, only used by Hibernate. */
-    @SuppressWarnings("unused")
-    private String getTld() {
-      return tld;
-    }
-
-    /** Private, only used by Hibernate. */
-    @SuppressWarnings("unused")
-    private LocalDate getDate() {
-      return date;
-    }
-
-    /** Private, only used by Hibernate. */
-    @SuppressWarnings("unused")
-    private RdeMode getMode() {
-      return mode;
-    }
-
-    /** Required by Hibernate, should not be used in order to maintain immutability. */
-    @SuppressWarnings("unused")
-    private void setTld(String tld) {
-      this.tld = tld;
-    }
-
-    /** Required by Hibernate, should not be used in order to maintain immutability. */
-    @SuppressWarnings("unused")
-    private void setDate(LocalDate date) {
-      this.date = date;
-    }
-
-    /** Required by Hibernate, should not be used in order to maintain immutability. */
-    @SuppressWarnings("unused")
-    private void setMode(RdeMode mode) {
-      this.mode = mode;
+    static RdeRevisionId create(String tld, LocalDate date, RdeMode mode) {
+      return new RdeRevisionId(tld, date, mode);
     }
   }
 }
