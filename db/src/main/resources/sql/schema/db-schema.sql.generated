@@ -597,7 +597,7 @@
 
     create table "Spec11ThreatMatch" (
        id  bigserial not null,
-        check_date text not null,
+        check_date date not null,
         domain_name text not null,
         domain_repo_id text not null,
         registrar_id text not null,

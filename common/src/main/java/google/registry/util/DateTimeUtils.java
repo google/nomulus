@@ -24,6 +24,7 @@ import java.time.ZonedDateTime;
 import java.util.TimeZone;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.LocalDate;
 
 /** Utilities methods and constants related to Joda {@link DateTime} objects. */
 public class DateTimeUtils {
@@ -107,5 +108,13 @@ public class DateTimeUtils {
     return new DateTime(
         zonedDateTime.toInstant().toEpochMilli(),
         DateTimeZone.forTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone())));
+  }
+
+  public static java.sql.Date toSqlDate(LocalDate localDate) {
+    return new java.sql.Date(localDate.toDateTimeAtStartOfDay().getMillis());
+  }
+
+  public static LocalDate toLocalDate(java.sql.Date date) {
+    return new LocalDate(date.getTime(), DateTimeZone.UTC);
   }
 }
