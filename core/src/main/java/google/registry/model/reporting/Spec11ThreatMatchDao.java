@@ -16,23 +16,25 @@ package google.registry.model.reporting;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.util.DateTimeUtils;
+import javax.persistence.TemporalType;
 import org.joda.time.LocalDate;
 
 /**
  * Data access object for {@link google.registry.model.reporting.Spec11ThreatMatch}.
  *
  * <p>A JpaTransactionManager is passed into each static method because they are called from a BEAM
- * pipeline and we don't know where it's coming from.</p>
+ * pipeline and we don't know where it's coming from.
  */
 public class Spec11ThreatMatchDao {
-  
+
   /** Delete all entries with the specified date from the database. */
   public static void deleteEntriesByDate(JpaTransactionManager jpaTm, LocalDate date) {
     jpaTm.assertInTransaction();
     jpaTm
         .getEntityManager()
         .createQuery("DELETE FROM Spec11ThreatMatch WHERE check_date = :date")
-        .setParameter("date", date.toString())
+        .setParameter("date", DateTimeUtils.toSqlDate(date), TemporalType.DATE)
         .executeUpdate();
   }
 

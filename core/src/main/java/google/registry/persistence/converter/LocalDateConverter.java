@@ -14,17 +14,23 @@
 
 package google.registry.persistence.converter;
 
+import google.registry.util.DateTimeUtils;
+import java.sql.Date;
+import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import org.joda.time.LocalDate;
-import org.joda.time.format.ISODateTimeFormat;
 
-/** JPA converter for {@link LocalDate}. */
+/** JPA converter for {@link LocalDate}, to/from {@link Date}. */
 @Converter(autoApply = true)
-public class LocalDateConverter extends ToStringConverterBase<LocalDate> {
+public class LocalDateConverter implements AttributeConverter<LocalDate, Date> {
 
-  /** Converts the string (a date in ISO-8601 format) into a LocalDate. */
   @Override
-  public LocalDate convertToEntityAttribute(String columnValue) {
-    return (columnValue == null) ? null : LocalDate.parse(columnValue, ISODateTimeFormat.date());
+  public Date convertToDatabaseColumn(LocalDate attribute) {
+    return attribute == null ? null : DateTimeUtils.toSqlDate(attribute);
+  }
+
+  @Override
+  public LocalDate convertToEntityAttribute(Date dbData) {
+    return dbData == null ? null : DateTimeUtils.toLocalDate(dbData);
   }
 }

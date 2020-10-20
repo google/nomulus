@@ -75,7 +75,7 @@ public class Spec11ThreatMatch extends ImmutableObject implements Buildable, Sql
   String registrarId;
 
   /** Date on which the check was run, on which the domain was flagged as abusive. */
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "date")
   LocalDate checkDate;
 
   /** The domain's top-level domain. */
