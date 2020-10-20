@@ -333,7 +333,9 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     return checkNotChangedUnlessAllowed(builder, initialRegistrar, Role.OWNER);
   }
 
+  /** Checks that the certificate string represents a certificate with no violations. */
   private void validateCertificate(String certificateString) {
+    //TODO(sarhabot): remove this check after November 1, 2020
     if(tm().getTransactionTime().isBefore(DateTime.parse("2020-11-01T00:00:00Z"))){
       return;
     }
