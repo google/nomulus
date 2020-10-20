@@ -20,7 +20,7 @@ import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import org.joda.time.LocalDate;
 
-/** JPA converter for {@link LocalDate}, to/from {@link java.sql.Date}. */
+/** JPA converter for {@link LocalDate}, to/from {@link Date}. */
 @Converter(autoApply = true)
 public class LocalDateConverter implements AttributeConverter<LocalDate, Date> {
 
