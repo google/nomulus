@@ -92,15 +92,13 @@ public class Spec11ThreatMatchDaoTest extends EntityTestCase {
   }
 
   private Spec11ThreatMatch createThreatMatch(String domainName, LocalDate date) {
-    Spec11ThreatMatch threatMatch =
-        new Spec11ThreatMatch()
-            .asBuilder()
-            .setThreatTypes(ImmutableSet.of(ThreatType.MALWARE))
-            .setCheckDate(date)
-            .setDomainName(domainName)
-            .setRegistrarId("Example Registrar")
-            .setDomainRepoId("1-COM")
-            .build();
-    return threatMatch;
+    return new Spec11ThreatMatch()
+        .asBuilder()
+        .setThreatTypes(ImmutableSet.of(ThreatType.MALWARE))
+        .setCheckDate(date)
+        .setDomainName(domainName)
+        .setRegistrarId("Example Registrar")
+        .setDomainRepoId("1-COM")
+        .build();
   }
 }

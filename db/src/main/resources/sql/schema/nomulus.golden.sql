@@ -860,7 +860,7 @@ ALTER SEQUENCE public."ReservedList_revision_id_seq" OWNED BY public."ReservedLi
 
 CREATE TABLE public."Spec11ThreatMatch" (
     id bigint NOT NULL,
-    check_date text NOT NULL,
+    check_date date NOT NULL,
     domain_name text NOT NULL,
     domain_repo_id text NOT NULL,
     registrar_id text NOT NULL,

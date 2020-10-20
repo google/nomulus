@@ -24,12 +24,16 @@ import static google.registry.util.DateTimeUtils.latestOf;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 import static google.registry.util.DateTimeUtils.leapSafeSubtractYears;
 import static google.registry.util.DateTimeUtils.toJodaDateTime;
+import static google.registry.util.DateTimeUtils.toLocalDate;
+import static google.registry.util.DateTimeUtils.toSqlDate;
 import static google.registry.util.DateTimeUtils.toZonedDateTime;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
+import java.sql.Date;
 import java.time.ZonedDateTime;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DateTimeUtils}. */
@@ -135,5 +139,17 @@ class DateTimeUtilsTest {
     ZonedDateTime zonedDateTime = ZonedDateTime.parse("2016-02-29T11:22:33.168Z");
     DateTime dateTime = toJodaDateTime(zonedDateTime);
     assertThat(dateTime.toString()).isEqualTo("2016-02-29T11:22:33.168Z");
+  }
+
+  @Test
+  void testSuccess_toSqlDate() {
+    LocalDate localDate = LocalDate.parse("2020-02-29");
+    assertThat(toSqlDate(localDate)).isEqualTo(Date.valueOf("2020-02-29"));
+  }
+
+  @Test
+  void testSuccess_toLocalDate() {
+    Date date = Date.valueOf("2020-02-29");
+    assertThat(toLocalDate(date)).isEqualTo(LocalDate.parse("2020-02-29"));
   }
 }
