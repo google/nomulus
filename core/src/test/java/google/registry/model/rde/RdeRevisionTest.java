@@ -67,7 +67,11 @@ public class RdeRevisionTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () -> tm().transact(() -> saveRevision("despondency", fakeClock.nowUtc(), FULL, 1)));
-    assertThat(thrown).hasMessageThat().contains("object missing");
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Couldn't find existing RDE revision despondency_1984-12-18_full "
+                + "when trying to save new revision 1");
   }
 
   @TestTemplate
@@ -96,7 +100,9 @@ public class RdeRevisionTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () -> tm().transact(() -> saveRevision("melancholy", fakeClock.nowUtc(), FULL, 2)));
-    assertThat(thrown).hasMessageThat().contains("should be at 1 ");
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("RDE revision object should be at revision 1 but was");
   }
 
   @TestTemplate
