@@ -162,7 +162,7 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreEntit
     String tld;
 
     // Auto-conversion doesn't work for ID classes, we must specify @Column and @Convert
-    @Column
+    @Column(columnDefinition = "date")
     @Convert(converter = LocalDateConverter.class)
     LocalDate date;
 

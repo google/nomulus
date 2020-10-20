@@ -689,7 +689,7 @@ ALTER SEQUENCE public."PremiumList_revision_id_seq" OWNED BY public."PremiumList
 CREATE TABLE public."RdeRevision" (
     tld text NOT NULL,
     mode text NOT NULL,
-    date text NOT NULL,
+    date date NOT NULL,
     update_timestamp timestamp with time zone,
     revision integer NOT NULL
 );

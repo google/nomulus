@@ -15,7 +15,7 @@
 CREATE TABLE "RdeRevision" (
    tld TEXT NOT NULL,
    mode TEXT NOT NULL,
-   date TEXT NOT NULL,
+   date date NOT NULL,
    update_timestamp timestamptz,
    revision int4 NOT NULL,
    PRIMARY KEY (tld, mode, date)

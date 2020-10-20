@@ -495,7 +495,7 @@
     );
 
     create table "RdeRevision" (
-       date text not null,
+       date date not null,
         mode text not null,
         tld text not null,
         update_timestamp timestamptz,
