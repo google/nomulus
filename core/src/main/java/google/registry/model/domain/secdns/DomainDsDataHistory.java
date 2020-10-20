@@ -24,7 +24,7 @@ import javax.persistence.Id;
 
 /** Entity class to represent a historic {@link DelegationSignerData}. */
 @Entity
-public class DelegationSignerDataHistory extends DelegationSignerDataBase {
+public class DomainDsDataHistory extends DomainDsDataBase {
 
   @Id Long dsDataHistoryRevisionId;
 
@@ -32,15 +32,15 @@ public class DelegationSignerDataHistory extends DelegationSignerDataBase {
   @Column(nullable = false)
   Long domainHistoryRevisionId;
 
-  private DelegationSignerDataHistory() {}
+  private DomainDsDataHistory() {}
 
   /**
-   * Creates a {@link DelegationSignerDataHistory} instance from given {@link
-   * #domainHistoryRevisionId} and {@link DelegationSignerData} instance.
+   * Creates a {@link DomainDsDataHistory} instance from given {@link #domainHistoryRevisionId} and
+   * {@link DelegationSignerData} instance.
    */
-  public static DelegationSignerDataHistory createFrom(
+  public static DomainDsDataHistory createFrom(
       long domainHistoryRevisionId, DelegationSignerData dsData) {
-    DelegationSignerDataHistory instance = new DelegationSignerDataHistory();
+    DomainDsDataHistory instance = new DomainDsDataHistory();
     instance.domainHistoryRevisionId = domainHistoryRevisionId;
     instance.domainRepoId = dsData.domainRepoId;
     instance.keyTag = dsData.getKeyTag();
@@ -49,6 +49,12 @@ public class DelegationSignerDataHistory extends DelegationSignerDataBase {
     instance.digest = dsData.getDigest();
     instance.dsDataHistoryRevisionId = ObjectifyService.allocateId();
     return instance;
+  }
+
+  @Override
+  @Access(AccessType.PROPERTY)
+  public String getDomainRepoId() {
+    return super.getDomainRepoId();
   }
 
   @Override

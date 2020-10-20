@@ -18,7 +18,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
-import google.registry.model.domain.secdns.DelegationSignerData.DelegationSignerDataId;
+import google.registry.model.domain.secdns.DelegationSignerData.DomainDsDataId;
 import java.io.Serializable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -35,15 +35,23 @@ import javax.xml.bind.annotation.XmlType;
  *
  * @see <a href="http://tools.ietf.org/html/rfc5910">RFC 5910</a>
  * @see <a href="http://tools.ietf.org/html/rfc4034">RFC 4034</a>
+ *     <p>TODO(shicong): Rename this class to DomainDsData.
  */
 @Embed
 @XmlType(name = "dsData")
 @Entity
-@IdClass(DelegationSignerDataId.class)
+@IdClass(DomainDsDataId.class)
 @Table(indexes = @Index(columnList = "domainRepoId"))
-public class DelegationSignerData extends DelegationSignerDataBase {
+public class DelegationSignerData extends DomainDsDataBase {
 
   private DelegationSignerData() {}
+
+  @Override
+  @Id
+  @Access(AccessType.PROPERTY)
+  public String getDomainRepoId() {
+    return super.getDomainRepoId();
+  }
 
   @Override
   @Id
@@ -107,7 +115,10 @@ public class DelegationSignerData extends DelegationSignerDataBase {
   }
 
   /** Class to represent the composite primary key of {@link DelegationSignerData} entity. */
-  static class DelegationSignerDataId extends ImmutableObject implements Serializable {
+  static class DomainDsDataId extends ImmutableObject implements Serializable {
+
+    String domainRepoId;
+
     int keyTag;
 
     int algorithm;
@@ -117,14 +128,25 @@ public class DelegationSignerData extends DelegationSignerDataBase {
     byte[] digest;
 
     /** Hibernate requires this default constructor. */
-    private DelegationSignerDataId() {}
+    private DomainDsDataId() {}
 
-    /** Constructs a {link DelegationSignerDataId} instance. */
-    DelegationSignerDataId(int keyTag, int algorithm, int digestType, byte[] digest) {
+    /** Constructs a {link DomainDsDataId} instance. */
+    DomainDsDataId(String domainRepoId, int keyTag, int algorithm, int digestType, byte[] digest) {
+      this.domainRepoId = domainRepoId;
       this.keyTag = keyTag;
       this.algorithm = algorithm;
       this.digestType = digestType;
       this.digest = digest;
+    }
+
+    /**
+     * Returns the domain repository ID.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private String getDomainRepoId() {
+      return domainRepoId;
     }
 
     /**
@@ -168,6 +190,16 @@ public class DelegationSignerData extends DelegationSignerDataBase {
     }
 
     /**
+     * Sets the domain repository ID.
+     *
+     * <p>This method is private because it is only used by Hibernate.
+     */
+    @SuppressWarnings("unused")
+    private void setDomainRepoId(String domainRepoId) {
+      this.domainRepoId = domainRepoId;
+    }
+
+    /**
      * Sets the key tag.
      *
      * <p>This method is private because it is only used by Hibernate.
@@ -207,10 +239,10 @@ public class DelegationSignerData extends DelegationSignerDataBase {
       this.digest = digest;
     }
 
-    public static DelegationSignerDataId create(
-        int keyTag, int algorithm, int digestType, byte[] digest) {
-      return new DelegationSignerDataId(
-          keyTag, algorithm, digestType, checkArgumentNotNull(digest));
+    public static DomainDsDataId create(
+        String domainRepoId, int keyTag, int algorithm, int digestType, byte[] digest) {
+      return new DomainDsDataId(
+          domainRepoId, keyTag, algorithm, digestType, checkArgumentNotNull(digest));
     }
   }
 }

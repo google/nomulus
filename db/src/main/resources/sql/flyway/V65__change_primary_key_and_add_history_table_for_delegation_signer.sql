@@ -16,20 +16,20 @@ alter table "DelegationSignerData" drop constraint "DelegationSignerData_pkey";
 
 alter table "DelegationSignerData"
     add constraint "DelegationSignerData_pkey"
-    primary key (key_tag, algorithm, digest_type, digest);
+    primary key (domain_repo_id, key_tag, algorithm, digest_type, digest);
 
-create table "DelegationSignerDataHistory" (
+create table "DomainDsDataHistory" (
     ds_data_history_revision_id int8 not null,
-    domain_repo_id text,
     algorithm int4 not null,
     digest bytea not null,
     digest_type int4 not null,
     domain_history_revision_id int8 not null,
     key_tag int4 not null,
+    domain_repo_id text,
     primary key (ds_data_history_revision_id)
 );
 
-alter table if exists "DelegationSignerDataHistory"
-    add constraint FKb6xm1thr4tys3s664yhj7cd9g
+alter table if exists "DomainDsDataHistory"
+    add constraint FKo4ilgyyfnvppbpuivus565i0j
     foreign key (domain_repo_id, domain_history_revision_id)
     references "DomainHistory";

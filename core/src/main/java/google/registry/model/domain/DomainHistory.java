@@ -18,12 +18,13 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
-import google.registry.model.domain.secdns.DelegationSignerDataHistory;
+import google.registry.model.domain.secdns.DomainDsDataHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
@@ -115,7 +116,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         insertable = false,
         updatable = false)
   })
-  Set<DelegationSignerDataHistory> dsDataHistories;
+  Set<DomainDsDataHistory> dsDataHistories;
 
   @Override
   @Nullable
@@ -184,8 +185,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
     return nsHosts;
   }
 
-  /** Returns the collection of {@link DelegationSignerDataHistory} instances. */
-  public Set<DelegationSignerDataHistory> getDsDataHistories() {
+  /** Returns the collection of {@link DomainDsDataHistory} instances. */
+  public ImmutableSet<DomainDsDataHistory> getDsDataHistories() {
     return nullToEmptyImmutableCopy(dsDataHistories);
   }
 
@@ -320,7 +321,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         instance.nsHosts = nullToEmptyImmutableCopy(instance.domainContent.nsHosts);
         instance.dsDataHistories =
             nullToEmptyImmutableCopy(instance.domainContent.getDsData()).stream()
-                .map(dsData -> DelegationSignerDataHistory.createFrom(instance.id, dsData))
+                .map(dsData -> DomainDsDataHistory.createFrom(instance.id, dsData))
                 .collect(toImmutableSet());
       }
       return instance;

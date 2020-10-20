@@ -230,20 +230,9 @@
        algorithm int4 not null,
         digest bytea not null,
         digest_type int4 not null,
+        domain_repo_id text not null,
         key_tag int4 not null,
-        domain_repo_id text,
-        primary key (algorithm, digest, digest_type, key_tag)
-    );
-
-    create table "DelegationSignerDataHistory" (
-       ds_data_history_revision_id int8 not null,
-        domain_repo_id text,
-        algorithm int4 not null,
-        digest bytea not null,
-        digest_type int4 not null,
-        domain_history_revision_id int8 not null,
-        key_tag int4 not null,
-        primary key (ds_data_history_revision_id)
+        primary key (algorithm, digest, digest_type, domain_repo_id, key_tag)
     );
 
     create table "Domain" (
@@ -300,6 +289,17 @@
         transfer_request_time timestamptz,
         transfer_status text,
         primary key (repo_id)
+    );
+
+    create table "DomainDsDataHistory" (
+       ds_data_history_revision_id int8 not null,
+        algorithm int4 not null,
+        digest bytea not null,
+        digest_type int4 not null,
+        domain_history_revision_id int8 not null,
+        domain_repo_id text,
+        key_tag int4 not null,
+        primary key (ds_data_history_revision_id)
     );
 
     create table "DomainHistory" (
@@ -740,8 +740,8 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        foreign key (domain_repo_id) 
        references "Domain";
 
-    alter table if exists "DelegationSignerDataHistory" 
-       add constraint FKb6xm1thr4tys3s664yhj7cd9g 
+    alter table if exists "DomainDsDataHistory" 
+       add constraint FKo4ilgyyfnvppbpuivus565i0j 
        foreign key (domain_repo_id, domain_history_revision_id) 
        references "DomainHistory";
 

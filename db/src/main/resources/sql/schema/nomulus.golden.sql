@@ -317,21 +317,6 @@ CREATE TABLE public."DelegationSignerData" (
 
 
 --
--- Name: DelegationSignerDataHistory; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."DelegationSignerDataHistory" (
-    ds_data_history_revision_id bigint NOT NULL,
-    domain_repo_id text,
-    algorithm integer NOT NULL,
-    digest bytea NOT NULL,
-    digest_type integer NOT NULL,
-    domain_history_revision_id bigint NOT NULL,
-    key_tag integer NOT NULL
-);
-
-
---
 -- Name: Domain; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -388,6 +373,21 @@ CREATE TABLE public."Domain" (
     transfer_billing_recurrence_history_id bigint,
     transfer_autorenew_poll_message_history_id bigint,
     transfer_billing_event_history_id bigint
+);
+
+
+--
+-- Name: DomainDsDataHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainDsDataHistory" (
+    ds_data_history_revision_id bigint NOT NULL,
+    algorithm integer NOT NULL,
+    digest bytea NOT NULL,
+    digest_type integer NOT NULL,
+    domain_history_revision_id bigint NOT NULL,
+    key_tag integer NOT NULL,
+    domain_repo_id text
 );
 
 
@@ -1083,19 +1083,19 @@ ALTER TABLE ONLY public."Cursor"
 
 
 --
--- Name: DelegationSignerDataHistory DelegationSignerDataHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DelegationSignerDataHistory"
-    ADD CONSTRAINT "DelegationSignerDataHistory_pkey" PRIMARY KEY (ds_data_history_revision_id);
-
-
---
 -- Name: DelegationSignerData DelegationSignerData_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."DelegationSignerData"
-    ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (key_tag, algorithm, digest_type, digest);
+    ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (domain_repo_id, key_tag, algorithm, digest_type, digest);
+
+
+--
+-- Name: DomainDsDataHistory DomainDsDataHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainDsDataHistory"
+    ADD CONSTRAINT "DomainDsDataHistory_pkey" PRIMARY KEY (ds_data_history_revision_id);
 
 
 --
@@ -1992,14 +1992,6 @@ ALTER TABLE ONLY public."DomainHistoryHost"
 
 
 --
--- Name: DelegationSignerDataHistory fkb6xm1thr4tys3s664yhj7cd9g; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."DelegationSignerDataHistory"
-    ADD CONSTRAINT fkb6xm1thr4tys3s664yhj7cd9g FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
-
-
---
 -- Name: DomainTransactionRecord fkcjqe54u72kha71vkibvxhjye7; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2045,6 +2037,14 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
+
+
+--
+-- Name: DomainDsDataHistory fko4ilgyyfnvppbpuivus565i0j; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainDsDataHistory"
+    ADD CONSTRAINT fko4ilgyyfnvppbpuivus565i0j FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
 
 
 --

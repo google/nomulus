@@ -28,14 +28,13 @@ import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-/** Base class for {@link DelegationSignerData} and {@link DelegationSignerDataHistory}. */
+/** Base class for {@link DelegationSignerData} and {@link DomainDsDataHistory}. */
 @Embed
 @MappedSuperclass
 @Access(AccessType.FIELD)
-public abstract class DelegationSignerDataBase extends ImmutableObject
-    implements DatastoreAndSqlEntity {
+public abstract class DomainDsDataBase extends ImmutableObject implements DatastoreAndSqlEntity {
 
-  @Ignore @XmlTransient String domainRepoId;
+  @Ignore @XmlTransient @Transient String domainRepoId;
 
   /** The identifier for this particular key in the domain. */
   @Transient int keyTag;
@@ -65,6 +64,10 @@ public abstract class DelegationSignerDataBase extends ImmutableObject
   @XmlJavaTypeAdapter(HexBinaryAdapter.class)
   byte[] digest;
 
+  public String getDomainRepoId() {
+    return domainRepoId;
+  }
+
   public int getKeyTag() {
     return keyTag;
   }
@@ -79,6 +82,16 @@ public abstract class DelegationSignerDataBase extends ImmutableObject
 
   public byte[] getDigest() {
     return digest;
+  }
+
+  /**
+   * Sets the domain repository ID.
+   *
+   * <p>This method is private because it is only used by Hibernate.
+   */
+  @SuppressWarnings("unused")
+  private void setDomainRepoId(String domainRepoId) {
+    this.domainRepoId = domainRepoId;
   }
 
   /**
