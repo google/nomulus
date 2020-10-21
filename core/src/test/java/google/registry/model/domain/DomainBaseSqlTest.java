@@ -78,6 +78,7 @@ public class DomainBaseSqlTest {
   private HostResource host;
   private ContactResource contact;
   private ContactResource contact2;
+  private ImmutableSet<GracePeriod> gracePeriods;
 
   @BeforeEach
   void setUp() {
@@ -506,6 +507,20 @@ public class DomainBaseSqlTest {
                       .setServerApproveAutorenewEvent(billEvent.createVKey())
                       .setServerApproveAutorenewPollMessage(autorenewPollMessage.createVKey())
                       .build();
+              gracePeriods =
+                  ImmutableSet.of(
+                      GracePeriod.create(
+                          GracePeriodStatus.ADD,
+                          "4-COM",
+                          END_OF_TIME,
+                          "registrar1",
+                          oneTimeBillingEvent.createVKey()),
+                      GracePeriod.createForRecurring(
+                          GracePeriodStatus.AUTO_RENEW,
+                          "4-COM",
+                          END_OF_TIME,
+                          "registrar1",
+                          billEvent.createVKey()));
 
               jpaTm().insert(contact);
               jpaTm().insert(contact2);
@@ -517,6 +532,7 @@ public class DomainBaseSqlTest {
                       .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                       .setDeletePollMessage(deletePollMessage.createVKey())
                       .setTransferData(transferData)
+                      .setGracePeriods(gracePeriods)
                       .build();
               historyEntry = historyEntry.asBuilder().setDomainContent(domain).build();
               jpaTm().insert(historyEntry);
@@ -553,6 +569,7 @@ public class DomainBaseSqlTest {
         .isEqualTo(originalTransferData.getServerApproveAutorenewEvent());
     assertThat(persistedTransferData.getServerApproveAutorenewPollMessage())
         .isEqualTo(originalTransferData.getServerApproveAutorenewPollMessage());
+    assertThat(persisted.getGracePeriods()).isEqualTo(gracePeriods);
   }
 
   @Test
@@ -624,6 +641,21 @@ public class DomainBaseSqlTest {
                           createLegacyVKey(
                               PollMessage.Autorenew.class, autorenewPollMessage.getId()))
                       .build();
+              gracePeriods =
+                  ImmutableSet.of(
+                      GracePeriod.create(
+                          GracePeriodStatus.ADD,
+                          "4-COM",
+                          END_OF_TIME,
+                          "registrar1",
+                          createLegacyVKey(
+                              BillingEvent.OneTime.class, oneTimeBillingEvent.getId())),
+                      GracePeriod.createForRecurring(
+                          GracePeriodStatus.AUTO_RENEW,
+                          "4-COM",
+                          END_OF_TIME,
+                          "registrar1",
+                          createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId())));
 
               jpaTm().insert(contact);
               jpaTm().insert(contact2);
@@ -639,6 +671,7 @@ public class DomainBaseSqlTest {
                       .setDeletePollMessage(
                           createLegacyVKey(PollMessage.OneTime.class, deletePollMessage.getId()))
                       .setTransferData(transferData)
+                      .setGracePeriods(gracePeriods)
                       .build();
               historyEntry = historyEntry.asBuilder().setDomainContent(domain).build();
               jpaTm().insert(historyEntry);
@@ -675,6 +708,7 @@ public class DomainBaseSqlTest {
         .isEqualTo(originalTransferData.getServerApproveAutorenewEvent());
     assertThat(persistedTransferData.getServerApproveAutorenewPollMessage())
         .isEqualTo(originalTransferData.getServerApproveAutorenewPollMessage());
+    assertThat(domain.getGracePeriods()).isEqualTo(gracePeriods);
   }
 
   private <T> VKey<T> createLegacyVKey(Class<T> clazz, long id) {

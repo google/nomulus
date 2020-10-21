@@ -21,6 +21,7 @@ import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import javax.annotation.Nullable;
@@ -53,12 +54,15 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
         (billingEventRecurring != null) == GracePeriodStatus.AUTO_RENEW.equals(type),
         "Recurring billing events must be present on (and only on) autorenew grace periods");
     GracePeriod instance = new GracePeriod();
+    instance.id = ObjectifyService.allocateId();
     instance.type = checkArgumentNotNull(type);
     instance.domainRepoId = checkArgumentNotNull(domainRepoId);
     instance.expirationTime = checkArgumentNotNull(expirationTime);
     instance.clientId = checkArgumentNotNull(clientId);
     instance.billingEventOneTime = billingEventOneTime;
+    instance.billingEventOneTimeHistoryId = DomainBase.getHistoryId(billingEventOneTime);
     instance.billingEventRecurring = billingEventRecurring;
+    instance.billingEventRecurringHistoryId = DomainBase.getHistoryId(billingEventRecurring);
     return instance;
   }
 
@@ -108,14 +112,16 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
   }
 
   /**
-   * Returns a clone of this {@link GracePeriod} with {@link #domainRepoId} set to the given value.
+   * Returns a clone of this {@link GracePeriod} with {@link #domainRepoId} set to the given value
+   * and reconstructed history ids.
    *
    * <p>TODO(b/162739503): Remove this function after fully migrating to Cloud SQL.
    */
-  public GracePeriod cloneWithDomainRepoId(String domainRepoId) {
+  public GracePeriod cloneAfterOfyLoad(String domainRepoId) {
     GracePeriod clone = clone(this);
+    clone.id = ObjectifyService.allocateId();
     clone.domainRepoId = checkArgumentNotNull(domainRepoId);
+    clone.restoreHistoryIds();
     return clone;
   }
-
 }

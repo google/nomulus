@@ -303,14 +303,13 @@ public class DomainContent extends EppResource
         allContacts.stream().map(DesignatedContact::reconstitute).collect(toImmutableSet());
     setContactFields(allContacts, true);
 
-    // We have to return the cloned object here because the original object's
-    // hashcode is not correct due to the change to its domainRepoId. The cloned
-    // object will have a null hashcode so that it can get a recalculated hashcode
-    // when its hashCode() is invoked.
+    // We have to return the cloned object here because the original object's hashcode is not
+    // correct due to the change to its domainRepoId and history ids. The cloned object will have a
+    // null hashcode so that it can get a recalculated hashcode when its hashCode() is invoked.
     // TODO(b/162739503): Remove this after fully migrating to Cloud SQL.
     gracePeriods =
         nullToEmptyImmutableCopy(gracePeriods).stream()
-            .map(gracePeriod -> gracePeriod.cloneWithDomainRepoId(getRepoId()))
+            .map(gracePeriod -> gracePeriod.cloneAfterOfyLoad(getRepoId()))
             .collect(toImmutableSet());
 
     // Restore history record ids.

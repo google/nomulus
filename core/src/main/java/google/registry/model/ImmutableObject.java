@@ -61,7 +61,17 @@ public abstract class ImmutableObject implements Cloneable {
   private boolean equalsImmutableObject(ImmutableObject other) {
     return getClass().equals(other.getClass())
         && hashCode() == other.hashCode()
-        && ModelUtils.getFieldValues(this).equals(ModelUtils.getFieldValues(other));
+        && getSignificantFields().equals(other.getSignificantFields());
+  }
+
+  /**
+   * Returns the map of significant fields (fields that we care about for purposes of comparison and
+   * display).
+   *
+   * <p>Isolated into a method so that derived classes can override it.
+   */
+  protected Map<Field, Object> getSignificantFields() {
+    return ModelUtils.getFieldValues(this);
   }
 
   @Override
@@ -72,7 +82,7 @@ public abstract class ImmutableObject implements Cloneable {
   @Override
   public int hashCode() {
     if (hashCode == null) {
-      hashCode = Arrays.hashCode(ModelUtils.getFieldValues(this).values().toArray());
+      hashCode = Arrays.hashCode(getSignificantFields().values().toArray());
     }
     return hashCode;
   }
@@ -111,7 +121,7 @@ public abstract class ImmutableObject implements Cloneable {
   @Override
   public String toString() {
     NavigableMap<String, Object> sortedFields = new TreeMap<>();
-    for (Entry<Field, Object> entry : ModelUtils.getFieldValues(this).entrySet()) {
+    for (Entry<Field, Object> entry : getSignificantFields().entrySet()) {
       sortedFields.put(entry.getKey().getName(), entry.getValue());
     }
     return toStringHelper(sortedFields);
@@ -121,7 +131,7 @@ public abstract class ImmutableObject implements Cloneable {
   public String toHydratedString() {
     // We can't use ImmutableSortedMap because we need to allow null values.
     NavigableMap<String, Object> sortedFields = new TreeMap<>();
-    for (Entry<Field, Object> entry : ModelUtils.getFieldValues(this).entrySet()) {
+    for (Entry<Field, Object> entry : getSignificantFields().entrySet()) {
       Field field = entry.getKey();
       Object value = entry.getValue();
       sortedFields.put(
@@ -161,7 +171,7 @@ public abstract class ImmutableObject implements Cloneable {
       // LinkedHashMap to preserve field ordering and because ImmutableMap forbids null
       // values.
       Map<String, Object> result = new LinkedHashMap<>();
-      for (Entry<Field, Object> entry : ModelUtils.getFieldValues(o).entrySet()) {
+      for (Entry<Field, Object> entry : ((ImmutableObject) o).getSignificantFields().entrySet()) {
         Field field = entry.getKey();
         if (!field.isAnnotationPresent(IgnoredInDiffableMap.class)) {
           result.put(field.getName(), toMapRecursive(entry.getValue()));

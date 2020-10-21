@@ -63,3 +63,4 @@ V62__disable_key_auto_generation_for_history_tables.sql
 V63__add_schema_for_ds_data.sql
 V64__transfer_history_columns.sql
 V65__local_date_date_type.sql
+V66__grace_period_history_ids.sql

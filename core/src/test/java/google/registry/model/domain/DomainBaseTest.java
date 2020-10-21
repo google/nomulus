@@ -38,6 +38,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
@@ -829,5 +830,64 @@ public class DomainBaseTest extends EntityTestCase {
     // Transferring removes the AUTORENEW grace period and adds a TRANSFER grace period
     assertThat(getOnlyElement(clone.getGracePeriods()).getType())
         .isEqualTo(GracePeriodStatus.TRANSFER);
+  }
+
+  @Test
+  void testHistoryIdRestoration() {
+    // Verify that history ids for billing events are restored during load from datastore.  History
+    // ids are not used by business code or persisted in datastore, but only to reconstruct
+    // objectify keys when loading from SQL.
+    DateTime now = fakeClock.nowUtc();
+    domain =
+        persistResource(
+            domain
+                .asBuilder()
+                .setRegistrationExpirationTime(now.plusYears(1))
+                .setGracePeriods(
+                    ImmutableSet.of(
+                        GracePeriod.createForRecurring(
+                            GracePeriodStatus.AUTO_RENEW,
+                            domain.getRepoId(),
+                            now.plusDays(1),
+                            "NewRegistrar",
+                            recurringBillKey),
+                        GracePeriod.create(
+                            GracePeriodStatus.RENEW,
+                            domain.getRepoId(),
+                            now.plusDays(1),
+                            "NewRegistrar",
+                            oneTimeBillKey)))
+                .build());
+    ImmutableSet<BillEventInfo> historyIds =
+        domain.getGracePeriods().stream()
+            .map(
+                gp ->
+                    new BillEventInfo(
+                        gp.getRecurringBillingEvent(), gp.billingEventRecurringHistoryId,
+                        gp.getOneTimeBillingEvent(), gp.billingEventOneTimeHistoryId))
+            .collect(toImmutableSet());
+    assertThat(historyIds)
+        .isEqualTo(
+            ImmutableSet.of(
+                new BillEventInfo(null, null, oneTimeBillKey, historyEntryKey.getId()),
+                new BillEventInfo(recurringBillKey, historyEntryKey.getId(), null, null)));
+  }
+
+  static class BillEventInfo extends ImmutableObject {
+    VKey<BillingEvent.Recurring> billingEventRecurring;
+    Long billingEventRecurringHistoryId;
+    VKey<BillingEvent.OneTime> billingEventOneTime;
+    Long billingEventOneTimeHistoryId;
+
+    BillEventInfo(
+        VKey<BillingEvent.Recurring> billingEventRecurring,
+        Long billingEventRecurringHistoryId,
+        VKey<BillingEvent.OneTime> billingEventOneTime,
+        Long billingEventOneTimeHistoryId) {
+      this.billingEventRecurring = billingEventRecurring;
+      this.billingEventRecurringHistoryId = billingEventRecurringHistoryId;
+      this.billingEventOneTime = billingEventOneTime;
+      this.billingEventOneTimeHistoryId = billingEventOneTimeHistoryId;
+    }
   }
 }
