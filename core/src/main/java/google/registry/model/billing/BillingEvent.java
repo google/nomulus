@@ -121,13 +121,11 @@ public abstract class BillingEvent extends ImmutableObject
   String clientId;
 
   /** Revision id of the entry in DomainHistory table that ths bill belongs to. */
-  // TODO(shicong): Add foreign key constraint when DomainHistory table is generated
   @Ignore
   @Column(nullable = false)
   Long domainHistoryRevisionId;
 
   /** ID of the EPP resource that the bill is for. */
-  // TODO(shicong): Add foreign key constraint when we expand DatastoreHelp for Postgresql
   @Ignore
   @Column(nullable = false)
   String domainRepoId;
@@ -291,7 +289,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "eventTime"),
         @javax.persistence.Index(columnList = "billingTime"),
         @javax.persistence.Index(columnList = "syntheticCreationTime"),
-        @javax.persistence.Index(columnList = "allocation_token_id")
+        @javax.persistence.Index(columnList = "allocationToken")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_event_id"))
   @WithLongVKey
@@ -334,10 +332,7 @@ public abstract class BillingEvent extends ImmutableObject
 
     /**
      * The {@link AllocationToken} used in the creation of this event, or null if one was not used.
-     *
-     * <p>TODO(shicong): Add foreign key constraint when AllocationToken schema is generated
      */
-    @Column(name = "allocation_token_id")
     @Index
     @Nullable
     VKey<AllocationToken> allocationToken;

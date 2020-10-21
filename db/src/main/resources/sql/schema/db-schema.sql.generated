@@ -52,7 +52,7 @@
         flags text[],
         reason text not null,
         domain_name text not null,
-        allocation_token_id text,
+        allocation_token text,
         billing_time timestamptz,
         cancellation_matching_billing_recurrence_id int8,
         cost_amount numeric(19, 2),
@@ -705,7 +705,7 @@ create index IDXqspv57gj2led8ly42fq01t7m7 on "BillingEvent" (registrar_id);
 create index IDX5yfbr88439pxw0v3j86c74fp8 on "BillingEvent" (event_time);
 create index IDX6py6ocrab0ivr76srcd2okpnq on "BillingEvent" (billing_time);
 create index IDXplxf9v56p0wg8ws6qsvd082hk on "BillingEvent" (synthetic_creation_time);
-create index IDXhmv411mdqo5ibn4vy7ykxpmlv on "BillingEvent" (allocation_token_id);
+create index IDXcesda59ssop44kklytpb292hn on "BillingEvent" (allocation_token);
 create index IDXd3gxhkh0jk694pjvh9pyn7wjc on "BillingRecurrence" (registrar_id);
 create index IDX6syykou4nkc7hqa5p8r92cpch on "BillingRecurrence" (event_time);
 create index IDXp3usbtvk0v1m14i5tdp4xnxgc on "BillingRecurrence" (recurrence_end_time);
