@@ -15,6 +15,7 @@
 package google.registry.model.smd;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.smd.SignedMarkRevocationList.SHARD_SIZE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -72,10 +73,11 @@ public class SignedMarkRevocationListTest {
       revokes.put(Integer.toString(i), clock.nowUtc());
     }
     // Save it with sharding, and make sure that reloading it works.
-    SignedMarkRevocationList unsharded = SignedMarkRevocationList
-        .create(clock.nowUtc(), revokes.build())
-        .save();
-    assertThat(SignedMarkRevocationList.get()).isEqualTo(unsharded);
+    SignedMarkRevocationList unsharded =
+        SignedMarkRevocationList.create(clock.nowUtc(), revokes.build()).save();
+    assertAboutImmutableObjects()
+        .that(SignedMarkRevocationList.get())
+        .isEqualExceptFields(unsharded, "revisionId");
     assertThat(ofy().load().type(SignedMarkRevocationList.class).count()).isEqualTo(2);
   }
 
@@ -91,7 +93,9 @@ public class SignedMarkRevocationListTest {
     SignedMarkRevocationList unsharded = SignedMarkRevocationList
         .create(clock.nowUtc(), revokes.build())
         .save();
-    assertThat(SignedMarkRevocationList.get()).isEqualTo(unsharded);
+    assertAboutImmutableObjects()
+        .that(SignedMarkRevocationList.get())
+        .isEqualExceptFields(unsharded, "revisionId");
     assertThat(ofy().load().type(SignedMarkRevocationList.class).count()).isEqualTo(4);
   }
 

@@ -29,6 +29,7 @@ import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.model.registry.RegistryTest;
 import google.registry.model.registry.label.ReservedListSqlDaoTest;
 import google.registry.model.reporting.Spec11ThreatMatchTest;
+import google.registry.model.smd.SignedMarkRevocationListDaoTest;
 import google.registry.model.tmch.ClaimsListDaoTest;
 import google.registry.persistence.transaction.JpaEntityCoverageExtension;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
@@ -92,6 +93,7 @@ import org.junit.runner.RunWith;
   RegistryTest.class,
   ReservedListSqlDaoTest.class,
   RegistryLockDaoTest.class,
+  SignedMarkRevocationListDaoTest.class,
   Spec11ThreatMatchTest.class,
   // AfterSuiteTest must be the last entry. See class javadoc for details.
   AfterSuiteTest.class

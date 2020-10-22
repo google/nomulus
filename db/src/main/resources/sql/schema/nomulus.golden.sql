@@ -872,6 +872,46 @@ ALTER SEQUENCE public."SafeBrowsingThreat_id_seq" OWNED BY public."Spec11ThreatM
 
 
 --
+-- Name: SignedMarkRevocationEntry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."SignedMarkRevocationEntry" (
+    revision_id bigint NOT NULL,
+    revocation_time timestamp with time zone NOT NULL,
+    smd_id text NOT NULL
+);
+
+
+--
+-- Name: SignedMarkRevocationList; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."SignedMarkRevocationList" (
+    revision_id bigint NOT NULL,
+    creation_time timestamp with time zone
+);
+
+
+--
+-- Name: SignedMarkRevocationList_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."SignedMarkRevocationList_revision_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: SignedMarkRevocationList_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."SignedMarkRevocationList_revision_id_seq" OWNED BY public."SignedMarkRevocationList".revision_id;
+
+
+--
 -- Name: Tld; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -979,6 +1019,13 @@ ALTER TABLE ONLY public."RegistryLock" ALTER COLUMN revision_id SET DEFAULT next
 --
 
 ALTER TABLE ONLY public."ReservedList" ALTER COLUMN revision_id SET DEFAULT nextval('public."ReservedList_revision_id_seq"'::regclass);
+
+
+--
+-- Name: SignedMarkRevocationList revision_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."SignedMarkRevocationList" ALTER COLUMN revision_id SET DEFAULT nextval('public."SignedMarkRevocationList_revision_id_seq"'::regclass);
 
 
 --
@@ -1209,6 +1256,22 @@ ALTER TABLE ONLY public."ReservedList"
 
 ALTER TABLE ONLY public."Spec11ThreatMatch"
     ADD CONSTRAINT "SafeBrowsingThreat_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SignedMarkRevocationEntry SignedMarkRevocationEntry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."SignedMarkRevocationEntry"
+    ADD CONSTRAINT "SignedMarkRevocationEntry_pkey" PRIMARY KEY (revision_id, smd_id);
+
+
+--
+-- Name: SignedMarkRevocationList SignedMarkRevocationList_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."SignedMarkRevocationList"
+    ADD CONSTRAINT "SignedMarkRevocationList_pkey" PRIMARY KEY (revision_id);
 
 
 --
@@ -1630,6 +1693,14 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."HostHistory"
     ADD CONSTRAINT fk3d09knnmxrt6iniwnp8j2ykga FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: SignedMarkRevocationEntry fk5ivlhvs3121yx2li5tqh54u4; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."SignedMarkRevocationEntry"
+    ADD CONSTRAINT fk5ivlhvs3121yx2li5tqh54u4 FOREIGN KEY (revision_id) REFERENCES public."SignedMarkRevocationList"(revision_id);
 
 
 --
