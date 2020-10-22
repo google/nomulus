@@ -18,7 +18,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import java.io.File;
-import java.util.function.Predicate;
 
 /**
  * Compares two Datastore backups in V3 format on local file system. This is for use in tests and
@@ -30,8 +29,10 @@ import java.util.function.Predicate;
  */
 class CompareDbBackups {
   private static final String DS_V3_BACKUP_FILE_PREFIX = "output-";
-  private static final Predicate<File> DATA_FILE_MATCHER =
-      file -> file.isFile() && file.getName().startsWith(DS_V3_BACKUP_FILE_PREFIX);
+
+  private static boolean isDatastoreV3File(File file) {
+    return file.isFile() && file.getName().startsWith(DS_V3_BACKUP_FILE_PREFIX);
+  }
 
   public static void main(String[] args) {
     if (args.length != 2) {
@@ -40,9 +41,11 @@ class CompareDbBackups {
     }
 
     ImmutableSet<EntityWrapper> entities1 =
-        RecordAccumulator.readDirectory(new File(args[0]), DATA_FILE_MATCHER).getEntityWrapperSet();
+        RecordAccumulator.readDirectory(new File(args[0]), CompareDbBackups::isDatastoreV3File)
+            .getEntityWrapperSet();
     ImmutableSet<EntityWrapper> entities2 =
-        RecordAccumulator.readDirectory(new File(args[1]), DATA_FILE_MATCHER).getEntityWrapperSet();
+        RecordAccumulator.readDirectory(new File(args[1]), CompareDbBackups::isDatastoreV3File)
+            .getEntityWrapperSet();
 
     // Calculate the entities added and removed.
     SetView<EntityWrapper> added = Sets.difference(entities2, entities1);

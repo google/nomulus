@@ -57,7 +57,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -146,8 +145,7 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreAndSqlE
 
   private static final Retrier LOADER_RETRIER = new Retrier(new SystemSleeper(), 2);
 
-  private static final Callable<ClaimsListShard> LOADER_CALLABLE =
-      () -> {
+  private static ClaimsListShard loadClaimsListShard() {
         // Find the most recent revision.
         Key<ClaimsListRevision> revisionKey = getCurrentRevision();
 
@@ -246,7 +244,9 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreAndSqlE
    */
   private static final Supplier<ClaimsListShard> CACHE =
       memoizeWithShortExpiration(
-          () -> LOADER_RETRIER.callWithRetry(LOADER_CALLABLE, IllegalStateException.class));
+          () ->
+              LOADER_RETRIER.callWithRetry(
+                  ClaimsListShard::loadClaimsListShard, IllegalStateException.class));
 
   /** Returns the revision id of this claims list, or throws exception if it is null. */
   public Long getRevisionId() {

@@ -93,7 +93,7 @@ public class TestSftpServer implements FtpServer {
     try (PEMParser pemParser = new PEMParser(new StringReader(key))) {
       PEMKeyPair pemPair = (PEMKeyPair) pemParser.readObject();
       KeyPair result = new JcaPEMKeyConverter().setProvider("BC").getKeyPair(pemPair);
-      logger.atInfo().log("Read key pair %s", result);
+      logger.atInfo().log("Read key pair successfully.");
       return result;
     } catch (IOException e) {
       logger.atSevere().withCause(e).log("Couldn't read key pair from string.");

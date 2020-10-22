@@ -28,7 +28,6 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -260,7 +259,8 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   /** A cache that loads the {@link Registry} for a given tld. */
   private static final LoadingCache<String, Optional<Registry>> CACHE =
       CacheBuilder.newBuilder()
-          .expireAfterWrite(getSingletonCacheRefreshDuration().getMillis(), MILLISECONDS)
+          .expireAfterWrite(
+              java.time.Duration.ofMillis(getSingletonCacheRefreshDuration().getMillis()))
           .build(
               new CacheLoader<String, Optional<Registry>>() {
                 @Override

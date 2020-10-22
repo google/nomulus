@@ -18,7 +18,6 @@ import static google.registry.config.RegistryConfig.getDomainLabelListCacheDurat
 import static google.registry.config.RegistryConfig.getSingletonCachePersistDuration;
 import static google.registry.config.RegistryConfig.getStaticPremiumListMaxCachedEntries;
 import static google.registry.schema.tld.PremiumListDao.getPriceForLabel;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
@@ -48,7 +47,7 @@ class PremiumListCache {
   static LoadingCache<String, Optional<PremiumList>> createCachePremiumLists(
       Duration cachePersistDuration) {
     return CacheBuilder.newBuilder()
-        .expireAfterWrite(cachePersistDuration.getMillis(), MILLISECONDS)
+        .expireAfterWrite(java.time.Duration.ofMillis(cachePersistDuration.getMillis()))
         .build(
             new CacheLoader<String, Optional<PremiumList>>() {
               @Override
@@ -81,7 +80,7 @@ class PremiumListCache {
   static LoadingCache<RevisionIdAndLabel, Optional<BigDecimal>> createCachePremiumEntries(
       Duration cachePersistDuration) {
     return CacheBuilder.newBuilder()
-        .expireAfterWrite(cachePersistDuration.getMillis(), MILLISECONDS)
+        .expireAfterWrite(java.time.Duration.ofMillis(cachePersistDuration.getMillis()))
         .maximumSize(getStaticPremiumListMaxCachedEntries())
         .build(
             new CacheLoader<RevisionIdAndLabel, Optional<BigDecimal>>() {

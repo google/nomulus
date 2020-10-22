@@ -18,7 +18,6 @@ import static google.registry.config.RegistryConfig.ConfigModule.TmchCaMode.PILO
 import static google.registry.config.RegistryConfig.ConfigModule.TmchCaMode.PRODUCTION;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -77,7 +76,8 @@ public final class TmchCertificateAuthority {
    */
   private static final LoadingCache<TmchCaMode, X509CRL> CRL_CACHE =
       CacheBuilder.newBuilder()
-          .expireAfterWrite(getSingletonCacheRefreshDuration().getMillis(), MILLISECONDS)
+          .expireAfterWrite(
+              java.time.Duration.ofMillis(getSingletonCacheRefreshDuration().getMillis()))
           .build(
               new CacheLoader<TmchCaMode, X509CRL>() {
                 @Override

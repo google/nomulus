@@ -144,16 +144,19 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
             rootKey, serverApproveAutorenewPollMessage, serverApproveAutorenewPollMessageHistoryId);
   }
 
+  @SuppressWarnings("unused") // For Hibernate.
   private void loadServerApproveBillingEventHistoryId(
       @AlsoLoad("serverApproveBillingEvent") VKey<BillingEvent.OneTime> val) {
     serverApproveBillingEventHistoryId = DomainBase.getHistoryId(val);
   }
 
+  @SuppressWarnings("unused") // For Hibernate.
   private void loadServerApproveAutorenewEventHistoryId(
       @AlsoLoad("serverApproveAutorenewEvent") VKey<BillingEvent.Recurring> val) {
     serverApproveAutorenewEventHistoryId = DomainBase.getHistoryId(val);
   }
 
+  @SuppressWarnings("unused") // For Hibernate.
   private void loadServerApproveAutorenewPollMessageHistoryId(
       @AlsoLoad("serverApproveAutorenewPollMessage") VKey<PollMessage.Autorenew> val) {
     serverApproveAutorenewPollMessageHistoryId = DomainBase.getHistoryId(val);

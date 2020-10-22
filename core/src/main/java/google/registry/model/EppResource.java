@@ -24,7 +24,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
@@ -387,7 +386,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   private static LoadingCache<VKey<? extends EppResource>, EppResource> createEppResourcesCache(
       Duration expiry) {
     return CacheBuilder.newBuilder()
-        .expireAfterWrite(expiry.getMillis(), MILLISECONDS)
+        .expireAfterWrite(java.time.Duration.ofMillis(expiry.getMillis()))
         .maximumSize(getEppResourceMaxCachedEntries())
         .build(CACHE_LOADER);
   }
