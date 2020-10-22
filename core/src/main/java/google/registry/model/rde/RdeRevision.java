@@ -74,17 +74,15 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreEntit
   /** Hibernate requires an empty constructor. */
   private RdeRevision() {}
 
-  private RdeRevision(String id, String tld, LocalDate date, RdeMode mode, int revision) {
-    this.id = id;
-    this.tld = tld;
-    this.date = date;
-    this.mode = mode;
-    this.revision = revision;
-  }
-
   public static RdeRevision create(
       String id, String tld, LocalDate date, RdeMode mode, int revision) {
-    return new RdeRevision(id, tld, date, mode, revision);
+    RdeRevision instance = new RdeRevision();
+    instance.id = id;
+    instance.tld = tld;
+    instance.date = date;
+    instance.mode = mode;
+    instance.revision = revision;
+    return instance;
   }
 
   public int getRevision() {
@@ -152,7 +150,7 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreEntit
           revision - 1,
           revisionOptional.get());
     }
-    RdeRevision object = new RdeRevision(triplet, tld, date.toLocalDate(), mode, revision);
+    RdeRevision object = RdeRevision.create(triplet, tld, date.toLocalDate(), mode, revision);
     tm().put(object);
   }
 
@@ -172,14 +170,12 @@ public final class RdeRevision extends BackupGroupRoot implements DatastoreEntit
     /** Hibernate requires this default constructor. */
     private RdeRevisionId() {}
 
-    private RdeRevisionId(String tld, LocalDate date, RdeMode mode) {
-      this.tld = tld;
-      this.date = date;
-      this.mode = mode;
-    }
-
     static RdeRevisionId create(String tld, LocalDate date, RdeMode mode) {
-      return new RdeRevisionId(tld, date, mode);
+      RdeRevisionId instance = new RdeRevisionId();
+      instance.tld = tld;
+      instance.date = date;
+      instance.mode = mode;
+      return instance;
     }
   }
 }
