@@ -446,3 +446,17 @@ registryTool:
   # OAuth client secret used by the tool.
   clientSecret: YOUR_CLIENT_SECRET
   username: toolusername
+
+# Configuration options for checking SSL certificates.
+sslCertificateValidation:
+  # A map specifying the maximum amount of days the certificate can be valid.
+  # The entry key is the date closest before the date the certificate was issued
+  # and the entry value is the applicable maximum validity days for that certificate.
+  maxValidityDaysSchedule:
+    "START_OF_TIME": 825
+    "2020-09-01T00:00:00Z": 398
+  # The number of days before a certificate expires that indicates the
+  # certificate is nearing expiration and warnings should be sent.
+  expirationWarningDays: 30
+  # The minimum number of bits an RSA key must contain
+  minimumRsaKeyLength: 2048

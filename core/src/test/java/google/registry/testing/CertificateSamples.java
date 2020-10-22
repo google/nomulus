@@ -88,5 +88,40 @@ public final class CertificateSamples {
    */
   public static final String SAMPLE_CERT2_HASH = "GNd6ZP8/n91t9UTnpxR8aH7aAW4+CpvufYx9ViGbcMY";
 
+  /*
+   * openssl req -new -nodes -x509 -days 200 -newkey rsa:2048 -keyout client1.key -out client1.crt
+   * -subj "/C=US/ST=New York/L=New York/O=Google/OU=domain-registry-test/CN=client1"
+   */
+  public static final String SAMPLE_CERT3 =
+      "-----BEGIN CERTIFICATE-----\n"
+          + "MIIDyzCCArOgAwIBAgIUJnhiVrxAxgwkLJzHPm1w/lBoNs4wDQYJKoZIhvcNAQEL\n"
+          + "BQAwdTELMAkGA1UEBhMCVVMxETAPBgNVBAgMCE5ldyBZb3JrMREwDwYDVQQHDAhO\n"
+          + "ZXcgWW9yazEPMA0GA1UECgwGR29vZ2xlMR0wGwYDVQQLDBRkb21haW4tcmVnaXN0\n"
+          + "cnktdGVzdDEQMA4GA1UEAwwHY2xpZW50MTAeFw0yMDEwMTIxNzU5NDFaFw0yMTA0\n"
+          + "MzAxNzU5NDFaMHUxCzAJBgNVBAYTAlVTMREwDwYDVQQIDAhOZXcgWW9yazERMA8G\n"
+          + "A1UEBwwITmV3IFlvcmsxDzANBgNVBAoMBkdvb2dsZTEdMBsGA1UECwwUZG9tYWlu\n"
+          + "LXJlZ2lzdHJ5LXRlc3QxEDAOBgNVBAMMB2NsaWVudDEwggEiMA0GCSqGSIb3DQEB\n"
+          + "AQUAA4IBDwAwggEKAoIBAQC0msirO7kXyGEC93stsNYGc02Z77Q2qfHFwaGYkUG8\n"
+          + "QvOF5SWN+jwTo5Td6Jj26A26a8MLCtK45TCBuMRNcUsHhajhT19ocphO20iY3zhi\n"
+          + "ycwV1id0iwME4kPd1m57BELRE9tUPOxF81/JQXdR1fwT5KRVHYRDWZhaZ5aBmlZY\n"
+          + "3t/H9Ly0RBYyApkMaGs3nlb94OOug6SouUfRt02S59ja3wsE2SVF/Eui647OXP7O\n"
+          + "QdYXofxuqLoNkE8EnAdl43/enGLiCIVd0G2lABibFF+gbxTtfgbg7YtfUZJdL+Mb\n"
+          + "RAcAtuLXEamNQ9H63JgVF16PlQVCDz2XyI3uCfPpDDiBAgMBAAGjUzBRMB0GA1Ud\n"
+          + "DgQWBBQ26bWk8qfEBjXs/xZ4m8JZyalnITAfBgNVHSMEGDAWgBQ26bWk8qfEBjXs\n"
+          + "/xZ4m8JZyalnITAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAZ\n"
+          + "VcsgslBKanKOieJ5ik2d9qzOMXKfBuWPRFWbkC3t9i5awhHqnGAaj6nICnnMZIyt\n"
+          + "rdx5lZW5aaQyf0EP/90JAA8Xmty4A6MXmEjQAMiCOpP3A7eeS6Xglgi8IOZl4/bg\n"
+          + "LonW62TUkilo5IiFt/QklFTeHIjXB+OvA8+2Quqyd+zp7v6KnhXjvaomim78DhwE\n"
+          + "0PIUnjmiRpGpHfTVioTdfhPHZ2Y93Y8K7juL93sQog9aBu5m9XRJCY6wGyWPE83i\n"
+          + "kmLfGzjcnaJ6kqCd9xQRFZ0JwHmGlkAQvFoeengbNUqSyjyVgsOoNkEsrWwe/JFO\n"
+          + "iqBvjEhJlvRoefvkdR98\n"
+          + "-----END CERTIFICATE-----\n";
+
+  /*
+   * python -c "import sys;print sys.argv[1].decode('hex').encode('base64').strip('\n=')" $(openssl
+   * x509 -fingerprint -sha256 -in client1.crt | grep -Po '(?<=Fingerprint=).*' | sed s/://g)
+   */
+  public static final String SAMPLE_CERT3_HASH = "GM2tYFuzdpDXN0lqpUXlsvrqk8OdMayryV+4/DOFZ0M";
+
   private CertificateSamples() {}
 }

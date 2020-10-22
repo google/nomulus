@@ -53,7 +53,6 @@ public class CertificateChecker {
    *   );
    * </pre>
    */
-  // TODO(sarahbot): Inject this.
   public CertificateChecker(
       ImmutableSortedMap<DateTime, Integer> maxValidityLengthSchedule,
       int daysToExpiration,
