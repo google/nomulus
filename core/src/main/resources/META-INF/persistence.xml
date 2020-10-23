@@ -53,6 +53,7 @@
     <class>google.registry.model.poll.PollMessage</class>
     <class>google.registry.model.poll.PollMessage$OneTime</class>
     <class>google.registry.model.poll.PollMessage$Autorenew</class>
+    <class>google.registry.model.rde.RdeRevision</class>
     <class>google.registry.model.registrar.Registrar</class>
     <class>google.registry.model.registrar.RegistrarContact</class>
     <class>google.registry.model.registry.label.PremiumList</class>

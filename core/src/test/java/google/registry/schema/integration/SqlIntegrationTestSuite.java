@@ -24,6 +24,7 @@ import google.registry.model.history.ContactHistoryTest;
 import google.registry.model.history.DomainHistoryTest;
 import google.registry.model.history.HostHistoryTest;
 import google.registry.model.poll.PollMessageTest;
+import google.registry.model.rde.RdeRevisionTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.model.registry.RegistryTest;
 import google.registry.model.registry.label.ReservedListSqlDaoTest;
@@ -86,6 +87,7 @@ import org.junit.runner.RunWith;
   LockDaoTest.class,
   PollMessageTest.class,
   PremiumListDaoTest.class,
+  RdeRevisionTest.class,
   RegistrarDaoTest.class,
   RegistryTest.class,
   ReservedListSqlDaoTest.class,

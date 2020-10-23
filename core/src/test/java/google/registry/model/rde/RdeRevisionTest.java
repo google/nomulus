@@ -15,118 +15,116 @@
 package google.registry.model.rde;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeRevision.getNextRevision;
 import static google.registry.model.rde.RdeRevision.saveRevision;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.common.base.VerifyException;
-import google.registry.testing.AppEngineExtension;
+import google.registry.model.EntityTestCase;
+import google.registry.testing.DualDatabaseTest;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestTemplate;
 
 /** Unit tests for {@link RdeRevision}. */
-public class RdeRevisionTest {
+@DualDatabaseTest
+public class RdeRevisionTest extends EntityTestCase {
 
-  @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public RdeRevisionTest() {
+    super(JpaEntityCoverageCheck.ENABLED);
+  }
 
-  @Test
+  @BeforeEach
+  void beforeEach() {
+    fakeClock.setTo(DateTime.parse("1984-12-18TZ"));
+  }
+
+  @TestTemplate
   void testGetNextRevision_objectDoesntExist_returnsZero() {
-    assertThat(getNextRevision("torment", DateTime.parse("1984-12-18TZ"), FULL)).isEqualTo(0);
+    tm().transact(
+            () -> assertThat(getNextRevision("torment", fakeClock.nowUtc(), FULL)).isEqualTo(0));
   }
 
-  @Test
+  @TestTemplate
   void testGetNextRevision_objectExistsAtZero_returnsOne() {
-    save("sorrow", DateTime.parse("1984-12-18TZ"), FULL, 0);
-    assertThat(getNextRevision("sorrow", DateTime.parse("1984-12-18TZ"), FULL)).isEqualTo(1);
+    save("sorrow", fakeClock.nowUtc(), FULL, 0);
+    tm().transact(
+            () -> assertThat(getNextRevision("sorrow", fakeClock.nowUtc(), FULL)).isEqualTo(1));
   }
 
-  @Test
+  @TestTemplate
   void testSaveRevision_objectDoesntExist_newRevisionIsZero_nextRevIsOne() {
-    tm().transact(() -> saveRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL, 0));
+    tm().transact(() -> saveRevision("despondency", fakeClock.nowUtc(), FULL, 0));
     tm().transact(
             () ->
-                assertThat(getNextRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL))
-                    .isEqualTo(1));
+                assertThat(getNextRevision("despondency", fakeClock.nowUtc(), FULL)).isEqualTo(1));
   }
 
-  @Test
+  @TestTemplate
   void testSaveRevision_objectDoesntExist_newRevisionIsOne_throwsVe() {
-    VerifyException thrown =
+    IllegalArgumentException thrown =
         assertThrows(
-            VerifyException.class,
-            () ->
-                tm().transact(
-                        () ->
-                            saveRevision("despondency", DateTime.parse("1984-12-18TZ"), FULL, 1)));
-    assertThat(thrown).hasMessageThat().contains("object missing");
+            IllegalArgumentException.class,
+            () -> tm().transact(() -> saveRevision("despondency", fakeClock.nowUtc(), FULL, 1)));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Couldn't find existing RDE revision despondency_1984-12-18_full "
+                + "when trying to save new revision 1");
   }
 
-  @Test
+  @TestTemplate
   void testSaveRevision_objectExistsAtZero_newRevisionIsZero_throwsVe() {
-    save("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0);
-    VerifyException thrown =
+    save("melancholy", fakeClock.nowUtc(), FULL, 0);
+    IllegalArgumentException thrown =
         assertThrows(
-            VerifyException.class,
-            () ->
-                tm().transact(
-                        () -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0)));
+            IllegalArgumentException.class,
+            () -> tm().transact(() -> saveRevision("melancholy", fakeClock.nowUtc(), FULL, 0)));
     assertThat(thrown).hasMessageThat().contains("object already created");
   }
 
-  @Test
+  @TestTemplate
   void testSaveRevision_objectExistsAtZero_newRevisionIsOne_nextRevIsTwo() {
-    save("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0);
-    tm().transact(() -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 1));
-    tm().transact(
-            () ->
-                assertThat(getNextRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL))
-                    .isEqualTo(2));
+    DateTime startOfDay = fakeClock.nowUtc().withTimeAtStartOfDay();
+    save("melancholy", startOfDay, FULL, 0);
+    fakeClock.advanceOneMilli();
+    tm().transact(() -> saveRevision("melancholy", startOfDay, FULL, 1));
+    tm().transact(() -> assertThat(getNextRevision("melancholy", startOfDay, FULL)).isEqualTo(2));
   }
 
-  @Test
+  @TestTemplate
   void testSaveRevision_objectExistsAtZero_newRevisionIsTwo_throwsVe() {
-    save("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 0);
-    VerifyException thrown =
+    save("melancholy", fakeClock.nowUtc(), FULL, 0);
+    IllegalArgumentException thrown =
         assertThrows(
-            VerifyException.class,
-            () ->
-                tm().transact(
-                        () -> saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, 2)));
-    assertThat(thrown).hasMessageThat().contains("should be at 1 ");
+            IllegalArgumentException.class,
+            () -> tm().transact(() -> saveRevision("melancholy", fakeClock.nowUtc(), FULL, 2)));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("RDE revision object should be at revision 1 but was");
   }
 
-  @Test
+  @TestTemplate
   void testSaveRevision_negativeRevision_throwsIae() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () ->
-                tm().transact(
-                        () ->
-                            saveRevision("melancholy", DateTime.parse("1984-12-18TZ"), FULL, -1)));
+            () -> tm().transact(() -> saveRevision("melancholy", fakeClock.nowUtc(), FULL, -1)));
     assertThat(thrown).hasMessageThat().contains("Negative revision");
   }
 
-  @Test
+  @TestTemplate
   void testSaveRevision_callerNotInTransaction_throwsIse() {
     IllegalStateException thrown =
         assertThrows(
-            IllegalStateException.class,
-            () -> saveRevision("frenzy", DateTime.parse("1984-12-18TZ"), FULL, 1));
+            IllegalStateException.class, () -> saveRevision("frenzy", fakeClock.nowUtc(), FULL, 1));
     assertThat(thrown).hasMessageThat().contains("transaction");
   }
 
   public static void save(String tld, DateTime date, RdeMode mode, int revision) {
     String triplet = RdeNamingUtils.makePartialName(tld, date, mode);
-    RdeRevision object = new RdeRevision();
-    object.id = triplet;
-    object.revision = revision;
-    ofy().saveWithoutBackup().entity(object).now();
+    RdeRevision object = RdeRevision.create(triplet, tld, date.toLocalDate(), mode, revision);
+    tm().transact(() -> tm().put(object));
   }
 }
