@@ -46,7 +46,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
@@ -74,9 +73,13 @@ class SslClientInitializerTest {
   /** Fake port to test if the SSL engine gets the correct peer port. */
   private static final int SSL_PORT = 12345;
 
-  private static final Function<Channel, String> hostProvider = channel -> SSL_HOST;
+  private static String hostProvider(Channel channel) {
+    return SSL_HOST;
+  }
 
-  private static final Function<Channel, Integer> portProvider = channel -> SSL_PORT;
+  private static int portProvider(Channel channel) {
+    return SSL_PORT;
+  }
 
   @RegisterExtension NettyExtension nettyExtension = new NettyExtension();
 
@@ -114,7 +117,12 @@ class SslClientInitializerTest {
   void testSuccess_swappedInitializerWithSslHandler(SslProvider sslProvider) {
     SslClientInitializer<EmbeddedChannel> sslClientInitializer =
         new SslClientInitializer<>(
-            sslProvider, hostProvider, portProvider, ImmutableList.of(), null, null);
+            sslProvider,
+            SslClientInitializerTest::hostProvider,
+            SslClientInitializerTest::portProvider,
+            ImmutableList.of(),
+            null,
+            null);
     EmbeddedChannel channel = new EmbeddedChannel();
     ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast(sslClientInitializer);
@@ -131,7 +139,12 @@ class SslClientInitializerTest {
   void testSuccess_nullHost(SslProvider sslProvider) {
     SslClientInitializer<EmbeddedChannel> sslClientInitializer =
         new SslClientInitializer<>(
-            sslProvider, channel -> null, portProvider, ImmutableList.of(), null, null);
+            sslProvider,
+            channel -> null,
+            SslClientInitializerTest::portProvider,
+            ImmutableList.of(),
+            null,
+            null);
     EmbeddedChannel channel = new EmbeddedChannel();
     ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast(sslClientInitializer);
@@ -144,7 +157,12 @@ class SslClientInitializerTest {
   void testSuccess_nullPort(SslProvider sslProvider) {
     SslClientInitializer<EmbeddedChannel> sslClientInitializer =
         new SslClientInitializer<>(
-            sslProvider, hostProvider, channel -> null, ImmutableList.of(), null, null);
+            sslProvider,
+            SslClientInitializerTest::hostProvider,
+            channel -> null,
+            ImmutableList.of(),
+            null,
+            null);
     EmbeddedChannel channel = new EmbeddedChannel();
     ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast(sslClientInitializer);
@@ -162,7 +180,12 @@ class SslClientInitializerTest {
     nettyExtension.setUpServer(localAddress, getServerHandler(false, ssc.key(), ssc.cert()));
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
-            sslProvider, hostProvider, portProvider, ImmutableList.of(), null, null);
+            sslProvider,
+            SslClientInitializerTest::hostProvider,
+            SslClientInitializerTest::portProvider,
+            ImmutableList.of(),
+            null,
+            null);
     nettyExtension.setUpClient(localAddress, sslClientInitializer);
     // The connection is now terminated, both the client side and the server side should get
     // exceptions.
@@ -192,7 +215,12 @@ class SslClientInitializerTest {
     // Set up the client to trust the self signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
-            sslProvider, hostProvider, portProvider, ImmutableList.of(ssc.cert()), null, null);
+            sslProvider,
+            SslClientInitializerTest::hostProvider,
+            SslClientInitializerTest::portProvider,
+            ImmutableList.of(ssc.cert()),
+            null,
+            null);
     nettyExtension.setUpClient(localAddress, sslClientInitializer);
 
     setUpSslChannel(nettyExtension.getClientChannel(), cert);
@@ -228,7 +256,12 @@ class SslClientInitializerTest {
     // Set up the client to trust the self signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
-            sslProvider, hostProvider, portProvider, ImmutableList.of(ssc.cert()), null, null);
+            sslProvider,
+            SslClientInitializerTest::hostProvider,
+            SslClientInitializerTest::portProvider,
+            ImmutableList.of(ssc.cert()),
+            null,
+            null);
     nettyExtension.setUpClient(localAddress, sslClientInitializer);
 
     verifySslException(
@@ -264,7 +297,12 @@ class SslClientInitializerTest {
     // Set up the client to trust the self signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
-            sslProvider, hostProvider, portProvider, ImmutableList.of(ssc.cert()), null, null);
+            sslProvider,
+            SslClientInitializerTest::hostProvider,
+            SslClientInitializerTest::portProvider,
+            ImmutableList.of(ssc.cert()),
+            null,
+            null);
     nettyExtension.setUpClient(localAddress, sslClientInitializer);
 
     verifySslException(
@@ -292,8 +330,8 @@ class SslClientInitializerTest {
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
             sslProvider,
-            hostProvider,
-            portProvider,
+            SslClientInitializerTest::hostProvider,
+            SslClientInitializerTest::portProvider,
             ImmutableList.of(serverSsc.cert()),
             () -> clientSsc.key(),
             () -> ImmutableList.of(clientSsc.cert()));
@@ -333,7 +371,12 @@ class SslClientInitializerTest {
     // Set up the client to trust the self signed cert used to sign the cert that server provides.
     SslClientInitializer<LocalChannel> sslClientInitializer =
         new SslClientInitializer<>(
-            sslProvider, hostProvider, portProvider, ImmutableList.of(ssc.cert()), null, null);
+            sslProvider,
+            SslClientInitializerTest::hostProvider,
+            SslClientInitializerTest::portProvider,
+            ImmutableList.of(ssc.cert()),
+            null,
+            null);
     nettyExtension.setUpClient(localAddress, sslClientInitializer);
 
     // When the client rejects the server cert due to wrong hostname, both the client and server

@@ -20,7 +20,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.util.CollectionUtils.nullToEmpty;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Splitter;
@@ -241,7 +240,8 @@ public final class ReservedList
 
   private static LoadingCache<String, ReservedList> cache =
       CacheBuilder.newBuilder()
-          .expireAfterWrite(getDomainLabelListCacheDuration().getMillis(), MILLISECONDS)
+          .expireAfterWrite(
+              java.time.Duration.ofMillis(getDomainLabelListCacheDuration().getMillis()))
           .build(
               new CacheLoader<String, ReservedList>() {
                 @Override

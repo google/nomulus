@@ -59,24 +59,10 @@ public class OteStats {
 
   private OteStats() {}
 
-  private static final Predicate<EppInput> HAS_CLAIMS_NOTICE =
-      eppInput -> {
-        Optional<LaunchCreateExtension> launchCreate =
-            eppInput.getSingleExtension(LaunchCreateExtension.class);
-        return launchCreate.isPresent() && launchCreate.get().getNotice() != null;
-      };
-
   private static final Predicate<EppInput> HAS_SEC_DNS =
       eppInput ->
           eppInput.getSingleExtension(SecDnsCreateExtension.class).isPresent()
               || eppInput.getSingleExtension(SecDnsUpdateExtension.class).isPresent();
-
-  private static final Predicate<EppInput> IS_SUNRISE =
-      eppInput -> {
-        Optional<LaunchCreateExtension> launchCreate =
-            eppInput.getSingleExtension(LaunchCreateExtension.class);
-        return launchCreate.isPresent() && !isNullOrEmpty(launchCreate.get().getSignedMarks());
-      };
 
   private static final Predicate<EppInput> IS_IDN =
       eppInput ->
@@ -94,6 +80,18 @@ public class OteStats {
                           .getResourceCommand())
                   .getInetAddresses());
 
+  private static boolean hasClaimsNotice(EppInput eppInput) {
+    Optional<LaunchCreateExtension> launchCreate =
+        eppInput.getSingleExtension(LaunchCreateExtension.class);
+    return launchCreate.isPresent() && launchCreate.get().getNotice() != null;
+  }
+
+  private static boolean isSunrise(EppInput eppInput) {
+    Optional<LaunchCreateExtension> launchCreate =
+        eppInput.getSingleExtension(LaunchCreateExtension.class);
+    return launchCreate.isPresent() && !isNullOrEmpty(launchCreate.get().getSignedMarks());
+  }
+
   /** Enum defining the distinct statistics (types of registrar actions) to record. */
   public enum StatType {
     CONTACT_CREATES(0, equalTo(Type.CONTACT_CREATE)),
@@ -107,8 +105,8 @@ public class OteStats {
     DOMAIN_CREATES(0, equalTo(Type.DOMAIN_CREATE)),
     DOMAIN_CREATES_ASCII(1, equalTo(Type.DOMAIN_CREATE), IS_IDN.negate()),
     DOMAIN_CREATES_IDN(1, equalTo(Type.DOMAIN_CREATE), IS_IDN),
-    DOMAIN_CREATES_START_DATE_SUNRISE(1, equalTo(Type.DOMAIN_CREATE), IS_SUNRISE),
-    DOMAIN_CREATES_WITH_CLAIMS_NOTICE(1, equalTo(Type.DOMAIN_CREATE), HAS_CLAIMS_NOTICE),
+    DOMAIN_CREATES_START_DATE_SUNRISE(1, equalTo(Type.DOMAIN_CREATE), OteStats::isSunrise),
+    DOMAIN_CREATES_WITH_CLAIMS_NOTICE(1, equalTo(Type.DOMAIN_CREATE), OteStats::hasClaimsNotice),
     DOMAIN_CREATES_WITH_FEE(
         1,
         equalTo(Type.DOMAIN_CREATE),

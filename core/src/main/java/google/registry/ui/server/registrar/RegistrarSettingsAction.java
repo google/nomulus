@@ -64,7 +64,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -96,8 +95,9 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
 
   @Inject RegistrarSettingsAction() {}
 
-  private static final Predicate<RegistrarContact> HAS_PHONE =
-      contact -> contact.getPhoneNumber() != null;
+  private static boolean hasPhone(RegistrarContact contact) {
+    return contact.getPhoneNumber() != null;
+  }
 
   @Override
   public void run() {
@@ -512,8 +512,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       Multimap<Type, RegistrarContact> newContactsByType,
       Type... types) {
     for (Type type : types) {
-      if (oldContactsByType.get(type).stream().anyMatch(HAS_PHONE)
-          && newContactsByType.get(type).stream().noneMatch(HAS_PHONE)) {
+      if (oldContactsByType.get(type).stream().anyMatch(RegistrarSettingsAction::hasPhone)
+          && newContactsByType.get(type).stream().noneMatch(RegistrarSettingsAction::hasPhone)) {
         throw new ContactRequirementException(
             String.format(
                 "Please provide a phone number for at least one %s contact",
