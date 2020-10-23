@@ -56,6 +56,7 @@ import google.registry.ui.forms.FormFieldException;
 import google.registry.ui.server.RegistrarFormFields;
 import google.registry.ui.server.SendEmailUtils;
 import google.registry.util.AppEngineServiceUtils;
+import google.registry.util.CertificateChecker;
 import google.registry.util.CollectionUtils;
 import google.registry.util.DiffUtils;
 import java.util.HashSet;
@@ -92,6 +93,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   @Inject SendEmailUtils sendEmailUtils;
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
   @Inject AuthResult authResult;
+  @Inject CertificateChecker certificateChecker;
 
   @Inject RegistrarSettingsAction() {}
 
@@ -306,17 +308,41 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
         RegistrarFormFields.IP_ADDRESS_ALLOW_LIST_FIELD
             .extractUntyped(args)
             .orElse(ImmutableList.of()));
-    RegistrarFormFields.CLIENT_CERTIFICATE_FIELD
-        .extractUntyped(args)
-        .ifPresent(
-            certificate -> builder.setClientCertificate(certificate, tm().getTransactionTime()));
-    RegistrarFormFields.FAILOVER_CLIENT_CERTIFICATE_FIELD
-        .extractUntyped(args)
-        .ifPresent(
-            certificate ->
-                builder.setFailoverClientCertificate(certificate, tm().getTransactionTime()));
+
+    Optional<String> certificateString =
+        RegistrarFormFields.CLIENT_CERTIFICATE_FIELD.extractUntyped(args);
+    if (certificateString.isPresent()) {
+      if (validateCertificate(initialRegistrar.getClientCertificate(), certificateString.get())) {
+        builder.setClientCertificate(certificateString.get(), tm().getTransactionTime());
+      }
+    }
+
+    Optional<String> failoverCertificateString =
+        RegistrarFormFields.FAILOVER_CLIENT_CERTIFICATE_FIELD.extractUntyped(args);
+    if (failoverCertificateString.isPresent()) {
+      if (validateCertificate(
+          initialRegistrar.getFailoverClientCertificate(), failoverCertificateString.get())) {
+        builder.setFailoverClientCertificate(
+            failoverCertificateString.get(), tm().getTransactionTime());
+      }
+    }
 
     return checkNotChangedUnlessAllowed(builder, initialRegistrar, Role.OWNER);
+  }
+
+  /**
+   * Returns true if the registrar should accept the new certificate. Returns false if the
+   * certificate is already the one stored for the registrar.
+   */
+  private boolean validateCertificate(String existingCertificate, String certificateString) {
+    if ((existingCertificate == null) || !existingCertificate.equals(certificateString)) {
+      // TODO(sarhabot): remove this check after November 1, 2020
+      if (tm().getTransactionTime().isAfter(DateTime.parse("2020-11-01T00:00:00Z"))) {
+        certificateChecker.validateCertificate(certificateString);
+      }
+      return true;
+    }
+    return false;
   }
 
   /**

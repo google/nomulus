@@ -16,13 +16,18 @@ package google.registry.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import java.io.ByteArrayInputStream;
 import java.security.PublicKey;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
+import java.util.stream.Collectors;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 
@@ -68,8 +73,23 @@ public class CertificateChecker {
   }
 
   /**
-   * Checks a certificate for violations and returns a list of all the violations the certificate
-   * has.
+   * Checks the given certificate string for violations and throws an exception if any violations
+   * exist.
+   */
+  public void validateCertificate(String certificateString) {
+    ImmutableSet<CertificateViolation> violations = checkCertificate(certificateString);
+    if (!violations.isEmpty()) {
+      String displayMessages =
+          violations.stream()
+              .map(violation -> getViolationDisplayMessage(violation))
+              .collect(Collectors.joining("\n"));
+      throw new IllegalArgumentException(displayMessages);
+    }
+  }
+
+  /**
+   * Checks a given certificate for violations and returns a list of all the violations the
+   * certificate has.
    */
   public ImmutableSet<CertificateViolation> checkCertificate(X509Certificate certificate) {
     ImmutableSet.Builder<CertificateViolation> violations = new ImmutableSet.Builder<>();
@@ -102,6 +122,25 @@ public class CertificateChecker {
       violations.add(CertificateViolation.ALGORITHM_CONSTRAINED);
     }
     return violations.build();
+  }
+
+  /**
+   * Converts a given string to a certificate and checks it for violations, returning a list of all
+   * the violations the certificate has.
+   */
+  public ImmutableSet<CertificateViolation> checkCertificate(String certificateString) {
+    X509Certificate certificate;
+
+    try {
+      certificate =
+          (X509Certificate)
+              CertificateFactory.getInstance("X509")
+                  .generateCertificate(new ByteArrayInputStream(certificateString.getBytes(UTF_8)));
+    } catch (CertificateException e) {
+      throw new IllegalArgumentException("Unable to read given certificate.");
+    }
+
+    return checkCertificate(certificate);
   }
 
   /**

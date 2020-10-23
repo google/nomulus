@@ -41,7 +41,6 @@ import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.util.CertificateChecker;
 import google.registry.util.CidrAddressBlock;
-import java.security.cert.CertificateException;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
@@ -267,9 +266,9 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getClientCertificate()).isNull();
     assertThat(registrar.getClientCertificateHash()).isNull();
-    CertificateException thrown =
+    IllegalArgumentException thrown =
         assertThrows(
-            CertificateException.class,
+            IllegalArgumentException.class,
             () -> runCommand("--cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
     assertThat(thrown.getMessage())
         .isEqualTo(
@@ -284,9 +283,9 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getClientCertificate()).isNull();
     assertThat(registrar.getClientCertificateHash()).isNull();
-    CertificateException thrown =
+    IllegalArgumentException thrown =
         assertThrows(
-            CertificateException.class,
+            IllegalArgumentException.class,
             () -> runCommand("--cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
     assertThat(thrown.getMessage())
         .isEqualTo(
@@ -300,9 +299,9 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getFailoverClientCertificate()).isNull();
-    CertificateException thrown =
+    IllegalArgumentException thrown =
         assertThrows(
-            CertificateException.class,
+            IllegalArgumentException.class,
             () ->
                 runCommand("--failover_cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
     assertThat(thrown.getMessage())
@@ -317,9 +316,9 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getFailoverClientCertificate()).isNull();
-    CertificateException thrown =
+    IllegalArgumentException thrown =
         assertThrows(
-            CertificateException.class,
+            IllegalArgumentException.class,
             () ->
                 runCommand("--failover_cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
     assertThat(thrown.getMessage())
