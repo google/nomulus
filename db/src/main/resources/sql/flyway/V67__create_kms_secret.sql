@@ -13,12 +13,12 @@
 -- limitations under the License.
 
 CREATE TABLE "KmsSecret" (
-   revision_key  int8 NOT NULL,
+   revision_id  int8 NOT NULL,
     creation_time timestamptz NOT NULL,
     encrypted_value text NOT NULL,
-    kms_crypto_key_version_name text NOT NULL,
+    crypto_key_version_name text NOT NULL,
     secret_name text NOT NULL,
-    PRIMARY KEY (revision_key)
+    PRIMARY KEY (revision_id)
 );
 
 CREATE INDEX IDXli9nil3s4t4p21i3xluvvilb7 ON "KmsSecret" (secret_name);

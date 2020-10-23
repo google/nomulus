@@ -440,12 +440,12 @@
     );
 
     create table "KmsSecret" (
-       revision_key int8 not null,
+       revision_id int8 not null,
         creation_time timestamptz not null,
         encrypted_value text not null,
-        kms_crypto_key_version_name text not null,
+        crypto_key_version_name text not null,
         secret_name text not null,
-        primary key (revision_key)
+        primary key (revision_id)
     );
 
     create table "Lock" (

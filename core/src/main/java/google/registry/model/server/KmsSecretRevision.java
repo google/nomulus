@@ -71,10 +71,11 @@ public class KmsSecretRevision extends ImmutableObject implements DatastoreEntit
   /**
    * The revision of this secret.
    *
-   * <p>TODO: change name to revisionId
+   * <p>TODO: change name of the variable to revisionId once we're off Datastore
    */
   @Id
   @javax.persistence.Id
+  @Column(name = "revisionId")
   long revisionKey;
 
   /** The parent {@link KmsSecret} which contains metadata about this {@link KmsSecretRevision}. */
@@ -86,10 +87,12 @@ public class KmsSecretRevision extends ImmutableObject implements DatastoreEntit
   /**
    * The name of the {@code cryptoKeyVersion} associated with this {@link KmsSecretRevision}.
    *
+   * <p>TODO: change name of the variable to cryptoKeyVersionName once we're off Datastore
+   *
    * @see <a
    *     href="https://cloud.google.com/kms/docs/reference/rest/v1/projects.locations.keyRings.cryptoKeys.cryptoKeyVersions">projects.locations.keyRings.cryptoKeys.cryptoKeyVersions</a>
    */
-  @Column(nullable = false)
+  @Column(nullable = false, name = "cryptoKeyVersionName")
   String kmsCryptoKeyVersionName;
 
   /**

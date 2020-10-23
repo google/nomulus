@@ -597,10 +597,10 @@ CREATE TABLE public."HostHistory" (
 --
 
 CREATE TABLE public."KmsSecret" (
-    revision_key bigint NOT NULL,
+    revision_id bigint NOT NULL,
     creation_time timestamp with time zone NOT NULL,
     encrypted_value text NOT NULL,
-    kms_crypto_key_version_name text NOT NULL,
+    crypto_key_version_name text NOT NULL,
     secret_name text NOT NULL
 );
 
@@ -1165,7 +1165,7 @@ ALTER TABLE ONLY public."Host"
 --
 
 ALTER TABLE ONLY public."KmsSecret"
-    ADD CONSTRAINT "KmsSecret_pkey" PRIMARY KEY (revision_key);
+    ADD CONSTRAINT "KmsSecret_pkey" PRIMARY KEY (revision_id);
 
 
 --
