@@ -20,7 +20,6 @@ import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntri
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.TypeUtils.instantiate;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
@@ -244,7 +243,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   private static LoadingCache<Key<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>>
       createForeignKeyIndexesCache(Duration expiry) {
     return CacheBuilder.newBuilder()
-        .expireAfterWrite(expiry.getMillis(), MILLISECONDS)
+        .expireAfterWrite(java.time.Duration.ofMillis(expiry.getMillis()))
         .maximumSize(getEppResourceMaxCachedEntries())
         .build(CACHE_LOADER);
   }

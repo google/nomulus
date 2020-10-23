@@ -25,7 +25,6 @@ import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
@@ -197,7 +196,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   @VisibleForTesting
   static LoadingCache<String, PremiumList> createCachePremiumLists(Duration cachePersistDuration) {
     return CacheBuilder.newBuilder()
-        .expireAfterWrite(cachePersistDuration.getMillis(), MILLISECONDS)
+        .expireAfterWrite(java.time.Duration.ofMillis(cachePersistDuration.getMillis()))
         .build(
             new CacheLoader<String, PremiumList>() {
               @Override
@@ -221,7 +220,8 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   static final LoadingCache<Key<PremiumListRevision>, PremiumListRevision>
       cachePremiumListRevisions =
           CacheBuilder.newBuilder()
-              .expireAfterWrite(getSingletonCachePersistDuration().getMillis(), MILLISECONDS)
+              .expireAfterWrite(
+                  java.time.Duration.ofMillis(getSingletonCachePersistDuration().getMillis()))
               .build(
                   new CacheLoader<Key<PremiumListRevision>, PremiumListRevision>() {
                     @Override
@@ -260,14 +260,14 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   static LoadingCache<Key<PremiumListEntry>, Optional<PremiumListEntry>>
       createCachePremiumListEntries(Duration cachePersistDuration) {
     return CacheBuilder.newBuilder()
-        .expireAfterWrite(cachePersistDuration.getMillis(), MILLISECONDS)
+        .expireAfterWrite(java.time.Duration.ofMillis(cachePersistDuration.getMillis()))
         .maximumSize(getStaticPremiumListMaxCachedEntries())
         .build(
             new CacheLoader<Key<PremiumListEntry>, Optional<PremiumListEntry>>() {
               @Override
               public Optional<PremiumListEntry> load(final Key<PremiumListEntry> entryKey) {
-                return tm()
-                    .doTransactionless(() -> Optional.ofNullable(ofy().load().key(entryKey).now()));
+                return tm().doTransactionless(
+                        () -> Optional.ofNullable(ofy().load().key(entryKey).now()));
               }
             });
   }

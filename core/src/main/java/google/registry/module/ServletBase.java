@@ -22,7 +22,6 @@ import google.registry.request.RequestHandler;
 import google.registry.util.SystemClock;
 import java.io.IOException;
 import java.security.Security;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -51,13 +50,16 @@ public class ServletBase extends HttpServlet {
     // etc), we log the error but keep the main thread running. Also the shutdown hook will only be
     // registered if metric reporter starts up correctly.
     try {
-      metricReporter.get().startAsync().awaitRunning(10, TimeUnit.SECONDS);
+      metricReporter.get().startAsync().awaitRunning(java.time.Duration.ofSeconds(10));
       logger.atInfo().log("Started up MetricReporter");
       LifecycleManager.getInstance()
           .setShutdownHook(
               () -> {
                 try {
-                  metricReporter.get().stopAsync().awaitTerminated(10, TimeUnit.SECONDS);
+                  metricReporter
+                      .get()
+                      .stopAsync()
+                      .awaitTerminated(java.time.Duration.ofSeconds(10));
                   logger.atInfo().log("Shut down MetricReporter");
                 } catch (TimeoutException e) {
                   logger.atSevere().withCause(e).log("Failed to stop MetricReporter.");

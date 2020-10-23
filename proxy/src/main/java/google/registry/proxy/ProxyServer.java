@@ -46,7 +46,6 @@ import io.netty.util.internal.logging.JdkLoggerFactory;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Queue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import javax.inject.Provider;
 
@@ -317,7 +316,7 @@ public class ProxyServer implements Runnable {
     if (proxyModule.provideEnvironment() != Environment.LOCAL) {
       MetricReporter metricReporter = proxyComponent.metricReporter();
       try {
-        metricReporter.startAsync().awaitRunning(10, TimeUnit.SECONDS);
+        metricReporter.startAsync().awaitRunning(java.time.Duration.ofSeconds(10));
         logger.atInfo().log("Started up MetricReporter");
       } catch (TimeoutException timeoutException) {
         logger.atSevere().withCause(timeoutException).log(
@@ -328,7 +327,7 @@ public class ProxyServer implements Runnable {
               new Thread(
                   () -> {
                     try {
-                      metricReporter.stopAsync().awaitTerminated(10, TimeUnit.SECONDS);
+                      metricReporter.stopAsync().awaitTerminated(java.time.Duration.ofSeconds(10));
                       logger.atInfo().log("Shut down MetricReporter");
                     } catch (TimeoutException timeoutException) {
                       logger.atWarning().withCause(timeoutException).log(

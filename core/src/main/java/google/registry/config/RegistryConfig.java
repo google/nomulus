@@ -16,9 +16,12 @@ package google.registry.config;
 
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
 import static google.registry.config.ConfigUtils.makeUrl;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.util.Comparator.naturalOrder;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ascii;
@@ -27,6 +30,7 @@ import com.google.common.base.Strings;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.util.TaskQueueUtils;
@@ -46,6 +50,7 @@ import javax.inject.Qualifier;
 import javax.inject.Singleton;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.Duration;
 
@@ -1344,6 +1349,33 @@ public final class RegistryConfig {
     @Nullable
     public static String provideRdapTosStaticUrl(RegistryConfigSettings config) {
       return config.registryPolicy.rdapTosStaticUrl;
+    }
+
+    @Provides
+    @Config("maxValidityDaysSchedule")
+    public static ImmutableSortedMap<DateTime, Integer> provideValidityDaysMap(
+        RegistryConfigSettings config) {
+      return config.sslCertificateValidation.maxValidityDaysSchedule.entrySet().stream()
+          .collect(
+              toImmutableSortedMap(
+                  naturalOrder(),
+                  e ->
+                      e.getKey().equals("START_OF_TIME")
+                          ? START_OF_TIME
+                          : DateTime.parse(e.getKey()),
+                  e -> e.getValue()));
+    }
+
+    @Provides
+    @Config("expirationWarningDays")
+    public static int provideDaysToExpiration(RegistryConfigSettings config) {
+      return config.sslCertificateValidation.expirationWarningDays;
+    }
+
+    @Provides
+    @Config("minimumRsaKeyLength")
+    public static int provideMinimumRsaKeyLength(RegistryConfigSettings config) {
+      return config.sslCertificateValidation.minimumRsaKeyLength;
     }
   }
 

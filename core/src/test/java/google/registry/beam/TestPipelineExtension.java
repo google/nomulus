@@ -143,6 +143,7 @@ public class TestPipelineExtension extends Pipeline
     // Null until the pipeline has been run
     @Nullable private List<TransformHierarchy.Node> runVisitedNodes;
 
+    @SuppressWarnings("UnnecessaryLambda") // Stay true to the original class.
     private final Predicate<Node> isPAssertNode =
         node ->
             node.getTransform() instanceof PAssert.GroupThenAssert

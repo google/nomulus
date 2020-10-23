@@ -175,7 +175,12 @@ public abstract class CommandTestCase<C extends Command> {
 
   /** Returns a path to a known good certificate file. */
   String getCertFilename() throws IOException {
-    return writeToNamedTmpFile("cert.pem", CertificateSamples.SAMPLE_CERT);
+    return getCertFilename(CertificateSamples.SAMPLE_CERT);
+  }
+
+  /** Returns a path to a specified certificate file. */
+  String getCertFilename(String certificateFile) throws IOException {
+    return writeToNamedTmpFile("cert.pem", certificateFile);
   }
 
   /** Reloads the given resource from Datastore. */

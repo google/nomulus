@@ -71,7 +71,7 @@ public class Retrier implements Serializable {
    * @return the value returned by the {@link Callable}.
    */
   public <V> V callWithRetry(Callable<V> callable, Predicate<Throwable> isRetryable) {
-    return callWithRetry(callable, LOGGING_FAILURE_REPORTER, isRetryable);
+    return callWithRetry(callable, Retrier::reportFailure, isRetryable);
   }
 
   /**
@@ -92,7 +92,7 @@ public class Retrier implements Serializable {
       Callable<V> callable,
       Class<? extends Throwable> retryableError,
       Class<? extends Throwable>... moreRetryableErrors) {
-    return callWithRetry(callable, LOGGING_FAILURE_REPORTER, retryableError, moreRetryableErrors);
+    return callWithRetry(callable, Retrier::reportFailure, retryableError, moreRetryableErrors);
   }
 
   /**
@@ -171,8 +171,8 @@ public class Retrier implements Serializable {
     }
   }
 
-  private static final FailureReporter LOGGING_FAILURE_REPORTER =
-      (thrown, failures, maxAttempts) ->
-          logger.atInfo().withCause(thrown).log(
-              "Retrying transient error, attempt %d/%d", failures, maxAttempts);
+  private static void reportFailure(Throwable thrown, int failures, int maxAttempts) {
+    logger.atInfo().withCause(thrown).log(
+        "Retrying transient error, attempt %d/%d", failures, maxAttempts);
+  }
 }
