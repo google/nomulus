@@ -101,8 +101,10 @@ class AppEngineAdmin:
         versions = []
         for service in response.get('services', []):
             if service['id'] in SERVICES:
-                versions_with_traffic = (service.get('split', {}).get(
-                    'allocations', {}).keys())
+                # yapf: disable
+                versions_with_traffic = (
+                    service.get('split', {}).get('allocations', {}).keys())
+                # yapf: enable
                 for version in versions_with_traffic:
                     versions.append(common.VersionKey(service['id'], version))
 
