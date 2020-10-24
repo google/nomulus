@@ -31,19 +31,18 @@ def setup_gcs_client(env: str):
         tag file and version map file on GCS.
     """
 
-    schema_tag_blob = mock.Mock('google.cloud.storage.Blob')
-    schema_tag_blob.download_as_text = mock.Mock(return_value='tag\n')
-    version_map_blob = mock.Mock('google.cloud.storage.Blob')
+    schema_tag_blob = mock.MagicMock()
+    schema_tag_blob.download_as_text.return_value = 'tag\n'
+    version_map_blob = mock.MagicMock()
     blobs_by_name = {
         f'nomulus.{env}.versions': version_map_blob,
         f'sql.{env}.tag': schema_tag_blob
     }
 
-    bucket = mock.Mock('google.cloud.storage.Bucket')
-    bucket.get_blob = mock.Mock(
-        side_effect=lambda blob_name: blobs_by_name[blob_name])
-    google_client = mock.Mock('google.cloud.storage.Client')
-    google_client.get_bucket = mock.Mock(return_value=bucket)
+    bucket = mock.MagicMock()
+    bucket.get_blob.side_effect = lambda blob_name: blobs_by_name[blob_name]
+    google_client = mock.MagicMock()
+    google_client.get_bucket.return_value = bucket
     gcs_client = gcs.GcsClient('project', google_client)
 
     return (gcs_client, schema_tag_blob, version_map_blob)
@@ -62,26 +61,26 @@ class GcsTestCase(unittest.TestCase):
         self.assertEqual(self._client.get_schema_tag(self._ENV), 'tag')
 
     def test_get_versions_by_release(self):
-        self._version_map_blob.download_as_text = mock.Mock(
-            return_value='nomulus-20200925-RC02,backend,nomulus-backend-v008')
+        self._version_map_blob.download_as_text.return_value = \
+            'nomulus-20200925-RC02,backend,nomulus-backend-v008'
         self.assertEqual(
             self._client.get_versions_by_release(self._ENV,
                                                  'nomulus-20200925-RC02'),
             frozenset([common.VersionKey('backend', 'nomulus-backend-v008')]))
 
     def test_get_versions_by_release_not_found(self):
-        self._version_map_blob.download_as_text = mock.Mock(
-            return_value='nomulus-20200925-RC02,backend,nomulus-backend-v008')
+        self._version_map_blob.download_as_text.return_value = \
+            'nomulus-20200925-RC02,backend,nomulus-backend-v008'
         self.assertEqual(
             self._client.get_versions_by_release(self._ENV, 'no-such-tag'),
             frozenset([]))
 
     def test_get_versions_by_release_multiple_service(self):
-        self._version_map_blob.download_as_text = mock.Mock(
-            return_value=textwrap.dedent("""\
+        self._version_map_blob.download_as_text.return_value = textwrap.dedent(
+            """\
             nomulus-20200925-RC02,backend,nomulus-backend-v008
             nomulus-20200925-RC02,default,nomulus-default-v008
-            """))
+            """)
         self.assertEqual(
             self._client.get_versions_by_release(self._ENV,
                                                  'nomulus-20200925-RC02'),
@@ -91,11 +90,11 @@ class GcsTestCase(unittest.TestCase):
             ]))
 
     def test_get_versions_by_release_multiple_deployment(self):
-        self._version_map_blob.download_as_text = mock.Mock(
-            return_value=textwrap.dedent("""\
+        self._version_map_blob.download_as_text.return_value = textwrap.dedent(
+            """\
             nomulus-20200925-RC02,backend,nomulus-backend-v008
             nomulus-20200925-RC02,backend,nomulus-backend-v018
-            """))
+            """)
         self.assertEqual(
             self._client.get_versions_by_release(self._ENV,
                                                  'nomulus-20200925-RC02'),
@@ -105,11 +104,11 @@ class GcsTestCase(unittest.TestCase):
             ]))
 
     def test_get_releases_by_versions(self):
-        self._version_map_blob.download_as_text = mock.Mock(
-            return_value=textwrap.dedent("""\
+        self._version_map_blob.download_as_text.return_value = textwrap.dedent(
+            """\
             nomulus-20200925-RC02,backend,nomulus-backend-v008
             nomulus-20200925-RC02,default,nomulus-default-v008
-            """))
+            """)
         self.assertEqual(
             self._client.get_releases_by_versions(
                 self._ENV, {
@@ -127,8 +126,7 @@ class GcsTestCase(unittest.TestCase):
             nomulus-20200925-RC02,backend,nomulus-backend-v008
             nomulus-20200925-RC02,default,nomulus-default-v008
             """)
-        self._version_map_blob.download_as_text = mock.Mock(
-            return_value=file_content)
+        self._version_map_blob.download_as_text.return_value = file_content
         self.assertEqual(
             self._client.get_recent_deployments(self._ENV, 2), {
                 common.VersionKey('default', 'nomulus-default-v008'):
@@ -138,11 +136,11 @@ class GcsTestCase(unittest.TestCase):
             })
 
     def test_get_recent_deployments_fewer_lines(self):
-        self._version_map_blob.download_as_text = mock.Mock(
-            return_value=textwrap.dedent("""\
+        self._version_map_blob.download_as_text.return_value = textwrap.dedent(
+            """\
             nomulus-20200925-RC02,backend,nomulus-backend-v008
             nomulus-20200925-RC02,default,nomulus-default-v008
-            """))
+            """)
         self.assertEqual(
             self._client.get_recent_deployments(self._ENV, 1), {
                 common.VersionKey('default', 'nomulus-default-v008'):

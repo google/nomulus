@@ -14,12 +14,25 @@
 """Helper for using the AppEngine Admin REST API."""
 
 import time
-from typing import Any, Dict, FrozenSet
+from typing import Any, Dict, FrozenSet, Set
 
 from googleapiclient import discovery
 from googleapiclient import http
 
 import common
+
+# AppEngine services under management.
+SERVICES = frozenset(['backend', 'default', 'pubapi', 'tools'])
+# Forces 'list' calls (for services and versions) to return all
+# results in one shot, to avoid having to handle pagination. This values
+# should be greater than the maximum allowed services and versions in any
+# project (
+# https://cloud.google.com/appengine/docs/standard/python/an-overview-of-app-engine#limits).
+_PAGE_SIZE = 250
+# Number of times to check the status of an operation before timing out.
+_STATUS_CHECK_TIMES = 5
+# Delay between status checks of a long-running operation, in seconds
+_STATUS_CHECK_INTERVAL = 5
 
 
 class PagingError(Exception):
@@ -31,40 +44,27 @@ class PagingError(Exception):
     def __init__(self, uri: str):
         super().__init__(
             self, f'Received paged response unexpectedly when calling {uri}. '
-            'Consider increase PAGE_SIZE.')
+            'Consider increasing _PAGE_SIZE.')
 
 
 class AppEngineAdmin:
     """Wrapper around the AppEngine Admin REST API client.
 
-    This class provides wrapper methods around the RESET API for service and
+    This class provides wrapper methods around the REST API for service and
     version queries and for migrating between versions.
     """
-
-    # AppEngine services under management.
-    SERVICES = frozenset(['backend', 'default', 'pubapi', 'tools'])
-
-    # Forces 'list' calls (for services and versions) to return all
-    # results in one shot, to avoid having to handl pagination. This values
-    # should be greater than the maximum allowed services and versions in any
-    # project (
-    # https://cloud.google.com/appengine/docs/standard/python/an-overview-of-app-engine#limits).
-    PAGE_SIZE = 250
-
-    # Number of times to check the status of an operation before timing out.
-    STATUS_CHECK_TIMES = 5
-    # Delay between status checks of a long-running operation, in seconds
-    STATUS_CHECK_INTERVAL = 5
-
     def __init__(self,
                  project: str,
                  service_lookup: discovery.Resource = None,
-                 status_check_interval: int = STATUS_CHECK_INTERVAL) -> None:
+                 status_check_interval: int = _STATUS_CHECK_INTERVAL) -> None:
         """Initialize this instance for an AppEngine(GCP) project."""
         self._project = project
-        apps = service_lookup.apps(
-        ) if service_lookup is not None else discovery.build(
-            'appengine', 'v1beta').apps()
+
+        if service_lookup is not None:
+            apps = service_lookup.apps()
+        else:
+            apps = discovery.build('appengine', 'v1beta').apps()
+
         self._services = apps.services()
         self._operations = apps.operations()
         self._status_check_interval = status_check_interval
@@ -84,27 +84,25 @@ class AppEngineAdmin:
     def get_serving_versions(self) -> FrozenSet[common.VersionKey]:
         """Returns the serving versions of every Nomulus service.
 
-        For each service in AppEngineAdmin.SERVICES, gets the version(s)
-        actually serving traffic. Services with the 'SERVING' status but no
-        allocated traffic are not included. Services not included in
-        AppEngineAdmin.SERVICES are also ignored.
+        For each service in appengine.SERVICES, gets the version(s) actually
+        serving traffic. Services with the 'SERVING' status but no allocated
+        traffic are not included. Services not included in appengine.SERVICES
+        are also ignored.
 
         Returns: An immutable collection of the serving versions grouped by
             service.
         """
         response = self._checked_request(
-            self._services.list(appsId=self._project,
-                                pageSize=AppEngineAdmin.PAGE_SIZE))
+            self._services.list(appsId=self._project, pageSize=_PAGE_SIZE))
 
         # Response format is specified at
         # http://googleapis.github.io/google-api-python-client/docs/dyn/appengine_v1beta5.apps.services.html#list.
 
         versions = []
         for service in response.get('services', []):
-            if service['id'] in AppEngineAdmin.SERVICES:
-                versions_with_traffic = service.get('split',
-                                                    {}).get('allocations',
-                                                            {}).keys()
+            if service['id'] in SERVICES:
+                versions_with_traffic = (service.get('split', {}).get(
+                    'allocations', {}).keys())
                 for version in versions_with_traffic:
                     versions.append(common.VersionKey(service['id'], version))
 
@@ -113,7 +111,7 @@ class AppEngineAdmin:
 
 # yapf: disable  #  argument indent wrong
     def get_version_configs(
-            self, versions: FrozenSet[common.VersionKey]
+            self, versions: Set[common.VersionKey]
     ) -> FrozenSet[common.VersionConfig]:
         # yapf: enable
         """Returns the configuration of requested versions.
@@ -122,11 +120,11 @@ class AppEngineAdmin:
         its static configuration (found in appengine-web.xml).
 
         Args:
-            versions: A collection of the Service objects, each containing the
+            versions: A set of the Service objects, each containing the
                 versions being queried in that service.
 
         Returns:
-            The version configurations in an immutable collection.
+            The version configurations in an immutable set.
         """
         requested_services = {version.service_id for version in versions}
 
@@ -137,7 +135,7 @@ class AppEngineAdmin:
             response = self._checked_request(self._services.versions().list(
                 appsId=self._project,
                 servicesId=service_id,
-                pageSize=AppEngineAdmin.PAGE_SIZE))
+                pageSize=_PAGE_SIZE))
 
             # Format of version_list is defined at
             # https://googleapis.github.io/google-api-python-client/docs/dyn/appengine_v1beta5.apps.services.versions.html#list.
@@ -152,7 +150,7 @@ class AppEngineAdmin:
                         raise common.CannotRollbackError(
                             f'Expecting exactly one scaling, found {scalings}')
 
-                    scaling = common.AppEngineScaling(next(iter(scalings)))
+                    scaling = common.AppEngineScaling(list(scalings)[0])
                     if scaling == common.AppEngineScaling.MANUAL:
                         manual_instances = version.get(
                             scaling.value).get('instances')
@@ -177,7 +175,7 @@ class AppEngineAdmin:
                                                    body=body).execute()
 
         operation_id = response.get('name').split('operations/')[1]
-        for _ in range(AppEngineAdmin.STATUS_CHECK_TIMES):
+        for _ in range(_STATUS_CHECK_TIMES):
             if self.query_operation_status(operation_id):
                 return
             time.sleep(self._status_check_interval)

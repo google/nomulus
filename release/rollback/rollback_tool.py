@@ -26,8 +26,8 @@ import plan
 MAIN_HELP = 'Script to roll back the Nomulus server on AppEngine.'
 ROLLBACK_HELP = 'Rolls back Nomulus to the target release.'
 GET_SERVING_RELEASE_HELP = 'Shows the release tag(s) of the serving versions.'
-GET_RECENT_DEPLOYMENTS_HELP = 'Shows recently deployed versions and their '\
-                              'release tags.'
+GET_RECENT_DEPLOYMENTS_HELP = ('Shows recently deployed versions and their '
+                               'release tags.')
 ROLLBACK_MODE_HELP = textwrap.dedent("""\
                      The execution mode.
                      - dryrun: Prints descriptions of all steps.
@@ -122,7 +122,7 @@ def show_serving_release(dev_project: str, project: str, env: str) -> None:
 
 def show_recent_deployments(dev_project: str, project: str, env: str) -> None:
     """Show release and version of recent deployments."""
-    num_services = len(appengine.AppEngineAdmin.SERVICES)
+    num_services = len(appengine.SERVICES)
     num_records = 3 * num_services
     print(f'{project}:')
     for version, tag in gcs.GcsClient(dev_project).get_recent_deployments(
@@ -174,5 +174,5 @@ if __name__ == '__main__':
     try:
         sys.exit(main())
     except Exception as ex:  # pylint: disable=broad-except
-        print(str(ex))
+        print(ex)
         sys.exit(1)

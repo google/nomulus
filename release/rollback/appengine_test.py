@@ -30,21 +30,20 @@ def setup_appengine_admin() -> Tuple[object, object]:
     """
 
     # Assign mocked API response to mock_request.execute.
-    mock_request = mock.Mock('googleapiclient.http.HttpRequest')
-    mock_request.uri = mock.Mock(return_value='myuri')
+    mock_request = mock.MagicMock()
+    mock_request.uri.return_value = 'myuri'
     # Mocked resource shared by services, versions, and operations.
-    resource = mock.Mock(object)
-    resource.list = mock.Mock(return_value=mock_request)
-    resource.get = mock.Mock(return_value=mock_request)
-    resource.patch = mock.Mock(return_value=mock_request)
-
+    resource = mock.MagicMock()
+    resource.list.return_value = mock_request
+    resource.get.return_value = mock_request
+    resource.patch.return_value = mock_request
     # Root resource of AppEngine API. Exact type unknown.
-    apps = mock.Mock(object)
-    apps.services = mock.Mock(return_value=resource)
-    apps.services.return_value.versions = mock.Mock(return_value=resource)
-    apps.operations = mock.Mock(return_value=resource)
-    service_lookup = mock.Mock('discovery.Resource')
-    service_lookup.apps = mock.Mock(return_value=apps)
+    apps = mock.MagicMock()
+    apps.services.return_value = resource
+    resource.versions.return_value = resource
+    apps.operations.return_value = resource
+    service_lookup = mock.MagicMock()
+    service_lookup.apps.return_value = apps
     appengine_admin = appengine.AppEngineAdmin('project', service_lookup, 1)
 
     return (appengine_admin, mock_request)
@@ -56,13 +55,16 @@ class AppEngineTestCase(unittest.TestCase):
         self._client, self._mock_request = setup_appengine_admin()
         self.addCleanup(patch.stopall)
 
+
+# yapf: disable
     def _set_mocked_response(
-            self, responses: Union[Dict[str, Any], List[Dict[str,
-                                                             Any]]]) -> None:
+            self,
+            responses: Union[Dict[str, Any], List[Dict[str, Any]]]) -> None:
+        # yapf: enable
         if isinstance(responses, list):
-            self._mock_request.execute = mock.Mock(side_effect=responses)
+            self._mock_request.execute.side_effect = responses
         else:
-            self._mock_request.execute = mock.Mock(return_value=responses)
+            self._mock_request.execute.return_value = responses
 
     def test_checked_request_multipage_raises(self) -> None:
         self._set_mocked_response({'nextPageToken': ''})
@@ -126,7 +128,6 @@ class AppEngineTestCase(unittest.TestCase):
         ])
         self._client.set_manual_scaling_num_instance('service', 'version', 1)
         self.assertEqual(self._mock_request.execute.call_count, 3)
-
 
 if __name__ == '__main__':
     unittest.main()

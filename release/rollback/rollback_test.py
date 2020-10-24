@@ -22,40 +22,39 @@ import gcs_test
 import plan
 
 
+def _make_serving_version(service: str, version: str) -> Dict[str, Any]:
+    """Creates description of one serving version in API response."""
+    return {
+        'split': {
+            'allocations': {
+                version: 1,
+            }
+        },
+        'id': service
+    }
+
+
+def _make_version_config(version,
+                         scaling: str,
+                         instance_tag: str,
+                         instances: int = 10) -> Dict[str, Any]:
+    """Creates one version config as part of an API response."""
+    return {scaling: {instance_tag: instances}, 'id': version}
+
+
 class RollbackTestCase(unittest.TestCase):
     """End-to-end test of rollback."""
     def setUp(self) -> None:
-        self._appengine_admin, self._appengine_request = \
-            appengine_test.setup_appengine_admin()
-        self._gcs_client, self._schema_tag, self._version_map = \
-            gcs_test.setup_gcs_client('crash')
+        self._appengine_admin, self._appengine_request = (
+            appengine_test.setup_appengine_admin())
+        self._gcs_client, self._schema_tag, self._version_map = (
+            gcs_test.setup_gcs_client('crash'))
         self.addCleanup(mock.patch.stopall)
 
-    @staticmethod
-    def _make_serving_version(service: str, version: str) -> Dict[str, Any]:
-        """Creates description of one serving version in API response."""
-        return {
-            'split': {
-                'allocations': {
-                    version: 1,
-                }
-            },
-            'id': service
-        }
-
-    @staticmethod
-    def _make_version_config(version,
-                             scaling: str,
-                             instance_tag: str,
-                             instances: int = 10) -> Dict[str, Any]:
-        """Creates one version config as part of an API response."""
-        return {scaling: {instance_tag: instances}, 'id': version}
-
     def test_rollback_success(self):
-        self._schema_tag.download_as_text = mock.Mock(
-            return_value='nomulus-2010-1014-RC00')
-        self._version_map.download_as_text = mock.Mock(
-            return_value=textwrap.dedent("""\
+        self._schema_tag.download_as_text.return_value = (
+            'nomulus-2010-1014-RC00')
+        self._version_map.download_as_text.return_value = textwrap.dedent("""\
         nomulus-20201014-RC00,backend,nomulus-backend-v009
         nomulus-20201014-RC00,default,nomulus-default-v009
         nomulus-20201014-RC00,pubapi,nomulus-pubapi-v009
@@ -64,57 +63,54 @@ class RollbackTestCase(unittest.TestCase):
         nomulus-20201014-RC01,default,nomulus-default-v010
         nomulus-20201014-RC01,pubapi,nomulus-pubapi-v010
         nomulus-20201014-RC01,tools,nomulus-tools-v010
-        """))
-        self._appengine_request.execute = mock.Mock(side_effect=[
+        """)
+        self._appengine_request.execute.side_effect = [
             # Response to get_serving_versions:
             {
                 'services': [
-                    self._make_serving_version('backend',
-                                               'nomulus-backend-v011'),
-                    self._make_serving_version('default',
-                                               'nomulus-default-v010'),
-                    self._make_serving_version('pubapi',
-                                               'nomulus-pubapi-v010'),
-                    self._make_serving_version('tools', 'nomulus-tools-v010')
+                    _make_serving_version('backend', 'nomulus-backend-v011'),
+                    _make_serving_version('default', 'nomulus-default-v010'),
+                    _make_serving_version('pubapi', 'nomulus-pubapi-v010'),
+                    _make_serving_version('tools', 'nomulus-tools-v010')
                 ]
             },
             # Responses to get_version_configs. AppEngineAdmin queries the
             # services by alphabetical order to facilitate this test.
             {
                 'versions': [
-                    self._make_version_config('nomulus-backend-v009',
-                                              'basicScaling', 'maxInstances'),
-                    self._make_version_config('nomulus-backend-v011',
-                                              'basicScaling', 'maxInstances')
+                    _make_version_config('nomulus-backend-v009',
+                                         'basicScaling', 'maxInstances'),
+                    _make_version_config('nomulus-backend-v011',
+                                         'basicScaling', 'maxInstances')
                 ]
             },
             {
                 'versions': [
-                    self._make_version_config('nomulus-default-v009',
-                                              'basicScaling', 'maxInstances'),
-                    self._make_version_config('nomulus-default-v010',
-                                              'basicScaling', 'maxInstances')
+                    _make_version_config('nomulus-default-v009',
+                                         'basicScaling', 'maxInstances'),
+                    _make_version_config('nomulus-default-v010',
+                                         'basicScaling', 'maxInstances')
                 ]
             },
             {
                 'versions': [
-                    self._make_version_config('nomulus-pubapi-v009',
-                                              'manualScaling', 'instances'),
-                    self._make_version_config('nomulus-pubapi-v010',
-                                              'manualScaling', 'instances')
+                    _make_version_config('nomulus-pubapi-v009',
+                                         'manualScaling', 'instances'),
+                    _make_version_config('nomulus-pubapi-v010',
+                                         'manualScaling', 'instances')
                 ]
             },
             {
                 'versions': [
-                    self._make_version_config('nomulus-tools-v009',
-                                              'automaticScaling',
-                                              'maxTotalInstances'),
-                    self._make_version_config('nomulus-tools-v010',
-                                              'automaticScaling',
-                                              'maxTotalInstances')
+                    _make_version_config('nomulus-tools-v009',
+                                         'automaticScaling',
+                                         'maxTotalInstances'),
+                    _make_version_config('nomulus-tools-v010',
+                                         'automaticScaling',
+                                         'maxTotalInstances')
                 ]
             }
-        ])
+        ]
 
         steps = plan.get_rollback_plan(self._gcs_client, self._appengine_admin,
                                        'crash', 'nomulus-20201014-RC00')

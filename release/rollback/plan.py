@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Generates a sequence of operations for execution."""
-
 from typing import FrozenSet, Tuple
 
 import appengine
@@ -67,7 +66,8 @@ def _get_service_rollback_plan(
     operations are idempotent.
 
     Attributes:
-        target_configs: The rollback target versions.
+        target_configs: The rollback target versions in each managed service
+            (as defined in appengine.SERVICES).
         serving_configs: The currently serving versions in each service.
 
     Raises:
@@ -85,8 +85,11 @@ def _get_service_rollback_plan(
     for version in serving_configs:
         serving_by_service.setdefault(version.service_id, set()).add(version)
 
-    if targets_by_service.keys() != appengine.AppEngineAdmin.SERVICES:
-        cannot_rollback = appengine.AppEngineAdmin.SERVICES.difference(
+    # The target_configs parameter only has configs for managed services.
+    # Since targets_by_service is derived from it, its keyset() should equal
+    # to appengine.SERVICES.
+    if targets_by_service.keys() != appengine.SERVICES:
+        cannot_rollback = appengine.SERVICES.difference(
             targets_by_service.keys())
         raise common.CannotRollbackError(
             f'Target version(s) not found for {cannot_rollback}')
@@ -95,17 +98,22 @@ def _get_service_rollback_plan(
     for service_id, versions in targets_by_service.items():
         serving_configs = serving_by_service.get(service_id, set())
         versions_to_stop = serving_configs.difference(versions)
-        chosen_target = next(iter(versions))
+        chosen_target = list(versions)[0]
         plan.append(ServiceRollback(chosen_target,
                                     frozenset(versions_to_stop)))
 
     return tuple(plan)
 
 
+# yapf: disable
 def _generate_steps(
-        gcs_client: gcs.GcsClient, appengine_admin: appengine.AppEngineAdmin,
-        env: str, target_release: str, rollback_plan: Tuple[ServiceRollback]
+        gcs_client: gcs.GcsClient,
+        appengine_admin: appengine.AppEngineAdmin,
+        env: str,
+        target_release: str,
+        rollback_plan: Tuple[ServiceRollback]
 ) -> Tuple[steps.RollbackStep, ...]:
+    # yapf: enable
     """Generates the sequence of operations for execution.
 
     A rollback consists of the following steps:

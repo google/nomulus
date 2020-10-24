@@ -55,8 +55,8 @@ class VersionKey:
     AppEngine versions as deployable units are managed on per-service basis.
     Each instance of this class uniquely identifies an AppEngine version.
 
-    This class may serve as the identity key of a subclass if the subclass
-    chooses not to implement its own __eq__() method.
+    This class implements the __eq__ method so that its equality property
+    applies to subclasses by default unless they override it.
     """
 
     service_id: str
@@ -76,14 +76,13 @@ class VersionConfig(VersionKey):
 
     Attributes:
         scaling: The scaling scheme of this version. This value determines what
-                 steps are needed for the rollback. If a version is on
-                 automatic scaling, we only need to direct traffic to it or
-                 away from it. The version cannot be started, stopped, or have
-                 its number of instances updated. If a version is on manual
-                 scaling, it not only needs to be started or stopped
-                 explicitly, its instances need to be updated too (to 0 when)
-                 it is shutdown, and to its original configured number when
-                 brought up.
+            steps are needed for the rollback. If a version is on automatic
+            scaling, we only need to direct traffic to it or away from it. The
+            version cannot be started, stopped, or have its number of instances
+            updated. If a version is on manual scaling, it not only needs to be
+            started or stopped explicitly, its instances need to be updated too
+            (to 1, the lowest allowed number) when it is shutdown, and to its
+            originally configured number of VM instances when brought up.
         manual_scaling_instances: The originally configure VM instances to use
             for each version that is on manual scaling.
     """
@@ -93,7 +92,7 @@ class VersionConfig(VersionKey):
 
 
 def get_nomulus_root() -> str:
-    """Finds the Nomulus root directory that contains this file.
+    """Finds the current Nomulus root directory.
 
     Returns:
         The absolute path to the Nomulus root directory.

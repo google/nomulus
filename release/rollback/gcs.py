@@ -20,6 +20,14 @@ from google.cloud import storage
 import common
 
 
+def _get_version_map_name(env: str):
+    return f'nomulus.{env}.versions'
+
+
+def _get_schema_tag_file(env: str):
+    return f'sql.{env}.tag'
+
+
 class GcsClient:
     """Manages Nomulus deployment records on GCS."""
     def __init__(self, project: str, gcs_client=None) -> None:
@@ -31,8 +39,11 @@ class GcsClient:
         """
 
         self._project = project
-        self._client = gcs_client if gcs_client else storage.Client(
-            self._project)
+
+        if gcs_client is not None:
+            self._client = gcs_client
+        else:
+            self._client = storage.Client(self._project)
 
     @property
     def project(self):
@@ -41,25 +52,17 @@ class GcsClient:
     def _get_deploy_bucket_name(self):
         return f'{self._project}-deployed-tags'
 
-    @staticmethod
-    def _get_version_map_name(env: str):
-        return f'nomulus.{env}.versions'
-
-    @staticmethod
-    def _get_schema_tag_file(env: str):
-        return f'sql.{env}.tag'
-
     def _get_release_to_version_mapping(
             self, env: str) -> Dict[common.VersionKey, str]:
         """Returns the content of the release to version mapping file.
 
         File content is returned in utf-8 encoding. Each line in the file is
         in this format:
-        '${RELEASE_TAG},{APP_ENGINE_SERVICE_ID},{APP_ENGINE_VERSION}'.
+        '{RELEASE_TAG},{APP_ENGINE_SERVICE_ID},{APP_ENGINE_VERSION}'.
         """
         file_content = self._client.get_bucket(
             self._get_deploy_bucket_name()).get_blob(
-                GcsClient._get_version_map_name(env)).download_as_text()
+                _get_version_map_name(env)).download_as_text()
 
         mapping = {}
         for line in file_content.splitlines(False):
@@ -73,7 +76,7 @@ class GcsClient:
         """Returns AppEngine version ids of a given Nomulus release tag.
 
         Fetches the version mapping file maintained by the deployment process
-        and parses its content into a collection of Service instances.
+        and parses its content into a collection of VersionKey instances.
 
         A release may map to multiple versions in a service if it has been
         deployed multiple times. This is not intended behavior and may only
@@ -84,7 +87,7 @@ class GcsClient:
             nom_tag: The Nomulus release tag.
 
         Returns:
-            An immutable collection of versions.
+            An immutable set of VersionKey instances.
         """
         mapping = self._get_release_to_version_mapping(env)
         return frozenset(
@@ -122,7 +125,7 @@ class GcsClient:
         """
         file_content = self._client.get_bucket(
             self._get_deploy_bucket_name()).get_blob(
-                GcsClient._get_version_map_name(env)).download_as_text()
+                _get_version_map_name(env)).download_as_text()
 
         mapping = {}
         for line in file_content.splitlines(False)[-num_records:]:
@@ -138,9 +141,8 @@ class GcsClient:
         """
         file_content = self._client.get_bucket(
             self._get_deploy_bucket_name()).get_blob(
-                GcsClient._get_schema_tag_file(
-                    env)).download_as_text().splitlines(False)
+                _get_schema_tag_file(env)).download_as_text().splitlines(False)
         assert len(
             file_content
-        ) == 1, f'Unexpected content in {GcsClient._get_schema_tag_file(env)}.'
-        return next(iter(file_content))
+        ) == 1, f'Unexpected content in {_get_schema_tag_file(env)}.'
+        return file_content[0]

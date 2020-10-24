@@ -1,5 +1,5 @@
 #!/bin/sh
-# Wrapper for nom_build.py.
+# Wrapper for rollback_tool.py.
 cd $(dirname $0)
 python3 ./release/rollback/rollback_tool.py "$@"
 exit $?

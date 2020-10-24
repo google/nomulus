@@ -23,7 +23,26 @@ that is, rolling forward to a newer release.
 ## Prerequisites
 
 This tool requires python version 3.7+. It also requires two GCP client
-libraries: google-cloud-storage and google-api-python-client.
+libraries: google-cloud-storage and google-api-python-client. They can be
+installed using pip.
+
+Registry team members should use virtualenv or venv to install the GCP
+libraries. A 'sudo pip install' may intefere with the Linux tooling on your
+corp desktop.
+
+Here is an example of using virtualenv to install the libraries:
+
+```shell script
+sudo apt-get install virtualenv python3-venv
+python3 -m venv myproject
+source myproject/bin/activate
+pip install google-cloud-storage
+pip install google-api-python-client
+deactivate
+```
+
+Before you run the rollback script, make sure that
+'source myproject/bin/activate' has been called.
 
 ## Usage
 
@@ -42,6 +61,8 @@ directory. The following parameters may be requested:
 A typical workflow goes as follows:
 
 ### Check Which Release is Serving
+
+From the Nomulus root directory:
 
 ```shell
 rollback show_serving_release --dev_project ... --project ... --env ...
