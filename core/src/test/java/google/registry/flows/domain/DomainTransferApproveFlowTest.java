@@ -22,7 +22,7 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatastoreHelper.assertBillingEventsForDomain;
+import static google.registry.testing.DatastoreHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.deleteResource;
 import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
@@ -168,7 +168,7 @@ class DomainTransferApproveFlowTest
     domain = reloadResourceByForeignKey();
     // Make sure the implicit billing event is there; it will be deleted by the flow.
     // We also expect to see autorenew events for the gaining and losing registrars.
-    assertBillingEventsForDomain(
+    assertBillingEventsForResource(
         domain,
         getBillingEventForImplicitTransfer(),
         getGainingClientAutorenewEvent(),
@@ -265,7 +265,7 @@ class DomainTransferApproveFlowTest
             .setPeriodYears(expectedYearsToCharge)
             .setParent(historyEntryTransferApproved)
             .build();
-    assertBillingEventsForDomain(
+    assertBillingEventsForResource(
         domain,
         Streams.concat(
                 Arrays.stream(expectedCancellationBillingEvents)
@@ -302,7 +302,7 @@ class DomainTransferApproveFlowTest
         getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE);
     // We expect two billing events: a closed autorenew for the losing client and an open autorenew
     // for the gaining client that begins at the new expiration time.
-    assertBillingEventsForDomain(
+    assertBillingEventsForResource(
         domain,
         Streams.concat(
                 Arrays.stream(expectedCancellationBillingEvents)

@@ -22,7 +22,7 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
-import static google.registry.testing.DatastoreHelper.assertBillingEventsForDomain;
+import static google.registry.testing.DatastoreHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.createTlds;
 import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
@@ -356,7 +356,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     OneTime oneTimeRenewBillingEvent = makeOneTimeRenewBillingEvent(domain, renewTime);
 
     // Verify that the OneTime billing event associated with the domain creation is canceled.
-    assertBillingEventsForDomain(
+    assertBillingEventsForResource(
         domain,
         // There should be one-time billing events for the create and the renew.
         oneTimeCreateBillingEvent,
@@ -418,7 +418,7 @@ class EppLifecycleDomainTest extends EppTestCase {
     // The expected one-time billing event, that should have an associated Cancellation.
     OneTime oneTimeCreateBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
     // Verify that the OneTime billing event associated with the domain creation is canceled.
-    assertBillingEventsForDomain(
+    assertBillingEventsForResource(
         domain,
         // Check the existence of the expected create one-time billing event.
         oneTimeCreateBillingEvent,
@@ -486,7 +486,7 @@ class EppLifecycleDomainTest extends EppTestCase {
                 DomainBase.class, "example.tld", DateTime.parse("2000-08-01T00:02:00Z"))
             .get();
     // Verify that the autorenew was ended and that the one-time billing event is not canceled.
-    assertBillingEventsForDomain(
+    assertBillingEventsForResource(
         domain,
         makeOneTimeCreateBillingEvent(domain, createTime),
         makeRecurringCreateBillingEvent(domain, createTime.plusYears(2), deleteTime));
@@ -548,7 +548,7 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     // The expected one-time billing event, that should have an associated Cancellation.
     OneTime expectedOneTimeCreateBillingEvent = makeOneTimeCreateBillingEvent(domain, createTime);
-    assertBillingEventsForDomain(
+    assertBillingEventsForResource(
         domain,
         // Check for the expected create one-time billing event ...
         expectedOneTimeCreateBillingEvent,
