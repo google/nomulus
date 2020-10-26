@@ -23,6 +23,7 @@ import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.host.HostHistory;
@@ -111,6 +112,16 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
+  public void insertWithoutBackup(Object entity) {
+    getOfy().saveWithoutBackup().entities(entity);
+  }
+
+  @Override
+  public void insertAllWithoutBackup(ImmutableCollection<?> entities) {
+    getOfy().saveWithoutBackup().entities(entities);
+  }
+
+  @Override
   public void put(Object entity) {
     saveEntity(entity);
   }
@@ -121,6 +132,16 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
+  public void putWithoutBackup(Object entity) {
+    getOfy().saveWithoutBackup().entities(entity);
+  }
+
+  @Override
+  public void putAllWithoutBackup(ImmutableCollection<?> entities) {
+    getOfy().saveWithoutBackup().entities(entities);
+  }
+
+  @Override
   public void update(Object entity) {
     saveEntity(entity);
   }
@@ -128,6 +149,16 @@ public class DatastoreTransactionManager implements TransactionManager {
   @Override
   public void updateAll(ImmutableCollection<?> entities) {
     getOfy().save().entities(entities);
+  }
+
+  @Override
+  public void updateWithoutBackup(Object entity) {
+    getOfy().saveWithoutBackup().entities(entity);
+  }
+
+  @Override
+  public void updateAllWithoutBackup(ImmutableCollection<?> entities) {
+    getOfy().saveWithoutBackup().entities(entities);
   }
 
   @Override
@@ -159,6 +190,11 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
+  public <T> T load(T entity) {
+    return ofy().load().entity(entity).now();
+  }
+
+  @Override
   public <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys) {
     // Keep track of the Key -> VKey mapping so we can translate them back.
     ImmutableMap<Key<T>, VKey<? extends T>> keyMap =
@@ -175,8 +211,12 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> ImmutableList<T> loadAll(Class<T> clazz) {
-    // We can do a ofy().load().type(clazz), but this doesn't work in a transaction.
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+    return ImmutableList.copyOf(getOfy().load().type(clazz));
+  }
+
+  @Override
+  public <T> ImmutableList<T> loadAll(Iterable<T> entities) {
+    return ImmutableList.copyOf(getOfy().load().entities(entities).values());
   }
 
   @Override
@@ -193,6 +233,34 @@ public class DatastoreTransactionManager implements TransactionManager {
             .map(VKey::getOfyKey)
             .collect(toImmutableList());
     getOfy().delete().keys(list).now();
+  }
+
+  @Override
+  public void delete(Object entity) {
+    getOfy().delete().entity(entity).now();
+  }
+
+  @Override
+  public void deleteWithoutBackup(VKey<?> key) {
+    getOfy().deleteWithoutBackup().key(key.getOfyKey()).now();
+  }
+
+  @Override
+  public void deleteWithoutBackup(Iterable<? extends VKey<?>> keys) {
+    getOfy()
+        .deleteWithoutBackup()
+        .keys(Streams.stream(keys).map(VKey::getOfyKey).collect(toImmutableList()))
+        .now();
+  }
+
+  @Override
+  public void deleteWithoutBackup(Object entity) {
+    getOfy().deleteWithoutBackup().entity(entity).now();
+  }
+
+  @Override
+  public void clearSessionCache() {
+    getOfy().clearSessionCache();
   }
 
   /**

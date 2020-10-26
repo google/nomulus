@@ -61,7 +61,7 @@ public enum Fixture {
       createTlds("xn--q9jyb4c", "example");
 
       // Used for OT&E TLDs
-      persistPremiumList("default_sandbox_list");
+      persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
 
       try {
         OteStatsTestHelper.setupCompleteOte("otefinished");

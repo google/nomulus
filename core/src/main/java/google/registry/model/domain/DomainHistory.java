@@ -75,7 +75,9 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @Id
   @Access(AccessType.PROPERTY)
   public String getDomainRepoId() {
-    return parent.getName();
+    // We need to handle null case here because Hibernate sometimes accesses this method before
+    // parent gets initialized
+    return parent == null ? null : parent.getName();
   }
 
   /** This method is private because it is only used by Hibernate. */
@@ -127,14 +129,24 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
    *
    * <p>This will be empty for any DomainHistory/HistoryEntry generated before this field was added,
    * mid-2017, as well as any action that does not generate billable events (e.g. updates).
+   *
+   * <p>This method is dedicated for Hibernate, external caller should use {@link
+   * #getDomainTransactionRecords()}.
    */
   @Access(AccessType.PROPERTY)
   @OneToMany(cascade = {CascadeType.ALL})
   @JoinColumn(name = "historyRevisionId", referencedColumnName = "historyRevisionId")
   @JoinColumn(name = "domainRepoId", referencedColumnName = "domainRepoId")
-  @Override
-  public Set<DomainTransactionRecord> getDomainTransactionRecords() {
-    return super.getDomainTransactionRecords();
+  @SuppressWarnings("unused")
+  private Set<DomainTransactionRecord> getInternalDomainTransactionRecords() {
+    return domainTransactionRecords;
+  }
+
+  /** Sets the domain transaction records. This method is dedicated for Hibernate. */
+  @SuppressWarnings("unused")
+  private void setInternalDomainTransactionRecords(
+      Set<DomainTransactionRecord> domainTransactionRecords) {
+    this.domainTransactionRecords = domainTransactionRecords;
   }
 
   @Id

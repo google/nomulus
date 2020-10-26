@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import google.registry.persistence.transaction.TransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -52,9 +53,21 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
   @Override
   public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(
       ExtensionContext context) {
-    return Stream.of(
-        createInvocationContext("Test Datastore", TransactionManagerFactory::ofyTm),
-        createInvocationContext("Test PostgreSQL", TransactionManagerFactory::jpaTm));
+    TestTemplateInvocationContext ofyContext =
+        createInvocationContext("Test Datastore", TransactionManagerFactory::ofyTm);
+    TestTemplateInvocationContext sqlContext =
+        createInvocationContext("Test PostgreSQL", TransactionManagerFactory::jpaTm);
+    Method testMethod = context.getTestMethod().orElseThrow(IllegalStateException::new);
+    if (testMethod.isAnnotationPresent(TestOfyAndSql.class)) {
+      return Stream.of(ofyContext, sqlContext);
+    } else if (testMethod.isAnnotationPresent(TestOfyOnly.class)) {
+      return Stream.of(ofyContext);
+    } else if (testMethod.isAnnotationPresent(TestSqlOnly.class)) {
+      return Stream.of(sqlContext);
+    } else {
+      throw new IllegalStateException(
+          "Test method must be annotated with @TestOfyAndSql, @TestOfyOnly or @TestSqlOnly");
+    }
   }
 
   private TestTemplateInvocationContext createInvocationContext(
@@ -104,6 +117,18 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
 
   static void injectTmForDualDatabaseTest(ExtensionContext context) {
     if (isDualDatabaseTest(context)) {
+      context
+          .getTestMethod()
+          .ifPresent(
+              testMethod -> {
+                if (!testMethod.isAnnotationPresent(TestOfyAndSql.class)
+                    && !testMethod.isAnnotationPresent(TestOfyOnly.class)
+                    && !testMethod.isAnnotationPresent(TestSqlOnly.class)) {
+                  throw new IllegalStateException(
+                      "Test method must be annotated with @TestOfyAndSql, @TestOfyOnly or"
+                          + " @TestSqlOnly");
+                }
+              });
       context.getStore(NAMESPACE).put(ORIGINAL_TM_KEY, tm());
       Supplier<? extends TransactionManager> tmSupplier =
           (Supplier<? extends TransactionManager>)
