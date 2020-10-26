@@ -369,6 +369,12 @@ public class DatastoreHelper {
                                   entries.values(), Key.create(revision)));
                     },
                     () -> tm().insert(premiumList)));
+    // The above premiumList is in the session cached and it is different from the corresponding
+    // entity stored in Datastore because it has some @Ignore fields set dedicated for SQL. This
+    // breaks the assumption we have in our application code, see
+    // PremiumListUtils.savePremiumListAndEntries(). Clearing the seesion cache can help make sure
+    // we always get the same list.
+    tm().clearSessionCache();
     return transactIfJpaTm(() -> tm().load(premiumList));
   }
 
@@ -713,19 +719,19 @@ public class DatastoreHelper {
                 tm().loadAll(BillingEvent.Cancellation.class)));
   }
 
-  private static Iterable<BillingEvent> getBillingEvents(DomainContent domain) {
+  private static Iterable<BillingEvent> getBillingEvents(EppResource resource) {
     return transactIfJpaTm(
         () ->
             Iterables.concat(
                 tm().loadAll(BillingEvent.OneTime.class).stream()
-                    .filter(oneTime -> oneTime.getDomainRepoId().equals(domain.getRepoId()))
+                    .filter(oneTime -> oneTime.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList()),
                 tm().loadAll(BillingEvent.Recurring.class).stream()
-                    .filter(recurring -> recurring.getDomainRepoId().equals(domain.getRepoId()))
+                    .filter(recurring -> recurring.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList()),
                 tm().loadAll(BillingEvent.Cancellation.class).stream()
                     .filter(
-                        cancellation -> cancellation.getDomainRepoId().equals(domain.getRepoId()))
+                        cancellation -> cancellation.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList())));
   }
 
@@ -755,8 +761,9 @@ public class DatastoreHelper {
   /**
    * Assert that the expected billing events are exactly the ones found for the given EppResource.
    */
-  public static void assertBillingEventsForDomain(DomainContent domain, BillingEvent... expected) {
-    assertBillingEventsEqual(getBillingEvents(domain), Arrays.asList(expected));
+  public static void assertBillingEventsForResource(
+      EppResource resource, BillingEvent... expected) {
+    assertBillingEventsEqual(getBillingEvents(resource), Arrays.asList(expected));
   }
 
   /** Assert that there are no billing events. */
