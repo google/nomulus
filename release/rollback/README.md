@@ -26,13 +26,15 @@ This tool requires python version 3.7+. It also requires two GCP client
 libraries: google-cloud-storage and google-api-python-client. They can be
 installed using pip.
 
-Registry team members should use virtualenv or venv to install the GCP
-libraries. A 'sudo pip install' may intefere with the Linux tooling on your
-corp desktop.
+Registry team members should use either non-sudo pip3 or virtualenv/venv to
+install the GCP libraries. A 'sudo pip install' may interfere with the Linux
+tooling on your corp desktop. The non-sudo 'pip3 install' command installs the
+libraries under $HOME/.local. The virtualenv or venv methods allow more control
+over the installation location.
 
-Here is an example of using virtualenv to install the libraries:
+Below is an example of using virtualenv to install the libraries:
 
-```shell script
+```shell
 sudo apt-get install virtualenv python3-venv
 python3 -m venv myproject
 source myproject/bin/activate
@@ -41,8 +43,8 @@ pip install google-api-python-client
 deactivate
 ```
 
-Before you run the rollback script, make sure that
-'source myproject/bin/activate' has been called.
+If using virtualenv, make sure to run 'source myproject/bin/activate' before
+running the rollback script.
 
 ## Usage
 
@@ -65,7 +67,7 @@ A typical workflow goes as follows:
 From the Nomulus root directory:
 
 ```shell
-rollback show_serving_release --dev_project ... --project ... --env ...
+rollback_tool show_serving_release --dev_project ... --project ... --env ...
 ```
 
 The output may look like:
@@ -80,7 +82,7 @@ tools   nomulus-v049    nomulus-20201019-RC00
 ### Review Recent Deployments
 
 ```shell
-rollback show_recent_deployments --dev_project ... --project ... --env ...
+rollback_tool show_recent_deployments --dev_project ... --project ... --env ...
 ```
 
 This command displays up to 3 most recent deployments. The output (from sandbox
@@ -101,7 +103,7 @@ tools   nomulus-v049    nomulus-20201019-RC00
 ### Roll to the Target Release
 
 ```shell
-rollback rollback --dev_project ... --project ... --env ... \
+rollback_tool rollback --dev_project ... --project ... --env ... \
     --targt_release {YOUR_CHOSEN_TAG} --run_mode ...
 ```
 

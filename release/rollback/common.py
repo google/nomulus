@@ -83,7 +83,7 @@ class VersionConfig(VersionKey):
             started or stopped explicitly, its instances need to be updated too
             (to 1, the lowest allowed number) when it is shutdown, and to its
             originally configured number of VM instances when brought up.
-        manual_scaling_instances: The originally configure VM instances to use
+        manual_scaling_instances: The originally configured VM instances to use
             for each version that is on manual scaling.
     """
 

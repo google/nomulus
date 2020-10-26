@@ -122,7 +122,7 @@ class AppEngineAdmin:
         its static configuration (found in appengine-web.xml).
 
         Args:
-            versions: A set of the Service objects, each containing the
+            versions: A set of the VersionKey objects, each containing the
                 versions being queried in that service.
 
         Returns:
