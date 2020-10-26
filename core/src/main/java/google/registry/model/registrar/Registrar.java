@@ -32,6 +32,7 @@ import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
 import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
@@ -991,8 +992,13 @@ public class Registrar extends ImmutableObject
   /** Loads and returns a registrar entity by its client id directly from Datastore. */
   public static Optional<Registrar> loadByClientId(String clientId) {
     checkArgument(!Strings.isNullOrEmpty(clientId), "clientId must be specified");
-    return Optional.ofNullable(
-        ofy().load().type(Registrar.class).parent(getCrossTldKey()).id(clientId).now());
+    return transactIfJpaTm(
+        () ->
+            tm().maybeLoad(
+                    VKey.create(
+                        Registrar.class,
+                        clientId,
+                        Key.create(getCrossTldKey(), Registrar.class, clientId))));
   }
 
   /**

@@ -25,6 +25,7 @@ import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.ofyOrJpaTm;
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -59,15 +60,21 @@ public final class Registries {
             tm().doTransactionless(
                     () -> {
                       ImmutableSet<String> tlds =
-                          ofy()
-                              .load()
-                              .type(Registry.class)
-                              .ancestor(getCrossTldKey())
-                              .keys()
-                              .list()
-                              .stream()
-                              .map(Key::getName)
-                              .collect(toImmutableSet());
+                          ofyOrJpaTm(
+                              () ->
+                                  ofy()
+                                      .load()
+                                      .type(Registry.class)
+                                      .ancestor(getCrossTldKey())
+                                      .keys()
+                                      .list()
+                                      .stream()
+                                      .map(Key::getName)
+                                      .collect(toImmutableSet()),
+                              () ->
+                                  tm().loadAll(Registry.class).stream()
+                                      .map(Registry::getTldStr)
+                                      .collect(toImmutableSet()));
                       return Registry.getAll(tlds).stream()
                           .map(e -> Maps.immutableEntry(e.getTldStr(), e.getTldType()))
                           .collect(entriesToImmutableMap());

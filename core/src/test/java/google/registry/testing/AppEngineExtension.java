@@ -17,6 +17,7 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.persistence.transaction.TransactionManagerUtil.ofyOrJpaTm;
 import static google.registry.testing.DatastoreHelper.persistSimpleResources;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.injectTmForDualDatabaseTest;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.restoreTmAfterDualDatabaseTest;
@@ -384,6 +385,17 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     if (isWithDatastoreAndCloudSql()) {
       injectTmForDualDatabaseTest(context);
     }
+    ofyOrJpaTm(
+        () -> {
+          if (withDatastore && !withoutCannedData) {
+            loadInitialData();
+          }
+        },
+        () -> {
+          if (withCloudSql && !withJpaUnitTest && !withoutCannedData) {
+            loadInitialData();
+          }
+        });
   }
 
   /**
@@ -458,9 +470,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       ObjectifyService.initOfy();
       // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
       ObjectifyService.resetNextTestId();
-      if (!withoutCannedData) {
-        loadInitialData();
-      }
       this.ofyTestEntities.forEach(AppEngineExtension::register);
     }
   }

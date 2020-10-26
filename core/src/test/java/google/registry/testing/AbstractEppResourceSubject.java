@@ -49,7 +49,7 @@ abstract class AbstractEppResourceSubject<
     this.actual = subject;
   }
 
-  private List<HistoryEntry> getHistoryEntries() {
+  private List<? extends HistoryEntry> getHistoryEntries() {
     return DatastoreHelper.getHistoryEntries(actual);
   }
 
@@ -120,7 +120,7 @@ abstract class AbstractEppResourceSubject<
   // TODO(weiminyu): Remove after next Truth update
   @SuppressWarnings("UnnecessaryParentheses")
   public Which<HistoryEntrySubject> hasHistoryEntryAtIndex(int index) {
-    List<HistoryEntry> historyEntries = getHistoryEntries();
+    List<? extends HistoryEntry> historyEntries = getHistoryEntries();
     check("getHistoryEntries().size()").that(historyEntries.size()).isAtLeast(index + 1);
     return new Which<>(
         check("getHistoryEntries(%s)", index)
