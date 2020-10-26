@@ -44,6 +44,7 @@ public class GracePeriodTest {
 
   private final DateTime now = DateTime.now(UTC);
   private BillingEvent.OneTime onetime;
+  private VKey<BillingEvent.Recurring> recurringKey;
 
   @BeforeEach
   void before() {
@@ -59,6 +60,14 @@ public class GracePeriodTest {
             .setPeriodYears(1)
             .setTargetId("foo.google")
             .build();
+    recurringKey =
+        VKey.create(
+            Recurring.class,
+            12345,
+            Key.create(
+                Key.create(Key.create(DomainBase.class, "1-TEST"), HistoryEntry.class, 343L),
+                Recurring.class,
+                12345));
   }
 
   @Test
@@ -71,6 +80,24 @@ public class GracePeriodTest {
     assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
     assertThat(gracePeriod.hasBillingEvent()).isTrue();
+    assertThat(gracePeriod.billingEventOneTimeHistoryId).isEqualTo(12345L);
+    assertThat(gracePeriod.billingEventRecurringHistoryId).isNull();
+  }
+
+  @Test
+  void testSuccess_forRecurringEvent() {
+    GracePeriod gracePeriod =
+        GracePeriod.createForRecurring(
+            GracePeriodStatus.AUTO_RENEW, "1-TEST", now.plusDays(1), "TheRegistrar", recurringKey);
+    assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.AUTO_RENEW);
+    assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
+    assertThat(gracePeriod.getOneTimeBillingEvent()).isNull();
+    assertThat(gracePeriod.getRecurringBillingEvent()).isEqualTo(recurringKey);
+    assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
+    assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
+    assertThat(gracePeriod.hasBillingEvent()).isTrue();
+    assertThat(gracePeriod.billingEventOneTimeHistoryId).isNull();
+    assertThat(gracePeriod.billingEventRecurringHistoryId).isEqualTo(343L);
   }
 
   @Test
@@ -98,11 +125,6 @@ public class GracePeriodTest {
 
   @Test
   void testFailure_createForRecurring_notAutoRenew() {
-    Key<Recurring> recurringKey =
-        Key.create(
-            Key.create(Key.create(DomainBase.class, "1-TEST"), HistoryEntry.class, 343L),
-            Recurring.class,
-            12345);
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -112,7 +134,7 @@ public class GracePeriodTest {
                     "1-TEST",
                     now.plusDays(1),
                     "TheRegistrar",
-                    VKey.create(Recurring.class, 12345, recurringKey)));
+                    recurringKey));
     assertThat(thrown).hasMessageThat().contains("autorenew");
   }
 }

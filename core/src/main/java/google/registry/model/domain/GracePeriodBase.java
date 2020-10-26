@@ -14,18 +14,21 @@
 
 package google.registry.model.domain;
 
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
+import google.registry.model.ModelUtils;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.persistence.VKey;
+import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.MappedSuperclass;
 import org.joda.time.DateTime;
 
@@ -36,7 +39,6 @@ public class GracePeriodBase extends ImmutableObject {
 
   /** Unique id required for hibernate representation. */
   @javax.persistence.Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Ignore
   Long id;
 
@@ -67,6 +69,10 @@ public class GracePeriodBase extends ImmutableObject {
   @Column(name = "billing_event_id")
   VKey<OneTime> billingEventOneTime = null;
 
+  @Ignore
+  @Column(name = "billing_event_history_id")
+  Long billingEventOneTimeHistoryId;
+
   /**
    * The recurring billing event corresponding to the action that triggered this grace period, if
    * applicable - i.e. if the action was an autorenew - or null in all other cases.
@@ -74,6 +80,14 @@ public class GracePeriodBase extends ImmutableObject {
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
   @Column(name = "billing_recurrence_id")
   VKey<BillingEvent.Recurring> billingEventRecurring = null;
+
+  @Ignore
+  @Column(name = "billing_recurrence_history_id")
+  Long billingEventRecurringHistoryId;
+
+  public long getId() {
+    return id;
+  }
 
   public GracePeriodStatus getType() {
     return type;
@@ -101,6 +115,7 @@ public class GracePeriodBase extends ImmutableObject {
    * period is not AUTO_RENEW.
    */
   public VKey<BillingEvent.OneTime> getOneTimeBillingEvent() {
+    restoreOfyKeys();
     return billingEventOneTime;
   }
 
@@ -109,6 +124,63 @@ public class GracePeriodBase extends ImmutableObject {
    * period is AUTO_RENEW.
    */
   public VKey<BillingEvent.Recurring> getRecurringBillingEvent() {
+    restoreOfyKeys();
     return billingEventRecurring;
+  }
+
+  /**
+   * Restores history ids for composite VKeys after a load from datastore.
+   *
+   * <p>For use by DomainContent.load() ONLY.
+   */
+  protected void restoreHistoryIds() {
+    billingEventOneTimeHistoryId = DomainBase.getHistoryId(billingEventOneTime);
+    billingEventRecurringHistoryId = DomainBase.getHistoryId(billingEventRecurring);
+  }
+
+  /**
+   * Override {@link ImmutableObject#getSignificantFields()} to exclude "id", which breaks equality
+   * testing in the unit tests.
+   */
+  @Override
+  protected Map<Field, Object> getSignificantFields() {
+    restoreOfyKeys();
+    // Can't use streams or ImmutableMap because we can have null values.
+    Map<Field, Object> result = new LinkedHashMap();
+    for (Map.Entry<Field, Object> entry : ModelUtils.getFieldValues(this).entrySet()) {
+      if (!entry.getKey().getName().equals("id")) {
+        result.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Restores Ofy keys in the billing events.
+   *
+   * <p>This must be called by all methods that access the one time or recurring billing event keys.
+   * When the billing event keys are loaded from SQL, they are loaded as asymmetric keys because the
+   * database columns that we load them from do not contain all of the information necessary to
+   * reconsitute the Ofy side of the key. In other cases, we restore the Ofy key during the
+   * hibernate {@link javax.persistence.PostLoad} method from the other fields of the object, but we
+   * have been unable to make this work with hibernate's internal persistence model in this case
+   * because the {@link GracePeriod}'s hash code is evaluated prior to these calls, and would be
+   * invalidated by changing the fields.
+   */
+  private final synchronized void restoreOfyKeys() {
+    if (billingEventOneTime != null && !billingEventOneTime.maybeGetOfyKey().isPresent()) {
+      billingEventOneTime =
+          DomainBase.restoreOfyFrom(
+              Key.create(DomainBase.class, domainRepoId),
+              billingEventOneTime,
+              billingEventOneTimeHistoryId);
+    }
+    if (billingEventRecurring != null && !billingEventRecurring.maybeGetOfyKey().isPresent()) {
+      billingEventRecurring =
+          DomainBase.restoreOfyFrom(
+              Key.create(DomainBase.class, domainRepoId),
+              billingEventRecurring,
+              billingEventRecurringHistoryId);
+    }
   }
 }
