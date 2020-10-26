@@ -19,37 +19,67 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.persistence.transaction.TransactionManager;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
- * Test to verify that {@link DualDatabaseTestInvocationContextProvider} extension executes {@link
- * TestTemplate} test twice with different databases.
+ * Test to verify that {@link DualDatabaseTestInvocationContextProvider} extension executes tests
+ * with corresponding {@link TransactionManager}.
  */
 @DualDatabaseTest
 public class DualDatabaseTestInvocationContextProviderTest {
 
-  private static int datastoreTestCounter = 0;
-  private static int postgresqlTestCounter = 0;
+  private static int testBothDbsOfyCounter = 0;
+  private static int testBothDbsSqlCounter = 0;
+  private static int testOfyOnlyOfyCounter = 0;
+  private static int testOfyOnlySqlCounter = 0;
+  private static int testSqlOnlyOfyCounter = 0;
+  private static int testSqlOnlySqlCounter = 0;
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @TestTemplate
-  void testToUseTransactionManager() {
+  @TestOfyAndSql
+  void testToVerifyBothOfyAndSqlTmAreUsed() {
     if (tm() instanceof DatastoreTransactionManager) {
-      datastoreTestCounter++;
+      testBothDbsOfyCounter++;
     }
     if (tm() instanceof JpaTransactionManager) {
-      postgresqlTestCounter++;
+      testBothDbsSqlCounter++;
+    }
+  }
+
+  @TestOfyOnly
+  void testToVerifyOnlyOfyTmIsUsed() {
+    if (tm() instanceof DatastoreTransactionManager) {
+      testOfyOnlyOfyCounter++;
+    }
+    if (tm() instanceof JpaTransactionManager) {
+      testOfyOnlySqlCounter++;
+    }
+  }
+
+  @TestSqlOnly
+  void testToVerifyOnlySqlTmIsUsed() {
+    if (tm() instanceof DatastoreTransactionManager) {
+      testSqlOnlyOfyCounter++;
+    }
+    if (tm() instanceof JpaTransactionManager) {
+      testSqlOnlySqlCounter++;
     }
   }
 
   @AfterAll
   static void assertEachTransactionManagerIsUsed() {
-    assertThat(datastoreTestCounter).isEqualTo(1);
-    assertThat(postgresqlTestCounter).isEqualTo(1);
+    assertThat(testBothDbsOfyCounter).isEqualTo(1);
+    assertThat(testBothDbsSqlCounter).isEqualTo(1);
+
+    assertThat(testOfyOnlyOfyCounter).isEqualTo(1);
+    assertThat(testOfyOnlySqlCounter).isEqualTo(0);
+
+    assertThat(testSqlOnlyOfyCounter).isEqualTo(0);
+    assertThat(testSqlOnlySqlCounter).isEqualTo(1);
   }
 }

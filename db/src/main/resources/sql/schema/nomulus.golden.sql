@@ -904,7 +904,7 @@ CREATE TABLE public."Tld" (
     registry_lock_or_unlock_cost_currency text,
     renew_billing_cost_transitions public.hstore NOT NULL,
     renew_grace_period_length interval NOT NULL,
-    reserved_list_names text[] NOT NULL,
+    reserved_list_names text[],
     restore_billing_cost_amount numeric(19,2),
     restore_billing_cost_currency text,
     roid_suffix text,

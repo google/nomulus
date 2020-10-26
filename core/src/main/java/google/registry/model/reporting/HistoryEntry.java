@@ -193,7 +193,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
    * transaction counts (such as contact or host mutations).
    */
   @Transient // domain-specific
-  Set<DomainTransactionRecord> domainTransactionRecords;
+  protected Set<DomainTransactionRecord> domainTransactionRecords;
 
   public long getId() {
     // For some reason, Hibernate throws NPE during some initialization phase if we don't deal with
@@ -273,7 +273,8 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
   @SuppressWarnings("UnusedMethod")
   private void setDomainTransactionRecords(Set<DomainTransactionRecord> domainTransactionRecords) {
-    this.domainTransactionRecords = ImmutableSet.copyOf(domainTransactionRecords);
+    this.domainTransactionRecords =
+        domainTransactionRecords == null ? null : ImmutableSet.copyOf(domainTransactionRecords);
   }
 
   public static VKey<HistoryEntry> createVKey(Key<HistoryEntry> key) {
