@@ -832,8 +832,8 @@ class EppLifecycleDomainTest extends EppTestCase {
         .atTime("2001-01-06T00:02:00Z")
         .hasResponse(
             "poll_response_domain_transfer_server_approve_winner.xml",
-            ImmutableMap.of("SERVER_TRID", transferRequestTrid, "ID", "1-C-EXAMPLE-20-24-2001"));
-    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-C-EXAMPLE-20-24-2001"))
+            ImmutableMap.of("SERVER_TRID", transferRequestTrid, "ID", messageId));
+    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", messageId))
         .atTime("2001-01-06T00:02:00Z")
         .hasResponse("poll_ack_response_empty.xml");
     assertThatLogoutSucceeds();

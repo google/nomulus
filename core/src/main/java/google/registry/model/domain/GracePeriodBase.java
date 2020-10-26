@@ -17,7 +17,6 @@ package google.registry.model.domain;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.OnLoad;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ModelUtils;
 import google.registry.model.billing.BillingEvent;
