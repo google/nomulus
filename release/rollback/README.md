@@ -119,3 +119,33 @@ The rollback subcommand has two new parameters:
         The user may choose to abort the rollback, skip the step, or continue
         with the step.
     3.  automatic: Tool will execute all steps in one shot.
+
+The rollback steps are organized according to the following logic:
+
+```
+    for service in ['backend', 'default', 'pubapi', 'tools']:
+        if service is on basicScaling: (See Notes # 1)
+            start the target version
+        if service is on manualScaling:
+            start the target version
+            set num_instances to its originally configured value
+
+    for service in ['backend', 'default', 'pubapi', 'tools']:
+        direct traffic to target version
+
+    for service in ['backend', 'default', 'pubapi', 'tools']:
+        if originally serving version is not the target version:
+            if originally serving version is on basicaScaling
+                stop the version
+            if originally serving version is on manualScaling:
+                stop the version
+                set_num_instances to 1 (See Notes #2)
+```
+
+Notes:
+
+1.  Versions on automatic scaling cannot be started or stopped by gcloud or the
+    AppEngine Admin REST API.
+
+2.  The minimum value assignable to num_instances through the REST API is 1.
+    This instance eventually will be released too.
