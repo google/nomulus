@@ -22,7 +22,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.RegistrarUtils.normalizeRegistrarName;
 import static java.nio.charset.StandardCharsets.US_ASCII;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
@@ -40,14 +39,9 @@ import google.registry.tools.params.OptionalPhoneNumberParameter;
 import google.registry.tools.params.OptionalStringParameter;
 import google.registry.tools.params.PathParameter;
 import google.registry.util.CertificateChecker;
-import google.registry.util.CertificateChecker.CertificateViolation;
 import google.registry.util.CidrAddressBlock;
-import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -55,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.joda.money.CurrencyUnit;
@@ -369,7 +362,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
         // existing certificate without providing a replacement. An uploaded empty certificate file
         // will prevent the registrar from being able to establish EPP connections.
         if (!asciiCert.equals("")) {
-          verifyCertificate(asciiCert);
+          certificateChecker.validateCertificate(asciiCert);
         }
         builder.setClientCertificate(asciiCert, now);
       }
@@ -378,7 +371,7 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
         String asciiCert =
             new String(Files.readAllBytes(failoverClientCertificateFilename), US_ASCII);
         if (!asciiCert.equals("")) {
-          verifyCertificate(asciiCert);
+          certificateChecker.validateCertificate(asciiCert);
         }
         builder.setFailoverClientCertificate(asciiCert, now);
       }
@@ -479,22 +472,6 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       }
 
       stageEntityChange(oldRegistrar, newRegistrar);
-    }
-  }
-
-  private void verifyCertificate(String certificateString) throws CertificateException {
-    X509Certificate certificate =
-        (X509Certificate)
-            CertificateFactory.getInstance("X509")
-                .generateCertificate(new ByteArrayInputStream(certificateString.getBytes(UTF_8)));
-    ImmutableSet<CertificateViolation> violations =
-        certificateChecker.checkCertificate(certificate);
-    if (!violations.isEmpty()) {
-      String displayMessages =
-          violations.stream()
-              .map(violation -> violation.getDisplayMessage(certificateChecker))
-              .collect(Collectors.joining("\n"));
-      throw new CertificateException(displayMessages);
     }
   }
 

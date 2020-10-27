@@ -515,27 +515,10 @@ CREATE TABLE public."GracePeriod" (
     registrar_id text NOT NULL,
     domain_repo_id text NOT NULL,
     expiration_time timestamp with time zone NOT NULL,
-    type text NOT NULL
+    type text NOT NULL,
+    billing_event_history_id bigint,
+    billing_recurrence_history_id bigint
 );
-
-
---
--- Name: GracePeriod_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public."GracePeriod_id_seq"
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: GracePeriod_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public."GracePeriod_id_seq" OWNED BY public."GracePeriod".id;
 
 
 --
@@ -988,13 +971,6 @@ ALTER TABLE ONLY public."ClaimsList" ALTER COLUMN revision_id SET DEFAULT nextva
 --
 
 ALTER TABLE ONLY public."DomainTransactionRecord" ALTER COLUMN id SET DEFAULT nextval('public."DomainTransactionRecord_id_seq"'::regclass);
-
-
---
--- Name: GracePeriod id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."GracePeriod" ALTER COLUMN id SET DEFAULT nextval('public."GracePeriod_id_seq"'::regclass);
 
 
 --
@@ -1669,14 +1645,6 @@ ALTER TABLE ONLY public."RegistryLock"
 
 
 --
--- Name: GracePeriod fk2mys4hojm6ev2g9tmy5aq6m7g; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."GracePeriod"
-    ADD CONSTRAINT fk2mys4hojm6ev2g9tmy5aq6m7g FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
-
-
---
 -- Name: Domain fk2u3srsfbei272093m3b3xwj23; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1922,6 +1890,14 @@ ALTER TABLE ONLY public."GracePeriod"
 
 ALTER TABLE ONLY public."GracePeriod"
     ADD CONSTRAINT fk_grace_period_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
+
+
+--
+-- Name: GracePeriod fk_grace_period_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."GracePeriod"
+    ADD CONSTRAINT fk_grace_period_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

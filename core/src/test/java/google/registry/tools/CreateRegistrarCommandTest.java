@@ -40,7 +40,6 @@ import com.google.common.net.MediaType;
 import google.registry.model.registrar.Registrar;
 import google.registry.util.CertificateChecker;
 import java.io.IOException;
-import java.security.cert.CertificateException;
 import java.util.Optional;
 import org.joda.money.CurrencyUnit;
 import org.joda.time.DateTime;
@@ -389,9 +388,9 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFail_clientCertFileFlagWithViolation() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
-    CertificateException thrown =
+    IllegalArgumentException thrown =
         assertThrows(
-            CertificateException.class,
+            IllegalArgumentException.class,
             () ->
                 runCommandForced(
                     "--name=blobio",
@@ -419,9 +418,9 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFail_clientCertFileFlagWithMultipleViolations() throws Exception {
     fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
-    CertificateException thrown =
+    IllegalArgumentException thrown =
         assertThrows(
-            CertificateException.class,
+            IllegalArgumentException.class,
             () ->
                 runCommandForced(
                     "--name=blobio",
@@ -499,9 +498,9 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFail_failoverClientCertFileFlagWithViolations() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
-    CertificateException thrown =
+    IllegalArgumentException thrown =
         assertThrows(
-            CertificateException.class,
+            IllegalArgumentException.class,
             () ->
                 runCommandForced(
                     "--name=blobio",
@@ -529,9 +528,9 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFail_failoverClientCertFileFlagWithMultipleViolations() throws Exception {
     fakeClock.setTo(DateTime.parse("2055-11-01T00:00:00Z"));
-    CertificateException thrown =
+    IllegalArgumentException thrown =
         assertThrows(
-            CertificateException.class,
+            IllegalArgumentException.class,
             () ->
                 runCommandForced(
                     "--name=blobio",
@@ -1182,51 +1181,9 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   }
 
   @Test
-  void testFailure_invalidCertFileContents() {
-    assertThrows(
-        CertificateException.class,
-        () ->
-            runCommandForced(
-                "--name=blobio",
-                "--password=some_password",
-                "--registrar_type=REAL",
-                "--iana_id=8",
-                "--cert_file=" + writeToTmpFile("ABCDEF"),
-                "--passcode=01234",
-                "--icann_referral_email=foo@bar.test",
-                "--street=\"123 Fake St\"",
-                "--city Fakington",
-                "--state MA",
-                "--zip 00351",
-                "--cc US",
-                "clientz"));
-  }
-
-  @Test
-  void testFailure_invalidFailoverCertFileContents() {
-    assertThrows(
-        CertificateException.class,
-        () ->
-            runCommandForced(
-                "--name=blobio",
-                "--password=some_password",
-                "--registrar_type=REAL",
-                "--iana_id=8",
-                "--failover_cert_file=" + writeToTmpFile("ABCDEF"),
-                "--passcode=01234",
-                "--icann_referral_email=foo@bar.test",
-                "--street=\"123 Fake St\"",
-                "--city Fakington",
-                "--state MA",
-                "--zip 00351",
-                "--cc US",
-                "clientz"));
-  }
-
-  @Test
   void testFailure_certHashAndCertFile() {
     assertThrows(
-        CertificateException.class,
+        IllegalArgumentException.class,
         () ->
             runCommandForced(
                 "--name=blobio",

@@ -194,7 +194,7 @@ public class ModelUtils {
    * returned map in its implementation of {@link ImmutableObject#toString} and {@link
    * ImmutableObject#equals}, which work by comparing and printing these maps.
    */
-  static Map<Field, Object> getFieldValues(Object instance) {
+  public static Map<Field, Object> getFieldValues(Object instance) {
     // Don't make this ImmutableMap because field values can be null.
     Map<Field, Object> values = new LinkedHashMap<>();
     for (Field field : getAllFields(instance.getClass()).values()) {
