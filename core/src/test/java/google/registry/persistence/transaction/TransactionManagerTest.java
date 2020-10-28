@@ -278,6 +278,15 @@ public class TransactionManagerTest {
   }
 
   @TestOfyAndSql
+  void delete_deletesTheGivenEntity() {
+    tm().transact(() -> tm().insert(theEntity));
+    assertEntityExists(theEntity);
+    fakeClock.advanceOneMilli();
+    tm().transact(() -> tm().delete(theEntity));
+    assertEntityNotExist(theEntity);
+  }
+
+  @TestOfyAndSql
   void load_multi() {
     assertAllEntitiesNotExist(moreEntities);
     tm().transact(() -> tm().insertAll(moreEntities));

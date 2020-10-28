@@ -415,10 +415,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public void delete(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
+    Object managedEntity = entity;
     if (!getEntityManager().contains(entity)) {
-      getEntityManager().merge(entity);
+      managedEntity = getEntityManager().merge(entity);
     }
-    getEntityManager().remove(entity);
+    getEntityManager().remove(managedEntity);
   }
 
   @Override

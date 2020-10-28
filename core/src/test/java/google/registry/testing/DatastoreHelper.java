@@ -1052,11 +1052,18 @@ public class DatastoreHelper {
                       } else if (resource instanceof DomainContent) {
                         unsorted = tm().loadAll(DomainHistory.class);
                       } else {
-                        unsorted =
-                            fail(
-                                "Expected an EppResource instance, but got " + resource.getClass());
+                        fail("Expected an EppResource instance, but got " + resource.getClass());
                       }
-                      return ImmutableList.sortedCopyOf(DateTimeComparator.getInstance(), unsorted);
+                      ImmutableList<? extends HistoryEntry> filtered =
+                          unsorted.stream()
+                              .filter(
+                                  historyEntry ->
+                                      historyEntry
+                                          .getParent()
+                                          .getName()
+                                          .equals(resource.getRepoId()))
+                              .collect(toImmutableList());
+                      return ImmutableList.sortedCopyOf(DateTimeComparator.getInstance(), filtered);
                     }));
   }
 
