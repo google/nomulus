@@ -3,6 +3,17 @@
 This project contains Nomulus's Cloud SQL schema and schema-deployment
 utilities.
 
+### ER Diagrams
+
+The following links are the ER diagrams generated from the current SQL schema:
+
+* [Full ER diagram](https://storage.googleapis.com/domain-registry-dev-er-diagram/full_er_diagram.html): 
+shows all columns, foreign keys and indexes.
+
+* [Brief ER diagram](https://storage.googleapis.com/domain-registry-dev-er-diagram/brief_er_diagram.html): 
+shows only significant columns, such as primary and foreign key columns, and 
+columns that are part of unique indexes.
+
 ### Database Roles and Privileges
 
 Nomulus uses the 'postgres' database in the 'public' schema. The following
