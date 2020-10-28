@@ -356,23 +356,20 @@ public class DatastoreHelper {
                             Map.Entry::getKey, entry -> entry.getValue().getValue().getAmount())))
             .build();
     PremiumListRevision revision = PremiumListRevision.create(premiumList, entries.keySet());
-    tm().transact(
-            () ->
-                ofyOrJpaTm(
-                    () -> {
-                      tm().putAllWithoutBackup(
-                              ImmutableList.of(
-                                  premiumList.asBuilder().setRevision(Key.create(revision)).build(),
-                                  revision));
-                      tm().putAllWithoutBackup(
-                              parentPremiumListEntriesOnRevision(
-                                  entries.values(), Key.create(revision)));
-                    },
-                    () -> tm().insert(premiumList)));
-    // The above premiumList is in the session cached and it is different from the corresponding
+
+    ofyOrJpaTm(
+        () -> {
+          tm().putAllWithoutBackup(
+                  ImmutableList.of(
+                      premiumList.asBuilder().setRevision(Key.create(revision)).build(), revision));
+          tm().putAllWithoutBackup(
+                  parentPremiumListEntriesOnRevision(entries.values(), Key.create(revision)));
+        },
+        () -> tm().transact(() -> tm().insert(premiumList)));
+    // The above premiumList is in the session cache and it is different from the corresponding
     // entity stored in Datastore because it has some @Ignore fields set dedicated for SQL. This
     // breaks the assumption we have in our application code, see
-    // PremiumListUtils.savePremiumListAndEntries(). Clearing the seesion cache can help make sure
+    // PremiumListUtils.savePremiumListAndEntries(). Clearing the session cache can help make sure
     // we always get the same list.
     tm().clearSessionCache();
     return transactIfJpaTm(() -> tm().load(premiumList));

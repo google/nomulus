@@ -705,8 +705,16 @@ public class Registrar extends ImmutableObject
     return new Builder(clone(this));
   }
 
+  /** Creates a {@link VKey} for this instance. */
   public VKey<Registrar> createVKey() {
     return VKey.create(Registrar.class, clientIdentifier, Key.create(this));
+  }
+
+  /** Creates a {@link VKey} for the given {@code registrarId}. */
+  public static VKey<Registrar> createVKey(String registrarId) {
+    checkArgumentNotNull(registrarId, "registrarId must be specified");
+    return VKey.create(
+        Registrar.class, registrarId, Key.create(getCrossTldKey(), Registrar.class, registrarId));
   }
 
   /** A builder for constructing {@link Registrar}, since it is immutable. */
@@ -992,13 +1000,7 @@ public class Registrar extends ImmutableObject
   /** Loads and returns a registrar entity by its client id directly from Datastore. */
   public static Optional<Registrar> loadByClientId(String clientId) {
     checkArgument(!Strings.isNullOrEmpty(clientId), "clientId must be specified");
-    return transactIfJpaTm(
-        () ->
-            tm().maybeLoad(
-                    VKey.create(
-                        Registrar.class,
-                        clientId,
-                        Key.create(getCrossTldKey(), Registrar.class, clientId))));
+    return transactIfJpaTm(() -> tm().maybeLoad(createVKey(clientId)));
   }
 
   /**
