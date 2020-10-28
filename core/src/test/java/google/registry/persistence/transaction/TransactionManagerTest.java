@@ -34,6 +34,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -308,6 +309,14 @@ public class TransactionManagerTest {
             .collect(toImmutableList());
     assertThat(tm().transact(() -> tm().load(keys)))
         .isEqualTo(Maps.uniqueIndex(moreEntities, TestEntity::key));
+  }
+
+  @TestOfyOnly
+  void loadAllForOfyTm_throwsExceptionInTransaction() {
+    assertAllEntitiesNotExist(moreEntities);
+    tm().transact(() -> tm().insertAll(moreEntities));
+    assertThrows(
+        IllegalArgumentException.class, () -> tm().transact(() -> tm().loadAll(TestEntity.class)));
   }
 
   private static void assertEntityExists(TestEntity entity) {
