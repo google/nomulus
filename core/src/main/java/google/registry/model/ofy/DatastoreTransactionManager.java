@@ -104,22 +104,22 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void insert(Object entity) {
-    saveEntity(entity);
+    put(entity);
   }
 
   @Override
   public void insertAll(ImmutableCollection<?> entities) {
-    syncIfTransactionless(getOfy().save().entities(entities));
+    putAll(entities);
   }
 
   @Override
   public void insertWithoutBackup(Object entity) {
-    syncIfTransactionless(getOfy().saveWithoutBackup().entities(entity));
+    putWithoutBackup(entity);
   }
 
   @Override
   public void insertAllWithoutBackup(ImmutableCollection<?> entities) {
-    syncIfTransactionless(getOfy().saveWithoutBackup().entities(entities));
+    putAllWithoutBackup(entities);
   }
 
   @Override
@@ -129,37 +129,37 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void putAll(ImmutableCollection<?> entities) {
-    insertAll(entities);
+    syncIfTransactionless(getOfy().save().entities(entities));
   }
 
   @Override
   public void putWithoutBackup(Object entity) {
-    put(entity);
+    syncIfTransactionless(getOfy().saveWithoutBackup().entities(entity));
   }
 
   @Override
   public void putAllWithoutBackup(ImmutableCollection<?> entities) {
-    insertAllWithoutBackup(entities);
+    syncIfTransactionless(getOfy().saveWithoutBackup().entities(entities));
   }
 
   @Override
   public void update(Object entity) {
-    saveEntity(entity);
+    put(entity);
   }
 
   @Override
   public void updateAll(ImmutableCollection<?> entities) {
-    insertAll(entities);
+    putAll(entities);
   }
 
   @Override
   public void updateWithoutBackup(Object entity) {
-    insertWithoutBackup(entity);
+    putWithoutBackup(entity);
   }
 
   @Override
   public void updateAllWithoutBackup(ImmutableCollection<?> entities) {
-    insertAllWithoutBackup(entities);
+    putAllWithoutBackup(entities);
   }
 
   @Override
