@@ -317,6 +317,10 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
     @Override
     public DomainHistory build() {
       DomainHistory instance = super.build();
+      // TODO(b/171990736): Assert instance.domainContent is not null after database migration.
+      // Note that we cannot assert that instance.domainContent is not null here because this
+      // builder is also used to convert legacy HistoryEntry objects to DomainHistory, when
+      // domainContent is not available.
       if (instance.domainContent != null) {
         instance.nsHosts = nullToEmptyImmutableCopy(instance.domainContent.nsHosts);
         instance.dsDataHistories =
