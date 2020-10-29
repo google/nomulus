@@ -1377,6 +1377,12 @@ public final class RegistryConfig {
     public static int provideMinimumRsaKeyLength(RegistryConfigSettings config) {
       return config.sslCertificateValidation.minimumRsaKeyLength;
     }
+
+    @Provides
+    @Config("validEcCurves")
+    public static ImmutableSet<String> provideEcCurves(RegistryConfigSettings config) {
+      return ImmutableSet.copyOf(config.sslCertificateValidation.ecCurves);
+    }
   }
 
   /** Returns the App Engine project ID, which is based off the environment name. */

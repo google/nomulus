@@ -460,3 +460,6 @@ sslCertificateValidation:
   expirationWarningDays: 30
   # The minimum number of bits an RSA key must contain
   minimumRsaKeyLength: 2048
+  ecCurves:
+    - secp256r1
+    - secp384r1
