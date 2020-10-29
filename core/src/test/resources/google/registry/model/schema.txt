@@ -273,6 +273,7 @@ class google.registry.model.domain.DomainHistory {
   java.lang.String clientId;
   java.lang.String otherClientId;
   java.lang.String reason;
+  java.util.Set<google.registry.model.domain.secdns.DomainDsDataHistory> dsDataHistories;
   java.util.Set<google.registry.model.reporting.DomainTransactionRecord> domainTransactionRecords;
   org.joda.time.DateTime modificationTime;
 }
@@ -314,6 +315,14 @@ class google.registry.model.domain.secdns.DelegationSignerData {
   int algorithm;
   int digestType;
   int keyTag;
+}
+class google.registry.model.domain.secdns.DomainDsDataHistory {
+  byte[] digest;
+  int algorithm;
+  int digestType;
+  int keyTag;
+  java.lang.Long domainHistoryRevisionId;
+  java.lang.Long dsDataHistoryRevisionId;
 }
 class google.registry.model.domain.token.AllocationToken {
   @Id java.lang.String token;
