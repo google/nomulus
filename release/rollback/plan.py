@@ -172,6 +172,9 @@ def _generate_steps(
     rollback_steps.append(
         steps.update_deploy_tags(gcs_client.project, env, target_release))
 
+    rollback_steps.append(
+        steps.sync_live_release(gcs_client.project, target_release))
+
     return tuple(rollback_steps)
 
 
