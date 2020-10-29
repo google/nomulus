@@ -646,7 +646,7 @@
         registry_lock_or_unlock_cost_currency text,
         renew_billing_cost_transitions hstore not null,
         renew_grace_period_length interval not null,
-        reserved_list_names text[] not null,
+        reserved_list_names text[],
         restore_billing_cost_amount numeric(19, 2),
         restore_billing_cost_currency text,
         roid_suffix text,

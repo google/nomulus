@@ -61,7 +61,9 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
   @Id
   @Access(AccessType.PROPERTY)
   public String getHostRepoId() {
-    return parent.getName();
+    // We need to handle null case here because Hibernate sometimes accesses this method before
+    // parent gets initialized
+    return parent == null ? null : parent.getName();
   }
 
   /** This method is private because it is only used by Hibernate. */

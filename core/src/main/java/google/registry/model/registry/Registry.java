@@ -22,7 +22,6 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.toMap;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -61,6 +60,7 @@ import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.util.Idn;
 import java.util.Map;
@@ -267,27 +267,23 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
                 public Optional<Registry> load(final String tld) {
                   // Enter a transaction-less context briefly; we don't want to enroll every TLD in
                   // a transaction that might be wrapping this call.
-                  return Optional.ofNullable(
-                      tm().doTransactionless(
-                              () ->
-                                  ofy()
-                                      .load()
-                                      .key(Key.create(getCrossTldKey(), Registry.class, tld))
-                                      .now()));
+                  return tm().doTransactionless(() -> tm().maybeLoad(createVKey(tld)));
                 }
 
                 @Override
                 public Map<String, Optional<Registry>> loadAll(Iterable<? extends String> tlds) {
-                  ImmutableMap<String, Key<Registry>> keysMap =
-                      toMap(
-                          ImmutableSet.copyOf(tlds),
-                          tld -> Key.create(getCrossTldKey(), Registry.class, tld));
-                  Map<Key<Registry>, Registry> entities =
-                      tm().doTransactionless(() -> ofy().load().keys(keysMap.values()));
+                  ImmutableMap<String, VKey<Registry>> keysMap =
+                      toMap(ImmutableSet.copyOf(tlds), Registry::createVKey);
+                  Map<VKey<? extends Registry>, Registry> entities =
+                      tm().doTransactionless(() -> tm().load(keysMap.values()));
                   return Maps.transformEntries(
                       keysMap, (k, v) -> Optional.ofNullable(entities.getOrDefault(v, null)));
                 }
               });
+
+  public static VKey<Registry> createVKey(String tld) {
+    return VKey.create(Registry.class, tld, Key.create(getCrossTldKey(), Registry.class, tld));
+  }
 
   /**
    * The name of the pricing engine that this TLD uses.
@@ -386,7 +382,7 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** The set of reserved lists that are applicable to this registry. */
-  @Column(name = "reserved_list_names", nullable = false)
+  @Column(name = "reserved_list_names")
   Set<Key<ReservedList>> reservedLists;
 
   /** Retrieves an ImmutableSet of all ReservedLists associated with this tld. */
