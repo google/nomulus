@@ -114,7 +114,7 @@ class RollbackTestCase(unittest.TestCase):
 
         steps = plan.get_rollback_plan(self._gcs_client, self._appengine_admin,
                                        'crash', 'nomulus-20201014-RC00')
-        self.assertEqual(len(steps), 14)
+        self.assertEqual(len(steps), 15)
         self.assertRegex(steps[0].info(),
                          '.*nom_build :integration:sqlIntegrationTest.*')
         self.assertRegex(steps[1].info(), '.*gcloud app versions start.*')
@@ -123,6 +123,7 @@ class RollbackTestCase(unittest.TestCase):
         self.assertRegex(steps[9].info(), '.*gcloud app versions stop.*')
         self.assertRegex(steps[13].info(),
                          '.*echo nomulus-20201014-RC00 | gsutil cat -.*')
+        self.assertRegex(steps[14].info(), '.*gsutil -m rsync -d .*')
 
 
 if __name__ == '__main__':

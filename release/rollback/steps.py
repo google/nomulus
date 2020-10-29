@@ -150,3 +150,20 @@ def update_deploy_tags(dev_project: str, env: str,
         f'Update Nomulus tag in {env}',
         (f'echo {nom_tag} | gsutil cp - {destination}', ''), nom_tag,
         destination)
+
+
+def sync_live_release(dev_project: str, nom_tag: str) -> RollbackStep:
+    """Syncs the target release artifacts to the live folder.
+
+    By convention the gs://{dev_project}-deploy/live folder should contain the
+    artifacts from the currently serving release.
+
+    For Domain Registry team members, this step updates the nomulus tool
+    installed on corp desktops.
+    """
+    artifacts_folder = f'gs://{dev_project}-deploy/{nom_tag}'
+    live_folder = f'gs://{dev_project}-deploy/live'
+
+    return RollbackStep(
+        f'Syncing {artifacts_folder} to {live_folder}.',
+        ('gsutil', '-m', 'rsync', '-d', artifacts_folder, live_folder))
