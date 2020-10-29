@@ -57,6 +57,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
             ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
             30,
             2048,
+            ImmutableSet.of("secp256r1", "secp384r1"),
             fakeClock);
   }
 
