@@ -14,6 +14,7 @@
 
 package google.registry.config;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import dagger.Module;
 import dagger.Provides;
@@ -36,8 +37,10 @@ public abstract class CertificateCheckerModule {
       @Config("maxValidityDaysSchedule") ImmutableSortedMap<DateTime, Integer> validityDaysMap,
       @Config("expirationWarningDays") int daysToExpiration,
       @Config("minimumRsaKeyLength") int minimumRsaKeyLength,
+      @Config("validEcCurves") ImmutableSet<String> ecCurves,
       Clock clock) {
-    return new CertificateChecker(validityDaysMap, daysToExpiration, minimumRsaKeyLength, clock);
+    return new CertificateChecker(
+        validityDaysMap, daysToExpiration, minimumRsaKeyLength, ecCurves, clock);
   }
 
   private CertificateCheckerModule() {}
