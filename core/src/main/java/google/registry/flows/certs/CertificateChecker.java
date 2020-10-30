@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.util;
+package google.registry.flows.certs;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -20,6 +20,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import google.registry.config.RegistryConfig.Config;
+import google.registry.util.Clock;
+import google.registry.util.DateTimeUtils;
 import java.io.ByteArrayInputStream;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
@@ -28,6 +31,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 
@@ -58,10 +62,12 @@ public class CertificateChecker {
    *   );
    * </pre>
    */
+  @Inject
   public CertificateChecker(
-      ImmutableSortedMap<DateTime, Integer> maxValidityLengthSchedule,
-      int daysToExpiration,
-      int minimumRsaKeyLength,
+      @Config("maxValidityDaysSchedule")
+          ImmutableSortedMap<DateTime, Integer> maxValidityLengthSchedule,
+      @Config("expirationWarningDays") int daysToExpiration,
+      @Config("minimumRsaKeyLength") int minimumRsaKeyLength,
       Clock clock) {
     checkArgument(
         maxValidityLengthSchedule.containsKey(START_OF_TIME),

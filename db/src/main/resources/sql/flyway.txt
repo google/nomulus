@@ -65,4 +65,6 @@ V64__transfer_history_columns.sql
 V65__local_date_date_type.sql
 V66__create_rde_revision.sql
 V67__grace_period_history_ids.sql
-V68__signed_mark_revocation_list.sql
+V68__make_reserved_list_nullable_in_registry.sql
+V69__change_primary_key_and_add_history_table_for_delegation_signer.sql
+V70__signed_mark_revocation_list.sql

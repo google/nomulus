@@ -23,7 +23,9 @@ import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
+import com.googlecode.objectify.Result;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry;
@@ -102,12 +104,22 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void insert(Object entity) {
-    saveEntity(entity);
+    put(entity);
   }
 
   @Override
   public void insertAll(ImmutableCollection<?> entities) {
-    getOfy().save().entities(entities);
+    putAll(entities);
+  }
+
+  @Override
+  public void insertWithoutBackup(Object entity) {
+    putWithoutBackup(entity);
+  }
+
+  @Override
+  public void insertAllWithoutBackup(ImmutableCollection<?> entities) {
+    putAllWithoutBackup(entities);
   }
 
   @Override
@@ -117,17 +129,37 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void putAll(ImmutableCollection<?> entities) {
-    getOfy().save().entities(entities);
+    syncIfTransactionless(getOfy().save().entities(entities));
+  }
+
+  @Override
+  public void putWithoutBackup(Object entity) {
+    syncIfTransactionless(getOfy().saveWithoutBackup().entities(entity));
+  }
+
+  @Override
+  public void putAllWithoutBackup(ImmutableCollection<?> entities) {
+    syncIfTransactionless(getOfy().saveWithoutBackup().entities(entities));
   }
 
   @Override
   public void update(Object entity) {
-    saveEntity(entity);
+    put(entity);
   }
 
   @Override
   public void updateAll(ImmutableCollection<?> entities) {
-    getOfy().save().entities(entities);
+    putAll(entities);
+  }
+
+  @Override
+  public void updateWithoutBackup(Object entity) {
+    putWithoutBackup(entity);
+  }
+
+  @Override
+  public void updateAllWithoutBackup(ImmutableCollection<?> entities) {
+    putAllWithoutBackup(entities);
   }
 
   @Override
@@ -159,6 +191,11 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
+  public <T> T load(T entity) {
+    return ofy().load().entity(entity).now();
+  }
+
+  @Override
   public <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys) {
     // Keep track of the Key -> VKey mapping so we can translate them back.
     ImmutableMap<Key<T>, VKey<? extends T>> keyMap =
@@ -175,13 +212,17 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> ImmutableList<T> loadAll(Class<T> clazz) {
-    // We can do a ofy().load().type(clazz), but this doesn't work in a transaction.
-    throw new UnsupportedOperationException("Not available in the Datastore transaction manager");
+    return ImmutableList.copyOf(getOfy().load().type(clazz));
+  }
+
+  @Override
+  public <T> ImmutableList<T> loadAll(Iterable<T> entities) {
+    return ImmutableList.copyOf(getOfy().load().entities(entities).values());
   }
 
   @Override
   public void delete(VKey<?> key) {
-    getOfy().delete().key(key.getOfyKey()).now();
+    syncIfTransactionless(getOfy().delete().key(key.getOfyKey()));
   }
 
   @Override
@@ -192,7 +233,35 @@ public class DatastoreTransactionManager implements TransactionManager {
         StreamSupport.stream(vKeys.spliterator(), false)
             .map(VKey::getOfyKey)
             .collect(toImmutableList());
-    getOfy().delete().keys(list).now();
+    syncIfTransactionless(getOfy().delete().keys(list));
+  }
+
+  @Override
+  public void delete(Object entity) {
+    syncIfTransactionless(getOfy().delete().entity(entity));
+  }
+
+  @Override
+  public void deleteWithoutBackup(VKey<?> key) {
+    syncIfTransactionless(getOfy().deleteWithoutBackup().key(key.getOfyKey()));
+  }
+
+  @Override
+  public void deleteWithoutBackup(Iterable<? extends VKey<?>> keys) {
+    syncIfTransactionless(
+        getOfy()
+            .deleteWithoutBackup()
+            .keys(Streams.stream(keys).map(VKey::getOfyKey).collect(toImmutableList())));
+  }
+
+  @Override
+  public void deleteWithoutBackup(Object entity) {
+    syncIfTransactionless(getOfy().deleteWithoutBackup().entity(entity));
+  }
+
+  @Override
+  public void clearSessionCache() {
+    getOfy().clearSessionCache();
   }
 
   /**
@@ -209,7 +278,7 @@ public class DatastoreTransactionManager implements TransactionManager {
     if (entity instanceof HistoryEntry) {
       entity = ((HistoryEntry) entity).asHistoryEntry();
     }
-    getOfy().save().entity(entity);
+    syncIfTransactionless(getOfy().save().entity(entity));
   }
 
   @SuppressWarnings("unchecked")
@@ -226,5 +295,20 @@ public class DatastoreTransactionManager implements TransactionManager {
   @Nullable
   private <T> T loadNullable(VKey<T> key) {
     return toChildHistoryEntryIfPossible(getOfy().load().key(key.getOfyKey()).now());
+  }
+
+  /**
+   * Executes the given {@link Result} instance synchronously if not in a transaction.
+   *
+   * <p>The {@link Result} instance contains a task that will be executed by Objectify
+   * asynchronously. If it is in a transaction, we don't need to execute the task immediately
+   * because it is guaranteed to be done by the end of the transaction. However, if it is not in a
+   * transaction, we need to execute it in case the following code expects that happens before
+   * themselves.
+   */
+  private void syncIfTransactionless(Result<?> result) {
+    if (!inTransaction()) {
+      result.now();
+    }
   }
 }

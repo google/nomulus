@@ -377,6 +377,21 @@ CREATE TABLE public."Domain" (
 
 
 --
+-- Name: DomainDsDataHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainDsDataHistory" (
+    ds_data_history_revision_id bigint NOT NULL,
+    algorithm integer NOT NULL,
+    digest bytea NOT NULL,
+    digest_type integer NOT NULL,
+    domain_history_revision_id bigint NOT NULL,
+    key_tag integer NOT NULL,
+    domain_repo_id text
+);
+
+
+--
 -- Name: DomainHistory; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -944,7 +959,7 @@ CREATE TABLE public."Tld" (
     registry_lock_or_unlock_cost_currency text,
     renew_billing_cost_transitions public.hstore NOT NULL,
     renew_grace_period_length interval NOT NULL,
-    reserved_list_names text[] NOT NULL,
+    reserved_list_names text[],
     restore_billing_cost_amount numeric(19,2),
     restore_billing_cost_currency text,
     roid_suffix text,
@@ -1119,7 +1134,15 @@ ALTER TABLE ONLY public."Cursor"
 --
 
 ALTER TABLE ONLY public."DelegationSignerData"
-    ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (domain_repo_id, key_tag);
+    ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (domain_repo_id, key_tag, algorithm, digest_type, digest);
+
+
+--
+-- Name: DomainDsDataHistory DomainDsDataHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainDsDataHistory"
+    ADD CONSTRAINT "DomainDsDataHistory_pkey" PRIMARY KEY (ds_data_history_revision_id);
 
 
 --
@@ -2085,6 +2108,14 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
+
+
+--
+-- Name: DomainDsDataHistory fko4ilgyyfnvppbpuivus565i0j; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainDsDataHistory"
+    ADD CONSTRAINT fko4ilgyyfnvppbpuivus565i0j FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
 
 
 --

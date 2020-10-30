@@ -480,8 +480,7 @@ public class ExpandRecurringBillingEventsActionTest
           .setSyntheticCreationTime(testTime)
           .build());
     }
-    assertBillingEventsForResource(
-        domain, Iterables.toArray(expectedEvents, BillingEvent.class));
+    assertBillingEventsForResource(domain, Iterables.toArray(expectedEvents, BillingEvent.class));
     assertCursorAt(testTime);
   }
 

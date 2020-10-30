@@ -47,6 +47,7 @@
     <class>google.registry.model.domain.DomainHistory</class>
     <class>google.registry.model.domain.GracePeriod</class>
     <class>google.registry.model.domain.secdns.DelegationSignerData</class>
+    <class>google.registry.model.domain.secdns.DomainDsDataHistory</class>
     <class>google.registry.model.domain.token.AllocationToken</class>
     <class>google.registry.model.host.HostHistory</class>
     <class>google.registry.model.host.HostResource</class>

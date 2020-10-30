@@ -17,7 +17,6 @@ package google.registry.module.frontend;
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
 import dagger.Lazy;
-import google.registry.config.CertificateCheckerModule;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.flows.ServerTridProviderModule;
@@ -45,7 +44,6 @@ import javax.inject.Singleton;
 @Component(
     modules = {
       AuthModule.class,
-      CertificateCheckerModule.class,
       ConfigModule.class,
       ConsoleConfigModule.class,
       CredentialModule.class,

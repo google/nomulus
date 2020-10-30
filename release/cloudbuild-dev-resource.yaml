@@ -1,14 +1,15 @@
 # To run the build locally, install cloud-build-local first.
 # See: https://cloud.google.com/cloud-build/docs/build-debug-locally
 # In the root of a nomulus source tree, run:
-# cloud-build-local --config=cloudbuild-javadoc.yaml --dryrun=false ..
+# cloud-build-local --config=cloudbuild-dev-resource.yaml --dryrun=false ..
 #
 # This will compile javadoc for the FOSS version of the code base and replace
 # the content at gs://${PROJECT_ID}-javadoc with the it. The compiled javadoc
 # can then be accesssed at https://storage.googleapis.com/${PROJECT_ID}-javadoc
 #
-# To manually trigger a build on GCB, run:
-# gcloud builds submit --config cloudbuild-javadoc.yaml ..
+# It will also upload all ER diagrams under db/src/main/resource/sql/er_diagram
+# to gs://${PROJECT_ID}-er-diagram. The ER diagrams can then be accesssed
+# at https://storage.googleapis.com/${PROJECT_ID}-er-diagram
 #
 # To trigger a build automatically, follow the instructions below and add a trigger:
 # https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
@@ -24,7 +25,14 @@ steps:
 - name: 'gcr.io/${PROJECT_ID}/builder'
   entrypoint: /bin/bash
   args: ['gsutil', '-m', 'rsync', '-d', '-r', 'build/docs/javadoc', 'gs://${PROJECT_ID}-javadoc']
-
+# Upload the files to GCS
+# We don't use GCB's built-in artifacts uploader because we want to delete
+# the existing files in the bucket first, and we want to parallelize the
+# uploading process.
+- name: 'gcr.io/${PROJECT_ID}/builder'
+  entrypoint: /bin/bash
+  args: ['gsutil', '-m', 'rsync', '-d', '-r', 'db/src/main/resources/sql/er_diagram',
+         'gs://${PROJECT_ID}-er-diagram']
 timeout: 3600s
 options:
   machineType: 'N1_HIGHCPU_8'
