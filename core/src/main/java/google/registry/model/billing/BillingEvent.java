@@ -24,6 +24,7 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -49,6 +50,8 @@ import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithLongVKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -685,7 +688,7 @@ public abstract class BillingEvent extends ImmutableObject
   @ReportedOn
   @Entity
   @WithLongVKey
-  public static class Modification extends BillingEvent implements DatastoreAndSqlEntity {
+  public static class Modification extends BillingEvent implements DatastoreEntity {
 
     /** The change in cost that should be applied to the original billing event. */
     Money cost;
@@ -745,6 +748,11 @@ public abstract class BillingEvent extends ImmutableObject
           .setCost(billingEvent.getCost().negated())
           .setParent(historyEntry)
           .build();
+    }
+
+    @Override
+    public ImmutableList<SqlEntity> toSqlEntities() {
+      return ImmutableList.of(); // not persisted in SQL
     }
 
     /** A builder for {@link Modification} since it is immutable. */
