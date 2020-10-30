@@ -62,6 +62,7 @@
     <class>google.registry.model.registry.Registry</class>
     <class>google.registry.model.reporting.DomainTransactionRecord</class>
     <class>google.registry.model.reporting.Spec11ThreatMatch</class>
+    <class>google.registry.model.smd.SignedMarkRevocationList</class>
     <class>google.registry.model.tmch.ClaimsListShard</class>
     <class>google.registry.persistence.transaction.TransactionEntity</class>
     <class>google.registry.schema.cursor.Cursor</class>

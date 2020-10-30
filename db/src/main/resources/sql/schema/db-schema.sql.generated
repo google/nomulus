@@ -617,6 +617,19 @@
         primary key (revision_id)
     );
 
+    create table "SignedMarkRevocationEntry" (
+       revision_id int8 not null,
+        revocation_time timestamptz not null,
+        smd_id text not null,
+        primary key (revision_id, smd_id)
+    );
+
+    create table "SignedMarkRevocationList" (
+       revision_id  bigserial not null,
+        creation_time timestamptz,
+        primary key (revision_id)
+    );
+
     create table "Spec11ThreatMatch" (
        id  bigserial not null,
         check_date date not null,
@@ -779,3 +792,8 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        add constraint FKgq03rk0bt1hb915dnyvd3vnfc 
        foreign key (revision_id) 
        references "ReservedList";
+
+    alter table if exists "SignedMarkRevocationEntry" 
+       add constraint FK5ivlhvs3121yx2li5tqh54u4 
+       foreign key (revision_id) 
+       references "SignedMarkRevocationList";
