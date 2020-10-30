@@ -91,17 +91,89 @@ public interface TransactionManager {
   /** Persists all new entities in the database, throws exception if any entity already exists. */
   void insertAll(ImmutableCollection<?> entities);
 
+  /**
+   * Persists a new entity in the database without writing any backup if the underlying database is
+   * Datastore.
+   *
+   * <p>This method is for the sake of keeping a single code path when replacing ofy() with tm() in
+   * the application code. When the method is invoked with Datastore, it won't write the commit log
+   * backup; when invoked with Cloud SQL, it behaves the same as the method which doesn't have
+   * "WithoutBackup" in its method name because it is not necessary to have the backup mechanism in
+   * SQL.
+   */
+  void insertWithoutBackup(Object entity);
+
+  /**
+   * Persists all new entities in the database without writing any backup if the underlying database
+   * is Datastore.
+   *
+   * <p>This method is for the sake of keeping a single code path when replacing ofy() with tm() in
+   * the application code. When the method is invoked with Datastore, it won't write the commit log
+   * backup; when invoked with Cloud SQL, it behaves the same as the method which doesn't have
+   * "WithoutBackup" in its method name because it is not necessary to have the backup mechanism in
+   * SQL.
+   */
+  void insertAllWithoutBackup(ImmutableCollection<?> entities);
+
   /** Persists a new entity or update the existing entity in the database. */
   void put(Object entity);
 
   /** Persists all new entities or update the existing entities in the database. */
   void putAll(ImmutableCollection<?> entities);
 
+  /**
+   * Persists a new entity or update the existing entity in the database without writing any backup
+   * if the underlying database is Datastore.
+   *
+   * <p>This method is for the sake of keeping a single code path when replacing ofy() with tm() in
+   * the application code. When the method is invoked with Datastore, it won't write the commit log
+   * backup; when invoked with Cloud SQL, it behaves the same as the method which doesn't have
+   * "WithoutBackup" in its method name because it is not necessary to have the backup mechanism in
+   * SQL.
+   */
+  void putWithoutBackup(Object entity);
+
+  /**
+   * Persists all new entities or update the existing entities in the database without writing any
+   * backup if the underlying database is Datastore.
+   *
+   * <p>This method is for the sake of keeping a single code path when replacing ofy() with tm() in
+   * the application code. When the method is invoked with Datastore, it won't write the commit log
+   * backup; when invoked with Cloud SQL, it behaves the same as the method which doesn't have
+   * "WithoutBackup" in its method name because it is not necessary to have the backup mechanism in
+   * SQL.
+   */
+  void putAllWithoutBackup(ImmutableCollection<?> entities);
+
   /** Updates an entity in the database, throws exception if the entity does not exist. */
   void update(Object entity);
 
   /** Updates all entities in the database, throws exception if any entity does not exist. */
   void updateAll(ImmutableCollection<?> entities);
+
+  /**
+   * Updates an entity in the database without writing any backup if the underlying database is
+   * Datastore.
+   *
+   * <p>This method is for the sake of keeping a single code path when replacing ofy() with tm() in
+   * the application code. When the method is invoked with Datastore, it won't write the commit log
+   * backup; when invoked with Cloud SQL, it behaves the same as the method which doesn't have
+   * "WithoutBackup" in its method name because it is not necessary to have the backup mechanism in
+   * SQL.
+   */
+  void updateWithoutBackup(Object entity);
+
+  /**
+   * Updates all entities in the database without writing any backup if the underlying database is
+   * Datastore.
+   *
+   * <p>This method is for the sake of keeping a single code path when replacing ofy() with tm() in
+   * the application code. When the method is invoked with Datastore, it won't write the commit log
+   * backup; when invoked with Cloud SQL, it behaves the same as the method which doesn't have
+   * "WithoutBackup" in its method name because it is not necessary to have the backup mechanism in
+   * SQL.
+   */
+  void updateAllWithoutBackup(ImmutableCollection<?> entities);
 
   /** Returns whether the given entity with same ID exists. */
   boolean exists(Object entity);
@@ -116,6 +188,11 @@ public interface TransactionManager {
   <T> T load(VKey<T> key);
 
   /**
+   * Loads the given entity from the database, throws NoSuchElementException if it doesn't exist.
+   */
+  <T> T load(T entity);
+
+  /**
    * Loads the set of entities by their key id.
    *
    * @throws NoSuchElementException if any of the keys are not found.
@@ -125,9 +202,38 @@ public interface TransactionManager {
   /** Loads all entities of the given type, returns empty if there is no such entity. */
   <T> ImmutableList<T> loadAll(Class<T> clazz);
 
+  /**
+   * Loads all given entities from the database, throws NoSuchElementException if it doesn't exist.
+   */
+  <T> ImmutableList<T> loadAll(Iterable<T> entities);
+
   /** Deletes the entity by its id. */
   void delete(VKey<?> key);
 
   /** Deletes the set of entities by their key id. */
   void delete(Iterable<? extends VKey<?>> keys);
+
+  /** Deletes the given entity from the database. */
+  void delete(Object entity);
+
+  /**
+   * Deletes the entity by its id without writing any backup if the underlying database is
+   * Datastore.
+   */
+  void deleteWithoutBackup(VKey<?> key);
+
+  /**
+   * Deletes the set of entities by their key id without writing any backup if the underlying
+   * database is Datastore.
+   */
+  void deleteWithoutBackup(Iterable<? extends VKey<?>> keys);
+
+  /**
+   * Deletes the given entity from the database without writing any backup if the underlying
+   * database is Datastore.
+   */
+  void deleteWithoutBackup(Object entity);
+
+  /** Clears the session cache if the underlying database is Datastore, otherwise it is a no-op. */
+  void clearSessionCache();
 }

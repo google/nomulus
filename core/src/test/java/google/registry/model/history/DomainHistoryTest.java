@@ -34,6 +34,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
+import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -141,6 +142,7 @@ public class DomainHistoryTest extends EntityTestCase {
         newDomainBase("example.tld", "domainRepoId", contact)
             .asBuilder()
             .setNameservers(host.createVKey())
+            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .build();
     jpaTm().transact(() -> jpaTm().insert(domain));
     return domain;

@@ -377,6 +377,21 @@ CREATE TABLE public."Domain" (
 
 
 --
+-- Name: DomainDsDataHistory; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DomainDsDataHistory" (
+    ds_data_history_revision_id bigint NOT NULL,
+    algorithm integer NOT NULL,
+    digest bytea NOT NULL,
+    digest_type integer NOT NULL,
+    domain_history_revision_id bigint NOT NULL,
+    key_tag integer NOT NULL,
+    domain_repo_id text
+);
+
+
+--
 -- Name: DomainHistory; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -885,6 +900,46 @@ ALTER SEQUENCE public."SafeBrowsingThreat_id_seq" OWNED BY public."Spec11ThreatM
 
 
 --
+-- Name: SignedMarkRevocationEntry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."SignedMarkRevocationEntry" (
+    revision_id bigint NOT NULL,
+    revocation_time timestamp with time zone NOT NULL,
+    smd_id text NOT NULL
+);
+
+
+--
+-- Name: SignedMarkRevocationList; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."SignedMarkRevocationList" (
+    revision_id bigint NOT NULL,
+    creation_time timestamp with time zone
+);
+
+
+--
+-- Name: SignedMarkRevocationList_revision_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public."SignedMarkRevocationList_revision_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: SignedMarkRevocationList_revision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public."SignedMarkRevocationList_revision_id_seq" OWNED BY public."SignedMarkRevocationList".revision_id;
+
+
+--
 -- Name: Tld; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -917,7 +972,7 @@ CREATE TABLE public."Tld" (
     registry_lock_or_unlock_cost_currency text,
     renew_billing_cost_transitions public.hstore NOT NULL,
     renew_grace_period_length interval NOT NULL,
-    reserved_list_names text[] NOT NULL,
+    reserved_list_names text[],
     restore_billing_cost_amount numeric(19,2),
     restore_billing_cost_currency text,
     roid_suffix text,
@@ -992,6 +1047,13 @@ ALTER TABLE ONLY public."RegistryLock" ALTER COLUMN revision_id SET DEFAULT next
 --
 
 ALTER TABLE ONLY public."ReservedList" ALTER COLUMN revision_id SET DEFAULT nextval('public."ReservedList_revision_id_seq"'::regclass);
+
+
+--
+-- Name: SignedMarkRevocationList revision_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."SignedMarkRevocationList" ALTER COLUMN revision_id SET DEFAULT nextval('public."SignedMarkRevocationList_revision_id_seq"'::regclass);
 
 
 --
@@ -1085,7 +1147,15 @@ ALTER TABLE ONLY public."Cursor"
 --
 
 ALTER TABLE ONLY public."DelegationSignerData"
-    ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (domain_repo_id, key_tag);
+    ADD CONSTRAINT "DelegationSignerData_pkey" PRIMARY KEY (domain_repo_id, key_tag, algorithm, digest_type, digest);
+
+
+--
+-- Name: DomainDsDataHistory DomainDsDataHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainDsDataHistory"
+    ADD CONSTRAINT "DomainDsDataHistory_pkey" PRIMARY KEY (ds_data_history_revision_id);
 
 
 --
@@ -1230,6 +1300,22 @@ ALTER TABLE ONLY public."ReservedList"
 
 ALTER TABLE ONLY public."Spec11ThreatMatch"
     ADD CONSTRAINT "SafeBrowsingThreat_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SignedMarkRevocationEntry SignedMarkRevocationEntry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."SignedMarkRevocationEntry"
+    ADD CONSTRAINT "SignedMarkRevocationEntry_pkey" PRIMARY KEY (revision_id, smd_id);
+
+
+--
+-- Name: SignedMarkRevocationList SignedMarkRevocationList_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."SignedMarkRevocationList"
+    ADD CONSTRAINT "SignedMarkRevocationList_pkey" PRIMARY KEY (revision_id);
 
 
 --
@@ -1661,6 +1747,14 @@ ALTER TABLE ONLY public."HostHistory"
 
 
 --
+-- Name: SignedMarkRevocationEntry fk5ivlhvs3121yx2li5tqh54u4; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."SignedMarkRevocationEntry"
+    ADD CONSTRAINT fk5ivlhvs3121yx2li5tqh54u4 FOREIGN KEY (revision_id) REFERENCES public."SignedMarkRevocationList"(revision_id);
+
+
+--
 -- Name: ClaimsEntry fk6sc6at5hedffc0nhdcab6ivuq; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2042,6 +2136,14 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."PremiumEntry"
     ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
+
+
+--
+-- Name: DomainDsDataHistory fko4ilgyyfnvppbpuivus565i0j; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainDsDataHistory"
+    ADD CONSTRAINT fko4ilgyyfnvppbpuivus565i0j FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
 
 
 --

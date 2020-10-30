@@ -28,8 +28,12 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.Maps;
+import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EmbedMap;
 import com.googlecode.objectify.annotation.Entity;
@@ -41,8 +45,19 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.EntityGroupRoot;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import google.registry.util.CollectionUtils;
 import java.util.Map;
+import java.util.Optional;
+import javax.persistence.CollectionTable;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.JoinColumn;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -56,35 +71,50 @@ import org.joda.time.DateTime;
  * order to avoid exceeding the one megabyte max entity size limit, we'll also be sharding that
  * entity into multiple entities, each entity containing {@value #SHARD_SIZE} rows.
  *
+ * <p>TODO: We can remove the sharding once we have converted entirely to Cloud SQL storage during
+ * the Registry 3.0 migration. Then, the entire table will be stored conceptually as one entity (in
+ * fact in SignedMarkRevocationList and SignedMarkRevocationEntry tables).
+ *
  * @see google.registry.tmch.SmdrlCsvParser
- * @see <a href="http://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.2">
- *     TMCH functional specifications - SMD Revocation List</a>
+ * @see <a href="http://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.2">TMCH
+ *     functional specifications - SMD Revocation List</a>
  */
 @Entity
+@javax.persistence.Entity
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
-public class SignedMarkRevocationList extends ImmutableObject {
+public class SignedMarkRevocationList extends ImmutableObject
+    implements DatastoreEntity, SqlEntity {
 
-  @VisibleForTesting
-  static final int SHARD_SIZE = 10000;
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  @VisibleForTesting static final int SHARD_SIZE = 10000;
 
   /** Common ancestor for queries. */
-  @Parent
-  Key<EntityGroupRoot> parent = getCrossTldKey();
+  @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
 
   /** ID for the sharded entity. */
-  @Id
-  long id;
+  @Id @Transient long id;
+
+  @Ignore
+  @javax.persistence.Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  Long revisionId;
 
   /** Time when this list was last updated, as specified in the first line of the CSV file. */
   DateTime creationTime;
 
   /** A map from SMD IDs to revocation time. */
   @EmbedMap
+  @ElementCollection
+  @CollectionTable(
+      name = "SignedMarkRevocationEntry",
+      joinColumns = @JoinColumn(name = "revisionId", referencedColumnName = "revisionId"))
+  @MapKeyColumn(name = "smdId")
+  @Column(name = "revocationTime", nullable = false)
   Map</*@MatchesPattern("[0-9]+-[0-9]+")*/ String, DateTime> revokes;
 
   /** Indicates that this is a shard rather than a "full" list. */
-  @Ignore
-  boolean isShard;
+  @Ignore @Transient boolean isShard;
 
   /**
    * A cached supplier that fetches the SMDRL shards from Datastore and recombines them into a
@@ -92,32 +122,16 @@ public class SignedMarkRevocationList extends ImmutableObject {
    */
   private static final Supplier<SignedMarkRevocationList> CACHE =
       memoizeWithShortExpiration(
-          () ->
-              tm()
-                  .transactNewReadOnly(
-                      () -> {
-                        Iterable<SignedMarkRevocationList> shards =
-                            ofy()
-                                .load()
-                                .type(SignedMarkRevocationList.class)
-                                .ancestor(getCrossTldKey());
-                        DateTime creationTime =
-                            isEmpty(shards)
-                                ? START_OF_TIME
-                                : checkNotNull(
-                                    Iterables.get(shards, 0).creationTime, "creationTime");
-                        ImmutableMap.Builder<String, DateTime> revokes =
-                            new ImmutableMap.Builder<>();
-                        for (SignedMarkRevocationList shard : shards) {
-                          revokes.putAll(shard.revokes);
-                          checkState(
-                              creationTime.equals(shard.creationTime),
-                              "Inconsistent creation times: %s vs. %s",
-                              creationTime,
-                              shard.creationTime);
-                        }
-                        return create(creationTime, revokes.build());
-                      }));
+          () -> {
+            SignedMarkRevocationList datastoreList = loadFromDatastore();
+            // Also load the list from Cloud SQL, compare the two lists, and log if different.
+            try {
+              loadAndCompareCloudSqlList(datastoreList);
+            } catch (Throwable t) {
+              logger.atSevere().withCause(t).log("Error comparing signed mark revocation lists.");
+            }
+            return datastoreList;
+          });
 
   /** Return a single logical instance that combines all Datastore shards. */
   public static SignedMarkRevocationList get() {
@@ -149,10 +163,39 @@ public class SignedMarkRevocationList extends ImmutableObject {
     return revokes.size();
   }
 
-  /** Save this list to Datastore in sharded form. Returns {@code this}. */
+  /** Save this list to Datastore in sharded form and to Cloud SQL. Returns {@code this}. */
   public SignedMarkRevocationList save() {
-    tm()
-        .transact(
+    saveToDatastore();
+    SignedMarkRevocationListDao.trySave(this);
+    return this;
+  }
+
+  /** Loads the shards from Datastore and combines them into one list. */
+  private static SignedMarkRevocationList loadFromDatastore() {
+    return tm().transactNewReadOnly(
+            () -> {
+              Iterable<SignedMarkRevocationList> shards =
+                  ofy().load().type(SignedMarkRevocationList.class).ancestor(getCrossTldKey());
+              DateTime creationTime =
+                  isEmpty(shards)
+                      ? START_OF_TIME
+                      : checkNotNull(Iterables.get(shards, 0).creationTime, "creationTime");
+              ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
+              for (SignedMarkRevocationList shard : shards) {
+                revokes.putAll(shard.revokes);
+                checkState(
+                    creationTime.equals(shard.creationTime),
+                    "Inconsistent creation times: %s vs. %s",
+                    creationTime,
+                    shard.creationTime);
+              }
+              return create(creationTime, revokes.build());
+            });
+  }
+
+  /** Save this list to Datastore in sharded form. */
+  private SignedMarkRevocationList saveToDatastore() {
+    tm().transact(
             () -> {
               ofy()
                   .deleteWithoutBackup()
@@ -165,8 +208,7 @@ public class SignedMarkRevocationList extends ImmutableObject {
               ofy()
                   .saveWithoutBackup()
                   .entities(
-                      CollectionUtils.partitionMap(revokes, SHARD_SIZE)
-                          .stream()
+                      CollectionUtils.partitionMap(revokes, SHARD_SIZE).stream()
                           .map(
                               shardRevokes -> {
                                 SignedMarkRevocationList shard = create(creationTime, shardRevokes);
@@ -180,12 +222,54 @@ public class SignedMarkRevocationList extends ImmutableObject {
     return this;
   }
 
+  private static void loadAndCompareCloudSqlList(SignedMarkRevocationList datastoreList) {
+    // Lifted with some modifications from ClaimsListShard
+    Optional<SignedMarkRevocationList> maybeCloudSqlList =
+        SignedMarkRevocationListDao.getLatestRevision();
+    if (maybeCloudSqlList.isPresent()) {
+      SignedMarkRevocationList cloudSqlList = maybeCloudSqlList.get();
+      MapDifference<String, DateTime> diff =
+          Maps.difference(datastoreList.revokes, cloudSqlList.revokes);
+      if (!diff.areEqual()) {
+        if (diff.entriesDiffering().size() > 10) {
+          logger.atWarning().log(
+              String.format(
+                  "Unequal SM revocation lists detected, Cloud SQL list with revision id %d has %d"
+                      + " different records than the current Datastore list.",
+                  cloudSqlList.revisionId, diff.entriesDiffering().size()));
+        } else {
+          StringBuilder diffMessage = new StringBuilder("Unequal SM revocation lists detected:\n");
+          diff.entriesDiffering()
+              .forEach(
+                  (label, valueDiff) ->
+                      diffMessage.append(
+                          String.format(
+                              "SMD %s has key %s in Datastore and key %s in Cloud SQL.\n",
+                              label, valueDiff.leftValue(), valueDiff.rightValue())));
+          logger.atWarning().log(diffMessage.toString());
+        }
+      }
+    } else {
+      logger.atWarning().log("Signed mark revocation list in Cloud SQL is empty.");
+    }
+  }
+
   /** As a safety mechanism, fail if someone tries to save this class directly. */
   @OnSave
   void disallowUnshardedSaves() {
     if (!isShard) {
       throw new UnshardedSaveException();
     }
+  }
+
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of(); // Dually-written every day
+  }
+
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // Dually-written every day
   }
 
   /** Exception when trying to directly save a {@link SignedMarkRevocationList} without sharding. */

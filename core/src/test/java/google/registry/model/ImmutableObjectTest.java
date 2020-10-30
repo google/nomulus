@@ -32,9 +32,11 @@ import com.googlecode.objectify.annotation.Id;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
+import java.lang.reflect.Field;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -319,5 +321,41 @@ public class ImmutableObjectTest {
     RootObject root = new RootObject();
     root.set = ImmutableSet.of(Key.create(persistResource(ValueObject.create(1, "foo"))));
     assertThat(root.toHydratedString()).contains("foo");
+  }
+
+  @Test
+  void testInsignificantFields() {
+    HasInsignificantFields instance1 =
+        HasInsignificantFields.create("significant", "insignificant");
+    HasInsignificantFields instance2 = HasInsignificantFields.create("significant", "other");
+    assertThat(instance1).isEqualTo(instance2);
+
+    // The hash code test test is implicit in "equals", it is added here just for clarity.
+    assertThat(instance1.hashCode()).isEqualTo(instance2.hashCode());
+    assertThat(instance1.toString()).matches(
+        "(?s)HasInsignificantFields (.*): \\{\\s*significant=significant\\s*\\}\\s*");
+  }
+
+  static class HasInsignificantFields extends ImmutableObject {
+    String significant;
+    String insignificant;
+
+    static HasInsignificantFields create(String significant, String insignificant) {
+      HasInsignificantFields instance = new HasInsignificantFields();
+      instance.significant = significant;
+      instance.insignificant = insignificant;
+      return instance;
+    }
+
+    @Override
+    protected Map<Field, Object> getSignificantFields() {
+      Map<Field, Object> result = new LinkedHashMap();
+      for (Map.Entry<Field, Object> entry : ModelUtils.getFieldValues(this).entrySet()) {
+        if (!entry.getKey().getName().equals("insignificant")) {
+          result.put(entry.getKey(), entry.getValue());
+        }
+      }
+      return result;
+    }
   }
 }

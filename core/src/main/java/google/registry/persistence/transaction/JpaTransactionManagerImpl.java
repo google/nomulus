@@ -15,6 +15,7 @@
 package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -25,6 +26,7 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig;
 import google.registry.persistence.JpaRetries;
@@ -239,6 +241,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public void insertWithoutBackup(Object entity) {
+    insert(entity);
+  }
+
+  @Override
+  public void insertAllWithoutBackup(ImmutableCollection<?> entities) {
+    insertAll(entities);
+  }
+
+  @Override
   public void put(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
@@ -251,6 +263,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgumentNotNull(entities, "entities must be specified");
     assertInTransaction();
     entities.forEach(this::put);
+  }
+
+  @Override
+  public void putWithoutBackup(Object entity) {
+    put(entity);
+  }
+
+  @Override
+  public void putAllWithoutBackup(ImmutableCollection<?> entities) {
+    putAll(entities);
   }
 
   @Override
@@ -267,6 +289,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgumentNotNull(entities, "entities must be specified");
     assertInTransaction();
     entities.forEach(this::update);
+  }
+
+  @Override
+  public void updateWithoutBackup(Object entity) {
+    update(entity);
+  }
+
+  @Override
+  public void updateAllWithoutBackup(ImmutableCollection<?> entities) {
+    updateAll(entities);
   }
 
   @Override
@@ -316,6 +348,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public <T> T load(T entity) {
+    checkArgumentNotNull(entity, "entity must be specified");
+    assertInTransaction();
+    return (T)
+        load(VKey.createSql(entity.getClass(), emf.getPersistenceUnitUtil().getIdentifier(entity)));
+  }
+
+  @Override
   public <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys) {
     checkArgumentNotNull(keys, "keys must be specified");
     assertInTransaction();
@@ -342,6 +382,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             .getResultList());
   }
 
+  @Override
+  public <T> ImmutableList<T> loadAll(Iterable<T> entities) {
+    return Streams.stream(entities).map(this::load).collect(toImmutableList());
+  }
+
   private int internalDelete(VKey<?> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
@@ -364,6 +409,37 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public void delete(Iterable<? extends VKey<?>> vKeys) {
     checkArgumentNotNull(vKeys, "vKeys must be specified");
     vKeys.forEach(this::internalDelete);
+  }
+
+  @Override
+  public void delete(Object entity) {
+    checkArgumentNotNull(entity, "entity must be specified");
+    assertInTransaction();
+    Object managedEntity = entity;
+    if (!getEntityManager().contains(entity)) {
+      managedEntity = getEntityManager().merge(entity);
+    }
+    getEntityManager().remove(managedEntity);
+  }
+
+  @Override
+  public void deleteWithoutBackup(VKey<?> key) {
+    delete(key);
+  }
+
+  @Override
+  public void deleteWithoutBackup(Iterable<? extends VKey<?>> keys) {
+    delete(keys);
+  }
+
+  @Override
+  public void deleteWithoutBackup(Object entity) {
+    delete(entity);
+  }
+
+  @Override
+  public void clearSessionCache() {
+    // This is an intended no-op method as there is no session cache in Postgresql.
   }
 
   @Override

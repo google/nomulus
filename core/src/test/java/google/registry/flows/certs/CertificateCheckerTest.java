@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.util;
+package google.registry.flows.certs;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.util.CertificateChecker.CertificateViolation.ALGORITHM_CONSTRAINED;
-import static google.registry.util.CertificateChecker.CertificateViolation.EXPIRED;
-import static google.registry.util.CertificateChecker.CertificateViolation.NOT_YET_VALID;
-import static google.registry.util.CertificateChecker.CertificateViolation.RSA_KEY_LENGTH_TOO_SHORT;
-import static google.registry.util.CertificateChecker.CertificateViolation.VALIDITY_LENGTH_TOO_LONG;
+import static google.registry.flows.certs.CertificateChecker.CertificateViolation.ALGORITHM_CONSTRAINED;
+import static google.registry.flows.certs.CertificateChecker.CertificateViolation.EXPIRED;
+import static google.registry.flows.certs.CertificateChecker.CertificateViolation.NOT_YET_VALID;
+import static google.registry.flows.certs.CertificateChecker.CertificateViolation.RSA_KEY_LENGTH_TOO_SHORT;
+import static google.registry.flows.certs.CertificateChecker.CertificateViolation.VALIDITY_LENGTH_TOO_LONG;
+import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
+import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.testing.FakeClock;
+import google.registry.util.SelfSignedCaCertificate;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -36,54 +39,6 @@ import org.junit.jupiter.api.Test;
 class CertificateCheckerTest {
 
   private static final String SSL_HOST = "www.example.tld";
-  private static final String GOOD_CERTIFICATE =
-      "-----BEGIN CERTIFICATE-----\n"
-          + "MIIDyzCCArOgAwIBAgIUJnhiVrxAxgwkLJzHPm1w/lBoNs4wDQYJKoZIhvcNAQEL\n"
-          + "BQAwdTELMAkGA1UEBhMCVVMxETAPBgNVBAgMCE5ldyBZb3JrMREwDwYDVQQHDAhO\n"
-          + "ZXcgWW9yazEPMA0GA1UECgwGR29vZ2xlMR0wGwYDVQQLDBRkb21haW4tcmVnaXN0\n"
-          + "cnktdGVzdDEQMA4GA1UEAwwHY2xpZW50MTAeFw0yMDEwMTIxNzU5NDFaFw0yMTA0\n"
-          + "MzAxNzU5NDFaMHUxCzAJBgNVBAYTAlVTMREwDwYDVQQIDAhOZXcgWW9yazERMA8G\n"
-          + "A1UEBwwITmV3IFlvcmsxDzANBgNVBAoMBkdvb2dsZTEdMBsGA1UECwwUZG9tYWlu\n"
-          + "LXJlZ2lzdHJ5LXRlc3QxEDAOBgNVBAMMB2NsaWVudDEwggEiMA0GCSqGSIb3DQEB\n"
-          + "AQUAA4IBDwAwggEKAoIBAQC0msirO7kXyGEC93stsNYGc02Z77Q2qfHFwaGYkUG8\n"
-          + "QvOF5SWN+jwTo5Td6Jj26A26a8MLCtK45TCBuMRNcUsHhajhT19ocphO20iY3zhi\n"
-          + "ycwV1id0iwME4kPd1m57BELRE9tUPOxF81/JQXdR1fwT5KRVHYRDWZhaZ5aBmlZY\n"
-          + "3t/H9Ly0RBYyApkMaGs3nlb94OOug6SouUfRt02S59ja3wsE2SVF/Eui647OXP7O\n"
-          + "QdYXofxuqLoNkE8EnAdl43/enGLiCIVd0G2lABibFF+gbxTtfgbg7YtfUZJdL+Mb\n"
-          + "RAcAtuLXEamNQ9H63JgVF16PlQVCDz2XyI3uCfPpDDiBAgMBAAGjUzBRMB0GA1Ud\n"
-          + "DgQWBBQ26bWk8qfEBjXs/xZ4m8JZyalnITAfBgNVHSMEGDAWgBQ26bWk8qfEBjXs\n"
-          + "/xZ4m8JZyalnITAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAZ\n"
-          + "VcsgslBKanKOieJ5ik2d9qzOMXKfBuWPRFWbkC3t9i5awhHqnGAaj6nICnnMZIyt\n"
-          + "rdx5lZW5aaQyf0EP/90JAA8Xmty4A6MXmEjQAMiCOpP3A7eeS6Xglgi8IOZl4/bg\n"
-          + "LonW62TUkilo5IiFt/QklFTeHIjXB+OvA8+2Quqyd+zp7v6KnhXjvaomim78DhwE\n"
-          + "0PIUnjmiRpGpHfTVioTdfhPHZ2Y93Y8K7juL93sQog9aBu5m9XRJCY6wGyWPE83i\n"
-          + "kmLfGzjcnaJ6kqCd9xQRFZ0JwHmGlkAQvFoeengbNUqSyjyVgsOoNkEsrWwe/JFO\n"
-          + "iqBvjEhJlvRoefvkdR98\n"
-          + "-----END CERTIFICATE-----\n";
-  private static final String BAD_CERTIFICATE =
-      "-----BEGIN CERTIFICATE-----\n"
-          + "MIIDvTCCAqWgAwIBAgIJANoEy6mYwalPMA0GCSqGSIb3DQEBCwUAMHUxCzAJBgNV\n"
-          + "BAYTAlVTMREwDwYDVQQIDAhOZXcgWW9yazERMA8GA1UEBwwITmV3IFlvcmsxDzAN\n"
-          + "BgNVBAoMBkdvb2dsZTEdMBsGA1UECwwUZG9tYWluLXJlZ2lzdHJ5LXRlc3QxEDAO\n"
-          + "BgNVBAMMB2NsaWVudDIwHhcNMTUwODI2MTkyODU3WhcNNDMwMTExMTkyODU3WjB1\n"
-          + "MQswCQYDVQQGEwJVUzERMA8GA1UECAwITmV3IFlvcmsxETAPBgNVBAcMCE5ldyBZ\n"
-          + "b3JrMQ8wDQYDVQQKDAZHb29nbGUxHTAbBgNVBAsMFGRvbWFpbi1yZWdpc3RyeS10\n"
-          + "ZXN0MRAwDgYDVQQDDAdjbGllbnQyMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB\n"
-          + "CgKCAQEAw2FtuDyoR+rUJHp6k7KwaoHGHPV1xnC8IpG9O0SZubOXrFrnBHggBsbu\n"
-          + "+DsknbHXjmoihSFFem0KQqJg5y34aDAHXQV3iqa7nDfb1x4oc5voVz9gqjdmGKNm\n"
-          + "WF4MTIPNMu8KY52M852mMCxODK+6MZYp7wCmVa63KdCm0bW/XsLgoA/+FVGwKLhf\n"
-          + "UqFzt10Cf+87zl4VHrSaJqcHBYM6yAO5lvkr5VC6g8rRQ+dJ+pBT2D99YpSF1aFc\n"
-          + "rWbBreIypixZAnXm/Xoogu6RnohS29VCJp2dXFAJmKXGwyKNQFXfEKxZBaBi8uKH\n"
-          + "XF459795eyF9xHgSckEgu7jZlxOk6wIDAQABo1AwTjAdBgNVHQ4EFgQUv26AsQyc\n"
-          + "kLOjkhqcFLOuueB33l4wHwYDVR0jBBgwFoAUv26AsQyckLOjkhqcFLOuueB33l4w\n"
-          + "DAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEANBuV+QDISSnGAEHKbR40\n"
-          + "zUYdOjdZ399zcFNqTSPHwmE0Qu8pbmXhofpBfjzrcv0tkVbhSLYnT22qhx7aDmhb\n"
-          + "bOS8CeVYCwl5eiDTkJly3pRZLzJpy+UT5z8SPxO3MrTqn+wuj0lBpWRTBCWYAUpr\n"
-          + "IFRmgVB3IwVb60UIuxhmuk8TVss2SzNrdhdt36eAIPJ0RWEb0KHYHi35Y6lt4f+t\n"
-          + "iVk+ZR0cCbHUs7Q1RqREXHd/ICuMRLY/MsadVQ9WDqVOridh198X/OIqdx/p9kvJ\n"
-          + "1R80jDcVGNhYVXLmHu4ho4xrOaliSYvUJSCmaaSEGVZ/xE5PI7S6A8RMdj0iXLSt\n"
-          + "Bg==\n"
-          + "-----END CERTIFICATE-----\n";
 
   private FakeClock fakeClock = new FakeClock();
   private CertificateChecker certificateChecker =
@@ -241,8 +196,8 @@ class CertificateCheckerTest {
   @Test
   void test_checkCertificate_validCertificateString() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
-    assertThat(certificateChecker.checkCertificate(GOOD_CERTIFICATE)).isEmpty();
-    assertThat(certificateChecker.checkCertificate(BAD_CERTIFICATE))
+    assertThat(certificateChecker.checkCertificate(SAMPLE_CERT3)).isEmpty();
+    assertThat(certificateChecker.checkCertificate(SAMPLE_CERT))
         .containsExactly(VALIDITY_LENGTH_TOO_LONG);
   }
 

@@ -227,12 +227,12 @@
     );
 
     create table "DelegationSignerData" (
-       domain_repo_id text not null,
-        key_tag int4 not null,
-        algorithm int4 not null,
+       algorithm int4 not null,
         digest bytea not null,
         digest_type int4 not null,
-        primary key (domain_repo_id, key_tag)
+        domain_repo_id text not null,
+        key_tag int4 not null,
+        primary key (algorithm, digest, digest_type, domain_repo_id, key_tag)
     );
 
     create table "Domain" (
@@ -289,6 +289,17 @@
         transfer_request_time timestamptz,
         transfer_status text,
         primary key (repo_id)
+    );
+
+    create table "DomainDsDataHistory" (
+       ds_data_history_revision_id int8 not null,
+        algorithm int4 not null,
+        digest bytea not null,
+        digest_type int4 not null,
+        domain_history_revision_id int8 not null,
+        domain_repo_id text,
+        key_tag int4 not null,
+        primary key (ds_data_history_revision_id)
     );
 
     create table "DomainHistory" (
@@ -615,6 +626,19 @@
         primary key (revision_id)
     );
 
+    create table "SignedMarkRevocationEntry" (
+       revision_id int8 not null,
+        revocation_time timestamptz not null,
+        smd_id text not null,
+        primary key (revision_id, smd_id)
+    );
+
+    create table "SignedMarkRevocationList" (
+       revision_id  bigserial not null,
+        creation_time timestamptz,
+        primary key (revision_id)
+    );
+
     create table "Spec11ThreatMatch" (
        id  bigserial not null,
         check_date date not null,
@@ -655,7 +679,7 @@
         registry_lock_or_unlock_cost_currency text,
         renew_billing_cost_transitions hstore not null,
         renew_grace_period_length interval not null,
-        reserved_list_names text[] not null,
+        reserved_list_names text[],
         restore_billing_cost_amount numeric(19, 2),
         restore_billing_cost_currency text,
         roid_suffix text,
@@ -739,6 +763,11 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        foreign key (domain_repo_id) 
        references "Domain";
 
+    alter table if exists "DomainDsDataHistory" 
+       add constraint FKo4ilgyyfnvppbpuivus565i0j 
+       foreign key (domain_repo_id, domain_history_revision_id) 
+       references "DomainHistory";
+
     alter table if exists "DomainHistoryHost" 
        add constraint FKa9woh3hu8gx5x0vly6bai327n 
        foreign key (domain_history_domain_repo_id, domain_history_history_revision_id) 
@@ -773,3 +802,8 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        add constraint FKgq03rk0bt1hb915dnyvd3vnfc 
        foreign key (revision_id) 
        references "ReservedList";
+
+    alter table if exists "SignedMarkRevocationEntry" 
+       add constraint FK5ivlhvs3121yx2li5tqh54u4 
+       foreign key (revision_id) 
+       references "SignedMarkRevocationList";
