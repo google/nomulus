@@ -180,6 +180,7 @@ public class CertificateChecker {
     return Days.daysBetween(start.withTimeAtStartOfDay(), end.withTimeAtStartOfDay()).getDays();
   }
 
+  /** Checks if the curve used for a public key is in the list of acceptable curves. */
   private static boolean checkCurveName(PublicKey key, ImmutableSet<String> ecCurves) {
     org.bouncycastle.jce.spec.ECParameterSpec params;
     if (key instanceof ECPublicKey) {
@@ -224,7 +225,7 @@ public class CertificateChecker {
             "Certificate validity period is too long; it must be less than or equal to %d days.",
             this.maxValidityLengthSchedule.lastEntry().getValue());
       case INVALID_ECDSA_CURVE:
-        return "Public Key of certificate uses an invalid ECDSA curve.";
+        return String.format("The ECDSA key must use onee of these algorithms: %s", ecCurves);
       default:
         throw new IllegalArgumentException(
             String.format(
