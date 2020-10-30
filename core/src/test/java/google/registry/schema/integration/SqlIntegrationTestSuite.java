@@ -29,6 +29,7 @@ import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.model.registry.RegistryTest;
 import google.registry.model.registry.label.ReservedListSqlDaoTest;
 import google.registry.model.reporting.Spec11ThreatMatchTest;
+import google.registry.model.server.KmsSecretRevisionSqlDaoTest;
 import google.registry.model.smd.SignedMarkRevocationListDaoTest;
 import google.registry.model.tmch.ClaimsListDaoTest;
 import google.registry.persistence.transaction.JpaEntityCoverageExtension;
@@ -85,6 +86,7 @@ import org.junit.runner.RunWith;
   DomainBaseSqlTest.class,
   DomainHistoryTest.class,
   HostHistoryTest.class,
+  KmsSecretRevisionSqlDaoTest.class,
   LockDaoTest.class,
   PollMessageTest.class,
   PremiumListDaoTest.class,

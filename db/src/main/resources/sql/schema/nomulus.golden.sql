@@ -591,6 +591,19 @@ CREATE TABLE public."HostHistory" (
 
 
 --
+-- Name: KmsSecret; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."KmsSecret" (
+    revision_id bigint NOT NULL,
+    creation_time timestamp with time zone NOT NULL,
+    encrypted_value text NOT NULL,
+    crypto_key_version_name text NOT NULL,
+    secret_name text NOT NULL
+);
+
+
+--
 -- Name: Lock; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1194,6 +1207,14 @@ ALTER TABLE ONLY public."Host"
 
 
 --
+-- Name: KmsSecret KmsSecret_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."KmsSecret"
+    ADD CONSTRAINT "KmsSecret_pkey" PRIMARY KEY (revision_id);
+
+
+--
 -- Name: Lock Lock_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1536,6 +1557,13 @@ CREATE INDEX idxkjt9yaq92876dstimd93hwckh ON public."Domain" USING btree (curren
 --
 
 CREATE INDEX idxknk8gmj7s47q56cwpa6rmpt5l ON public."HostHistory" USING btree (history_type);
+
+
+--
+-- Name: idxli9nil3s4t4p21i3xluvvilb7; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxli9nil3s4t4p21i3xluvvilb7 ON public."KmsSecret" USING btree (secret_name);
 
 
 --
