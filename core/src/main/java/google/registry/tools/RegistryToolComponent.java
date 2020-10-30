@@ -20,7 +20,6 @@ import dagger.Lazy;
 import google.registry.batch.BatchModule;
 import google.registry.beam.initsql.BeamJpaModule;
 import google.registry.bigquery.BigqueryModule;
-import google.registry.config.CertificateCheckerModule;
 import google.registry.config.CredentialModule.LocalCredentialJson;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
@@ -61,7 +60,6 @@ import javax.inject.Singleton;
       BatchModule.class,
       BeamJpaModule.class,
       BigqueryModule.class,
-      CertificateCheckerModule.class,
       ConfigModule.class,
       CloudDnsWriterModule.class,
       DatastoreAdminModule.class,
