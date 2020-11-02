@@ -73,7 +73,7 @@ public class CertificateChecker {
           ImmutableSortedMap<DateTime, Integer> maxValidityLengthSchedule,
       @Config("expirationWarningDays") int daysToExpiration,
       @Config("minimumRsaKeyLength") int minimumRsaKeyLength,
-      ImmutableSet<String> ecCurves,
+      @Config("validEcCurves") ImmutableSet<String> ecCurves,
       Clock clock) {
     checkArgument(
         maxValidityLengthSchedule.containsKey(START_OF_TIME),
