@@ -36,13 +36,11 @@ import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
-import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.DomainLabelMetrics.PremiumListCheckOutcome;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumList.PremiumListRevision;
-import google.registry.schema.tld.PremiumListDao;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -55,8 +53,6 @@ public final class PremiumListUtils {
 
   /** The number of premium list entry entities that are created and deleted per batch. */
   private static final int TRANSACTION_BATCH_SIZE = 200;
-
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** Value type class used by {@link #checkStatus} to return the results of a premiumness check. */
   @AutoValue
@@ -102,18 +98,6 @@ public final class PremiumListUtils {
         checkResults.checkOutcome(),
         DateTime.now(UTC).getMillis() - startTime.getMillis());
 
-    // Also load the value from Cloud SQL, compare the two results, and log if different.
-    try {
-      Optional<Money> priceFromSql = PremiumListDao.getPremiumPrice(label, registry);
-      if (!priceFromSql.equals(checkResults.premiumPrice())) {
-        logger.atWarning().log(
-            "Unequal prices for domain %s.%s from Datastore (%s) and Cloud SQL (%s).",
-            label, registry.getTldStr(), checkResults.premiumPrice(), priceFromSql);
-      }
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log(
-          "Error loading price of domain %s.%s from Cloud SQL.", label, registry.getTldStr());
-    }
     return checkResults.premiumPrice();
   }
 
