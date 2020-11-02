@@ -461,6 +461,6 @@ sslCertificateValidation:
   # The minimum number of bits an RSA key must contain.
   minimumRsaKeyLength: 2048
   # The ECDSA curves that are allowed for public keys.
-  ecCurves:
+  allowedEcdsaCurves:
     - secp256r1
     - secp384r1
