@@ -1379,9 +1379,9 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("validEcCurves")
-    public static ImmutableSet<String> provideEcCurves(RegistryConfigSettings config) {
-      return ImmutableSet.copyOf(config.sslCertificateValidation.ecCurves);
+    @Config("allowedEcdsaCurves")
+    public static ImmutableSet<String> provideAllowedEcdsaCurves(RegistryConfigSettings config) {
+      return ImmutableSet.copyOf(config.sslCertificateValidation.allowedEcdsaCurves);
     }
   }
 

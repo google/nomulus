@@ -70,18 +70,18 @@ public class CertificateChecker {
   @Inject
   public CertificateChecker(
       @Config("maxValidityDaysSchedule")
-          ImmutableSortedMap<DateTime, Integer> maxValidityLengthSchedule,
-      @Config("expirationWarningDays") int daysToExpiration,
+          ImmutableSortedMap<DateTime, Integer> maxValidityDaysSchedule,
+      @Config("expirationWarningDays") int expirationWarningDays,
       @Config("minimumRsaKeyLength") int minimumRsaKeyLength,
-      @Config("validEcCurves") ImmutableSet<String> ecCurves,
+      @Config("allowedEcdsaCurves") ImmutableSet<String> allowedEcdsaCurves,
       Clock clock) {
     checkArgument(
-        maxValidityLengthSchedule.containsKey(START_OF_TIME),
+        maxValidityDaysSchedule.containsKey(START_OF_TIME),
         "Max validity length schedule must contain an entry for START_OF_TIME");
-    this.maxValidityLengthSchedule = maxValidityLengthSchedule;
-    this.daysToExpiration = daysToExpiration;
+    this.maxValidityLengthSchedule = maxValidityDaysSchedule;
+    this.daysToExpiration = expirationWarningDays;
     this.minimumRsaKeyLength = minimumRsaKeyLength;
-    this.ecCurves = ecCurves;
+    this.ecCurves = allowedEcdsaCurves;
     this.clock = clock;
   }
 
@@ -181,7 +181,7 @@ public class CertificateChecker {
   }
 
   /** Checks if the curve used for a public key is in the list of acceptable curves. */
-  private static boolean checkCurveName(PublicKey key, ImmutableSet<String> ecCurves) {
+  private static boolean checkCurveName(PublicKey key, ImmutableSet<String> allowedEcdsaCurves) {
     org.bouncycastle.jce.spec.ECParameterSpec params;
     if (key instanceof ECPublicKey) {
       ECPublicKey ecKey = (ECPublicKey) key;
@@ -193,16 +193,15 @@ public class CertificateChecker {
     } else {
       throw new IllegalArgumentException("Unrecognized instance of PublicKey.");
     }
-    for (String curve : ecCurves) {
-      ECNamedCurveParameterSpec nameParams = ECNamedCurveTable.getParameterSpec(curve);
-      if (nameParams.getN().equals(params.getN())
-          && nameParams.getH().equals(params.getH())
-          && nameParams.getCurve().equals(params.getCurve())
-          && nameParams.getG().equals(params.getG())) {
-        return true;
-      }
-    }
-    return false;
+    return allowedEcdsaCurves.stream()
+        .anyMatch(
+            curve -> {
+              ECNamedCurveParameterSpec cParams = ECNamedCurveTable.getParameterSpec(curve);
+              return cParams.getN().equals(params.getN())
+                  && cParams.getH().equals(params.getH())
+                  && cParams.getCurve().equals(params.getCurve())
+                  && cParams.getG().equals(params.getG());
+            });
   }
 
   private String getViolationDisplayMessage(CertificateViolation certificateViolation) {
@@ -225,7 +224,7 @@ public class CertificateChecker {
             "Certificate validity period is too long; it must be less than or equal to %d days.",
             this.maxValidityLengthSchedule.lastEntry().getValue());
       case INVALID_ECDSA_CURVE:
-        return String.format("The ECDSA key must use onee of these algorithms: %s", ecCurves);
+        return String.format("The ECDSA key must use one of these algorithms: %s", ecCurves);
       default:
         throw new IllegalArgumentException(
             String.format(

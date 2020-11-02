@@ -227,6 +227,6 @@ public class RegistryConfigSettings {
     public Map<String, Integer> maxValidityDaysSchedule;
     public int expirationWarningDays;
     public int minimumRsaKeyLength;
-    public Set<String> ecCurves;
+    public Set<String> allowedEcdsaCurves;
   }
 }
