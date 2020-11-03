@@ -38,9 +38,9 @@ import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link ResaveEntitiesWithUniqueIdCommand}. */
-class ResaveEntitiesWithUniqueIdCommandTest
-    extends CommandTestCase<ResaveEntitiesWithUniqueIdCommand> {
+/** Unit tests for {@link DedupeOneTimeBillingEventIdsCommand}. */
+class DedupeOneTimeBillingEventIdsCommandTest
+    extends CommandTestCase<DedupeOneTimeBillingEventIdsCommand> {
 
   DomainBase domain;
   HistoryEntry historyEntry;
@@ -48,7 +48,7 @@ class ResaveEntitiesWithUniqueIdCommandTest
   BillingEvent.OneTime billingEventToResave;
 
   @BeforeEach
-  void setUp() {
+  void beforeEach() {
     createTld("foobar");
     domain = persistActiveDomain("foo.foobar");
     historyEntry = persistHistoryEntry(domain);
