@@ -14,29 +14,38 @@
 
 package google.registry.model.server;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Longs;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Unindex;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
+import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import javax.persistence.Column;
 
 /** A secret number used for generating tokens (such as XSRF tokens). */
 @Entity
+@javax.persistence.Entity
 @Unindex
 @NotBackedUp(reason = Reason.AUTO_GENERATED)
 // TODO(b/27427316): Replace this with an entry in KMSKeyring
-public class ServerSecret extends CrossTldSingleton {
+public class ServerSecret extends CrossTldSingleton implements DatastoreEntity, SqlEntity {
 
   /**
    * Cache of the singleton ServerSecret instance that creates it if not present.
@@ -45,28 +54,39 @@ public class ServerSecret extends CrossTldSingleton {
    * Supplier that can be reset for testing purposes.
    */
   private static final LoadingCache<Class<ServerSecret>, ServerSecret> CACHE =
-      CacheBuilder.newBuilder().build(
-          new CacheLoader<Class<ServerSecret>, ServerSecret>() {
-            @Override
-            public ServerSecret load(Class<ServerSecret> unused) {
-              // Fast path - non-transactional load to hit memcache.
-              ServerSecret secret = ofy().load().entity(new ServerSecret()).now();
-              if (secret != null) {
-                return secret;
-              }
-              // Slow path - transactionally create a new ServerSecret (once per app setup).
-              return tm().transact(() -> {
-                // Check again for an existing secret within the transaction to avoid races.
-                ServerSecret secret1 = ofy().load().entity(new ServerSecret()).now();
-                if (secret1 == null) {
-                  UUID uuid = UUID.randomUUID();
-                  secret1 = create(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
-                  ofy().saveWithoutBackup().entity(secret1).now();
+      CacheBuilder.newBuilder()
+          .build(
+              new CacheLoader<Class<ServerSecret>, ServerSecret>() {
+                @Override
+                public ServerSecret load(Class<ServerSecret> unused) {
+                  return retrieveAndSaveSecret();
                 }
-                return secret1;
               });
-            }
-          });
+
+  private static ServerSecret retrieveAndSaveSecret() {
+    VKey<ServerSecret> key =
+        VKey.create(
+            ServerSecret.class,
+            SINGLETON_ID,
+            Key.create(getCrossTldKey(), ServerSecret.class, SINGLETON_ID));
+    return tm().transact(
+            () -> {
+              ServerSecret secret =
+                  tm().maybeLoad(key)
+                      .orElseGet(
+                          () -> {
+                            // transactionally create a new ServerSecret (once per app setup).
+                            UUID uuid = UUID.randomUUID();
+                            return create(
+                                uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
+                          });
+              // During a dual-write period, write it to both Datastore and SQL
+              // even if we didn't have to retrieve it from the DB
+              ofyTm().transact(() -> ofyTm().putWithoutBackup(secret));
+              jpaTm().transact(() -> jpaTm().putWithoutBackup(secret));
+              return secret;
+            });
+  }
 
   /** Returns the global ServerSecret instance, creating it if one isn't already in Datastore. */
   public static ServerSecret get() {
@@ -78,9 +98,11 @@ public class ServerSecret extends CrossTldSingleton {
   }
 
   /** Most significant 8 bytes of the UUID value. */
+  @Column(nullable = false)
   long mostSignificant;
 
   /** Least significant 8 bytes of the UUID value. */
+  @Column(nullable = false)
   long leastSignificant;
 
   @VisibleForTesting
@@ -102,6 +124,16 @@ public class ServerSecret extends CrossTldSingleton {
         .putLong(mostSignificant)
         .putLong(leastSignificant)
         .array();
+  }
+
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of(); // dually-written
+  }
+
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // dually-written
   }
 
   @VisibleForTesting

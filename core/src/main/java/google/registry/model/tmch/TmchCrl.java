@@ -15,31 +15,47 @@
 package google.registry.model.tmch;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.collect.ImmutableList;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
-import javax.annotation.Nullable;
+import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
+import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
+import javax.persistence.Column;
 import org.joda.time.DateTime;
 
 /** Datastore singleton for ICANN's TMCH CA certificate revocation list (CRL). */
 @Entity
+@javax.persistence.Entity
 @Immutable
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
-public final class TmchCrl extends CrossTldSingleton {
+public final class TmchCrl extends CrossTldSingleton implements DatastoreEntity, SqlEntity {
 
+  @Column(nullable = false)
   String crl;
+
+  @Column(nullable = false)
   DateTime updated;
+
+  @Column(nullable = false)
   String url;
 
   /** Returns the singleton instance of this entity, without memoization. */
-  @Nullable
-  public static TmchCrl get() {
-    return ofy().load().entity(new TmchCrl()).now();
+  public static Optional<TmchCrl> get() {
+    VKey<TmchCrl> key =
+        VKey.create(
+            TmchCrl.class, SINGLETON_ID, Key.create(getCrossTldKey(), TmchCrl.class, SINGLETON_ID));
+    return tm().transact(() -> tm().maybeLoad(key));
   }
 
   /**
@@ -47,16 +63,18 @@ public final class TmchCrl extends CrossTldSingleton {
    *
    * <p>Please do not call this function unless your CRL is properly formatted, signed by the root,
    * and actually newer than the one currently in Datastore.
+   *
+   * <p>During the dual-write period, we write to both Datastore and SQL
    */
   public static void set(final String crl, final String url) {
-    tm()
-        .transactNew(
+    tm().transact(
             () -> {
               TmchCrl tmchCrl = new TmchCrl();
               tmchCrl.updated = tm().getTransactionTime();
               tmchCrl.crl = checkNotNull(crl, "crl");
               tmchCrl.url = checkNotNull(url, "url");
-              ofy().saveWithoutBackup().entity(tmchCrl);
+              ofyTm().transactNew(() -> ofyTm().putWithoutBackup(tmchCrl));
+              jpaTm().transactNew(() -> jpaTm().putWithoutBackup(tmchCrl));
             });
   }
 
@@ -73,5 +91,15 @@ public final class TmchCrl extends CrossTldSingleton {
   /** Time we last updated the Datastore with a newer ICANN CRL. */
   public final DateTime getUpdated() {
     return updated;
+  }
+
+  @Override
+  public ImmutableList<SqlEntity> toSqlEntities() {
+    return ImmutableList.of(); // dually-written
+  }
+
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // dually-written
   }
 }

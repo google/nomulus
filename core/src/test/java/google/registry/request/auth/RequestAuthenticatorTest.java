@@ -43,12 +43,13 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link RequestAuthenticator}. */
 class RequestAuthenticatorTest {
 
-  @RegisterExtension final AppEngineExtension appEngine = AppEngineExtension.builder().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  private static final AuthSettings AUTH_NONE = AuthSettings.create(
-      ImmutableList.of(AuthMethod.INTERNAL),
-      AuthLevel.NONE,
-      UserPolicy.IGNORED);
+  private static final AuthSettings AUTH_NONE =
+      AuthSettings.create(
+          ImmutableList.of(AuthMethod.INTERNAL), AuthLevel.NONE, UserPolicy.IGNORED);
 
   private static final AuthSettings AUTH_INTERNAL_OR_ADMIN = AuthSettings.create(
       ImmutableList.of(AuthMethod.INTERNAL),

@@ -626,6 +626,13 @@
         primary key (revision_id)
     );
 
+    create table "ServerSecret" (
+       id int8 not null,
+        least_significant int8 not null,
+        most_significant int8 not null,
+        primary key (id)
+    );
+
     create table "SignedMarkRevocationEntry" (
        revision_id int8 not null,
         revocation_time timestamptz not null,
@@ -690,6 +697,14 @@
         tld_unicode text not null,
         transfer_grace_period_length interval not null,
         primary key (tld_name)
+    );
+
+    create table "TmchCrl" (
+       id int8 not null,
+        crl text not null,
+        updated timestamptz not null,
+        url text not null,
+        primary key (id)
     );
 
     create table "Transaction" (

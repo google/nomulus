@@ -15,22 +15,42 @@
 package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.CrossTldSingleton.SINGLETON_ID;
+import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
+import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import google.registry.testing.AppEngineExtension;
+import com.googlecode.objectify.Key;
+import google.registry.model.EntityTestCase;
+import google.registry.persistence.VKey;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link TmchCrl}. */
-public class TmchCrlTest {
+public class TmchCrlTest extends EntityTestCase {
 
-  @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  TmchCrlTest() {
+    super(JpaEntityCoverageCheck.ENABLED);
+  }
 
   @Test
   void testSuccess() {
-    assertThat(TmchCrl.get()).isNull();
-    TmchCrl.set("lolcat", "http://lol.cat");
-    assertThat(TmchCrl.get().getCrl()).isEqualTo("lolcat");
+    assertThat(TmchCrl.get()).isEqualTo(Optional.empty());
+    TmchCrl.set("lolcat", "https://lol.cat");
+    assertThat(TmchCrl.get().get().getCrl()).isEqualTo("lolcat");
+  }
+
+  @Test
+  void testDualWrite() {
+    TmchCrl expected = new TmchCrl();
+    expected.crl = "lolcat";
+    expected.url = "https://lol.cat";
+    expected.updated = fakeClock.nowUtc();
+    TmchCrl.set("lolcat", "https://lol.cat");
+    assertThat(ofy().load().entity(new TmchCrl()).now()).isEqualTo(expected);
+    VKey<TmchCrl> key =
+        VKey.create(
+            TmchCrl.class, SINGLETON_ID, Key.create(getCrossTldKey(), TmchCrl.class, SINGLETON_ID));
+    assertThat(jpaTm().transact(() -> jpaTm().load(key))).isEqualTo(expected);
   }
 }
