@@ -14,8 +14,11 @@
 
 package google.registry.model.domain.secdns;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.ofy.ObjectifyService;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -24,7 +27,7 @@ import javax.persistence.Id;
 
 /** Entity class to represent a historic {@link DelegationSignerData}. */
 @Entity
-public class DomainDsDataHistory extends DomainDsDataBase {
+public class DomainDsDataHistory extends DomainDsDataBase implements SqlEntity {
 
   @Id Long dsDataHistoryRevisionId;
 
@@ -80,5 +83,10 @@ public class DomainDsDataHistory extends DomainDsDataBase {
   @Column(nullable = false)
   public byte[] getDigest() {
     return super.getDigest();
+  }
+
+  @Override
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // not persisted in Datastore
   }
 }
