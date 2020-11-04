@@ -41,10 +41,10 @@ import org.joda.time.DateTime;
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 public final class TmchCrl extends CrossTldSingleton implements DatastoreEntity, SqlEntity {
 
-  @Column(nullable = false)
+  @Column(nullable = false, name = "certificateRevocations")
   String crl;
 
-  @Column(nullable = false)
+  @Column(nullable = false, name = "updateTimestamp")
   DateTime updated;
 
   @Column(nullable = false)

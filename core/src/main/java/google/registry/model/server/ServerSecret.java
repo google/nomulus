@@ -27,6 +27,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Longs;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Ignore;
+import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Unindex;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
@@ -38,6 +40,8 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import javax.persistence.Column;
+import javax.persistence.PostLoad;
+import javax.persistence.Transient;
 
 /** A secret number used for generating tokens (such as XSRF tokens). */
 @Entity
@@ -73,13 +77,8 @@ public class ServerSecret extends CrossTldSingleton implements DatastoreEntity, 
             () -> {
               ServerSecret secret =
                   tm().maybeLoad(key)
-                      .orElseGet(
-                          () -> {
-                            // transactionally create a new ServerSecret (once per app setup).
-                            UUID uuid = UUID.randomUUID();
-                            return create(
-                                uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
-                          });
+                      // transactionally create a new ServerSecret (once per app setup).
+                      .orElseGet(() -> create(UUID.randomUUID()));
               // During a dual-write period, write it to both Datastore and SQL
               // even if we didn't have to retrieve it from the DB
               ofyTm().transact(() -> ofyTm().putWithoutBackup(secret));
@@ -97,25 +96,37 @@ public class ServerSecret extends CrossTldSingleton implements DatastoreEntity, 
     }
   }
 
-  /** Most significant 8 bytes of the UUID value. */
-  @Column(nullable = false)
-  long mostSignificant;
+  /** Most significant 8 bytes of the UUID value (stored separately for legacy purposes). */
+  @Transient long mostSignificant;
 
-  /** Least significant 8 bytes of the UUID value. */
-  @Column(nullable = false)
-  long leastSignificant;
+  /** Least significant 8 bytes of the UUID value (stored separately for legacy purposes). */
+  @Transient long leastSignificant;
 
-  @VisibleForTesting
-  static ServerSecret create(long mostSignificant, long leastSignificant) {
-    ServerSecret secret = new ServerSecret();
-    secret.mostSignificant = mostSignificant;
-    secret.leastSignificant = leastSignificant;
-    return secret;
+  /** The UUID value itself. */
+  @Column(nullable = false, columnDefinition = "uuid")
+  @Ignore
+  UUID uuid;
+
+  /** Convert the Datastore representation to SQL. */
+  @OnLoad
+  void onLoad() {
+    uuid = new UUID(mostSignificant, leastSignificant);
   }
 
-  /** Returns the value of this ServerSecret as a UUID. */
-  public UUID asUuid() {
-    return new UUID(mostSignificant, leastSignificant);
+  /** Convert the SQL representation to Datastore. */
+  @PostLoad
+  void postLoad() {
+    mostSignificant = uuid.getMostSignificantBits();
+    leastSignificant = uuid.getLeastSignificantBits();
+  }
+
+  @VisibleForTesting
+  static ServerSecret create(UUID uuid) {
+    ServerSecret secret = new ServerSecret();
+    secret.mostSignificant = uuid.getMostSignificantBits();
+    secret.leastSignificant = uuid.getLeastSignificantBits();
+    secret.uuid = uuid;
+    return secret;
   }
 
   /** Returns the value of this ServerSecret as a byte array. */

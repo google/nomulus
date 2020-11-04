@@ -628,8 +628,7 @@
 
     create table "ServerSecret" (
        id int8 not null,
-        least_significant int8 not null,
-        most_significant int8 not null,
+        uuid uuid not null,
         primary key (id)
     );
 
@@ -701,8 +700,8 @@
 
     create table "TmchCrl" (
        id int8 not null,
-        crl text not null,
-        updated timestamptz not null,
+        certificate_revocations text not null,
+        update_timestamp timestamptz not null,
         url text not null,
         primary key (id)
     );

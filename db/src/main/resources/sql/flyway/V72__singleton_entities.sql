@@ -14,15 +14,14 @@
 
 CREATE TABLE "ServerSecret" (
    id int8 NOT NULL,
-    least_significant int8 NOT NULL,
-    most_significant int8 NOT NULL,
+   uuid uuid NOT NULL,
     PRIMARY KEY (id)
 );
 
 CREATE TABLE "TmchCrl" (
    id int8 NOT NULL,
-    crl text NOT NULL,
-    updated timestamptz NOT NULL,
+    certificate_revocations text NOT NULL,
+    update_timestamp timestamptz NOT NULL,
     url text NOT NULL,
     PRIMARY KEY (id)
 );

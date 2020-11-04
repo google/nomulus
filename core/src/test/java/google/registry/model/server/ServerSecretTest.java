@@ -50,7 +50,7 @@ public class ServerSecretTest extends EntityTestCase {
 
   @Test
   void testGet_existingSecret_returned() {
-    ServerSecret secret = ServerSecret.create(123, 456);
+    ServerSecret secret = ServerSecret.create(new UUID(123, 456));
     ofy().saveWithoutBackup().entity(secret).now();
     assertThat(ServerSecret.get()).isEqualTo(secret);
     assertThat(ofy().load().entity(new ServerSecret()).now()).isEqualTo(secret);
@@ -68,15 +68,8 @@ public class ServerSecretTest extends EntityTestCase {
   }
 
   @Test
-  void testAsUuid() {
-    UUID uuid = ServerSecret.create(123, 456).asUuid();
-    assertThat(uuid.getMostSignificantBits()).isEqualTo(123);
-    assertThat(uuid.getLeastSignificantBits()).isEqualTo(456);
-  }
-
-  @Test
   void testAsBytes() {
-    byte[] bytes = ServerSecret.create(123, 0x456).asBytes();
+    byte[] bytes = ServerSecret.create(new UUID(123, 0x456)).asBytes();
     assertThat(bytes).isEqualTo(new byte[] {0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 0, 0x4, 0x56});
   }
 
