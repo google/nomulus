@@ -46,7 +46,7 @@ public class CertificateChecker {
   private final int daysToExpiration;
   private final int minimumRsaKeyLength;
   private final Clock clock;
-  private final ImmutableSet<String> ecCurves;
+  private final ImmutableSet<String> allowedEcdsaCurves;
 
   /**
    * Constructs a CertificateChecker instance with the specified configuration parameters.
@@ -81,7 +81,7 @@ public class CertificateChecker {
     this.maxValidityLengthSchedule = maxValidityDaysSchedule;
     this.daysToExpiration = expirationWarningDays;
     this.minimumRsaKeyLength = minimumRsaKeyLength;
-    this.ecCurves = allowedEcdsaCurves;
+    this.allowedEcdsaCurves = allowedEcdsaCurves;
     this.clock = clock;
   }
 
@@ -130,7 +130,7 @@ public class CertificateChecker {
         violations.add(CertificateViolation.RSA_KEY_LENGTH_TOO_SHORT);
       }
     } else if (key.getAlgorithm().equals("EC")) {
-      if (!checkCurveName(key, ecCurves)) {
+      if (!checkCurveName(key, allowedEcdsaCurves)) {
         violations.add(CertificateViolation.INVALID_ECDSA_CURVE);
       }
     } else {
@@ -183,6 +183,9 @@ public class CertificateChecker {
   /** Checks if the curve used for a public key is in the list of acceptable curves. */
   private static boolean checkCurveName(PublicKey key, ImmutableSet<String> allowedEcdsaCurves) {
     org.bouncycastle.jce.spec.ECParameterSpec params;
+    // These 2 different instances of PublicKey need to be handled separately since their OIDs are
+    // encoded differently. More details on this can be found at
+    // https://stackoverflow.com/questions/49895713/how-to-find-the-matching-curve-name-from-an-ecpublickey.
     if (key instanceof ECPublicKey) {
       ECPublicKey ecKey = (ECPublicKey) key;
       params = EC5Util.convertSpec(ecKey.getParams(), false);
@@ -224,7 +227,8 @@ public class CertificateChecker {
             "Certificate validity period is too long; it must be less than or equal to %d days.",
             this.maxValidityLengthSchedule.lastEntry().getValue());
       case INVALID_ECDSA_CURVE:
-        return String.format("The ECDSA key must use one of these algorithms: %s", ecCurves);
+        return String.format(
+            "The ECDSA key must use one of these algorithms: %s", allowedEcdsaCurves);
       default:
         throw new IllegalArgumentException(
             String.format(

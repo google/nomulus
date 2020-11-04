@@ -255,7 +255,7 @@ class CertificateCheckerTest {
   }
 
   @Test
-  void test_checkEcCurve() throws Exception {
+  void test_checkCurveName_invalidCurve_returnsViolation() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
     // Invalid curve
     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
@@ -272,14 +272,19 @@ class CertificateCheckerTest {
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate))
         .containsExactly(INVALID_ECDSA_CURVE);
+  }
 
-    // valid curve
-    keyGen = KeyPairGenerator.getInstance("EC");
-    apParam = AlgorithmParameters.getInstance("EC");
+  @Test
+  void test_checkCurveName_validCurves_returnsNoViolations() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+
+    // valid P-256 curve
+    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+    AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
     apParam.init(new ECGenParameterSpec("secp256r1"));
-    spec = apParam.getParameterSpec(ECParameterSpec.class);
+    ECParameterSpec spec = apParam.getParameterSpec(ECParameterSpec.class);
     keyGen.initialize(spec, new SecureRandom());
-    certificate =
+    X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 keyGen.generateKeyPair(),
                 SSL_HOST,
@@ -288,6 +293,7 @@ class CertificateCheckerTest {
             .cert();
     assertThat(certificateChecker.checkCertificate(certificate)).isEmpty();
 
+    // valid P-384 curve
     keyGen = KeyPairGenerator.getInstance("EC");
     apParam = AlgorithmParameters.getInstance("EC");
     apParam.init(new ECGenParameterSpec("secp384r1"));
