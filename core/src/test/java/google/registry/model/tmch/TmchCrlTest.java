@@ -15,14 +15,10 @@
 package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.common.CrossTldSingleton.SINGLETON_ID;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
-import google.registry.persistence.VKey;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -48,9 +44,19 @@ public class TmchCrlTest extends EntityTestCase {
     expected.updated = fakeClock.nowUtc();
     TmchCrl.set("lolcat", "https://lol.cat");
     assertThat(ofy().load().entity(new TmchCrl()).now()).isEqualTo(expected);
-    VKey<TmchCrl> key =
-        VKey.create(
-            TmchCrl.class, SINGLETON_ID, Key.create(getCrossTldKey(), TmchCrl.class, SINGLETON_ID));
-    assertThat(jpaTm().transact(() -> jpaTm().load(key))).isEqualTo(expected);
+    assertThat(loadFromSql()).isEqualTo(expected);
+  }
+
+  private static TmchCrl loadFromSql() {
+    return jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .getEntityManager()
+                    .createQuery("FROM TmchCrl", TmchCrl.class)
+                    .setMaxResults(1)
+                    .getResultStream()
+                    .findFirst()
+                    .get());
   }
 }

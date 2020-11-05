@@ -40,6 +40,7 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import javax.persistence.Column;
+import javax.persistence.Id;
 import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 
@@ -75,10 +76,10 @@ public class ServerSecret extends CrossTldSingleton implements DatastoreEntity, 
             Key.create(getCrossTldKey(), ServerSecret.class, SINGLETON_ID));
     return tm().transact(
             () -> {
+              // transactionally create a new ServerSecret (once per app setup) if necessary.
+              // return the ofy() result during Datastore-primary phase
               ServerSecret secret =
-                  tm().maybeLoad(key)
-                      // transactionally create a new ServerSecret (once per app setup).
-                      .orElseGet(() -> create(UUID.randomUUID()));
+                  ofyTm().maybeLoad(key).orElseGet(() -> create(UUID.randomUUID()));
               // During a dual-write period, write it to both Datastore and SQL
               // even if we didn't have to retrieve it from the DB
               ofyTm().transact(() -> ofyTm().putWithoutBackup(secret));
@@ -103,7 +104,8 @@ public class ServerSecret extends CrossTldSingleton implements DatastoreEntity, 
   @Transient long leastSignificant;
 
   /** The UUID value itself. */
-  @Column(nullable = false, columnDefinition = "uuid")
+  @Id
+  @Column(columnDefinition = "uuid")
   @Ignore
   UUID uuid;
 

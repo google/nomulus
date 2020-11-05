@@ -45,7 +45,7 @@ public class ServerSecretTest extends EntityTestCase {
     ServerSecret secret = ServerSecret.get();
     assertThat(secret).isNotNull();
     assertThat(ofy().load().entity(new ServerSecret()).now()).isEqualTo(secret);
-    assertThat(jpaTm().transact(() -> jpaTm().load(createKey()))).isEqualTo(secret);
+    assertThat(loadFromSql()).isEqualTo(secret);
   }
 
   @Test
@@ -54,7 +54,7 @@ public class ServerSecretTest extends EntityTestCase {
     ofy().saveWithoutBackup().entity(secret).now();
     assertThat(ServerSecret.get()).isEqualTo(secret);
     assertThat(ofy().load().entity(new ServerSecret()).now()).isEqualTo(secret);
-    assertThat(jpaTm().transact(() -> jpaTm().load(createKey()))).isEqualTo(secret);
+    assertThat(loadFromSql()).isEqualTo(secret);
   }
 
   @Test
@@ -71,6 +71,19 @@ public class ServerSecretTest extends EntityTestCase {
   void testAsBytes() {
     byte[] bytes = ServerSecret.create(new UUID(123, 0x456)).asBytes();
     assertThat(bytes).isEqualTo(new byte[] {0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 0, 0x4, 0x56});
+  }
+
+  private static ServerSecret loadFromSql() {
+    return jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .getEntityManager()
+                    .createQuery("FROM ServerSecret", ServerSecret.class)
+                    .setMaxResults(1)
+                    .getResultStream()
+                    .findFirst()
+                    .get());
   }
 
   private static VKey<ServerSecret> createKey() {

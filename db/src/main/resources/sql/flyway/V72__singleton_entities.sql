@@ -13,15 +13,13 @@
 -- limitations under the License.
 
 CREATE TABLE "ServerSecret" (
-   id int8 NOT NULL,
    uuid uuid NOT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (uuid)
 );
 
 CREATE TABLE "TmchCrl" (
-   id int8 NOT NULL,
     certificate_revocations text NOT NULL,
     update_timestamp timestamptz NOT NULL,
     url text NOT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (certificate_revocations, update_timestamp, url)
 );

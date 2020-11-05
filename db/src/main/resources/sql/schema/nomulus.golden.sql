@@ -904,7 +904,6 @@ ALTER SEQUENCE public."SafeBrowsingThreat_id_seq" OWNED BY public."Spec11ThreatM
 --
 
 CREATE TABLE public."ServerSecret" (
-    id bigint NOT NULL,
     uuid uuid NOT NULL
 );
 
@@ -1000,7 +999,6 @@ CREATE TABLE public."Tld" (
 --
 
 CREATE TABLE public."TmchCrl" (
-    id bigint NOT NULL,
     certificate_revocations text NOT NULL,
     update_timestamp timestamp with time zone NOT NULL,
     url text NOT NULL
@@ -1329,7 +1327,7 @@ ALTER TABLE ONLY public."Spec11ThreatMatch"
 --
 
 ALTER TABLE ONLY public."ServerSecret"
-    ADD CONSTRAINT "ServerSecret_pkey" PRIMARY KEY (id);
+    ADD CONSTRAINT "ServerSecret_pkey" PRIMARY KEY (uuid);
 
 
 --
@@ -1361,7 +1359,7 @@ ALTER TABLE ONLY public."Tld"
 --
 
 ALTER TABLE ONLY public."TmchCrl"
-    ADD CONSTRAINT "TmchCrl_pkey" PRIMARY KEY (id);
+    ADD CONSTRAINT "TmchCrl_pkey" PRIMARY KEY (certificate_revocations, update_timestamp, url);
 
 
 --

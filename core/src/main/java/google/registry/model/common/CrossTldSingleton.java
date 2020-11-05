@@ -29,7 +29,7 @@ public abstract class CrossTldSingleton extends ImmutableObject {
 
   public static final long SINGLETON_ID = 1; // There is always exactly one of these.
 
-  @Id @javax.persistence.Id long id = SINGLETON_ID;
+  @Id @Transient long id = SINGLETON_ID;
 
   @Transient @Parent Key<EntityGroupRoot> parent = getCrossTldKey();
 }

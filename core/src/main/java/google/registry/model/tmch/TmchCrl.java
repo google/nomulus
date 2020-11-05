@@ -26,12 +26,16 @@ import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
+import google.registry.model.tmch.TmchCrl.TmchCrlId;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
+import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.IdClass;
 import org.joda.time.DateTime;
 
 /** Datastore singleton for ICANN's TMCH CA certificate revocation list (CRL). */
@@ -39,23 +43,22 @@ import org.joda.time.DateTime;
 @javax.persistence.Entity
 @Immutable
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
+@IdClass(TmchCrlId.class)
 public final class TmchCrl extends CrossTldSingleton implements DatastoreEntity, SqlEntity {
 
-  @Column(nullable = false, name = "certificateRevocations")
-  String crl;
+  @Id String crl;
 
-  @Column(nullable = false, name = "updateTimestamp")
-  DateTime updated;
+  @Id DateTime updated;
 
-  @Column(nullable = false)
-  String url;
+  @Id String url;
 
   /** Returns the singleton instance of this entity, without memoization. */
   public static Optional<TmchCrl> get() {
     VKey<TmchCrl> key =
         VKey.create(
             TmchCrl.class, SINGLETON_ID, Key.create(getCrossTldKey(), TmchCrl.class, SINGLETON_ID));
-    return tm().transact(() -> tm().maybeLoad(key));
+    // return the ofy() result during Datastore-primary phase
+    return ofyTm().transact(() -> ofyTm().maybeLoad(key));
   }
 
   /**
@@ -101,5 +104,27 @@ public final class TmchCrl extends CrossTldSingleton implements DatastoreEntity,
   @Override
   public ImmutableList<DatastoreEntity> toDatastoreEntities() {
     return ImmutableList.of(); // dually-written
+  }
+
+  static class TmchCrlId implements Serializable {
+
+    @Column(name = "certificateRevocations")
+    String crl;
+
+    @Column(name = "updateTimestamp")
+    DateTime updated;
+
+    String url;
+
+    /** Hibernate requires this default constructor. */
+    private TmchCrlId() {}
+
+    static TmchCrlId create(String crl, DateTime updated, String url) {
+      TmchCrlId result = new TmchCrlId();
+      result.crl = crl;
+      result.updated = updated;
+      result.url = url;
+      return result;
+    }
   }
 }
