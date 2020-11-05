@@ -37,11 +37,6 @@ alter table if exists "BillingEvent"
    foreign key (domain_repo_id, domain_history_revision_id)
    references "DomainHistory";
 
-alter table if exists "BillingEvent"
-   add constraint fk_billing_event_domain_repo_id
-   foreign key (domain_repo_id)
-   references "Domain";
-
 alter table "BillingEvent" rename allocation_token_id to allocation_token;
 
 alter table if exists "BillingEvent"
@@ -54,20 +49,10 @@ alter table if exists "BillingRecurrence"
    foreign key (domain_repo_id, domain_history_revision_id)
    references "DomainHistory";
 
-alter table if exists "BillingRecurrence"
-   add constraint fk_billing_recurrence_domain_repo_id
-   foreign key (domain_repo_id)
-   references "Domain";
-
 alter table if exists "BillingCancellation"
    add constraint fk_billing_cancellation_domain_history
    foreign key (domain_repo_id, domain_history_revision_id)
    references "DomainHistory";
-
-alter table if exists "BillingCancellation"
-   add constraint fk_billing_cancellation_domain_repo_id
-   foreign key (domain_repo_id)
-   references "Domain";
 
 alter table if exists "Contact"
    add constraint fk_contact_transfer_gaining_poll_message_id

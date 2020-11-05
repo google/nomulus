@@ -210,77 +210,77 @@ digraph {
             78 -> 79 [style=solid label=""]
         }
         subgraph cluster_80 {
-            label = "Write to sql: Transforms:Registrar"
+            label = "Write to sql: Transforms:Registry"
             subgraph cluster_81 {
-                label = "Write to sql: Transforms:Registrar/Shard data for Transforms:Registrar"
+                label = "Write to sql: Transforms:Registry/Shard data for Transforms:Registry"
                 subgraph cluster_82 {
-                    label = "Write to sql: Transforms:Registrar/Shard data for Transforms:Registrar/Map"
+                    label = "Write to sql: Transforms:Registry/Shard data for Transforms:Registry/Map"
                     83 [label="ParMultiDo(Anonymous)"]
                     79 -> 83 [style=solid label=""]
                 }
             }
             subgraph cluster_84 {
-                label = "Write to sql: Transforms:Registrar/Batch output by shard Transforms:Registrar"
+                label = "Write to sql: Transforms:Registry/Batch output by shard Transforms:Registry"
                 subgraph cluster_85 {
-                    label = "Write to sql: Transforms:Registrar/Batch output by shard Transforms:Registrar/ParDo(GroupIntoBatches)"
+                    label = "Write to sql: Transforms:Registry/Batch output by shard Transforms:Registry/ParDo(GroupIntoBatches)"
                     86 [label="ParMultiDo(GroupIntoBatches)"]
                     83 -> 86 [style=solid label=""]
                 }
             }
             subgraph cluster_87 {
-                label = "Write to sql: Transforms:Registrar/Write in batch for Transforms:Registrar"
+                label = "Write to sql: Transforms:Registry/Write in batch for Transforms:Registry"
                 88 [label="ParMultiDo(SqlBatchWriter)"]
                 86 -> 88 [style=solid label=""]
             }
         }
         subgraph cluster_89 {
-            label = "Wait on Transforms:Registrar"
+            label = "Wait on Transforms:Registry"
             subgraph cluster_90 {
-                label = "Wait on Transforms:Registrar/To wait view 0"
+                label = "Wait on Transforms:Registry/To wait view 0"
                 subgraph cluster_91 {
-                    label = "Wait on Transforms:Registrar/To wait view 0/Window.Into()"
+                    label = "Wait on Transforms:Registry/To wait view 0/Window.Into()"
                     92 [label="Flatten.PCollections"]
                     88 -> 92 [style=solid label=""]
                 }
                 subgraph cluster_93 {
-                    label = "Wait on Transforms:Registrar/To wait view 0/ParDo(CollectWindows)"
+                    label = "Wait on Transforms:Registry/To wait view 0/ParDo(CollectWindows)"
                     94 [label="ParMultiDo(CollectWindows)"]
                     92 -> 94 [style=solid label=""]
                 }
                 subgraph cluster_95 {
-                    label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any"
+                    label = "Wait on Transforms:Registry/To wait view 0/Sample.Any"
                     subgraph cluster_96 {
-                        label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)"
+                        label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Combine.globally(SampleAny)"
                         subgraph cluster_97 {
-                            label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys"
+                            label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys"
                             subgraph cluster_98 {
-                                label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys"
+                                label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys"
                                 subgraph cluster_99 {
-                                    label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys/Map"
+                                    label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys/Map"
                                     100 [label="ParMultiDo(Anonymous)"]
                                     94 -> 100 [style=solid label=""]
                                 }
                             }
                         }
                         subgraph cluster_101 {
-                            label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)"
+                            label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)"
                             102 [label="GroupByKey"]
                             100 -> 102 [style=solid label=""]
                             subgraph cluster_103 {
-                                label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues"
+                                label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues"
                                 subgraph cluster_104 {
-                                    label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues/ParDo(Anonymous)"
+                                    label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues/ParDo(Anonymous)"
                                     105 [label="ParMultiDo(Anonymous)"]
                                     102 -> 105 [style=solid label=""]
                                 }
                             }
                         }
                         subgraph cluster_106 {
-                            label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values"
+                            label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values"
                             subgraph cluster_107 {
-                                label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values"
+                                label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values"
                                 subgraph cluster_108 {
-                                    label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values/Map"
+                                    label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values/Map"
                                     109 [label="ParMultiDo(Anonymous)"]
                                     105 -> 109 [style=solid label=""]
                                 }
@@ -288,11 +288,11 @@ digraph {
                         }
                     }
                     subgraph cluster_110 {
-                        label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Flatten.Iterables"
+                        label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Flatten.Iterables"
                         subgraph cluster_111 {
-                            label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables"
+                            label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables"
                             subgraph cluster_112 {
-                                label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables/FlatMap"
+                                label = "Wait on Transforms:Registry/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables/FlatMap"
                                 113 [label="ParMultiDo(Anonymous)"]
                                 109 -> 113 [style=solid label=""]
                             }
@@ -300,11 +300,11 @@ digraph {
                     }
                 }
                 subgraph cluster_114 {
-                    label = "Wait on Transforms:Registrar/To wait view 0/View.AsList"
+                    label = "Wait on Transforms:Registry/To wait view 0/View.AsList"
                     subgraph cluster_115 {
-                        label = "Wait on Transforms:Registrar/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization"
+                        label = "Wait on Transforms:Registry/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization"
                         subgraph cluster_116 {
-                            label = "Wait on Transforms:Registrar/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization/ParDo(VoidKeyToMultimapMaterialization)"
+                            label = "Wait on Transforms:Registry/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization/ParDo(VoidKeyToMultimapMaterialization)"
                             117 [label="ParMultiDo(VoidKeyToMultimapMaterialization)"]
                             113 -> 117 [style=solid label=""]
                         }
@@ -314,9 +314,9 @@ digraph {
                 }
             }
             subgraph cluster_119 {
-                label = "Wait on Transforms:Registrar/Wait"
+                label = "Wait on Transforms:Registry/Wait"
                 subgraph cluster_120 {
-                    label = "Wait on Transforms:Registrar/Wait/Map"
+                    label = "Wait on Transforms:Registry/Wait/Map"
                     121 [label="ParMultiDo(Anonymous)"]
                     79 -> 121 [style=solid label=""]
                     117 -> 121 [style=dashed label=""]
@@ -324,196 +324,196 @@ digraph {
             }
         }
         subgraph cluster_122 {
-            label = "Write to sql: Transforms:ContactResource"
+            label = "Write to sql: Transforms:Registrar"
             subgraph cluster_123 {
-                label = "Write to sql: Transforms:ContactResource/Shard data for Transforms:ContactResource"
+                label = "Write to sql: Transforms:Registrar/Shard data for Transforms:Registrar"
                 subgraph cluster_124 {
-                    label = "Write to sql: Transforms:ContactResource/Shard data for Transforms:ContactResource/Map"
+                    label = "Write to sql: Transforms:Registrar/Shard data for Transforms:Registrar/Map"
                     125 [label="ParMultiDo(Anonymous)"]
                     121 -> 125 [style=solid label=""]
                 }
             }
             subgraph cluster_126 {
-                label = "Write to sql: Transforms:ContactResource/Batch output by shard Transforms:ContactResource"
+                label = "Write to sql: Transforms:Registrar/Batch output by shard Transforms:Registrar"
                 subgraph cluster_127 {
-                    label = "Write to sql: Transforms:ContactResource/Batch output by shard Transforms:ContactResource/ParDo(GroupIntoBatches)"
+                    label = "Write to sql: Transforms:Registrar/Batch output by shard Transforms:Registrar/ParDo(GroupIntoBatches)"
                     128 [label="ParMultiDo(GroupIntoBatches)"]
                     125 -> 128 [style=solid label=""]
                 }
             }
             subgraph cluster_129 {
-                label = "Write to sql: Transforms:ContactResource/Write in batch for Transforms:ContactResource"
+                label = "Write to sql: Transforms:Registrar/Write in batch for Transforms:Registrar"
                 130 [label="ParMultiDo(SqlBatchWriter)"]
                 128 -> 130 [style=solid label=""]
             }
         }
         subgraph cluster_131 {
-            label = "Remove circular foreign keys from DomainBase"
-            132 [label="ParMultiDo(RemoveDomainBaseForeignKeys)"]
-            79 -> 132 [style=solid label=""]
-        }
-        subgraph cluster_133 {
-            label = "Wait on phase one"
-            subgraph cluster_134 {
-                label = "Wait on phase one/To wait view 0"
+            label = "Wait on Transforms:Registrar"
+            subgraph cluster_132 {
+                label = "Wait on Transforms:Registrar/To wait view 0"
+                subgraph cluster_133 {
+                    label = "Wait on Transforms:Registrar/To wait view 0/Window.Into()"
+                    134 [label="Flatten.PCollections"]
+                    130 -> 134 [style=solid label=""]
+                }
                 subgraph cluster_135 {
-                    label = "Wait on phase one/To wait view 0/Window.Into()"
-                    136 [label="Flatten.PCollections"]
-                    130 -> 136 [style=solid label=""]
+                    label = "Wait on Transforms:Registrar/To wait view 0/ParDo(CollectWindows)"
+                    136 [label="ParMultiDo(CollectWindows)"]
+                    134 -> 136 [style=solid label=""]
                 }
                 subgraph cluster_137 {
-                    label = "Wait on phase one/To wait view 0/ParDo(CollectWindows)"
-                    138 [label="ParMultiDo(CollectWindows)"]
-                    136 -> 138 [style=solid label=""]
-                }
-                subgraph cluster_139 {
-                    label = "Wait on phase one/To wait view 0/Sample.Any"
-                    subgraph cluster_140 {
-                        label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)"
-                        subgraph cluster_141 {
-                            label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys"
-                            subgraph cluster_142 {
-                                label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys"
-                                subgraph cluster_143 {
-                                    label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys/Map"
-                                    144 [label="ParMultiDo(Anonymous)"]
-                                    138 -> 144 [style=solid label=""]
+                    label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any"
+                    subgraph cluster_138 {
+                        label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)"
+                        subgraph cluster_139 {
+                            label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys"
+                            subgraph cluster_140 {
+                                label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys"
+                                subgraph cluster_141 {
+                                    label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys/Map"
+                                    142 [label="ParMultiDo(Anonymous)"]
+                                    136 -> 142 [style=solid label=""]
                                 }
                             }
                         }
-                        subgraph cluster_145 {
-                            label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)"
-                            146 [label="GroupByKey"]
-                            144 -> 146 [style=solid label=""]
-                            subgraph cluster_147 {
-                                label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues"
-                                subgraph cluster_148 {
-                                    label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues/ParDo(Anonymous)"
-                                    149 [label="ParMultiDo(Anonymous)"]
-                                    146 -> 149 [style=solid label=""]
+                        subgraph cluster_143 {
+                            label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)"
+                            144 [label="GroupByKey"]
+                            142 -> 144 [style=solid label=""]
+                            subgraph cluster_145 {
+                                label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues"
+                                subgraph cluster_146 {
+                                    label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues/ParDo(Anonymous)"
+                                    147 [label="ParMultiDo(Anonymous)"]
+                                    144 -> 147 [style=solid label=""]
                                 }
                             }
                         }
-                        subgraph cluster_150 {
-                            label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values"
-                            subgraph cluster_151 {
-                                label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values"
-                                subgraph cluster_152 {
-                                    label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values/Map"
-                                    153 [label="ParMultiDo(Anonymous)"]
-                                    149 -> 153 [style=solid label=""]
+                        subgraph cluster_148 {
+                            label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values"
+                            subgraph cluster_149 {
+                                label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values"
+                                subgraph cluster_150 {
+                                    label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values/Map"
+                                    151 [label="ParMultiDo(Anonymous)"]
+                                    147 -> 151 [style=solid label=""]
                                 }
                             }
                         }
                     }
-                    subgraph cluster_154 {
-                        label = "Wait on phase one/To wait view 0/Sample.Any/Flatten.Iterables"
-                        subgraph cluster_155 {
-                            label = "Wait on phase one/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables"
-                            subgraph cluster_156 {
-                                label = "Wait on phase one/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables/FlatMap"
-                                157 [label="ParMultiDo(Anonymous)"]
-                                153 -> 157 [style=solid label=""]
+                    subgraph cluster_152 {
+                        label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Flatten.Iterables"
+                        subgraph cluster_153 {
+                            label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables"
+                            subgraph cluster_154 {
+                                label = "Wait on Transforms:Registrar/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables/FlatMap"
+                                155 [label="ParMultiDo(Anonymous)"]
+                                151 -> 155 [style=solid label=""]
                             }
                         }
                     }
                 }
-                subgraph cluster_158 {
-                    label = "Wait on phase one/To wait view 0/View.AsList"
-                    subgraph cluster_159 {
-                        label = "Wait on phase one/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization"
-                        subgraph cluster_160 {
-                            label = "Wait on phase one/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization/ParDo(VoidKeyToMultimapMaterialization)"
-                            161 [label="ParMultiDo(VoidKeyToMultimapMaterialization)"]
-                            157 -> 161 [style=solid label=""]
+                subgraph cluster_156 {
+                    label = "Wait on Transforms:Registrar/To wait view 0/View.AsList"
+                    subgraph cluster_157 {
+                        label = "Wait on Transforms:Registrar/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization"
+                        subgraph cluster_158 {
+                            label = "Wait on Transforms:Registrar/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization/ParDo(VoidKeyToMultimapMaterialization)"
+                            159 [label="ParMultiDo(VoidKeyToMultimapMaterialization)"]
+                            155 -> 159 [style=solid label=""]
                         }
                     }
-                    162 [label="View.CreatePCollectionView"]
-                    161 -> 162 [style=solid label=""]
+                    160 [label="View.CreatePCollectionView"]
+                    159 -> 160 [style=solid label=""]
                 }
             }
-            subgraph cluster_163 {
-                label = "Wait on phase one/Wait"
-                subgraph cluster_164 {
-                    label = "Wait on phase one/Wait/Map"
-                    165 [label="ParMultiDo(Anonymous)"]
-                    132 -> 165 [style=solid label=""]
-                    161 -> 165 [style=dashed label=""]
+            subgraph cluster_161 {
+                label = "Wait on Transforms:Registrar/Wait"
+                subgraph cluster_162 {
+                    label = "Wait on Transforms:Registrar/Wait/Map"
+                    163 [label="ParMultiDo(Anonymous)"]
+                    79 -> 163 [style=solid label=""]
+                    159 -> 163 [style=dashed label=""]
                 }
             }
         }
-        subgraph cluster_166 {
-            label = "Write to sql: DomainBase without circular foreign keys"
-            subgraph cluster_167 {
-                label = "Write to sql: DomainBase without circular foreign keys/Shard data for DomainBase without circular foreign keys"
-                subgraph cluster_168 {
-                    label = "Write to sql: DomainBase without circular foreign keys/Shard data for DomainBase without circular foreign keys/Map"
-                    169 [label="ParMultiDo(Anonymous)"]
-                    165 -> 169 [style=solid label=""]
+        subgraph cluster_164 {
+            label = "Write to sql: Transforms:ContactResource"
+            subgraph cluster_165 {
+                label = "Write to sql: Transforms:ContactResource/Shard data for Transforms:ContactResource"
+                subgraph cluster_166 {
+                    label = "Write to sql: Transforms:ContactResource/Shard data for Transforms:ContactResource/Map"
+                    167 [label="ParMultiDo(Anonymous)"]
+                    163 -> 167 [style=solid label=""]
                 }
             }
-            subgraph cluster_170 {
-                label = "Write to sql: DomainBase without circular foreign keys/Batch output by shard DomainBase without circular foreign keys"
-                subgraph cluster_171 {
-                    label = "Write to sql: DomainBase without circular foreign keys/Batch output by shard DomainBase without circular foreign keys/ParDo(GroupIntoBatches)"
-                    172 [label="ParMultiDo(GroupIntoBatches)"]
-                    169 -> 172 [style=solid label=""]
+            subgraph cluster_168 {
+                label = "Write to sql: Transforms:ContactResource/Batch output by shard Transforms:ContactResource"
+                subgraph cluster_169 {
+                    label = "Write to sql: Transforms:ContactResource/Batch output by shard Transforms:ContactResource/ParDo(GroupIntoBatches)"
+                    170 [label="ParMultiDo(GroupIntoBatches)"]
+                    167 -> 170 [style=solid label=""]
                 }
             }
-            subgraph cluster_173 {
-                label = "Write to sql: DomainBase without circular foreign keys/Write in batch for DomainBase without circular foreign keys"
-                174 [label="ParMultiDo(SqlBatchWriter)"]
-                172 -> 174 [style=solid label=""]
+            subgraph cluster_171 {
+                label = "Write to sql: Transforms:ContactResource/Write in batch for Transforms:ContactResource"
+                172 [label="ParMultiDo(SqlBatchWriter)"]
+                170 -> 172 [style=solid label=""]
             }
+        }
+        subgraph cluster_173 {
+            label = "Remove circular foreign keys from DomainBase"
+            174 [label="ParMultiDo(RemoveDomainBaseForeignKeys)"]
+            79 -> 174 [style=solid label=""]
         }
         subgraph cluster_175 {
-            label = "Wait on DomainBaseNoFkeys"
+            label = "Wait on phase one"
             subgraph cluster_176 {
-                label = "Wait on DomainBaseNoFkeys/To wait view 0"
+                label = "Wait on phase one/To wait view 0"
                 subgraph cluster_177 {
-                    label = "Wait on DomainBaseNoFkeys/To wait view 0/Window.Into()"
+                    label = "Wait on phase one/To wait view 0/Window.Into()"
                     178 [label="Flatten.PCollections"]
-                    174 -> 178 [style=solid label=""]
+                    172 -> 178 [style=solid label=""]
                 }
                 subgraph cluster_179 {
-                    label = "Wait on DomainBaseNoFkeys/To wait view 0/ParDo(CollectWindows)"
+                    label = "Wait on phase one/To wait view 0/ParDo(CollectWindows)"
                     180 [label="ParMultiDo(CollectWindows)"]
                     178 -> 180 [style=solid label=""]
                 }
                 subgraph cluster_181 {
-                    label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any"
+                    label = "Wait on phase one/To wait view 0/Sample.Any"
                     subgraph cluster_182 {
-                        label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)"
+                        label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)"
                         subgraph cluster_183 {
-                            label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys"
+                            label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys"
                             subgraph cluster_184 {
-                                label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys"
+                                label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys"
                                 subgraph cluster_185 {
-                                    label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys/Map"
+                                    label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys/Map"
                                     186 [label="ParMultiDo(Anonymous)"]
                                     180 -> 186 [style=solid label=""]
                                 }
                             }
                         }
                         subgraph cluster_187 {
-                            label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)"
+                            label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)"
                             188 [label="GroupByKey"]
                             186 -> 188 [style=solid label=""]
                             subgraph cluster_189 {
-                                label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues"
+                                label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues"
                                 subgraph cluster_190 {
-                                    label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues/ParDo(Anonymous)"
+                                    label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues/ParDo(Anonymous)"
                                     191 [label="ParMultiDo(Anonymous)"]
                                     188 -> 191 [style=solid label=""]
                                 }
                             }
                         }
                         subgraph cluster_192 {
-                            label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values"
+                            label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values"
                             subgraph cluster_193 {
-                                label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values"
+                                label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values"
                                 subgraph cluster_194 {
-                                    label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values/Map"
+                                    label = "Wait on phase one/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values/Map"
                                     195 [label="ParMultiDo(Anonymous)"]
                                     191 -> 195 [style=solid label=""]
                                 }
@@ -521,11 +521,11 @@ digraph {
                         }
                     }
                     subgraph cluster_196 {
-                        label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Flatten.Iterables"
+                        label = "Wait on phase one/To wait view 0/Sample.Any/Flatten.Iterables"
                         subgraph cluster_197 {
-                            label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables"
+                            label = "Wait on phase one/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables"
                             subgraph cluster_198 {
-                                label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables/FlatMap"
+                                label = "Wait on phase one/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables/FlatMap"
                                 199 [label="ParMultiDo(Anonymous)"]
                                 195 -> 199 [style=solid label=""]
                             }
@@ -533,11 +533,11 @@ digraph {
                     }
                 }
                 subgraph cluster_200 {
-                    label = "Wait on DomainBaseNoFkeys/To wait view 0/View.AsList"
+                    label = "Wait on phase one/To wait view 0/View.AsList"
                     subgraph cluster_201 {
-                        label = "Wait on DomainBaseNoFkeys/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization"
+                        label = "Wait on phase one/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization"
                         subgraph cluster_202 {
-                            label = "Wait on DomainBaseNoFkeys/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization/ParDo(VoidKeyToMultimapMaterialization)"
+                            label = "Wait on phase one/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization/ParDo(VoidKeyToMultimapMaterialization)"
                             203 [label="ParMultiDo(VoidKeyToMultimapMaterialization)"]
                             199 -> 203 [style=solid label=""]
                         }
@@ -547,37 +547,151 @@ digraph {
                 }
             }
             subgraph cluster_205 {
-                label = "Wait on DomainBaseNoFkeys/Wait"
+                label = "Wait on phase one/Wait"
                 subgraph cluster_206 {
-                    label = "Wait on DomainBaseNoFkeys/Wait/Map"
+                    label = "Wait on phase one/Wait/Map"
                     207 [label="ParMultiDo(Anonymous)"]
-                    79 -> 207 [style=solid label=""]
+                    174 -> 207 [style=solid label=""]
                     203 -> 207 [style=dashed label=""]
                 }
             }
         }
         subgraph cluster_208 {
-            label = "Write to sql: Transforms:HostResource"
+            label = "Write to sql: DomainBase without circular foreign keys"
             subgraph cluster_209 {
-                label = "Write to sql: Transforms:HostResource/Shard data for Transforms:HostResource"
+                label = "Write to sql: DomainBase without circular foreign keys/Shard data for DomainBase without circular foreign keys"
                 subgraph cluster_210 {
-                    label = "Write to sql: Transforms:HostResource/Shard data for Transforms:HostResource/Map"
+                    label = "Write to sql: DomainBase without circular foreign keys/Shard data for DomainBase without circular foreign keys/Map"
                     211 [label="ParMultiDo(Anonymous)"]
                     207 -> 211 [style=solid label=""]
                 }
             }
             subgraph cluster_212 {
-                label = "Write to sql: Transforms:HostResource/Batch output by shard Transforms:HostResource"
+                label = "Write to sql: DomainBase without circular foreign keys/Batch output by shard DomainBase without circular foreign keys"
                 subgraph cluster_213 {
-                    label = "Write to sql: Transforms:HostResource/Batch output by shard Transforms:HostResource/ParDo(GroupIntoBatches)"
+                    label = "Write to sql: DomainBase without circular foreign keys/Batch output by shard DomainBase without circular foreign keys/ParDo(GroupIntoBatches)"
                     214 [label="ParMultiDo(GroupIntoBatches)"]
                     211 -> 214 [style=solid label=""]
                 }
             }
             subgraph cluster_215 {
-                label = "Write to sql: Transforms:HostResource/Write in batch for Transforms:HostResource"
+                label = "Write to sql: DomainBase without circular foreign keys/Write in batch for DomainBase without circular foreign keys"
                 216 [label="ParMultiDo(SqlBatchWriter)"]
                 214 -> 216 [style=solid label=""]
+            }
+        }
+        subgraph cluster_217 {
+            label = "Wait on DomainBaseNoFkeys"
+            subgraph cluster_218 {
+                label = "Wait on DomainBaseNoFkeys/To wait view 0"
+                subgraph cluster_219 {
+                    label = "Wait on DomainBaseNoFkeys/To wait view 0/Window.Into()"
+                    220 [label="Flatten.PCollections"]
+                    216 -> 220 [style=solid label=""]
+                }
+                subgraph cluster_221 {
+                    label = "Wait on DomainBaseNoFkeys/To wait view 0/ParDo(CollectWindows)"
+                    222 [label="ParMultiDo(CollectWindows)"]
+                    220 -> 222 [style=solid label=""]
+                }
+                subgraph cluster_223 {
+                    label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any"
+                    subgraph cluster_224 {
+                        label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)"
+                        subgraph cluster_225 {
+                            label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys"
+                            subgraph cluster_226 {
+                                label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys"
+                                subgraph cluster_227 {
+                                    label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/WithKeys/AddKeys/Map"
+                                    228 [label="ParMultiDo(Anonymous)"]
+                                    222 -> 228 [style=solid label=""]
+                                }
+                            }
+                        }
+                        subgraph cluster_229 {
+                            label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)"
+                            230 [label="GroupByKey"]
+                            228 -> 230 [style=solid label=""]
+                            subgraph cluster_231 {
+                                label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues"
+                                subgraph cluster_232 {
+                                    label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Combine.perKey(SampleAny)/Combine.GroupedValues/ParDo(Anonymous)"
+                                    233 [label="ParMultiDo(Anonymous)"]
+                                    230 -> 233 [style=solid label=""]
+                                }
+                            }
+                        }
+                        subgraph cluster_234 {
+                            label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values"
+                            subgraph cluster_235 {
+                                label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values"
+                                subgraph cluster_236 {
+                                    label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Combine.globally(SampleAny)/Values/Values/Map"
+                                    237 [label="ParMultiDo(Anonymous)"]
+                                    233 -> 237 [style=solid label=""]
+                                }
+                            }
+                        }
+                    }
+                    subgraph cluster_238 {
+                        label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Flatten.Iterables"
+                        subgraph cluster_239 {
+                            label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables"
+                            subgraph cluster_240 {
+                                label = "Wait on DomainBaseNoFkeys/To wait view 0/Sample.Any/Flatten.Iterables/FlattenIterables/FlatMap"
+                                241 [label="ParMultiDo(Anonymous)"]
+                                237 -> 241 [style=solid label=""]
+                            }
+                        }
+                    }
+                }
+                subgraph cluster_242 {
+                    label = "Wait on DomainBaseNoFkeys/To wait view 0/View.AsList"
+                    subgraph cluster_243 {
+                        label = "Wait on DomainBaseNoFkeys/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization"
+                        subgraph cluster_244 {
+                            label = "Wait on DomainBaseNoFkeys/To wait view 0/View.AsList/View.VoidKeyToMultimapMaterialization/ParDo(VoidKeyToMultimapMaterialization)"
+                            245 [label="ParMultiDo(VoidKeyToMultimapMaterialization)"]
+                            241 -> 245 [style=solid label=""]
+                        }
+                    }
+                    246 [label="View.CreatePCollectionView"]
+                    245 -> 246 [style=solid label=""]
+                }
+            }
+            subgraph cluster_247 {
+                label = "Wait on DomainBaseNoFkeys/Wait"
+                subgraph cluster_248 {
+                    label = "Wait on DomainBaseNoFkeys/Wait/Map"
+                    249 [label="ParMultiDo(Anonymous)"]
+                    79 -> 249 [style=solid label=""]
+                    245 -> 249 [style=dashed label=""]
+                }
+            }
+        }
+        subgraph cluster_250 {
+            label = "Write to sql: Transforms:HostResource"
+            subgraph cluster_251 {
+                label = "Write to sql: Transforms:HostResource/Shard data for Transforms:HostResource"
+                subgraph cluster_252 {
+                    label = "Write to sql: Transforms:HostResource/Shard data for Transforms:HostResource/Map"
+                    253 [label="ParMultiDo(Anonymous)"]
+                    249 -> 253 [style=solid label=""]
+                }
+            }
+            subgraph cluster_254 {
+                label = "Write to sql: Transforms:HostResource/Batch output by shard Transforms:HostResource"
+                subgraph cluster_255 {
+                    label = "Write to sql: Transforms:HostResource/Batch output by shard Transforms:HostResource/ParDo(GroupIntoBatches)"
+                    256 [label="ParMultiDo(GroupIntoBatches)"]
+                    253 -> 256 [style=solid label=""]
+                }
+            }
+            subgraph cluster_257 {
+                label = "Write to sql: Transforms:HostResource/Write in batch for Transforms:HostResource"
+                258 [label="ParMultiDo(SqlBatchWriter)"]
+                256 -> 258 [style=solid label=""]
             }
         }
     }

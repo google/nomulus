@@ -217,7 +217,7 @@ class InitSqlPipelineTest {
                           GracePeriodStatus.ADD,
                           "4-COM",
                           fakeClock.nowUtc().plusDays(1),
-                          "registrar",
+                          "TheRegistrar",
                           null))
                   .build());
       exportDir = store.export(exportRootDir.getAbsolutePath(), ALL_KINDS, ImmutableSet.of());

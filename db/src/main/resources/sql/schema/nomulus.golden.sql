@@ -1795,14 +1795,6 @@ ALTER TABLE ONLY public."BillingCancellation"
 
 
 --
--- Name: BillingCancellation fk_billing_cancellation_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingCancellation"
-    ADD CONSTRAINT fk_billing_cancellation_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
-
-
---
 -- Name: BillingCancellation fk_billing_cancellation_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1835,14 +1827,6 @@ ALTER TABLE ONLY public."BillingEvent"
 
 
 --
--- Name: BillingEvent fk_billing_event_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingEvent"
-    ADD CONSTRAINT fk_billing_event_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
-
-
---
 -- Name: BillingEvent fk_billing_event_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1856,14 +1840,6 @@ ALTER TABLE ONLY public."BillingEvent"
 
 ALTER TABLE ONLY public."BillingRecurrence"
     ADD CONSTRAINT fk_billing_recurrence_domain_history FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
-
-
---
--- Name: BillingRecurrence fk_billing_recurrence_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."BillingRecurrence"
-    ADD CONSTRAINT fk_billing_recurrence_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
 
 
 --

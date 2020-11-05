@@ -92,9 +92,8 @@ public class InitSqlPipeline implements Serializable {
    * Datastore kinds to be written to the SQL database before the cleansed version of {@link
    * DomainBase}.
    */
-  // TODO(weiminyu): include Registry.class when it is modeled in JPA.
   private static final ImmutableList<Class<?>> PHASE_ONE_ORDERED =
-      ImmutableList.of(Registrar.class, ContactResource.class);
+      ImmutableList.of(Registry.class, Registrar.class, ContactResource.class);
 
   /**
    * Datastore kinds to be written to the SQL database after the cleansed version of {@link
