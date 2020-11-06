@@ -13,8 +13,8 @@
 -- limitations under the License.
 
 CREATE TABLE "ServerSecret" (
-   uuid uuid NOT NULL,
-    PRIMARY KEY (uuid)
+   secret uuid NOT NULL,
+    PRIMARY KEY (secret)
 );
 
 CREATE TABLE "TmchCrl" (

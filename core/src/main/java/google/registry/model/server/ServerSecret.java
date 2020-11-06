@@ -107,19 +107,19 @@ public class ServerSecret extends CrossTldSingleton implements DatastoreEntity, 
   @Id
   @Column(columnDefinition = "uuid")
   @Ignore
-  UUID uuid;
+  UUID secret;
 
   /** Convert the Datastore representation to SQL. */
   @OnLoad
   void onLoad() {
-    uuid = new UUID(mostSignificant, leastSignificant);
+    secret = new UUID(mostSignificant, leastSignificant);
   }
 
   /** Convert the SQL representation to Datastore. */
   @PostLoad
   void postLoad() {
-    mostSignificant = uuid.getMostSignificantBits();
-    leastSignificant = uuid.getLeastSignificantBits();
+    mostSignificant = secret.getMostSignificantBits();
+    leastSignificant = secret.getLeastSignificantBits();
   }
 
   @VisibleForTesting
@@ -127,7 +127,7 @@ public class ServerSecret extends CrossTldSingleton implements DatastoreEntity, 
     ServerSecret secret = new ServerSecret();
     secret.mostSignificant = uuid.getMostSignificantBits();
     secret.leastSignificant = uuid.getLeastSignificantBits();
-    secret.uuid = uuid;
+    secret.secret = uuid;
     return secret;
   }
 

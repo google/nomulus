@@ -904,7 +904,7 @@ ALTER SEQUENCE public."SafeBrowsingThreat_id_seq" OWNED BY public."Spec11ThreatM
 --
 
 CREATE TABLE public."ServerSecret" (
-    uuid uuid NOT NULL
+    secret uuid NOT NULL
 );
 
 
@@ -1327,7 +1327,7 @@ ALTER TABLE ONLY public."Spec11ThreatMatch"
 --
 
 ALTER TABLE ONLY public."ServerSecret"
-    ADD CONSTRAINT "ServerSecret_pkey" PRIMARY KEY (uuid);
+    ADD CONSTRAINT "ServerSecret_pkey" PRIMARY KEY (secret);
 
 
 --

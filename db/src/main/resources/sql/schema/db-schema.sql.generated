@@ -627,8 +627,8 @@
     );
 
     create table "ServerSecret" (
-       uuid uuid not null,
-        primary key (uuid)
+       secret uuid not null,
+        primary key (secret)
     );
 
     create table "SignedMarkRevocationEntry" (
