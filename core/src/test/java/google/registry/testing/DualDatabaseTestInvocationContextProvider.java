@@ -96,22 +96,33 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
     @Override
     public void postProcessTestInstance(Object testInstance, ExtensionContext context)
         throws Exception {
-      List<Field> appEngineRuleFields =
-          Stream.of(testInstance.getClass().getFields())
-              .filter(field -> field.getType().isAssignableFrom(AppEngineExtension.class))
-              .collect(toImmutableList());
-      if (appEngineRuleFields.size() != 1) {
+      List<Field> appEngineExtensionFields = getAppEngineExtensionFields(testInstance.getClass());
+      if (appEngineExtensionFields.size() != 1) {
         throw new IllegalStateException(
-            "@DualDatabaseTest test must have only 1 AppEngineRule field");
+            String.format(
+                "@DualDatabaseTest test must have 1 AppEngineExtension field but found %d field(s)",
+                appEngineExtensionFields.size()));
       }
-      appEngineRuleFields.get(0).setAccessible(true);
+      appEngineExtensionFields.get(0).setAccessible(true);
       AppEngineExtension appEngineRule =
-          (AppEngineExtension) appEngineRuleFields.get(0).get(testInstance);
+          (AppEngineExtension) appEngineExtensionFields.get(0).get(testInstance);
       if (!appEngineRule.isWithDatastoreAndCloudSql()) {
         throw new IllegalStateException(
-            "AppEngineRule in @DualDatabaseTest test must set withDatastoreAndCloudSql()");
+            "AppEngineExtension in @DualDatabaseTest test must set withDatastoreAndCloudSql()");
       }
       context.getStore(NAMESPACE).put(INJECTED_TM_SUPPLIER_KEY, tmSupplier);
+    }
+
+    private static ImmutableList<Field> getAppEngineExtensionFields(Class<?> clazz) {
+      ImmutableList.Builder<Field> fieldBuilder = new ImmutableList.Builder<>();
+      if (clazz.getSuperclass() != null) {
+        fieldBuilder.addAll(getAppEngineExtensionFields(clazz.getSuperclass()));
+      }
+      fieldBuilder.addAll(
+          Stream.of(clazz.getDeclaredFields())
+              .filter(field -> field.getType().isAssignableFrom(AppEngineExtension.class))
+              .collect(toImmutableList()));
+      return fieldBuilder.build();
     }
   }
 
