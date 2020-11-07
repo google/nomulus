@@ -1151,6 +1151,15 @@ public class DatastoreHelper {
                   tm().put(resource);
                   return tm().load(resource);
                 });
+    return ofyOrJpaTm(
+        () -> tm().transact(() -> ofy().load().fromEntity(ofy().save().toEntity(resource))),
+        () -> {
+          // We have to separate the read and write operation into different transactions
+          // otherwise JPA would just return the input entity instead of actually creating a
+          // clone.
+          tm().transact(() -> tm().put(resource));
+          return tm().transact(() -> tm().load(resource));
+        });
   }
 
   /** Returns the entire map of {@link PremiumListEntry}s for the given {@link PremiumList}. */

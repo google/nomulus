@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.base.Strings.nullToEmpty;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSortedMap.toImmutableSortedMap;
@@ -31,7 +32,9 @@ import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registries.assertTldsExist;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.ofyOrJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
@@ -645,7 +648,19 @@ public class Registrar extends ImmutableObject
   }
 
   private Iterable<RegistrarContact> getContactsIterable() {
-    return ofy().load().type(RegistrarContact.class).ancestor(Registrar.this);
+    return ofyOrJpaTm(
+        () -> ofy().load().type(RegistrarContact.class).ancestor(Registrar.this),
+        () ->
+            tm().transact(
+                    () ->
+                        jpaTm()
+                            .getEntityManager()
+                            .createQuery(
+                                "FROM RegistrarPoc WHERE registrarId = :registrarId",
+                                RegistrarContact.class)
+                            .setParameter("registrarId", clientIdentifier)
+                            .getResultStream()
+                            .collect(toImmutableList())));
   }
 
   @Override
@@ -798,12 +813,12 @@ public class Registrar extends ImmutableObject
      * to set the allowed TLDs.
      */
     public Builder setAllowedTldsUncached(Set<String> allowedTlds) {
-      ImmutableSet<Key<Registry>> newTldKeys =
+      ImmutableSet<VKey<Registry>> newTldKeys =
           Sets.difference(allowedTlds, getInstance().getAllowedTlds()).stream()
-              .map(tld -> Key.create(getCrossTldKey(), Registry.class, tld))
+              .map(Registry::createVKey)
               .collect(toImmutableSet());
-      Set<Key<Registry>> missingTldKeys =
-          Sets.difference(newTldKeys, ofy().load().keys(newTldKeys).keySet());
+      Set<VKey<Registry>> missingTldKeys =
+          Sets.difference(newTldKeys, transactIfJpaTm(() -> tm().load(newTldKeys)).keySet());
       checkArgument(missingTldKeys.isEmpty(), "Trying to set nonexisting TLDs: %s", missingTldKeys);
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(allowedTlds);
       return this;
@@ -989,7 +1004,9 @@ public class Registrar extends ImmutableObject
 
   /** Loads all registrar entities directly from Datastore. */
   public static Iterable<Registrar> loadAll() {
-    return ImmutableList.copyOf(ofy().load().type(Registrar.class).ancestor(getCrossTldKey()));
+    return ofyOrJpaTm(
+        () -> ImmutableList.copyOf(ofy().load().type(Registrar.class).ancestor(getCrossTldKey())),
+        () -> tm().transact(() -> tm().loadAll(Registrar.class)));
   }
 
   /** Loads all registrar entities using an in-memory cache. */
