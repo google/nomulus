@@ -17,13 +17,11 @@ package google.registry.model.registry;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
 import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newRegistry;
 import static google.registry.testing.DatastoreHelper.persistPremiumList;
@@ -44,59 +42,57 @@ import google.registry.model.registry.Registry.RegistryNotFoundException;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Registry}. */
+@DualDatabaseTest
 public class RegistryTest extends EntityTestCase {
+
+  RegistryTest() {
+    super(JpaEntityCoverageCheck.ENABLED);
+  }
 
   @BeforeEach
   void beforeEach() {
     createTld("tld");
   }
 
-  @RegisterExtension
-  JpaIntegrationWithCoverageExtension jpa =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
-
-  @Test
-  public void testCloudSqlPersistence() {
+  @TestOfyAndSql
+  public void testPersistence_updateReservedAndPremiumListSuccessfully() {
     ReservedList rl15 = persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED");
     PremiumList pl = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
     Registry registry =
         Registry.get("tld").asBuilder().setReservedLists(rl15).setPremiumList(pl).build();
-    jpaTm().transact(() -> jpaTm().insert(registry));
-    Registry persisted =
-        jpaTm().transact(() -> jpaTm().load(VKey.createSql(Registry.class, registry.tldStrId)));
+    tm().transact(() -> tm().put(registry));
+    Registry persisted = tm().transact(() -> tm().load(Registry.createVKey(registry.tldStrId)));
     assertThat(persisted).isEqualTo(registry);
   }
 
-  @Test
+  @TestOfyAndSql
   void testPersistence() {
     assertWithMessage("Registry not found").that(Registry.get("tld")).isNotNull();
-    assertThat(ofy().load().type(Registry.class).parent(getCrossTldKey()).id("tld").now())
+    assertThat(tm().transact(() -> tm().load(Registry.createVKey("tld"))))
         .isEqualTo(Registry.get("tld"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_registryNotFound() {
     createTld("foo");
     assertThrows(RegistryNotFoundException.class, () -> Registry.get("baz"));
   }
 
-  @Test
+  @TestOfyOnly
   void testIndexing() throws Exception {
     verifyIndexing(Registry.get("tld"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSettingEscrowEnabled_null() {
     assertThat(Registry.get("tld").asBuilder().setEscrowEnabled(true).build().getEscrowEnabled())
         .isTrue();
@@ -104,7 +100,7 @@ public class RegistryTest extends EntityTestCase {
         .isFalse();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSettingCreateBillingCost() {
     Registry registry =
         Registry.get("tld").asBuilder().setCreateBillingCost(Money.of(USD, 42)).build();
@@ -113,7 +109,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(registry.getStandardRestoreCost()).isEqualTo(Money.of(USD, 17));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSettingRestoreBillingCost() {
     Registry registry =
         Registry.get("tld").asBuilder().setRestoreBillingCost(Money.of(USD, 42)).build();
@@ -122,19 +118,19 @@ public class RegistryTest extends EntityTestCase {
     assertThat(registry.getStandardRestoreCost()).isEqualTo(Money.of(USD, 42));
   }
 
-  @Test
+  @TestOfyAndSql
   void testDefaultNumDnsPublishShards_equalToOne() {
     Registry registry = Registry.get("tld").asBuilder().build();
     assertThat(registry.getNumDnsPublishLocks()).isEqualTo(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSettingNumDnsPublishShards() {
     Registry registry = Registry.get("tld").asBuilder().setNumDnsPublishLocks(2).build();
     assertThat(registry.getNumDnsPublishLocks()).isEqualTo(2);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSetReservedList_doesntMutateExistingRegistry() {
     ReservedList rl15 =
         persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED");
@@ -152,27 +148,27 @@ public class RegistryTest extends EntityTestCase {
     assertThat(registry2.getReservedLists()).hasSize(2);
   }
 
-  @Test
+  @TestOfyAndSql
   void testGetReservedLists_doesntReturnNullWhenUninitialized() {
     Registry registry = newRegistry("foo", "FOO");
     assertThat(registry.getReservedLists()).isNotNull();
     assertThat(registry.getReservedLists()).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testGetAll() {
     createTld("foo");
     assertThat(Registry.getAll(ImmutableSet.of("foo", "tld")))
         .containsExactlyElementsIn(
-            ofy()
-                .load()
-                .keys(
-                    Key.create(getCrossTldKey(), Registry.class, "foo"),
-                    Key.create(getCrossTldKey(), Registry.class, "tld"))
+            tm().transact(
+                    () ->
+                        tm().load(
+                                ImmutableSet.of(
+                                    Registry.createVKey("foo"), Registry.createVKey("tld"))))
                 .values());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSetReservedLists() {
     ReservedList rl5 =
         persistReservedList("tld-reserved5", "lol,FULLY_BLOCKED", "cat,FULLY_BLOCKED");
@@ -186,7 +182,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(r.getReservedLists()).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSetReservedListsByName() {
     persistReservedList("tld-reserved24", "lol,FULLY_BLOCKED", "cat,FULLY_BLOCKED");
     persistReservedList("tld-reserved25", "mit,FULLY_BLOCKED", "tim,FULLY_BLOCKED");
@@ -201,7 +197,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(r.getReservedLists()).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSetPremiumList() {
     PremiumList pl2 = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
@@ -211,20 +207,20 @@ public class RegistryTest extends EntityTestCase {
     assertThat(stored.getName()).isEqualTo("tld2");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSettingServerStatusChangeBillingCost() {
     Registry registry =
         Registry.get("tld").asBuilder().setServerStatusChangeBillingCost(Money.of(USD, 42)).build();
     assertThat(registry.getServerStatusChangeCost()).isEqualTo(Money.of(USD, 42));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSettingLordnUsername() {
     Registry registry = Registry.get("tld").asBuilder().setLordnUsername("username").build();
     assertThat(registry.getLordnUsername()).isEqualTo("username");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSettingDnsWriters() {
     Registry registry = Registry.get("tld");
     assertThat(registry.getDnsWriters()).containsExactly(VoidDnsWriter.NAME);
@@ -232,7 +228,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(registry.getDnsWriters()).containsExactly("baz", "bang");
   }
 
-  @Test
+  @TestOfyAndSql
   void testPdtLooksLikeGa() {
     Registry registry =
         Registry.get("tld")
@@ -242,7 +238,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(registry.getTldState(START_OF_TIME)).isEqualTo(GENERAL_AVAILABILITY);
   }
 
-  @Test
+  @TestOfyAndSql
   void testTldStateTransitionTimes() {
     Registry registry =
         Registry.get("tld")
@@ -277,7 +273,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(registry.getTldState(END_OF_TIME)).isEqualTo(GENERAL_AVAILABILITY);
   }
 
-  @Test
+  @TestOfyAndSql
   void testQuietPeriodCanAppearMultipleTimesAnywhere() {
     Registry.get("tld")
         .asBuilder()
@@ -292,7 +288,7 @@ public class RegistryTest extends EntityTestCase {
         .build();
   }
 
-  @Test
+  @TestOfyAndSql
   void testRenewBillingCostTransitionTimes() {
     Registry registry =
         Registry.get("tld")
@@ -331,7 +327,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(registry.getStandardRenewCost(END_OF_TIME)).isEqualTo(Money.of(USD, 3));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRenewBillingCostNoTransitions() {
     Registry registry = Registry.get("tld");
     // The default value of 11 is set in createTld().
@@ -344,21 +340,21 @@ public class RegistryTest extends EntityTestCase {
     assertThat(registry.getStandardRenewCost(END_OF_TIME)).isEqualTo(Money.of(USD, 11));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_tldNeverSet() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> new Registry.Builder().build());
     assertThat(thrown).hasMessageThat().contains("No registry TLD specified");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_setTldStr_null() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> new Registry.Builder().setTldStr(null));
     assertThat(thrown).hasMessageThat().contains("TLD must not be null");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_setTldStr_invalidTld() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -368,7 +364,7 @@ public class RegistryTest extends EntityTestCase {
         .contains("Cannot create registry for TLD that is not a valid, canonical domain name");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_setTldStr_nonCanonicalTld() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -378,7 +374,7 @@ public class RegistryTest extends EntityTestCase {
         .contains("Cannot create registry for TLD that is not a valid, canonical domain name");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_tldStatesOutOfOrder() {
     assertThrows(
         IllegalArgumentException.class,
@@ -392,7 +388,7 @@ public class RegistryTest extends EntityTestCase {
                 .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_duplicateTldState() {
     assertThrows(
         IllegalArgumentException.class,
@@ -406,7 +402,7 @@ public class RegistryTest extends EntityTestCase {
                 .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_pricingEngineIsRequired() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -417,7 +413,7 @@ public class RegistryTest extends EntityTestCase {
         .contains("All registries must have a configured pricing engine");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_negativeRenewBillingCostTransitionValue() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -430,7 +426,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("billing cost cannot be negative");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_negativeCreateBillingCost() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -439,7 +435,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("createBillingCost cannot be negative");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_negativeRestoreBillingCost() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -448,7 +444,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("restoreBillingCost cannot be negative");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonPositiveNumDnsPublishLocks() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -468,7 +464,7 @@ public class RegistryTest extends EntityTestCase {
             "numDnsPublishLocks must be positive when set explicitly (use 1 for TLD-wide locks)");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_negativeServerStatusChangeBillingCost() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -480,7 +476,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("billing cost cannot be negative");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renewBillingCostTransitionValue_wrongCurrency() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -494,7 +490,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("cost must be in the registry's currency");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_createBillingCost_wrongCurrency() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -503,7 +499,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("cost must be in the registry's currency");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_restoreBillingCost_wrongCurrency() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -512,7 +508,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("cost must be in the registry's currency");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_serverStatusChangeBillingCost_wrongCurrency() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -525,13 +521,13 @@ public class RegistryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("cost must be in the registry's currency");
   }
 
-  @Test
+  @TestOfyAndSql
   void testEapFee_undefined() {
     assertThat(Registry.get("tld").getEapFeeFor(fakeClock.nowUtc()).getCost())
         .isEqualTo(BigDecimal.ZERO.setScale(2, ROUND_UNNECESSARY));
   }
 
-  @Test
+  @TestOfyAndSql
   void testEapFee_specified() {
     DateTime a = fakeClock.nowUtc().minusDays(1);
     DateTime b = fakeClock.nowUtc().plusDays(1);
@@ -553,7 +549,7 @@ public class RegistryTest extends EntityTestCase {
         .isEqualTo(new BigDecimal("50.00"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_eapFee_wrongCurrency() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -566,7 +562,7 @@ public class RegistryTest extends EntityTestCase {
     assertThat(thrown).hasMessageThat().contains("All EAP fees must be in the registry's currency");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_roidSuffixTooLong() {
     IllegalArgumentException e =
         assertThrows(
@@ -575,14 +571,14 @@ public class RegistryTest extends EntityTestCase {
     assertThat(e).hasMessageThat().isEqualTo("ROID suffix must be in format ^[A-Z0-9_]{1,8}$");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_roidSuffixNotUppercased() {
     assertThrows(
         IllegalArgumentException.class,
         () -> Registry.get("tld").asBuilder().setRoidSuffix("abcd"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_roidSuffixContainsInvalidCharacters() {
     assertThrows(
         IllegalArgumentException.class,

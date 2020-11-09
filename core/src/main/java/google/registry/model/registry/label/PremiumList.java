@@ -25,6 +25,7 @@ import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.ofyOrJpaTm;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
@@ -55,6 +56,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -207,7 +209,9 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   }
 
   private static PremiumList loadPremiumList(String name) {
-    return ofy().load().type(PremiumList.class).parent(getCrossTldKey()).id(name).now();
+    return ofyOrJpaTm(
+        () -> ofy().load().type(PremiumList.class).parent(getCrossTldKey()).id(name).now(),
+        () -> PremiumListDao.getLatestRevision(name).orElseThrow(NoSuchElementException::new));
   }
 
   /**

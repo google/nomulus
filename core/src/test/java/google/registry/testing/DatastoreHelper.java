@@ -322,12 +322,19 @@ public class DatastoreHelper {
 
   public static ReservedList persistReservedList(
     String listName, boolean shouldPublish, String... lines) {
-    return persistResource(
+    ReservedList reservedList =
         new ReservedList.Builder()
             .setName(listName)
             .setReservedListMapFromLines(ImmutableList.copyOf(lines))
             .setShouldPublish(shouldPublish)
-            .build());
+            .setLastUpdateTime(DateTime.now(DateTimeZone.UTC))
+            .build();
+    return ofyOrJpaTm(
+        () -> persistResource(reservedList),
+        () -> {
+          tm().transact(() -> tm().insert(reservedList));
+          return reservedList;
+        });
   }
 
   /**
