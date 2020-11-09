@@ -27,7 +27,7 @@ import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.schema.replay.DuallyWrittenEntity;
+import google.registry.schema.replay.NonReplicatedEntity;
 import javax.persistence.Column;
 import javax.persistence.Index;
 import javax.persistence.PostLoad;
@@ -58,7 +58,7 @@ import javax.persistence.Transient;
 @ReportedOn
 @javax.persistence.Entity(name = "KmsSecret")
 @Table(indexes = {@Index(columnList = "secretName")})
-public class KmsSecretRevision extends ImmutableObject implements DuallyWrittenEntity {
+public class KmsSecretRevision extends ImmutableObject implements NonReplicatedEntity {
 
   /**
    * The maximum allowable secret size. Although Datastore allows entities up to 1 MB in size,

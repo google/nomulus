@@ -28,7 +28,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
 import google.registry.persistence.VKey;
 import google.registry.persistence.converter.LocalDateConverter;
-import google.registry.schema.replay.DuallyWrittenEntity;
+import google.registry.schema.replay.NonReplicatedEntity;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.persistence.Column;
@@ -50,7 +50,7 @@ import org.joda.time.LocalDate;
 @Entity
 @javax.persistence.Entity
 @IdClass(RdeRevisionId.class)
-public final class RdeRevision extends BackupGroupRoot implements DuallyWrittenEntity {
+public final class RdeRevision extends BackupGroupRoot implements NonReplicatedEntity {
 
   /** String triplet of tld, date, and mode, e.g. {@code soy_2015-09-01_full}. */
   @Id @Transient String id;

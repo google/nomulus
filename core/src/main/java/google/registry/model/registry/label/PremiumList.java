@@ -47,7 +47,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registry.Registry;
 import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.DuallyWrittenEntity;
+import google.registry.schema.replay.NonReplicatedEntity;
 import google.registry.schema.replay.SqlEntity;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.util.NonFinalForTesting;
@@ -90,7 +90,7 @@ import org.joda.time.Duration;
 @javax.persistence.Entity
 @Table(indexes = {@Index(columnList = "name", name = "premiumlist_name_idx")})
 public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.PremiumListEntry>
-    implements DuallyWrittenEntity {
+    implements NonReplicatedEntity {
 
   /** Stores the revision key for the set of currently used premium list entry entities. */
   @Transient Key<PremiumListRevision> revisionKey;

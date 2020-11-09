@@ -16,8 +16,12 @@ package google.registry.schema.replay;
 
 import com.google.common.collect.ImmutableList;
 
-/** An entity that is dually-written, so it need not be converted during replay. */
-public interface DuallyWrittenEntity extends DatastoreEntity, SqlEntity {
+/**
+ * Represents an entity that should not participate in asynchronous replication.
+ *
+ * <p>We expect that this is a result of the entity being dually-written.
+ */
+public interface NonReplicatedEntity extends DatastoreEntity, SqlEntity {
 
   @Override
   default ImmutableList<DatastoreEntity> toDatastoreEntities() {

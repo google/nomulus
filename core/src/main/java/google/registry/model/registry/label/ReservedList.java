@@ -38,7 +38,7 @@ import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.DomainLabelMetrics.MetricsReservedListMatch;
-import google.registry.schema.replay.DuallyWrittenEntity;
+import google.registry.schema.replay.NonReplicatedEntity;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -67,7 +67,7 @@ import org.joda.time.DateTime;
 @Table(indexes = {@Index(columnList = "name", name = "reservedlist_name_idx")})
 public final class ReservedList
     extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry>
-    implements DuallyWrittenEntity {
+    implements NonReplicatedEntity {
 
   @Mapify(ReservedListEntry.LabelMapper.class)
   @ElementCollection

@@ -44,7 +44,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.schema.replay.DuallyWrittenEntity;
+import google.registry.schema.replay.NonReplicatedEntity;
 import google.registry.util.CollectionUtils;
 import java.util.Map;
 import java.util.Optional;
@@ -80,7 +80,7 @@ import org.joda.time.DateTime;
 @Entity
 @javax.persistence.Entity
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
-public class SignedMarkRevocationList extends ImmutableObject implements DuallyWrittenEntity {
+public class SignedMarkRevocationList extends ImmutableObject implements NonReplicatedEntity {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
