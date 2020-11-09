@@ -34,10 +34,11 @@ io.opencensus:opencensus-contrib-http-util:0.24.0
 org.apache.httpcomponents:httpclient:4.5.10
 org.apache.httpcomponents:httpcore:4.4.12
 org.checkerframework:checker-compat-qual:2.5.5
+org.checkerframework:checker-qual:3.5.0
 org.flywaydb:flyway-core:5.2.4
 org.ow2.asm:asm-analysis:8.0.1
 org.ow2.asm:asm-commons:7.1
 org.ow2.asm:asm-tree:8.0.1
 org.ow2.asm:asm-util:8.0.1
 org.ow2.asm:asm:8.0.1
-org.postgresql:postgresql:42.2.14
+org.postgresql:postgresql:42.2.18

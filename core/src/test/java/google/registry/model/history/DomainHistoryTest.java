@@ -20,10 +20,10 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
-import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
@@ -41,22 +41,19 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 
 /** Tests for {@link DomainHistory}. */
+@DualDatabaseTest
 public class DomainHistoryTest extends EntityTestCase {
 
   DomainHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
-  @BeforeEach
-  void beforeEach() {
-    saveRegistrar("TheRegistrar");
-  }
-
-  @Test
+  @TestSqlOnly
   void testPersistence() {
     DomainBase domain = createDomainWithContactsAndHosts();
     DomainHistory domainHistory = createDomainHistory(domain);
@@ -71,7 +68,7 @@ public class DomainHistoryTest extends EntityTestCase {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testLegacyPersistence_nullResource() {
     DomainBase domain = createDomainWithContactsAndHosts();
     DomainHistory domainHistory =
@@ -92,7 +89,7 @@ public class DomainHistoryTest extends EntityTestCase {
             });
   }
 
-  @Test
+  @TestOfyOnly
   void testOfyPersistence() {
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
@@ -128,6 +125,7 @@ public class DomainHistoryTest extends EntityTestCase {
   }
 
   static DomainBase createDomainWithContactsAndHosts() {
+    createTld("tld");
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
 

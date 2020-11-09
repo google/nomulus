@@ -336,10 +336,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    */
   private boolean validateCertificate(String existingCertificate, String certificateString) {
     if ((existingCertificate == null) || !existingCertificate.equals(certificateString)) {
-      // TODO(sarhabot): remove this check after November 1, 2020
-      if (tm().getTransactionTime().isAfter(DateTime.parse("2020-11-01T00:00:00Z"))) {
         certificateChecker.validateCertificate(certificateString);
-      }
       return true;
     }
     return false;

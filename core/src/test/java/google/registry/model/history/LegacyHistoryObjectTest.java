@@ -17,10 +17,10 @@ package google.registry.model.history;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
-import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -40,34 +40,32 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestSqlOnly;
 
 /** Tests to check {@link HistoryEntry} + its subclasses' transitions to/from Datastore/SQL. */
+@DualDatabaseTest
 public class LegacyHistoryObjectTest extends EntityTestCase {
 
   public LegacyHistoryObjectTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
-  @BeforeEach
-  void beforeEach() {
-    saveRegistrar("TheRegistrar");
-  }
-
-  @Test
+  @TestSqlOnly
   void testFullConversion_contact() {
     // Create+save an old contact HistoryEntry, reload it, and verify it's a proper ContactHistory
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
     HistoryEntry legacyHistoryEntry = historyEntryBuilderFor(contact).build();
-    tm().transact(() -> tm().insert(legacyHistoryEntry));
+    ofyTm().transact(() -> ofyTm().insert(legacyHistoryEntry));
 
     // In Datastore, we will save it as HistoryEntry but retrieve it as ContactHistory
     long historyEntryId = legacyHistoryEntry.getId();
     HistoryEntry fromObjectify =
-        tm().transact(
+        ofyTm()
+            .transact(
                 () ->
-                    tm().load(
+                    ofyTm()
+                        .load(
                             VKey.create(
                                 HistoryEntry.class,
                                 historyEntryId,
@@ -96,19 +94,22 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
         .isEqualTo(legacyHistoryFromSql.getParentVKey().getSqlKey());
   }
 
-  @Test
+  @TestSqlOnly
   void testFullConversion_domain() {
+    createTld("foobar");
     // Create+save an old domain HistoryEntry, reload it, and verify it's a proper DomainHistory
     DomainBase domain = DomainHistoryTest.createDomainWithContactsAndHosts();
     HistoryEntry legacyHistoryEntry = historyEntryForDomain(domain);
-    tm().transact(() -> tm().insert(legacyHistoryEntry));
+    ofyTm().transact(() -> ofyTm().insert(legacyHistoryEntry));
 
     // In Datastore, we will save it as HistoryEntry but retrieve it as DomainHistory
     long historyEntryId = legacyHistoryEntry.getId();
     HistoryEntry fromObjectify =
-        tm().transact(
+        ofyTm()
+            .transact(
                 () ->
-                    tm().load(
+                    ofyTm()
+                        .load(
                             VKey.create(
                                 HistoryEntry.class,
                                 historyEntryId,
@@ -140,19 +141,21 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
         .isEqualTo(nullToEmpty(legacyHistoryFromSql.getNsHosts()));
   }
 
-  @Test
+  @TestSqlOnly
   void testFullConversion_host() {
     // Create+save an old host HistoryEntry, reload it, and verify it's a proper HostHistory
     HostResource host = newHostResourceWithRoid("hs1.example.com", "host1");
     HistoryEntry legacyHistoryEntry = historyEntryBuilderFor(host).build();
-    tm().transact(() -> tm().insert(legacyHistoryEntry));
+    ofyTm().transact(() -> ofyTm().insert(legacyHistoryEntry));
 
     // In Datastore, we will save it as HistoryEntry but retrieve it as HostHistory
     long historyEntryId = legacyHistoryEntry.getId();
     HistoryEntry fromObjectify =
-        tm().transact(
+        ofyTm()
+            .transact(
                 () ->
-                    tm().load(
+                    ofyTm()
+                        .load(
                             VKey.create(
                                 HistoryEntry.class,
                                 historyEntryId,

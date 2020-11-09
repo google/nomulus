@@ -30,13 +30,16 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.VKey;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestSqlOnly;
 import org.joda.time.LocalDate;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Spec11ThreatMatch}. */
+@DualDatabaseTest
 public class Spec11ThreatMatchTest extends EntityTestCase {
 
   private static final String REGISTRAR_ID = "registrar";
@@ -100,8 +103,9 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
             .build();
   }
 
-  @Test
+  @TestSqlOnly
   void testPersistence() {
+    createTld("tld");
     saveRegistrar(REGISTRAR_ID);
 
     jpaTm()
@@ -121,7 +125,7 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
     assertThat(threat).isEqualTo(persistedThreat);
   }
 
-  @Test
+  @TestSqlOnly
   @Disabled("We can't rely on foreign keys until we've migrated to SQL")
   void testThreatForeignKeyConstraints() {
     assertThrowForeignKeyViolation(
@@ -152,7 +156,7 @@ public class Spec11ThreatMatchTest extends EntityTestCase {
         });
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_threatsWithInvalidFields() {
     assertThrows(
         IllegalArgumentException.class, () -> threat.asBuilder().setRegistrarId(null).build());

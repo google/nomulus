@@ -86,7 +86,7 @@ CREATE TABLE public."BillingEvent" (
     flags text[],
     reason text NOT NULL,
     domain_name text NOT NULL,
-    allocation_token_id text,
+    allocation_token text,
     billing_time timestamp with time zone,
     cancellation_matching_billing_recurrence_id bigint,
     cost_amount numeric(19,2),
@@ -1550,7 +1550,7 @@ CREATE INDEX idxhlqqd5uy98cjyos72d81x9j95 ON public."DelegationSignerData" USING
 -- Name: idxhmv411mdqo5ibn4vy7ykxpmlv; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idxhmv411mdqo5ibn4vy7ykxpmlv ON public."BillingEvent" USING btree (allocation_token_id);
+CREATE INDEX idxhmv411mdqo5ibn4vy7ykxpmlv ON public."BillingEvent" USING btree (allocation_token);
 
 
 --
@@ -1823,11 +1823,27 @@ ALTER TABLE ONLY public."BillingCancellation"
 
 
 --
+-- Name: BillingCancellation fk_billing_cancellation_domain_history; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingCancellation"
+    ADD CONSTRAINT fk_billing_cancellation_domain_history FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+
+
+--
 -- Name: BillingCancellation fk_billing_cancellation_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."BillingCancellation"
     ADD CONSTRAINT fk_billing_cancellation_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: BillingEvent fk_billing_event_allocation_token; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEvent"
+    ADD CONSTRAINT fk_billing_event_allocation_token FOREIGN KEY (allocation_token) REFERENCES public."AllocationToken"(token);
 
 
 --
@@ -1839,11 +1855,27 @@ ALTER TABLE ONLY public."BillingEvent"
 
 
 --
+-- Name: BillingEvent fk_billing_event_domain_history; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEvent"
+    ADD CONSTRAINT fk_billing_event_domain_history FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+
+
+--
 -- Name: BillingEvent fk_billing_event_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."BillingEvent"
     ADD CONSTRAINT fk_billing_event_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: BillingRecurrence fk_billing_recurrence_domain_history; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingRecurrence"
+    ADD CONSTRAINT fk_billing_recurrence_domain_history FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
 
 
 --
@@ -1871,11 +1903,27 @@ ALTER TABLE ONLY public."ContactHistory"
 
 
 --
+-- Name: Contact fk_contact_transfer_gaining_poll_message_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Contact"
+    ADD CONSTRAINT fk_contact_transfer_gaining_poll_message_id FOREIGN KEY (transfer_gaining_poll_message_id) REFERENCES public."PollMessage"(poll_message_id);
+
+
+--
 -- Name: Contact fk_contact_transfer_gaining_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."Contact"
     ADD CONSTRAINT fk_contact_transfer_gaining_registrar_id FOREIGN KEY (transfer_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: Contact fk_contact_transfer_losing_poll_message_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Contact"
+    ADD CONSTRAINT fk_contact_transfer_losing_poll_message_id FOREIGN KEY (transfer_losing_poll_message_id) REFERENCES public."PollMessage"(poll_message_id);
 
 
 --
@@ -1959,6 +2007,22 @@ ALTER TABLE ONLY public."Domain"
 
 
 --
+-- Name: Domain fk_domain_tld; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Domain"
+    ADD CONSTRAINT fk_domain_tld FOREIGN KEY (tld) REFERENCES public."Tld"(tld_name);
+
+
+--
+-- Name: DomainTransactionRecord fk_domain_transaction_record_tld; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainTransactionRecord"
+    ADD CONSTRAINT fk_domain_transaction_record_tld FOREIGN KEY (tld) REFERENCES public."Tld"(tld_name);
+
+
+--
 -- Name: Domain fk_domain_transfer_billing_cancellation_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2028,6 +2092,38 @@ ALTER TABLE ONLY public."GracePeriod"
 
 ALTER TABLE ONLY public."GracePeriod"
     ADD CONSTRAINT fk_grace_period_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: GracePeriod fk_grace_period_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."GracePeriod"
+    ADD CONSTRAINT fk_grace_period_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: Host fk_host_creation_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Host"
+    ADD CONSTRAINT fk_host_creation_registrar_id FOREIGN KEY (creation_registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: Host fk_host_current_sponsor_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Host"
+    ADD CONSTRAINT fk_host_current_sponsor_registrar_id FOREIGN KEY (current_sponsor_registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: Host fk_host_last_epp_update_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Host"
+    ADD CONSTRAINT fk_host_last_epp_update_registrar_id FOREIGN KEY (last_epp_update_registrar_id) REFERENCES public."Registrar"(registrar_id);
 
 
 --
@@ -2116,6 +2212,38 @@ ALTER TABLE ONLY public."PollMessage"
 
 ALTER TABLE ONLY public."PollMessage"
     ADD CONSTRAINT fk_poll_message_transfer_response_losing_registrar_id FOREIGN KEY (transfer_response_losing_registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: RegistrarPoc fk_registrar_poc_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."RegistrarPoc"
+    ADD CONSTRAINT fk_registrar_poc_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: Spec11ThreatMatch fk_spec11_threat_match_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Spec11ThreatMatch"
+    ADD CONSTRAINT fk_spec11_threat_match_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
+
+
+--
+-- Name: Spec11ThreatMatch fk_spec11_threat_match_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Spec11ThreatMatch"
+    ADD CONSTRAINT fk_spec11_threat_match_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+
+
+--
+-- Name: Spec11ThreatMatch fk_spec11_threat_match_tld; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Spec11ThreatMatch"
+    ADD CONSTRAINT fk_spec11_threat_match_tld FOREIGN KEY (tld) REFERENCES public."Tld"(tld_name);
 
 
 --

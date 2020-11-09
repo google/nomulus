@@ -17,6 +17,7 @@ package google.registry.model.domain;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -45,30 +46,29 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
-import google.registry.testing.DatastoreEntityExtension;
+import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TestSqlOnly;
 import java.util.Arrays;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Verify that we can store/retrieve DomainBase objects from a SQL database. */
+@DualDatabaseTest
 public class DomainBaseSqlTest {
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
-  @Order(value = 1)
-  DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
-
-  @RegisterExtension
-  JpaIntegrationWithCoverageExtension jpa =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .enableJpaEntityCoverageCheck(true)
+          .withClock(fakeClock)
+          .build();
 
   private DomainBase domain;
   private DomainHistory historyEntry;
@@ -132,7 +132,7 @@ public class DomainBaseSqlTest {
     contact2 = makeContact("contact_id2");
   }
 
-  @Test
+  @TestSqlOnly
   void testDomainBasePersistence() {
     persistDomain();
 
@@ -144,7 +144,7 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testHostForeignKeyConstraints() {
     assertThrowForeignKeyViolation(
         () ->
@@ -158,7 +158,7 @@ public class DomainBaseSqlTest {
                     }));
   }
 
-  @Test
+  @TestSqlOnly
   void testContactForeignKeyConstraints() {
     assertThrowForeignKeyViolation(
         () ->
@@ -171,7 +171,7 @@ public class DomainBaseSqlTest {
                     }));
   }
 
-  @Test
+  @TestSqlOnly
   void testResaveDomain_succeeds() {
     persistDomain();
     jpaTm()
@@ -189,7 +189,7 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testModifyGracePeriod_setEmptyCollectionSuccessfully() {
     persistDomain();
     jpaTm()
@@ -209,7 +209,7 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testModifyGracePeriod_setNullCollectionSuccessfully() {
     persistDomain();
     jpaTm()
@@ -228,7 +228,7 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testModifyGracePeriod_addThenRemoveSuccessfully() {
     persistDomain();
     jpaTm()
@@ -305,7 +305,7 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testModifyGracePeriod_removeThenAddSuccessfully() {
     persistDomain();
     jpaTm()
@@ -347,7 +347,7 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testModifyDsData_addThenRemoveSuccessfully() {
     persistDomain();
     DelegationSignerData extraDsData =
@@ -391,8 +391,9 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testUpdates() {
+    createTld("com");
     jpaTm()
         .transact(
             () -> {
@@ -423,6 +424,7 @@ public class DomainBaseSqlTest {
   }
 
   private void persistDomain() {
+    createTld("com");
     jpaTm()
         .transact(
             () -> {
@@ -442,8 +444,9 @@ public class DomainBaseSqlTest {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void persistDomainWithCompositeVKeys() {
+    createTld("com");
     jpaTm()
         .transact(
             () -> {
@@ -572,8 +575,9 @@ public class DomainBaseSqlTest {
     assertThat(persisted.getGracePeriods()).isEqualTo(gracePeriods);
   }
 
-  @Test
+  @TestSqlOnly
   void persistDomainWithLegacyVKeys() {
+    createTld("com");
     jpaTm()
         .transact(
             () -> {

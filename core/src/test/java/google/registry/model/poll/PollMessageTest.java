@@ -15,13 +15,12 @@
 package google.registry.model.poll;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.persistActiveContact;
 import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.model.EntityTestCase;
@@ -31,10 +30,14 @@ import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link PollMessage}. */
+@DualDatabaseTest
 public class PollMessageTest extends EntityTestCase {
 
   private DomainBase domain;
@@ -64,7 +67,8 @@ public class PollMessageTest extends EntityTestCase {
                 .setBySuperuser(false)
                 .setReason("reason")
                 .setRequestedByRegistrar(false)
-                .build());
+                .build()
+                .toChildHistoryEntity());
     oneTime =
         new PollMessage.OneTime.Builder()
             .setId(100L)
@@ -83,35 +87,9 @@ public class PollMessageTest extends EntityTestCase {
             .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
             .setTargetId("foobar.foo")
             .build();
-    jpaTm()
-        .transact(
-            () -> {
-              saveRegistrar("TheRegistrar");
-              jpaTm().insert(contact);
-              jpaTm().insert(domain);
-              jpaTm().insert(historyEntry.toChildHistoryEntity());
-            });
   }
 
-  @Test
-  void testCloudSqlPersistenceOneTime() {
-    jpaTm().transact(() -> jpaTm().insert(oneTime));
-    PollMessage.OneTime persisted =
-        jpaTm().transact(() -> jpaTm().load(VKey.createSql(PollMessage.OneTime.class, oneTime.id)));
-    assertThat(persisted).isEqualTo(oneTime);
-  }
-
-  @Test
-  void testCloudSqlPersistenceAutorenew() {
-    jpaTm().transact(() -> jpaTm().insert(autoRenew));
-    PollMessage.Autorenew persisted =
-        jpaTm()
-            .transact(
-                () -> jpaTm().load(VKey.createSql(PollMessage.Autorenew.class, autoRenew.id)));
-    assertThat(persisted).isEqualTo(autoRenew);
-  }
-
-  @Test
+  @TestSqlOnly
   void testCloudSqlSupportForPolymorphicVKey() {
     jpaTm().transact(() -> jpaTm().insert(oneTime));
     PollMessage persistedOneTime =
@@ -126,7 +104,7 @@ public class PollMessageTest extends EntityTestCase {
     assertThat(persistedAutoRenew).isEqualTo(autoRenew);
   }
 
-  @Test
+  @TestOfyAndSql
   void testPersistenceOneTime() {
     PollMessage.OneTime pollMessage =
         persistResource(
@@ -136,10 +114,10 @@ public class PollMessageTest extends EntityTestCase {
                 .setMsg("Test poll message")
                 .setParent(historyEntry)
                 .build());
-    assertThat(ofy().load().entity(pollMessage).now()).isEqualTo(pollMessage);
+    assertThat(tm().transact(() -> tm().load(pollMessage))).isEqualTo(pollMessage);
   }
 
-  @Test
+  @TestOfyAndSql
   void testPersistenceAutorenew() {
     PollMessage.Autorenew pollMessage =
         persistResource(
@@ -151,10 +129,10 @@ public class PollMessageTest extends EntityTestCase {
                 .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
                 .setTargetId("foobar.foo")
                 .build());
-    assertThat(ofy().load().entity(pollMessage).now()).isEqualTo(pollMessage);
+    assertThat(tm().transact(() -> tm().load(pollMessage))).isEqualTo(pollMessage);
   }
 
-  @Test
+  @TestOfyOnly
   void testIndexingAutorenew() throws Exception {
     PollMessage.Autorenew pollMessage =
         persistResource(
