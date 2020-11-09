@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import com.google.appengine.api.users.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth;
@@ -123,6 +124,7 @@ public abstract class RegistrarSettingsActionTestCase {
             ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
             30,
             2048,
+            ImmutableSet.of("secp256r1", "secp384r1"),
             clock);
     inject.setStaticField(Ofy.class, "clock", clock);
     when(req.getMethod()).thenReturn("POST");

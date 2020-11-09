@@ -28,10 +28,14 @@ import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
+import org.bouncycastle.jce.ECNamedCurveTable;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 
@@ -42,6 +46,7 @@ public class CertificateChecker {
   private final int daysToExpiration;
   private final int minimumRsaKeyLength;
   private final Clock clock;
+  private final ImmutableSet<String> allowedEcdsaCurves;
 
   /**
    * Constructs a CertificateChecker instance with the specified configuration parameters.
@@ -65,16 +70,18 @@ public class CertificateChecker {
   @Inject
   public CertificateChecker(
       @Config("maxValidityDaysSchedule")
-          ImmutableSortedMap<DateTime, Integer> maxValidityLengthSchedule,
-      @Config("expirationWarningDays") int daysToExpiration,
+          ImmutableSortedMap<DateTime, Integer> maxValidityDaysSchedule,
+      @Config("expirationWarningDays") int expirationWarningDays,
       @Config("minimumRsaKeyLength") int minimumRsaKeyLength,
+      @Config("allowedEcdsaCurves") ImmutableSet<String> allowedEcdsaCurves,
       Clock clock) {
     checkArgument(
-        maxValidityLengthSchedule.containsKey(START_OF_TIME),
+        maxValidityDaysSchedule.containsKey(START_OF_TIME),
         "Max validity length schedule must contain an entry for START_OF_TIME");
-    this.maxValidityLengthSchedule = maxValidityLengthSchedule;
-    this.daysToExpiration = daysToExpiration;
+    this.maxValidityLengthSchedule = maxValidityDaysSchedule;
+    this.daysToExpiration = expirationWarningDays;
     this.minimumRsaKeyLength = minimumRsaKeyLength;
+    this.allowedEcdsaCurves = allowedEcdsaCurves;
     this.clock = clock;
   }
 
@@ -123,7 +130,9 @@ public class CertificateChecker {
         violations.add(CertificateViolation.RSA_KEY_LENGTH_TOO_SHORT);
       }
     } else if (key.getAlgorithm().equals("EC")) {
-      // TODO(sarahbot): Add verification of ECDSA curves
+      if (!checkCurveName(key, allowedEcdsaCurves)) {
+        violations.add(CertificateViolation.INVALID_ECDSA_CURVE);
+      }
     } else {
       violations.add(CertificateViolation.ALGORITHM_CONSTRAINED);
     }
@@ -171,6 +180,33 @@ public class CertificateChecker {
     return Days.daysBetween(start.withTimeAtStartOfDay(), end.withTimeAtStartOfDay()).getDays();
   }
 
+  /** Checks if the curve used for a public key is in the list of acceptable curves. */
+  private static boolean checkCurveName(PublicKey key, ImmutableSet<String> allowedEcdsaCurves) {
+    org.bouncycastle.jce.spec.ECParameterSpec params;
+    // These 2 different instances of PublicKey need to be handled separately since their OIDs are
+    // encoded differently. More details on this can be found at
+    // https://stackoverflow.com/questions/49895713/how-to-find-the-matching-curve-name-from-an-ecpublickey.
+    if (key instanceof ECPublicKey) {
+      ECPublicKey ecKey = (ECPublicKey) key;
+      params = EC5Util.convertSpec(ecKey.getParams(), false);
+    } else if (key instanceof org.bouncycastle.jce.interfaces.ECPublicKey) {
+      org.bouncycastle.jce.interfaces.ECPublicKey ecKey =
+          (org.bouncycastle.jce.interfaces.ECPublicKey) key;
+      params = ecKey.getParameters();
+    } else {
+      throw new IllegalArgumentException("Unrecognized instance of PublicKey.");
+    }
+    return allowedEcdsaCurves.stream()
+        .anyMatch(
+            curve -> {
+              ECNamedCurveParameterSpec cParams = ECNamedCurveTable.getParameterSpec(curve);
+              return cParams.getN().equals(params.getN())
+                  && cParams.getH().equals(params.getH())
+                  && cParams.getCurve().equals(params.getCurve())
+                  && cParams.getG().equals(params.getG());
+            });
+  }
+
   private String getViolationDisplayMessage(CertificateViolation certificateViolation) {
     // Yes, we'd rather do this as an instance method on the CertificateViolation enum itself, but
     // we can't because we need access to configuration (injected as instance variables) which you
@@ -190,6 +226,9 @@ public class CertificateChecker {
         return String.format(
             "Certificate validity period is too long; it must be less than or equal to %d days.",
             this.maxValidityLengthSchedule.lastEntry().getValue());
+      case INVALID_ECDSA_CURVE:
+        return String.format(
+            "The ECDSA key must use one of these algorithms: %s", allowedEcdsaCurves);
       default:
         throw new IllegalArgumentException(
             String.format(
@@ -206,7 +245,8 @@ public class CertificateChecker {
     NOT_YET_VALID,
     VALIDITY_LENGTH_TOO_LONG,
     RSA_KEY_LENGTH_TOO_SHORT,
-    ALGORITHM_CONSTRAINED;
+    ALGORITHM_CONSTRAINED,
+    INVALID_ECDSA_CURVE;
 
     /**
      * Gets a suitable end-user-facing display message for this particular certificate violation.

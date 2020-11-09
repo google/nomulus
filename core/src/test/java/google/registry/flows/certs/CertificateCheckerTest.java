@@ -17,6 +17,7 @@ package google.registry.flows.certs;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.flows.certs.CertificateChecker.CertificateViolation.ALGORITHM_CONSTRAINED;
 import static google.registry.flows.certs.CertificateChecker.CertificateViolation.EXPIRED;
+import static google.registry.flows.certs.CertificateChecker.CertificateViolation.INVALID_ECDSA_CURVE;
 import static google.registry.flows.certs.CertificateChecker.CertificateViolation.NOT_YET_VALID;
 import static google.registry.flows.certs.CertificateChecker.CertificateViolation.RSA_KEY_LENGTH_TOO_SHORT;
 import static google.registry.flows.certs.CertificateChecker.CertificateViolation.VALIDITY_LENGTH_TOO_LONG;
@@ -25,12 +26,16 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.testing.FakeClock;
 import google.registry.util.SelfSignedCaCertificate;
+import java.security.AlgorithmParameters;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.ECParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -46,6 +51,7 @@ class CertificateCheckerTest {
           ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
           30,
           2048,
+          ImmutableSet.of("secp256r1", "secp384r1"),
           fakeClock);
 
   @Test
@@ -246,5 +252,63 @@ class CertificateCheckerTest {
     assertThat(VALIDITY_LENGTH_TOO_LONG.getDisplayMessage(certificateChecker))
         .isEqualTo(
             "Certificate validity period is too long; it must be less than or equal to 398 days.");
+  }
+
+  @Test
+  void test_checkCurveName_invalidCurve_returnsViolation() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    // Invalid curve
+    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+    AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
+    apParam.init(new ECGenParameterSpec("secp128r1"));
+    ECParameterSpec spec = apParam.getParameterSpec(ECParameterSpec.class);
+    keyGen.initialize(spec, new SecureRandom());
+    X509Certificate certificate =
+        SelfSignedCaCertificate.create(
+                keyGen.generateKeyPair(),
+                SSL_HOST,
+                DateTime.parse("2020-09-02T00:00:00Z"),
+                DateTime.parse("2021-10-01T00:00:00Z"))
+            .cert();
+    assertThat(certificateChecker.checkCertificate(certificate))
+        .containsExactly(INVALID_ECDSA_CURVE);
+  }
+
+  @Test
+  void test_checkCurveName_p256Curve_returnsNoViolations() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    // valid P-256 curve
+    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+    AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
+    apParam.init(new ECGenParameterSpec("secp256r1"));
+    ECParameterSpec spec = apParam.getParameterSpec(ECParameterSpec.class);
+    keyGen.initialize(spec, new SecureRandom());
+    X509Certificate certificate =
+        SelfSignedCaCertificate.create(
+                keyGen.generateKeyPair(),
+                SSL_HOST,
+                DateTime.parse("2020-09-02T00:00:00Z"),
+                DateTime.parse("2021-10-01T00:00:00Z"))
+            .cert();
+    assertThat(certificateChecker.checkCertificate(certificate)).isEmpty();
+  }
+
+  @Test
+  void test_checkCurveName_p384Curve_returnsNoViolations() throws Exception {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
+    // valid P-384 curve
+    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+    AlgorithmParameters apParam = AlgorithmParameters.getInstance("EC");
+    apParam.init(new ECGenParameterSpec("secp384r1"));
+    ECParameterSpec spec = apParam.getParameterSpec(ECParameterSpec.class);
+    keyGen.initialize(spec, new SecureRandom());
+    X509Certificate certificate =
+        SelfSignedCaCertificate.create(
+                keyGen.generateKeyPair(),
+                SSL_HOST,
+                DateTime.parse("2020-09-02T00:00:00Z"),
+                DateTime.parse("2021-10-01T00:00:00Z"))
+            .cert();
+    assertThat(certificateChecker.checkCertificate(certificate)).isEmpty();
   }
 }

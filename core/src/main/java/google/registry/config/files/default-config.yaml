@@ -458,5 +458,9 @@ sslCertificateValidation:
   # The number of days before a certificate expires that indicates the
   # certificate is nearing expiration and warnings should be sent.
   expirationWarningDays: 30
-  # The minimum number of bits an RSA key must contain
+  # The minimum number of bits an RSA key must contain.
   minimumRsaKeyLength: 2048
+  # The ECDSA curves that are allowed for public keys.
+  allowedEcdsaCurves:
+    - secp256r1
+    - secp384r1

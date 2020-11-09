@@ -16,6 +16,7 @@ package google.registry.config;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** The POJO that YAML config files are deserialized into. */
 public class RegistryConfigSettings {
@@ -226,5 +227,6 @@ public class RegistryConfigSettings {
     public Map<String, Integer> maxValidityDaysSchedule;
     public int expirationWarningDays;
     public int minimumRsaKeyLength;
+    public Set<String> allowedEcdsaCurves;
   }
 }
