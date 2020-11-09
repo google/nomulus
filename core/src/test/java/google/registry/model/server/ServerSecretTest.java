@@ -15,21 +15,25 @@
 package google.registry.model.server;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.CrossTldSingleton.SINGLETON_ID;
+import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
+import com.googlecode.objectify.Key;
+import google.registry.model.EntityTestCase;
 import google.registry.model.ofy.RequestCapturingAsyncDatastoreService;
-import google.registry.testing.AppEngineExtension;
+import google.registry.persistence.VKey;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ServerSecret}. */
-public class ServerSecretTest {
+public class ServerSecretTest extends EntityTestCase {
 
-  @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  ServerSecretTest() {
+    super(JpaEntityCoverageCheck.ENABLED);
+  }
 
   @BeforeEach
   void beforeEach() {
@@ -41,18 +45,20 @@ public class ServerSecretTest {
     ServerSecret secret = ServerSecret.get();
     assertThat(secret).isNotNull();
     assertThat(ofy().load().entity(new ServerSecret()).now()).isEqualTo(secret);
+    assertThat(loadFromSql()).isEqualTo(secret);
   }
 
   @Test
   void testGet_existingSecret_returned() {
-    ServerSecret secret = ServerSecret.create(123, 456);
+    ServerSecret secret = ServerSecret.create(new UUID(123, 456));
     ofy().saveWithoutBackup().entity(secret).now();
     assertThat(ServerSecret.get()).isEqualTo(secret);
     assertThat(ofy().load().entity(new ServerSecret()).now()).isEqualTo(secret);
+    assertThat(loadFromSql()).isEqualTo(secret);
   }
 
   @Test
-  void testGet_cachedSecret_returnedWithoutDatastoreRead() {
+  void testGet_cachedSecret() {
     int numInitialReads = RequestCapturingAsyncDatastoreService.getReads().size();
     ServerSecret secret = ServerSecret.get();
     int numReads = RequestCapturingAsyncDatastoreService.getReads().size();
@@ -62,16 +68,28 @@ public class ServerSecretTest {
   }
 
   @Test
-  void testAsUuid() {
-    UUID uuid = ServerSecret.create(123, 456).asUuid();
-    assertThat(uuid.getMostSignificantBits()).isEqualTo(123);
-    assertThat(uuid.getLeastSignificantBits()).isEqualTo(456);
+  void testAsBytes() {
+    byte[] bytes = ServerSecret.create(new UUID(123, 0x456)).asBytes();
+    assertThat(bytes).isEqualTo(new byte[] {0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 0, 0x4, 0x56});
   }
 
-  @Test
-  void testAsBytes() {
-    byte[] bytes = ServerSecret.create(123, 0x456).asBytes();
-    assertThat(bytes)
-        .isEqualTo(new byte[] {0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 0, 0, 0, 0x4, 0x56});
+  private static ServerSecret loadFromSql() {
+    return jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .getEntityManager()
+                    .createQuery("FROM ServerSecret", ServerSecret.class)
+                    .setMaxResults(1)
+                    .getResultStream()
+                    .findFirst()
+                    .get());
+  }
+
+  private static VKey<ServerSecret> createKey() {
+    return VKey.create(
+        ServerSecret.class,
+        SINGLETON_ID,
+        Key.create(getCrossTldKey(), ServerSecret.class, SINGLETON_ID));
   }
 }

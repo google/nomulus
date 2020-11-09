@@ -32,6 +32,7 @@ import java.security.GeneralSecurityException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
@@ -82,14 +83,15 @@ public final class TmchCertificateAuthority {
               new CacheLoader<TmchCaMode, X509CRL>() {
                 @Override
                 public X509CRL load(final TmchCaMode tmchCaMode) throws GeneralSecurityException {
-                  TmchCrl storedCrl = TmchCrl.get();
-                  String crlContents;
-                  if (storedCrl == null) {
-                    String file = (tmchCaMode == PILOT) ? CRL_PILOT_FILE : CRL_FILE;
-                    crlContents = readResourceUtf8(TmchCertificateAuthority.class, file);
-                  } else {
-                    crlContents = storedCrl.getCrl();
-                  }
+                  Optional<TmchCrl> storedCrl = TmchCrl.get();
+                  String crlContents =
+                      storedCrl
+                          .map(TmchCrl::getCrl)
+                          .orElseGet(
+                              () -> {
+                                String file = (tmchCaMode == PILOT) ? CRL_PILOT_FILE : CRL_FILE;
+                                return readResourceUtf8(TmchCertificateAuthority.class, file);
+                              });
                   X509CRL crl = X509Utils.loadCrl(crlContents);
                   crl.verify(ROOT_CERTS.get(tmchCaMode).getPublicKey());
                   return crl;

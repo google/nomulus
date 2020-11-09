@@ -626,6 +626,11 @@
         primary key (revision_id)
     );
 
+    create table "ServerSecret" (
+       secret uuid not null,
+        primary key (secret)
+    );
+
     create table "SignedMarkRevocationEntry" (
        revision_id int8 not null,
         revocation_time timestamptz not null,
@@ -690,6 +695,13 @@
         tld_unicode text not null,
         transfer_grace_period_length interval not null,
         primary key (tld_name)
+    );
+
+    create table "TmchCrl" (
+       certificate_revocations text not null,
+        update_timestamp timestamptz not null,
+        url text not null,
+        primary key (certificate_revocations, update_timestamp, url)
     );
 
     create table "Transaction" (

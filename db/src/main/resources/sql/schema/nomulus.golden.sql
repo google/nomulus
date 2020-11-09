@@ -900,6 +900,15 @@ ALTER SEQUENCE public."SafeBrowsingThreat_id_seq" OWNED BY public."Spec11ThreatM
 
 
 --
+-- Name: ServerSecret; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."ServerSecret" (
+    secret uuid NOT NULL
+);
+
+
+--
 -- Name: SignedMarkRevocationEntry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -982,6 +991,17 @@ CREATE TABLE public."Tld" (
     tld_type text NOT NULL,
     tld_unicode text NOT NULL,
     transfer_grace_period_length interval NOT NULL
+);
+
+
+--
+-- Name: TmchCrl; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."TmchCrl" (
+    certificate_revocations text NOT NULL,
+    update_timestamp timestamp with time zone NOT NULL,
+    url text NOT NULL
 );
 
 
@@ -1303,6 +1323,14 @@ ALTER TABLE ONLY public."Spec11ThreatMatch"
 
 
 --
+-- Name: ServerSecret ServerSecret_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ServerSecret"
+    ADD CONSTRAINT "ServerSecret_pkey" PRIMARY KEY (secret);
+
+
+--
 -- Name: SignedMarkRevocationEntry SignedMarkRevocationEntry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1324,6 +1352,14 @@ ALTER TABLE ONLY public."SignedMarkRevocationList"
 
 ALTER TABLE ONLY public."Tld"
     ADD CONSTRAINT "Tld_pkey" PRIMARY KEY (tld_name);
+
+
+--
+-- Name: TmchCrl TmchCrl_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."TmchCrl"
+    ADD CONSTRAINT "TmchCrl_pkey" PRIMARY KEY (certificate_revocations, update_timestamp, url);
 
 
 --

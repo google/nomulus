@@ -70,3 +70,4 @@ V69__change_primary_key_and_add_history_table_for_delegation_signer.sql
 V70__signed_mark_revocation_list.sql
 V71__create_kms_secret.sql
 V72__add_missing_foreign_keys.sql
+V73__singleton_entities.sql
