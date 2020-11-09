@@ -17,23 +17,42 @@ package google.registry.model.reporting;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatastoreHelper.createTlds;
+import static google.registry.testing.DatastoreHelper.newDomainBase;
+import static google.registry.testing.DatastoreHelper.persistActiveContact;
+import static google.registry.testing.DatastoreHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.EntityTestCase;
+import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestSqlOnly;
 import org.joda.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Spec11ThreatMatchDao}. */
+@DualDatabaseTest
 public class Spec11ThreatMatchDaoTest extends EntityTestCase {
 
   private static final LocalDate TODAY = new LocalDate(2020, 8, 4);
   private static final LocalDate YESTERDAY = new LocalDate(2020, 8, 3);
 
+  private DomainBase todayComDomain;
+  private DomainBase todayOrgDomain;
+  private DomainBase yesterdayComDomain;
+  private DomainBase yesterdayOrgDomain;
+
   @BeforeEach
   void setUp() {
+    createTlds("com", "org");
+    ContactResource contact = persistActiveContact("jd1234");
+    todayComDomain = persistResource(newDomainBase("today.com", contact));
+    todayOrgDomain = persistResource(newDomainBase("today.org", contact));
+    yesterdayComDomain = persistResource(newDomainBase("yesterday.com", contact));
+    yesterdayOrgDomain = persistResource(newDomainBase("yesterday.org", contact));
     jpaTm()
         .transact(
             () -> {
@@ -42,7 +61,7 @@ public class Spec11ThreatMatchDaoTest extends EntityTestCase {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testDeleteEntriesByDate() {
     // Verify that all entries with the date TODAY were removed
     jpaTm()
@@ -66,7 +85,7 @@ public class Spec11ThreatMatchDaoTest extends EntityTestCase {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testLoadEntriesByDate() {
     jpaTm()
         .transact(
@@ -82,23 +101,25 @@ public class Spec11ThreatMatchDaoTest extends EntityTestCase {
 
   private ImmutableList<Spec11ThreatMatch> getThreatMatchesYesterday() {
     return ImmutableList.of(
-        createThreatMatch("yesterday.com", YESTERDAY),
-        createThreatMatch("yesterday.org", YESTERDAY));
+        createThreatMatch("yesterday.com", yesterdayComDomain.getRepoId(), YESTERDAY),
+        createThreatMatch("yesterday.org", yesterdayOrgDomain.getRepoId(), YESTERDAY));
   }
 
   private ImmutableList<Spec11ThreatMatch> getThreatMatchesToday() {
     return ImmutableList.of(
-        createThreatMatch("today.com", TODAY), createThreatMatch("today.org", TODAY));
+        createThreatMatch("today.com", todayComDomain.getRepoId(), TODAY),
+        createThreatMatch("today.org", todayOrgDomain.getRepoId(), TODAY));
   }
 
-  private Spec11ThreatMatch createThreatMatch(String domainName, LocalDate date) {
+  private Spec11ThreatMatch createThreatMatch(
+      String domainName, String domainRepoId, LocalDate date) {
     return new Spec11ThreatMatch()
         .asBuilder()
         .setThreatTypes(ImmutableSet.of(ThreatType.MALWARE))
         .setCheckDate(date)
         .setDomainName(domainName)
-        .setRegistrarId("Example Registrar")
-        .setDomainRepoId("1-COM")
+        .setRegistrarId("TheRegistrar")
+        .setDomainRepoId(domainRepoId)
         .build();
   }
 }
