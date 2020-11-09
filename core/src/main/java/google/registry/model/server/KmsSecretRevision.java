@@ -17,7 +17,6 @@ package google.registry.model.server;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 
-import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -28,8 +27,7 @@ import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.DuallyWrittenEntity;
 import javax.persistence.Column;
 import javax.persistence.Index;
 import javax.persistence.PostLoad;
@@ -60,7 +58,7 @@ import javax.persistence.Transient;
 @ReportedOn
 @javax.persistence.Entity(name = "KmsSecret")
 @Table(indexes = {@Index(columnList = "secretName")})
-public class KmsSecretRevision extends ImmutableObject implements DatastoreEntity, SqlEntity {
+public class KmsSecretRevision extends ImmutableObject implements DuallyWrittenEntity {
 
   /**
    * The maximum allowable secret size. Although Datastore allows entities up to 1 MB in size,
@@ -127,16 +125,6 @@ public class KmsSecretRevision extends ImmutableObject implements DatastoreEntit
   @OnLoad
   void onLoad() {
     secretName = parent.getName();
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // This is dually-written, as we do not care about history
-  }
-
-  @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(); // This is dually-written, as we do not care about history
   }
 
   /** A builder for constructing {@link KmsSecretRevision} entities, since they are immutable. */
