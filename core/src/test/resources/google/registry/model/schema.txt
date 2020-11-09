@@ -483,6 +483,11 @@ class google.registry.model.ofy.CommitLogMutation {
   @Parent com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest> parent;
   byte[] entityProtoBytes;
 }
+class google.registry.model.ofy.SqlReplayCheckpoint {
+  @Id long id;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  org.joda.time.DateTime lastReplayTime;
+}
 class google.registry.model.poll.PendingActionNotificationResponse$ContactPendingActionNotificationResponse {
   google.registry.model.eppcommon.Trid trid;
   google.registry.model.poll.PendingActionNotificationResponse$NameOrId nameOrId;
