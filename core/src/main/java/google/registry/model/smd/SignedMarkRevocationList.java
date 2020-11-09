@@ -28,7 +28,6 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapDifference;
@@ -45,8 +44,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.NonReplicatedEntity;
 import google.registry.util.CollectionUtils;
 import java.util.Map;
 import java.util.Optional;
@@ -82,8 +80,7 @@ import org.joda.time.DateTime;
 @Entity
 @javax.persistence.Entity
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
-public class SignedMarkRevocationList extends ImmutableObject
-    implements DatastoreEntity, SqlEntity {
+public class SignedMarkRevocationList extends ImmutableObject implements NonReplicatedEntity {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -260,16 +257,6 @@ public class SignedMarkRevocationList extends ImmutableObject
     if (!isShard) {
       throw new UnshardedSaveException();
     }
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // Dually-written every day
-  }
-
-  @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(); // Dually-written every day
   }
 
   /** Exception when trying to directly save a {@link SignedMarkRevocationList} without sharding. */

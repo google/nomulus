@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.annotation.Embed;
+import google.registry.model.common.GaeUserIdConverter;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
@@ -27,7 +28,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -35,8 +35,10 @@ import org.junit.jupiter.api.Test;
  */
 public class EntityTest {
 
+  private static final ImmutableSet<Class<?>> NON_CONVERTED_CLASSES =
+      ImmutableSet.of(GaeUserIdConverter.class);
+
   @Test
-  @Disabled("This won't be done until b/152410794 is done, since it requires many entity changes")
   void testSqlEntityPersistence() {
     try (ScanResult scanResult =
         new ClassGraph().enableAnnotationInfo().whitelistPackages("google.registry").scan()) {
@@ -74,6 +76,7 @@ public class EntityTest {
         .map(ClassInfo::loadClass)
         .filter(clazz -> !clazz.isAnnotationPresent(EntityForTesting.class))
         .filter(clazz -> !clazz.isAnnotationPresent(Embed.class))
+        .filter(clazz -> !NON_CONVERTED_CLASSES.contains(clazz))
         .map(Class::getName)
         .collect(toImmutableSet());
   }
