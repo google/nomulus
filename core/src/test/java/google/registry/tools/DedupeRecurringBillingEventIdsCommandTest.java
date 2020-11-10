@@ -221,12 +221,6 @@ class DedupeRecurringBillingEventIdsCommandTest
     }
   }
 
-  private static void assertNotChangeInDatastore(ImmutableObject... entities) {
-    for (ImmutableObject entity : entities) {
-      assertThat(ofy().load().entity(entity).now()).isEqualTo(entity);
-    }
-  }
-
   private static void assertNotChangeExceptUpdateTime(ImmutableObject... entities) {
     for (ImmutableObject entity : entities) {
       assertAboutImmutableObjects()

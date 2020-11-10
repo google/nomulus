@@ -15,15 +15,11 @@
 package google.registry.model.server;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.common.CrossTldSingleton.SINGLETON_ID;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.ofy.RequestCapturingAsyncDatastoreService;
-import google.registry.persistence.VKey;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,12 +80,5 @@ public class ServerSecretTest extends EntityTestCase {
                     .getResultStream()
                     .findFirst()
                     .get());
-  }
-
-  private static VKey<ServerSecret> createKey() {
-    return VKey.create(
-        ServerSecret.class,
-        SINGLETON_ID,
-        Key.create(getCrossTldKey(), ServerSecret.class, SINGLETON_ID));
   }
 }

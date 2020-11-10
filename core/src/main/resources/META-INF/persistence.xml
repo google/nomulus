@@ -70,6 +70,7 @@
     <class>google.registry.persistence.transaction.TransactionEntity</class>
     <class>google.registry.schema.cursor.Cursor</class>
     <class>google.registry.schema.domain.RegistryLock</class>
+    <class>google.registry.schema.replay.SqlReplayCheckpoint</class>
     <class>google.registry.schema.server.Lock</class>
     <class>google.registry.schema.tld.PremiumEntry</class>
 

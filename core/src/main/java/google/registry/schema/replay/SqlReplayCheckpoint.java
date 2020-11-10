@@ -12,53 +12,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.ofy;
+package google.registry.schema.replay;
 
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static google.registry.model.common.CrossTldSingleton.SINGLETON_ID;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import google.registry.model.common.CrossTldSingleton;
-import google.registry.persistence.VKey;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import org.joda.time.DateTime;
 
 @Entity
-public class SqlReplayCheckpoint extends CrossTldSingleton implements DatastoreEntity {
+public class SqlReplayCheckpoint implements SqlEntity {
 
-  DateTime lastReplayTime;
+  // Hibernate doesn't allow us to have a converted DateTime as our primary key so we need this
+  @Id private long revisionId = SINGLETON_ID;
+
+  private DateTime lastReplayTime;
 
   @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // not necessary to persist in SQL
+  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
+    return ImmutableList.of(); // not necessary to persist in Datastore
   }
 
   public static DateTime get() {
-    VKey<SqlReplayCheckpoint> key =
-        VKey.create(
-            SqlReplayCheckpoint.class,
-            SINGLETON_ID,
-            Key.create(getCrossTldKey(), SqlReplayCheckpoint.class, SINGLETON_ID));
-    return ofyTm()
+    return jpaTm()
         .transact(
             () ->
-                ofyTm()
-                    .maybeLoad(key)
+                jpaTm()
+                    .getEntityManager()
+                    .createQuery("FROM SqlReplayCheckpoint", SqlReplayCheckpoint.class)
+                    .setMaxResults(1)
+                    .getResultStream()
+                    .findFirst()
                     .map(checkpoint -> checkpoint.lastReplayTime)
                     .orElse(START_OF_TIME));
   }
 
   public static void set(DateTime lastReplayTime) {
-    ofyTm()
+    jpaTm()
         .transact(
             () -> {
+              jpaTm()
+                  .getEntityManager()
+                  .createQuery("DELETE FROM SqlReplayCheckpoint")
+                  .executeUpdate();
               SqlReplayCheckpoint checkpoint = new SqlReplayCheckpoint();
               checkpoint.lastReplayTime = lastReplayTime;
-              ofyTm().put(checkpoint);
+              jpaTm().insert(checkpoint);
             });
   }
 }

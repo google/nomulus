@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.ofy;
+package google.registry.schema.replay;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import google.registry.testing.AppEngineExtension;
+import google.registry.model.EntityTestCase;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link SqlReplayCheckpoint}. */
-public class SqlReplayCheckpointTest {
+public class SqlReplayCheckpointTest extends EntityTestCase {
 
-  @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  SqlReplayCheckpointTest() {
+    super(JpaEntityCoverageCheck.ENABLED);
+  }
 
   @Test
   void testEmpty_startOfTime() {
@@ -39,5 +39,23 @@ public class SqlReplayCheckpointTest {
     DateTime dateTime = DateTime.parse("2012-02-29T00:00:00Z");
     SqlReplayCheckpoint.set(dateTime);
     assertThat(SqlReplayCheckpoint.get()).isEqualTo(dateTime);
+  }
+
+  @Test
+  void testSuccess_multipleWrites() {
+    DateTime firstTime = DateTime.parse("2012-02-29T00:00:00Z");
+    SqlReplayCheckpoint.set(firstTime);
+    DateTime secondTime = DateTime.parse("2013-02-28T00:00:00Z");
+    SqlReplayCheckpoint.set(secondTime);
+    assertThat(SqlReplayCheckpoint.get()).isEqualTo(secondTime);
+    jpaTm()
+        .transact(
+            () ->
+                assertThat(
+                        jpaTm()
+                            .getEntityManager()
+                            .createQuery("SELECT COUNT(*) FROM SqlReplayCheckpoint", Long.class)
+                            .getSingleResult())
+                    .isEqualTo(1L));
   }
 }

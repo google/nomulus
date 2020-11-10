@@ -34,7 +34,6 @@ import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
-import google.registry.model.ofy.SqlReplayCheckpoint;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
@@ -103,7 +102,6 @@ public final class EntityClasses {
           ReservedList.class,
           ServerSecret.class,
           SignedMarkRevocationList.class,
-          SqlReplayCheckpoint.class,
           TmchCrl.class);
 
   private EntityClasses() {}
