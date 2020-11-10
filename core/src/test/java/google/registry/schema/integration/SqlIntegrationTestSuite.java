@@ -40,6 +40,7 @@ import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTest;
 import google.registry.schema.registrar.RegistrarDaoTest;
+import google.registry.schema.replay.SqlReplayCheckpointTest;
 import google.registry.schema.server.LockDaoTest;
 import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.testing.AppEngineExtension;
@@ -100,6 +101,7 @@ import org.junit.runner.RunWith;
   ServerSecretTest.class,
   SignedMarkRevocationListDaoTest.class,
   Spec11ThreatMatchTest.class,
+  SqlReplayCheckpointTest.class,
   TmchCrlTest.class,
   // AfterSuiteTest must be the last entry. See class javadoc for details.
   AfterSuiteTest.class

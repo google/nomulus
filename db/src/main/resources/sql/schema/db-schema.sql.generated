@@ -655,6 +655,12 @@
         primary key (id)
     );
 
+    create table "SqlReplayCheckpoint" (
+       revision_id int8 not null,
+        last_replay_time timestamptz,
+        primary key (revision_id)
+    );
+
     create table "Tld" (
        tld_name text not null,
         add_grace_period_length interval not null,

@@ -949,6 +949,16 @@ ALTER SEQUENCE public."SignedMarkRevocationList_revision_id_seq" OWNED BY public
 
 
 --
+-- Name: SqlReplayCheckpoint; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."SqlReplayCheckpoint" (
+    revision_id bigint NOT NULL,
+    last_replay_time timestamp with time zone NOT NULL
+);
+
+
+--
 -- Name: Tld; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1344,6 +1354,14 @@ ALTER TABLE ONLY public."SignedMarkRevocationEntry"
 
 ALTER TABLE ONLY public."SignedMarkRevocationList"
     ADD CONSTRAINT "SignedMarkRevocationList_pkey" PRIMARY KEY (revision_id);
+
+
+--
+-- Name: SqlReplayCheckpoint SqlReplayCheckpoint_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."SqlReplayCheckpoint"
+    ADD CONSTRAINT "SqlReplayCheckpoint_pkey" PRIMARY KEY (revision_id);
 
 
 --
