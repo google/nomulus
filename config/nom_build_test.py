@@ -113,7 +113,10 @@ class MyTest(unittest.TestCase):
         nom_build.main(['nom_build', ':nom:generate_golden_file'])
         self.call_mock.assert_has_calls([
             mock.call([GRADLEW, ':db:test']),
-            mock.call([GRADLEW, ':db:test'])
+            mock.call([GRADLEW, ':db:test', 'devTool',
+                       '--args=-e localhost --log_level=WARNING '
+                       'generate_sql_er_diagram -o '
+                       '/tmp/rootdir/db/src/main/resources/sql/er_diagram'])
         ])
 
     def test_generate_golden_file_nofail(self):
@@ -122,5 +125,3 @@ class MyTest(unittest.TestCase):
         self.call_mock.assert_has_calls([mock.call([GRADLEW, ':db:test'])])
 
 unittest.main()
-
-

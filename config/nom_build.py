@@ -300,9 +300,15 @@ def do_pseudo_task(task: str) -> None:
                     f'{root}/db/src/main/resources/sql/schema/'
                     'nomulus.golden.sql')
 
-        if subprocess.call([f'{root}/gradlew', ':db:test']):
-            print('\033[31mERROR:\033[0m Golden file test failed after '
-                  'copying schema.  Please check your flyway files.')
+        # Rerun :db:test and regenerate the ER diagram (at "warning" log
+        # level so it doesn't generate pages of messaging)
+        if subprocess.call([f'{root}/gradlew', ':db:test', 'devTool',
+                            '--args=-e localhost --log_level=WARNING '
+                            'generate_sql_er_diagram -o '
+                            f'{root}/db/src/main/resources/sql/er_diagram']):
+            print('\033[31mERROR:\033[0m Golden file test or ER diagram '
+                  'generation failed after copying schema.  Please check your '
+                  'flyway files.')
             raise Abort()
     else:
         print(f'\033[31mERROR:\033[0m Unknown task {task}')
@@ -377,6 +383,7 @@ def main(args) -> int:
 
     # See if there are any special ":nom:" pseudo-tasks specified.
     got_non_pseudo_tasks = False
+    got_pseudo_tasks = False
     for arg in args.non_flag_args[1:]:
         if arg.startswith(':nom:'):
             if got_non_pseudo_tasks:
@@ -388,13 +395,14 @@ def main(args) -> int:
                       'specified prior to all actual gradle tasks.  Aborting.')
                 return 1
             do_pseudo_task(arg)
+            got_pseudo_tasks = True
         else:
             got_non_pseudo_tasks = True
     non_flag_args = [
         arg for arg in args.non_flag_args[1:] if not arg.startswith(':nom:')]
 
     if not non_flag_args:
-        if not got_non_pseudo_tasks:
+        if not got_pseudo_tasks:
             print('\033[33mWARNING:\033[0m No tasks specified.  Not '
                   'doing anything')
         return 0
