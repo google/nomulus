@@ -51,40 +51,6 @@ public class TransactionManagerUtil {
   }
 
   /**
-   * Executes either {@code ofyRunnable} if {@link TransactionManagerFactory#tm()} returns a {@link
-   * JpaTransactionManager} instance, or {@code jpaRunnable} if {@link
-   * TransactionManagerFactory#tm()} returns a {@link DatastoreTransactionManager} instance.
-   */
-  public static void ofyOrJpaTm(Runnable ofyRunnable, Runnable jpaRunnable) {
-    ofyOrJpaTm(
-        () -> {
-          ofyRunnable.run();
-          return null;
-        },
-        () -> {
-          jpaRunnable.run();
-          return null;
-        });
-  }
-
-  /**
-   * Returns the result from either {@code ofySupplier} if {@link TransactionManagerFactory#tm()}
-   * returns a {@link JpaTransactionManager} instance, or {@code jpaSupplier} if {@link
-   * TransactionManagerFactory#tm()} returns a {@link DatastoreTransactionManager} instance.
-   */
-  public static <T> T ofyOrJpaTm(Supplier<T> ofySupplier, Supplier<T> jpaSupplier) {
-    if (tm() instanceof DatastoreTransactionManager) {
-      return ofySupplier.get();
-    } else if (tm() instanceof JpaTransactionManager) {
-      return jpaSupplier.get();
-    } else {
-      throw new IllegalStateException(
-          "Expected tm() to be DatastoreTransactionManager or JpaTransactionManager, but got "
-              + tm().getClass());
-    }
-  }
-
-  /**
    * Executes the given {@link Runnable} if {@link TransactionManagerFactory#tm()} returns a {@link
    * DatastoreTransactionManager} instance, otherwise does nothing.
    */

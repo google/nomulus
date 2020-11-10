@@ -17,6 +17,7 @@ package google.registry.persistence.transaction;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.VKey;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -236,4 +237,9 @@ public interface TransactionManager {
 
   /** Clears the session cache if the underlying database is Datastore, otherwise it is a no-op. */
   void clearSessionCache();
+
+  /** Returns true if the transaction manager is DatastoreTransactionManager. */
+  default boolean isOfy() {
+    return this instanceof DatastoreTransactionManager;
+  }
 }
