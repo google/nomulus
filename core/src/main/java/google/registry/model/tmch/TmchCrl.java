@@ -77,7 +77,16 @@ public final class TmchCrl extends CrossTldSingleton implements DatastoreEntity,
               tmchCrl.crl = checkNotNull(crl, "crl");
               tmchCrl.url = checkNotNull(url, "url");
               ofyTm().transactNew(() -> ofyTm().putWithoutBackup(tmchCrl));
-              jpaTm().transactNew(() -> jpaTm().putWithoutBackup(tmchCrl));
+              jpaTm()
+                  .transactNew(
+                      () -> {
+                        // Delete the old one and insert the new one
+                        jpaTm()
+                            .getEntityManager()
+                            .createQuery("DELETE FROM TmchCrl")
+                            .executeUpdate();
+                        jpaTm().putWithoutBackup(tmchCrl);
+                      });
             });
   }
 
