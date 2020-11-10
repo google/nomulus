@@ -37,30 +37,22 @@ public class SqlReplayCheckpoint implements SqlEntity {
   }
 
   public static DateTime get() {
+    jpaTm().assertInTransaction();
     return jpaTm()
-        .transact(
-            () ->
-                jpaTm()
-                    .getEntityManager()
-                    .createQuery("FROM SqlReplayCheckpoint", SqlReplayCheckpoint.class)
-                    .setMaxResults(1)
-                    .getResultStream()
-                    .findFirst()
-                    .map(checkpoint -> checkpoint.lastReplayTime)
-                    .orElse(START_OF_TIME));
+        .getEntityManager()
+        .createQuery("FROM SqlReplayCheckpoint", SqlReplayCheckpoint.class)
+        .setMaxResults(1)
+        .getResultStream()
+        .findFirst()
+        .map(checkpoint -> checkpoint.lastReplayTime)
+        .orElse(START_OF_TIME);
   }
 
   public static void set(DateTime lastReplayTime) {
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm()
-                  .getEntityManager()
-                  .createQuery("DELETE FROM SqlReplayCheckpoint")
-                  .executeUpdate();
-              SqlReplayCheckpoint checkpoint = new SqlReplayCheckpoint();
-              checkpoint.lastReplayTime = lastReplayTime;
-              jpaTm().insert(checkpoint);
-            });
+    jpaTm().assertInTransaction();
+    SqlReplayCheckpoint checkpoint = new SqlReplayCheckpoint();
+    checkpoint.lastReplayTime = lastReplayTime;
+    // this will overwrite the existing object due to the constant revisionId
+    jpaTm().put(checkpoint);
   }
 }

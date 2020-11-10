@@ -31,23 +31,23 @@ public class SqlReplayCheckpointTest extends EntityTestCase {
 
   @Test
   void testEmpty_startOfTime() {
-    assertThat(SqlReplayCheckpoint.get()).isEqualTo(START_OF_TIME);
+    assertThat(jpaTm().transact(SqlReplayCheckpoint::get)).isEqualTo(START_OF_TIME);
   }
 
   @Test
   void testSuccess_writes() {
     DateTime dateTime = DateTime.parse("2012-02-29T00:00:00Z");
-    SqlReplayCheckpoint.set(dateTime);
-    assertThat(SqlReplayCheckpoint.get()).isEqualTo(dateTime);
+    jpaTm().transact(() -> SqlReplayCheckpoint.set(dateTime));
+    assertThat(jpaTm().transact(SqlReplayCheckpoint::get)).isEqualTo(dateTime);
   }
 
   @Test
   void testSuccess_multipleWrites() {
     DateTime firstTime = DateTime.parse("2012-02-29T00:00:00Z");
-    SqlReplayCheckpoint.set(firstTime);
+    jpaTm().transact(() -> SqlReplayCheckpoint.set(firstTime));
     DateTime secondTime = DateTime.parse("2013-02-28T00:00:00Z");
-    SqlReplayCheckpoint.set(secondTime);
-    assertThat(SqlReplayCheckpoint.get()).isEqualTo(secondTime);
+    jpaTm().transact(() -> SqlReplayCheckpoint.set(secondTime));
+    assertThat(jpaTm().transact(SqlReplayCheckpoint::get)).isEqualTo(secondTime);
     jpaTm()
         .transact(
             () ->
