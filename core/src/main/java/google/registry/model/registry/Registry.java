@@ -285,6 +285,10 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
     return VKey.create(Registry.class, tld, Key.create(getCrossTldKey(), Registry.class, tld));
   }
 
+  public static VKey<Registry> createVKey(Key<Registry> key) {
+    return createVKey(key.getName());
+  }
+
   /**
    * The name of the pricing engine that this TLD uses.
    *

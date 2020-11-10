@@ -352,7 +352,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
 
     @Override
     public ImmutableList<SqlEntity> toSqlEntities() {
-      return null;
+      return ImmutableList.of();
     }
 
     /** A builder for constructing {@link PremiumListEntry} objects, since they are immutable. */
