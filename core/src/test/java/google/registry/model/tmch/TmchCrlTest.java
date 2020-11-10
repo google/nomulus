@@ -47,6 +47,23 @@ public class TmchCrlTest extends EntityTestCase {
     assertThat(loadFromSql()).isEqualTo(expected);
   }
 
+  @Test
+  void testMultipleWrites() {
+    TmchCrl.set("first", "https://first.cat");
+    assertThat(TmchCrl.get().get().getCrl()).isEqualTo("first");
+    TmchCrl.set("second", "https://second.cat");
+    assertThat(TmchCrl.get().get().getCrl()).isEqualTo("second");
+    jpaTm()
+        .transact(
+            () ->
+                assertThat(
+                        jpaTm()
+                            .getEntityManager()
+                            .createQuery("SELECT COUNT(*) FROM TmchCrl", Long.class)
+                            .getSingleResult())
+                    .isEqualTo(1L));
+  }
+
   private static TmchCrl loadFromSql() {
     return jpaTm()
         .transact(
