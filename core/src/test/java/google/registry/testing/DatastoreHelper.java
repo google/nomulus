@@ -34,7 +34,6 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.label.PremiumListUtils.parentPremiumListEntriesOnRevision;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.ofyOrJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.ofyTmOrDoNothing;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
@@ -329,12 +328,13 @@ public class DatastoreHelper {
             .setShouldPublish(shouldPublish)
             .setLastUpdateTime(DateTime.now(DateTimeZone.UTC))
             .build();
-    return ofyOrJpaTm(
-        () -> persistResource(reservedList),
-        () -> {
-          tm().transact(() -> tm().insert(reservedList));
-          return reservedList;
-        });
+    return tm().isOfy()
+        ? persistResource(reservedList)
+        : tm().transact(
+                () -> {
+                  tm().insert(reservedList);
+                  return reservedList;
+                });
   }
 
   /**
@@ -364,15 +364,15 @@ public class DatastoreHelper {
             .build();
     PremiumListRevision revision = PremiumListRevision.create(premiumList, entries.keySet());
 
-    ofyOrJpaTm(
-        () -> {
-          tm().putAllWithoutBackup(
-                  ImmutableList.of(
-                      premiumList.asBuilder().setRevision(Key.create(revision)).build(), revision));
-          tm().putAllWithoutBackup(
-                  parentPremiumListEntriesOnRevision(entries.values(), Key.create(revision)));
-        },
-        () -> tm().transact(() -> tm().insert(premiumList)));
+    if (tm().isOfy()) {
+      tm().putAllWithoutBackup(
+              ImmutableList.of(
+                  premiumList.asBuilder().setRevision(Key.create(revision)).build(), revision));
+      tm().putAllWithoutBackup(
+              parentPremiumListEntriesOnRevision(entries.values(), Key.create(revision)));
+    } else {
+      tm().transact(() -> tm().insert(premiumList));
+    }
     // The above premiumList is in the session cache and it is different from the corresponding
     // entity stored in Datastore because it has some @Ignore fields set dedicated for SQL. This
     // breaks the assumption we have in our application code, see
@@ -933,17 +933,17 @@ public class DatastoreHelper {
   }
 
   private static <R> void saveResource(R resource, boolean wantBackup) {
-    ofyOrJpaTm(
-        () -> {
-          Saver saver = wantBackup ? ofy().save() : ofy().saveWithoutBackup();
-          saver.entity(resource);
-          if (resource instanceof EppResource) {
-            EppResource eppResource = (EppResource) resource;
-            persistEppResourceExtras(
-                eppResource, EppResourceIndex.create(Key.create(eppResource)), saver);
-          }
-        },
-        () -> tm().put(resource));
+    if (tm().isOfy()) {
+      Saver saver = wantBackup ? ofy().save() : ofy().saveWithoutBackup();
+      saver.entity(resource);
+      if (resource instanceof EppResource) {
+        EppResource eppResource = (EppResource) resource;
+        persistEppResourceExtras(
+            eppResource, EppResourceIndex.create(Key.create(eppResource)), saver);
+      }
+    } else {
+      tm().put(resource);
+    }
   }
 
   private static <R extends EppResource> void persistEppResourceExtras(
@@ -975,14 +975,15 @@ public class DatastoreHelper {
     final EppResourceIndex eppResourceIndex =
         EppResourceIndex.create(Key.create(EppResourceIndexBucket.class, 1), Key.create(resource));
     tm().transact(
-            () ->
-                ofyOrJpaTm(
-                    () -> {
-                      Saver saver = ofy().save();
-                      saver.entity(resource);
-                      persistEppResourceExtras(resource, eppResourceIndex, saver);
-                    },
-                    () -> tm().put(resource)));
+            () -> {
+              if (tm().isOfy()) {
+                Saver saver = ofy().save();
+                saver.entity(resource);
+                persistEppResourceExtras(resource, eppResourceIndex, saver);
+              } else {
+                tm().put(resource);
+              }
+            });
     tm().clearSessionCache();
     return transactIfJpaTm(() -> tm().load(resource));
   }
@@ -1040,38 +1041,28 @@ public class DatastoreHelper {
 
   /** Returns all of the history entries that are parented off the given EppResource. */
   public static List<? extends HistoryEntry> getHistoryEntries(EppResource resource) {
-    return ofyOrJpaTm(
-        () ->
-            ofy()
-                .load()
-                .type(HistoryEntry.class)
-                .ancestor(resource)
-                .order("modificationTime")
-                .list(),
-        () ->
-            tm().transact(
-                    () -> {
-                      ImmutableList<? extends HistoryEntry> unsorted = null;
-                      if (resource instanceof ContactBase) {
-                        unsorted = tm().loadAll(ContactHistory.class);
-                      } else if (resource instanceof HostBase) {
-                        unsorted = tm().loadAll(HostHistory.class);
-                      } else if (resource instanceof DomainContent) {
-                        unsorted = tm().loadAll(DomainHistory.class);
-                      } else {
-                        fail("Expected an EppResource instance, but got " + resource.getClass());
-                      }
-                      ImmutableList<? extends HistoryEntry> filtered =
-                          unsorted.stream()
-                              .filter(
-                                  historyEntry ->
-                                      historyEntry
-                                          .getParent()
-                                          .getName()
-                                          .equals(resource.getRepoId()))
-                              .collect(toImmutableList());
-                      return ImmutableList.sortedCopyOf(DateTimeComparator.getInstance(), filtered);
-                    }));
+    return tm().isOfy()
+        ? ofy().load().type(HistoryEntry.class).ancestor(resource).order("modificationTime").list()
+        : tm().transact(
+                () -> {
+                  ImmutableList<? extends HistoryEntry> unsorted = null;
+                  if (resource instanceof ContactBase) {
+                    unsorted = tm().loadAll(ContactHistory.class);
+                  } else if (resource instanceof HostBase) {
+                    unsorted = tm().loadAll(HostHistory.class);
+                  } else if (resource instanceof DomainContent) {
+                    unsorted = tm().loadAll(DomainHistory.class);
+                  } else {
+                    fail("Expected an EppResource instance, but got " + resource.getClass());
+                  }
+                  ImmutableList<? extends HistoryEntry> filtered =
+                      unsorted.stream()
+                          .filter(
+                              historyEntry ->
+                                  historyEntry.getParent().getName().equals(resource.getRepoId()))
+                          .collect(toImmutableList());
+                  return ImmutableList.sortedCopyOf(DateTimeComparator.getInstance(), filtered);
+                });
   }
 
   /**
@@ -1154,13 +1145,12 @@ public class DatastoreHelper {
   /** Force the create and update timestamps to get written into the resource. **/
   public static <R> R cloneAndSetAutoTimestamps(final R resource) {
     return tm().transact(
-            () ->
-                ofyOrJpaTm(
-                    () -> ofy().load().fromEntity(ofy().save().toEntity(resource)),
-                    () -> {
-                      tm().put(resource);
-                      return tm().load(resource);
-                    }));
+            tm().isOfy()
+                ? () -> ofy().load().fromEntity(ofy().save().toEntity(resource))
+                : () -> {
+                  tm().put(resource);
+                  return tm().load(resource);
+                });
   }
 
   /** Returns the entire map of {@link PremiumListEntry}s for the given {@link PremiumList}. */
