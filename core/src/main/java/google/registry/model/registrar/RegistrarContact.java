@@ -363,9 +363,20 @@ public class RegistrarContact extends ImmutableObject
     parent = Key.create(getCrossTldKey(), Registrar.class, registrarId);
   }
 
+  public String getRegistrarId() {
+    return registrarId;
+  }
+
   public VKey<RegistrarContact> createVKey() {
     return VKey.create(
         RegistrarContact.class, new RegistrarPocId(emailAddress, registrarId), Key.create(this));
+  }
+
+  public static VKey<RegistrarContact> createVKey(Registrar registrar, String emailAddress) {
+    return VKey.create(
+        RegistrarContact.class,
+        new RegistrarPocId(emailAddress, registrar.getClientId()),
+        Key.create(Key.create(registrar), RegistrarContact.class, emailAddress));
   }
 
   /** Class to represent the composite primary key for {@link RegistrarContact} entity. */

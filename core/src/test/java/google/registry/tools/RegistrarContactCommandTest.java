@@ -19,10 +19,12 @@ import static google.registry.model.registrar.RegistrarContact.Type.ABUSE;
 import static google.registry.model.registrar.RegistrarContact.Type.ADMIN;
 import static google.registry.model.registrar.RegistrarContact.Type.TECH;
 import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatastoreHelper.loadRegistrar;
 import static google.registry.testing.DatastoreHelper.persistResource;
 import static google.registry.testing.DatastoreHelper.persistSimpleResource;
 import static google.registry.testing.DatastoreHelper.persistSimpleResources;
+import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -43,6 +45,20 @@ class RegistrarContactCommandTest extends CommandTestCase<RegistrarContactComman
   @BeforeEach
   void beforeEach() {
     output = tmpDir.resolve("temp.dat").toString();
+  }
+
+  @Test
+  void testCloudSqlPersistence() throws Exception {
+    Registrar registrar = saveRegistrar("NewRegistrar");
+    runCommandForced(
+        "--mode=CREATE", "--name=Jim Doe", "--email=jim.doe@example.com", "NewRegistrar");
+    RegistrarContact persisted =
+        jpaTm()
+            .transact(
+                () -> jpaTm().load(RegistrarContact.createVKey(registrar, "jim.doe@example.com")));
+    assertThat("Jim Doe").isEqualTo(persisted.getName());
+    assertThat("jim.doe@example.com").isEqualTo(persisted.getEmailAddress());
+    assertThat("NewRegistrar").isEqualTo(persisted.getRegistrarId());
   }
 
   @Test

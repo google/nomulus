@@ -16,30 +16,20 @@ package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.testing.SqlHelper.saveRegistrar;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatastoreHelper.loadRegistrar;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.EntityTestCase;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
-import google.registry.testing.DatastoreEntityExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for persisting {@link RegistrarContact} entities. */
-class RegistrarContactTest {
-
-  @RegisterExtension
-  @Order(value = 1)
-  DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
-
-  @RegisterExtension
-  JpaIntegrationWithCoverageExtension jpa =
-      new JpaTestRules.Builder().buildIntegrationWithCoverageExtension();
+@DualDatabaseTest
+class RegistrarContactTest extends EntityTestCase {
 
   private Registrar testRegistrar;
 
@@ -47,7 +37,7 @@ class RegistrarContactTest {
 
   @BeforeEach
   public void beforeEach() {
-    testRegistrar = saveRegistrar("registrarId");
+    testRegistrar = loadRegistrar("TheRegistrar");
     testRegistrarPoc =
         new RegistrarContact.Builder()
             .setParent(testRegistrar)
@@ -63,11 +53,10 @@ class RegistrarContactTest {
             .build();
   }
 
-  @Test
+  @TestOfyAndSql
   void testPersistence_succeeds() {
-    jpaTm().transact(() -> jpaTm().insert(testRegistrarPoc));
-    RegistrarContact persisted =
-        jpaTm().transact(() -> jpaTm().load(testRegistrarPoc.createVKey()));
+    tm().transact(() -> tm().insert(testRegistrarPoc));
+    RegistrarContact persisted = tm().transact(() -> tm().load(testRegistrarPoc.createVKey()));
     assertThat(persisted).isEqualTo(testRegistrarPoc);
   }
 }
