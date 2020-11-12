@@ -111,8 +111,7 @@ class TransactionInfo {
 
   /** Returns the weight of the entity type in the map entry. */
   private static int getWeight(ImmutableMap.Entry<Key<?>, Object> entry) {
-    Integer weightObject = CLASS_WEIGHTS.get(entry.getKey().getKind());
-    int weight = weightObject == null ? 0 : weightObject;
+    int weight = CLASS_WEIGHTS.getOrDefault(entry.getKey().getKind(), 0);
     return entry.getValue().equals(Delete.SENTINEL) ? DELETE_RANGE + -weight : weight;
   }
 
