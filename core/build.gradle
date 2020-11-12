@@ -171,6 +171,8 @@ dependencies {
   testRuntime files(sourceSets.test.resources.srcDirs)
 
   compile deps['com.beust:jcommander']
+  compile deps['com.google.api:gax']
+  compile deps['com.google.api.grpc:proto-google-cloud-secretmanager-v1']
   compile deps['com.google.api-client:google-api-client']
   compile deps['com.google.api-client:google-api-client-appengine']
   compile deps['com.google.api-client:google-api-client-servlet']
@@ -196,6 +198,7 @@ dependencies {
   compile deps['com.google.auth:google-auth-library-oauth2-http']
   compile deps['com.google.cloud.sql:jdbc-socket-factory-core']
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
+  compile deps['com.google.cloud:google-cloud-secretmanager']
   compile deps['com.google.code.gson:gson']
   compile deps['com.google.auto.value:auto-value-annotations']
   compile deps['com.google.code.findbugs:jsr305']
@@ -215,6 +218,7 @@ dependencies {
   compile deps['com.google.oauth-client:google-oauth-client-jetty']
   compile deps['com.google.oauth-client:google-oauth-client-appengine']
   compile deps['com.google.oauth-client:google-oauth-client-servlet']
+  compile deps['com.google.protobuf:protobuf-java']
   compile deps['com.google.re2j:re2j']
   compile deps['com.google.template:soy']
   compile deps['com.googlecode.json-simple:json-simple']
