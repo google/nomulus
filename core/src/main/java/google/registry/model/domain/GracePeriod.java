@@ -17,7 +17,9 @@ package google.registry.model.domain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.objectify.annotation.Embed;
+import com.googlecode.objectify.annotation.OnLoad;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -25,7 +27,10 @@ import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import javax.annotation.Nullable;
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
 import org.joda.time.DateTime;
@@ -41,20 +46,36 @@ import org.joda.time.DateTime;
 @Table(indexes = @Index(columnList = "domainRepoId"))
 public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntity {
 
+  @Id
+  @Access(AccessType.PROPERTY)
+  @Override
+  public long getGracePeriodId() {
+    return super.getGracePeriodId();
+  }
+
+  // TODO(b/169873747): Remove this method after explicitly re-saving all domain entities.
+  @OnLoad
+  void onLoad() {
+    if (gracePeriodId == null) {
+      gracePeriodId = ObjectifyService.allocateId();
+    }
+  }
+
   private static GracePeriod createInternal(
       GracePeriodStatus type,
       String domainRepoId,
       DateTime expirationTime,
       String clientId,
       @Nullable VKey<BillingEvent.OneTime> billingEventOneTime,
-      @Nullable VKey<BillingEvent.Recurring> billingEventRecurring) {
+      @Nullable VKey<BillingEvent.Recurring> billingEventRecurring,
+      @Nullable Long gracePeriodId) {
     checkArgument((billingEventOneTime == null) || (billingEventRecurring == null),
         "A grace period can have at most one billing event");
     checkArgument(
         (billingEventRecurring != null) == GracePeriodStatus.AUTO_RENEW.equals(type),
         "Recurring billing events must be present on (and only on) autorenew grace periods");
     GracePeriod instance = new GracePeriod();
-    instance.id = ObjectifyService.allocateId();
+    instance.gracePeriodId = gracePeriodId == null ? ObjectifyService.allocateId() : gracePeriodId;
     instance.type = checkArgumentNotNull(type);
     instance.domainRepoId = checkArgumentNotNull(domainRepoId);
     instance.expirationTime = checkArgumentNotNull(expirationTime);
@@ -79,7 +100,28 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
       DateTime expirationTime,
       String clientId,
       @Nullable VKey<BillingEvent.OneTime> billingEventOneTime) {
-    return createInternal(type, domainRepoId, expirationTime, clientId, billingEventOneTime, null);
+    return createInternal(
+        type, domainRepoId, expirationTime, clientId, billingEventOneTime, null, null);
+  }
+
+  /**
+   * Creates a GracePeriod for an (optional) OneTime billing event and a given {@link
+   * #gracePeriodId}.
+   *
+   * <p>Normal callers should always use {@link #forBillingEvent} instead, assuming they do not need
+   * to avoid loading the BillingEvent from Datastore. This method should typically be called only
+   * from test code to explicitly construct GracePeriods.
+   */
+  @VisibleForTesting
+  public static GracePeriod create(
+      GracePeriodStatus type,
+      String domainRepoId,
+      DateTime expirationTime,
+      String clientId,
+      @Nullable VKey<BillingEvent.OneTime> billingEventOneTime,
+      @Nullable Long gracePeriodId) {
+    return createInternal(
+        type, domainRepoId, expirationTime, clientId, billingEventOneTime, null, gracePeriodId);
   }
 
   /** Creates a GracePeriod for a Recurring billing event. */
@@ -91,13 +133,27 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
       VKey<Recurring> billingEventRecurring) {
     checkArgumentNotNull(billingEventRecurring, "billingEventRecurring cannot be null");
     return createInternal(
-        type, domainRepoId, expirationTime, clientId, null, billingEventRecurring);
+        type, domainRepoId, expirationTime, clientId, null, billingEventRecurring, null);
+  }
+
+  /** Creates a GracePeriod for a Recurring billing event and a given {@link #gracePeriodId}. */
+  @VisibleForTesting
+  public static GracePeriod createForRecurring(
+      GracePeriodStatus type,
+      String domainRepoId,
+      DateTime expirationTime,
+      String clientId,
+      VKey<Recurring> billingEventRecurring,
+      @Nullable Long gracePeriodId) {
+    checkArgumentNotNull(billingEventRecurring, "billingEventRecurring cannot be null");
+    return createInternal(
+        type, domainRepoId, expirationTime, clientId, null, billingEventRecurring, gracePeriodId);
   }
 
   /** Creates a GracePeriod with no billing event. */
   public static GracePeriod createWithoutBillingEvent(
       GracePeriodStatus type, String domainRepoId, DateTime expirationTime, String clientId) {
-    return createInternal(type, domainRepoId, expirationTime, clientId, null, null);
+    return createInternal(type, domainRepoId, expirationTime, clientId, null, null, null);
   }
 
   /** Constructs a GracePeriod of the given type from the provided one-time BillingEvent. */
@@ -119,7 +175,6 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
    */
   public GracePeriod cloneAfterOfyLoad(String domainRepoId) {
     GracePeriod clone = clone(this);
-    clone.id = ObjectifyService.allocateId();
     clone.domainRepoId = checkArgumentNotNull(domainRepoId);
     clone.restoreHistoryIds();
     return clone;
@@ -135,5 +190,50 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
     GracePeriod clone = clone(this);
     clone.billingEventRecurring = recurring;
     return clone;
+  }
+
+  /**
+   * Returns a clone of this {@link GracePeriod} with prepopulated {@link #gracePeriodId} generated
+   * by {@link ObjectifyService#allocateId()}.
+   *
+   * <p>TODO(shicong): Figure out how to generate the id only when the entity is used for Cloud SQL.
+   */
+  @VisibleForTesting
+  public GracePeriod cloneWithPrepopulatedId() {
+    GracePeriod clone = clone(this);
+    clone.gracePeriodId = ObjectifyService.allocateId();
+    return clone;
+  }
+
+  /** Entity class to represent a historic {@link GracePeriod}. */
+  @Entity(name = "GracePeriodHistory")
+  @Table(indexes = @Index(columnList = "domainRepoId"))
+  static class GracePeriodHistory extends GracePeriodBase {
+    @Id Long gracePeriodHistoryRevisionId;
+
+    /** ID for the associated {@link DomainHistory} entity. */
+    Long domainHistoryRevisionId;
+
+    @Override
+    @Access(AccessType.PROPERTY)
+    public long getGracePeriodId() {
+      return super.getGracePeriodId();
+    }
+
+    static GracePeriodHistory createFrom(long historyRevisionId, GracePeriod gracePeriod) {
+      GracePeriodHistory instance = new GracePeriodHistory();
+      instance.gracePeriodHistoryRevisionId = ObjectifyService.allocateId();
+      instance.domainHistoryRevisionId = historyRevisionId;
+      instance.gracePeriodId = gracePeriod.gracePeriodId;
+      instance.type = gracePeriod.type;
+      instance.domainRepoId = gracePeriod.domainRepoId;
+      instance.expirationTime = gracePeriod.expirationTime;
+      instance.clientId = gracePeriod.clientId;
+      instance.billingEventOneTime = gracePeriod.billingEventOneTime;
+      instance.billingEventOneTimeHistoryId = gracePeriod.billingEventOneTimeHistoryId;
+      instance.billingEventRecurring = gracePeriod.billingEventRecurring;
+      instance.billingEventRecurringHistoryId = gracePeriod.billingEventRecurringHistoryId;
+      return instance;
+    }
   }
 }

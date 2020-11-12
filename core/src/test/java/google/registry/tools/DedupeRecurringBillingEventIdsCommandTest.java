@@ -124,19 +124,19 @@ class DedupeRecurringBillingEventIdsCommandTest
   @Test
   void testResaveAssociatedDomainAndOneTimeBillingEventCorrectly() throws Exception {
     assertThat(recurring1.getId()).isEqualTo(recurring2.getId());
+    GracePeriod gracePeriod =
+        GracePeriod.createForRecurring(
+            GracePeriodStatus.AUTO_RENEW,
+            domain1.getRepoId(),
+            now.plusDays(45),
+            "a registrar",
+            recurring1.createVKey());
     domain1 =
         persistResource(
             domain1
                 .asBuilder()
                 .setAutorenewBillingEvent(recurring1.createVKey())
-                .setGracePeriods(
-                    ImmutableSet.of(
-                        GracePeriod.createForRecurring(
-                            GracePeriodStatus.AUTO_RENEW,
-                            domain1.getRepoId(),
-                            now.plusDays(45),
-                            "a registrar",
-                            recurring1.createVKey())))
+                .setGracePeriods(ImmutableSet.of(gracePeriod))
                 .setTransferData(
                     new DomainTransferData.Builder()
                         .setServerApproveAutorenewEvent(recurring1.createVKey())
@@ -201,7 +201,8 @@ class DedupeRecurringBillingEventIdsCommandTest
                         domain1.getRepoId(),
                         now.plusDays(45),
                         "a registrar",
-                        newRecurring.createVKey()));
+                        newRecurring.createVKey(),
+                        gracePeriod.getGracePeriodId()));
             assertThat(persistedDomain.getTransferData().getServerApproveAutorenewEvent())
                 .isEqualTo(newRecurring.createVKey());
             assertThat(persistedDomain.getTransferData().getServerApproveEntities())

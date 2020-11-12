@@ -394,7 +394,7 @@
     );
 
     create table "GracePeriod" (
-       id int8 not null,
+       grace_period_id int8 not null,
         billing_event_id int8,
         billing_event_history_id int8,
         billing_recurrence_id int8,
@@ -403,7 +403,22 @@
         domain_repo_id text not null,
         expiration_time timestamptz not null,
         type text not null,
-        primary key (id)
+        primary key (grace_period_id)
+    );
+
+    create table "GracePeriodHistory" (
+       grace_period_history_revision_id int8 not null,
+        billing_event_id int8,
+        billing_event_history_id int8,
+        billing_recurrence_id int8,
+        billing_recurrence_history_id int8,
+        registrar_id text not null,
+        domain_repo_id text not null,
+        expiration_time timestamptz not null,
+        type text not null,
+        domain_history_revision_id int8,
+        grace_period_id int8 not null,
+        primary key (grace_period_history_revision_id)
     );
 
     create table "Host" (
@@ -749,6 +764,7 @@ create index IDXaro1omfuaxjwmotk3vo00trwm on "DomainHistory" (history_registrar_
 create index IDXsu1nam10cjes9keobapn5jvxj on "DomainHistory" (history_type);
 create index IDX6w3qbtgce93cal2orjg1tw7b7 on "DomainHistory" (history_modification_time);
 create index IDXj1mtx98ndgbtb1bkekahms18w on "GracePeriod" (domain_repo_id);
+create index IDXd01j17vrpjxaerxdmn8bwxs7s on "GracePeriodHistory" (domain_repo_id);
 create index IDXfg2nnjlujxo6cb9fha971bq2n on "HostHistory" (creation_time);
 create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id);
 create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);
@@ -805,6 +821,11 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        add constraint FK2mys4hojm6ev2g9tmy5aq6m7g 
        foreign key (domain_repo_id) 
        references "Domain";
+
+    alter table if exists "GracePeriodHistory" 
+       add constraint FK7w3cx8d55q8bln80e716tr7b8 
+       foreign key (domain_repo_id, domain_history_revision_id) 
+       references "DomainHistory";
 
     alter table if exists "PremiumEntry" 
        add constraint FKo0gw90lpo1tuee56l0nb6y6g5 
