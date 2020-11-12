@@ -100,7 +100,7 @@ public class FakeSecretManagerClient implements SecretManagerClient {
 
   private static class VersionEntry {
     private String data;
-    private com.google.cloud.secretmanager.v1.SecretVersion.State state;
+    private State state;
 
     VersionEntry(String data) {
       this.data = checkNotNull(data, "data");
