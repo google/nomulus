@@ -73,3 +73,4 @@ V72__add_missing_foreign_keys.sql
 V73__singleton_entities.sql
 V74__sql_replay_checkpoint.sql
 V75__add_grace_period_history.sql
+V76__change_history_nullability.sql

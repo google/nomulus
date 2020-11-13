@@ -137,7 +137,12 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   @Transient // domain-specific
   Period period;
 
-  /** The actual EPP xml of the command, stored as bytes to be agnostic of encoding. */
+  /**
+   * The actual EPP xml of the command, stored as bytes to be agnostic of encoding.
+   *
+   * <p>The nullable property is overridden in {@link ContactHistory} since contact requests may
+   * contain PII.
+   */
   @Column(nullable = false, name = "historyXmlBytes")
   byte[] xmlBytes;
 
@@ -182,7 +187,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   String reason;
 
   /** Whether this change was requested by a registrar. */
-  @Column(nullable = false, name = "historyRequestedByRegistrar")
+  @Column(name = "historyRequestedByRegistrar")
   Boolean requestedByRegistrar;
 
   /**
