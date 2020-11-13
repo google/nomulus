@@ -17,7 +17,9 @@ ALTER table "ContactHistory"
   ALTER column history_requested_by_registrar DROP NOT NULL;
 
 ALTER table "DomainHistory"
+  ALTER column history_xml_bytes DROP NOT NULL,
   ALTER column history_requested_by_registrar DROP NOT NULL;
 
 ALTER table "HostHistory"
+  ALTER column history_xml_bytes DROP NOT NULL,
   ALTER column history_requested_by_registrar DROP NOT NULL;

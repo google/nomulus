@@ -140,10 +140,9 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   /**
    * The actual EPP xml of the command, stored as bytes to be agnostic of encoding.
    *
-   * <p>The nullable property is overridden in {@link ContactHistory} since contact requests may
-   * contain PII.
+   * <p>Changes performed by backend actions would not have EPP requests to store.
    */
-  @Column(nullable = false, name = "historyXmlBytes")
+  @Column(name = "historyXmlBytes")
   byte[] xmlBytes;
 
   /** The time the command occurred, represented by the ofy transaction time. */

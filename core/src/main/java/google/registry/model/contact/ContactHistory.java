@@ -28,8 +28,6 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -54,9 +52,6 @@ import javax.persistence.PostLoad;
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(ContactHistoryId.class)
-@AttributeOverrides(
-    // HistoryEntry.xmlBytes is nullable in ContactHistory since requests may contain PII.
-    @AttributeOverride(name = "xmlBytes", column = @Column(name = "historyXmlBytes")))
 public class ContactHistory extends HistoryEntry implements SqlEntity {
 
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
