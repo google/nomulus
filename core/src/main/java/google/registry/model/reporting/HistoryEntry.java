@@ -137,8 +137,12 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   @Transient // domain-specific
   Period period;
 
-  /** The actual EPP xml of the command, stored as bytes to be agnostic of encoding. */
-  @Column(nullable = false, name = "historyXmlBytes")
+  /**
+   * The actual EPP xml of the command, stored as bytes to be agnostic of encoding.
+   *
+   * <p>Changes performed by backend actions would not have EPP requests to store.
+   */
+  @Column(name = "historyXmlBytes")
   byte[] xmlBytes;
 
   /** The time the command occurred, represented by the ofy transaction time. */
@@ -182,7 +186,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   String reason;
 
   /** Whether this change was requested by a registrar. */
-  @Column(nullable = false, name = "historyRequestedByRegistrar")
+  @Column(name = "historyRequestedByRegistrar")
   Boolean requestedByRegistrar;
 
   /**
