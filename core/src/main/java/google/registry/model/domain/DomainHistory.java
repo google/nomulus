@@ -257,7 +257,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   }
 
   /** Class to represent the composite primary key of {@link DomainHistory} entity. */
-  static class DomainHistoryId extends ImmutableObject implements Serializable {
+  public static class DomainHistoryId extends ImmutableObject implements Serializable {
 
     private String domainRepoId;
 
@@ -266,7 +266,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
     /** Hibernate requires this default constructor. */
     private DomainHistoryId() {}
 
-    DomainHistoryId(String domainRepoId, long id) {
+    public DomainHistoryId(String domainRepoId, long id) {
       this.domainRepoId = domainRepoId;
       this.id = id;
     }

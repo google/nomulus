@@ -43,7 +43,6 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
       ALL_CLASSES.stream()
           .filter(clazz -> !clazz.isAnnotationPresent(EntitySubclass.class))
           .collect(toImmutableMap(com.googlecode.objectify.Key::getKind, identity()));
-  ;
 
   public VKeyTranslatorFactory() {
     super(VKey.class);

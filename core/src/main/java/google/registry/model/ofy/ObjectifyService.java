@@ -42,6 +42,7 @@ import google.registry.model.translators.CidrAddressBlockTranslatorFactory;
 import google.registry.model.translators.CommitLogRevisionsTranslatorFactory;
 import google.registry.model.translators.CreateAutoTimestampTranslatorFactory;
 import google.registry.model.translators.CurrencyUnitTranslatorFactory;
+import google.registry.model.translators.DomainHistoryVKeyTranslatorFactory;
 import google.registry.model.translators.DurationTranslatorFactory;
 import google.registry.model.translators.InetAddressTranslatorFactory;
 import google.registry.model.translators.ReadableInstantUtcTranslatorFactory;
@@ -127,6 +128,7 @@ public class ObjectifyService {
             new CreateAutoTimestampTranslatorFactory(),
             new CurrencyUnitTranslatorFactory(),
             new DurationTranslatorFactory(),
+            new DomainHistoryVKeyTranslatorFactory(),
             new InetAddressTranslatorFactory(),
             new MoneyStringTranslatorFactory(),
             new ReadableInstantUtcTranslatorFactory(),

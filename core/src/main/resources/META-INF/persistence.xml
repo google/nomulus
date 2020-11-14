@@ -112,7 +112,6 @@
     <class>google.registry.model.host.VKeyConverter_HostResource</class>
     <class>google.registry.model.poll.VKeyConverter_Autorenew</class>
     <class>google.registry.model.poll.VKeyConverter_OneTime</class>
-    <class>google.registry.model.reporting.VKeyConverter_HistoryEntry</class>
 
     <!-- TODO(weiminyu): check out application-layer validation. -->
     <validation-mode>NONE</validation-mode>

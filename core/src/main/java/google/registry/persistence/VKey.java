@@ -36,18 +36,20 @@ public class VKey<T> extends ImmutableObject implements Serializable {
 
   private static final long serialVersionUID = -5291472863840231240L;
 
-  // The primary key for the referenced entity.
-  private final Object primaryKey;
+  // The SQL key for the referenced entity.
+  Object sqlKey;
 
   // The objectify key for the referenced entity.
-  private final com.googlecode.objectify.Key<T> ofyKey;
+  Key<T> ofyKey;
 
-  private final Class<? extends T> kind;
+  Class<? extends T> kind;
 
-  private VKey(Class<? extends T> kind, com.googlecode.objectify.Key<T> ofyKey, Object primaryKey) {
+  VKey() {}
+
+  VKey(Class<? extends T> kind, Key<T> ofyKey, Object sqlKey) {
     this.kind = kind;
     this.ofyKey = ofyKey;
-    this.primaryKey = primaryKey;
+    this.sqlKey = sqlKey;
   }
 
   /**
@@ -62,15 +64,14 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   }
 
   /** Creates a {@link VKey} which only contains the ofy primary key. */
-  public static <T> VKey<T> createOfy(Class<T> kind, com.googlecode.objectify.Key<T> ofyKey) {
+  public static <T> VKey<T> createOfy(Class<T> kind, Key<T> ofyKey) {
     checkArgumentNotNull(kind, "kind must not be null");
     checkArgumentNotNull(ofyKey, "ofyKey must not be null");
     return new VKey<T>(kind, ofyKey, null);
   }
 
   /** Creates a {@link VKey} which only contains both sql and ofy primary key. */
-  public static <T> VKey<T> create(
-      Class<T> kind, Object sqlKey, com.googlecode.objectify.Key<T> ofyKey) {
+  public static <T> VKey<T> create(Class<T> kind, Object sqlKey, Key<T> ofyKey) {
     checkArgumentNotNull(kind, "kind must not be null");
     checkArgumentNotNull(sqlKey, "sqlKey must not be null");
     checkArgumentNotNull(ofyKey, "ofyKey must not be null");
@@ -197,23 +198,23 @@ public class VKey<T> extends ImmutableObject implements Serializable {
 
   /** Returns the SQL primary key. */
   public Object getSqlKey() {
-    checkState(primaryKey != null, "Attempting obtain a null SQL key.");
-    return this.primaryKey;
+    checkState(sqlKey != null, "Attempting obtain a null SQL key.");
+    return this.sqlKey;
   }
 
   /** Returns the SQL primary key if it exists. */
   public Optional<Object> maybeGetSqlKey() {
-    return Optional.ofNullable(this.primaryKey);
+    return Optional.ofNullable(this.sqlKey);
   }
 
   /** Returns the objectify key. */
-  public com.googlecode.objectify.Key<T> getOfyKey() {
+  public Key<T> getOfyKey() {
     checkState(ofyKey != null, "Attempting obtain a null Objectify key.");
     return this.ofyKey;
   }
 
   /** Returns the objectify key if it exists. */
-  public Optional<com.googlecode.objectify.Key<T>> maybeGetOfyKey() {
+  public Optional<Key<T>> maybeGetOfyKey() {
     return Optional.ofNullable(this.ofyKey);
   }
 

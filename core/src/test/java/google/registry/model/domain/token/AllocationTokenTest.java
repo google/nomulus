@@ -40,6 +40,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.DomainHistoryVKey;
 import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,7 +86,7 @@ public class AllocationTokenTest extends EntityTestCase {
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123Single")
-                .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+                .setRedemptionHistoryEntry(DomainHistoryVKey.create(historyEntryKey))
                 .setDomainName("example.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setTokenType(SINGLE_USE)
@@ -124,7 +125,7 @@ public class AllocationTokenTest extends EntityTestCase {
             new AllocationToken.Builder()
                 .setToken("abc123")
                 .setTokenType(SINGLE_USE)
-                .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1L, historyEntryKey))
+                .setRedemptionHistoryEntry(DomainHistoryVKey.create(historyEntryKey))
                 .setDomainName("blahdomain.foo")
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .build()),
@@ -230,7 +231,7 @@ public class AllocationTokenTest extends EntityTestCase {
         new AllocationToken.Builder()
             .setToken("foobar")
             .setTokenType(TokenType.UNLIMITED_USE)
-            .setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1L, historyEntryKey));
+            .setRedemptionHistoryEntry(DomainHistoryVKey.create(historyEntryKey));
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, builder::build);
     assertThat(thrown)
         .hasMessageThat()

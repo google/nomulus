@@ -39,8 +39,6 @@ import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
-import google.registry.persistence.VKey;
-import google.registry.persistence.WithStringVKey;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import java.util.Set;
@@ -60,7 +58,6 @@ import org.joda.time.DateTime;
 @ReportedOn
 @Entity
 @MappedSuperclass
-@WithStringVKey // TODO(b/162229294): This should be resolved during the course of that bug
 @Access(AccessType.FIELD)
 public class HistoryEntry extends ImmutableObject implements Buildable, DatastoreEntity {
 
@@ -279,19 +276,6 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   private void setDomainTransactionRecords(Set<DomainTransactionRecord> domainTransactionRecords) {
     this.domainTransactionRecords =
         domainTransactionRecords == null ? null : ImmutableSet.copyOf(domainTransactionRecords);
-  }
-
-  public static VKey<HistoryEntry> createVKey(Key<HistoryEntry> key) {
-    // TODO(b/159207551): This will likely need some revision.  As it stands, this method was
-    // introduced purely to facilitate testing of VKey specialization in VKeyTranslatorFactory.
-    // This class will likely require that functionality, though perhaps not this implementation of
-    // it.
-    // For now, just assume that the primary key of a history entry is comprised of the parent
-    // type, key and the object identifer.
-    return VKey.create(
-        HistoryEntry.class,
-        key.getParent().getKind() + "/" + key.getParent().getName() + "/" + key.getId(),
-        key);
   }
 
   @Override
