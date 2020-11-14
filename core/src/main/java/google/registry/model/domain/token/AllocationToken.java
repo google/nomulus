@@ -47,12 +47,15 @@ import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.DomainHistoryVKey;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -108,6 +111,15 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
   /** The key of the history entry for which the token was used. Null if not yet used. */
   // TODO(b/172848495): Remove the "Transient" when we can finally persist and restore this.
   @Transient @Nullable @Index VKey<HistoryEntry> redemptionHistoryEntry;
+  @Nullable
+  @Index
+  @AttributeOverrides({
+    @AttributeOverride(name = "domainRepoId", column = @Column(name = "redemption_domain_repo_id")),
+    @AttributeOverride(
+        name = "domainHistoryId",
+        column = @Column(name = "redemption_domain_history_id"))
+  })
+  DomainHistoryVKey redemptionHistoryEntry;
 
   /** The fully-qualified domain name that this token is limited to, if any. */
   @Nullable @Index String domainName;
@@ -282,7 +294,7 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
       return this;
     }
 
-    public Builder setRedemptionHistoryEntry(VKey<HistoryEntry> redemptionHistoryEntry) {
+    public Builder setRedemptionHistoryEntry(DomainHistoryVKey redemptionHistoryEntry) {
       getInstance().redemptionHistoryEntry =
           checkArgumentNotNull(redemptionHistoryEntry, "Redemption history entry must not be null");
       return this;

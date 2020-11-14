@@ -27,7 +27,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.persistence.VKey;
+import google.registry.persistence.DomainHistoryVKey;
 import java.util.Collection;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -173,7 +173,7 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
       String domainToPersist = domainName != null ? domainName : "example.foo";
       DomainBase domain = persistActiveDomain(domainToPersist);
       Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1051L);
-      builder.setRedemptionHistoryEntry(VKey.create(HistoryEntry.class, 1051L, historyEntryKey));
+      builder.setRedemptionHistoryEntry(DomainHistoryVKey.create(historyEntryKey));
     }
     return persistResource(builder.build());
   }

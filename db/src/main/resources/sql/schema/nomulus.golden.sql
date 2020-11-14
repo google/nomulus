@@ -48,9 +48,10 @@ CREATE TABLE public."AllocationToken" (
     discount_premiums boolean NOT NULL,
     discount_years integer NOT NULL,
     domain_name text,
-    redemption_history_entry text,
+    redemption_domain_repo_id text,
     token_status_transitions public.hstore,
-    token_type text
+    token_type text,
+    redemption_domain_history_id bigint
 );
 
 
