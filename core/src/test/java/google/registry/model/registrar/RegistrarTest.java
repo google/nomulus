@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.ofyTmOrDoNothing;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2_HASH;
@@ -563,24 +562,21 @@ class RegistrarTest extends EntityTestCase {
     }
   }
 
-  @TestOfyAndSql
+  @TestOfyOnly
   void testLoadByClientIdCached_isTransactionless() {
     tm().transact(
             () -> {
               assertThat(Registrar.loadByClientIdCached("registrar")).isPresent();
-              ofyTmOrDoNothing(
-                  () -> {
-                    // Load something as a control to make sure we are seeing loaded keys in the
-                    // session cache.
-                    ofy().load().entity(abuseAdminContact).now();
-                    assertThat(ofy().getSessionKeys()).contains(Key.create(abuseAdminContact));
-                    assertThat(ofy().getSessionKeys()).doesNotContain(Key.create(registrar));
-                  });
+              // Load something as a control to make sure we are seeing loaded keys in the
+              // session cache.
+              ofy().load().entity(abuseAdminContact).now();
+              assertThat(ofy().getSessionKeys()).contains(Key.create(abuseAdminContact));
+              assertThat(ofy().getSessionKeys()).doesNotContain(Key.create(registrar));
             });
     tm().clearSessionCache();
     // Conversely, loads outside of a transaction should end up in the session cache.
     assertThat(Registrar.loadByClientIdCached("registrar")).isPresent();
-    ofyTmOrDoNothing(() -> assertThat(ofy().getSessionKeys()).contains(Key.create(registrar)));
+    assertThat(ofy().getSessionKeys()).contains(Key.create(registrar));
   }
 
   @TestOfyAndSql

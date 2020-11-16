@@ -1144,22 +1144,15 @@ public class DatastoreHelper {
 
   /** Force the create and update timestamps to get written into the resource. **/
   public static <R> R cloneAndSetAutoTimestamps(final R resource) {
-    return tm().transact(
-            tm().isOfy()
-                ? () -> ofy().load().fromEntity(ofy().save().toEntity(resource))
-                : () -> {
-                  tm().put(resource);
-                  return tm().load(resource);
-                });
-    return ofyOrJpaTm(
-        () -> tm().transact(() -> ofy().load().fromEntity(ofy().save().toEntity(resource))),
-        () -> {
-          // We have to separate the read and write operation into different transactions
-          // otherwise JPA would just return the input entity instead of actually creating a
-          // clone.
-          tm().transact(() -> tm().put(resource));
-          return tm().transact(() -> tm().load(resource));
-        });
+    if (tm().isOfy()) {
+      return tm().transact(() -> ofy().load().fromEntity(ofy().save().toEntity(resource)));
+    } else {
+      // We have to separate the read and write operation into different transactions
+      // otherwise JPA would just return the input entity instead of actually creating a
+      // clone.
+      tm().transact(() -> tm().put(resource));
+      return tm().transact(() -> tm().load(resource));
+    }
   }
 
   /** Returns the entire map of {@link PremiumListEntry}s for the given {@link PremiumList}. */

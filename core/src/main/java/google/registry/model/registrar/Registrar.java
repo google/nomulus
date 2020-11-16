@@ -34,7 +34,6 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.ofyOrJpaTm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
@@ -648,19 +647,20 @@ public class Registrar extends ImmutableObject
   }
 
   private Iterable<RegistrarContact> getContactsIterable() {
-    return ofyOrJpaTm(
-        () -> ofy().load().type(RegistrarContact.class).ancestor(Registrar.this),
-        () ->
-            tm().transact(
-                    () ->
-                        jpaTm()
-                            .getEntityManager()
-                            .createQuery(
-                                "FROM RegistrarPoc WHERE registrarId = :registrarId",
-                                RegistrarContact.class)
-                            .setParameter("registrarId", clientIdentifier)
-                            .getResultStream()
-                            .collect(toImmutableList())));
+    if (tm().isOfy()) {
+      return ofy().load().type(RegistrarContact.class).ancestor(Registrar.this);
+    } else {
+      return tm().transact(
+              () ->
+                  jpaTm()
+                      .getEntityManager()
+                      .createQuery(
+                          "FROM RegistrarPoc WHERE registrarId = :registrarId",
+                          RegistrarContact.class)
+                      .setParameter("registrarId", clientIdentifier)
+                      .getResultStream()
+                      .collect(toImmutableList()));
+    }
   }
 
   @Override
@@ -1004,9 +1004,9 @@ public class Registrar extends ImmutableObject
 
   /** Loads all registrar entities directly from Datastore. */
   public static Iterable<Registrar> loadAll() {
-    return ofyOrJpaTm(
-        () -> ImmutableList.copyOf(ofy().load().type(Registrar.class).ancestor(getCrossTldKey())),
-        () -> tm().transact(() -> tm().loadAll(Registrar.class)));
+    return tm().isOfy()
+        ? ImmutableList.copyOf(ofy().load().type(Registrar.class).ancestor(getCrossTldKey()))
+        : tm().transact(() -> tm().loadAll(Registrar.class));
   }
 
   /** Loads all registrar entities using an in-memory cache. */
