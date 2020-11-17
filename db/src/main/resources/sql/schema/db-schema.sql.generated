@@ -22,6 +22,8 @@
         discount_premiums boolean not null,
         discount_years int4 not null,
         domain_name text,
+        redemption_domain_history_id int8,
+        redemption_domain_repo_id text,
         token_status_transitions hstore,
         token_type text,
         primary key (token)
