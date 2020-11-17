@@ -1963,27 +1963,11 @@ ALTER TABLE ONLY public."ContactHistory"
 
 
 --
--- Name: Contact fk_contact_transfer_gaining_poll_message_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk_contact_transfer_gaining_poll_message_id FOREIGN KEY (transfer_gaining_poll_message_id) REFERENCES public."PollMessage"(poll_message_id);
-
-
---
 -- Name: Contact fk_contact_transfer_gaining_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."Contact"
     ADD CONSTRAINT fk_contact_transfer_gaining_registrar_id FOREIGN KEY (transfer_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id);
-
-
---
--- Name: Contact fk_contact_transfer_losing_poll_message_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk_contact_transfer_losing_poll_message_id FOREIGN KEY (transfer_losing_poll_message_id) REFERENCES public."PollMessage"(poll_message_id);
 
 
 --
@@ -2003,14 +1987,6 @@ ALTER TABLE ONLY public."Domain"
 
 
 --
--- Name: Domain fk_domain_autorenew_poll_message_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_autorenew_poll_message_id FOREIGN KEY (autorenew_poll_message_id) REFERENCES public."PollMessage"(poll_message_id);
-
-
---
 -- Name: Domain fk_domain_billing_contact; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2024,14 +2000,6 @@ ALTER TABLE ONLY public."Domain"
 
 ALTER TABLE ONLY public."Domain"
     ADD CONSTRAINT fk_domain_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
-
-
---
--- Name: Domain fk_domain_deletion_poll_message_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_deletion_poll_message_id FOREIGN KEY (deletion_poll_message_id) REFERENCES public."PollMessage"(poll_message_id);
 
 
 --
