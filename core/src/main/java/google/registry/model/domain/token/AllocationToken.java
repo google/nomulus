@@ -57,6 +57,7 @@ import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /** An entity representing an allocation token. */
@@ -105,7 +106,8 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
   @javax.persistence.Id @Id String token;
 
   /** The key of the history entry for which the token was used. Null if not yet used. */
-  @Nullable @Index VKey<HistoryEntry> redemptionHistoryEntry;
+  // TODO(b/172848495): Remove the "Transient" when we can finally persist and restore this.
+  @Transient @Nullable @Index VKey<HistoryEntry> redemptionHistoryEntry;
 
   /** The fully-qualified domain name that this token is limited to, if any. */
   @Nullable @Index String domainName;

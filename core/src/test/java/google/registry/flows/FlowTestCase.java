@@ -59,6 +59,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
@@ -80,12 +81,6 @@ public abstract class FlowTestCase<F extends Flow> {
     SUPERUSER
   }
 
-  @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
-
-  @RegisterExtension final InjectExtension inject = new InjectExtension();
-
   protected EppLoader eppLoader;
   protected SessionMetadata sessionMetadata;
   protected FakeClock clock = new FakeClock(DateTime.now(UTC));
@@ -95,14 +90,24 @@ public abstract class FlowTestCase<F extends Flow> {
 
   private EppMetric.Builder eppMetricBuilder;
 
+  // Set the clock for transactional flows.  We have to order this before the AppEngineExtension
+  // which populates data (and may do so with clock-dependent commit logs if mixed with
+  // ReplayExtension).
+  @Order(value = Order.DEFAULT - 1)
+  @RegisterExtension
+  final InjectExtension inject =
+      new InjectExtension().withStaticFieldOverride(Ofy.class, "clock", clock);
+
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+
   @BeforeEach
   public void beforeEachFlowTestCase() {
     sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
     sessionMetadata.setClientId("TheRegistrar");
     sessionMetadata.setServiceExtensionUris(ProtocolDefinition.getVisibleServiceExtensionUris());
     ofy().saveWithoutBackup().entity(new ClaimsListSingleton()).now();
-    // For transactional flows
-    inject.setStaticField(Ofy.class, "clock", clock);
  }
 
   protected void removeServiceExtensionUri(String uri) {

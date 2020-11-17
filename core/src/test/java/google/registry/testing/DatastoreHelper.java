@@ -122,6 +122,14 @@ import org.joda.time.DateTimeZone;
 /** Static utils for setting up test resources. */
 public class DatastoreHelper {
 
+  // The following two fields are injected by ReplayExtension.
+
+  // If this is true, all of the methods that save to the datastore do so with backup.
+  private static boolean alwaysSaveWithBackup;
+
+  // If the clock is defined, it will always be advanced by one millsecond after a transaction.
+  private static FakeClock clock;
+
   private static final Supplier<String[]> DEFAULT_PREMIUM_LIST_CONTENTS =
       memoize(
           () ->
@@ -131,6 +139,20 @@ public class DatastoreHelper {
                           readResourceUtf8(
                               DatastoreHelper.class, "default_premium_list_testdata.csv")),
                   String.class));
+
+  public static void setAlwaysSaveWithBackup(boolean enable) {
+    alwaysSaveWithBackup = enable;
+  }
+
+  public static void setClock(FakeClock fakeClock) {
+    clock = fakeClock;
+  }
+
+  private static void maybeAdvanceClock() {
+    if (clock != null) {
+      clock.advanceOneMilli();
+    }
+  }
 
   public static HostResource newHostResource(String hostName) {
     return newHostResourceWithRoid(hostName, generateNewContactHostRoid());
@@ -312,6 +334,7 @@ public class DatastoreHelper {
     // the
     // transaction time is set correctly.
     tm().transactNew(() -> LordnTaskUtils.enqueueDomainBaseTask(persistedDomain));
+    maybeAdvanceClock();
     return persistedDomain;
   }
 
@@ -365,14 +388,25 @@ public class DatastoreHelper {
     PremiumListRevision revision = PremiumListRevision.create(premiumList, entries.keySet());
 
     if (tm().isOfy()) {
-      tm().putAllWithoutBackup(
-              ImmutableList.of(
-                  premiumList.asBuilder().setRevision(Key.create(revision)).build(), revision));
-      tm().putAllWithoutBackup(
-              parentPremiumListEntriesOnRevision(entries.values(), Key.create(revision)));
+      ImmutableList<Object> premiumLists =
+          ImmutableList.of(
+              premiumList.asBuilder().setRevision(Key.create(revision)).build(), revision);
+      ImmutableSet<PremiumListEntry> entriesOnRevision =
+          parentPremiumListEntriesOnRevision(entries.values(), Key.create(revision));
+      if (alwaysSaveWithBackup) {
+        tm().transact(
+                () -> {
+                  tm().putAll(premiumLists);
+                  tm().putAll(entriesOnRevision);
+                });
+      } else {
+        tm().putAllWithoutBackup(premiumLists);
+        tm().putAllWithoutBackup(entriesOnRevision);
+      }
     } else {
       tm().transact(() -> tm().insert(premiumList));
     }
+    maybeAdvanceClock();
     // The above premiumList is in the session cache and it is different from the corresponding
     // entity stored in Datastore because it has some @Ignore fields set dedicated for SQL. This
     // breaks the assumption we have in our application code, see
@@ -934,7 +968,7 @@ public class DatastoreHelper {
 
   private static <R> void saveResource(R resource, boolean wantBackup) {
     if (tm().isOfy()) {
-      Saver saver = wantBackup ? ofy().save() : ofy().saveWithoutBackup();
+      Saver saver = wantBackup || alwaysSaveWithBackup ? ofy().save() : ofy().saveWithoutBackup();
       saver.entity(resource);
       if (resource instanceof EppResource) {
         EppResource eppResource = (EppResource) resource;
@@ -962,6 +996,7 @@ public class DatastoreHelper {
         .that(resource)
         .isNotInstanceOf(Buildable.Builder.class);
     tm().transact(() -> saveResource(resource, wantBackup));
+    maybeAdvanceClock();
     // Force the session cache to be cleared so that when we read the resource back, we read from
     // Datastore and not from the session cache. This is needed to trigger Objectify's load process
     // (unmarshalling entity protos to POJOs, nulling out empty collections, calling @OnLoad
@@ -984,6 +1019,7 @@ public class DatastoreHelper {
                 tm().put(resource);
               }
             });
+    maybeAdvanceClock();
     tm().clearSessionCache();
     return transactIfJpaTm(() -> tm().load(resource));
   }
@@ -1001,6 +1037,7 @@ public class DatastoreHelper {
     // Persist domains ten at a time, to avoid exceeding the entity group limit.
     for (final List<R> chunk : Iterables.partition(resources, 10)) {
       tm().transact(() -> chunk.forEach(resource -> saveResource(resource, wantBackup)));
+      maybeAdvanceClock();
     }
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
@@ -1035,6 +1072,7 @@ public class DatastoreHelper {
               ofyTmOrDoNothing(
                   () -> tm().put(ForeignKeyIndex.create(resource, resource.getDeletionTime())));
             });
+    maybeAdvanceClock();
     tm().clearSessionCache();
     return transactIfJpaTm(() -> tm().load(resource));
   }
@@ -1128,7 +1166,15 @@ public class DatastoreHelper {
    * ForeignKeyedEppResources.
    */
   public static <R> ImmutableList<R> persistSimpleResources(final Iterable<R> resources) {
-    tm().transact(() -> tm().putAllWithoutBackup(ImmutableList.copyOf(resources)));
+    tm().transact(
+            () -> {
+              if (alwaysSaveWithBackup) {
+                tm().putAll(ImmutableList.copyOf(resources));
+              } else {
+                tm().putAllWithoutBackup(ImmutableList.copyOf(resources));
+              }
+            });
+    maybeAdvanceClock();
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
     tm().clearSessionCache();
@@ -1136,7 +1182,11 @@ public class DatastoreHelper {
   }
 
   public static void deleteResource(final Object resource) {
-    transactIfJpaTm(() -> tm().deleteWithoutBackup(resource));
+    if (alwaysSaveWithBackup) {
+      tm().transact(() -> tm().delete(resource));
+    } else {
+      transactIfJpaTm(() -> tm().deleteWithoutBackup(resource));
+    }
     // Force the session to be cleared so that when we read it back, we read from Datastore and
     // not from the transaction's session cache.
     tm().clearSessionCache();
@@ -1144,15 +1194,18 @@ public class DatastoreHelper {
 
   /** Force the create and update timestamps to get written into the resource. **/
   public static <R> R cloneAndSetAutoTimestamps(final R resource) {
+    R result;
     if (tm().isOfy()) {
-      return tm().transact(() -> ofy().load().fromEntity(ofy().save().toEntity(resource)));
+      result = tm().transact(() -> ofy().load().fromEntity(ofy().save().toEntity(resource)));
     } else {
       // We have to separate the read and write operation into different transactions
       // otherwise JPA would just return the input entity instead of actually creating a
       // clone.
       tm().transact(() -> tm().put(resource));
-      return tm().transact(() -> tm().load(resource));
+      result = tm().transact(() -> tm().load(resource));
     }
+    maybeAdvanceClock();
+    return result;
   }
 
   /** Returns the entire map of {@link PremiumListEntry}s for the given {@link PremiumList}. */

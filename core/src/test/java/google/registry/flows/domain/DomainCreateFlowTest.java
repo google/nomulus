@@ -163,6 +163,7 @@ import google.registry.model.reporting.DomainTransactionRecord.TransactionReport
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.VKey;
+import google.registry.testing.ReplayExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.math.BigDecimal;
 import java.util.Map;
@@ -171,7 +172,9 @@ import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainCreateFlow}. */
 class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, DomainBase> {
@@ -179,6 +182,10 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   private static final String CLAIMS_KEY = "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001";
 
   private AllocationToken allocationToken;
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = new ReplayExtension(clock);
 
   DomainCreateFlowTest() {
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
@@ -222,7 +229,6 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     }
     persistActiveContact("jd1234");
     persistActiveContact("sh8013");
-    clock.advanceOneMilli();
   }
 
   private void persistContactsAndHosts() {
@@ -350,7 +356,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .hasLaunchNotice(null);
     String expectedPayload =
         String.format(
-            "%s,%s,0000001761376042759136-65535,1,2014-09-09T09:09:09.001Z",
+            "%s,%s,0000001761376042759136-65535,1,2014-09-09T09:09:09.016Z",
             reloadResourceByForeignKey().getRepoId(), domainName);
     assertTasksEnqueued(QUEUE_SUNRISE, new TaskMatcher().payload(expectedPayload));
   }
@@ -371,7 +377,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .payload(
                 reloadResourceByForeignKey().getRepoId()
                     + ",example-one.tld,370d0b7c9223372036854775807,1,"
-                    + "2009-08-16T09:00:00.001Z,2009-08-16T09:00:00.000Z");
+                    + "2009-08-16T09:00:00.016Z,2009-08-16T09:00:00.000Z");
     assertTasksEnqueued(QUEUE_CLAIMS, task);
   }
 

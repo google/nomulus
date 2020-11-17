@@ -74,3 +74,4 @@ V73__singleton_entities.sql
 V74__sql_replay_checkpoint.sql
 V75__add_grace_period_history.sql
 V76__change_history_nullability.sql
+V77__fixes_for_replay.sql

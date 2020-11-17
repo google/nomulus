@@ -161,6 +161,7 @@ class CommitLoggedWork<R> implements Runnable {
           .addAll(untouchedRootsWithTouchedChildren)
           .build())
       .now();
+    ReplayQueue.addInTests(info);
   }
 
   /** Check that the timestamp of each BackupGroupRoot is in the past. */

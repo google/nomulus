@@ -22,7 +22,6 @@
         discount_premiums boolean not null,
         discount_years int4 not null,
         domain_name text,
-        redemption_history_entry text,
         token_status_transitions hstore,
         token_type text,
         primary key (token)
@@ -524,7 +523,7 @@
 
     create table "PremiumList" (
        revision_id  bigserial not null,
-        creation_timestamp timestamptz not null,
+        creation_timestamp timestamptz,
         name text not null,
         bloom_filter bytea not null,
         currency text not null,
@@ -635,7 +634,7 @@
 
     create table "ReservedList" (
        revision_id  bigserial not null,
-        creation_timestamp timestamptz not null,
+        creation_timestamp timestamptz,
         name text not null,
         should_publish boolean not null,
         primary key (revision_id)

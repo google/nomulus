@@ -79,7 +79,7 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
   // set to the timestamp when the list is created. In Datastore, we have two fields and the
   // lastUpdateTime is set to the current timestamp when creating and updating a list. So, we use
   // lastUpdateTime as the creation_timestamp column during the dual-write phase for compatibility.
-  @Column(name = "creation_timestamp", nullable = false)
+  @Column(name = "creation_timestamp")
   DateTime lastUpdateTime;
 
   /** Returns the ID of this revision, or throws if null. */
