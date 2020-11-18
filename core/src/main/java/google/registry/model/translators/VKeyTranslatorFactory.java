@@ -16,15 +16,16 @@ package google.registry.model.translators;
 
 import static com.google.common.base.Functions.identity;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.EntityClasses.ALL_CLASSES;
 
 import com.google.appengine.api.datastore.Key;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.persistence.VKey;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 /**
@@ -39,10 +40,10 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
   // name, which is all the datastore key gives us.
   // Note that entities annotated with @EntitySubclass are removed because they share the same
   // kind of the key with their parent class.
-  private static final ImmutableMap<String, Class<?>> CLASS_REGISTRY =
+  private static final Map<String, Class<?>> CLASS_REGISTRY =
       ALL_CLASSES.stream()
           .filter(clazz -> !clazz.isAnnotationPresent(EntitySubclass.class))
-          .collect(toImmutableMap(com.googlecode.objectify.Key::getKind, identity()));
+          .collect(Collectors.toMap(com.googlecode.objectify.Key::getKind, identity()));
 
   public VKeyTranslatorFactory() {
     super(VKey.class);
@@ -59,6 +60,7 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
 
   /** Create a VKey from an objectify Key. */
   @Nullable
+  @SuppressWarnings("unchecked")
   public static <T> VKey<T> createVKey(@Nullable com.googlecode.objectify.Key<T> key) {
     if (key == null) {
       return null;
@@ -93,6 +95,11 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
   /** Create a VKey from a URL-safe string representation. */
   public static VKey<?> createVKey(String urlSafe) {
     return createVKey(com.googlecode.objectify.Key.create(urlSafe));
+  }
+
+  @VisibleForTesting
+  public static void addTestEntityClass(Class<?> clazz) {
+    CLASS_REGISTRY.put(com.googlecode.objectify.Key.getKind(clazz), clazz);
   }
 
   @Override

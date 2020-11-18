@@ -27,15 +27,23 @@ import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.TestObject;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class VKeyTranslatorFactoryTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withDatastore().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastore().withOfyTestEntities(TestObject.class).build();
 
   VKeyTranslatorFactoryTest() {}
+
+  @BeforeAll
+  static void beforeAll() {
+    VKeyTranslatorFactory.addTestEntityClass(TestObject.class);
+  }
 
   @Test
   void testEntityWithFlatKey() {
@@ -87,5 +95,12 @@ public class VKeyTranslatorFactoryTest {
     assertThat(vkey.getKind()).isEqualTo(DomainBase.class);
     assertThat(vkey.getOfyKey()).isEqualTo(key);
     assertThat(vkey.getSqlKey()).isEqualTo("ROID-1");
+  }
+
+  @Test
+  void testExtraEntityClass() {
+    TestObject testObject = TestObject.create("id", "field");
+    Key<TestObject> key = Key.create(testObject);
+    assertThat(VKeyTranslatorFactory.createVKey(key).getSqlKey()).isEqualTo("id");
   }
 }
