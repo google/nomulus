@@ -174,16 +174,17 @@ public class EppTestCase {
         assertThat(response.getHeaders()).isEqualTo(ImmutableMap.of());
       }
     }
-    String result = response.getPayload();
-    EppXmlTransformer.validateOutput(result);
+    String actualOutput = response.getPayload();
+    // Run the resulting xml through the unmarshaller to verify that it was valid.
+    EppXmlTransformer.validateOutput(actualOutput);
     assertXmlEqualsWithMessage(
         expectedOutput,
-        result,
+        actualOutput,
         "Running " + inputFilename + " => " + outputFilename,
         "epp.response.resData.infData.roid",
         "epp.response.trID.svTRID");
     ofy().clearSessionCache(); // Clear the cache like OfyFilter would.
-    return result;
+    return actualOutput;
   }
 
   private FakeResponse executeXmlCommand(String inputXml) throws Exception {
