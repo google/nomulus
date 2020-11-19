@@ -55,6 +55,8 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
   // TODO(b/169873747): Remove this method after explicitly re-saving all domain entities.
   // This method is invoked from DomainContent.load(): Objectify's @OnLoad annotation
   // apparently does not work on embedded objects inside an entity.
+  // Changing signature to void onLoad(@AlsoLoad("gracePeriodId") Long gracePeriodId)
+  // would not work. Method is not called if gracePeriodId is null.
   void onLoad() {
     if (gracePeriodId == null) {
       gracePeriodId = ObjectifyService.allocateId();

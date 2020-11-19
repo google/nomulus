@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
@@ -169,9 +169,9 @@ public class DomainBaseTest extends EntityTestCase {
 
   @Test
   void testGracePeriod_nullIdFromOfy() {
-    Entity entity = tm().transact(() -> ofy().save().toEntity(domain));
+    Entity entity = ofyTm().transact(() -> ofy().save().toEntity(domain));
     entity.setUnindexedProperty("gracePeriods.gracePeriodId", null);
-    DomainBase domainFromEntity = tm().transact(() -> ofy().load().fromEntity(entity));
+    DomainBase domainFromEntity = ofyTm().transact(() -> ofy().load().fromEntity(entity));
     GracePeriod gracePeriod = domainFromEntity.getGracePeriods().iterator().next();
     assertThat(gracePeriod.gracePeriodId).isNotNull();
   }
