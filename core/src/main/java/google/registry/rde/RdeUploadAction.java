@@ -195,7 +195,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
    * simultaneously uploading it to the SFTP endpoint, and then using {@link ByteStreams#copy} to
    * blocking-copy bytes from the cloud storage {@code InputStream} to the RyDE/SFTP pipeline.
    *
-   * <p>In psuedoshell, the whole process looks like the following:
+   * <p>In pseudo-shell, the whole process looks like the following:
    *
    * <pre>   {@code
    *   gcs read $xmlFile \                                   # Get GhostRyDE from cloud storage.
