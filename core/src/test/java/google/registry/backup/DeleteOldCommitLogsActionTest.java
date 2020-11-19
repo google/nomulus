@@ -22,7 +22,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.ofy.Ofy;
-import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
@@ -52,9 +52,9 @@ public class DeleteOldCommitLogsActionTest
     action.clock = clock;
     action.maxAge = Duration.standardDays(30);
 
-    ContactResource contact = DatastoreHelper.persistActiveContact("TheRegistrar");
+    ContactResource contact = DatabaseHelper.persistActiveContact("TheRegistrar");
     clock.advanceBy(Duration.standardDays(1));
-    DatastoreHelper.persistResourceWithCommitLog(contact);
+    DatabaseHelper.persistResourceWithCommitLog(contact);
 
     prepareData();
   }
@@ -75,7 +75,7 @@ public class DeleteOldCommitLogsActionTest
         .asBuilder()
         .setEmailAddress(email)
         .build();
-    DatastoreHelper.persistResourceWithCommitLog(contact);
+    DatabaseHelper.persistResourceWithCommitLog(contact);
   }
 
   private void prepareData() {

@@ -21,8 +21,8 @@ import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.schema.cursor.Cursor.GLOBAL;
 import static google.registry.schema.cursor.CursorDao.loadAndCompare;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

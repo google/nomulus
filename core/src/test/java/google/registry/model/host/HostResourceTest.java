@@ -17,10 +17,10 @@ package google.registry.model.host;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.testing.DatastoreHelper.cloneAndSetAutoTimestamps;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

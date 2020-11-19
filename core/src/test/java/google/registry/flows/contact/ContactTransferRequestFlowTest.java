@@ -22,12 +22,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.config.RegistryConfig.getContactAutomaticTransferLength;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
-import static google.registry.testing.DatastoreHelper.assertNoBillingEvents;
-import static google.registry.testing.DatastoreHelper.assertPollMessagesEqual;
-import static google.registry.testing.DatastoreHelper.deleteResource;
-import static google.registry.testing.DatastoreHelper.getPollMessages;
-import static google.registry.testing.DatastoreHelper.persistActiveContact;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
+import static google.registry.testing.DatabaseHelper.assertPollMessagesEqual;
+import static google.registry.testing.DatabaseHelper.deleteResource;
+import static google.registry.testing.DatabaseHelper.getPollMessages;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

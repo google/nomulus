@@ -20,8 +20,8 @@ import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeMode.THIN;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.time.DateTimeConstants.TUESDAY;
 import static org.joda.time.Duration.standardDays;
 

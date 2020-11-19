@@ -31,10 +31,10 @@ import static google.registry.model.registry.label.PremiumListUtils.doesPremiumL
 import static google.registry.model.registry.label.PremiumListUtils.getPremiumPrice;
 import static google.registry.model.registry.label.PremiumListUtils.savePremiumListAndEntries;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.loadPremiumListEntries;
-import static google.registry.testing.DatastoreHelper.persistPremiumList;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadPremiumListEntries;
+import static google.registry.testing.DatabaseHelper.persistPremiumList;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

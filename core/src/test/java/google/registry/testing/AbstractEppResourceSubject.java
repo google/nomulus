@@ -19,7 +19,7 @@ import static com.google.common.truth.Fact.fact;
 import static com.google.common.truth.Fact.simpleFact;
 import static com.google.common.truth.OptionalSubject.optionals;
 import static google.registry.model.EppResourceUtils.isActive;
-import static google.registry.testing.DatastoreHelper.getHistoryEntriesOfType;
+import static google.registry.testing.DatabaseHelper.getHistoryEntriesOfType;
 import static google.registry.testing.HistoryEntrySubject.historyEntries;
 import static google.registry.util.DiffUtils.prettyPrintEntityDeepDiff;
 
@@ -50,7 +50,7 @@ abstract class AbstractEppResourceSubject<
   }
 
   private List<? extends HistoryEntry> getHistoryEntries() {
-    return DatastoreHelper.getHistoryEntries(actual);
+    return DatabaseHelper.getHistoryEntries(actual);
   }
 
   @SuppressWarnings("unchecked")

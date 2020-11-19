@@ -17,9 +17,9 @@ package google.registry.beam.initsql;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatastoreHelper.cloneAndSetAutoTimestamps;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -47,7 +47,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import org.joda.time.Instant;
@@ -213,7 +213,7 @@ public class DomainBaseUtilTest {
   @Test
   void removeBillingAndPollAndHosts_notDomainBase() {
     Entity contactEntity =
-        tm().transact(() -> ofy().toEntity(DatastoreHelper.newContactResource("contact")));
+        tm().transact(() -> ofy().toEntity(DatabaseHelper.newContactResource("contact")));
 
     assertThrows(
         IllegalArgumentException.class,

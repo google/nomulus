@@ -18,9 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.testing.DatastoreHelper.newContactResource;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.newRegistry;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;

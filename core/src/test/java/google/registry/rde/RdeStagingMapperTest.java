@@ -17,7 +17,7 @@ package google.registry.rde;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 

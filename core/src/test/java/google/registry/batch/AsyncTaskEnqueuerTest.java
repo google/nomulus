@@ -23,7 +23,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.PATH_RESAVE_ENTITY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
-import static google.registry.testing.DatastoreHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;

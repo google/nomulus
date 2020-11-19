@@ -14,9 +14,9 @@
 
 package google.registry.tools.server;
 
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.testing.FakeClock;

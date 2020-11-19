@@ -15,9 +15,9 @@
 package google.registry.flows.contact;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.testing.DatastoreHelper.newContactResource;
-import static google.registry.testing.DatastoreHelper.persistContactWithPendingTransfer;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.persistContactWithPendingTransfer;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import google.registry.flows.Flow;
 import google.registry.flows.ResourceFlowTestCase;

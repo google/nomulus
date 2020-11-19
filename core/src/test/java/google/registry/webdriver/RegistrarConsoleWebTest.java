@@ -17,7 +17,7 @@ package google.registry.webdriver;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.server.Fixture.BASIC;
 import static google.registry.server.Route.route;
-import static google.registry.testing.DatastoreHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.loadRegistrar;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

@@ -120,7 +120,7 @@ import org.joda.time.DateTimeComparator;
 import org.joda.time.DateTimeZone;
 
 /** Static utils for setting up test resources. */
-public class DatastoreHelper {
+public class DatabaseHelper {
 
   // The following two fields are injected by ReplayExtension.
 
@@ -137,7 +137,7 @@ public class DatastoreHelper {
                   Splitter.on('\n')
                       .split(
                           readResourceUtf8(
-                              DatastoreHelper.class, "default_premium_list_testdata.csv")),
+                              DatabaseHelper.class, "default_premium_list_testdata.csv")),
                   String.class));
 
   public static void setAlwaysSaveWithBackup(boolean enable) {
@@ -1234,5 +1234,5 @@ public class DatastoreHelper {
         clientId);
   }
 
-  private DatastoreHelper() {}
+  private DatabaseHelper() {}
 }

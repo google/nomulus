@@ -18,8 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.EppMetricSubject.assertThat;
 import static google.registry.testing.HostResourceSubject.assertAboutHosts;
 

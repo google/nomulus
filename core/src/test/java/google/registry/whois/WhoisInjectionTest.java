@@ -15,8 +15,8 @@
 package google.registry.whois;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHostResource;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;

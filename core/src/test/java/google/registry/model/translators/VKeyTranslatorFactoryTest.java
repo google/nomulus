@@ -15,8 +15,8 @@
 package google.registry.model.translators;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;

@@ -30,7 +30,7 @@ import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreEntityExtension;
-import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import java.io.Serializable;
@@ -90,7 +90,7 @@ class WriteToSqlTest implements Serializable {
       ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
 
       for (int i = 0; i < 3; i++) {
-        ContactResource contact = DatastoreHelper.newContactResource("contact_" + i);
+        ContactResource contact = DatabaseHelper.newContactResource("contact_" + i);
         store.insertOrUpdate(contact);
         builder.add(store.loadAsDatastoreEntity(contact));
       }

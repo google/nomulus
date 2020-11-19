@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatastoreHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.injectTmForDualDatabaseTest;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.restoreTmAfterDualDatabaseTest;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;

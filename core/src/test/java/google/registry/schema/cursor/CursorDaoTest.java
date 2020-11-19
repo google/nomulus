@@ -16,8 +16,8 @@ package google.registry.schema.cursor;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 
 import com.google.common.collect.ImmutableMap;

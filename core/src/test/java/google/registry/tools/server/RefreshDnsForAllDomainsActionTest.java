@@ -15,9 +15,9 @@
 package google.registry.tools.server;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.joda.time.Duration.standardMinutes;
 import static org.junit.jupiter.api.Assertions.assertThrows;

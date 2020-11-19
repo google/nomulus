@@ -14,7 +14,7 @@
 
 package google.registry.tools.server;
 
-import static google.registry.testing.DatastoreHelper.persistPremiumList;
+import static google.registry.testing.DatabaseHelper.persistPremiumList;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;

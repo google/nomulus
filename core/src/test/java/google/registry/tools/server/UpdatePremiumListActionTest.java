@@ -19,8 +19,8 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registry.label.PremiumListUtils.getPremiumPrice;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.loadPremiumListEntries;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.loadPremiumListEntries;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
@@ -28,7 +28,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeJsonResponse;
 import java.math.BigDecimal;
 import org.joda.money.Money;
@@ -77,7 +77,7 @@ class UpdatePremiumListActionTest {
   void test_success() {
     PremiumListDao.saveNew(
         parseToPremiumList(
-            "foo", readResourceUtf8(DatastoreHelper.class, "default_premium_list_testdata.csv")));
+            "foo", readResourceUtf8(DatabaseHelper.class, "default_premium_list_testdata.csv")));
     action.name = "foo";
     action.inputData = "rich,USD 75\nricher,USD 5000\npoor, USD 0.99";
     action.run();

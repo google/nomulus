@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.testing.DatastoreHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.createTlds;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

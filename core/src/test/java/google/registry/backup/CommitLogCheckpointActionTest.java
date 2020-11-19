@@ -16,7 +16,7 @@ package google.registry.backup;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.CommitLogCheckpointRoot.loadRoot;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;

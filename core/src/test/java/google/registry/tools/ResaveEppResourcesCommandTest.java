@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.testing.DatastoreHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactResource;

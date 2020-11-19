@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.reporting.Spec11ThreatMatch.ThreatType.MALWARE;
 import static google.registry.model.reporting.Spec11ThreatMatch.ThreatType.UNWANTED_SOFTWARE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static org.junit.jupiter.api.Assertions.assertThrows;

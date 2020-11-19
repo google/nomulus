@@ -15,8 +15,8 @@
 package google.registry.flows.contact;
 
 import static google.registry.model.eppoutput.CheckData.ContactCheck.create;
-import static google.registry.testing.DatastoreHelper.persistActiveContact;
-import static google.registry.testing.DatastoreHelper.persistDeletedContact;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistDeletedContact;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

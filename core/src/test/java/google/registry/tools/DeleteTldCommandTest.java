@@ -15,10 +15,10 @@
 package google.registry.tools;
 
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
-import static google.registry.testing.DatastoreHelper.allowRegistrarAccess;
-import static google.registry.testing.DatastoreHelper.newRegistry;
-import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.allowRegistrarAccess;
+import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
