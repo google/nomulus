@@ -54,9 +54,11 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
   public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(
       ExtensionContext context) {
     TestTemplateInvocationContext ofyContext =
-        createInvocationContext("Test Datastore", TransactionManagerFactory::ofyTm);
+        createInvocationContext(
+            context.getDisplayName() + " with Datastore", TransactionManagerFactory::ofyTm);
     TestTemplateInvocationContext sqlContext =
-        createInvocationContext("Test PostgreSQL", TransactionManagerFactory::jpaTm);
+        createInvocationContext(
+            context.getDisplayName() + " with PostgreSQL", TransactionManagerFactory::jpaTm);
     Method testMethod = context.getTestMethod().orElseThrow(IllegalStateException::new);
     if (testMethod.isAnnotationPresent(TestOfyAndSql.class)) {
       return Stream.of(ofyContext, sqlContext);
