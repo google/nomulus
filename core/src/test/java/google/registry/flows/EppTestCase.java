@@ -165,18 +165,28 @@ public class EppTestCase {
             }
           };
     }
-    String actualOutput = executeXmlCommand(input);
+    FakeResponse response = executeXmlCommand(input);
+    // The response for a successful login request should include a logged-in header.
+    if (inputFilename.equals("login.xml")) {
+      if (outputFilename.equals("generic_success_response.xml")) {
+        assertThat(response.getHeaders()).isEqualTo(ImmutableMap.of("logged-in", "true"));
+      } else {
+        assertThat(response.getHeaders()).isEqualTo(ImmutableMap.of());
+      }
+    }
+    String result = response.getPayload();
+    EppXmlTransformer.validateOutput(result);
     assertXmlEqualsWithMessage(
         expectedOutput,
-        actualOutput,
+        result,
         "Running " + inputFilename + " => " + outputFilename,
         "epp.response.resData.infData.roid",
         "epp.response.trID.svTRID");
     ofy().clearSessionCache(); // Clear the cache like OfyFilter would.
-    return actualOutput;
+    return result;
   }
 
-  private String executeXmlCommand(String inputXml) throws Exception {
+  private FakeResponse executeXmlCommand(String inputXml) throws Exception {
     EppRequestHandler handler = new EppRequestHandler();
     FakeResponse response = new FakeResponse();
     handler.response = response;
@@ -195,10 +205,7 @@ public class EppTestCase {
         inputXml.getBytes(UTF_8));
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getContentType()).isEqualTo(APPLICATION_EPP_XML_UTF8);
-    String result = response.getPayload();
-    // Run the resulting xml through the unmarshaller to verify that it was valid.
-    EppXmlTransformer.validateOutput(result);
-    return result;
+    return response;
   }
 
   EppMetric getRecordedEppMetric() {
