@@ -19,7 +19,6 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.OnLoad;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -54,7 +53,8 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
   }
 
   // TODO(b/169873747): Remove this method after explicitly re-saving all domain entities.
-  @OnLoad
+  // This method is invoked from DomainContent.load(): Objectify's @OnLoad annotation
+  // apparently does not work on embedded objects inside an entity.
   void onLoad() {
     if (gracePeriodId == null) {
       gracePeriodId = ObjectifyService.allocateId();
