@@ -39,6 +39,10 @@ public abstract class StringGenerator implements Serializable {
 
     /** Digit-only alphabet. */
     public static final String DIGITS_ONLY = "0123456789";
+
+    /** Full ASCII alphabet with a wide selection of punctuation characters. */
+    public static final String FULL_ASCII =
+        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`~!@#$%^&*()_-+={}[]\\/<>,.;?':| ";
   }
 
   protected String alphabet;
