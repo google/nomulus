@@ -122,7 +122,7 @@ class GcsDiffFileLister {
 
     // Reconstruct the sequence of files by traversing backwards from "lastUpperBoundTime" (i.e. the
     // last file that we found) and finding its previous file until we either run out of files or
-    // get to one that preceeds "fromTime".
+    // get to one that precedes "fromTime".
     //
     // GCS file listing is eventually consistent, so it's possible that we are missing a file. The
     // metadata of a file is sufficient to identify the preceding file, so if we start from the

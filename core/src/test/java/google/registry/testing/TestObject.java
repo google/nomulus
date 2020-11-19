@@ -24,16 +24,19 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
+import javax.persistence.Transient;
 
 /** A test model object that can be persisted in any entity group. */
 @Entity
+@javax.persistence.Entity
 @EntityForTesting
-public class TestObject extends ImmutableObject {
+public class TestObject extends ImmutableObject implements DatastoreAndSqlEntity {
 
-  @Parent Key<EntityGroupRoot> parent;
+  @Parent @Transient Key<EntityGroupRoot> parent;
 
-  @Id String id;
+  @Id @javax.persistence.Id String id;
 
   String field;
 
