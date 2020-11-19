@@ -14,12 +14,12 @@
 
 package google.registry.flows.poll;
 
-import static google.registry.testing.DatastoreHelper.createHistoryEntryForEppResource;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.persistActiveContact;
-import static google.registry.testing.DatastoreHelper.persistActiveHost;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createHistoryEntryForEppResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

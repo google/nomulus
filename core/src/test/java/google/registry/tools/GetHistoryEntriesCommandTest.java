@@ -14,9 +14,9 @@
 
 package google.registry.tools;
 
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntry;
 
 import google.registry.model.domain.DomainBase;

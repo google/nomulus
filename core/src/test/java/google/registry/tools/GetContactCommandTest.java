@@ -14,11 +14,11 @@
 
 package google.registry.tools;
 
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newContactResource;
-import static google.registry.testing.DatastoreHelper.persistActiveContact;
-import static google.registry.testing.DatastoreHelper.persistDeletedContact;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistDeletedContact;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

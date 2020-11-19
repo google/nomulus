@@ -16,11 +16,11 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 import static org.junit.jupiter.api.Assertions.assertThrows;

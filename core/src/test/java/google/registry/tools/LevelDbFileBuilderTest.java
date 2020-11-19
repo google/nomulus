@@ -24,7 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import google.registry.model.contact.ContactResource;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.tools.EntityWrapper.Property;
 import java.io.File;
 import java.io.IOException;
@@ -95,7 +95,7 @@ public class LevelDbFileBuilderTest {
     File logFile = tmpDir.resolve("testfile").toFile();
     LevelDbFileBuilder builder = new LevelDbFileBuilder(logFile);
 
-    ContactResource contact = DatastoreHelper.newContactResource("contact");
+    ContactResource contact = DatabaseHelper.newContactResource("contact");
     builder.addEntity(tm().transact(() -> ofy().save().toEntity(contact)));
     builder.build();
 

@@ -14,8 +14,8 @@
 
 package google.registry.tools.server;
 
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveHost;
 
 import google.registry.testing.FakeClock;
 import java.util.Optional;

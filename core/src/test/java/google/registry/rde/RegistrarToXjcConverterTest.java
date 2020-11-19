@@ -16,7 +16,7 @@ package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.rde.RegistrarToXjcConverter.convertRegistrar;
-import static google.registry.testing.DatastoreHelper.cloneAndSetAutoTimestamps;
+import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.xjc.XjcXmlTransformer.marshalStrict;
 import static java.nio.charset.StandardCharsets.UTF_8;
 

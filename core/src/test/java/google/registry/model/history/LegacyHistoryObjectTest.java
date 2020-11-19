@@ -18,9 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
-import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
+import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static java.nio.charset.StandardCharsets.UTF_8;
 

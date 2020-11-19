@@ -23,12 +23,12 @@ import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2_HASH;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
-import static google.registry.testing.DatastoreHelper.cloneAndSetAutoTimestamps;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newRegistry;
-import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.DatastoreHelper.persistSimpleResource;
-import static google.registry.testing.DatastoreHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistSimpleResource;
+import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;

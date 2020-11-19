@@ -14,7 +14,7 @@
 
 package google.registry.flows.session;
 
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;

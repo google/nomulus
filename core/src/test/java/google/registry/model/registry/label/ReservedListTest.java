@@ -25,9 +25,9 @@ import static google.registry.model.registry.label.ReservationType.ALLOWED_IN_SU
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.model.registry.label.ReservationType.NAME_COLLISION;
 import static google.registry.model.registry.label.ReservedList.getReservationTypes;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistReservedList;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistReservedList;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;

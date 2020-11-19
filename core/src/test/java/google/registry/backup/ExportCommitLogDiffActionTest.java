@@ -20,7 +20,7 @@ import static google.registry.backup.BackupUtils.GcsMetadataKeys.LOWER_BOUND_CHE
 import static google.registry.backup.BackupUtils.GcsMetadataKeys.NUM_TRANSACTIONS;
 import static google.registry.backup.BackupUtils.GcsMetadataKeys.UPPER_BOUND_CHECKPOINT;
 import static google.registry.backup.BackupUtils.deserializeEntities;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 

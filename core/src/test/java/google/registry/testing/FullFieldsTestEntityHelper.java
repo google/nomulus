@@ -14,9 +14,9 @@
 
 package google.registry.testing;
 
-import static google.registry.testing.DatastoreHelper.generateNewContactHostRoid;
-import static google.registry.testing.DatastoreHelper.generateNewDomainRoid;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.generateNewContactHostRoid;
+import static google.registry.testing.DatabaseHelper.generateNewDomainRoid;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 

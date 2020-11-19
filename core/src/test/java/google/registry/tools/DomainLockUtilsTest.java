@@ -17,13 +17,13 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.testing.DatastoreHelper.assertNoBillingEvents;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.getHistoryEntriesOfType;
-import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.persistActiveHost;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.getHistoryEntriesOfType;
+import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getRegistryLockByRevisionId;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
@@ -46,7 +46,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SqlHelper;
@@ -534,6 +534,6 @@ public final class DomainLockUtilsTest {
                         .setParent(entry)
                         .build())
             .collect(Collectors.toSet());
-    DatastoreHelper.assertBillingEvents(expectedEvents);
+    DatabaseHelper.assertBillingEvents(expectedEvents);
   }
 }

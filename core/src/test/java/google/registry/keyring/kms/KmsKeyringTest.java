@@ -15,7 +15,7 @@
 package google.registry.keyring.kms;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.persistResources;
+import static google.registry.testing.DatabaseHelper.persistResources;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.keyring.api.KeySerializer;

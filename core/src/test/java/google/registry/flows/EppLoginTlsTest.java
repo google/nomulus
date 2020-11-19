@@ -14,8 +14,8 @@
 
 package google.registry.flows;
 
-import static google.registry.testing.DatastoreHelper.loadRegistrar;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;

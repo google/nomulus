@@ -16,11 +16,11 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.deleteResource;
-import static google.registry.testing.DatastoreHelper.persistActiveHost;
-import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.deleteResource;
+import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

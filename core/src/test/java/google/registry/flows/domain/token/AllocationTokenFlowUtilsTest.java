@@ -21,9 +21,9 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;

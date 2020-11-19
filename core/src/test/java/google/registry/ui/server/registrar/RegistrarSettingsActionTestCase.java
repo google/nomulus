@@ -21,9 +21,9 @@ import static google.registry.config.RegistryConfig.getGSuiteOutgoingEmailDispla
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.ADMIN;
 import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.OWNER;
 import static google.registry.security.JsonHttpTestUtils.createJsonPayload;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.disallowRegistrarAccess;
-import static google.registry.testing.DatastoreHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.disallowRegistrarAccess;
+import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

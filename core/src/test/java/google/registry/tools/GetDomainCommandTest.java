@@ -14,11 +14,11 @@
 
 package google.registry.tools;
 
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

@@ -17,7 +17,7 @@ package google.registry.ui.server.registrar;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

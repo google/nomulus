@@ -16,10 +16,10 @@ package google.registry.flows.contact;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.isDeleted;
-import static google.registry.testing.DatastoreHelper.assertNoBillingEvents;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

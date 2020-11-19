@@ -15,9 +15,9 @@
 package google.registry.dns;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistActiveSubordinateHost;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
 import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;

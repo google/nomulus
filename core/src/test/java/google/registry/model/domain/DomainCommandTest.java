@@ -14,8 +14,8 @@
 
 package google.registry.model.domain;
 
-import static google.registry.testing.DatastoreHelper.persistActiveContact;
-import static google.registry.testing.DatastoreHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistActiveHost;
 
 import google.registry.model.ResourceCommandTestCase;
 import google.registry.model.eppinput.EppInput;

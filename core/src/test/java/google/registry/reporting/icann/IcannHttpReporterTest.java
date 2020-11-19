@@ -17,7 +17,7 @@ package google.registry.reporting.icann;
 import static com.google.common.net.MediaType.CSV_UTF_8;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

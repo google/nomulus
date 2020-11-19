@@ -15,7 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.assertNoBillingEvents;
+import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 
 import google.registry.model.EppResource;
 import google.registry.model.eppoutput.CheckData;

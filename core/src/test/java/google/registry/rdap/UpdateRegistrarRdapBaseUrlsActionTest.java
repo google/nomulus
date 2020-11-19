@@ -16,11 +16,11 @@ package google.registry.rdap;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.deleteTld;
-import static google.registry.testing.DatastoreHelper.loadRegistrar;
-import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.DatastoreHelper.persistSimpleResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.deleteTld;
+import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.api.client.http.LowLevelHttpRequest;

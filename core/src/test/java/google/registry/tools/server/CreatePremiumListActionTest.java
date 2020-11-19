@@ -18,8 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registry.label.PremiumListUtils.deletePremiumList;
 import static google.registry.model.registry.label.PremiumListUtils.getPremiumPrice;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.loadPremiumListEntries;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.loadPremiumListEntries;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.registry.Registry;

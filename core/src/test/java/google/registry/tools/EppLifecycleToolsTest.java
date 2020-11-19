@@ -15,9 +15,9 @@
 package google.registry.tools;
 
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.testing.DatastoreHelper.assertBillingEventsForResource;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
+import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableList;

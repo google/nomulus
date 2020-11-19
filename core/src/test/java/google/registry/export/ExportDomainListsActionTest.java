@@ -18,10 +18,10 @@ import static com.google.appengine.tools.cloudstorage.GcsServiceFactory.createGc
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.export.ExportDomainListsAction.ExportDomainListsReducer.EXPORT_MIME_TYPE;
 import static google.registry.export.ExportDomainListsAction.ExportDomainListsReducer.REGISTERED_DOMAINS_FILENAME;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.GcsTestingUtils.readGcsFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;

@@ -20,10 +20,10 @@ import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABIL
 import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
 import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistPremiumList;
-import static google.registry.testing.DatastoreHelper.persistReservedList;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistPremiumList;
+import static google.registry.testing.DatabaseHelper.persistReservedList;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.money.CurrencyUnit.JPY;

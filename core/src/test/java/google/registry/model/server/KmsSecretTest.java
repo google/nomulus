@@ -16,7 +16,7 @@ package google.registry.model.server;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.BeforeEach;

@@ -17,7 +17,7 @@ package google.registry.model.ofy;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTld;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityTranslator;

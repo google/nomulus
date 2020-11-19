@@ -17,7 +17,7 @@ package google.registry.flows;
 import static com.google.common.io.BaseEncoding.base64;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
-import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.testing.TestLogHandlerUtils.findFirstLogRecordWithMessagePrefix;

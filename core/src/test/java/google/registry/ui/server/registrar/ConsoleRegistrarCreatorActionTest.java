@@ -18,7 +18,7 @@ import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.GaeUserIdConverter.convertEmailAddressToGaeUserId;
 import static google.registry.model.registrar.Registrar.loadByClientId;
-import static google.registry.testing.DatastoreHelper.persistPremiumList;
+import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

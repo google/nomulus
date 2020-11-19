@@ -16,9 +16,9 @@ package google.registry.model.registry;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.newRegistry;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.net.InternetDomainName;

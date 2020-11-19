@@ -22,11 +22,11 @@ import static com.google.common.collect.Multimaps.filterKeys;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistActiveContact;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistActiveHost;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.util.Arrays.asList;
 

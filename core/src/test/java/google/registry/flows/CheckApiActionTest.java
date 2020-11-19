@@ -22,10 +22,10 @@ import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.RE
 import static google.registry.monitoring.whitebox.CheckApiMetric.Availability.RESERVED;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.PREMIUM;
 import static google.registry.monitoring.whitebox.CheckApiMetric.Tier.STANDARD;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistReservedList;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistReservedList;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.mockito.Mockito.verify;
 
 import google.registry.model.registry.Registry;

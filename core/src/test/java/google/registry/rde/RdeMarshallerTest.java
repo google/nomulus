@@ -15,7 +15,7 @@
 package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.xml.ValidationMode.STRICT;
 
 import google.registry.testing.AppEngineExtension;

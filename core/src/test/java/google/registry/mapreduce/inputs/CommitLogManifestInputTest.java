@@ -23,7 +23,7 @@ import com.googlecode.objectify.Key;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DatabaseHelper;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -126,7 +126,7 @@ final class CommitLogManifestInputTest {
   private static Key<CommitLogManifest> createManifest(
       Key<CommitLogBucket> parent, DateTime dateTime) {
     CommitLogManifest commitLogManifest = CommitLogManifest.create(parent, dateTime, null);
-    DatastoreHelper.persistResource(commitLogManifest);
+    DatabaseHelper.persistResource(commitLogManifest);
     return Key.create(commitLogManifest);
   }
 }

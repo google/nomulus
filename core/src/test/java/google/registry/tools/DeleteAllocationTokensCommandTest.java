@@ -17,9 +17,9 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;

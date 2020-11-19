@@ -15,13 +15,13 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistActiveContact;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistActiveHost;
-import static google.registry.testing.DatastoreHelper.persistDeletedContact;
-import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
-import static google.registry.testing.DatastoreHelper.persistDeletedHost;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistDeletedContact;
+import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.testing.DatabaseHelper.persistDeletedHost;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

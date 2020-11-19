@@ -16,11 +16,11 @@ package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.persistActiveHost;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getRegistryLockByVerificationCode;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
@@ -46,7 +46,7 @@ import google.registry.request.auth.UserAuthInfo;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.security.XsrfTokenManager;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -137,7 +137,7 @@ final class RegistryLockVerifyActionTest {
     HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
     assertThat(historyEntry.getRequestedByRegistrar()).isFalse();
     assertThat(historyEntry.getBySuperuser()).isTrue();
-    DatastoreHelper.assertNoBillingEvents();
+    DatabaseHelper.assertNoBillingEvents();
   }
 
   @Test
@@ -312,7 +312,7 @@ final class RegistryLockVerifyActionTest {
   }
 
   private void assertBillingEvent(HistoryEntry historyEntry) {
-    DatastoreHelper.assertBillingEvents(
+    DatabaseHelper.assertBillingEvents(
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.SERVER_STATUS)
             .setTargetId(domain.getForeignKey())

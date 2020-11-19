@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;

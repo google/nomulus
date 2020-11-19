@@ -14,7 +14,7 @@
 
 package google.registry.flows.session;
 
-import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

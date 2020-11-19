@@ -16,11 +16,11 @@ package google.registry.flows.contact;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
-import static google.registry.testing.DatastoreHelper.assertNoBillingEvents;
-import static google.registry.testing.DatastoreHelper.newContactResource;
-import static google.registry.testing.DatastoreHelper.persistActiveContact;
-import static google.registry.testing.DatastoreHelper.persistDeletedContact;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
+import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistDeletedContact;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

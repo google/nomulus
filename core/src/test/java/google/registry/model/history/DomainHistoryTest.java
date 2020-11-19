@@ -20,10 +20,10 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 

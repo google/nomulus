@@ -20,7 +20,7 @@ import static google.registry.rdap.RdapTestHelper.loadJsonFile;
 import static google.registry.rdap.RdapTestHelper.parseJsonObject;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
-import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static org.mockito.Mockito.verify;
 
 import google.registry.rdap.RdapMetrics.EndpointType;

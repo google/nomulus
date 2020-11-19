@@ -37,8 +37,8 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
   @Override
   public void beforeEach(ExtensionContext context) {
-    DatastoreHelper.setClock(clock);
-    DatastoreHelper.setAlwaysSaveWithBackup(true);
+    DatabaseHelper.setClock(clock);
+    DatabaseHelper.setAlwaysSaveWithBackup(true);
     ReplayQueue.clear();
     context.getStore(ExtensionContext.Namespace.GLOBAL).put(ReplayExtension.class, this);
   }
@@ -52,7 +52,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   }
 
   public void replayToSql() {
-    DatastoreHelper.setAlwaysSaveWithBackup(false);
+    DatabaseHelper.setAlwaysSaveWithBackup(false);
     ReplayQueue.replay();
   }
 }

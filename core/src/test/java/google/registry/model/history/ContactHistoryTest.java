@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
+import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 

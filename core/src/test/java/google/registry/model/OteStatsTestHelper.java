@@ -14,8 +14,8 @@
 
 package google.registry.model;
 
-import static google.registry.testing.DatastoreHelper.persistPremiumList;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistPremiumList;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadBytes;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 

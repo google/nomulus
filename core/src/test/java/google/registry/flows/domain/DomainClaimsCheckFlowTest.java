@@ -15,11 +15,11 @@
 package google.registry.flows.domain;
 
 import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
-import static google.registry.testing.DatastoreHelper.assertNoBillingEvents;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.loadRegistrar;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

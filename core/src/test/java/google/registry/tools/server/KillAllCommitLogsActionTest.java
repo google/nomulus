@@ -21,10 +21,10 @@ import static com.google.common.collect.Iterables.filter;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newContactResource;
-import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.DatastoreHelper.persistResourceWithCommitLog;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResourceWithCommitLog;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.util.Arrays.asList;
 

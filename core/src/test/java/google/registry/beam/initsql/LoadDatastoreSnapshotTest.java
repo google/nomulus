@@ -14,9 +14,9 @@
 
 package google.registry.beam.initsql;
 
-import static google.registry.testing.DatastoreHelper.newContactResource;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.newRegistry;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.common.collect.ImmutableList;

@@ -22,7 +22,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatastoreHelper.stripBillingEventId;
+import static google.registry.testing.DatabaseHelper.stripBillingEventId;
 import static google.registry.xml.XmlTestUtils.assertXmlEquals;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;

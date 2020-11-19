@@ -19,10 +19,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServer;
 import static google.registry.model.common.Cursor.CursorType.SYNC_REGISTRAR_SHEET;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
-import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.DatastoreHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static org.joda.money.CurrencyUnit.JPY;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
@@ -39,7 +39,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
@@ -79,7 +79,7 @@ public class SyncRegistrarsSheetTest {
     inject.setStaticField(Ofy.class, "clock", clock);
     createTld("example");
     // Remove Registrar entities created by AppEngineRule.
-    Registrar.loadAll().forEach(DatastoreHelper::deleteResource);
+    Registrar.loadAll().forEach(DatabaseHelper::deleteResource);
   }
 
   @Test

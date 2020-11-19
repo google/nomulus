@@ -16,11 +16,11 @@ package google.registry.tools.javascrap;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistActiveDomain;
-import static google.registry.testing.DatastoreHelper.persistDeletedDomain;
-import static google.registry.testing.DatastoreHelper.persistNewRegistrar;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.getMostRecentRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.getMostRecentVerifiedRegistryLockByRepoId;
 import static google.registry.testing.SqlHelper.getRegistryLocksByRegistrarId;

@@ -16,8 +16,8 @@ package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.testing.DatastoreHelper.getOnlyHistoryEntryOfType;
-import static google.registry.testing.DatastoreHelper.stripBillingEventId;
+import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
+import static google.registry.testing.DatabaseHelper.stripBillingEventId;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.xml.XmlTestUtils.assertXmlEqualsWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;

@@ -17,7 +17,7 @@ package google.registry.backup;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.RDE_REPORT;
 import static google.registry.model.ofy.CommitLogBucket.getBucketKey;
-import static google.registry.testing.DatastoreHelper.createTld;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 

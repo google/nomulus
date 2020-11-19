@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

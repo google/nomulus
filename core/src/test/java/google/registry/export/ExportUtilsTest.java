@@ -15,9 +15,9 @@
 package google.registry.export;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.persistReservedList;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistReservedList;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;

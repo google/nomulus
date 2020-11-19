@@ -16,10 +16,10 @@ package google.registry.whois;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatastoreHelper.createTlds;
-import static google.registry.testing.DatastoreHelper.loadRegistrar;
-import static google.registry.testing.DatastoreHelper.persistResource;
-import static google.registry.testing.DatastoreHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeContactResource;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeDomainBase;
 import static google.registry.testing.FullFieldsTestEntityHelper.makeHostResource;

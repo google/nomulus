@@ -20,7 +20,7 @@ import static google.registry.request.auth.AuthenticatedRegistrarAccessor.Role.O
 import static google.registry.testing.AppEngineExtension.makeRegistrar2;
 import static google.registry.testing.AppEngineExtension.makeRegistrarContact2;
 import static google.registry.testing.AppEngineExtension.makeRegistrarContact3;
-import static google.registry.testing.DatastoreHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
