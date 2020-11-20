@@ -141,12 +141,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @Nullable
   @Access(AccessType.PROPERTY)
   @AttributeOverrides({
-      @AttributeOverride(
-          name = "unit",
-          column = @Column(name = "historyPeriodUnit")),
-      @AttributeOverride(
-          name = "value",
-          column = @Column(name = "historyPeriodValue"))
+    @AttributeOverride(name = "unit", column = @Column(name = "historyPeriodUnit")),
+    @AttributeOverride(name = "value", column = @Column(name = "historyPeriodValue"))
   })
   public Period getPeriod() {
     return super.getPeriod();
@@ -229,9 +225,9 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   }
 
   /** Creates a {@link VKey} instance for this entity. */
+  @SuppressWarnings("unchecked")
   public VKey<DomainHistory> createVKey() {
-    return VKey.create(
-        DomainHistory.class, new DomainHistoryId(getDomainRepoId(), getId()), Key.create(this));
+    return (VKey<DomainHistory>) createVKey(Key.create(this));
   }
 
   @PostLoad

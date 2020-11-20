@@ -32,7 +32,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.BloomFilter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -45,9 +44,8 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registry.Registry;
-import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.schema.replay.NonReplicatedEntity;
-import google.registry.schema.replay.SqlEntity;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.util.NonFinalForTesting;
 import java.io.ByteArrayOutputStream;
@@ -114,7 +112,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   /** Virtual parent entity for premium list entry entities associated with a single revision. */
   @ReportedOn
   @Entity
-  public static class PremiumListRevision extends ImmutableObject implements DatastoreEntity {
+  public static class PremiumListRevision extends ImmutableObject implements DatastoreOnlyEntity {
 
     @Parent Key<PremiumList> parent;
 
@@ -170,11 +168,6 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
         throw new IllegalStateException("Could not serialize premium labels Bloom filter", e);
       }
       return revision;
-    }
-
-    @Override
-    public ImmutableList<SqlEntity> toSqlEntities() {
-      return ImmutableList.of(); // not persisted in SQL
     }
   }
 
@@ -332,7 +325,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   @ReportedOn
   @Entity
   public static class PremiumListEntry extends DomainLabelEntry<Money, PremiumListEntry>
-      implements Buildable, DatastoreEntity {
+      implements Buildable, DatastoreOnlyEntity {
 
     @Parent
     Key<PremiumListRevision> parent;
@@ -347,11 +340,6 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
     @Override
     public Builder asBuilder() {
       return new Builder(clone(this));
-    }
-
-    @Override
-    public ImmutableList<SqlEntity> toSqlEntities() {
-      return ImmutableList.of();
     }
 
     /** A builder for constructing {@link PremiumListEntry} objects, since they are immutable. */

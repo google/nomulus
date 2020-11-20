@@ -17,21 +17,19 @@ package google.registry.model.ofy;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.DatastoreOnlyEntity;
 import org.joda.time.DateTime;
 
 /** Singleton parent entity for all commit log checkpoints. */
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
-public class CommitLogCheckpointRoot extends ImmutableObject implements DatastoreEntity {
+public class CommitLogCheckpointRoot extends ImmutableObject implements DatastoreOnlyEntity {
 
   public static final long SINGLETON_ID = 1;  // There is always exactly one of these.
 
@@ -48,11 +46,6 @@ public class CommitLogCheckpointRoot extends ImmutableObject implements Datastor
 
   public DateTime getLastWrittenTime() {
     return lastWrittenTime;
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // not persisted in SQL
   }
 
   public static CommitLogCheckpointRoot loadRoot() {

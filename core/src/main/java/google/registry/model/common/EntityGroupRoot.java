@@ -14,13 +14,11 @@
 
 package google.registry.model.common;
 
-import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.BackupGroupRoot;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.DatastoreOnlyEntity;
 
 /**
  * The root key for the entity group which is known as the cross-tld entity group for historical
@@ -37,7 +35,7 @@ import google.registry.schema.replay.SqlEntity;
  * entity group for the single namespace where global data applicable for all TLDs lived.
  */
 @Entity
-public class EntityGroupRoot extends BackupGroupRoot implements DatastoreEntity {
+public class EntityGroupRoot extends BackupGroupRoot implements DatastoreOnlyEntity {
 
   @SuppressWarnings("unused")
   @Id
@@ -46,10 +44,5 @@ public class EntityGroupRoot extends BackupGroupRoot implements DatastoreEntity 
   /** The root key for cross-tld resources such as registrars. */
   public static Key<EntityGroupRoot> getCrossTldKey() {
     return Key.create(EntityGroupRoot.class, "cross-tld");
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // not persisted in SQL
   }
 }

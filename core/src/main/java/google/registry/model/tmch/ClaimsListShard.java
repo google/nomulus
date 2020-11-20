@@ -26,7 +26,6 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
@@ -46,9 +45,8 @@ import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.schema.replay.DatastoreAndSqlEntity;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.DatastoreOnlyEntity;
+import google.registry.schema.replay.NonReplicatedEntity;
 import google.registry.util.CollectionUtils;
 import google.registry.util.Concurrent;
 import google.registry.util.Retrier;
@@ -97,7 +95,7 @@ import org.joda.time.DateTime;
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 @javax.persistence.Entity(name = "ClaimsList")
 @Table
-public class ClaimsListShard extends ImmutableObject implements DatastoreAndSqlEntity {
+public class ClaimsListShard extends ImmutableObject implements NonReplicatedEntity {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -146,63 +144,62 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreAndSqlE
   private static final Retrier LOADER_RETRIER = new Retrier(new SystemSleeper(), 2);
 
   private static ClaimsListShard loadClaimsListShard() {
-        // Find the most recent revision.
-        Key<ClaimsListRevision> revisionKey = getCurrentRevision();
+    // Find the most recent revision.
+    Key<ClaimsListRevision> revisionKey = getCurrentRevision();
 
-        Map<String, String> combinedLabelsToKeys = new HashMap<>();
-        DateTime creationTime = START_OF_TIME;
-        if (revisionKey != null) {
-          // Grab all of the keys for the shards that belong to the current revision.
-          final List<Key<ClaimsListShard>> shardKeys =
-              ofy().load().type(ClaimsListShard.class).ancestor(revisionKey).keys().list();
+    Map<String, String> combinedLabelsToKeys = new HashMap<>();
+    DateTime creationTime = START_OF_TIME;
+    if (revisionKey != null) {
+      // Grab all of the keys for the shards that belong to the current revision.
+      final List<Key<ClaimsListShard>> shardKeys =
+          ofy().load().type(ClaimsListShard.class).ancestor(revisionKey).keys().list();
 
-          List<ClaimsListShard> shards;
-          try {
-            // Load all of the shards concurrently, each in a separate transaction.
-            shards =
-                Concurrent.transform(
-                    shardKeys,
-                    key ->
-                        tm().transactNewReadOnly(
-                                () -> {
-                                  ClaimsListShard claimsListShard = ofy().load().key(key).now();
-                                  checkState(
-                                      claimsListShard != null,
-                                      "Key not found when loading claims list shards.");
-                                  return claimsListShard;
-                                }));
-          } catch (UncheckedExecutionException e) {
-            // We retry on IllegalStateException. However, there's a checkState inside the
-            // Concurrent.transform, so if it's thrown it'll be wrapped in an
-            // UncheckedExecutionException. We want to unwrap it so it's caught by the retrier.
-            if (e.getCause() != null) {
-              throwIfUnchecked(e.getCause());
-            }
-            throw e;
-          }
-
-          // Combine the shards together and return the concatenated ClaimsList.
-          if (!shards.isEmpty()) {
-            creationTime = shards.get(0).creationTime;
-            for (ClaimsListShard shard : shards) {
-              combinedLabelsToKeys.putAll(shard.labelsToKeys);
-              checkState(
-                  creationTime.equals(shard.creationTime),
-                  "Inconsistent claims list shard creation times.");
-            }
-          }
+      List<ClaimsListShard> shards;
+      try {
+        // Load all of the shards concurrently, each in a separate transaction.
+        shards =
+            Concurrent.transform(
+                shardKeys,
+                key ->
+                    tm().transactNewReadOnly(
+                            () -> {
+                              ClaimsListShard claimsListShard = ofy().load().key(key).now();
+                              checkState(
+                                  claimsListShard != null,
+                                  "Key not found when loading claims list shards.");
+                              return claimsListShard;
+                            }));
+      } catch (UncheckedExecutionException e) {
+        // We retry on IllegalStateException. However, there's a checkState inside the
+        // Concurrent.transform, so if it's thrown it'll be wrapped in an
+        // UncheckedExecutionException. We want to unwrap it so it's caught by the retrier.
+        if (e.getCause() != null) {
+          throwIfUnchecked(e.getCause());
         }
+        throw e;
+      }
 
-        ClaimsListShard datastoreList =
-            create(creationTime, ImmutableMap.copyOf(combinedLabelsToKeys));
-        // Also load the list from Cloud SQL, compare the two lists, and log if different.
-        try {
-          loadAndCompareCloudSqlList(datastoreList);
-        } catch (Throwable t) {
-          logger.atSevere().withCause(t).log("Error comparing claims lists.");
+      // Combine the shards together and return the concatenated ClaimsList.
+      if (!shards.isEmpty()) {
+        creationTime = shards.get(0).creationTime;
+        for (ClaimsListShard shard : shards) {
+          combinedLabelsToKeys.putAll(shard.labelsToKeys);
+          checkState(
+              creationTime.equals(shard.creationTime),
+              "Inconsistent claims list shard creation times.");
         }
-        return datastoreList;
-      };
+      }
+    }
+
+    ClaimsListShard datastoreList = create(creationTime, ImmutableMap.copyOf(combinedLabelsToKeys));
+    // Also load the list from Cloud SQL, compare the two lists, and log if different.
+    try {
+      loadAndCompareCloudSqlList(datastoreList);
+    } catch (Throwable t) {
+      logger.atSevere().withCause(t).log("Error comparing claims lists.");
+    }
+    return datastoreList;
+  };
 
   private static void loadAndCompareCloudSqlList(ClaimsListShard datastoreList) {
     Optional<ClaimsListShard> maybeCloudSqlList = ClaimsListDao.getLatestRevision();
@@ -304,8 +301,7 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreAndSqlE
     Concurrent.transform(
         CollectionUtils.partitionMap(labelsToKeys, shardSize),
         (final ImmutableMap<String, String> labelsToKeysShard) ->
-            tm()
-                .transactNew(
+            tm().transactNew(
                     () -> {
                       ClaimsListShard shard = create(creationTime, labelsToKeysShard);
                       shard.isShard = true;
@@ -315,8 +311,7 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreAndSqlE
                     }));
 
     // Persist the new revision, thus causing the newly created shards to go live.
-    tm()
-        .transactNew(
+    tm().transactNew(
             () -> {
               verify(
                   (getCurrentRevision() == null && oldRevision == null)
@@ -358,12 +353,10 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreAndSqlE
   /** Virtual parent entity for claims list shards of a specific revision. */
   @Entity
   @VirtualEntity
-  public static class ClaimsListRevision extends ImmutableObject implements DatastoreEntity {
-    @Parent
-    Key<ClaimsListSingleton> parent;
+  public static class ClaimsListRevision extends ImmutableObject implements DatastoreOnlyEntity {
+    @Parent Key<ClaimsListSingleton> parent;
 
-    @Id
-    long versionId;
+    @Id long versionId;
 
     @VisibleForTesting
     public static Key<ClaimsListRevision> createKey(ClaimsListSingleton singleton) {
@@ -377,11 +370,6 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreAndSqlE
     public static Key<ClaimsListRevision> createKey() {
       return createKey(new ClaimsListSingleton());
     }
-
-    @Override
-    public ImmutableList<SqlEntity> toSqlEntities() {
-      return ImmutableList.of(); // ClaimsLists are dually written
-    }
   }
 
   /**
@@ -390,7 +378,7 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreAndSqlE
    */
   @Entity
   @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
-  public static class ClaimsListSingleton extends CrossTldSingleton implements DatastoreEntity {
+  public static class ClaimsListSingleton extends CrossTldSingleton implements DatastoreOnlyEntity {
     Key<ClaimsListRevision> activeRevision;
 
     static ClaimsListSingleton create(Key<ClaimsListRevision> revision) {
@@ -402,11 +390,6 @@ public class ClaimsListShard extends ImmutableObject implements DatastoreAndSqlE
     @VisibleForTesting
     public void setActiveRevision(Key<ClaimsListRevision> revision) {
       activeRevision = revision;
-    }
-
-    @Override
-    public ImmutableList<SqlEntity> toSqlEntities() {
-      return ImmutableList.of(); // ClaimsLists are dually written
     }
   }
 

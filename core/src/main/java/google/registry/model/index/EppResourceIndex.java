@@ -17,7 +17,6 @@ package google.registry.model.index;
 import static google.registry.util.TypeUtils.instantiate;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -26,25 +25,21 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.EppResource;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.DatastoreOnlyEntity;
 
 /** An index that allows for quick enumeration of all EppResource entities (e.g. via map reduce). */
 @ReportedOn
 @Entity
-public class EppResourceIndex extends BackupGroupRoot implements DatastoreEntity {
+public class EppResourceIndex extends BackupGroupRoot implements DatastoreOnlyEntity {
 
-  @Id
-  String id;
+  @Id String id;
 
-  @Parent
-  Key<EppResourceIndexBucket> bucket;
+  @Parent Key<EppResourceIndexBucket> bucket;
 
   /** Although this field holds a {@link Key} it is named "reference" for historical reasons. */
   Key<? extends EppResource> reference;
 
-  @Index
-  String kind;
+  @Index String kind;
 
   public String getId() {
     return id;
@@ -69,17 +64,12 @@ public class EppResourceIndex extends BackupGroupRoot implements DatastoreEntity
     EppResourceIndex instance = instantiate(EppResourceIndex.class);
     instance.reference = resourceKey;
     instance.kind = resourceKey.getKind();
-    instance.id = resourceKey.getString();  // creates a web-safe key string
+    instance.id = resourceKey.getString(); // creates a web-safe key string
     instance.bucket = bucket;
     return instance;
   }
 
   public static <T extends EppResource> EppResourceIndex create(Key<T> resourceKey) {
     return create(EppResourceIndexBucket.getBucketKey(resourceKey), resourceKey);
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // not relevant in SQL
   }
 }

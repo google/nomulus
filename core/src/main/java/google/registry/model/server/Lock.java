@@ -22,15 +22,13 @@ import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.util.RequestStatusChecker;
 import google.registry.util.RequestStatusCheckerImpl;
 import java.io.Serializable;
@@ -50,7 +48,7 @@ import org.joda.time.Duration;
  */
 @Entity
 @NotBackedUp(reason = Reason.TRANSIENT)
-public class Lock extends ImmutableObject implements DatastoreEntity, Serializable {
+public class Lock extends ImmutableObject implements DatastoreOnlyEntity, Serializable {
 
   private static final long serialVersionUID = 756397280691684645L;
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -258,10 +256,5 @@ public class Lock extends ImmutableObject implements DatastoreEntity, Serializab
                     "Not deleting lock: %s - someone else has it: %s", lockId, loadedLock);
               }
             });
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // Locks are not converted since they are ephemeral
   }
 }

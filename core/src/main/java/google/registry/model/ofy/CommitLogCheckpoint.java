@@ -27,8 +27,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.DatastoreOnlyEntity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -46,7 +45,7 @@ import org.joda.time.DateTime;
  */
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
-public class CommitLogCheckpoint extends ImmutableObject implements DatastoreEntity {
+public class CommitLogCheckpoint extends ImmutableObject implements DatastoreOnlyEntity {
 
   /** Shared singleton parent entity for commit log checkpoints. */
   @Parent
@@ -71,11 +70,6 @@ public class CommitLogCheckpoint extends ImmutableObject implements DatastoreEnt
       builder.put(i + 1, bucketTimestamps.get(i));
     }
     return builder.build();
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // not persisted in SQL
   }
 
   /**

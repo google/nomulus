@@ -32,13 +32,17 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.ContactHistory;
+import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostHistory;
+import google.registry.model.host.HostHistory.HostHistoryId;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import java.util.Set;
@@ -312,6 +316,33 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   @Override
   public ImmutableList<SqlEntity> toSqlEntities() {
     return ImmutableList.of((SqlEntity) toChildHistoryEntity());
+  }
+
+  /** Creates a {@link VKey} instance from a {@link Key} instance. */
+  public static VKey<? extends HistoryEntry> createVKey(Key<HistoryEntry> key) {
+    String repoId = key.getParent().getName();
+    long id = key.getId();
+    Key<EppResource> parent = key.getParent();
+    String parentKind = parent.getKind();
+    if (parentKind.equals(getKind(DomainBase.class))) {
+      return VKey.create(
+          DomainHistory.class,
+          new DomainHistoryId(repoId, id),
+          Key.create(parent, DomainHistory.class, id));
+    } else if (parentKind.equals(getKind(HostResource.class))) {
+      return VKey.create(
+          HostHistory.class,
+          new HostHistoryId(repoId, id),
+          Key.create(parent, HostHistory.class, id));
+    } else if (parentKind.equals(getKind(ContactResource.class))) {
+      return VKey.create(
+          ContactHistory.class,
+          new ContactHistoryId(repoId, id),
+          Key.create(parent, ContactHistory.class, id));
+    } else {
+      throw new IllegalStateException(
+          String.format("Unknown kind of HistoryEntry parent %s", parentKind));
+    }
   }
 
   /** A builder for {@link HistoryEntry} since it is immutable */

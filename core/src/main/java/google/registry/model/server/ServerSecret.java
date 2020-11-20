@@ -23,7 +23,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Longs;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
@@ -34,8 +33,7 @@ import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.persistence.VKey;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.NonReplicatedEntity;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -50,7 +48,7 @@ import javax.persistence.Transient;
 @Unindex
 @NotBackedUp(reason = Reason.AUTO_GENERATED)
 // TODO(b/27427316): Replace this with an entry in KMSKeyring
-public class ServerSecret extends CrossTldSingleton implements DatastoreEntity, SqlEntity {
+public class ServerSecret extends CrossTldSingleton implements NonReplicatedEntity {
 
   /**
    * Cache of the singleton ServerSecret instance that creates it if not present.
@@ -137,16 +135,6 @@ public class ServerSecret extends CrossTldSingleton implements DatastoreEntity, 
         .putLong(mostSignificant)
         .putLong(leastSignificant)
         .array();
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // dually-written
-  }
-
-  @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(); // dually-written
   }
 
   @VisibleForTesting
