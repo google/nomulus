@@ -21,10 +21,10 @@ import static google.registry.model.ImmutableObjectSubject.immutableObjectCorres
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatastoreHelper.createTld;
-import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
-import static google.registry.testing.DatastoreHelper.newDomainBase;
-import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -50,7 +50,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import google.registry.testing.DatastoreHelper;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
@@ -140,7 +140,7 @@ public class DomainHistoryTest extends EntityTestCase {
     // We have to add the registry to ofy, since we're currently loading the cache from ofy.  We
     // also have to add it to SQL to satisfy the foreign key constraints of the registrar.
     Registry registry =
-        DatastoreHelper.newRegistry(
+        DatabaseHelper.newRegistry(
             "tld", "TLD", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
     tm().transact(() -> tm().insert(registry));
     Registries.resetCache();
