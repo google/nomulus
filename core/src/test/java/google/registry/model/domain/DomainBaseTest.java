@@ -19,6 +19,8 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
@@ -30,6 +32,7 @@ import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.appengine.api.datastore.Entity;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -162,6 +165,15 @@ public class DomainBaseTest extends EntityTestCase {
                             null))
                     .setAutorenewEndTime(Optional.of(fakeClock.nowUtc().plusYears(2)))
                     .build()));
+  }
+
+  @Test
+  void testGracePeriod_nullIdFromOfy() {
+    Entity entity = ofyTm().transact(() -> ofy().save().toEntity(domain));
+    entity.setUnindexedProperty("gracePeriods.gracePeriodId", null);
+    DomainBase domainFromEntity = ofyTm().transact(() -> ofy().load().fromEntity(entity));
+    GracePeriod gracePeriod = domainFromEntity.getGracePeriods().iterator().next();
+    assertThat(gracePeriod.gracePeriodId).isNotNull();
   }
 
   @Test
