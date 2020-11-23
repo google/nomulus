@@ -14,7 +14,7 @@
 
 package google.registry.model.history;
 
-//import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
@@ -25,7 +25,7 @@ import static google.registry.testing.DatastoreHelper.createTld;
 import static google.registry.testing.DatastoreHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatastoreHelper.newDomainBase;
 import static google.registry.testing.DatastoreHelper.newHostResourceWithRoid;
-//import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -37,13 +37,14 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
-//import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
-//import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registry.Registries;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
@@ -52,7 +53,7 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DatastoreHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
-//import google.registry.testing.TestSqlOnly;
+import google.registry.testing.TestSqlOnly;
 
 /** Tests for {@link DomainHistory}. */
 @DualDatabaseTest
@@ -62,90 +63,44 @@ public class DomainHistoryTest extends EntityTestCase {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
-//  @TestSqlOnly
-//  void testPersistence() {
-//    DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
-//    DomainHistory domainHistory = createDomainHistory(domain);
-//    jpaTm().transact(() -> jpaTm().insert(domainHistory));
-//
-//    jpaTm()
-//        .transact(
-//            () -> {
-//              DomainHistory fromDatabase = jpaTm().load(domainHistory.createVKey());
-//              assertDomainHistoriesEqual(fromDatabase, domainHistory);
-//              assertThat(fromDatabase.getParentVKey()).isEqualTo(domainHistory.getParentVKey());
-//            });
-//  }
-//
-//  @TestSqlOnly
-//  void testLegacyPersistence_nullResource() {
-//    DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
-//    DomainHistory domainHistory =
-//        createDomainHistory(domain).asBuilder().setDomainContent(null).build();
-//    jpaTm().transact(() -> jpaTm().insert(domainHistory));
-//
-//    jpaTm()
-//        .transact(
-//            () -> {
-//              DomainHistory fromDatabase = jpaTm().load(domainHistory.createVKey());
-//              assertDomainHistoriesEqual(fromDatabase, domainHistory);
-//              assertThat(fromDatabase.getParentVKey()).isEqualTo(domainHistory.getParentVKey());
-//              assertThat(fromDatabase.getNsHosts())
-//                  .containsExactlyElementsIn(
-//                      domainHistory.getNsHosts().stream()
-//                          .map(key -> VKey.createSql(HostResource.class, key.getSqlKey()))
-//                          .collect(toImmutableSet()));
-//            });
-//  }
-//
-//  @TestOfyOnly
-//  void testOfyPersistence() {
-//    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
-//    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
-//
-//    tm().transact(
-//            () -> {
-//              tm().insert(host);
-//              tm().insert(contact);
-//            });
-//    fakeClock.advanceOneMilli();
-//
-//    DomainBase domain =
-//        newDomainBase("example.tld", "domainRepoId", contact)
-//            .asBuilder()
-//            .setNameservers(host.createVKey())
-//            .build();
-//    tm().transact(() -> tm().insert(domain));
-//
-//    fakeClock.advanceOneMilli();
-//    DomainHistory domainHistory = createDomainHistory(domain);
-//    tm().transact(() -> tm().insert(domainHistory));
-//
-//    // retrieving a HistoryEntry or a DomainHistory with the same key should return the same
-//    // object
-//    // note: due to the @EntitySubclass annotation. all Keys for DomainHistory objects will have
-//    // type HistoryEntry
-//    VKey<DomainHistory> domainHistoryVKey = domainHistory.createVKey();
-//    VKey<HistoryEntry> historyEntryVKey =
-//        VKey.createOfy(HistoryEntry.class, Key.create(domainHistory.asHistoryEntry()));
-//    DomainHistory domainHistoryFromDb = tm().transact(() -> tm().load(domainHistoryVKey));
-//    HistoryEntry historyEntryFromDb = tm().transact(() -> tm().load(historyEntryVKey));
-//
-//    assertThat(domainHistoryFromDb).isEqualTo(historyEntryFromDb);
-//  }
+  @TestSqlOnly
+  void testPersistence() {
+    DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
+    DomainHistory domainHistory = createDomainHistory(domain);
+    jpaTm().transact(() -> jpaTm().insert(domainHistory));
+
+    jpaTm()
+        .transact(
+            () -> {
+              DomainHistory fromDatabase = jpaTm().load(domainHistory.createVKey());
+              assertDomainHistoriesEqual(fromDatabase, domainHistory);
+              assertThat(fromDatabase.getParentVKey()).isEqualTo(domainHistory.getParentVKey());
+            });
+  }
+
+  @TestSqlOnly
+  void testLegacyPersistence_nullResource() {
+    DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
+    DomainHistory domainHistory =
+        createDomainHistory(domain).asBuilder().setDomainContent(null).build();
+    jpaTm().transact(() -> jpaTm().insert(domainHistory));
+
+    jpaTm()
+        .transact(
+            () -> {
+              DomainHistory fromDatabase = jpaTm().load(domainHistory.createVKey());
+              assertDomainHistoriesEqual(fromDatabase, domainHistory);
+              assertThat(fromDatabase.getParentVKey()).isEqualTo(domainHistory.getParentVKey());
+              assertThat(fromDatabase.getNsHosts())
+                  .containsExactlyElementsIn(
+                      domainHistory.getNsHosts().stream()
+                          .map(key -> VKey.createSql(HostResource.class, key.getSqlKey()))
+                          .collect(toImmutableSet()));
+            });
+  }
 
   @TestOfyOnly
-  void testDoubleWriteOfOfyResource() {
-    jpaTm().transact(() -> {
-          Registry registry =
-              DatastoreHelper.newRegistry(
-                  "tld", "TLD", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
-          jpaTm().insert(registry);
-          Registrar registrar = appEngine.makeRegistrar2().asBuilder()
-              .setAllowedTlds(ImmutableSet.of("tld")).build();
-          jpaTm().insert(registrar);
-        });
-
+  void testOfyPersistence() {
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
 
@@ -153,11 +108,6 @@ public class DomainHistoryTest extends EntityTestCase {
             () -> {
               tm().insert(host);
               tm().insert(contact);
-            });
-    jpaTm().transact(
-            () -> {
-              jpaTm().insert(host);
-              jpaTm().insert(contact);
             });
     fakeClock.advanceOneMilli();
 
@@ -167,13 +117,13 @@ public class DomainHistoryTest extends EntityTestCase {
             .setNameservers(host.createVKey())
             .build();
     tm().transact(() -> tm().insert(domain));
-    jpaTm().transact(() -> jpaTm().insert(domain));
 
     fakeClock.advanceOneMilli();
     DomainHistory domainHistory = createDomainHistory(domain);
     tm().transact(() -> tm().insert(domainHistory));
 
-    // retrieving a HistoryEntry or a DomainHistory with the same key should return the same object
+    // retrieving a HistoryEntry or a DomainHistory with the same key should return the same
+    // object
     // note: due to the @EntitySubclass annotation. all Keys for DomainHistory objects will have
     // type HistoryEntry
     VKey<DomainHistory> domainHistoryVKey = domainHistory.createVKey();
@@ -183,7 +133,61 @@ public class DomainHistoryTest extends EntityTestCase {
     HistoryEntry historyEntryFromDb = tm().transact(() -> tm().load(historyEntryVKey));
 
     assertThat(domainHistoryFromDb).isEqualTo(historyEntryFromDb);
+  }
 
+  @TestOfyOnly
+  void testDoubleWriteOfOfyResource() {
+    // We have to add the registry to ofy, since we're currently loading the cache from ofy.  We
+    // also have to add it to SQL to satisfy the foreign key constraints of the registrar.
+    Registry registry =
+        DatastoreHelper.newRegistry(
+            "tld", "TLD", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
+    tm().transact(() -> tm().insert(registry));
+    Registries.resetCache();
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().insert(registry);
+              Registrar registrar =
+                  appEngine
+                      .makeRegistrar2()
+                      .asBuilder()
+                      .setAllowedTlds(ImmutableSet.of("tld"))
+                      .build();
+              jpaTm().insert(registrar);
+            });
+
+    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+
+    // Set up the host and domain objects in both databases.
+    tm().transact(
+            () -> {
+              tm().insert(host);
+              tm().insert(contact);
+            });
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().insert(host);
+              jpaTm().insert(contact);
+            });
+    fakeClock.advanceOneMilli();
+    DomainBase domain =
+        newDomainBase("example.tld", "domainRepoId", contact)
+            .asBuilder()
+            .setNameservers(host.createVKey())
+            .build();
+    tm().transact(() -> tm().insert(domain));
+    jpaTm().transact(() -> jpaTm().insert(domain));
+    fakeClock.advanceOneMilli();
+
+    DomainHistory domainHistory = createDomainHistory(domain);
+    tm().transact(() -> tm().insert(domainHistory));
+
+    // Load the DomainHistory object from the datastore.
+    VKey<DomainHistory> domainHistoryVKey = domainHistory.createVKey();
+    DomainHistory domainHistoryFromDb = tm().transact(() -> tm().load(domainHistoryVKey));
 
     // attempt to write to SQL.
     jpaTm().transact(() -> jpaTm().insert(domainHistoryFromDb));
@@ -215,16 +219,16 @@ public class DomainHistoryTest extends EntityTestCase {
     return domain;
   }
 
-//  private static DomainBase addGracePeriodForSql(DomainBase domainBase) {
-//    return domainBase
-//        .asBuilder()
-//        .setGracePeriods(
-//            ImmutableSet.of(
-//                GracePeriod.create(
-//                        GracePeriodStatus.ADD, "domainRepoId", END_OF_TIME, "clientId", null)
-//                    .cloneWithPrepopulatedId()))
-//        .build();
-//  }
+  private static DomainBase addGracePeriodForSql(DomainBase domainBase) {
+    return domainBase
+        .asBuilder()
+        .setGracePeriods(
+            ImmutableSet.of(
+                GracePeriod.create(
+                        GracePeriodStatus.ADD, "domainRepoId", END_OF_TIME, "clientId", null)
+                    .cloneWithPrepopulatedId()))
+        .build();
+  }
 
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
     assertAboutImmutableObjects()

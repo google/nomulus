@@ -14,10 +14,10 @@
 
 package google.registry.model.registry;
 
-//import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.equalTo;
-//import static com.google.common.base.Predicates.in;
-//import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.in;
+import static com.google.common.base.Predicates.not;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.filterValues;
@@ -28,12 +28,12 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-//import com.google.common.base.Joiner;
+import com.google.common.base.Joiner;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-//import com.google.common.collect.Streams;
+import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry.TldType;
@@ -99,10 +99,10 @@ public final class Registries {
 
   /** Pass-through check that the specified TLD exists, otherwise throw an IAE. */
   public static String assertTldExists(String tld) {
-//    checkArgument(
-//        getTlds().contains(checkArgumentNotNull(emptyToNull(tld), "Null or empty TLD specified")),
-//        "TLD %s does not exist",
-//        tld);
+    checkArgument(
+        getTlds().contains(checkArgumentNotNull(emptyToNull(tld), "Null or empty TLD specified")),
+        "TLD %s does not exist",
+        tld);
     return tld;
   }
 
@@ -111,9 +111,9 @@ public final class Registries {
     for (String tld : tlds) {
       checkArgumentNotNull(emptyToNull(tld), "Null or empty TLD specified");
     }
-//    ImmutableSet<String> badTlds =
-//        Streams.stream(tlds).filter(not(in(getTlds()))).collect(toImmutableSet());
-//    checkArgument(badTlds.isEmpty(), "TLDs do not exist: %s", Joiner.on(", ").join(badTlds));
+    ImmutableSet<String> badTlds =
+        Streams.stream(tlds).filter(not(in(getTlds()))).collect(toImmutableSet());
+    checkArgument(badTlds.isEmpty(), "TLDs do not exist: %s", Joiner.on(", ").join(badTlds));
     return tlds;
   }
 
