@@ -96,16 +96,23 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.testing.ReplayExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.util.Map;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainDeleteFlow}. */
 class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, DomainBase> {
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = new ReplayExtension(clock);
 
   private DomainBase domain;
   private HistoryEntry earlierHistoryEntry;
@@ -137,6 +144,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         persistResource(createAutorenewBillingEvent("TheRegistrar").build());
     PollMessage.Autorenew autorenewPollMessage =
         persistResource(createAutorenewPollMessage("TheRegistrar").build());
+
     domain =
         persistResource(
             domain
@@ -144,6 +152,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
                 .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                 .build());
+
     assertTransactionalFlow(true);
   }
 
@@ -151,15 +160,20 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // Persist a linked contact.
     ContactResource contact = persistActiveContact("sh8013");
     domain =
-        newDomainBase(getUniqueIdFromCommand())
-            .asBuilder()
-            .setCreationTimeForTest(TIME_BEFORE_FLOW)
-            .setRegistrant(contact.createVKey())
-            .setRegistrationExpirationTime(expirationTime)
-            .build();
+        persistResource(
+            newDomainBase(getUniqueIdFromCommand())
+                .asBuilder()
+                .setCreationTimeForTest(TIME_BEFORE_FLOW)
+                .setRegistrant(contact.createVKey())
+                .setRegistrationExpirationTime(expirationTime)
+                .build());
     earlierHistoryEntry =
         persistResource(
-            new HistoryEntry.Builder().setType(DOMAIN_CREATE).setParent(domain).build());
+            new HistoryEntry.Builder()
+                .setType(DOMAIN_CREATE)
+                .setParent(domain)
+                .setModificationTime(clock.nowUtc())
+                .build());
   }
 
   private void setUpGracePeriods(GracePeriod... gracePeriods) {
@@ -208,7 +222,14 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   private void assertAutorenewClosedAndCancellationCreatedFor(
       BillingEvent.OneTime graceBillingEvent, HistoryEntry historyEntryDomainDelete) {
-    DateTime eventTime = clock.nowUtc();
+    assertAutorenewClosedAndCancellationCreatedFor(
+        graceBillingEvent, historyEntryDomainDelete, clock.nowUtc());
+  }
+
+  private void assertAutorenewClosedAndCancellationCreatedFor(
+      BillingEvent.OneTime graceBillingEvent,
+      HistoryEntry historyEntryDomainDelete,
+      DateTime eventTime) {
     assertBillingEvents(
         createAutorenewBillingEvent("TheRegistrar").setRecurrenceEndTime(eventTime).build(),
         graceBillingEvent,
@@ -293,7 +314,11 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     setUpSuccessfulTest();
     setUpGracePeriods(
         GracePeriod.create(
-            GracePeriodStatus.ADD, domain.getRepoId(), TIME_BEFORE_FLOW.plusDays(1), "foo", null));
+            GracePeriodStatus.ADD,
+            domain.getRepoId(),
+            TIME_BEFORE_FLOW.plusDays(1),
+            "TheRegistrar",
+            null));
     dryRunFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
@@ -398,7 +423,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             GracePeriodStatus.TRANSFER,
             domain.getRepoId(),
             TIME_BEFORE_FLOW.plusDays(1),
-            "foo",
+            "NewRegistrar",
             null));
     // We should see exactly one poll message, which is for the autorenew 1 month in the future.
     assertPollMessages(createAutorenewPollMessage("TheRegistrar").build());
@@ -730,11 +755,11 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setNameservers(ImmutableSet.of(host.createVKey()))
             .setDeletionTime(START_OF_TIME)
             .build());
-    clock.advanceOneMilli();
+    DateTime eventTime = clock.nowUtc();
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     assertDnsTasksEnqueued("example.tld");
     assertAutorenewClosedAndCancellationCreatedFor(
-        graceBillingEvent, getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE));
+        graceBillingEvent, getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE), eventTime);
   }
 
   @Test
