@@ -17,7 +17,6 @@ package google.registry.model.ofy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
@@ -26,8 +25,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.DatastoreOnlyEntity;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import org.joda.time.DateTime;
@@ -41,7 +39,7 @@ import org.joda.time.DateTime;
  */
 @Entity
 @NotBackedUp(reason = Reason.COMMIT_LOGS)
-public class CommitLogManifest extends ImmutableObject implements DatastoreEntity {
+public class CommitLogManifest extends ImmutableObject implements DatastoreOnlyEntity {
 
   /** Commit log manifests are parented on a random bucket. */
   @Parent
@@ -68,11 +66,6 @@ public class CommitLogManifest extends ImmutableObject implements DatastoreEntit
 
   public ImmutableSet<Key<?>> getDeletions() {
     return nullToEmptyImmutableCopy(deletions);
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // not persisted in SQL
   }
 
   public static CommitLogManifest create(

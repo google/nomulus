@@ -95,9 +95,9 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
   }
 
   /** Creates a {@link VKey} instance for this entity. */
+  @SuppressWarnings("unchecked")
   public VKey<ContactHistory> createVKey() {
-    return VKey.create(
-        ContactHistory.class, new ContactHistoryId(getContactRepoId(), getId()), Key.create(this));
+    return (VKey<ContactHistory>) createVKey(Key.create(this));
   }
 
   @PostLoad
@@ -116,7 +116,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
   }
 
   /** Class to represent the composite primary key of {@link ContactHistory} entity. */
-  static class ContactHistoryId extends ImmutableObject implements Serializable {
+  public static class ContactHistoryId extends ImmutableObject implements Serializable {
 
     private String contactRepoId;
 
@@ -125,7 +125,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
     /** Hibernate requires this default constructor. */
     private ContactHistoryId() {}
 
-    ContactHistoryId(String contactRepoId, long id) {
+    public ContactHistoryId(String contactRepoId, long id) {
       this.contactRepoId = contactRepoId;
       this.id = id;
     }

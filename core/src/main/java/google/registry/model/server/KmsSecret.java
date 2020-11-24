@@ -16,7 +16,6 @@ package google.registry.model.server;
 
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 
-import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -24,13 +23,12 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.DatastoreOnlyEntity;
 
 /** Pointer to the latest {@link KmsSecretRevision}. */
 @Entity
 @ReportedOn
-public class KmsSecret extends ImmutableObject implements DatastoreEntity {
+public class KmsSecret extends ImmutableObject implements DatastoreOnlyEntity {
 
   /** The unique name of this {@link KmsSecret}. */
   @Id String name;
@@ -46,11 +44,6 @@ public class KmsSecret extends ImmutableObject implements DatastoreEntity {
 
   public Key<KmsSecretRevision> getLatestRevision() {
     return latestRevision;
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // not persisted in SQL
   }
 
   public static KmsSecret create(String name, KmsSecretRevision latestRevision) {

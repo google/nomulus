@@ -42,8 +42,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.util.NonFinalForTesting;
 import java.util.Map;
 import java.util.Optional;
@@ -63,34 +62,19 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   @ReportedOn
   @Entity
   public static class ForeignKeyContactIndex extends ForeignKeyIndex<ContactResource>
-      implements DatastoreEntity {
-    @Override
-    public ImmutableList<SqlEntity> toSqlEntities() {
-      return ImmutableList.of(); // not relevant in SQL
-    }
-  }
+      implements DatastoreOnlyEntity {}
 
   /** The {@link ForeignKeyIndex} type for {@link DomainBase} entities. */
   @ReportedOn
   @Entity
   public static class ForeignKeyDomainIndex extends ForeignKeyIndex<DomainBase>
-      implements DatastoreEntity {
-    @Override
-    public ImmutableList<SqlEntity> toSqlEntities() {
-      return ImmutableList.of(); // not relevant in SQL
-    }
-  }
+      implements DatastoreOnlyEntity {}
 
   /** The {@link ForeignKeyIndex} type for {@link HostResource} entities. */
   @ReportedOn
   @Entity
   public static class ForeignKeyHostIndex extends ForeignKeyIndex<HostResource>
-      implements DatastoreEntity {
-    @Override
-    public ImmutableList<SqlEntity> toSqlEntities() {
-      return ImmutableList.of(); // not relevant in SQL
-    }
-  }
+      implements DatastoreOnlyEntity {}
 
   static final ImmutableMap<Class<? extends EppResource>, Class<? extends ForeignKeyIndex<?>>>
       RESOURCE_CLASS_TO_FKI_CLASS =

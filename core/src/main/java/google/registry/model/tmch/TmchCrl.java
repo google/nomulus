@@ -29,6 +29,7 @@ import google.registry.model.common.CrossTldSingleton;
 import google.registry.model.tmch.TmchCrl.TmchCrlId;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.NonReplicatedEntity;
 import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
 import java.util.Optional;
@@ -44,7 +45,7 @@ import org.joda.time.DateTime;
 @Immutable
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 @IdClass(TmchCrlId.class)
-public final class TmchCrl extends CrossTldSingleton implements DatastoreEntity, SqlEntity {
+public final class TmchCrl extends CrossTldSingleton implements NonReplicatedEntity {
 
   @Id String crl;
 

@@ -119,9 +119,7 @@ public class RegistrarContact extends ImmutableObject
   String name;
 
   /** The email address of the contact. */
-  @Id
-  @javax.persistence.Id
-  String emailAddress;
+  @Id @javax.persistence.Id String emailAddress;
 
   @Ignore @javax.persistence.Id String registrarId;
 
@@ -147,8 +145,7 @@ public class RegistrarContact extends ImmutableObject
    *
    * @see com.google.appengine.api.users.User#getUserId()
    */
-  @Index
-  String gaeUserId;
+  @Index String gaeUserId;
 
   /**
    * Whether this contact is publicly visible in WHOIS registrar query results as an Admin contact.
@@ -202,8 +199,7 @@ public class RegistrarContact extends ImmutableObject
    */
   public static void updateContacts(
       final Registrar registrar, final Set<RegistrarContact> contacts) {
-    tm()
-        .transact(
+    tm().transact(
             () -> {
               ofy()
                   .delete()
@@ -364,8 +360,15 @@ public class RegistrarContact extends ImmutableObject
   }
 
   public VKey<RegistrarContact> createVKey() {
-    return VKey.create(
-        RegistrarContact.class, new RegistrarPocId(emailAddress, registrarId), Key.create(this));
+    return createVKey(Key.create(this));
+  }
+
+  /** Creates a {@link VKey} instance from a {@link Key} instance. */
+  public static VKey<RegistrarContact> createVKey(Key<RegistrarContact> key) {
+    Key<Registrar> parent = key.getParent();
+    String registrarId = parent.getName();
+    String emailAddress = key.getName();
+    return VKey.create(RegistrarContact.class, new RegistrarPocId(emailAddress, registrarId), key);
   }
 
   /** Class to represent the composite primary key for {@link RegistrarContact} entity. */
