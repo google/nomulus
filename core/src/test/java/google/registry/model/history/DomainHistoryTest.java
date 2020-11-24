@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
+import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -25,9 +26,11 @@ import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
@@ -40,10 +43,14 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
+import google.registry.model.registrar.Registrar;
+import google.registry.model.registry.Registries;
+import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
@@ -115,7 +122,8 @@ public class DomainHistoryTest extends EntityTestCase {
     DomainHistory domainHistory = createDomainHistory(domain);
     tm().transact(() -> tm().insert(domainHistory));
 
-    // retrieving a HistoryEntry or a DomainHistory with the same key should return the same object
+    // retrieving a HistoryEntry or a DomainHistory with the same key should return the same
+    // object
     // note: due to the @EntitySubclass annotation. all Keys for DomainHistory objects will have
     // type HistoryEntry
     VKey<DomainHistory> domainHistoryVKey = domainHistory.createVKey();
@@ -125,6 +133,68 @@ public class DomainHistoryTest extends EntityTestCase {
     HistoryEntry historyEntryFromDb = tm().transact(() -> tm().load(historyEntryVKey));
 
     assertThat(domainHistoryFromDb).isEqualTo(historyEntryFromDb);
+  }
+
+  @TestOfyOnly
+  void testDoubleWriteOfOfyResource() {
+    // We have to add the registry to ofy, since we're currently loading the cache from ofy.  We
+    // also have to add it to SQL to satisfy the foreign key constraints of the registrar.
+    Registry registry =
+        DatabaseHelper.newRegistry(
+            "tld", "TLD", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
+    tm().transact(() -> tm().insert(registry));
+    Registries.resetCache();
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().insert(registry);
+              Registrar registrar =
+                  appEngine
+                      .makeRegistrar2()
+                      .asBuilder()
+                      .setAllowedTlds(ImmutableSet.of("tld"))
+                      .build();
+              jpaTm().insert(registrar);
+            });
+
+    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+
+    // Set up the host and domain objects in both databases.
+    tm().transact(
+            () -> {
+              tm().insert(host);
+              tm().insert(contact);
+            });
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().insert(host);
+              jpaTm().insert(contact);
+            });
+    fakeClock.advanceOneMilli();
+    DomainBase domain =
+        newDomainBase("example.tld", "domainRepoId", contact)
+            .asBuilder()
+            .setNameservers(host.createVKey())
+            .build();
+    tm().transact(() -> tm().insert(domain));
+    jpaTm().transact(() -> jpaTm().insert(domain));
+    fakeClock.advanceOneMilli();
+
+    DomainHistory domainHistory = createDomainHistory(domain);
+    tm().transact(() -> tm().insert(domainHistory));
+
+    // Load the DomainHistory object from the datastore.
+    VKey<DomainHistory> domainHistoryVKey = domainHistory.createVKey();
+    DomainHistory domainHistoryFromDb = tm().transact(() -> tm().load(domainHistoryVKey));
+
+    // attempt to write to SQL.
+    jpaTm().transact(() -> jpaTm().insert(domainHistoryFromDb));
+
+    // Reload and rewrite.
+    DomainHistory domainHistoryFromDb2 = tm().transact(() -> tm().load(domainHistoryVKey));
+    jpaTm().transact(() -> jpaTm().put(domainHistoryFromDb2));
   }
 
   static DomainBase createDomainWithContactsAndHosts() {

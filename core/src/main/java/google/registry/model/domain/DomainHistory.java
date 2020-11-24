@@ -101,6 +101,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @Column(name = "host_repo_id")
   Set<VKey<HostResource>> nsHosts;
 
+  @Ignore
   @OneToMany(
       cascade = {CascadeType.ALL},
       fetch = FetchType.EAGER,
@@ -117,8 +118,9 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         insertable = false,
         updatable = false)
   })
-  Set<DomainDsDataHistory> dsDataHistories;
+  Set<DomainDsDataHistory> dsDataHistories = ImmutableSet.of();
 
+  @Ignore
   @OneToMany(
       cascade = {CascadeType.ALL},
       fetch = FetchType.EAGER,
@@ -135,7 +137,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         insertable = false,
         updatable = false)
   })
-  Set<GracePeriodHistory> gracePeriodHistories;
+  Set<GracePeriodHistory> gracePeriodHistories = ImmutableSet.of();
 
   @Override
   @Nullable
