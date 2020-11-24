@@ -95,7 +95,7 @@ public class DeleteOldCommitLogsActionTest
     // Before deleting the unneeded manifests - we have 11 of them (one for the first
     // creation, and 10 more for the mutateContacts)
     assertThat(ofy().load().type(CommitLogManifest.class).count()).isEqualTo(11);
-    // And each DatastoreHelper.persistResourceWithCommitLog creates 3 mutations
+    // And each DatabaseHelper.persistResourceWithCommitLog creates 3 mutations
     assertThat(ofy().load().type(CommitLogMutation.class).count()).isEqualTo(33);
   }
 
@@ -111,7 +111,7 @@ public class DeleteOldCommitLogsActionTest
     assertThat(ImmutableList.copyOf(ofy().load().type(CommitLogManifest.class).keys().iterable()))
         .containsExactlyElementsIn(contact.getRevisions().values());
 
-    // And each DatastoreHelper.persistResourceWithCommitLog creates 3 mutations
+    // And each DatabaseHelper.persistResourceWithCommitLog creates 3 mutations
     assertThat(ofyLoadType(CommitLogMutation.class)).hasSize(contact.getRevisions().size() * 3);
   }
 

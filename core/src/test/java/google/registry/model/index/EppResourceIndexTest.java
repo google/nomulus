@@ -37,7 +37,7 @@ class EppResourceIndexTest extends EntityTestCase {
   @BeforeEach
   void setUp() {
     createTld("tld");
-    // The DatastoreHelper here creates the EppResourceIndex for us.
+    // The DatabaseHelper here creates the EppResourceIndex for us.
     contact = persistActiveContact("abcd1357");
   }
 
