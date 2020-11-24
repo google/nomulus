@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Parent;
+import google.registry.model.ModelUtils;
 import google.registry.model.common.GaeUserIdConverter;
 import google.registry.persistence.VKey;
 import google.registry.testing.DatastoreEntityExtension;
@@ -33,7 +34,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -73,7 +73,8 @@ public class EntityTest {
   @Test
   void testDatastoreEntityVKeyCreation() {
     // For replication, we need to be able to convert from Key -> VKey for the relevant classes.
-    // This means that the relevant classes must not have a parent or must have a createVKey method
+    // This means that the relevant classes must have non-composite Objectify keys or must have a
+    // createVKey method
     try (ScanResult scanResult =
         new ClassGraph().enableAnnotationInfo().whitelistPackages("google.registry").scan()) {
       ImmutableSet<Class<?>> datastoreEntityClasses =
@@ -87,7 +88,7 @@ public class EntityTest {
 
       ImmutableSet.Builder<Class<?>> failedClasses = new ImmutableSet.Builder<>();
       for (Class<?> clazz : vkeyConversionNecessaryClasses) {
-        if (hasParent(clazz)) {
+        if (hasKeyWithParent(clazz)) {
           try {
             Method createVKeyMethod = clazz.getMethod("createVKey", Key.class);
             if (!createVKeyMethod.getReturnType().equals(VKey.class)) {
@@ -105,19 +106,9 @@ public class EntityTest {
     }
   }
 
-  private <T> boolean hasParent(Class<T> clazz) {
-    return getAllFields(clazz).stream()
+  private boolean hasKeyWithParent(Class<?> clazz) {
+    return ModelUtils.getAllFields(clazz).values().stream()
         .anyMatch(field -> field.getAnnotation(Parent.class) != null);
-  }
-
-  private ImmutableSet<Field> getAllFields(Class<?> clazz) {
-    ImmutableSet.Builder<Field> builder = new ImmutableSet.Builder<>();
-    for (Class<?> currentClass = clazz;
-        currentClass != null;
-        currentClass = currentClass.getSuperclass()) {
-      builder.addAll(ImmutableSet.copyOf(currentClass.getDeclaredFields()));
-    }
-    return builder.build();
   }
 
   private ImmutableSet<String> getAllClassesWithAnnotation(

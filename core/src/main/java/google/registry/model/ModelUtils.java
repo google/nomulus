@@ -87,7 +87,7 @@ public class ModelUtils {
               });
 
   /** Lists all instance fields on an object, including non-public and inherited fields. */
-  static Map<String, Field> getAllFields(Class<?> clazz) {
+  public static Map<String, Field> getAllFields(Class<?> clazz) {
     return ALL_FIELDS_CACHE.getUnchecked(clazz);
   }
 
