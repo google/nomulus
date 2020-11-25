@@ -638,11 +638,13 @@ public class DatabaseHelper {
       DateTime requestTime,
       DateTime expirationTime,
       DateTime extendedRegistrationExpirationTime) {
-    HistoryEntry historyEntryDomainTransfer = persistResource(
-        new HistoryEntry.Builder()
-            .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
-            .setParent(domain)
-            .build());
+    HistoryEntry historyEntryDomainTransfer =
+        persistResource(
+            new HistoryEntry.Builder()
+                .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
+                .setModificationTime(tm().transact(() -> tm().getTransactionTime()))
+                .setParent(domain)
+                .build());
     BillingEvent.OneTime transferBillingEvent = persistResource(createBillingEventForTransfer(
             domain,
             historyEntryDomainTransfer,
@@ -1184,6 +1186,7 @@ public class DatabaseHelper {
   public static void deleteResource(final Object resource) {
     if (alwaysSaveWithBackup) {
       tm().transact(() -> tm().delete(resource));
+      maybeAdvanceClock();
     } else {
       transactIfJpaTm(() -> tm().deleteWithoutBackup(resource));
     }
