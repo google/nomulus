@@ -195,15 +195,14 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
   }
 
   /**
-   * Returns a clone of this {@link GracePeriod} with prepopulated {@link #gracePeriodId} generated
-   * by {@link ObjectifyService#allocateId()}.
+   * Returns a clone of this {@link GracePeriod} with {@link #gracePeriodId} set to null.
    *
-   * <p>TODO(shicong): Figure out how to generate the id only when the entity is used for Cloud SQL.
+   * <p>TODO(b/169873747): Remove this method after all domain entities are re-saved.
    */
   @VisibleForTesting
-  public GracePeriod cloneWithPrepopulatedId() {
+  public GracePeriod cloneWithNullId() {
     GracePeriod clone = clone(this);
-    clone.gracePeriodId = ObjectifyService.allocateId();
+    clone.gracePeriodId = null;
     return clone;
   }
 

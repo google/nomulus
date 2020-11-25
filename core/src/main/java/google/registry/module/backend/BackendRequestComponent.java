@@ -27,6 +27,7 @@ import google.registry.batch.DeleteProberDataAction;
 import google.registry.batch.ExpandRecurringBillingEventsAction;
 import google.registry.batch.RefreshDnsOnHostRenameAction;
 import google.registry.batch.RelockDomainAction;
+import google.registry.batch.ResaveAllDomainsAction;
 import google.registry.batch.ResaveAllEppResourcesAction;
 import google.registry.batch.ResaveEntityAction;
 import google.registry.cron.CommitLogFanoutAction;
@@ -174,6 +175,8 @@ interface BackendRequestComponent {
   RefreshDnsOnHostRenameAction refreshDnsOnHostRenameAction();
 
   RelockDomainAction relockDomainAction();
+
+  ResaveAllDomainsAction resaveAllDomainsAction();
 
   ResaveAllEppResourcesAction resaveAllEppResourcesAction();
 
