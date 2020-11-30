@@ -18,7 +18,7 @@ import datetime
 import enum
 import pathlib
 import re
-from typing import Any, Callable, NewType, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
 
 from google.protobuf import timestamp_pb2
 from googleapiclient import http
@@ -122,17 +122,9 @@ def get_nomulus_root() -> str:
         'Do not move this file out of the Nomulus directory tree.')
 
 
-# Interface for use by the list_all_pages function in this module. Implementor
-# is given a page_token on each invocation, and should return an HttpRequest
-# object with the pageToken attribute set to the page_token.
-# yapf: disable
-ListRequestFactory = NewType(
-    'ListRequestFactory', Callable[[str], http.HttpRequest])
-# yapf: enable
-
-
-def list_all_pages(data_field: str,
-                   request_factory: ListRequestFactory) -> Tuple[Any, ...]:
+def list_all_pages(
+        data_field: str,
+        request_factory: Callable[[str], http.HttpRequest]) -> Tuple[Any, ...]:
     """Collects all data items from a paginator-based 'List' API.
 
     Args:
@@ -152,9 +144,8 @@ def list_all_pages(data_field: str,
         response = request.execute()
         result_collector.extend(response.get(data_field, []))
         page_token = response.get('nextPageToken')
-        if page_token:
-            continue
-        return tuple(result_collector)
+        if not page_token:
+            return tuple(result_collector)
 
 
 def parse_gcp_timestamp(timestamp: str) -> datetime.datetime:
