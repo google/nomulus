@@ -21,7 +21,7 @@ import appengine
 import common
 
 
-def setup_appengine_admin() -> Tuple[object, object]:
+def setup_appengine_admin() -> Tuple[appengine.AppEngineAdmin, object]:
     """Helper for setting up a mocked AppEngineAdmin instance.
 
     Returns:

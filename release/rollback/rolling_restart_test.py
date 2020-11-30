@@ -29,6 +29,41 @@ class RollingRestartTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self._appengine_admin, self._appengine_request = (
             appengine_test.setup_appengine_admin())
+        self._version = common.VersionKey('my_service', 'my_version')
+        self.addCleanup(mock.patch.stopall)
+
+    def _setup_execute_steps_tests(self):
+        self._appengine_request.execute.side_effect = [
+            # First list_instance response.
+            {
+                'instances': [{
+                    'id': 'vm_to_delete',
+                    'startTime': '2019-01-01T00:00:00Z'
+                }, {
+                    'id': 'vm_to_stay',
+                    'startTime': '2019-01-01T00:00:00Z'
+                }]
+            },
+            # Second list_instance response
+            {
+                'instances': [{
+                    'id': 'vm_to_stay',
+                    'startTime': '2019-01-01T00:00:00Z'
+                }]
+            },
+            # Third list_instance response
+            {
+                'instances': [{
+                    'id': 'vm_to_stay',
+                    'startTime': '2019-01-01T00:00:00Z'
+                }, {
+                    'id': 'vm_new',
+                    'startTime': '2019-01-01T00:00:00Z'
+                }]
+            }
+        ]
+
+    def _setup_generate_steps_tests(self):
         self._appengine_request.execute.side_effect = [
             # First page of list_instance response.
             {
@@ -47,7 +82,6 @@ class RollingRestartTestCase(unittest.TestCase):
                 }]
             }
         ]
-        self.addCleanup(mock.patch.stopall)
 
     def test_kill_vm_command(self) -> None:
         cmd = steps.kill_nomulus_instance(
@@ -65,22 +99,50 @@ class RollingRestartTestCase(unittest.TestCase):
                                            version, instance_name)
 
     def test_generate_commands(self):
-        version = common.VersionKey('my_service', 'my_version')
+        self._setup_generate_steps_tests()
         commands = rolling_restart.generate_steps(self._appengine_admin,
-                                                  version,
+                                                  self._version,
                                                   datetime.datetime.utcnow())
         self.assertSequenceEqual(commands, [
-            self._generate_kill_vm_command(version, 'vm_2019'),
-            self._generate_kill_vm_command(version, 'vm_2020')
+            self._generate_kill_vm_command(self._version, 'vm_2019'),
+            self._generate_kill_vm_command(self._version, 'vm_2020')
         ])
 
     def test_generate_commands_older_vm(self):
+        self._setup_generate_steps_tests()
         version = common.VersionKey('my_service', 'my_version')
+        # yapf: disable
         commands = rolling_restart.generate_steps(
-            self._appengine_admin, version,
+            self._appengine_admin,
+            version,
             common.parse_gcp_timestamp('2019-12-01T00:00:00Z'))
+        # yapf: enable
         self.assertSequenceEqual(
             commands, [self._generate_kill_vm_command(version, 'vm_2019')])
+
+    def test_execute_steps_variable_instances(self):
+        self._setup_execute_steps_tests()
+        cmd = mock.MagicMock()
+        cmd.instance_name = 'vm_to_delete'
+        cmds = tuple([cmd])  # yapf does not format (cmd,) correctly.
+        rolling_restart.execute_steps(appengine_admin=self._appengine_admin,
+                                      version=self._version,
+                                      cmds=cmds,
+                                      min_delay=0,
+                                      fixed_num_instances=None)
+        self.assertEqual(self._appengine_request.execute.call_count, 2)
+
+    def test_execute_steps_fixed_instances(self):
+        self._setup_execute_steps_tests()
+        cmd = mock.MagicMock()
+        cmd.instance_name = 'vm_to_delete'
+        cmds = tuple([cmd])  # yapf does not format (cmd,) correctly.
+        rolling_restart.execute_steps(appengine_admin=self._appengine_admin,
+                                      version=self._version,
+                                      cmds=cmds,
+                                      min_delay=0,
+                                      fixed_num_instances=2)
+        self.assertEqual(self._appengine_request.execute.call_count, 3)
 
 
 if __name__ == '__main__':

@@ -40,7 +40,7 @@ import argparse
 import datetime
 import sys
 import time
-from typing import Iterable, Tuple
+from typing import Iterable, Optional, Tuple
 
 import appengine
 import common
@@ -68,13 +68,10 @@ def generate_steps(
     ])
 
 
-# yapf: disable
-def restart_one_service(appengine_admin: appengine.AppEngineAdmin,
-                        version: common.VersionKey,
-                        min_delay: int,
-                        started_before: datetime.datetime) -> None:
-    # yapf: enable
-    cmds = generate_steps(appengine_admin, version, started_before)
+def execute_steps(appengine_admin: appengine.AppEngineAdmin,
+                  version: common.VersionKey,
+                  cmds: Tuple[steps.KillNomulusInstance, ...], min_delay: int,
+                  fixed_num_instances: Optional[int]) -> None:
     print(f'Restarting {len(cmds)} instances in {version.service_id}')
     for cmd in cmds:
         print(cmd.info())
@@ -89,10 +86,40 @@ def restart_one_service(appengine_admin: appengine.AppEngineAdmin,
             if cmd.instance_name in running_instances:
                 print('Waiting for VM to shut down...')
                 continue
+            if (fixed_num_instances is not None
+                    and len(running_instances) < fixed_num_instances):
+                print('Waiting for new VM to come up...')
+                continue
             break
         print('VM instance has shut down.\n')
 
     print(f'Done: {len(cmds)} instances in {version.service_id}\n')
+
+
+# yapf: disable
+def restart_one_service(appengine_admin: appengine.AppEngineAdmin,
+                        version: common.VersionKey,
+                        min_delay: int,
+                        started_before: datetime.datetime,
+                        fixed_num_instances: Optional[int]) -> None:
+    # yapf: enable
+    """Restart VM instances in one service according to their start time.
+
+    Args:
+        appengine_admin: The client of AppEngine Admin API.
+        version: The Nomulus version to restart. This must be the currently
+            serving version.
+        min_delay: The minimum delay between successive deletions.
+        started_before: Only VM instances started before this time are to be
+            deleted.
+        fixed_num_instances: When present, the constant number of instances
+            this version is configured with.
+    """
+    cmds = generate_steps(appengine_admin, version, started_before)
+    # yapf: disable
+    execute_steps(
+        appengine_admin, version, cmds, min_delay, fixed_num_instances)
+    # yapf: enable
 
 
 # yapf: disable
@@ -104,14 +131,20 @@ def rolling_restart(project: str,
     print(f'Rolling restart {project} at '
           f'{common.to_gcp_timestamp(started_before)}\n')
     appengine_admin = appengine.AppEngineAdmin(project)
-    serving_versions = appengine_admin.get_serving_versions()
+    version_configs = appengine_admin.get_version_configs(
+        set(appengine_admin.get_serving_versions()))
     restart_versions = [
-        version for version in serving_versions
+        version for version in version_configs
         if version.service_id in services
     ]
+    # yapf: disable
     for version in restart_versions:
-        restart_one_service(appengine_admin, version, min_delay,
-                            started_before)
+        restart_one_service(appengine_admin,
+                            version,
+                            min_delay,
+                            started_before,
+                            version.manual_scaling_instances)
+    # yapf: enable
 
 
 def main() -> int:
