@@ -20,7 +20,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.filterValues;
 import static com.google.common.collect.Maps.toMap;
 import static google.registry.model.ofy.CommitLogBucket.getArbitraryBucketId;
-import static google.registry.model.ofy.ObjectWeights.getObjectWeight;
+import static google.registry.model.ofy.EntityWritePriorities.getEntityPriority;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
@@ -105,7 +105,7 @@ class TransactionInfo {
   /** Returns the weight of the entity type in the map entry. */
   @VisibleForTesting
   static int getWeight(ImmutableMap.Entry<Key<?>, Object> entry) {
-    return getObjectWeight(entry.getKey().getKind(), entry.getValue().equals(Delete.SENTINEL));
+    return getEntityPriority(entry.getKey().getKind(), entry.getValue().equals(Delete.SENTINEL));
   }
 
   private static int compareByWeight(

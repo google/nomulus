@@ -27,6 +27,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.any;
@@ -314,6 +315,51 @@ public class ReplayCommitLogsToSqlActionTest {
                 .collect(toImmutableList()))
         .isEqualTo(ImmutableList.of(ContactResource.class, DomainBase.class));
     inOrder.verify(spy).delete(toDelete.createVKey());
+  }
+
+  @Test
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  void testReplay_properlyWeighted_doesNotApplyCrossTransactions() throws Exception {
+    DateTime now = fakeClock.nowUtc();
+    Key<CommitLogManifest> manifestKey =
+        CommitLogManifest.createKey(getBucketKey(1), now.minusMinutes(1));
+
+    // Create and save the standard contact
+    ContactResource contact = persistActiveContact("contact1234");
+    jpaTm().transact(() -> jpaTm().put(contact));
+
+    // Simulate a Datastore transaction with a new version of the contact
+    ContactResource contactWithEdit =
+        contact.asBuilder().setEmailAddress("replay@example.tld").build();
+    CommitLogMutation contactMutation =
+        tm().transact(() -> CommitLogMutation.create(manifestKey, contactWithEdit));
+
+    jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
+
+    // spy the txn manager so we can see what order things were inserted
+    JpaTransactionManager spy = spy(jpaTm());
+    TransactionManagerFactory.setJpaTm(() -> spy);
+    // Save two commits -- the deletion, then the new version of the contact
+    saveDiffFile(
+        gcsService,
+        createCheckpoint(now.minusMinutes(1).plusMillis(1)),
+        CommitLogManifest.create(
+            getBucketKey(1), now.minusMinutes(1), ImmutableSet.of(Key.create(contact))),
+        CommitLogManifest.create(
+            getBucketKey(1), now.minusMinutes(1).plusMillis(1), ImmutableSet.of()),
+        contactMutation);
+    runAndAssertSuccess(now.minusMinutes(1).plusMillis(1));
+    // Verify that the delete occurred first (because it was in the first transaction) even though
+    // deletes have higher weight
+    ArgumentCaptor<ImmutableCollection> collectionCaptor =
+        ArgumentCaptor.forClass(ImmutableCollection.class);
+    InOrder inOrder = Mockito.inOrder(spy);
+    inOrder.verify(spy).delete(contact.createVKey());
+    inOrder.verify(spy).putAll(collectionCaptor.capture());
+    assertThat(Iterables.getOnlyElement(collectionCaptor.getValue()).getClass())
+        .isEqualTo(ContactResource.class);
+    assertThat(jpaTm().transact(() -> jpaTm().load(contact.createVKey()).getEmailAddress()))
+        .isEqualTo("replay@example.tld");
   }
 
   @Test

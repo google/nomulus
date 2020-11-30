@@ -14,8 +14,6 @@
 
 package google.registry.backup;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
-import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Verify.verifyNotNull;
@@ -41,7 +39,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
-import google.registry.config.RegistryConfig;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.CommitLogBucket;
@@ -51,7 +48,6 @@ import google.registry.model.ofy.CommitLogMutation;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
-import google.registry.util.TaskQueueUtils;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
@@ -83,8 +79,6 @@ public final class ExportCommitLogDiffAction implements Runnable {
   @Inject @Config("commitLogDiffExportBatchSize") int batchSize;
   @Inject @Parameter(LOWER_CHECKPOINT_TIME_PARAM) DateTime lowerCheckpointTime;
   @Inject @Parameter(UPPER_CHECKPOINT_TIME_PARAM) DateTime upperCheckpointTime;
-
-  @Inject TaskQueueUtils taskQueueUtils;
 
   @Inject ExportCommitLogDiffAction() {}
 
@@ -144,13 +138,6 @@ public final class ExportCommitLogDiffAction implements Runnable {
       throw new RuntimeException(e);
     }
     logger.atInfo().log("Exported %d manifests in total", sortedKeys.size());
-    if (RegistryConfig.getCloudSqlReplayCommitLogs()) {
-      // If enabled, trigger the SQL replay
-      logger.atInfo().log("Triggering ReplayCommitLogsToSqlAction");
-      taskQueueUtils.enqueue(
-          getQueue(ReplayCommitLogsToSqlAction.QUEUE_NAME),
-          withUrl(ReplayCommitLogsToSqlAction.PATH));
-    }
   }
 
   /**

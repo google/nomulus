@@ -17,12 +17,20 @@ package google.registry.model.ofy;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 
-public class ObjectWeights {
+public class EntityWritePriorities {
 
-  // Mapping from class name to "weight" (which in this case is the order in which the class must
-  // be "put" in a transaction with respect to instances of other classes).  Lower weight classes
-  // are put first, by default all classes have a weight of zero.
-  static final ImmutableMap<String, Integer> CLASS_WEIGHTS =
+  /**
+   * Mapping from class name to "priority".
+   *
+   * <p>Here, "priority" means the order in which the class should be inserted / updated in a
+   * transaction with respect to instances of other classes. By default, all classes have a weight
+   * of zero.
+   *
+   * <p>For each transaction, classes should be written in priority order from the lowest number to
+   * the highest, in order to maintain foreign-key write consistency. For the same reason, deletes
+   * should happen after all writes.
+   */
+  static final ImmutableMap<String, Integer> CLASS_PRIORITIES =
       ImmutableMap.of(
           "HistoryEntry", -10,
           "AllocationToken", -9,
@@ -35,9 +43,9 @@ public class ObjectWeights {
   // to make sure foreign keys aren't violated during deletion.
   @VisibleForTesting static final int DELETE_RANGE = Integer.MAX_VALUE / 2;
 
-  /** Returns the weight of the entity type in the map entry. */
-  public static int getObjectWeight(String kind, boolean isDelete) {
-    int weight = CLASS_WEIGHTS.getOrDefault(kind, 0);
-    return isDelete ? DELETE_RANGE - weight : weight;
+  /** Returns the priority of the entity type in the map entry. */
+  public static int getEntityPriority(String kind, boolean isDelete) {
+    int priority = CLASS_PRIORITIES.getOrDefault(kind, 0);
+    return isDelete ? DELETE_RANGE - priority : priority;
   }
 }

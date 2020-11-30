@@ -15,7 +15,7 @@
 package google.registry.backup;
 
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
-import static google.registry.model.ofy.ObjectWeights.getObjectWeight;
+import static google.registry.model.ofy.EntityWritePriorities.getEntityPriority;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
@@ -80,7 +80,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     if (!RegistryConfig.getCloudSqlReplayCommitLogs()) {
       String message = "ReplayCommitLogsToSqlAction was called but disabled in the config.";
       logger.atWarning().log(message);
-      // AppEngine will retry on any non-2xx status code, which we don't want in this case.
+      // App Engine will retry on any non-2xx status code, which we don't want in this case.
       response.setStatus(SC_NO_CONTENT);
       response.setPayload(message);
       return;
@@ -91,14 +91,14 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     if (lock.isEmpty()) {
       String message = "Can't acquire SQL commit log replay lock, aborting";
       logger.atSevere().log(message);
-      // AppEngine will retry on any non-2xx status code, which we don't want in this case.
+      // App Engine will retry on any non-2xx status code, which we don't want in this case.
       // Let the next run after the next export happen naturally.
       response.setStatus(SC_NO_CONTENT);
       response.setPayload(message);
       return;
     }
     try {
-      jpaTm().transact(this::replayFiles);
+      replayFiles();
       response.setStatus(HttpServletResponse.SC_OK);
     } finally {
       lock.ifPresent(Lock::release);
@@ -107,25 +107,20 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
 
   private void replayFiles() {
     // Start at the first millisecond we haven't seen yet
-    DateTime fromTime = SqlReplayCheckpoint.get().plusMillis(1);
-    // the diff lister is inclusive, so use everything before the current txn
-    DateTime toTime = jpaTm().getTransactionTime().minusMillis(1);
+    DateTime fromTime = jpaTm().transact(() -> SqlReplayCheckpoint.get().plusMillis(1));
     // If there's an inconsistent file set, this will throw IllegalStateException and the job
     // will try later -- this is likely because an export hasn't finished yet.
-    ImmutableList<GcsFileMetadata> commitLogFiles = diffLister.listDiffFiles(fromTime, toTime);
+    ImmutableList<GcsFileMetadata> commitLogFiles =
+        diffLister.listDiffFiles(fromTime, /* current time */ null);
     for (GcsFileMetadata metadata : commitLogFiles) {
       try (InputStream input =
           Channels.newInputStream(
               gcsService.openPrefetchingReadChannel(metadata.getFilename(), 0, BLOCK_SIZE))) {
-        // Save the corresponding SQL entities or delete the key if it was a delete
-        CommitLogImports.loadEntities(input).stream()
-            .sorted(ReplayCommitLogsToSqlAction::compareByWeight)
-            .forEach(
-                versionedEntity ->
-                    versionedEntity
-                        .getEntity()
-                        .ifPresentOrElse(
-                            this::handleEntityPut, () -> handleEntityDelete(versionedEntity)));
+        // Load and process the Datastore transactions one at a time
+        for (ImmutableList<VersionedEntity> transaction :
+            CommitLogImports.loadEntitiesByTransaction(input)) {
+          jpaTm().transact(() -> replayTransaction(transaction));
+        }
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
@@ -140,8 +135,20 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
                   .getObjectName()
                   .substring(DIFF_FILE_PREFIX.length()));
       // if we succeeded, set the last-seen time
-      SqlReplayCheckpoint.set(upperBoundTime);
+      jpaTm().transact(() -> SqlReplayCheckpoint.set(upperBoundTime));
     }
+    logger.atInfo().log("Replayed %d commit log files to SQL", commitLogFiles.size());
+  }
+
+  private void replayTransaction(ImmutableList<VersionedEntity> transaction) {
+    transaction.stream()
+        .sorted(ReplayCommitLogsToSqlAction::compareByWeight)
+        .forEach(
+            versionedEntity ->
+                versionedEntity
+                    .getEntity()
+                    .ifPresentOrElse(
+                        this::handleEntityPut, () -> handleEntityDelete(versionedEntity)));
   }
 
   private void handleEntityPut(Entity entity) {
@@ -180,7 +187,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
   }
 
   private static int compareByWeight(VersionedEntity a, VersionedEntity b) {
-    return getObjectWeight(a.key().getKind(), a.getEntity().isEmpty())
-        - getObjectWeight(b.key().getKind(), b.getEntity().isEmpty());
+    return getEntityPriority(a.key().getKind(), a.getEntity().isEmpty())
+        - getEntityPriority(b.key().getKind(), b.getEntity().isEmpty());
   }
 }

@@ -15,10 +15,10 @@
 package google.registry.backup;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.backup.BackupUtils.createDeserializingIterator;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Streams;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogManifest;
@@ -31,7 +31,6 @@ import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Iterator;
-import java.util.stream.Stream;
 
 /**
  * Helpers for reading CommitLog records from a file.
@@ -42,6 +41,55 @@ import java.util.stream.Stream;
 public final class CommitLogImports {
 
   private CommitLogImports() {}
+
+  /**
+   * Returns entities in an {@code inputStream} (from a single CommitLog file) as an {@link
+   * ImmutableList} of {@link ImmutableList}s of {@link VersionedEntity} records where the inner
+   * lists each consist of one transaction. Upon completion the {@code inputStream} is closed.
+   *
+   * <p>The returned list may be empty, since CommitLogs are written at fixed intervals regardless
+   * if actual changes exist. Each sublist, however, will not be empty.
+   *
+   * <p>A CommitLog file starts with a {@link CommitLogCheckpoint}, followed by (repeated)
+   * subsequences of [{@link CommitLogManifest}, [{@link CommitLogMutation}] ...]. Each subsequence
+   * represents the changes in one transaction. The {@code CommitLogManifest} contains deleted
+   * entity keys, whereas each {@code CommitLogMutation} contains one whole entity.
+   */
+  public static ImmutableList<ImmutableList<VersionedEntity>> loadEntitiesByTransaction(
+      InputStream inputStream) {
+    try (AppEngineEnvironment appEngineEnvironment = new AppEngineEnvironment();
+        InputStream input = new BufferedInputStream(inputStream)) {
+      Iterator<ImmutableObject> commitLogs = createDeserializingIterator(input);
+      checkState(commitLogs.hasNext());
+      checkState(commitLogs.next() instanceof CommitLogCheckpoint);
+
+      ImmutableList.Builder<ImmutableList<VersionedEntity>> resultBuilder =
+          new ImmutableList.Builder<>();
+      ImmutableList.Builder<VersionedEntity> currentTransactionBuilder =
+          new ImmutableList.Builder<>();
+
+      for (ImmutableObject currentObject : ImmutableList.copyOf(commitLogs)) {
+        if (currentObject instanceof CommitLogManifest) {
+          // CommitLogManifest means we are starting a new transaction
+          addIfNonempty(resultBuilder, currentTransactionBuilder);
+          currentTransactionBuilder = new ImmutableList.Builder<>();
+          VersionedEntity.fromManifest((CommitLogManifest) currentObject)
+              .forEach(currentTransactionBuilder::add);
+        } else if (currentObject instanceof CommitLogMutation) {
+          currentTransactionBuilder.add(
+              VersionedEntity.fromMutation((CommitLogMutation) currentObject));
+        } else {
+          throw new IllegalStateException(
+              String.format("Unknown entity type %s in commit logs", currentObject.getClass()));
+        }
+      }
+      // Add the last transaction in (if it's not empty)
+      addIfNonempty(resultBuilder, currentTransactionBuilder);
+      return resultBuilder.build();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   /**
    * Returns entities in an {@code inputStream} (from a single CommitLog file) as an {@link
@@ -57,23 +105,9 @@ public final class CommitLogImports {
    * entity keys, whereas each {@code CommitLogMutation} contains one whole entity.
    */
   public static ImmutableList<VersionedEntity> loadEntities(InputStream inputStream) {
-    try (AppEngineEnvironment appEngineEnvironment = new AppEngineEnvironment();
-        InputStream input = new BufferedInputStream(inputStream)) {
-      Iterator<ImmutableObject> commitLogs = createDeserializingIterator(input);
-      checkState(commitLogs.hasNext());
-      checkState(commitLogs.next() instanceof CommitLogCheckpoint);
-
-      return Streams.stream(commitLogs)
-          .map(
-              e ->
-                  e instanceof CommitLogManifest
-                      ? VersionedEntity.fromManifest((CommitLogManifest) e)
-                      : Stream.of(VersionedEntity.fromMutation((CommitLogMutation) e)))
-          .flatMap(s -> s)
-          .collect(ImmutableList.toImmutableList());
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return loadEntitiesByTransaction(inputStream).stream()
+        .flatMap(ImmutableList::stream)
+        .collect(toImmutableList());
   }
 
   /** Covenience method that adapts {@link #loadEntities(InputStream)} to a {@link File}. */
@@ -91,5 +125,14 @@ public final class CommitLogImports {
    */
   public static ImmutableList<VersionedEntity> loadEntities(ReadableByteChannel channel) {
     return loadEntities(Channels.newInputStream(channel));
+  }
+
+  private static void addIfNonempty(
+      ImmutableList.Builder<ImmutableList<VersionedEntity>> resultBuilder,
+      ImmutableList.Builder<VersionedEntity> currentTransactionBuilder) {
+    ImmutableList<VersionedEntity> currentTransaction = currentTransactionBuilder.build();
+    if (!currentTransaction.isEmpty()) {
+      resultBuilder.add(currentTransaction);
+    }
   }
 }
