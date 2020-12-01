@@ -101,7 +101,7 @@ def restart_one_service(appengine_admin: appengine.AppEngineAdmin,
                         version: common.VersionKey,
                         min_delay: int,
                         started_before: datetime.datetime,
-                        fixed_num_instances: Optional[int]) -> None:
+                        configured_num_instances: Optional[int]) -> None:
     # yapf: enable
     """Restart VM instances in one service according to their start time.
 
@@ -112,13 +112,13 @@ def restart_one_service(appengine_admin: appengine.AppEngineAdmin,
         min_delay: The minimum delay between successive deletions.
         started_before: Only VM instances started before this time are to be
             deleted.
-        fixed_num_instances: When present, the constant number of instances
+        configured_num_instances: When present, the constant number of instances
             this version is configured with.
     """
     cmds = generate_steps(appengine_admin, version, started_before)
     # yapf: disable
     execute_steps(
-        appengine_admin, version, cmds, min_delay, fixed_num_instances)
+        appengine_admin, version, cmds, min_delay, configured_num_instances)
     # yapf: enable
 
 
