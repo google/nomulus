@@ -23,8 +23,8 @@ public class EntityWritePriorities {
    * Mapping from class name to "priority".
    *
    * <p>Here, "priority" means the order in which the class should be inserted / updated in a
-   * transaction with respect to instances of other classes. By default, all classes have a weight
-   * of zero.
+   * transaction with respect to instances of other classes. By default, all classes have a priority
+   * number of zero.
    *
    * <p>For each transaction, classes should be written in priority order from the lowest number to
    * the highest, in order to maintain foreign-key write consistency. For the same reason, deletes
@@ -37,10 +37,10 @@ public class EntityWritePriorities {
           "ContactResource", 5,
           "DomainBase", 10);
 
-  // The beginning of the range of weights reserved for delete.  This must be greater than any of
-  // the values in CLASS_WEIGHTS by enough overhead to accommodate  any negative values in it.
-  // Note: by design, deletions will happen in the opposite order of insertions, which is necessary
-  // to make sure foreign keys aren't violated during deletion.
+  // The beginning of the range of priority numbers reserved for delete.  This must be greater than
+  // any of the values in CLASS_PRIORITIES by enough overhead to accommodate  any negative values in
+  // it. Note: by design, deletions will happen in the opposite order of insertions, which is
+  // necessary to make sure foreign keys aren't violated during deletion.
   @VisibleForTesting static final int DELETE_RANGE = Integer.MAX_VALUE / 2;
 
   /** Returns the priority of the entity type in the map entry. */

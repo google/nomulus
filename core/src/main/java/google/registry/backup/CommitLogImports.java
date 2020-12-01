@@ -68,7 +68,8 @@ public final class CommitLogImports {
       ImmutableList.Builder<VersionedEntity> currentTransactionBuilder =
           new ImmutableList.Builder<>();
 
-      for (ImmutableObject currentObject : ImmutableList.copyOf(commitLogs)) {
+      while (commitLogs.hasNext()) {
+        ImmutableObject currentObject = commitLogs.next();
         if (currentObject instanceof CommitLogManifest) {
           // CommitLogManifest means we are starting a new transaction
           addIfNonempty(resultBuilder, currentTransactionBuilder);

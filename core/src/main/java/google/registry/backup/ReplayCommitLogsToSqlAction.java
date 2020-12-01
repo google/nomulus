@@ -26,7 +26,6 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.cloudstorage.GcsFileMetadata;
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig;
 import google.registry.model.server.Lock;
@@ -59,7 +58,6 @@ import org.joda.time.Duration;
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class ReplayCommitLogsToSqlAction implements Runnable {
 
-  static final String QUEUE_NAME = "replay-commit-logs-to-sql";
   static final String PATH = "/_dr/task/replayCommitLogsToSql";
 
   private static final int BLOCK_SIZE =
@@ -113,31 +111,29 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     ImmutableList<GcsFileMetadata> commitLogFiles =
         diffLister.listDiffFiles(fromTime, /* current time */ null);
     for (GcsFileMetadata metadata : commitLogFiles) {
-      try (InputStream input =
-          Channels.newInputStream(
-              gcsService.openPrefetchingReadChannel(metadata.getFilename(), 0, BLOCK_SIZE))) {
-        // Load and process the Datastore transactions one at a time
-        for (ImmutableList<VersionedEntity> transaction :
-            CommitLogImports.loadEntitiesByTransaction(input)) {
-          jpaTm().transact(() -> replayTransaction(transaction));
-        }
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-    if (!commitLogFiles.isEmpty()) {
-      // The last checkpoint time isn't necessarily right now, but rather the upper bound of the
-      // last file we processed
-      DateTime upperBoundTime =
-          DateTime.parse(
-              Iterables.getLast(commitLogFiles)
-                  .getFilename()
-                  .getObjectName()
-                  .substring(DIFF_FILE_PREFIX.length()));
-      // if we succeeded, set the last-seen time
-      jpaTm().transact(() -> SqlReplayCheckpoint.set(upperBoundTime));
+      // One transaction per GCS file
+      jpaTm().transact(() -> processFile(metadata));
     }
     logger.atInfo().log("Replayed %d commit log files to SQL", commitLogFiles.size());
+  }
+
+  private void processFile(GcsFileMetadata metadata) {
+    try (InputStream input =
+        Channels.newInputStream(
+            gcsService.openPrefetchingReadChannel(metadata.getFilename(), 0, BLOCK_SIZE))) {
+      // Load and process the Datastore transactions one at a time
+      ImmutableList<ImmutableList<VersionedEntity>> allTransactions =
+          CommitLogImports.loadEntitiesByTransaction(input);
+      allTransactions.forEach(this::replayTransaction);
+      // if we succeeded, set the last-seen time
+      DateTime checkpoint =
+          DateTime.parse(
+              metadata.getFilename().getObjectName().substring(DIFF_FILE_PREFIX.length()));
+      SqlReplayCheckpoint.set(checkpoint);
+      logger.atInfo().log("Replayed %d transactions from commit log file", allTransactions.size());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private void replayTransaction(ImmutableList<VersionedEntity> transaction) {
