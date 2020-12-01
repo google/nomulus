@@ -416,6 +416,14 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("cloudSqlDbInstanceName")
+    public static String providesCloudSqlDbInstance(RegistryConfigSettings config) {
+      // Format of instanceConnectionName: project-id:region:instance-name
+      int lastColonIndex = config.cloudSql.instanceConnectionName.lastIndexOf(':');
+      return config.cloudSql.instanceConnectionName.substring(lastColonIndex + 1);
+    }
+
+    @Provides
     @Config("cloudDnsRootUrl")
     public static Optional<String> getCloudDnsRootUrl(RegistryConfigSettings config) {
       return Optional.ofNullable(config.cloudDns.rootUrl);

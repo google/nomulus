@@ -14,12 +14,12 @@
 
 package google.registry.privileges.secretmanager;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.util.Retrier;
 import google.registry.util.UtilsModule;
@@ -28,19 +28,16 @@ import javax.inject.Singleton;
 
 /** Provides bindings for {@link SecretManagerClient}. */
 @Module
-public class SecretManagerModule {
-
-  private final String project;
-
-  public SecretManagerModule(String project) {
-    this.project = checkNotNull(project, "project");
-  }
+public abstract class SecretManagerModule {
 
   @Provides
   @Singleton
-  SecretManagerClient provideSecretManagerClient(Retrier retrier) {
+  static SecretManagerClient provideSecretManagerClient(
+      @Config("projectId") String project, Retrier retrier) {
     try {
-      return new SecretManagerClientImpl(project, SecretManagerServiceClient.create(), retrier);
+      SecretManagerServiceClient stub = SecretManagerServiceClient.create();
+      Runtime.getRuntime().addShutdownHook(new Thread(stub::close));
+      return new SecretManagerClientImpl(project, stub, retrier);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

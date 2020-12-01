@@ -18,12 +18,17 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.cloud.secretmanager.v1.SecretVersion.State;
+import google.registry.privileges.secretmanager.SecretManagerClient.NoSuchSecretResourceException;
 import google.registry.privileges.secretmanager.SecretManagerClient.SecretAlreadyExistsException;
 import google.registry.privileges.secretmanager.SecretManagerClient.SecretManagerException;
+import google.registry.util.Retrier;
+import google.registry.util.SystemSleeper;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -43,52 +48,50 @@ public class SecretManagerClientTest {
   private static final String SECRET_ID_PREFIX = "TEST_" + UUID.randomUUID() + "_";
   // Used for unique secret id generation.
   private static int seqno = 0;
-
   private static SecretManagerClient secretManagerClient;
   private static boolean isUnitTest = true;
 
-  private static String nextSecretId() {
-    return SECRET_ID_PREFIX + seqno++;
-  }
+  private String secretId;
 
   @BeforeAll
   static void beforeAll() {
     String environmentName = System.getProperty("test.gcp_integration.env");
     if (environmentName != null) {
       secretManagerClient =
-          DaggerSecretManagerModule_SecretManagerComponent.builder()
-              .secretManagerModule(
-                  new SecretManagerModule(String.format("domain-registry-%s", environmentName)))
-              .build()
-              .secretManagerClient();
+          SecretManagerModule.provideSecretManagerClient(
+              String.format("domain-registry-%s", environmentName),
+              new Retrier(new SystemSleeper(), 1));
       isUnitTest = false;
     } else {
       secretManagerClient = new FakeSecretManagerClient();
     }
   }
 
-  @AfterAll
-  static void afterAll() {
+  @BeforeEach
+  void beforeEach() {
+    secretId = SECRET_ID_PREFIX + seqno++;
+  }
+
+  @AfterEach
+  void afterEach() throws IOException {
     if (isUnitTest) {
       return;
     }
-    for (String secretId : secretManagerClient.listSecrets()) {
-      if (secretId.startsWith(SECRET_ID_PREFIX)) {
-        secretManagerClient.deleteSecret(secretId);
-      }
+    try {
+      secretManagerClient.deleteSecret(secretId);
+    } catch (NoSuchSecretResourceException e) {
+      // deleteSecret() deleted it already.
     }
   }
 
   @Test
   void createSecret_success() {
-    String secretId = nextSecretId();
     secretManagerClient.createSecret(secretId);
     assertThat(secretManagerClient.listSecrets()).contains(secretId);
   }
 
   @Test
   void createSecret_duplicate() {
-    String secretId = nextSecretId();
     secretManagerClient.createSecret(secretId);
     assertThrows(
         SecretAlreadyExistsException.class, () -> secretManagerClient.createSecret(secretId));
@@ -96,7 +99,6 @@ public class SecretManagerClientTest {
 
   @Test
   void addSecretVersion() {
-    String secretId = nextSecretId();
     secretManagerClient.createSecret(secretId);
     String version = secretManagerClient.addSecretVersion(secretId, "mydata");
     assertThat(secretManagerClient.listSecretVersions(secretId, State.ENABLED))
@@ -104,8 +106,18 @@ public class SecretManagerClientTest {
   }
 
   @Test
+  void secretExists_true() {
+    secretManagerClient.createSecret(secretId);
+    assertThat(secretManagerClient.secretExists(secretId)).isTrue();
+  }
+
+  @Test
+  void secretExists_False() {
+    assertThat(secretManagerClient.secretExists(secretId)).isFalse();
+  }
+
+  @Test
   void getSecretData_byVersion() {
-    String secretId = nextSecretId();
     secretManagerClient.createSecret(secretId);
     String version = secretManagerClient.addSecretVersion(secretId, "mydata");
     assertThat(secretManagerClient.getSecretData(secretId, Optional.of(version)))
@@ -114,15 +126,70 @@ public class SecretManagerClientTest {
 
   @Test
   void getSecretData_latestVersion() {
-    String secretId = nextSecretId();
     secretManagerClient.createSecret(secretId);
     secretManagerClient.addSecretVersion(secretId, "mydata");
     assertThat(secretManagerClient.getSecretData(secretId, Optional.empty())).isEqualTo("mydata");
   }
 
   @Test
+  void disableSecretVersion() {
+    secretManagerClient.createSecret(secretId);
+    String version = secretManagerClient.addSecretVersion(secretId, "mydata");
+    secretManagerClient.disableSecretVersion(secretId, version);
+    assertThat(secretManagerClient.listSecretVersions(secretId, State.DISABLED)).contains(version);
+  }
+
+  @Test
+  void disableSecretVersion_ignoreAlreadyDisabled() {
+    secretManagerClient.createSecret(secretId);
+    String version = secretManagerClient.addSecretVersion(secretId, "mydata");
+    secretManagerClient.disableSecretVersion(secretId, version);
+    assertThat(secretManagerClient.listSecretVersions(secretId, State.DISABLED)).contains(version);
+    secretManagerClient.disableSecretVersion(secretId, version);
+  }
+
+  @Test
+  void disableSecretVersion_destroyed() {
+    secretManagerClient.createSecret(secretId);
+    String version = secretManagerClient.addSecretVersion(secretId, "mydata");
+    secretManagerClient.destroySecretVersion(secretId, version);
+    assertThat(secretManagerClient.listSecretVersions(secretId, State.DESTROYED)).contains(version);
+    assertThrows(
+        SecretManagerException.class,
+        () -> secretManagerClient.disableSecretVersion(secretId, version));
+  }
+
+  @Test
+  void enableSecretVersion_ignoreAlreadyEnabled() {
+    secretManagerClient.createSecret(secretId);
+    String version = secretManagerClient.addSecretVersion(secretId, "mydata");
+    assertThat(secretManagerClient.listSecretVersions(secretId, State.ENABLED)).contains(version);
+    secretManagerClient.enableSecretVersion(secretId, version);
+  }
+
+  @Test
+  void enableSecretVersion() {
+    secretManagerClient.createSecret(secretId);
+    String version = secretManagerClient.addSecretVersion(secretId, "mydata");
+    secretManagerClient.disableSecretVersion(secretId, version);
+    assertThat(secretManagerClient.listSecretVersions(secretId, State.DISABLED)).contains(version);
+    secretManagerClient.enableSecretVersion(secretId, version);
+    assertThat(secretManagerClient.listSecretVersions(secretId, State.ENABLED)).contains(version);
+  }
+
+  @Test
+  void enableSecretVersion_destroyed() {
+    secretManagerClient.createSecret(secretId);
+    String version = secretManagerClient.addSecretVersion(secretId, "mydata");
+    secretManagerClient.destroySecretVersion(secretId, version);
+    assertThat(secretManagerClient.listSecretVersions(secretId, State.DESTROYED)).contains(version);
+    assertThrows(
+        SecretManagerException.class,
+        () -> secretManagerClient.enableSecretVersion(secretId, version));
+  }
+
+  @Test
   void destroySecretVersion() {
-    String secretId = nextSecretId();
     secretManagerClient.createSecret(secretId);
     String version = secretManagerClient.addSecretVersion(secretId, "mydata");
     secretManagerClient.destroySecretVersion(secretId, version);
@@ -134,7 +201,6 @@ public class SecretManagerClientTest {
 
   @Test
   void deleteSecret() {
-    String secretId = nextSecretId();
     secretManagerClient.createSecret(secretId);
     assertThat(secretManagerClient.listSecrets()).contains(secretId);
     secretManagerClient.deleteSecret(secretId);

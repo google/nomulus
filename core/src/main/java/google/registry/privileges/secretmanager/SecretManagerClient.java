@@ -22,6 +22,9 @@ import java.util.Optional;
 /** A Cloud Secret Manager client for Nomulus, bound to a specific GCP project. */
 public interface SecretManagerClient {
 
+  /** Returns the project name with which this client is associated. */
+  String getProject();
+
   /**
    * Creates a new secret in the Cloud Secret Manager with no data.
    *
@@ -31,6 +34,9 @@ public interface SecretManagerClient {
    * @throws SecretAlreadyExistsException A secret with this secretId already exists
    */
   void createSecret(String secretId);
+
+  /** Checks if a secret with the given {@code secretId} already exists. */
+  boolean secretExists(String secretId);
 
   /** Returns all secret IDs in the Cloud Secret Manager. */
   Iterable<String> listSecrets();
@@ -66,6 +72,24 @@ public interface SecretManagerClient {
    *     will be returned
    */
   String getSecretData(String secretId, Optional<String> version);
+
+  /**
+   * Enables a secret version.
+   *
+   * @param secretId The ID of the secret
+   * @param version The version of the secret to fetch. If not provided, the {@code latest} version
+   *     will be returned
+   */
+  void enableSecretVersion(String secretId, String version);
+
+  /**
+   * Disables a secret version.
+   *
+   * @param secretId The ID of the secret
+   * @param version The version of the secret to fetch. If not provided, the {@code latest} version
+   *     will be returned
+   */
+  void disableSecretVersion(String secretId, String version);
 
   /**
    * Destroys a secret version.
