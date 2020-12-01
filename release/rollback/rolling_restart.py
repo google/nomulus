@@ -71,7 +71,7 @@ def generate_steps(
 def execute_steps(appengine_admin: appengine.AppEngineAdmin,
                   version: common.VersionKey,
                   cmds: Tuple[steps.KillNomulusInstance, ...], min_delay: int,
-                  fixed_num_instances: Optional[int]) -> None:
+                  configured_num_instances: Optional[int]) -> None:
     print(f'Restarting {len(cmds)} instances in {version.service_id}')
     for cmd in cmds:
         print(cmd.info())
@@ -86,8 +86,8 @@ def execute_steps(appengine_admin: appengine.AppEngineAdmin,
             if cmd.instance_name in running_instances:
                 print('Waiting for VM to shut down...')
                 continue
-            if (fixed_num_instances is not None
-                    and len(running_instances) < fixed_num_instances):
+            if (configured_num_instances is not None
+                    and len(running_instances) < configured_num_instances):
                 print('Waiting for new VM to come up...')
                 continue
             break

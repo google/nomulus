@@ -125,11 +125,10 @@ def list_all_pages(func, data_field: str, *args, **kwargs) -> Tuple[Any, ...]:
     """Collects all data items from a paginator-based 'List' API.
 
     Args:
+        func: The GCP API method that supports paged responses.
         data_field: The field in a response object containing the data
             items to be returned. This is guaranteed to be an Iterable
             type.
-        request_factory: A factory that returns a list request when given
-            a page token.
 
     Returns: An immutable collection of data items assembled from the
         paged responses.

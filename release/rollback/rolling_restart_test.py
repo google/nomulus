@@ -129,7 +129,7 @@ class RollingRestartTestCase(unittest.TestCase):
                                       version=self._version,
                                       cmds=cmds,
                                       min_delay=0,
-                                      fixed_num_instances=None)
+                                      configured_num_instances=None)
         self.assertEqual(self._appengine_request.execute.call_count, 2)
 
     def test_execute_steps_fixed_instances(self):
@@ -141,7 +141,7 @@ class RollingRestartTestCase(unittest.TestCase):
                                       version=self._version,
                                       cmds=cmds,
                                       min_delay=0,
-                                      fixed_num_instances=2)
+                                      configured_num_instances=2)
         self.assertEqual(self._appengine_request.execute.call_count, 3)
 
 
