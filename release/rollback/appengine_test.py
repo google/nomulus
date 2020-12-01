@@ -17,11 +17,14 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
+from googleapiclient import http
+
 import appengine
 import common
 
 
-def setup_appengine_admin() -> Tuple[appengine.AppEngineAdmin, object]:
+def setup_appengine_admin(
+) -> Tuple[appengine.AppEngineAdmin, http.HttpRequest]:
     """Helper for setting up a mocked AppEngineAdmin instance.
 
     Returns:

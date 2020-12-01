@@ -24,15 +24,18 @@ class CommonTestCase(unittest.TestCase):
     """Unit tests for the common module."""
     def setUp(self) -> None:
         self._mock_request = mock.MagicMock()
-        self._mock_factory = mock.MagicMock()
-        self._mock_factory.return_value = self._mock_request
+        self._mock_api = mock.MagicMock()
+        self._mock_api.list.return_value = self._mock_request
         self.addCleanup(patch.stopall)
 
     def test_list_all_pages_single_page(self):
         self._mock_request.execute.return_value = {'data': [1]}
-        response = common.list_all_pages('data', self._mock_factory)
+        response = common.list_all_pages(self._mock_api.list,
+                                         'data',
+                                         appsId='project')
         self.assertSequenceEqual(response, [1])
-        self._mock_factory.assert_called_once_with(None)
+        self._mock_api.list.assert_called_once_with(pageToken=None,
+                                                    appsId='project')
 
     def test_list_all_pages_multi_page(self):
         self._mock_request.execute.side_effect = [{
@@ -41,10 +44,14 @@ class CommonTestCase(unittest.TestCase):
         }, {
             'data': [2]
         }]
-        response = common.list_all_pages('data', self._mock_factory)
+        response = common.list_all_pages(self._mock_api.list,
+                                         'data',
+                                         appsId='project')
         self.assertSequenceEqual(response, [1, 2])
-        self.assertSequenceEqual(self._mock_factory.call_args_list,
-                                 [call(None), call('token')])
+        self.assertSequenceEqual(self._mock_api.list.call_args_list, [
+            call(pageToken=None, appsId='project'),
+            call(pageToken='token', appsId='project')
+        ])
 
     def test_parse_timestamp(self):
         self.assertEqual(common.parse_gcp_timestamp('2020-01-01T00:00:00Z'),

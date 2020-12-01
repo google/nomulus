@@ -74,10 +74,9 @@ class AppEngineAdmin:
         Returns: An immutable collection of the serving versions grouped by
             service.
         """
-        services = common.list_all_pages(
-            'services',
-            lambda page_token: self._services.list(appsId=self._project,
-                                                   pageToken=page_token))
+        services = common.list_all_pages(self._services.list,
+                                         'services',
+                                         appsId=self._project)
 
         # Response format is specified at
         # http://googleapis.github.io/google-api-python-client/docs/dyn/appengine_v1beta.apps.services.html#list.
@@ -114,18 +113,14 @@ class AppEngineAdmin:
         """
         requested_services = {version.service_id for version in versions}
 
-        def request_factory(service_id: str):
-            return lambda page_token: self._versions.list(appsId=self._project,
-                                                          servicesId=
-                                                          service_id,
-                                                          pageToken=page_token)
-
         version_configs = []
         # Sort the requested services for ease of testing. For now the mocked
         # AppEngine admin in appengine_test can only respond in a fixed order.
         for service_id in sorted(requested_services):
-            response = common.list_all_pages('versions',
-                                             request_factory(service_id))
+            response = common.list_all_pages(self._versions.list,
+                                             'versions',
+                                             appsId=self._project,
+                                             servicesId=service_id)
 
             # Format of version_list is defined at
             # https://googleapis.github.io/google-api-python-client/docs/dyn/appengine_v1beta.apps.services.versions.html#list.
@@ -156,12 +151,11 @@ class AppEngineAdmin:
     def list_instances(
             self,
             version: common.VersionKey) -> Tuple[common.VmInstanceInfo, ...]:
-        instances = common.list_all_pages(
-            'instances', lambda page_token: self._versions.instances().list(
-                appsId=self._project,
-                servicesId=version.service_id,
-                versionsId=version.version_id,
-                pageToken=page_token))
+        instances = common.list_all_pages(self._versions.instances().list,
+                                          'instances',
+                                          appsId=self._project,
+                                          servicesId=version.service_id,
+                                          versionsId=version.version_id)
 
         # Format of version_list is defined at
         # https://googleapis.github.io/google-api-python-client/docs/dyn/appengine_v1beta.apps.services.versions.instances.html#list

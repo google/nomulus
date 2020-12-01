@@ -18,10 +18,9 @@ import datetime
 import enum
 import pathlib
 import re
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 from google.protobuf import timestamp_pb2
-from googleapiclient import http
 
 
 class CannotRollbackError(Exception):
@@ -122,9 +121,7 @@ def get_nomulus_root() -> str:
         'Do not move this file out of the Nomulus directory tree.')
 
 
-def list_all_pages(
-        data_field: str,
-        request_factory: Callable[[str], http.HttpRequest]) -> Tuple[Any, ...]:
+def list_all_pages(func, data_field: str, *args, **kwargs) -> Tuple[Any, ...]:
     """Collects all data items from a paginator-based 'List' API.
 
     Args:
@@ -140,7 +137,7 @@ def list_all_pages(
     result_collector = []
     page_token = None
     while True:
-        request = request_factory(page_token)
+        request = func(*args, pageToken=page_token, **kwargs)
         response = request.execute()
         result_collector.extend(response.get(data_field, []))
         page_token = response.get('nextPageToken')
