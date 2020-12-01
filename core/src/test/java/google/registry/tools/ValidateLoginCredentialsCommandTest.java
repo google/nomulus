@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -33,6 +34,7 @@ import google.registry.testing.CertificateSamples;
 import google.registry.util.CidrAddressBlock;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +52,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
         loadRegistrar("NewRegistrar")
             .asBuilder()
             .setPassword(PASSWORD)
-            .setClientCertificateHash(CERT_HASH)
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT, DateTime.now(UTC))
             .setIpAddressAllowList(ImmutableList.of(new CidrAddressBlock(CLIENT_IP)))
             .setState(ACTIVE)
             .setAllowedTlds(ImmutableSet.of("tld"))

@@ -15,6 +15,7 @@
 package google.registry.flows.session;
 
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
@@ -26,6 +27,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.testing.CertificateSamples;
 import google.registry.util.CidrAddressBlock;
 import java.util.Optional;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link LoginFlow} when accessed via a TLS transport. */
@@ -41,7 +43,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   @Override
   protected Registrar.Builder getRegistrarBuilder() {
     return super.getRegistrarBuilder()
-        .setClientCertificateHash(GOOD_CERT)
+        .setClientCertificate(CertificateSamples.SAMPLE_CERT, DateTime.now(UTC))
         .setIpAddressAllowList(
             ImmutableList.of(CidrAddressBlock.create(InetAddresses.forString(GOOD_IP.get()), 32)));
   }

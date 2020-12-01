@@ -157,16 +157,6 @@ public final class OteAccountBuilderTest {
   }
 
   @Test
-  void testCreateOteEntities_setCertificateHash() {
-    OteAccountBuilder.forClientId("myclientid")
-        .setCertificateHash(SAMPLE_CERT_HASH)
-        .buildAndPersist();
-
-    assertThat(Registrar.loadByClientId("myclientid-3").get().getClientCertificateHash())
-        .isEqualTo(SAMPLE_CERT_HASH);
-  }
-
-  @Test
   void testCreateOteEntities_setCertificate() {
     OteAccountBuilder.forClientId("myclientid")
         .setCertificate(SAMPLE_CERT, new SystemClock().nowUtc())
