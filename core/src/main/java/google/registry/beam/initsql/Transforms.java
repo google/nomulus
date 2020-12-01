@@ -68,6 +68,7 @@ import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.ProcessFunction;
+import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
@@ -277,21 +278,25 @@ public final class Transforms {
    * @param batchSize the number of entities to write in each operation
    * @param jpaSupplier supplier of a {@link JpaTransactionManager}
    */
-  public static PTransform<PCollection<VersionedEntity>, PCollection<Void>> writeToSql(
+  public static <T> PTransform<PCollection<T>, PCollection<Void>> writeToSql(
       String transformId,
       int maxWriters,
       int batchSize,
-      SerializableSupplier<JpaTransactionManager> jpaSupplier) {
-    return new PTransform<PCollection<VersionedEntity>, PCollection<Void>>() {
+      SerializableSupplier<JpaTransactionManager> jpaSupplier,
+      SerializableFunction<T, Object> jpaConverter,
+      TypeDescriptor<T> objectDescriptor) {
+    return new PTransform<PCollection<T>, PCollection<Void>>() {
       @Override
-      public PCollection<Void> expand(PCollection<VersionedEntity> input) {
+      public PCollection<Void> expand(PCollection<T> input) {
         return input
             .apply(
                 "Shard data for " + transformId,
-                MapElements.into(kvs(integers(), TypeDescriptor.of(VersionedEntity.class)))
+                MapElements.into(kvs(integers(), objectDescriptor))
                     .via(ve -> KV.of(ThreadLocalRandom.current().nextInt(maxWriters), ve)))
             .apply("Batch output by shard " + transformId, GroupIntoBatches.ofSize(batchSize))
-            .apply("Write in batch for " + transformId, ParDo.of(new SqlBatchWriter(jpaSupplier)));
+            .apply(
+                "Write in batch for " + transformId,
+                ParDo.of(new SqlBatchWriter<T>(jpaSupplier, jpaConverter)));
       }
     };
   }
@@ -385,18 +390,22 @@ public final class Transforms {
    * to hold the {@code JpaTransactionManager} instance, we must ensure that JpaTransactionManager
    * is not changed or torn down while being used by some instance.
    */
-  private static class SqlBatchWriter extends DoFn<KV<Integer, Iterable<VersionedEntity>>, Void> {
+  private static class SqlBatchWriter<T> extends DoFn<KV<Integer, Iterable<T>>, Void> {
 
     private static int instanceCount = 0;
     private static JpaTransactionManager originalJpa;
 
     private final SerializableSupplier<JpaTransactionManager> jpaSupplier;
+    private final SerializableFunction<T, Object> jpaConverter;
 
     private transient Ofy ofy;
     private transient SystemSleeper sleeper;
 
-    SqlBatchWriter(SerializableSupplier<JpaTransactionManager> jpaSupplier) {
+    SqlBatchWriter(
+        SerializableSupplier<JpaTransactionManager> jpaSupplier,
+        SerializableFunction<T, Object> jpaConverter) {
       this.jpaSupplier = jpaSupplier;
+      this.jpaConverter = jpaConverter;
     }
 
     @Setup
@@ -429,13 +438,11 @@ public final class Transforms {
     }
 
     @ProcessElement
-    public void processElement(@Element KV<Integer, Iterable<VersionedEntity>> kv) {
+    public void processElement(@Element KV<Integer, Iterable<T>> kv) {
       try (AppEngineEnvironment env = new AppEngineEnvironment()) {
         ImmutableList<Object> ofyEntities =
             Streams.stream(kv.getValue())
-                .map(VersionedEntity::getEntity)
-                .map(Optional::get)
-                .map(ofy::toPojo)
+                .map(this.jpaConverter::apply)
                 .collect(ImmutableList.toImmutableList());
         retry(() -> jpaTm().transact(() -> jpaTm().putAll(ofyEntities)));
       }

@@ -16,6 +16,7 @@ package google.registry.beam.initsql;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.appengine.api.datastore.Entity;
@@ -37,6 +38,7 @@ import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
 import org.apache.beam.sdk.transforms.Create;
+import org.apache.beam.sdk.values.TypeDescriptor;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -116,7 +118,9 @@ class WriteToSqlTest implements Serializable {
                     DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
                         .beamJpaModule(beamJpaExtension.getBeamJpaModule())
                         .build()
-                        .localDbJpaTransactionManager()));
+                        .localDbJpaTransactionManager(),
+                (entity) -> ofy().toPojo(entity.getEntity().get()),
+                TypeDescriptor.of(VersionedEntity.class)));
     testPipeline.run().waitUntilFinish();
 
     ImmutableList<?> sqlContacts = jpaTm().transact(() -> jpaTm().loadAll(ContactResource.class));

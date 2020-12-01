@@ -20,7 +20,7 @@ import static google.registry.beam.BeamUtils.getQueryFromFile;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
-import google.registry.backup.AppEngineEnvironment;
+import google.registry.beam.initsql.Transforms;
 import google.registry.beam.initsql.Transforms.SerializableSupplier;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.CredentialModule.LocalCredential;
@@ -43,7 +43,6 @@ import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.options.ValueProvider.NestedValueProvider;
-import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -191,34 +190,27 @@ public class Spec11Pipeline implements Serializable {
       PCollection<Subdomain> domains,
       EvaluateSafeBrowsingFn evaluateSafeBrowsingFn,
       ValueProvider<String> dateProvider) {
-
     PCollection<KV<Subdomain, ThreatMatch>> subdomainsSql =
         domains.apply("Run through SafeBrowsing API", ParDo.of(evaluateSafeBrowsingFn));
-    /* Store ThreatMatch objects in SQL. */
+    TypeDescriptor<KV<Subdomain, ThreatMatch>> descriptor =
+        new TypeDescriptor<KV<Subdomain, ThreatMatch>>() {};
     subdomainsSql.apply(
-        ParDo.of(
-            new DoFn<KV<Subdomain, ThreatMatch>, Void>() {
-              @ProcessElement
-              public void processElement(ProcessContext context) {
-                // create the Spec11ThreatMatch from Subdomain and ThreatMatch
-                try (AppEngineEnvironment env = new AppEngineEnvironment()) {
-                  Subdomain subdomain = context.element().getKey();
-                  Spec11ThreatMatch threatMatch =
-                      new Spec11ThreatMatch.Builder()
-                          .setThreatTypes(
-                              ImmutableSet.of(
-                                  ThreatType.valueOf(context.element().getValue().threatType())))
-                          .setCheckDate(
-                              LocalDate.parse(dateProvider.get(), ISODateTimeFormat.date()))
-                          .setDomainName(subdomain.domainName())
-                          .setDomainRepoId(subdomain.domainRepoId())
-                          .setRegistrarId(subdomain.registrarId())
-                          .build();
-                  JpaTransactionManager jpaTransactionManager = jpaSupplierFactory.get();
-                  jpaTransactionManager.transact(() -> jpaTransactionManager.insert(threatMatch));
-                }
-              }
-            }));
+        Transforms.writeToSql(
+            "Spec11ThreatMatch",
+            4,
+            4,
+            jpaSupplierFactory,
+            (kv) -> {
+              Subdomain subdomain = kv.getKey();
+              return new Spec11ThreatMatch.Builder()
+                  .setThreatTypes(ImmutableSet.of(ThreatType.valueOf(kv.getValue().threatType())))
+                  .setCheckDate(LocalDate.parse(dateProvider.get(), ISODateTimeFormat.date()))
+                  .setDomainName(subdomain.domainName())
+                  .setDomainRepoId(subdomain.domainRepoId())
+                  .setRegistrarId(subdomain.registrarId())
+                  .build();
+            },
+            descriptor));
 
     /* Store ThreatMatch objects in JSON. */
     PCollection<KV<Subdomain, ThreatMatch>> subdomainsJson =
