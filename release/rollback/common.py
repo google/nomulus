@@ -129,6 +129,8 @@ def list_all_pages(func, data_field: str, *args, **kwargs) -> Tuple[Any, ...]:
         data_field: The field in a response object containing the data
             items to be returned. This is guaranteed to be an Iterable
             type.
+        *args: Positional arguments passed to func.
+        *kwargs: Keyword arguments passed to func.
 
     Returns: An immutable collection of data items assembled from the
         paged responses.
