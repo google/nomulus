@@ -87,7 +87,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
         Lock.acquire(
             this.getClass().getSimpleName(), null, LEASE_LENGTH, requestStatusChecker, false);
     if (lock.isEmpty()) {
-      String message = "Can't acquire SQL commit log replay lock, aborting";
+      String message = "Can't acquire SQL commit log replay lock, aborting.";
       logger.atSevere().log(message);
       // App Engine will retry on any non-2xx status code, which we don't want in this case.
       // Let the next run after the next export happen naturally.
@@ -98,6 +98,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     try {
       replayFiles();
       response.setStatus(HttpServletResponse.SC_OK);
+      logger.atInfo().log("ReplayCommitLogsToSqlAction completed successfully.");
     } finally {
       lock.ifPresent(Lock::release);
     }
@@ -114,7 +115,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
       // One transaction per GCS file
       jpaTm().transact(() -> processFile(metadata));
     }
-    logger.atInfo().log("Replayed %d commit log files to SQL", commitLogFiles.size());
+    logger.atInfo().log("Replayed %d commit log files to SQL successfully.", commitLogFiles.size());
   }
 
   private void processFile(GcsFileMetadata metadata) {
@@ -130,7 +131,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
           DateTime.parse(
               metadata.getFilename().getObjectName().substring(DIFF_FILE_PREFIX.length()));
       SqlReplayCheckpoint.set(checkpoint);
-      logger.atInfo().log("Replayed %d transactions from commit log file", allTransactions.size());
+      logger.atInfo().log("Replayed %d transactions from commit log file.", allTransactions.size());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -170,7 +171,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
       // This means that the key wasn't convertible to VKey through the standard methods or via
       // a createVKey method. This means that the object isn't persisted in SQL so we ignore it.
       logger.atInfo().log(
-          "Skipping SQL delete for kind %s since it is not convertible", key.getKind());
+          "Skipping SQL delete for kind %s since it is not convertible.", key.getKind());
       return;
     }
     Class<?> entityClass = entityVKey.getKind();

@@ -447,7 +447,7 @@ public class ReplayCommitLogsToSqlActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
-        .isEqualTo("Can't acquire SQL commit log replay lock, aborting");
+        .isEqualTo("Can't acquire SQL commit log replay lock, aborting.");
   }
 
   private void runAndAssertSuccess(DateTime expectedCheckpointTime) {
