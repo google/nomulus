@@ -18,13 +18,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import google.registry.util.DomainNameUtils;
+import java.util.Optional;
 import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -111,8 +111,8 @@ public class Spec11ThreatMatch extends ImmutableObject implements Buildable, Sql
   }
 
   @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(); // not stored in Datastore
+  public Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.empty(); // Not persisted in Datastore
   }
 
   @Override

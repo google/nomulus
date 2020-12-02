@@ -20,7 +20,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.annotations.NotBackedUp;
@@ -28,9 +27,7 @@ import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.model.tmch.TmchCrl.TmchCrlId;
 import google.registry.persistence.VKey;
-import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.NonReplicatedEntity;
-import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
@@ -104,16 +101,6 @@ public final class TmchCrl extends CrossTldSingleton implements NonReplicatedEnt
   /** Time we last updated the Datastore with a newer ICANN CRL. */
   public final DateTime getUpdated() {
     return updated;
-  }
-
-  @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(); // dually-written
-  }
-
-  @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(); // dually-written
   }
 
   static class TmchCrlId implements Serializable {

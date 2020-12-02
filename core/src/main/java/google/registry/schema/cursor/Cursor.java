@@ -16,7 +16,6 @@ package google.registry.schema.cursor;
 
 import static com.google.appengine.api.search.checkers.Preconditions.checkNotNull;
 
-import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.common.Cursor.CursorType;
@@ -26,6 +25,7 @@ import google.registry.schema.replay.SqlEntity;
 import google.registry.util.DateTimeUtils;
 import java.io.Serializable;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -104,8 +104,8 @@ public class Cursor implements SqlEntity {
   }
 
   @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(); // Cursors are not converted since they are ephemeral
+  public Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.empty(); // Cursors are not converted since they are ephemeral
   }
 
   static class CursorId extends ImmutableObject implements Serializable {

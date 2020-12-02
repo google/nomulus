@@ -14,11 +14,11 @@
 
 package google.registry.model.domain.secdns;
 
-import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
+import java.util.Optional;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -86,7 +86,7 @@ public class DomainDsDataHistory extends DomainDsDataBase implements SqlEntity {
   }
 
   @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(); // not persisted in Datastore
+  public Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.empty(); // Not persisted in Datastore
   }
 }

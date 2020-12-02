@@ -14,7 +14,7 @@
 
 package google.registry.schema.replay;
 
-import com.google.common.collect.ImmutableList;
+import java.util.Optional;
 
 /**
  * An object that can be stored in Cloud SQL using {@link
@@ -25,5 +25,5 @@ import com.google.common.collect.ImmutableList;
  */
 public interface SqlEntity {
 
-  ImmutableList<DatastoreEntity> toDatastoreEntities();
+  Optional<DatastoreEntity> toDatastoreEntity();
 }

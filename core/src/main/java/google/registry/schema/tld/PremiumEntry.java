@@ -14,13 +14,13 @@
 
 package google.registry.schema.tld;
 
-import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -47,7 +47,7 @@ public class PremiumEntry extends ImmutableObject implements Serializable, SqlEn
   private PremiumEntry() {}
 
   @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(); // PremiumList is dually-written
+  public Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.empty(); // PremiumList is dually-written
   }
 }
