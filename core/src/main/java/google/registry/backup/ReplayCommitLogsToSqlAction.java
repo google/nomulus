@@ -49,7 +49,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
-/** Action that replays commit logs to SQL to keep it up to date. */
+/** Action that replays commit logs to Cloud SQL to keep it up to date. */
 @Action(
     service = Action.Service.BACKEND,
     path = ReplayCommitLogsToSqlAction.PATH,

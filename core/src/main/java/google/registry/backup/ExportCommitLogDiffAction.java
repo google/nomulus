@@ -79,7 +79,6 @@ public final class ExportCommitLogDiffAction implements Runnable {
   @Inject @Config("commitLogDiffExportBatchSize") int batchSize;
   @Inject @Parameter(LOWER_CHECKPOINT_TIME_PARAM) DateTime lowerCheckpointTime;
   @Inject @Parameter(UPPER_CHECKPOINT_TIME_PARAM) DateTime upperCheckpointTime;
-
   @Inject ExportCommitLogDiffAction() {}
 
   @Override
