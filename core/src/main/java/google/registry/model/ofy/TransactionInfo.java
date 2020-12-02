@@ -29,7 +29,6 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
 import java.util.Map;
 import org.joda.time.DateTime;
 
@@ -137,10 +136,9 @@ class TransactionInfo {
                         if (entry.getValue().equals(Delete.SENTINEL)) {
                           jpaTm().delete(VKey.from(entry.getKey()));
                         } else {
-                          for (SqlEntity entity :
-                              ((DatastoreEntity) entry.getValue()).toSqlEntities()) {
-                            jpaTm().put(entity);
-                          }
+                          ((DatastoreEntity) entry.getValue())
+                              .toSqlEntity()
+                              .ifPresent(jpaTm()::put);
                         }
                       });
             });

@@ -14,18 +14,18 @@
 
 package google.registry.schema.replay;
 
-import com.google.common.collect.ImmutableList;
+import java.util.Optional;
 
 /** An entity that has the same Java object representation in SQL and Datastore. */
 public interface DatastoreAndSqlEntity extends DatastoreEntity, SqlEntity {
 
   @Override
-  default ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(this);
+  default Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.of(this);
   }
 
   @Override
-  default ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of(this);
+  default Optional<SqlEntity> toSqlEntity() {
+    return Optional.of(this);
   }
 }

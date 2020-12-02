@@ -14,9 +14,9 @@
 
 package google.registry.persistence.transaction;
 
-import com.google.common.collect.ImmutableList;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
+import java.util.Optional;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -45,7 +45,7 @@ public class TransactionEntity implements SqlEntity {
   }
 
   @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(); // not stored in Datastore per se
+  public Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.empty(); // Not persisted in Datastore per se
   }
 }
