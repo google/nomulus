@@ -14,7 +14,7 @@
 
 package google.registry.schema.replay;
 
-import com.google.common.collect.ImmutableList;
+import java.util.Optional;
 
 /**
  * Represents an entity that should not participate in asynchronous replication.
@@ -24,12 +24,12 @@ import com.google.common.collect.ImmutableList;
 public interface NonReplicatedEntity extends DatastoreEntity, SqlEntity {
 
   @Override
-  default ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of();
+  default Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.empty();
   }
 
   @Override
-  default ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of();
+  default Optional<SqlEntity> toSqlEntity() {
+    return Optional.empty();
   }
 }

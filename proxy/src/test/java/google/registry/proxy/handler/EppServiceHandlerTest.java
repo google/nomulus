@@ -250,6 +250,20 @@ class EppServiceHandlerTest {
   }
 
   @Test
+  void sendResponseToNextHandler_unrecognizedHeader() throws Exception {
+    setHandshakeSuccess();
+    String content = "<epp>stuff</epp>";
+    HttpResponse response = makeEppHttpResponse(content, HttpResponseStatus.OK);
+    response.headers().set("unrecognized-header", "test");
+    channel.writeOutbound(response);
+    ByteBuf expectedResponse = channel.readOutbound();
+    assertThat(Unpooled.wrappedBuffer(content.getBytes(UTF_8))).isEqualTo(expectedResponse);
+    // Nothing further to pass to the next handler.
+    assertThat((Object) channel.readOutbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
   void testFailure_disconnectOnNonOKResponseStatus() throws Exception {
     setHandshakeSuccess();
     String content = "<epp>stuff</epp>";

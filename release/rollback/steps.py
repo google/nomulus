@@ -123,6 +123,24 @@ def direct_service_traffic_to_version(
 
 
 @dataclasses.dataclass(frozen=True)
+class KillNomulusInstance(RollbackStep):
+    """Step that kills a Nomulus VM instance."""
+    instance_name: str
+
+
+# yapf: disable
+def kill_nomulus_instance(project: str,
+                          version: common.VersionKey,
+                          instance_name: str) -> KillNomulusInstance:
+    # yapf: enable
+    return KillNomulusInstance(
+        'Delete one VM instance.',
+        ('gcloud', 'app', 'instances', 'delete', instance_name, '--quiet',
+         '--user-output-enabled=false', '--service', version.service_id,
+         '--version', version.version_id, '--project', project), instance_name)
+
+
+@dataclasses.dataclass(frozen=True)
 class _UpdateDeployTag(RollbackStep):
     """Updates the deployment tag on GCS."""
 

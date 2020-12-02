@@ -17,7 +17,6 @@ package google.registry.model.domain;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
@@ -250,8 +249,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
 
   // In Datastore, save as a HistoryEntry object regardless of this object's type
   @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(asHistoryEntry());
+  public Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.of(asHistoryEntry());
   }
 
   /** Class to represent the composite primary key of {@link DomainHistory} entity. */

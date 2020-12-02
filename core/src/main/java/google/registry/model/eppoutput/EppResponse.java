@@ -65,6 +65,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
 /**
@@ -86,6 +87,9 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
 
   /** The command result. The RFC allows multiple failure results, but we always return one. */
   Result result;
+
+  /** Indicates if this response is for a login request. */
+  @XmlTransient boolean isLoginResponse = false;
 
   /**
    * Information about messages queued for retrieval. This may appear in response to any EPP message
@@ -178,6 +182,10 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
     return result;
   }
 
+  public boolean isLoginResponse() {
+    return isLoginResponse;
+  }
+
   /** Marker interface for types that can go in the {@link #resData} field. */
   public interface ResponseData {}
 
@@ -220,6 +228,11 @@ public class EppResponse extends ImmutableObject implements ResponseOrGreeting {
 
     public Builder setExtensions(ImmutableList<? extends ResponseExtension> extensions) {
       getInstance().extensions = forceEmptyToNull(extensions);
+      return this;
+    }
+
+    public Builder setIsLoginResponse() {
+      getInstance().isLoginResponse = true;
       return this;
     }
   }

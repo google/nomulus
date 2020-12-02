@@ -11,13 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Declares data types that describe AppEngine services and versions."""
+"""Data types and utilities common to the other modules in this package."""
 
 import dataclasses
+import datetime
 import enum
 import pathlib
 import re
-from typing import Optional
+from typing import Any, Optional, Tuple
+
+from google.protobuf import timestamp_pb2
 
 
 class CannotRollbackError(Exception):
@@ -91,6 +94,13 @@ class VersionConfig(VersionKey):
     manual_scaling_instances: Optional[int] = None
 
 
+@dataclasses.dataclass(frozen=True)
+class VmInstanceInfo:
+    """Information about an AppEngine VM instance."""
+    instance_name: str
+    start_time: datetime.datetime
+
+
 def get_nomulus_root() -> str:
     """Finds the current Nomulus root directory.
 
@@ -109,3 +119,63 @@ def get_nomulus_root() -> str:
 
     raise RuntimeError(
         'Do not move this file out of the Nomulus directory tree.')
+
+
+def list_all_pages(func, data_field: str, *args, **kwargs) -> Tuple[Any, ...]:
+    """Collects all data items from a paginator-based 'List' API.
+
+    Args:
+        func: The GCP API method that supports paged responses.
+        data_field: The field in a response object containing the data
+            items to be returned. This is guaranteed to be an Iterable
+            type.
+        *args: Positional arguments passed to func.
+        *kwargs: Keyword arguments passed to func.
+
+    Returns: An immutable collection of data items assembled from the
+        paged responses.
+    """
+    result_collector = []
+    page_token = None
+    while True:
+        request = func(*args, pageToken=page_token, **kwargs)
+        response = request.execute()
+        result_collector.extend(response.get(data_field, []))
+        page_token = response.get('nextPageToken')
+        if not page_token:
+            return tuple(result_collector)
+
+
+def parse_gcp_timestamp(timestamp: str) -> datetime.datetime:
+    """Parses a timestamp string in GCP API to datetime.
+
+    This method uses protobuf's Timestamp class to parse timestamp strings.
+    This class is used by GCP APIs to parse timestamp strings, and is tolerant
+    to certain cases which can break datetime as of Python 3.8, e.g., the
+    trailing 'Z' as timezone, and fractional seconds with number of digits
+    other than 3 or 6.
+
+    Args:
+        timestamp: A string in RFC 3339 format.
+
+    Returns: A datetime instance.
+    """
+    ts = timestamp_pb2.Timestamp()
+    ts.FromJsonString(timestamp)
+    return ts.ToDatetime()
+
+
+def to_gcp_timestamp(timestamp: datetime.datetime) -> str:
+    """Converts a datetime to string.
+
+    This method uses protobuf's Timestamp class to parse timestamp strings.
+    This class is used by GCP APIs to parse timestamp strings.
+
+    Args:
+        timestamp: The datetime instance to be converted.
+
+    Returns: A string in RFC 3339 format.
+    """
+    ts = timestamp_pb2.Timestamp()
+    ts.FromDatetime(timestamp)
+    return ts.ToJsonString()

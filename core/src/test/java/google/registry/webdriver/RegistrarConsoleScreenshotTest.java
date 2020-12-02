@@ -343,26 +343,6 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
   }
 
   @RetryingTest(3)
-  void settingsSecurityWithHashOnly() throws Throwable {
-    server.runInAppEngineEnvironment(
-        () -> {
-          persistResource(
-              loadRegistrar("TheRegistrar")
-                  .asBuilder()
-                  .setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH)
-                  .build());
-          return null;
-        });
-    driver.manage().window().setSize(new Dimension(1050, 2000));
-    driver.get(server.getUrl("/registrar#security-settings"));
-    driver.waitForDisplayedElement(By.tagName("h1"));
-    driver.diffPage("view");
-    driver.waitForDisplayedElement(By.id("reg-app-btn-edit")).click();
-    driver.waitForDisplayedElement(By.tagName("h1"));
-    driver.diffPage("edit");
-  }
-
-  @RetryingTest(3)
   void index_registrarDisabled() throws Throwable {
     server.runInAppEngineEnvironment(
         () ->

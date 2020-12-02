@@ -14,7 +14,6 @@
 
 package google.registry.model.host;
 
-import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.ImmutableObject;
@@ -112,8 +111,8 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
 
   // In Datastore, save as a HistoryEntry object regardless of this object's type
   @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(asHistoryEntry());
+  public Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.of(asHistoryEntry());
   }
 
   /** Class to represent the composite primary key of {@link HostHistory} entity. */

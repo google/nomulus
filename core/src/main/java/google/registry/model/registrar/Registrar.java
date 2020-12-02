@@ -856,26 +856,6 @@ public class Registrar extends ImmutableObject
       }
     }
 
-    /**
-     * Sets client certificate hash, but not the certificate.
-     *
-     * <p><b>Warning:</b> {@link #setClientCertificate(String, DateTime)} sets the hash for you and
-     * is preferred. Calling this method will nullify the {@code clientCertificate} field.
-     */
-    public Builder setClientCertificateHash(String clientCertificateHash) {
-      if (clientCertificateHash != null) {
-        checkArgument(
-            Pattern.matches("[A-Za-z0-9+/]+", clientCertificateHash),
-            "--cert_hash not a valid base64 (no padding) value");
-        checkArgument(
-            base64().decode(clientCertificateHash).length == 256 / 8,
-            "--cert_hash base64 does not decode to 256 bits");
-      }
-      getInstance().clientCertificate = null;
-      getInstance().clientCertificateHash = clientCertificateHash;
-      return this;
-    }
-
     public Builder setContactsRequireSyncing(boolean contactsRequireSyncing) {
       getInstance().contactsRequireSyncing = contactsRequireSyncing;
       return this;

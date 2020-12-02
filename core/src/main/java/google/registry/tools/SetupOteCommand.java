@@ -66,13 +66,6 @@ final class SetupOteCommand extends ConfirmingCommand implements CommandWithRemo
   private Path certFile;
 
   @Parameter(
-      names = {"-h", "--certhash"},
-      description =
-          "Hash of client certificate (SHA256 base64 no padding). Do not use this unless "
-              + "you want to store ONLY the hash and not the full certificate.")
-  private String certHash;
-
-  @Parameter(
       names = {"--overwrite"},
       description = "Whether to replace existing entities if we encounter any, instead of failing.")
   private boolean overwrite = false;
@@ -89,9 +82,7 @@ final class SetupOteCommand extends ConfirmingCommand implements CommandWithRemo
   /** Run any pre-execute command checks */
   @Override
   protected void init() throws Exception {
-    checkArgument(
-        certFile == null ^ certHash == null,
-        "Must specify exactly one of client certificate file or client certificate hash.");
+    checkArgument(certFile != null, "Must specify exactly one client certificate file.");
 
     password = passwordGenerator.createString(PASSWORD_LENGTH);
     oteAccountBuilder =
@@ -101,16 +92,10 @@ final class SetupOteCommand extends ConfirmingCommand implements CommandWithRemo
             .setIpAllowList(ipAllowList)
             .setReplaceExisting(overwrite);
 
-    if (certFile != null) {
       String asciiCert = MoreFiles.asCharSource(certFile, US_ASCII).read();
       // Don't wait for create_registrar to fail if it's a bad certificate file.
       loadCertificate(asciiCert);
       oteAccountBuilder.setCertificate(asciiCert, clock.nowUtc());
-    }
-
-    if (certHash != null) {
-      oteAccountBuilder.setCertificateHash(certHash);
-    }
   }
 
   @Override

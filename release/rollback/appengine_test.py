@@ -17,11 +17,14 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
+from googleapiclient import http
+
 import appengine
 import common
 
 
-def setup_appengine_admin() -> Tuple[object, object]:
+def setup_appengine_admin(
+) -> Tuple[appengine.AppEngineAdmin, http.HttpRequest]:
     """Helper for setting up a mocked AppEngineAdmin instance.
 
     Returns:
@@ -32,7 +35,7 @@ def setup_appengine_admin() -> Tuple[object, object]:
     # Assign mocked API response to mock_request.execute.
     mock_request = mock.MagicMock()
     mock_request.uri.return_value = 'myuri'
-    # Mocked resource shared by services, versions, and operations.
+    # Mocked resource shared by services, versions, instances, and operations.
     resource = mock.MagicMock()
     resource.list.return_value = mock_request
     resource.get.return_value = mock_request
@@ -41,6 +44,7 @@ def setup_appengine_admin() -> Tuple[object, object]:
     apps = mock.MagicMock()
     apps.services.return_value = resource
     resource.versions.return_value = resource
+    resource.instances.return_value = resource
     apps.operations.return_value = resource
     service_lookup = mock.MagicMock()
     service_lookup.apps.return_value = apps
@@ -65,11 +69,6 @@ class AppEngineTestCase(unittest.TestCase):
             self._mock_request.execute.side_effect = responses
         else:
             self._mock_request.execute.return_value = responses
-
-    def test_checked_request_multipage_raises(self) -> None:
-        self._set_mocked_response({'nextPageToken': ''})
-        self.assertRaises(appengine.PagingError,
-                          self._client.get_serving_versions)
 
     def test_get_serving_versions(self) -> None:
         self._set_mocked_response({

@@ -211,11 +211,6 @@ public final class OteAccountBuilder {
     return transformRegistrars(builder -> builder.setPassword(password));
   }
 
-  /** Sets the client certificate hash to all the OT&amp;E Registrars. */
-  public OteAccountBuilder setCertificateHash(String certHash) {
-    return transformRegistrars(builder -> builder.setClientCertificateHash(certHash));
-  }
-
   /** Sets the client certificate to all the OT&amp;E Registrars. */
   public OteAccountBuilder setCertificate(String asciiCert, DateTime now) {
     return transformRegistrars(builder -> builder.setClientCertificate(asciiCert, now));

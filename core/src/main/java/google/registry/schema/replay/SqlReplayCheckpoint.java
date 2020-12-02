@@ -18,7 +18,7 @@ import static google.registry.model.common.CrossTldSingleton.SINGLETON_ID;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import com.google.common.collect.ImmutableList;
+import java.util.Optional;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
@@ -32,8 +32,8 @@ public class SqlReplayCheckpoint implements SqlEntity {
   private DateTime lastReplayTime;
 
   @Override
-  public ImmutableList<DatastoreEntity> toDatastoreEntities() {
-    return ImmutableList.of(); // not necessary to persist in Datastore
+  public Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.empty(); // Not necessary to persist in Datastore
   }
 
   public static DateTime get() {

@@ -44,13 +44,13 @@ class EppLoginTlsTest extends EppTestCase {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
-            .setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH)
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT, DateTime.now(UTC))
             .build());
     // Set a cert for the second registrar, or else any cert will be allowed for login.
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificateHash(CertificateSamples.SAMPLE_CERT2_HASH)
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT2, DateTime.now(UTC))
             .build());
   }
 

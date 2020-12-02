@@ -51,7 +51,7 @@ class ServiceRollback:
 def _get_service_rollback_plan(
         target_configs: FrozenSet[common.VersionConfig],
         serving_configs: FrozenSet[common.VersionConfig]
-) -> Tuple[ServiceRollback]:
+) -> Tuple[ServiceRollback, ...]:
     # yapf: enable
     """Determines the versions to bring up/down in each service.
 
@@ -111,7 +111,7 @@ def _generate_steps(
         appengine_admin: appengine.AppEngineAdmin,
         env: str,
         target_release: str,
-        rollback_plan: Tuple[ServiceRollback]
+        rollback_plan: Tuple[ServiceRollback, ...]
 ) -> Tuple[steps.RollbackStep, ...]:
     # yapf: enable
     """Generates the sequence of operations for execution.
@@ -158,11 +158,11 @@ def _generate_steps(
 
     for plan in rollback_plan:
         for version in plan.serving_versions:
-            if plan.target_version.scaling != common.AppEngineScaling.AUTOMATIC:
+            if version.scaling != common.AppEngineScaling.AUTOMATIC:
                 rollback_steps.append(
                     steps.start_or_stop_version(appengine_admin.project,
                                                 'stop', version))
-            if plan.target_version.scaling == common.AppEngineScaling.MANUAL:
+            if version.scaling == common.AppEngineScaling.MANUAL:
                 # Release all but one instances. Cannot set num_instances to 0
                 # with this api.
                 rollback_steps.append(
@@ -180,7 +180,7 @@ def _generate_steps(
 
 def get_rollback_plan(gcs_client: gcs.GcsClient,
                       appengine_admin: appengine.AppEngineAdmin, env: str,
-                      target_release: str) -> Tuple[steps.RollbackStep]:
+                      target_release: str) -> Tuple[steps.RollbackStep, ...]:
     """Generates the sequence of rollback operations for execution."""
     target_versions = gcs_client.get_versions_by_release(env, target_release)
     serving_versions = appengine_admin.get_serving_versions()

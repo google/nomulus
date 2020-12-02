@@ -14,7 +14,7 @@
 
 package google.registry.schema.replay;
 
-import com.google.common.collect.ImmutableList;
+import java.util.Optional;
 
 /**
  * An object that can be stored in Datastore and serialized using Objectify's {@link
@@ -26,5 +26,5 @@ import com.google.common.collect.ImmutableList;
  */
 public interface DatastoreEntity {
 
-  ImmutableList<SqlEntity> toSqlEntities();
+  Optional<SqlEntity> toSqlEntity();
 }

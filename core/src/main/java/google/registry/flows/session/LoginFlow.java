@@ -141,7 +141,7 @@ public class LoginFlow implements Flow {
     sessionMetadata.resetFailedLoginAttempts();
     sessionMetadata.setClientId(login.getClientId());
     sessionMetadata.setServiceExtensionUris(serviceExtensionUrisBuilder.build());
-    return responseBuilder.build();
+    return responseBuilder.setIsLoginResponse().build();
   }
 
   /** Registrar with this client ID could not be found. */

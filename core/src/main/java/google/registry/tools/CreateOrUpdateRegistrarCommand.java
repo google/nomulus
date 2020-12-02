@@ -140,15 +140,6 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
 
   @Nullable
   @Parameter(
-    names = "--cert_hash",
-    description =
-        "Hash of client certificate (SHA256 base64 no padding). Do not use this unless "
-            + "you want to store ONLY the hash and not the full certificate"
-  )
-  String clientCertificateHash;
-
-  @Nullable
-  @Parameter(
       names = "--failover_cert_file",
       description = "File containing failover client certificate (X.509 PEM)",
       validateWith = PathParameter.InputFile.class)
@@ -374,14 +365,6 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
           certificateChecker.validateCertificate(asciiCert);
         }
         builder.setFailoverClientCertificate(asciiCert, now);
-      }
-      if (!isNullOrEmpty(clientCertificateHash)) {
-        checkArgument(clientCertificateFilename == null,
-            "Can't specify both --cert_hash and --cert_file");
-        if ("null".equals(clientCertificateHash)) {
-          clientCertificateHash = null;
-        }
-        builder.setClientCertificateHash(clientCertificateHash);
       }
       if (ianaId != null) {
         builder.setIanaIdentifier(ianaId.orElse(null));

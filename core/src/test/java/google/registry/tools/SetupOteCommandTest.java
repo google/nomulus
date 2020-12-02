@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registrar.Registrar.State.ACTIVE;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
-import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -98,8 +97,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
       String registrarName,
       String allowedTld,
       String password,
-      ImmutableList<CidrAddressBlock> ipAllowList,
-      boolean hashOnly) {
+      ImmutableList<CidrAddressBlock> ipAllowList) {
     Registrar registrar = loadRegistrar(registrarName);
     assertThat(registrar).isNotNull();
     assertThat(registrar.getAllowedTlds()).containsExactlyElementsIn(ImmutableSet.of(allowedTld));
@@ -108,18 +106,6 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     assertThat(registrar.verifyPassword(password)).isTrue();
     assertThat(registrar.getIpAddressAllowList()).isEqualTo(ipAllowList);
     assertThat(registrar.getClientCertificateHash()).isEqualTo(SAMPLE_CERT_HASH);
-    // If certificate hash is provided, there's no certificate file stored with the registrar.
-    if (!hashOnly) {
-      assertThat(registrar.getClientCertificate()).isEqualTo(SAMPLE_CERT);
-    }
-  }
-
-  private void verifyRegistrarCreation(
-      String registrarName,
-      String allowedTld,
-      String password,
-      ImmutableList<CidrAddressBlock> ipAllowList) {
-    verifyRegistrarCreation(registrarName, allowedTld, password, ipAllowList, false);
   }
 
   private void verifyRegistrarContactCreation(String registrarName, String email) {
@@ -185,24 +171,6 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  void testSuccess_certificateHash() throws Exception {
-    runCommandForced(
-        "--ip_allow_list=1.1.1.1",
-        "--registrar=blobio",
-        "--email=contact@email.com",
-        "--certhash=" + SAMPLE_CERT_HASH);
-
-    verifyTldCreation("blobio-eap", "BLOBIOE3", GENERAL_AVAILABILITY, true);
-
-    ImmutableList<CidrAddressBlock> ipAddress =
-        ImmutableList.of(CidrAddressBlock.create("1.1.1.1"));
-
-    verifyRegistrarCreation("blobio-5", "blobio-eap", PASSWORD, ipAddress, true);
-
-    verifyRegistrarContactCreation("blobio-5", "contact@email.com");
-  }
-
-  @Test
   void testSuccess_multipleIps() throws Exception {
     runCommandForced(
         "--ip_allow_list=1.1.1.1,2.2.2.2",
@@ -256,7 +224,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   }
 
   @Test
-  void testFailure_missingCertificateFileAndCertificateHash() {
+  void testFailure_missingCertificateFile() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -265,26 +233,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
                     "--ip_allow_list=1.1.1.1", "--email=contact@email.com", "--registrar=blobio"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains(
-            "Must specify exactly one of client certificate file or client certificate hash.");
-  }
-
-  @Test
-  void testFailure_suppliedCertificateFileAndCertificateHash() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                runCommandForced(
-                    "--ip_allow_list=1.1.1.1",
-                    "--email=contact@email.com",
-                    "--registrar=blobio",
-                    "--certfile=" + getCertFilename(),
-                    "--certhash=" + SAMPLE_CERT_HASH));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "Must specify exactly one of client certificate file or client certificate hash.");
+        .contains("Must specify exactly one client certificate file.");
   }
 
   @Test

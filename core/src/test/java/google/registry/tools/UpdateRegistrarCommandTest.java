@@ -21,7 +21,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3_HASH;
-import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -340,14 +339,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   }
 
   @Test
-  void testSuccess_certHash() throws Exception {
-    assertThat(loadRegistrar("NewRegistrar").getClientCertificateHash()).isNull();
-    runCommand("--cert_hash=" + SAMPLE_CERT_HASH, "--force", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").getClientCertificateHash())
-        .isEqualTo(SAMPLE_CERT_HASH);
-  }
-
-  @Test
   void testSuccess_clearCert() throws Exception {
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -357,18 +348,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     assertThat(isNullOrEmpty(loadRegistrar("NewRegistrar").getClientCertificate())).isFalse();
     runCommand("--cert_file=/dev/null", "--force", "NewRegistrar");
     assertThat(loadRegistrar("NewRegistrar").getClientCertificate()).isNull();
-  }
-
-  @Test
-  void testSuccess_clearCertHash() throws Exception {
-    persistResource(
-        loadRegistrar("NewRegistrar")
-            .asBuilder()
-            .setClientCertificateHash(SAMPLE_CERT_HASH)
-            .build());
-    assertThat(isNullOrEmpty(loadRegistrar("NewRegistrar").getClientCertificateHash())).isFalse();
-    runCommand("--cert_hash=null", "--force", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").getClientCertificateHash()).isNull();
   }
 
   @Test
@@ -760,18 +739,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     assertThrows(
         Exception.class,
         () -> runCommand("--cert_file=" + writeToTmpFile("ABCDEF"), "--force", "NewRegistrar"));
-  }
-
-  @Test
-  void testFailure_certHashAndCertFile() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            runCommand(
-                "--cert_file=" + getCertFilename(SAMPLE_CERT3),
-                "--cert_hash=ABCDEF",
-                "--force",
-                "NewRegistrar"));
   }
 
   @Test

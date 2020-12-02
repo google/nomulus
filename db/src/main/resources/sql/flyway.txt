@@ -77,3 +77,4 @@ V76__change_history_nullability.sql
 V77__fixes_for_replay.sql
 V78__add_history_id_for_redemption_history_entry.sql
 V79__drop_foreign_keys_on_pollmessage.sql
+V80__defer_bill_event_key.sql

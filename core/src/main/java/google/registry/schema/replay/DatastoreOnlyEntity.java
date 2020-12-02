@@ -14,11 +14,12 @@
 
 package google.registry.schema.replay;
 
-import com.google.common.collect.ImmutableList;
+import java.util.Optional;
 
+/** An entity that is only stored in Datastore, that should not be replayed to SQL. */
 public interface DatastoreOnlyEntity extends DatastoreEntity {
   @Override
-  default ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of();
+  default Optional<SqlEntity> toSqlEntity() {
+    return Optional.empty();
   }
 }

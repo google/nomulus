@@ -21,7 +21,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3_HASH;
-import static google.registry.testing.CertificateSamples.SAMPLE_CERT_HASH;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -445,29 +444,6 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 + " than or equal to 398 days.");
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isEmpty();
-  }
-
-  @Test
-  void testSuccess_clientCertHashFlag() throws Exception {
-    runCommandForced(
-        "--name=blobio",
-        "--password=some_password",
-        "--registrar_type=REAL",
-        "--iana_id=8",
-        "--cert_hash=" + SAMPLE_CERT_HASH,
-        "--passcode=01234",
-        "--icann_referral_email=foo@bar.test",
-        "--street=\"123 Fake St\"",
-        "--city Fakington",
-        "--state MA",
-        "--zip 00351",
-        "--cc US",
-        "clientz");
-
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
-    assertThat(registrar).isPresent();
-    assertThat(registrar.get().getClientCertificate()).isNull();
-    assertThat(registrar.get().getClientCertificateHash()).isEqualTo(SAMPLE_CERT_HASH);
   }
 
   @Test
@@ -1180,74 +1156,6 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
                 "--zip 00351",
                 "--cc US",
                 "clientz"));
-  }
-
-  @Test
-  void testFailure_certHashAndCertFile() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            runCommandForced(
-                "--name=blobio",
-                "--password=some_password",
-                "--registrar_type=REAL",
-                "--iana_id=8",
-                "--cert_file=" + getCertFilename(),
-                "--cert_hash=ABCDEF",
-                "--passcode=01234",
-                "--icann_referral_email=foo@bar.test",
-                "--street=\"123 Fake St\"",
-                "--city Fakington",
-                "--state MA",
-                "--zip 00351",
-                "--cc US",
-                "clientz"));
-  }
-
-  @Test
-  void testFailure_certHashNotBase64() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                runCommandForced(
-                    "--name=blobio",
-                    "--password=some_password",
-                    "--registrar_type=REAL",
-                    "--iana_id=8",
-                    "--cert_hash=!",
-                    "--passcode=01234",
-                    "--icann_referral_email=foo@bar.test",
-                    "--street=\"123 Fake St\"",
-                    "--city Fakington",
-                    "--state MA",
-                    "--zip 00351",
-                    "--cc US",
-                    "clientz"));
-    assertThat(thrown).hasMessageThat().contains("base64");
-  }
-
-  @Test
-  void testFailure_certHashNotA256BitValue() {
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () ->
-                runCommandForced(
-                    "--name=blobio",
-                    "--password=some_password",
-                    "--registrar_type=REAL",
-                    "--iana_id=8",
-                    "--cert_hash=abc",
-                    "--passcode=01234",
-                    "--icann_referral_email=foo@bar.test",
-                    "--street=\"123 Fake St\"",
-                    "--city Fakington",
-                    "--state MA",
-                    "--zip 00351",
-                    "--cc US",
-                    "clientz"));
-    assertThat(thrown).hasMessageThat().contains("256");
   }
 
   @Test

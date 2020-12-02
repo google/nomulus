@@ -18,7 +18,6 @@ import static com.googlecode.objectify.Key.getKind;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
@@ -45,6 +44,7 @@ import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
+import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
@@ -314,8 +314,8 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
 
   // In SQL, save the child type
   @Override
-  public ImmutableList<SqlEntity> toSqlEntities() {
-    return ImmutableList.of((SqlEntity) toChildHistoryEntity());
+  public Optional<SqlEntity> toSqlEntity() {
+    return Optional.of((SqlEntity) toChildHistoryEntity());
   }
 
   /** Creates a {@link VKey} instance from a {@link Key} instance. */

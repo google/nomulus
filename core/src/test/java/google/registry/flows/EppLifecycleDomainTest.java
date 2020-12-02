@@ -501,7 +501,7 @@ class EppLifecycleDomainTest extends EppTestCase {
 
   @Test
   void testEapDomainDeletion_withinAddGracePeriod_eapFeeIsNotRefunded() throws Exception {
-    assertThatCommand("login_valid_fee_extension.xml").hasResponse("generic_success_response.xml");
+    assertThatCommand("login_valid_fee_extension.xml").hasSuccessfulLogin();
     createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
 
     // Set the EAP schedule.
@@ -718,7 +718,7 @@ class EppLifecycleDomainTest extends EppTestCase {
             START_OF_TIME, PREDELEGATION,
             gaDate, GENERAL_AVAILABILITY));
 
-    assertThatCommand("login_valid_fee_extension.xml").hasResponse("generic_success_response.xml");
+    assertThatCommand("login_valid_fee_extension.xml").hasSuccessfulLogin();
 
     assertThatCommand("domain_check_fee_premium.xml")
         .atTime(gaDate.plusDays(1))
@@ -1196,7 +1196,7 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .atTime(sunriseDate.minusDays(3))
-        .hasResponse("generic_success_response.xml");
+        .hasSuccessfulLogin();
 
     createContactsAndHosts();
 
@@ -1292,7 +1292,7 @@ class EppLifecycleDomainTest extends EppTestCase {
 
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .atTime(sunriseDate.minusDays(3))
-        .hasResponse("generic_success_response.xml");
+        .hasSuccessfulLogin();
 
     createContactsAndHosts();
 
