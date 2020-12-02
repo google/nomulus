@@ -121,6 +121,10 @@ public class EppTestCase {
       return assertCommandAndResponse(
           inputFilename, inputSubstitutions, outputFilename, outputSubstitutions, now);
     }
+
+    public String hasSuccessfulLogin() throws Exception {
+      return assertLoginCommandAndResponse(inputFilename, inputSubstitutions, null, now);
+    }
   }
 
   protected CommandAsserter assertThatCommand(String inputFilename) {
@@ -137,11 +141,31 @@ public class EppTestCase {
   }
 
   protected void assertThatLoginSucceeds(String clientId, String password) throws Exception {
-    assertThatLogin(clientId, password).hasResponse("generic_success_response.xml");
+    assertThatLogin(clientId, password).hasSuccessfulLogin();
   }
 
   protected void assertThatLogoutSucceeds() throws Exception {
     assertThatCommand("logout.xml").hasResponse("logout_response.xml");
+  }
+
+  private String assertLoginCommandAndResponse(
+      String inputFilename,
+      @Nullable Map<String, String> inputSubstitutions,
+      @Nullable Map<String, String> outputSubstitutions,
+      DateTime now)
+      throws Exception {
+    String outputFilename = "generic_success_response.xml";
+    clock.setTo(now);
+    String input = loadFile(EppTestCase.class, inputFilename, inputSubstitutions);
+    String expectedOutput = loadFile(EppTestCase.class, outputFilename, outputSubstitutions);
+    setUpSession();
+    FakeResponse response = executeXmlCommand(input);
+
+    // Check that the logged-in header was added to the response
+    assertThat(response.getHeaders()).isEqualTo(ImmutableMap.of("Logged-In", "true"));
+
+    return verifyAndReturnOutput(
+        response.getPayload(), expectedOutput, inputFilename, outputFilename);
   }
 
   private String assertCommandAndResponse(
@@ -154,6 +178,18 @@ public class EppTestCase {
     clock.setTo(now);
     String input = loadFile(EppTestCase.class, inputFilename, inputSubstitutions);
     String expectedOutput = loadFile(EppTestCase.class, outputFilename, outputSubstitutions);
+    setUpSession();
+    FakeResponse response = executeXmlCommand(input);
+
+    // Checks that the Logged-In header is not in the response. If testing the login command, use
+    // assertLoginCommandAndResponse instead of this method.
+    assertThat(response.getHeaders()).doesNotContainEntry("Logged-In", "true");
+
+    return verifyAndReturnOutput(
+        response.getPayload(), expectedOutput, inputFilename, outputFilename);
+  }
+
+  private void setUpSession() {
     if (sessionMetadata == null) {
       sessionMetadata =
           new HttpSessionMetadata(new FakeHttpSession()) {
@@ -165,7 +201,13 @@ public class EppTestCase {
             }
           };
     }
-    String actualOutput = executeXmlCommand(input);
+  }
+
+  private String verifyAndReturnOutput(
+      String actualOutput, String expectedOutput, String inputFilename, String outputFilename)
+      throws Exception {
+    // Run the resulting xml through the unmarshaller to verify that it was valid.
+    EppXmlTransformer.validateOutput(actualOutput);
     assertXmlEqualsWithMessage(
         expectedOutput,
         actualOutput,
@@ -176,7 +218,7 @@ public class EppTestCase {
     return actualOutput;
   }
 
-  private String executeXmlCommand(String inputXml) throws Exception {
+  private FakeResponse executeXmlCommand(String inputXml) throws Exception {
     EppRequestHandler handler = new EppRequestHandler();
     FakeResponse response = new FakeResponse();
     handler.response = response;
@@ -195,10 +237,7 @@ public class EppTestCase {
         inputXml.getBytes(UTF_8));
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getContentType()).isEqualTo(APPLICATION_EPP_XML_UTF8);
-    String result = response.getPayload();
-    // Run the resulting xml through the unmarshaller to verify that it was valid.
-    EppXmlTransformer.validateOutput(result);
-    return result;
+    return response;
   }
 
   EppMetric getRecordedEppMetric() {

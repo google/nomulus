@@ -74,6 +74,14 @@ public class EppRequestHandler {
           && eppOutput.getResponse().getResult().getCode() == SUCCESS_AND_CLOSE) {
         response.setHeader("Epp-Session", "close");
       }
+      // If a login request returns a success, a logged-in header is added to the response to inform
+      // the proxy that it is no longer necessary to send the full client certificate to the backend
+      // for this connection.
+      if (eppOutput.isResponse()
+          && eppOutput.getResponse().isLoginResponse()
+          && eppOutput.isSuccess()) {
+        response.setHeader("Logged-In", "true");
+      }
     } catch (Exception e) {
       logger.atWarning().withCause(e).log("handleEppCommand general exception");
       response.setStatus(SC_BAD_REQUEST);
