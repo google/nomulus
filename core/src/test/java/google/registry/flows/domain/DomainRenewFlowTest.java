@@ -26,6 +26,7 @@ import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistResources;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.HistoryEntrySubject.assertAboutHistoryEntries;
@@ -39,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
 import google.registry.flows.ResourceFlowTestCase;
@@ -69,12 +71,18 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
+import google.registry.testing.ReplayExtension;
 import java.util.Map;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainRenewFlow}. */
 class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBase> {
@@ -96,50 +104,66 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
 
   private final DateTime expirationTime = DateTime.parse("2000-04-03T22:00:00.0Z");
 
+  @Order(value = Order.DEFAULT - 3)
+  @RegisterExtension
+  final SetClockExtension setClockExtension = new SetClockExtension();
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = new ReplayExtension(clock);
+
   @BeforeEach
   void initDomainTest() {
     createTld("tld");
-    clock.setTo(expirationTime.minusMillis(2));
     setEppInput("domain_renew.xml", ImmutableMap.of("DOMAIN", "example.tld", "YEARS", "5"));
   }
 
   private void persistDomain(StatusValue... statusValues) throws Exception {
     DomainBase domain = newDomainBase(getUniqueIdFromCommand());
-    HistoryEntry historyEntryDomainCreate =
-        persistResource(
-            new HistoryEntry.Builder()
-                .setParent(domain)
-                .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                .build());
-    BillingEvent.Recurring autorenewEvent =
-        persistResource(
-            new BillingEvent.Recurring.Builder()
-                .setReason(Reason.RENEW)
-                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-                .setTargetId(getUniqueIdFromCommand())
-                .setClientId("TheRegistrar")
-                .setEventTime(expirationTime)
-                .setRecurrenceEndTime(END_OF_TIME)
-                .setParent(historyEntryDomainCreate)
-                .build());
-    PollMessage.Autorenew autorenewPollMessage =
-        persistResource(
-            new PollMessage.Autorenew.Builder()
-                .setTargetId(getUniqueIdFromCommand())
-                .setClientId("TheRegistrar")
-                .setEventTime(expirationTime)
-                .setAutorenewEndTime(END_OF_TIME)
-                .setMsg("Domain was auto-renewed.")
-                .setParent(historyEntryDomainCreate)
-                .build());
-    persistResource(
-        domain
-            .asBuilder()
-            .setRegistrationExpirationTime(expirationTime)
-            .setStatusValues(ImmutableSet.copyOf(statusValues))
-            .setAutorenewBillingEvent(autorenewEvent.createVKey())
-            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
-            .build());
+    tm().transact(
+            () -> {
+              try {
+                HistoryEntry historyEntryDomainCreate =
+                    new HistoryEntry.Builder()
+                        .setParent(domain)
+                        .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                        .setModificationTime(clock.nowUtc())
+                        .build();
+                BillingEvent.Recurring autorenewEvent =
+                    new BillingEvent.Recurring.Builder()
+                        .setReason(Reason.RENEW)
+                        .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                        .setTargetId(getUniqueIdFromCommand())
+                        .setClientId("TheRegistrar")
+                        .setEventTime(expirationTime)
+                        .setRecurrenceEndTime(END_OF_TIME)
+                        .setParent(historyEntryDomainCreate)
+                        .build();
+                PollMessage.Autorenew autorenewPollMessage =
+                    new PollMessage.Autorenew.Builder()
+                        .setTargetId(getUniqueIdFromCommand())
+                        .setClientId("TheRegistrar")
+                        .setEventTime(expirationTime)
+                        .setAutorenewEndTime(END_OF_TIME)
+                        .setMsg("Domain was auto-renewed.")
+                        .setParent(historyEntryDomainCreate)
+                        .build();
+                DomainBase newDomain =
+                    domain
+                        .asBuilder()
+                        .setRegistrationExpirationTime(expirationTime)
+                        .setStatusValues(ImmutableSet.copyOf(statusValues))
+                        .setAutorenewBillingEvent(autorenewEvent.createVKey())
+                        .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+                        .build();
+                persistResources(
+                    ImmutableSet.of(
+                        historyEntryDomainCreate, autorenewEvent,
+                        autorenewPollMessage, newDomain));
+              } catch (Exception e) {
+                throw new RuntimeException("Error persisting domain", e);
+              }
+            });
     clock.advanceOneMilli();
   }
 
@@ -255,6 +279,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
 
   @Test
   void testSuccess() throws Exception {
+    clock.advanceOneMilli();
     persistDomain();
     doSuccessfulTest(
         "domain_renew_response.xml",
@@ -788,5 +813,22 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
                 historyEntry.getModificationTime().plusMinutes(9),
                 TransactionReportField.netRenewsFieldFromYears(5),
                 1));
+  }
+
+  /**
+   * Local extension so we can set the clock correctly prior to using it to define basic entities in
+   * AppEngineExtension.
+   *
+   * <p>This has to happen first, we'll get timestamp inversions if we try to set the clock after
+   * these objects are created.
+   */
+  class SetClockExtension implements BeforeEachCallback {
+    @Override
+    public void beforeEach(ExtensionContext context) {
+      // we have to go far enough back before the expiration time so that the clock advances we do
+      // after each persist don't move us into a grace period.  The current value is likely beyond
+      // what is necessary, but this doesn't hurt.
+      clock.setTo(expirationTime.minusMillis(20));
+    }
   }
 }
