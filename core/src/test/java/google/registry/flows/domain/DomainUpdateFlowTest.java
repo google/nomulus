@@ -90,11 +90,14 @@ import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.testing.ReplayExtension;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainUpdateFlow}. */
 class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, DomainBase> {
@@ -111,6 +114,10 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   private ContactResource sh8013Contact;
   private ContactResource mak21Contact;
   private ContactResource unusedContact;
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = new ReplayExtension(clock);
 
   @BeforeEach
   void initDomainTest() {
@@ -146,6 +153,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         new HistoryEntry.Builder()
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .setModificationTime(clock.nowUtc())
             .setParent(domain)
             .build());
     clock.advanceOneMilli();
@@ -168,6 +176,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistResource(
         new HistoryEntry.Builder()
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .setModificationTime(clock.nowUtc())
             .setParent(domain)
             .build());
     clock.advanceOneMilli();
