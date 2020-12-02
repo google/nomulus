@@ -17,6 +17,15 @@ package google.registry.model.ofy;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 
+/**
+ * Contains the mapping from class names to SQL-replay-write priorities.
+ *
+ * <p>When replaying Datastore commit logs to SQL (asynchronous replication), in order to avoid
+ * issues with foreign keys, we should replay entity writes so that foreign key references are
+ * always written after the entity that they reference. This class represents that DAG, where lower
+ * values represent an earlier write (and later delete). Higher-valued classes can have foreign keys
+ * on lower-valued classes, but not vice versa.
+ */
 public class EntityWritePriorities {
 
   /**
