@@ -37,11 +37,9 @@ import static org.mockito.Mockito.verify;
 
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth8;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
@@ -304,17 +302,11 @@ public class ReplayCommitLogsToSqlActionTest {
     // 1. that the contact insert occurred before the domain insert (necessary for FK ordering)
     //    even though the domain came first in the file
     // 2. that the allocation token delete occurred after the insertions
-    ArgumentCaptor<ImmutableCollection> collectionCaptor =
-        ArgumentCaptor.forClass(ImmutableCollection.class);
     InOrder inOrder = Mockito.inOrder(spy);
-    inOrder.verify(spy, times(2)).putAll(collectionCaptor.capture());
-    assertThat(
-            collectionCaptor.getAllValues().stream()
-                .map(Iterables::getOnlyElement)
-                .map(Object::getClass)
-                .collect(toImmutableList()))
-        .isEqualTo(ImmutableList.of(ContactResource.class, DomainBase.class));
+    inOrder.verify(spy).put(any(ContactResource.class));
+    inOrder.verify(spy).put(any(DomainBase.class));
     inOrder.verify(spy).delete(toDelete.createVKey());
+    inOrder.verify(spy).put(any(SqlReplayCheckpoint.class));
   }
 
   @Test
@@ -351,13 +343,11 @@ public class ReplayCommitLogsToSqlActionTest {
     runAndAssertSuccess(now.minusMinutes(1).plusMillis(1));
     // Verify that the delete occurred first (because it was in the first transaction) even though
     // deletes have higher weight
-    ArgumentCaptor<ImmutableCollection> collectionCaptor =
-        ArgumentCaptor.forClass(ImmutableCollection.class);
+    ArgumentCaptor<Object> putCaptor = ArgumentCaptor.forClass(Object.class);
     InOrder inOrder = Mockito.inOrder(spy);
     inOrder.verify(spy).delete(contact.createVKey());
-    inOrder.verify(spy).putAll(collectionCaptor.capture());
-    assertThat(Iterables.getOnlyElement(collectionCaptor.getValue()).getClass())
-        .isEqualTo(ContactResource.class);
+    inOrder.verify(spy).put(putCaptor.capture());
+    assertThat(putCaptor.getValue().getClass()).isEqualTo(ContactResource.class);
     assertThat(jpaTm().transact(() -> jpaTm().load(contact.createVKey()).getEmailAddress()))
         .isEqualTo("replay@example.tld");
   }
@@ -395,10 +385,9 @@ public class ReplayCommitLogsToSqlActionTest {
               }
             });
     runAndAssertSuccess(now.minusMinutes(1));
-    // It should have called putAll twice with empty lists
-    ArgumentCaptor<ImmutableCollection> captor = ArgumentCaptor.forClass(ImmutableCollection.class);
-    verify(spy, times(2)).putAll(captor.capture());
-    captor.getAllValues().forEach(coll -> assertThat(coll).isEmpty());
+    // jpaTm()::put should only have been called with the checkpoint
+    verify(spy, times(2)).put(any(SqlReplayCheckpoint.class));
+    verify(spy, times(2)).put(any());
   }
 
   @Test

@@ -37,7 +37,6 @@ import google.registry.request.auth.Auth;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.schema.replay.NonReplicatedEntity;
-import google.registry.schema.replay.SqlEntity;
 import google.registry.schema.replay.SqlReplayCheckpoint;
 import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
@@ -152,8 +151,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     Object ofyPojo = ofy().toPojo(entity);
     if (ofyPojo instanceof DatastoreEntity) {
       DatastoreEntity datastoreEntity = (DatastoreEntity) ofyPojo;
-      ImmutableList<SqlEntity> convertedEntities = datastoreEntity.toSqlEntities();
-      jpaTm().putAll(convertedEntities);
+      datastoreEntity.toSqlEntity().ifPresent(jpaTm()::put);
     } else {
       // this should never happen, but we shouldn't fail on it
       logger.atSevere().log(
