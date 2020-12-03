@@ -20,6 +20,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.filterValues;
 import static com.google.common.collect.Maps.toMap;
 import static google.registry.model.ofy.CommitLogBucket.getArbitraryBucketId;
+import static google.registry.model.ofy.EntityWritePriorities.getEntityPriority;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
@@ -60,7 +61,7 @@ class TransactionInfo {
 
   TransactionInfo(DateTime now) {
     this.transactionTime = now;
-    ofy().load().key(bucketKey);  // Asynchronously load value into session cache.
+    ofy().load().key(bucketKey); // Asynchronously load value into session cache.
   }
 
   TransactionInfo setReadOnly() {
@@ -100,23 +101,10 @@ class TransactionInfo {
         .collect(toImmutableSet());
   }
 
-  // Mapping from class name to "weight" (which in this case is the order in which the class must
-  // be "put" in a transaction with respect to instances of other classes).  Lower weight classes
-  // are put first, by default all classes have a weight of zero.
-  static final ImmutableMap<String, Integer> CLASS_WEIGHTS =
-      ImmutableMap.of(
-          "HistoryEntry", -1,
-          "DomainBase", 1);
-
-  // The beginning of the range of weights reserved for delete.  This must be greater than any of
-  // the values in CLASS_WEIGHTS by enough overhead to accomodate any negative values in it.
-  @VisibleForTesting static final int DELETE_RANGE = Integer.MAX_VALUE / 2;
-
   /** Returns the weight of the entity type in the map entry. */
   @VisibleForTesting
   static int getWeight(ImmutableMap.Entry<Key<?>, Object> entry) {
-    int weight = CLASS_WEIGHTS.getOrDefault(entry.getKey().getKind(), 0);
-    return entry.getValue().equals(Delete.SENTINEL) ? DELETE_RANGE - weight : weight;
+    return getEntityPriority(entry.getKey().getKind(), entry.getValue().equals(Delete.SENTINEL));
   }
 
   private static int compareByWeight(

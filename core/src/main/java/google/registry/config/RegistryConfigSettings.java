@@ -126,6 +126,7 @@ public class RegistryConfigSettings {
     public String username;
     public String instanceConnectionName;
     public boolean replicateTransactions;
+    public boolean replayCommitLogs;
   }
 
   /** Configuration for Apache Beam (Cloud Dataflow). */
