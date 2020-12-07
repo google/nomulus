@@ -290,7 +290,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "allocationToken")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_event_id"))
-  @WithLongVKey
+  @WithLongVKey(compositeKey = true)
   public static class OneTime extends BillingEvent implements DatastoreAndSqlEntity {
 
     /** The billable value. */
@@ -464,7 +464,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "recurrence_time_of_year")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_recurrence_id"))
-  @WithLongVKey
+  @WithLongVKey(compositeKey = true)
   public static class Recurring extends BillingEvent implements DatastoreAndSqlEntity {
 
     /**
@@ -559,7 +559,7 @@ public abstract class BillingEvent extends ImmutableObject
         @javax.persistence.Index(columnList = "billingTime")
       })
   @AttributeOverride(name = "id", column = @Column(name = "billing_cancellation_id"))
-  @WithLongVKey
+  @WithLongVKey(compositeKey = true)
   public static class Cancellation extends BillingEvent implements DatastoreAndSqlEntity {
 
     /** The billing time of the charge that is being cancelled. */
@@ -680,7 +680,7 @@ public abstract class BillingEvent extends ImmutableObject
   /** An event representing a modification of an existing one-time billing event. */
   @ReportedOn
   @Entity
-  @WithLongVKey
+  @WithLongVKey(compositeKey = true)
   public static class Modification extends BillingEvent implements DatastoreOnlyEntity {
 
     /** The change in cost that should be applied to the original billing event. */

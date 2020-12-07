@@ -84,10 +84,10 @@ public class DomainBaseSqlTest {
     saveRegistrar("registrar1");
     saveRegistrar("registrar2");
     saveRegistrar("registrar3");
-    contactKey = VKey.createSql(ContactResource.class, "contact_id1");
-    contact2Key = VKey.createSql(ContactResource.class, "contact_id2");
+    contactKey = createKey(ContactResource.class, "contact_id1");
+    contact2Key = createKey(ContactResource.class, "contact_id2");
 
-    host1VKey = VKey.createSql(HostResource.class, "host1");
+    host1VKey = createKey(HostResource.class, "host1");
 
     domain =
         new DomainBase.Builder()
@@ -694,6 +694,10 @@ public class DomainBaseSqlTest {
     assertThat(persistedTransferData.getServerApproveAutorenewPollMessage())
         .isEqualTo(originalTransferData.getServerApproveAutorenewPollMessage());
     assertThat(domain.getGracePeriods()).isEqualTo(gracePeriods);
+  }
+
+  private <T> VKey<T> createKey(Class<T> clazz, String name) {
+    return VKey.create(clazz, name, Key.create(clazz, name));
   }
 
   private <T> VKey<T> createLegacyVKey(Class<T> clazz, long id) {

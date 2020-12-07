@@ -19,8 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.testing.AppEngineExtension;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.jupiter.api.Test;
@@ -30,36 +29,61 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class StringVKeyConverterTest {
 
   @RegisterExtension
-  public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder()
-          .withEntityClass(TestEntity.class, VKeyConverter_StringType.class)
-          .buildUnitTestRule();
+  public final AppEngineExtension appEngineExtension =
+      new AppEngineExtension.Builder()
+          .withDatastoreAndCloudSql()
+          .withoutCannedData()
+          .withJpaUnitTestEntities(
+              TestStringEntity.class,
+              VKeyConverter_StringType.class,
+              VKeyConverter_CompositeStringType.class)
+          .withOfyTestEntities(TestStringEntity.class, CompositeKeyTestStringEntity.class)
+          .build();
 
   @Test
   void testRoundTrip() {
-    TestEntity original =
-        new TestEntity("TheRealSpartacus", VKey.createSql(TestEntity.class, "ImSpartacus!"));
+    TestStringEntity original =
+        new TestStringEntity(
+            "TheRealSpartacus",
+            VKey.createSql(TestStringEntity.class, "ImSpartacus!"),
+            VKey.createSql(CompositeKeyTestStringEntity.class, "NoImSpartacus!"));
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(original));
 
-    TestEntity retrieved =
+    TestStringEntity retrieved =
         jpaTm()
-            .transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "TheRealSpartacus"));
+            .transact(
+                () -> jpaTm().getEntityManager().find(TestStringEntity.class, "TheRealSpartacus"));
     assertThat(retrieved.other.getSqlKey()).isEqualTo("ImSpartacus!");
+    assertThat(retrieved.other.getOfyKey().getName()).isEqualTo("ImSpartacus!");
+
+    assertThat(retrieved.composite.getSqlKey()).isEqualTo("NoImSpartacus!");
+    assertThat(retrieved.composite.maybeGetOfyKey().isPresent()).isFalse();
   }
 
-  @Entity(name = "TestEntity")
+  @Entity(name = "TestStringEntity")
+  @com.googlecode.objectify.annotation.Entity
   @WithStringVKey(classNameSuffix = "StringType")
-  static class TestEntity {
-    @Id String id;
+  static class TestStringEntity {
+    @com.googlecode.objectify.annotation.Id @Id String id;
 
-    VKey<TestEntity> other;
+    VKey<TestStringEntity> other;
+    VKey<CompositeKeyTestStringEntity> composite;
 
-    TestEntity(String id, VKey<TestEntity> other) {
+    TestStringEntity(
+        String id, VKey<TestStringEntity> other, VKey<CompositeKeyTestStringEntity> composite) {
       this.id = id;
       this.other = other;
+      this.composite = composite;
     }
 
     /** Default constructor, needed for hibernate. */
-    public TestEntity() {}
+    public TestStringEntity() {}
+  }
+
+  @Entity(name = "CompositeKeyTestStringEntity")
+  @com.googlecode.objectify.annotation.Entity
+  @WithStringVKey(classNameSuffix = "CompositeStringType", compositeKey = true)
+  static class CompositeKeyTestStringEntity {
+    @com.googlecode.objectify.annotation.Id @Id String id = "id";
   }
 }

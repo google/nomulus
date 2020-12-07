@@ -27,11 +27,14 @@ import com.squareup.javapoet.TypeSpec;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -47,8 +50,11 @@ import javax.persistence.Converter;
 public abstract class AbstractVKeyProcessor extends AbstractProcessor {
 
   private static final String CONVERTER_CLASS_NAME_TEMP = "VKeyConverter_%s";
-  // The method with same name should be defined in StringVKey and LongVKey
+  // The method with same name should be defined in WithStringVKey and WithLongVKey
   private static final String CLASS_NAME_SUFFIX_KEY = "classNameSuffix";
+
+  // Method in WithStringVKey and WithLongVKey to indicate that this is a composite key.
+  private static final String COMPOSITE_KEY_KEY = "compositeKey";
 
   abstract Class<?> getSqlColumnType();
 
@@ -76,18 +82,18 @@ public abstract class AbstractVKeyProcessor extends AbstractProcessor {
                         actualAnnotation.size() == 1,
                         String.format(
                             "type can have only 1 %s annotation", getAnnotationSimpleName()));
-                    String converterClassNameSuffix =
-                        actualAnnotation.get(0).getElementValues().entrySet().stream()
-                            .filter(
-                                entry ->
-                                    entry
-                                        .getKey()
-                                        .getSimpleName()
-                                        .toString()
-                                        .equals(CLASS_NAME_SUFFIX_KEY))
-                            .map(entry -> ((String) entry.getValue().getValue()).trim())
-                            .findFirst()
-                            .orElse("");
+                    String converterClassNameSuffix = "";
+                    boolean hasCompositeOfyKey = false;
+                    for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
+                        actualAnnotation.get(0).getElementValues().entrySet()) {
+                      String keyName = entry.getKey().getSimpleName().toString();
+                      Object value = entry.getValue().getValue();
+                      if (keyName.equals(CLASS_NAME_SUFFIX_KEY)) {
+                        converterClassNameSuffix = ((String) value).trim();
+                      } else if (keyName.equals(COMPOSITE_KEY_KEY)) {
+                        hasCompositeOfyKey = (Boolean) value;
+                      }
+                    }
                     if (converterClassNameSuffix.isEmpty()) {
                       converterClassNameSuffix =
                           getTypeUtils().asElement(entityType).getSimpleName().toString();
@@ -97,7 +103,8 @@ public abstract class AbstractVKeyProcessor extends AbstractProcessor {
                       createJavaFile(
                               getPackageName(annotatedTypeElement),
                               String.format(CONVERTER_CLASS_NAME_TEMP, converterClassNameSuffix),
-                              entityType)
+                              entityType,
+                              hasCompositeOfyKey)
                           .writeTo(processingEnv.getFiler());
                     } catch (IOException e) {
                       throw new UncheckedIOException(e);
@@ -108,7 +115,10 @@ public abstract class AbstractVKeyProcessor extends AbstractProcessor {
   }
 
   private JavaFile createJavaFile(
-      String packageName, String converterClassName, TypeMirror entityTypeMirror) {
+      String packageName,
+      String converterClassName,
+      TypeMirror entityTypeMirror,
+      boolean hasCompositeOfyKey) {
     TypeName entityType = ClassName.get(entityTypeMirror);
 
     ParameterizedTypeName attributeConverter =
@@ -127,7 +137,7 @@ public abstract class AbstractVKeyProcessor extends AbstractProcessor {
             .addStatement("return $T.class", entityType)
             .build();
 
-    TypeSpec vKeyConverter =
+    TypeSpec.Builder classBuilder =
         TypeSpec.classBuilder(converterClassName)
             .addAnnotation(
                 AnnotationSpec.builder(ClassName.get(Converter.class))
@@ -135,9 +145,24 @@ public abstract class AbstractVKeyProcessor extends AbstractProcessor {
                     .build())
             .addModifiers(Modifier.FINAL)
             .superclass(attributeConverter)
-            .addMethod(getAttributeClass)
-            .build();
+            .addMethod(getAttributeClass);
 
+    // If this is a converter for a composite vkey type, generate an override for the default
+    // {@link google.registry.persistence.VKeyConverter.hasCompositeOfyKey()} method, which returns
+    // false.
+    if (hasCompositeOfyKey) {
+      MethodSpec hasCompositeOfyKeyMethod =
+          MethodSpec.methodBuilder("hasCompositeOfyKey")
+              .addAnnotation(Override.class)
+              .addModifiers(Modifier.PROTECTED)
+              .returns(boolean.class)
+              .addStatement("return true", entityType)
+              .build();
+
+      classBuilder.addMethod(hasCompositeOfyKeyMethod);
+    }
+
+    TypeSpec vKeyConverter = classBuilder.build();
     return JavaFile.builder(packageName, vKeyConverter).build();
   }
 

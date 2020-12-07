@@ -19,8 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithLongVKey;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.testing.AppEngineExtension;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.junit.jupiter.api.Test;
@@ -30,33 +29,56 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class LongVKeyConverterTest {
 
   @RegisterExtension
-  public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder()
-          .withEntityClass(TestEntity.class, VKeyConverter_LongType.class)
-          .buildUnitTestRule();
+  public final AppEngineExtension appEngineExtension =
+      new AppEngineExtension.Builder()
+          .withDatastoreAndCloudSql()
+          .withoutCannedData()
+          .withJpaUnitTestEntities(
+              TestLongEntity.class,
+              VKeyConverter_LongType.class,
+              VKeyConverter_CompositeLongType.class)
+          .withOfyTestEntities(TestLongEntity.class, CompositeKeyTestLongEntity.class)
+          .build();
 
   @Test
   void testRoundTrip() {
-    TestEntity original = new TestEntity(VKey.createSql(TestEntity.class, 10L));
+    TestLongEntity original =
+        new TestLongEntity(
+            VKey.createSql(TestLongEntity.class, 10L),
+            VKey.createSql(CompositeKeyTestLongEntity.class, 20L));
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(original));
 
-    TestEntity retrieved =
-        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+    TestLongEntity retrieved =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestLongEntity.class, "id"));
     assertThat(retrieved.number.getSqlKey()).isEqualTo(10L);
+    assertThat(retrieved.number.getOfyKey().getId()).isEqualTo(10L);
+
+    assertThat(retrieved.composite.getSqlKey()).isEqualTo(20L);
+    assertThat(retrieved.composite.maybeGetOfyKey().isPresent()).isFalse();
   }
 
-  @Entity(name = "TestEntity")
+  @Entity(name = "TestLongEntity")
+  @com.googlecode.objectify.annotation.Entity
   @WithLongVKey(classNameSuffix = "LongType")
-  static class TestEntity {
-    @Id String id = "id";
+  static class TestLongEntity {
+    @com.googlecode.objectify.annotation.Id @Id String id = "id";
 
-    VKey<TestEntity> number;
+    VKey<TestLongEntity> number;
+    VKey<CompositeKeyTestLongEntity> composite;
 
-    TestEntity(VKey<TestEntity> number) {
+    TestLongEntity(VKey<TestLongEntity> number, VKey<CompositeKeyTestLongEntity> composite) {
       this.number = number;
+      this.composite = composite;
     }
 
     /** Default constructor, needed for hibernate. */
-    public TestEntity() {}
+    public TestLongEntity() {}
+  }
+
+  @Entity(name = "CompositeKeyTestLongEntity")
+  @com.googlecode.objectify.annotation.Entity
+  @WithLongVKey(classNameSuffix = "CompositeLongType", compositeKey = true)
+  static class CompositeKeyTestLongEntity {
+    @com.googlecode.objectify.annotation.Id @Id String id = "id";
   }
 }

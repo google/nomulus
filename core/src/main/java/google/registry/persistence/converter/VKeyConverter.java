@@ -14,6 +14,7 @@
 
 package google.registry.persistence.converter;
 
+import com.googlecode.objectify.Key;
 import google.registry.persistence.VKey;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
@@ -29,7 +30,28 @@ public abstract class VKeyConverter<T, C> implements AttributeConverter<VKey<? e
   @Override
   @Nullable
   public VKey<? extends T> convertToEntityAttribute(@Nullable C dbData) {
-    return dbData == null ? null : VKey.createSql(getAttributeClass(), dbData);
+    if (dbData == null) {
+      return null;
+    }
+    Class<? extends T> clazz = getAttributeClass();
+    Key ofyKey = null;
+    if (!hasCompositeOfyKey()) {
+      // If this isn't a composite key, we can create the Ofy key from the SQL key.
+      ofyKey =
+          dbData instanceof String
+              ? Key.create(clazz, (String) dbData)
+              : Key.create(clazz, (Long) dbData);
+      return VKey.create(clazz, dbData, ofyKey);
+    } else {
+      // We don't know how to create the Ofy key and probably don't have everything necessary to do
+      // it anyway, so just create an asymmetric key - the containing object will have to convert it
+      // into a symmetric key.
+      return VKey.createSql(clazz, dbData);
+    }
+  }
+
+  protected boolean hasCompositeOfyKey() {
+    return false;
   }
 
   /** Returns the class of the attribute. */
