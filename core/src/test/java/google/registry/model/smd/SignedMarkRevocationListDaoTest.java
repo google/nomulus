@@ -51,21 +51,6 @@ public class SignedMarkRevocationListDaoTest {
   }
 
   @Test
-  void trySave_failureIsSwallowed() {
-    SignedMarkRevocationList list =
-        SignedMarkRevocationList.create(
-            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
-    SignedMarkRevocationListDao.trySave(list);
-    SignedMarkRevocationList fromDb = SignedMarkRevocationListDao.getLatestRevision().get();
-    assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list);
-
-    // This should throw an exception, which is swallowed and nothing changed
-    SignedMarkRevocationListDao.trySave(list);
-    SignedMarkRevocationList secondFromDb = SignedMarkRevocationListDao.getLatestRevision().get();
-    assertAboutImmutableObjects().that(secondFromDb).isEqualExceptFields(fromDb);
-  }
-
-  @Test
   void testRetrieval_notPresent() {
     assertThat(SignedMarkRevocationListDao.getLatestRevision().isPresent()).isFalse();
   }

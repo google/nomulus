@@ -40,6 +40,7 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
+import google.registry.config.RegistryEnvironment;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
@@ -125,6 +126,9 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
             try {
               loadAndCompareCloudSqlList(datastoreList);
             } catch (Throwable t) {
+              if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
+                throw t;
+              }
               logger.atSevere().withCause(t).log("Error comparing signed mark revocation lists.");
             }
             return datastoreList;
@@ -229,11 +233,15 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
           Maps.difference(datastoreList.revokes, cloudSqlList.revokes);
       if (!diff.areEqual()) {
         if (diff.entriesDiffering().size() > 10) {
-          logger.atWarning().log(
+          String message =
               String.format(
                   "Unequal SM revocation lists detected, Cloud SQL list with revision id %d has %d"
                       + " different records than the current Datastore list.",
-                  cloudSqlList.revisionId, diff.entriesDiffering().size()));
+                  cloudSqlList.revisionId, diff.entriesDiffering().size());
+          if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
+            throw new RuntimeException(message);
+          }
+          logger.atWarning().log(message);
         } else {
           StringBuilder diffMessage = new StringBuilder("Unequal SM revocation lists detected:\n");
           diff.entriesDiffering()
@@ -243,11 +251,19 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
                           String.format(
                               "SMD %s has key %s in Datastore and key %s in Cloud SQL.\n",
                               label, valueDiff.leftValue(), valueDiff.rightValue())));
+          if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
+            throw new RuntimeException(diffMessage.toString());
+          }
           logger.atWarning().log(diffMessage.toString());
         }
       }
     } else {
-      logger.atWarning().log("Signed mark revocation list in Cloud SQL is empty.");
+      if (datastoreList.size() != 0) {
+        if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
+          throw new RuntimeException("Signed mark revocation list in Cloud SQL is empty.");
+        }
+        logger.atWarning().log("Signed mark revocation list in Cloud SQL is empty.");
+      }
     }
   }
 
