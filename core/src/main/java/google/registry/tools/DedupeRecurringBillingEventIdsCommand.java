@@ -54,11 +54,10 @@ import java.util.Set;
 @Parameters(
     separators = " =",
     commandDescription = "Dedupe BillingEvent.Recurring entities with duplicate IDs.")
-public class DedupeRecurringBillingEventIdsCommand
-    extends DedupeEntityIdsCommand<BillingEvent.Recurring> {
+public class DedupeRecurringBillingEventIdsCommand extends ReadEntityFromKeyPathCommand<Recurring> {
 
   @Override
-  void dedupe(Recurring recurring) {
+  void process(Recurring recurring) {
     // Loads the associated DomainBase and BillingEvent.OneTime entities that
     // may have reference to this BillingEvent.Recurring entity.
     Key<DomainBase> domainKey = getGrandParentAsDomain(Key.create(recurring));

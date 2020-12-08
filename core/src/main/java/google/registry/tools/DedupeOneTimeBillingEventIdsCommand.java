@@ -45,10 +45,10 @@ import google.registry.model.domain.DomainBase;
 @Parameters(
     separators = " =",
     commandDescription = "Dedupe BillingEvent.OneTime entities with duplicate IDs.")
-public class DedupeOneTimeBillingEventIdsCommand extends DedupeEntityIdsCommand<OneTime> {
+public class DedupeOneTimeBillingEventIdsCommand extends ReadEntityFromKeyPathCommand<OneTime> {
 
   @Override
-  void dedupe(OneTime entity) {
+  void process(OneTime entity) {
     Key<BillingEvent> key = Key.create(entity);
     Key<DomainBase> domainKey = getGrandParentAsDomain(key);
     DomainBase domain = ofy().load().key(domainKey).now();
