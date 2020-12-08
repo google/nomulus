@@ -51,6 +51,9 @@ public final class BackupPaths {
   private static final String SQL_CONN_INFO_FILE_PATTERN =
       "gs://domain-registry-dev-deploy/cloudsql-credentials/%s/admin_credential.enc";
 
+  private static final String BEAM_SQL_CONN_INFO_FILE_PATTERN =
+      "gs://%s-beam/cloudsql/admin_credential.enc";
+
   private static final ImmutableSet<String> ALLOWED_ENV =
       ImmutableSet.of("alpha", "crash", "sandbox", "production");
 
@@ -113,5 +116,9 @@ public final class BackupPaths {
     checkArgument(
         ALLOWED_ENV.contains(environmentName), "Invalid environment name %s", environmentName);
     return ImmutableList.of(String.format(SQL_CONN_INFO_FILE_PATTERN, environmentName));
+  }
+
+  public static String getBeamCloudSqlCredentialFilePattern(String projectId) {
+    return String.format(BEAM_SQL_CONN_INFO_FILE_PATTERN, projectId);
   }
 }

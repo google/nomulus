@@ -2252,30 +2252,6 @@ ALTER TABLE ONLY public."RegistrarPoc"
 
 
 --
--- Name: Spec11ThreatMatch fk_spec11_threat_match_domain_repo_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Spec11ThreatMatch"
-    ADD CONSTRAINT fk_spec11_threat_match_domain_repo_id FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
-
-
---
--- Name: Spec11ThreatMatch fk_spec11_threat_match_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Spec11ThreatMatch"
-    ADD CONSTRAINT fk_spec11_threat_match_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
-
-
---
--- Name: Spec11ThreatMatch fk_spec11_threat_match_tld; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Spec11ThreatMatch"
-    ADD CONSTRAINT fk_spec11_threat_match_tld FOREIGN KEY (tld) REFERENCES public."Tld"(tld_name);
-
-
---
 -- Name: DomainHistoryHost fka9woh3hu8gx5x0vly6bai327n; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

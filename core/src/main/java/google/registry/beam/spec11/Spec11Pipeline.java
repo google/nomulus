@@ -19,19 +19,22 @@ import static google.registry.beam.BeamUtils.getQueryFromFile;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auto.value.AutoValue;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
+import google.registry.beam.initsql.BackupPaths;
+import google.registry.beam.initsql.BeamJpaModule.JpaTransactionManagerComponent;
+import google.registry.beam.initsql.JpaSupplierFactory;
 import google.registry.beam.initsql.Transforms;
-import google.registry.beam.initsql.Transforms.SerializableSupplier;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
-import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
 import google.registry.util.SqlTemplate;
 import java.io.Serializable;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.apache.beam.runners.dataflow.DataflowRunner;
 import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
@@ -88,32 +91,39 @@ public class Spec11Pipeline implements Serializable {
   public static final String THREAT_MATCHES_FIELD = "threatMatches";
 
   private final String projectId;
+  private final String cloudKmsProjectId;
   private final String beamJobRegion;
   private final String beamStagingUrl;
   private final String spec11TemplateUrl;
   private final String reportingBucketUrl;
   private final GoogleCredentials googleCredentials;
   private final Retrier retrier;
-  private final SerializableSupplier<JpaTransactionManager> jpaSupplierFactory;
+  @VisibleForTesting
+  private transient Optional<String> localCredentialFileUrl = Optional.empty();
 
   @Inject
   public Spec11Pipeline(
       @Config("projectId") String projectId,
+      @Config("cloudKmsProjectId") String cloudKmsProjectId,
       @Config("defaultJobRegion") String beamJobRegion,
       @Config("beamStagingUrl") String beamStagingUrl,
       @Config("spec11TemplateUrl") String spec11TemplateUrl,
       @Config("reportingBucketUrl") String reportingBucketUrl,
-      SerializableSupplier<JpaTransactionManager> jpaSupplierFactory,
       @LocalCredential GoogleCredentialsBundle googleCredentialsBundle,
       Retrier retrier) {
     this.projectId = projectId;
+    this.cloudKmsProjectId = cloudKmsProjectId;
     this.beamJobRegion = beamJobRegion;
     this.beamStagingUrl = beamStagingUrl;
     this.spec11TemplateUrl = spec11TemplateUrl;
     this.reportingBucketUrl = reportingBucketUrl;
-    this.jpaSupplierFactory = jpaSupplierFactory;
     this.googleCredentials = googleCredentialsBundle.getGoogleCredentials();
     this.retrier = retrier;
+  }
+
+  @VisibleForTesting
+  void useLocalCredentialForTesting(String credentialFilePatternUrl) {
+    localCredentialFileUrl = Optional.of(credentialFilePatternUrl);
   }
 
   /** Custom options for running the spec11 pipeline. */
@@ -190,6 +200,14 @@ public class Spec11Pipeline implements Serializable {
       PCollection<Subdomain> domains,
       EvaluateSafeBrowsingFn evaluateSafeBrowsingFn,
       ValueProvider<String> dateProvider) {
+    JpaSupplierFactory jpaSupplierFactory =
+        new JpaSupplierFactory(
+            localCredentialFileUrl.orElse(
+                BackupPaths.getBeamCloudSqlCredentialFilePattern(projectId)),
+            cloudKmsProjectId,
+            localCredentialFileUrl.isPresent()
+                ? JpaTransactionManagerComponent::localDbJpaTransactionManager
+                : JpaTransactionManagerComponent::cloudSqlJpaTransactionManager);
     PCollection<KV<Subdomain, ThreatMatch>> subdomainsSql =
         domains.apply("Run through SafeBrowsing API", ParDo.of(evaluateSafeBrowsingFn));
     TypeDescriptor<KV<Subdomain, ThreatMatch>> descriptor =
