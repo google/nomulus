@@ -122,15 +122,11 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
       memoizeWithShortExpiration(
           () -> {
             SignedMarkRevocationList datastoreList = loadFromDatastore();
-            // Also load the list from Cloud SQL, compare the two lists, and log if different.
-            try {
-              loadAndCompareCloudSqlList(datastoreList);
-            } catch (Throwable t) {
-              if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
-                throw t;
-              }
-              logger.atSevere().withCause(t).log("Error comparing signed mark revocation lists.");
-            }
+            supressExceptionUnlessInTest(
+                () -> {
+                  loadAndCompareCloudSqlList(datastoreList);
+                },
+                "Error comparing signed mark revocation lists.");
             return datastoreList;
           });
 
@@ -238,10 +234,7 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
                   "Unequal SM revocation lists detected, Cloud SQL list with revision id %d has %d"
                       + " different records than the current Datastore list.",
                   cloudSqlList.revisionId, diff.entriesDiffering().size());
-          if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
-            throw new RuntimeException(message);
-          }
-          logger.atWarning().log(message);
+          throw new RuntimeException(message);
         } else {
           StringBuilder diffMessage = new StringBuilder("Unequal SM revocation lists detected:\n");
           diff.entriesDiffering()
@@ -251,18 +244,12 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
                           String.format(
                               "SMD %s has key %s in Datastore and key %s in Cloud SQL.\n",
                               label, valueDiff.leftValue(), valueDiff.rightValue())));
-          if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
-            throw new RuntimeException(diffMessage.toString());
-          }
-          logger.atWarning().log(diffMessage.toString());
+          throw new RuntimeException(diffMessage.toString());
         }
       }
     } else {
       if (datastoreList.size() != 0) {
-        if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
-          throw new RuntimeException("Signed mark revocation list in Cloud SQL is empty.");
-        }
-        logger.atWarning().log("Signed mark revocation list in Cloud SQL is empty.");
+        throw new RuntimeException("Signed mark revocation list in Cloud SQL is empty.");
       }
     }
   }
@@ -272,6 +259,17 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
   void disallowUnshardedSaves() {
     if (!isShard) {
       throw new UnshardedSaveException();
+    }
+  }
+
+  static void supressExceptionUnlessInTest(Runnable work, String message) {
+    try {
+      work.run();
+    } catch (Exception e) {
+      if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
+        throw e;
+      }
+      logger.atWarning().withCause(e).log(message);
     }
   }
 

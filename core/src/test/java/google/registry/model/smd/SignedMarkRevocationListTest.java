@@ -140,7 +140,7 @@ public class SignedMarkRevocationListTest {
   }
 
   @Test
-  void test_getCreationTime_failsIfDatabasesDiffer() {
+  void test_getCreationTime_missingInCloudSQL() {
     clock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
     createSaveGetHelper(1);
     jpaTm().transact(() -> jpaTm().delete(SignedMarkRevocationListDao.getLatestRevision().get()));
@@ -149,6 +149,21 @@ public class SignedMarkRevocationListTest {
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Signed mark revocation list in Cloud SQL is empty.");
+  }
+
+  @Test
+  void test_getCreationTime_unequalListsInDatabases() {
+    clock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
+    createSaveGetHelper(1);
+    ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
+    for (int i = 0; i < 3; i++) {
+      revokes.put(Integer.toString(i), clock.nowUtc());
+    }
+    SignedMarkRevocationListDao.trySave(
+        SignedMarkRevocationList.create(clock.nowUtc(), revokes.build()));
+    RuntimeException thrown =
+        assertThrows(RuntimeException.class, () -> SignedMarkRevocationList.get());
+    assertThat(thrown).hasMessageThat().contains("Unequal SM revocation lists detected:");
   }
 
   @Test

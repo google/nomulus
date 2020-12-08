@@ -19,7 +19,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.base.Supplier;
 import com.google.common.flogger.FluentLogger;
-import google.registry.config.RegistryEnvironment;
 import java.util.Optional;
 import javax.persistence.EntityManager;
 
@@ -61,17 +60,14 @@ public class SignedMarkRevocationListDao {
    * the authoritative database.
    */
   static void trySave(SignedMarkRevocationList signedMarkRevocationList) {
-    try {
-      SignedMarkRevocationListDao.save(signedMarkRevocationList);
-      logger.atInfo().log(
-          "Inserted %,d signed mark revocations into Cloud SQL",
-          signedMarkRevocationList.revokes.size());
-    } catch (Throwable e) {
-      if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
-        throw e;
-      }
-      logger.atSevere().withCause(e).log("Error inserting signed mark revocations into Cloud SQL");
-    }
+    SignedMarkRevocationList.supressExceptionUnlessInTest(
+        () -> {
+          SignedMarkRevocationListDao.save(signedMarkRevocationList);
+          logger.atInfo().log(
+              "Inserted %,d signed mark revocations into Cloud SQL",
+              signedMarkRevocationList.revokes.size());
+        },
+        "Error inserting signed mark revocations into Cloud SQL");
   }
 
   private static void save(SignedMarkRevocationList signedMarkRevocationList) {
