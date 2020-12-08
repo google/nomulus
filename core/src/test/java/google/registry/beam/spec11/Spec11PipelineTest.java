@@ -15,25 +15,35 @@
 package google.registry.beam.spec11;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.io.CharStreams;
 import google.registry.beam.TestPipelineExtension;
+import google.registry.beam.initsql.BeamJpaExtension;
+import google.registry.beam.initsql.JpaSupplierFactory;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
-import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.persistence.PersistenceTestModule;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
+import google.registry.testing.InjectExtension;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.ResourceUtils;
 import google.registry.util.Retrier;
@@ -48,9 +58,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.function.Supplier;
-import org.apache.beam.runners.direct.DirectRunner;
-import org.apache.beam.sdk.options.PipelineOptions;
-import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.options.ValueProvider.StaticValueProvider;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.values.PCollection;
@@ -60,59 +67,50 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicStatusLine;
-import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.format.ISODateTimeFormat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.mockito.stubbing.Answer;
 
 /** Unit tests for {@link Spec11Pipeline}. */
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class Spec11PipelineTest {
-  private static class SaveNewThreatMatchAnswer implements Answer<Void>, Serializable {
-    @Override
-    public Void answer(InvocationOnMock invocation) {
-      Runnable runnable = invocation.getArgument(0, Runnable.class);
-      runnable.run();
-      return null;
-    }
-  }
 
-  private static PipelineOptions pipelineOptions;
+  // The following fields are transient because otherwise we'd attempt to serialize them as part of
+  // the ParDo functions
+  private final transient FakeClock fakeClock = new FakeClock();
 
-  @Mock(serializable = true)
-  private static JpaTransactionManager mockJpaTm;
-
-  @BeforeAll
-  static void beforeAll() {
-    pipelineOptions = PipelineOptionsFactory.create();
-    pipelineOptions.setRunner(DirectRunner.class);
-  }
-
-  @RegisterExtension
-  final transient TestPipelineExtension testPipeline =
-      TestPipelineExtension.fromOptions(pipelineOptions);
+  @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
 
   @SuppressWarnings("WeakerAccess")
   @TempDir
-  Path tmpDir;
+  transient Path tmpDir;
 
-  private final Retrier retrier =
-      new Retrier(new FakeSleeper(new FakeClock(DateTime.parse("2019-07-15TZ"))), 1);
+  @RegisterExtension
+  final transient TestPipelineExtension testPipeline =
+      TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
+
+  @RegisterExtension
+  final transient AppEngineExtension appEngineExtension =
+      AppEngineExtension.builder().withDatastore().withClock(fakeClock).build();
+
+  @RegisterExtension
+  final transient JpaIntegrationTestExtension database =
+      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
+
+  @RegisterExtension
+  @Order(Order.DEFAULT + 1)
+  final transient BeamJpaExtension beamJpaExtension =
+      new BeamJpaExtension(() -> tmpDir.resolve("credential.dat"), database.getDatabase());
+
+  private final Retrier retrier = new Retrier(new FakeSleeper(fakeClock), 3);
   private Spec11Pipeline spec11Pipeline;
 
   @BeforeEach
@@ -120,6 +118,11 @@ class Spec11PipelineTest {
     String beamTempFolder =
         Files.createDirectory(tmpDir.resolve("beam_temp")).toAbsolutePath().toString();
 
+    JpaSupplierFactory jpaSupplierFactory =
+        new JpaSupplierFactory(
+            beamJpaExtension.getCredentialFile().getAbsolutePath(),
+            "test-project",
+            PersistenceTestModule::testJpaTransactionManager);
     spec11Pipeline =
         new Spec11Pipeline(
             "test-project",
@@ -127,14 +130,14 @@ class Spec11PipelineTest {
             beamTempFolder + "/staging",
             beamTempFolder + "/templates/invoicing",
             tmpDir.toAbsolutePath().toString(),
-            () -> mockJpaTm,
             GoogleCredentialsBundle.create(GoogleCredentials.create(null)),
-            retrier);
+            retrier,
+            jpaSupplierFactory);
+    createTld("tld");
   }
 
   private static final ImmutableList<String> BAD_DOMAINS =
-      ImmutableList.of(
-          "111.com", "222.com", "444.com", "no-email.com", "testThreatMatchToSqlBad.com");
+      ImmutableList.of("111.com", "222.com", "444.com", "no-email.com", "bad.tld");
 
   private ImmutableList<Subdomain> getInputDomainsJson() {
     ImmutableList.Builder<Subdomain> subdomainsBuilder = new ImmutableList.Builder<>();
@@ -241,19 +244,21 @@ class Spec11PipelineTest {
   @Test
   @SuppressWarnings("unchecked")
   public void testSpec11ThreatMatchToSql() throws Exception {
-    doAnswer(new SaveNewThreatMatchAnswer()).when(mockJpaTm).transact(any(Runnable.class));
-
-    // Create one bad and one good Subdomain to test with evaluateUrlHealth. Only the bad one should
-    // be detected and persisted.
-    Subdomain badDomain =
+    // Only the bad domain should be persisted in SQL
+    DomainBase badDomain = newDomainBase("bad.tld");
+    DomainBase goodDomain = newDomainBase("good.tld");
+    Subdomain badSubdomain =
         Subdomain.create(
-            "testThreatMatchToSqlBad.com", "theDomain", "theRegistrar", "fake@theRegistrar.com");
-    Subdomain goodDomain =
+            badDomain.getDomainName(),
+            badDomain.getRepoId(),
+            badDomain.getCurrentSponsorClientId(),
+            "fake@example.tld");
+    Subdomain goodSubdomain =
         Subdomain.create(
-            "testThreatMatchToSqlGood.com",
-            "someDomain",
-            "someRegistrar",
-            "fake@someRegistrar.com");
+            goodDomain.getDomainName(),
+            goodDomain.getRepoId(),
+            goodDomain.getCurrentSponsorClientId(),
+            "foo@example.tld");
 
     // Establish a mock HttpResponse that returns a JSON response based on the request.
     CloseableHttpClient mockHttpClient =
@@ -267,7 +272,7 @@ class Spec11PipelineTest {
             (Serializable & Supplier) () -> mockHttpClient);
 
     // Apply input and evaluation transforms
-    PCollection<Subdomain> input = testPipeline.apply(Create.of(badDomain, goodDomain));
+    PCollection<Subdomain> input = testPipeline.apply(Create.of(badSubdomain, goodSubdomain));
     spec11Pipeline.evaluateUrlHealth(input, evalFn, StaticValueProvider.of("2020-06-10"));
     testPipeline.run();
 
@@ -278,13 +283,16 @@ class Spec11PipelineTest {
             .asBuilder()
             .setThreatTypes(ImmutableSet.of(ThreatType.MALWARE))
             .setCheckDate(LocalDate.parse("2020-06-10", ISODateTimeFormat.date()))
-            .setDomainName(badDomain.domainName())
-            .setDomainRepoId(badDomain.domainRepoId())
-            .setRegistrarId(badDomain.registrarId())
+            .setDomainName(badDomain.getDomainName())
+            .setDomainRepoId(badDomain.getRepoId())
+            .setRegistrarId(badDomain.getCurrentSponsorClientId())
             .build();
-
-    verify(mockJpaTm).transact(any(Runnable.class));
-    verify(mockJpaTm).putAll(ImmutableList.of(expected));
+    assertAboutImmutableObjects()
+        .that(
+            jpaTm()
+                .transact(
+                    () -> Iterables.getOnlyElement(jpaTm().loadAllOf(Spec11ThreatMatch.class))))
+        .isEqualExceptFields(expected, "id");
   }
 
   /**

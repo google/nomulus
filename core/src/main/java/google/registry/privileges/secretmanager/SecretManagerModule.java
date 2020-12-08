@@ -36,7 +36,7 @@ public abstract class SecretManagerModule {
       @DefaultCredential GoogleCredentialsBundle credentialsBundle) {
     try {
       return SecretManagerServiceSettings.newBuilder()
-          .setCredentialsProvider(() -> credentialsBundle.getGoogleCredentials())
+          .setCredentialsProvider(credentialsBundle::getGoogleCredentials)
           .build();
     } catch (IOException e) {
       throw new RuntimeException(e);

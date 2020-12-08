@@ -26,6 +26,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
+import google.registry.persistence.PersistenceTestModule;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
 import google.registry.testing.AppEngineExtension;
@@ -113,10 +114,8 @@ class WriteToSqlTest implements Serializable {
                 2,
                 4,
                 () ->
-                    DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
-                        .beamJpaModule(beamJpaExtension.getBeamJpaModule())
-                        .build()
-                        .localDbJpaTransactionManager()));
+                    PersistenceTestModule.testJpaTransactionManager(
+                        beamJpaExtension.getBeamJpaModule())));
     testPipeline.run().waitUntilFinish();
 
     ImmutableList<?> sqlContacts = jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class));

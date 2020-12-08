@@ -17,6 +17,8 @@ package google.registry.beam.initsql;
 import static com.google.common.truth.Truth.assertThat;
 
 import google.registry.persistence.NomulusPostgreSql;
+import google.registry.persistence.PersistenceModule;
+import google.registry.persistence.PersistenceTestModule;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.testing.DatastoreEntityExtension;
 import java.nio.file.Path;
@@ -53,10 +55,7 @@ class BeamJpaModuleTest {
   @Test
   void getJpaTransactionManager_local() {
     JpaTransactionManager jpa =
-        DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
-            .beamJpaModule(beamJpaExtension.getBeamJpaModule())
-            .build()
-            .localDbJpaTransactionManager();
+        PersistenceTestModule.testJpaTransactionManager(beamJpaExtension.getBeamJpaModule());
     assertThat(
             jpa.transact(
                 () -> jpa.getEntityManager().createNativeQuery("select 1").getSingleResult()))
@@ -79,13 +78,10 @@ class BeamJpaModuleTest {
     String environmentName = System.getProperty("test.gcp_integration.env");
     FileSystems.setDefaultPipelineOptions(PipelineOptionsFactory.create());
     JpaTransactionManager jpa =
-        DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
-            .beamJpaModule(
-                new BeamJpaModule(
-                    BackupPaths.getCloudSQLCredentialFilePatterns(environmentName).get(0),
-                    String.format("domain-registry-%s", environmentName)))
-            .build()
-            .cloudSqlJpaTransactionManager();
+        PersistenceModule.jpaTransactionManager(
+            new BeamJpaModule(
+                BackupPaths.getCloudSQLCredentialFilePatterns(environmentName).get(0),
+                String.format("domain-registry-%s", environmentName)));
     assertThat(
             jpa.transact(
                 () -> jpa.getEntityManager().createNativeQuery("select 1").getSingleResult()))

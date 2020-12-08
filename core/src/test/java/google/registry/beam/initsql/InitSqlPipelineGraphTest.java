@@ -18,6 +18,7 @@ import static google.registry.testing.truth.TextDiffSubject.assertWithMessageAbo
 
 import com.google.common.io.Resources;
 import google.registry.beam.TestPipelineExtension;
+import google.registry.persistence.PersistenceTestModule;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -52,7 +53,8 @@ class InitSqlPipelineGraphTest {
 
   @Test
   void createPipeline_compareGraph() throws IOException {
-    new InitSqlPipeline(options, testPipeline).setupPipeline();
+    new InitSqlPipeline(options, testPipeline, PersistenceTestModule::testJpaTransactionManager)
+        .setupPipeline();
     String dotString = PipelineDotRenderer.toDotString(testPipeline);
     URL goldenDotUrl = Resources.getResource(InitSqlPipelineGraphTest.class, GOLDEN_DOT_FILE);
     File outputFile = new File(new File(goldenDotUrl.getFile()).getParent(), "pipeline_curr.dot");

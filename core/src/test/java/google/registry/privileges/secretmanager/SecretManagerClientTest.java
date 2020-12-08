@@ -62,7 +62,7 @@ public class SecretManagerClientTest {
       secretManagerClient =
           SecretManagerModule.provideSecretManagerClient(
               SecretManagerServiceSettings.newBuilder()
-                  .setCredentialsProvider(() -> GoogleCredentials.getApplicationDefault())
+                  .setCredentialsProvider(GoogleCredentials::getApplicationDefault)
                   .build(),
               String.format("domain-registry-%s", environmentName),
               new Retrier(new SystemSleeper(), 1));

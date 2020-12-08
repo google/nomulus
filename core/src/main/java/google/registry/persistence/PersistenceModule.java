@@ -28,13 +28,19 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
 import dagger.BindsOptionalOf;
+import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.beam.initsql.BeamJpaModule;
+import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.keyring.kms.KmsKeyring;
+import google.registry.keyring.kms.KmsModule;
 import google.registry.persistence.transaction.CloudSqlCredentialSupplier;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.JpaTransactionManagerImpl;
+import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.privileges.secretmanager.SqlCredential;
 import google.registry.privileges.secretmanager.SqlCredentialStore;
 import google.registry.privileges.secretmanager.SqlUser;
@@ -42,6 +48,7 @@ import google.registry.privileges.secretmanager.SqlUser.RobotId;
 import google.registry.privileges.secretmanager.SqlUser.RobotUser;
 import google.registry.tools.AuthModule.CloudSqlClientCredential;
 import google.registry.util.Clock;
+import google.registry.util.UtilsModule;
 import java.lang.annotation.Documented;
 import java.sql.Connection;
 import java.util.HashMap;
@@ -167,8 +174,8 @@ public abstract class PersistenceModule {
     validateCredentialStore(
         credentialStore,
         new RobotUser(RobotId.NOMULUS),
-        overrides.get(Environment.USER),
-        overrides.get(Environment.PASS));
+        username,
+        kmsKeyring.getCloudSqlPassword());
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -183,14 +190,13 @@ public abstract class PersistenceModule {
       @CloudSqlClientCredential Credential credential,
       Clock clock) {
     CloudSqlCredentialSupplier.setupCredentialSupplier(credential);
+    RobotUser toolRobotUser = new RobotUser(RobotId.TOOL);
+    SqlCredential sqlCredential = credentialStore.getCredential(toolRobotUser);
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
-    overrides.put(Environment.USER, username);
-    overrides.put(Environment.PASS, kmsKeyring.getToolsCloudSqlPassword());
+    overrides.put(Environment.USER, sqlCredential.login());
+    overrides.put(Environment.PASS, sqlCredential.password());
     validateCredentialStore(
-        credentialStore,
-        new RobotUser(RobotId.TOOL),
-        overrides.get(Environment.USER),
-        overrides.get(Environment.PASS));
+        credentialStore, toolRobotUser, username, kmsKeyring.getToolsCloudSqlPassword());
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -199,37 +205,15 @@ public abstract class PersistenceModule {
   @SocketFactoryJpaTm
   static JpaTransactionManager provideSocketFactoryJpaTm(
       SqlCredentialStore credentialStore,
-      @Config("beamCloudSqlUsername") String username,
-      @Config("beamCloudSqlPassword") String password,
       @Config("beamHibernateHikariMaximumPoolSize") int hikariMaximumPoolSize,
       @BeamPipelineCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
       Clock clock) {
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
-    overrides.put(Environment.USER, username);
-    overrides.put(Environment.PASS, password);
+    SqlCredential sqlCredential = credentialStore.getCredential(new RobotUser(RobotId.NOMULUS));
+    overrides.put(Environment.USER, sqlCredential.login());
+    overrides.put(Environment.PASS, sqlCredential.password());
     overrides.put(HIKARI_MAXIMUM_POOL_SIZE, String.valueOf(hikariMaximumPoolSize));
     // TODO(b/175700623): consider assigning different logins to pipelines
-    validateCredentialStore(
-        credentialStore,
-        new RobotUser(RobotId.NOMULUS),
-        overrides.get(Environment.USER),
-        overrides.get(Environment.PASS));
-    return new JpaTransactionManagerImpl(create(overrides), clock);
-  }
-
-  @Provides
-  @Singleton
-  @JdbcJpaTm
-  static JpaTransactionManager provideLocalJpaTm(
-      @Config("beamCloudSqlJdbcUrl") String jdbcUrl,
-      @Config("beamCloudSqlUsername") String username,
-      @Config("beamCloudSqlPassword") String password,
-      @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs,
-      Clock clock) {
-    HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
-    overrides.put(Environment.URL, jdbcUrl);
-    overrides.put(Environment.USER, username);
-    overrides.put(Environment.PASS, password);
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -245,7 +229,7 @@ public abstract class PersistenceModule {
     return create(ImmutableMap.copyOf(properties));
   }
 
-  private static EntityManagerFactory create(Map<String, String> properties) {
+  static EntityManagerFactory create(Map<String, String> properties) {
     // If there are no annotated classes, we can create the EntityManagerFactory from the generic
     // method.  Otherwise we have to use a more tailored approach.  Note that this adds to the set
     // of annotated classes defined in the configuration, it does not override them.
@@ -258,11 +242,12 @@ public abstract class PersistenceModule {
     return emf;
   }
 
-  /** Verifies that the credential from the Secret Manager matches the one currently in use.
+  /**
+   * Verifies that the credential from the Secret Manager matches the one currently in use.
    *
-   * <p>This is a helper for the transition to the Secret Manager, and will be removed once data
-   * and permissions are properly set up for all projects.
-   **/
+   * <p>This is a helper for the transition to the Secret Manager, and will be removed once data and
+   * permissions are properly set up for all projects.
+   */
   private static void validateCredentialStore(
       SqlCredentialStore credentialStore, SqlUser sqlUser, String login, String password) {
     try {
@@ -332,14 +317,6 @@ public abstract class PersistenceModule {
   @Documented
   public @interface SocketFactoryJpaTm {}
 
-  /**
-   * Dagger qualifier for {@link JpaTransactionManager} backed by plain JDBC connections. This is
-   * mainly used by tests.
-   */
-  @Qualifier
-  @Documented
-  public @interface JdbcJpaTm {}
-
   /** Dagger qualifier for the partial Cloud SQL configs. */
   @Qualifier
   @Documented
@@ -356,4 +333,27 @@ public abstract class PersistenceModule {
   @Qualifier
   @Documented
   public @interface DefaultHibernateConfigs {}
+
+  @Singleton
+  @Component(
+      modules = {
+        ConfigModule.class,
+        CredentialModule.class,
+        BeamJpaModule.class,
+        KmsModule.class,
+        PersistenceModule.class,
+        SecretManagerModule.class,
+        UtilsModule.class
+      })
+  public interface JpaTransactionManagerComponent {
+    @SocketFactoryJpaTm
+    JpaTransactionManager jpaTransactionManager();
+  }
+
+  public static JpaTransactionManager jpaTransactionManager(BeamJpaModule beamJpaModule) {
+    return DaggerPersistenceModule_JpaTransactionManagerComponent.builder()
+        .beamJpaModule(beamJpaModule)
+        .build()
+        .jpaTransactionManager();
+  }
 }

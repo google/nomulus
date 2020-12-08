@@ -19,21 +19,12 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 import com.google.common.base.Splitter;
-import dagger.Component;
 import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.config.RegistryConfig.ConfigModule;
-import google.registry.keyring.kms.KmsModule;
-import google.registry.persistence.PersistenceModule;
-import google.registry.persistence.PersistenceModule.JdbcJpaTm;
-import google.registry.persistence.PersistenceModule.SocketFactoryJpaTm;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
-import google.registry.privileges.secretmanager.SecretManagerModule;
-import google.registry.util.UtilsModule;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -178,24 +169,5 @@ public class BeamJpaModule {
   static int getBeamHibernateHikariMaximumPoolSize() {
     // TODO(weiminyu): make this configurable. Should be equal to number of cores.
     return 4;
-  }
-
-  @Singleton
-  @Component(
-      modules = {
-        ConfigModule.class,
-        CredentialModule.class,
-        BeamJpaModule.class,
-        KmsModule.class,
-        PersistenceModule.class,
-        SecretManagerModule.class,
-        UtilsModule.class
-      })
-  public interface JpaTransactionManagerComponent {
-    @SocketFactoryJpaTm
-    JpaTransactionManager cloudSqlJpaTransactionManager();
-
-    @JdbcJpaTm
-    JpaTransactionManager localDbJpaTransactionManager();
   }
 }

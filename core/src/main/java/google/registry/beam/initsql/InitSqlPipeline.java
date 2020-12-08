@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.backup.AppEngineEnvironment;
 import google.registry.backup.VersionedEntity;
-import google.registry.beam.initsql.BeamJpaModule.JpaTransactionManagerComponent;
 import google.registry.beam.initsql.Transforms.RemoveDomainBaseForeignKeys;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.ContactResource;
@@ -34,6 +33,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import java.io.Serializable;
@@ -124,20 +124,22 @@ public class InitSqlPipeline implements Serializable {
 
   private final Pipeline pipeline;
 
-  private final SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager>
-      jpaGetter;
+  private final SerializableFunction<BeamJpaModule, JpaTransactionManager> jpaGetter;
 
   InitSqlPipeline(InitSqlPipelineOptions options) {
     this.options = options;
-    pipeline = Pipeline.create(options);
-    jpaGetter = JpaTransactionManagerComponent::cloudSqlJpaTransactionManager;
+    this.pipeline = Pipeline.create(options);
+    this.jpaGetter = PersistenceModule::jpaTransactionManager;
   }
 
   @VisibleForTesting
-  InitSqlPipeline(InitSqlPipelineOptions options, Pipeline pipeline) {
+  InitSqlPipeline(
+      InitSqlPipelineOptions options,
+      Pipeline pipeline,
+      SerializableFunction<BeamJpaModule, JpaTransactionManager> jpaGetter) {
     this.options = options;
     this.pipeline = pipeline;
-    jpaGetter = JpaTransactionManagerComponent::localDbJpaTransactionManager;
+    this.jpaGetter = jpaGetter;
   }
 
   public PipelineResult run() {

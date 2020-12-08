@@ -55,6 +55,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.PersistenceTestModule;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
@@ -325,7 +326,9 @@ class InitSqlPipelineTest {
                 "--commitLogDir=" + commitLogDir.getAbsolutePath())
             .withValidation()
             .as(InitSqlPipelineOptions.class);
-    InitSqlPipeline initSqlPipeline = new InitSqlPipeline(options, testPipeline);
+    InitSqlPipeline initSqlPipeline =
+        new InitSqlPipeline(
+            options, testPipeline, PersistenceTestModule::testJpaTransactionManager);
     initSqlPipeline.run().waitUntilFinish();
     try (AppEngineEnvironment env = new AppEngineEnvironment("test")) {
       assertHostResourceEquals(

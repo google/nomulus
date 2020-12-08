@@ -19,15 +19,17 @@ import static google.registry.beam.BeamUtils.getQueryFromFile;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auto.value.AutoValue;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
+import google.registry.beam.initsql.BackupPaths;
+import google.registry.beam.initsql.JpaSupplierFactory;
 import google.registry.beam.initsql.Transforms;
-import google.registry.beam.initsql.Transforms.SerializableSupplier;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.CredentialModule.LocalCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
-import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.persistence.PersistenceModule;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
 import google.registry.util.SqlTemplate;
@@ -93,27 +95,52 @@ public class Spec11Pipeline implements Serializable {
   private final String spec11TemplateUrl;
   private final String reportingBucketUrl;
   private final GoogleCredentials googleCredentials;
+
   private final Retrier retrier;
-  private final SerializableSupplier<JpaTransactionManager> jpaSupplierFactory;
+  private final JpaSupplierFactory jpaSupplierFactory;
 
   @Inject
   public Spec11Pipeline(
       @Config("projectId") String projectId,
+      @Config("cloudKmsProjectId") String cloudKmsProjectId,
       @Config("defaultJobRegion") String beamJobRegion,
       @Config("beamStagingUrl") String beamStagingUrl,
       @Config("spec11TemplateUrl") String spec11TemplateUrl,
       @Config("reportingBucketUrl") String reportingBucketUrl,
-      SerializableSupplier<JpaTransactionManager> jpaSupplierFactory,
       @LocalCredential GoogleCredentialsBundle googleCredentialsBundle,
       Retrier retrier) {
+    this(
+        projectId,
+        beamJobRegion,
+        beamStagingUrl,
+        spec11TemplateUrl,
+        reportingBucketUrl,
+        googleCredentialsBundle,
+        retrier,
+        new JpaSupplierFactory(
+            BackupPaths.getBeamCloudSqlCredentialFilePattern(projectId),
+            cloudKmsProjectId,
+            PersistenceModule::jpaTransactionManager));
+  }
+
+  @VisibleForTesting
+  public Spec11Pipeline(
+      String projectId,
+      String beamJobRegion,
+      String beamStagingUrl,
+      String spec11TemplateUrl,
+      String reportingBucketUrl,
+      GoogleCredentialsBundle googleCredentialsBundle,
+      Retrier retrier,
+      JpaSupplierFactory jpaSupplierFactory) {
     this.projectId = projectId;
     this.beamJobRegion = beamJobRegion;
     this.beamStagingUrl = beamStagingUrl;
     this.spec11TemplateUrl = spec11TemplateUrl;
     this.reportingBucketUrl = reportingBucketUrl;
-    this.jpaSupplierFactory = jpaSupplierFactory;
     this.googleCredentials = googleCredentialsBundle.getGoogleCredentials();
     this.retrier = retrier;
+    this.jpaSupplierFactory = jpaSupplierFactory;
   }
 
   /** Custom options for running the spec11 pipeline. */
