@@ -14,7 +14,6 @@
 
 package google.registry.model.history;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
@@ -92,10 +91,7 @@ public class DomainHistoryTest extends EntityTestCase {
               assertDomainHistoriesEqual(fromDatabase, domainHistory);
               assertThat(fromDatabase.getParentVKey()).isEqualTo(domainHistory.getParentVKey());
               assertThat(fromDatabase.getNsHosts())
-                  .containsExactlyElementsIn(
-                      domainHistory.getNsHosts().stream()
-                          .map(key -> VKey.createSql(HostResource.class, key.getSqlKey()))
-                          .collect(toImmutableSet()));
+                  .containsExactlyElementsIn(domainHistory.getNsHosts());
             });
   }
 

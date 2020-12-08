@@ -31,4 +31,12 @@ public @interface WithLongVKey {
    * class name will be "VKeyConverter_" concatenated with the suffix.
    */
   String classNameSuffix() default "";
+
+  /**
+   * Set to true if this is a composite vkey.
+   *
+   * <p>For composite VKeys, we don't attempt to define an objectify key when loading from SQL: the
+   * enclosing class has to take care of that.
+   */
+  boolean compositeKey() default false;
 }

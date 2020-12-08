@@ -18,6 +18,12 @@ plugins {
 
 dependencies {
     def deps = rootProject.dependencyMap
+
+    // Custom-built objectify jar at commit ecd5165, included in Nomulus
+    // release.
+    compile files(
+        "${rootDir}/third_party/objectify/v4_1/objectify-4.1.3.jar")
+
     compile deps['com.google.code.findbugs:jsr305']
     compile deps['com.google.guava:guava']
     compile deps['com.squareup:javapoet']

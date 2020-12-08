@@ -279,7 +279,7 @@ public abstract class PollMessage extends ImmutableObject
   @EntitySubclass(index = false)
   @javax.persistence.Entity
   @DiscriminatorValue("ONE_TIME")
-  @WithLongVKey
+  @WithLongVKey(compositeKey = true)
   public static class OneTime extends PollMessage {
 
     // Response data. Objectify cannot persist a base class type, so we must have a separate field
@@ -432,7 +432,7 @@ public abstract class PollMessage extends ImmutableObject
   @EntitySubclass(index = false)
   @javax.persistence.Entity
   @DiscriminatorValue("AUTORENEW")
-  @WithLongVKey
+  @WithLongVKey(compositeKey = true)
   public static class Autorenew extends PollMessage {
 
     /** The target id of the autorenew event. */
