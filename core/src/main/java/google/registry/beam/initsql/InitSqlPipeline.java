@@ -15,7 +15,6 @@
 package google.registry.beam.initsql;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -48,7 +47,6 @@ import org.apache.beam.sdk.transforms.Wait;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionTuple;
 import org.apache.beam.sdk.values.TupleTag;
-import org.apache.beam.sdk.values.TypeDescriptor;
 import org.joda.time.DateTime;
 
 /**
@@ -228,9 +226,7 @@ public class InitSqlPipeline implements Serializable {
             transformId,
             options.getMaxConcurrentSqlWriters(),
             options.getSqlWriteBatchSize(),
-            new JpaSupplierFactory(credentialFileUrl, options.getCloudKmsProjectId(), jpaGetter),
-            (entity) -> ofy().toPojo(entity.getEntity().get()),
-            TypeDescriptor.of(VersionedEntity.class)));
+            new JpaSupplierFactory(credentialFileUrl, options.getCloudKmsProjectId(), jpaGetter)));
   }
 
   private static ImmutableList<String> toKindStrings(Collection<Class<?>> entityClasses) {
