@@ -24,10 +24,8 @@ import google.registry.privileges.secretmanager.SqlUser;
 import google.registry.privileges.secretmanager.SqlUser.RobotUser;
 import google.registry.tools.params.PathParameter;
 import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Optional;
 import javax.inject.Inject;
 
 /**
@@ -54,25 +52,22 @@ public class GetSqlCredentialCommand implements Command {
 
   @Override
   public void run() throws Exception {
-    Optional<OutputStream> out =
-        outputPath == null
-            ? Optional.empty()
-            : Optional.of(new FileOutputStream(outputPath.toFile()));
-
     SqlUser sqlUser = new RobotUser(SqlUser.RobotId.valueOf(Ascii.toUpperCase(user)));
 
+    SqlCredential credential;
     try {
-      SqlCredential credential = store.getCredential(sqlUser);
-      if (out.isPresent()) {
-        out.get().write(credential.toFormattedString().getBytes(StandardCharsets.UTF_8));
-      } else {
-        System.out.printf("[%s]\n", credential.toFormattedString());
-      }
+      credential = store.getCredential(sqlUser);
     } catch (SecretManagerException e) {
       System.out.println(e.getMessage());
+      return;
     }
-    if (out.isPresent()) {
-      out.get().close();
+
+    if (outputPath == null) {
+      System.out.printf("[%s]\n", credential.toFormattedString());
+      return;
+    }
+    try (FileOutputStream out = new FileOutputStream(outputPath.toFile())) {
+      out.write(credential.toFormattedString().getBytes(StandardCharsets.UTF_8));
     }
   }
 }
