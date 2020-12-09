@@ -57,7 +57,7 @@ public class SaveSqlCredentialCommand implements Command {
     String password = getPassword();
     SqlUser sqlUser = new RobotUser(SqlUser.RobotId.valueOf(Ascii.toUpperCase(user)));
     store.createOrUpdateCredential(sqlUser, password);
-    System.out.printf("Done:[%s]\n", password);
+    System.out.printf("\nDone:[%s]\n", password);
   }
 
   private String getPassword() throws Exception {
