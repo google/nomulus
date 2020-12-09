@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 import static google.registry.beam.initsql.BackupPaths.getCommitLogTimestamp;
 import static google.registry.beam.initsql.BackupPaths.getExportFilePatterns;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.JpaRetries.isFailedTxnRetriable;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.setJpaTm;
@@ -265,9 +266,9 @@ public final class Transforms {
   }
 
   /**
-   * Returns a {@link PTransform} that writes a {@link PCollection} of entities to a SQL database.
-   * and outputs an empty {@code PCollection<Void>}. This allows other operations to {@link
-   * org.apache.beam.sdk.transforms.Wait wait} for the completion of this transform.
+   * Returns a {@link PTransform} that writes a {@link PCollection} of {@link VersionedEntity}s to a
+   * SQL database. and outputs an empty {@code PCollection<Void>}. This allows other operations to
+   * {@link org.apache.beam.sdk.transforms.Wait wait} for the completion of this transform.
    *
    * <p>Errors are handled according to the pipeline runner's default policy. As part of a one-time
    * job, we will not add features unless proven necessary.
@@ -277,6 +278,39 @@ public final class Transforms {
    *     number of connection pools created
    * @param batchSize the number of entities to write in each operation
    * @param jpaSupplier supplier of a {@link JpaTransactionManager}
+   */
+  public static PTransform<PCollection<VersionedEntity>, PCollection<Void>> writeToSql(
+      String transformId,
+      int maxWriters,
+      int batchSize,
+      SerializableSupplier<JpaTransactionManager> jpaSupplier) {
+    return writeToSql(
+        transformId,
+        maxWriters,
+        batchSize,
+        jpaSupplier,
+        (e) -> ofy().toPojo(e.getEntity().get()),
+        TypeDescriptor.of(VersionedEntity.class));
+  }
+
+  /**
+   * Returns a {@link PTransform} that writes a {@link PCollection} of entities to a SQL database.
+   * and outputs an empty {@code PCollection<Void>}. This allows other operations to {@link
+   * org.apache.beam.sdk.transforms.Wait wait} for the completion of this transform.
+   *
+   * <p>The converter and type descriptor are generics so that we can convert any type of entity to
+   * an object to be placed in SQL.
+   *
+   * <p>Errors are handled according to the pipeline runner's default policy. As part of a one-time
+   * job, we will not add features unless proven necessary.
+   *
+   * @param transformId a unique ID for an instance of the returned transform
+   * @param maxWriters the max number of concurrent writes to SQL, which also determines the max
+   *     number of connection pools created
+   * @param batchSize the number of entities to write in each operation
+   * @param jpaSupplier supplier of a {@link JpaTransactionManager}
+   * @param jpaConverter the function that converts the input object to a JPA entity
+   * @param objectDescriptor the type descriptor of the input object
    */
   public static <T> PTransform<PCollection<T>, PCollection<Void>> writeToSql(
       String transformId,
