@@ -33,8 +33,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 
-/** Base Command to dedupe entities with duplicate IDs. */
-abstract class DedupeEntityIdsCommand<T> extends MutatingCommand {
+/**
+ * Base Command to read entities from Datastore by their key paths retrieved from BigQuery.
+ *
+ * <p>The key path is the value of column __key__.path of the entity's BigQuery table. Its value is
+ * converted from the entity's key.
+ */
+abstract class ReadEntityFromKeyPathCommand<T> extends MutatingCommand {
 
   @Parameter(
       names = "--key_paths_file",
@@ -48,7 +53,7 @@ abstract class DedupeEntityIdsCommand<T> extends MutatingCommand {
 
   private StringBuilder changeMessage = new StringBuilder();
 
-  abstract void dedupe(T entity);
+  abstract void process(T entity);
 
   @Override
   protected void init() throws Exception {
@@ -69,7 +74,7 @@ abstract class DedupeEntityIdsCommand<T> extends MutatingCommand {
       }
       Class<T> clazz = new TypeInstantiator<T>(getClass()) {}.getExactType();
       if (clazz.isInstance(entity)) {
-        dedupe((T) entity);
+        process((T) entity);
       } else {
         throw new IllegalArgumentException("Unsupported entity key: " + untypedKey);
       }

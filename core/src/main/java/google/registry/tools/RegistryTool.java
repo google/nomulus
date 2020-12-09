@@ -99,6 +99,7 @@ public final class RegistryTool {
           .put("populate_null_registrar_fields", PopulateNullRegistrarFieldsCommand.class)
           .put("registrar_contact", RegistrarContactCommand.class)
           .put("remove_ip_address", RemoveIpAddressCommand.class)
+          .put("remove_registry_one_key", RemoveRegistryOneKeyCommand.class)
           .put("renew_domain", RenewDomainCommand.class)
           .put("resave_entities", ResaveEntitiesCommand.class)
           .put("resave_environment_entities", ResaveEnvironmentEntitiesCommand.class)
