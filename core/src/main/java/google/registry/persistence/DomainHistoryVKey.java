@@ -21,42 +21,44 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.reporting.HistoryEntry;
 import javax.persistence.Embeddable;
-import javax.persistence.PostLoad;
 
 /** {@link VKey} for {@link HistoryEntry} which parent is {@link DomainBase}. */
 @Embeddable
-public class DomainHistoryVKey extends VKey<HistoryEntry> {
+public class DomainHistoryVKey extends EppHistoryVKey<HistoryEntry, DomainBase> {
 
-  private String domainRepoId;
+  @Override
+  Object createSqlKey() {
+    return createSqlKey(repoId, historyRevisionId);
+  }
 
-  private Long domainHistoryId;
+  @Override
+  Key<HistoryEntry> createOfyKey() {
+    return createOfyKey(repoId, historyRevisionId);
+  }
+
+  private Object createSqlKey(String repoId, long historyRevisionId) {
+    return new DomainHistoryId(repoId, historyRevisionId);
+  }
+
+  private Key<HistoryEntry> createOfyKey(String repoId, long historyRevisionId) {
+    return Key.create(Key.create(DomainBase.class, repoId), HistoryEntry.class, historyRevisionId);
+  }
 
   // Hibernate requires a default constructor
   private DomainHistoryVKey() {}
 
-  private DomainHistoryVKey(String domainRepoId, long domainHistoryId) {
-    initWith(domainRepoId, domainHistoryId);
-  }
-
-  @PostLoad
-  void postLoad() {
-    initWith(domainRepoId, domainHistoryId);
-  }
-
-  private void initWith(String domainRepoId, long domainHistoryId) {
-    this.kind = HistoryEntry.class;
-    this.ofyKey =
-        Key.create(Key.create(DomainBase.class, domainRepoId), HistoryEntry.class, domainHistoryId);
-    this.sqlKey = new DomainHistoryId(domainRepoId, domainHistoryId);
-    this.domainRepoId = domainRepoId;
-    this.domainHistoryId = domainHistoryId;
+  private DomainHistoryVKey(String repoId, long historyRevisionId) {
+    this.ofyKey = createOfyKey(repoId, historyRevisionId);
+    this.sqlKey = createSqlKey(repoId, historyRevisionId);
+    this.repoId = repoId;
+    this.historyRevisionId = historyRevisionId;
   }
 
   /** Creates {@link DomainHistoryVKey} from the given {@link Key} instance. */
   public static DomainHistoryVKey create(Key<HistoryEntry> ofyKey) {
     checkArgumentNotNull(ofyKey, "ofyKey must be specified");
-    String domainRepoId = ofyKey.getParent().getName();
-    long domainHistoryId = ofyKey.getId();
-    return new DomainHistoryVKey(domainRepoId, domainHistoryId);
+    String repoId = ofyKey.getParent().getName();
+    long historyRevisionId = ofyKey.getId();
+    return new DomainHistoryVKey(repoId, historyRevisionId);
   }
 }

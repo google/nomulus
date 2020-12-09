@@ -63,6 +63,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.PollMessageVKey.DomainPollMessageVKey;
 import google.registry.persistence.VKey;
 import google.registry.util.CollectionUtils;
 import java.util.HashSet;
@@ -209,17 +210,16 @@ public class DomainContent extends EppResource
    * refer to a {@link PollMessage} timed to when the domain is fully deleted. If the domain is
    * restored, the message should be deleted.
    */
-  @Column(name = "deletion_poll_message_id")
-  VKey<PollMessage.OneTime> deletePollMessage;
-
-  /**
-   * History record for the delete poll message.
-   *
-   * <p>Here so we can restore the original ofy key from sql.
-   */
-  @Column(name = "deletion_poll_message_history_id")
-  @Ignore
-  Long deletePollMessageHistoryId;
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "repoId",
+        column = @Column(name = "repoId", insertable = false, updatable = false)),
+    @AttributeOverride(
+        name = "historyRevisionId",
+        column = @Column(name = "deletion_poll_message_history_id")),
+    @AttributeOverride(name = "pollMessageId", column = @Column(name = "deletion_poll_message_id"))
+  })
+  DomainPollMessageVKey deletePollMessage;
 
   /**
    * The recurring billing event associated with this domain's autorenewals.
@@ -249,15 +249,16 @@ public class DomainContent extends EppResource
    * {@link #registrationExpirationTime} is changed the recurrence should be closed, a new one
    * should be created, and this field should be updated to point to the new one.
    */
-  @Column(name = "autorenew_poll_message_id")
-  VKey<PollMessage.Autorenew> autorenewPollMessage;
-
-  /**
-   * History record for the autorenew poll message.
-   *
-   * <p>Here so we can restore the original ofy key from sql.
-   */
-  @Ignore Long autorenewPollMessageHistoryId;
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "repoId",
+        column = @Column(name = "repoId", insertable = false, updatable = false)),
+    @AttributeOverride(
+        name = "historyRevisionId",
+        column = @Column(name = "autorenew_poll_message_history_id")),
+    @AttributeOverride(name = "pollMessageId", column = @Column(name = "autorenew_poll_message_id"))
+  })
+  DomainPollMessageVKey autorenewPollMessage;
 
   /** The unexpired grace periods for this domain (some of which may not be active yet). */
   @Transient Set<GracePeriod> gracePeriods;
@@ -316,9 +317,7 @@ public class DomainContent extends EppResource
     gracePeriods.forEach(GracePeriod::onLoad);
 
     // Restore history record ids.
-    autorenewPollMessageHistoryId = getHistoryId(autorenewPollMessage);
     autorenewBillingEventHistoryId = getHistoryId(autorenewBillingEvent);
-    deletePollMessageHistoryId = getHistoryId(deletePollMessage);
     dsData =
         nullToEmptyImmutableCopy(dsData).stream()
             .map(dsData -> dsData.cloneWithDomainRepoId(getRepoId()))
@@ -349,11 +348,11 @@ public class DomainContent extends EppResource
 
     // Reconstitute the composite ofy keys from the SQL data.
     Key<DomainBase> myKey = Key.create(DomainBase.class, getRepoId());
-    deletePollMessage = restoreOfyFrom(myKey, deletePollMessage, deletePollMessageHistoryId);
     autorenewBillingEvent =
         restoreOfyFrom(myKey, autorenewBillingEvent, autorenewBillingEventHistoryId);
-    autorenewPollMessage =
-        restoreOfyFrom(myKey, autorenewPollMessage, autorenewPollMessageHistoryId);
+
+    deletePollMessage = deletePollMessage.isNullKey() ? null : deletePollMessage;
+    autorenewPollMessage = autorenewPollMessage.isNullKey() ? null : autorenewPollMessage;
 
     if (transferData != null) {
       transferData.restoreOfyKeys(myKey);
@@ -378,7 +377,7 @@ public class DomainContent extends EppResource
   }
 
   public VKey<PollMessage.OneTime> getDeletePollMessage() {
-    return deletePollMessage;
+    return deletePollMessage == null ? null : deletePollMessage.toOneTimeVKey();
   }
 
   public VKey<BillingEvent.Recurring> getAutorenewBillingEvent() {
@@ -386,7 +385,7 @@ public class DomainContent extends EppResource
   }
 
   public VKey<PollMessage.Autorenew> getAutorenewPollMessage() {
-    return autorenewPollMessage;
+    return autorenewPollMessage == null ? null : autorenewPollMessage.toAutoRenewVKey();
   }
 
   public ImmutableSet<GracePeriod> getGracePeriods() {
@@ -914,8 +913,8 @@ public class DomainContent extends EppResource
     }
 
     public B setDeletePollMessage(VKey<PollMessage.OneTime> deletePollMessage) {
-      getInstance().deletePollMessage = deletePollMessage;
-      getInstance().deletePollMessageHistoryId = getHistoryId(deletePollMessage);
+      getInstance().deletePollMessage =
+          deletePollMessage == null ? null : DomainPollMessageVKey.create(deletePollMessage);
       return thisCastToDerived();
     }
 
@@ -926,8 +925,8 @@ public class DomainContent extends EppResource
     }
 
     public B setAutorenewPollMessage(VKey<PollMessage.Autorenew> autorenewPollMessage) {
-      getInstance().autorenewPollMessage = autorenewPollMessage;
-      getInstance().autorenewPollMessageHistoryId = getHistoryId(autorenewPollMessage);
+      getInstance().autorenewPollMessage =
+          autorenewPollMessage == null ? null : DomainPollMessageVKey.create(autorenewPollMessage);
       return thisCastToDerived();
     }
 

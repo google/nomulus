@@ -650,11 +650,8 @@ public class DomainBaseSqlTest {
                       .asBuilder()
                       .setAutorenewBillingEvent(
                           createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId()))
-                      .setAutorenewPollMessage(
-                          createLegacyVKey(
-                              PollMessage.Autorenew.class, autorenewPollMessage.getId()))
-                      .setDeletePollMessage(
-                          createLegacyVKey(PollMessage.OneTime.class, deletePollMessage.getId()))
+                      .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+                      .setDeletePollMessage(deletePollMessage.createVKey())
                       .setTransferData(transferData)
                       .setGracePeriods(gracePeriods)
                       .build();

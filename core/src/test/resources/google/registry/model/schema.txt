@@ -208,9 +208,9 @@ class google.registry.model.domain.DomainBase {
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
   google.registry.model.transfer.DomainTransferData transferData;
+  google.registry.persistence.PollMessageVKey$DomainPollMessageVKey autorenewPollMessage;
+  google.registry.persistence.PollMessageVKey$DomainPollMessageVKey deletePollMessage;
   google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> autorenewBillingEvent;
-  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
-  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
   java.lang.String fullyQualifiedDomainName;
@@ -238,9 +238,9 @@ class google.registry.model.domain.DomainContent {
   google.registry.model.domain.DomainAuthInfo authInfo;
   google.registry.model.domain.launch.LaunchNotice launchNotice;
   google.registry.model.transfer.DomainTransferData transferData;
+  google.registry.persistence.PollMessageVKey$DomainPollMessageVKey autorenewPollMessage;
+  google.registry.persistence.PollMessageVKey$DomainPollMessageVKey deletePollMessage;
   google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> autorenewBillingEvent;
-  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$Autorenew> autorenewPollMessage;
-  google.registry.persistence.VKey<google.registry.model.poll.PollMessage$OneTime> deletePollMessage;
   java.lang.String creationClientId;
   java.lang.String currentSponsorClientId;
   java.lang.String fullyQualifiedDomainName;
@@ -891,7 +891,15 @@ enum google.registry.model.transfer.TransferStatus {
 class google.registry.persistence.DomainHistoryVKey {
   com.googlecode.objectify.Key<T> ofyKey;
   java.lang.Class<? extends T> kind;
-  java.lang.Long domainHistoryId;
+  java.lang.Long historyRevisionId;
   java.lang.Object sqlKey;
-  java.lang.String domainRepoId;
+  java.lang.String repoId;
+}
+class google.registry.persistence.PollMessageVKey$DomainPollMessageVKey {
+  com.googlecode.objectify.Key<T> ofyKey;
+  java.lang.Class<? extends T> kind;
+  java.lang.Long historyRevisionId;
+  java.lang.Long pollMessageId;
+  java.lang.Object sqlKey;
+  java.lang.String repoId;
 }

@@ -111,9 +111,9 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
   @Nullable
   @Index
   @AttributeOverrides({
-    @AttributeOverride(name = "domainRepoId", column = @Column(name = "redemption_domain_repo_id")),
+    @AttributeOverride(name = "repoId", column = @Column(name = "redemption_domain_repo_id")),
     @AttributeOverride(
-        name = "domainHistoryId",
+        name = "historyRevisionId",
         column = @Column(name = "redemption_domain_history_id"))
   })
   DomainHistoryVKey redemptionHistoryEntry;
