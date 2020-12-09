@@ -35,7 +35,7 @@ public abstract class SqlCredential {
 
   @Override
   public final String toString() {
-    // Ensure password is not accidentally logged.
+    // Use Object.toString(), which does not show object data.
     return super.toString();
   }
 

@@ -43,7 +43,9 @@ public class SaveSqlCredentialCommand implements Command {
 
   @Parameter(
       names = {"--input"},
-      description = "Name of input file for the password.",
+      description =
+          "Name of input file for the password. If absent, command will prompt for "
+              + "password in console.",
       validateWith = PathParameter.InputFile.class)
   private Path inputPath = null;
 
@@ -52,9 +54,16 @@ public class SaveSqlCredentialCommand implements Command {
 
   @Override
   public void run() throws Exception {
-    String password = Files.readAllLines(inputPath, StandardCharsets.UTF_8).get(0);
+    String password = getPassword();
     SqlUser sqlUser = new RobotUser(SqlUser.RobotId.valueOf(Ascii.toUpperCase(user)));
     store.createOrUpdateCredential(sqlUser, password);
-    System.out.println("Done");
+    System.out.printf("Done:[%s]\n", password);
+  }
+
+  private String getPassword() throws Exception {
+    if (inputPath != null) {
+      return Files.readAllLines(inputPath, StandardCharsets.UTF_8).get(0);
+    }
+    return System.console().readLine("Please enter the password: ").trim();
   }
 }

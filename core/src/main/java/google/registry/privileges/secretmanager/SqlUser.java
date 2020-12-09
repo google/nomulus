@@ -42,6 +42,7 @@ public abstract class SqlUser {
 
   /** Cloud SQL user types. Please see class javadoc of {@link SqlUser} for more information. */
   enum UserType {
+    // Work in progress. Human user will be added.
     ROBOT
   }
 
@@ -51,6 +52,7 @@ public abstract class SqlUser {
   }
 
   /** Information of a RobotUser for privilege management purposes. */
+  // Work in progress. Eventually will be provided based on configuration.
   public static class RobotUser extends SqlUser {
 
     public RobotUser(RobotId robot) {
