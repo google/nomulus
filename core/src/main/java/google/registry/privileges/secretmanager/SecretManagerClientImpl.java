@@ -29,12 +29,11 @@ import com.google.cloud.secretmanager.v1.SecretName;
 import com.google.cloud.secretmanager.v1.SecretPayload;
 import com.google.cloud.secretmanager.v1.SecretVersion;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import com.google.protobuf.ByteString;
 import google.registry.util.Retrier;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.inject.Inject;
 
 /** Implements {@link SecretManagerClient} on Google Cloud Platform. */
 public class SecretManagerClientImpl implements SecretManagerClient {
@@ -42,11 +41,15 @@ public class SecretManagerClientImpl implements SecretManagerClient {
   private final SecretManagerServiceClient csmClient;
   private final Retrier retrier;
 
-  @Inject
   SecretManagerClientImpl(String project, SecretManagerServiceClient csmClient, Retrier retrier) {
     this.project = project;
     this.csmClient = csmClient;
     this.retrier = retrier;
+  }
+
+  @Override
+  public String getProject() {
+    return project;
   }
 
   @Override
@@ -58,11 +61,24 @@ public class SecretManagerClientImpl implements SecretManagerClient {
   }
 
   @Override
+  public boolean secretExists(String secretId) {
+    checkNotNull(secretId, "secretId");
+    try {
+      callSecretManager(() -> csmClient.getSecret(SecretName.of(project, secretId)));
+      return true;
+    } catch (NoSuchSecretResourceException e) {
+      return false;
+    }
+  }
+
+  @Override
   public Iterable<String> listSecrets() {
     ListSecretsPagedResponse response =
         callSecretManager(() -> csmClient.listSecrets(ProjectName.of(project)));
-    return Iterables.transform(
-        response.iterateAll(), secret -> SecretName.parse(secret.getName()).getSecret());
+    return () ->
+        Streams.stream(response.iterateAll())
+            .map(secret -> SecretName.parse(secret.getName()).getSecret())
+            .iterator();
   }
 
   @Override
@@ -70,8 +86,10 @@ public class SecretManagerClientImpl implements SecretManagerClient {
     checkNotNull(secretId, "secretId");
     ListSecretVersionsPagedResponse response =
         callSecretManager(() -> csmClient.listSecretVersions(SecretName.of(project, secretId)));
-    return Iterables.transform(
-        response.iterateAll(), SecretManagerClientImpl::toSecretVersionState);
+    return () ->
+        Streams.stream(response.iterateAll())
+            .map(SecretManagerClientImpl::toSecretVersionState)
+            .iterator();
   }
 
   private static SecretVersionState toSecretVersionState(SecretVersion secretVersion) {
@@ -106,6 +124,22 @@ public class SecretManagerClientImpl implements SecretManagerClient {
                 .getPayload()
                 .getData()
                 .toStringUtf8());
+  }
+
+  @Override
+  public void enableSecretVersion(String secretId, String version) {
+    checkNotNull(secretId, "secretId");
+    checkNotNull(version, "version");
+    callSecretManager(
+        () -> csmClient.enableSecretVersion(SecretVersionName.of(project, secretId, version)));
+  }
+
+  @Override
+  public void disableSecretVersion(String secretId, String version) {
+    checkNotNull(secretId, "secretId");
+    checkNotNull(version, "version");
+    callSecretManager(
+        () -> csmClient.disableSecretVersion(SecretVersionName.of(project, secretId, version)));
   }
 
   @Override

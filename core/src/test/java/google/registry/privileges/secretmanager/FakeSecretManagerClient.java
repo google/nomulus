@@ -33,12 +33,23 @@ public class FakeSecretManagerClient implements SecretManagerClient {
   FakeSecretManagerClient() {}
 
   @Override
+  public String getProject() {
+    return "fake_project";
+  }
+
+  @Override
   public void createSecret(String secretId) {
     checkNotNull(secretId, "secretId");
     if (secrets.containsKey(secretId)) {
       throw new SecretAlreadyExistsException(null);
     }
     secrets.put(secretId, new SecretEntry(secretId));
+  }
+
+  @Override
+  public boolean secretExists(String secretId) {
+    checkNotNull(secretId, "secretId");
+    return secrets.containsKey(secretId);
   }
 
   @Override
@@ -76,6 +87,28 @@ public class FakeSecretManagerClient implements SecretManagerClient {
       throw new NoSuchSecretResourceException(null);
     }
     return secretEntry.getVersion(version).getData();
+  }
+
+  @Override
+  public void enableSecretVersion(String secretId, String version) {
+    checkNotNull(secretId, "secretId");
+    checkNotNull(version, "version");
+    SecretEntry secretEntry = secrets.get(secretId);
+    if (secretEntry == null) {
+      throw new NoSuchSecretResourceException(null);
+    }
+    secretEntry.enableVersion(version);
+  }
+
+  @Override
+  public void disableSecretVersion(String secretId, String version) {
+    checkNotNull(secretId, "secretId");
+    checkNotNull(version, "version");
+    SecretEntry secretEntry = secrets.get(secretId);
+    if (secretEntry == null) {
+      throw new NoSuchSecretResourceException(null);
+    }
+    secretEntry.disableVersion(version);
   }
 
   @Override
@@ -118,6 +151,20 @@ public class FakeSecretManagerClient implements SecretManagerClient {
       return state;
     }
 
+    void enable() {
+      if (state.equals(State.DESTROYED)) {
+        throw new SecretManagerException(null);
+      }
+      state = State.ENABLED;
+    }
+
+    void disable() {
+      if (state.equals(State.DESTROYED)) {
+        throw new SecretManagerException(null);
+      }
+      state = State.DISABLED;
+    }
+
     void destroy() {
       data = null;
       state = State.DESTROYED;
@@ -145,6 +192,8 @@ public class FakeSecretManagerClient implements SecretManagerClient {
         return versions.get(index);
       } catch (NumberFormatException e) {
         throw new IllegalArgumentException("Invalid version " + version.get());
+      } catch (ArrayIndexOutOfBoundsException e) {
+        throw new NoSuchSecretResourceException(null);
       }
     }
 
@@ -156,15 +205,16 @@ public class FakeSecretManagerClient implements SecretManagerClient {
       return builder.build();
     }
 
+    void enableVersion(String version) {
+      getVersion(Optional.of(version)).enable();
+    }
+
+    void disableVersion(String version) {
+      getVersion(Optional.of(version)).disable();
+    }
+
     void destroyVersion(String version) {
-      try {
-        int index = Integer.valueOf(version);
-        versions.get(index).destroy();
-      } catch (NumberFormatException e) {
-        throw new IllegalArgumentException("Invalid version " + version);
-      } catch (ArrayIndexOutOfBoundsException e) {
-        throw new NoSuchSecretResourceException(null);
-      }
+      getVersion(Optional.of(version)).destroy();
     }
   }
 }

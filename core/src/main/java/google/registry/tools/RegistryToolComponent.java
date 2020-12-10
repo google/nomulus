@@ -34,6 +34,7 @@ import google.registry.keyring.kms.KmsModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.NomulusToolJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.rde.RdeModule;
 import google.registry.request.Modules.DatastoreServiceModule;
 import google.registry.request.Modules.Jackson2Module;
@@ -74,6 +75,7 @@ import javax.inject.Singleton;
       PersistenceModule.class,
       RdeModule.class,
       RequestFactoryModule.class,
+      SecretManagerModule.class,
       URLFetchServiceModule.class,
       UrlFetchTransportModule.class,
       UserServiceModule.class,
@@ -118,6 +120,8 @@ interface RegistryToolComponent {
 
   void inject(GetOperationStatusCommand command);
 
+  void inject(GetSqlCredentialCommand command);
+
   void inject(GhostrydeCommand command);
 
   void inject(ImportDatastoreCommand command);
@@ -137,6 +141,8 @@ interface RegistryToolComponent {
   void inject(PendingEscrowCommand command);
 
   void inject(RenewDomainCommand command);
+
+  void inject(SaveSqlCredentialCommand command);
 
   void inject(SendEscrowReportToIcannCommand command);
 
