@@ -50,11 +50,21 @@ public class ResaveAllEppResourcesAction implements Runnable {
   @Inject Response response;
   @Inject ResaveAllEppResourcesAction() {}
 
+  /**
+   * The number of shards to run the map-only mapreduce on.
+   *
+   * <p>This is less than the default of 100 because we only run this action monthly and can afford
+   * it being slower, but we don't want to write out lots of large commit logs in a short period of
+   * time because they make the Cloud SQL migration tougher.
+   */
+  private static final int NUM_SHARDS = 10;
+
   @Override
   public void run() {
     mrRunner
         .setJobName("Re-save all EPP resources")
         .setModuleName("backend")
+        .setDefaultMapShards(NUM_SHARDS)
         .runMapOnly(
             new ResaveAllEppResourcesActionMapper(),
             ImmutableList.of(EppResourceInputs.createKeyInput(EppResource.class)))
