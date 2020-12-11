@@ -187,13 +187,9 @@ public class DomainBaseTest extends EntityTestCase {
 
   @Test
   void testVKeyRestoration() {
-    assertThat(domain.getDeletePollMessage())
-        .isEqualTo(
-            VKey.create(
-                PollMessage.OneTime.class,
-                1L,
-                Key.create(historyEntryKey, PollMessage.OneTime.class, 1L)));
+    assertThat(domain.deletePollMessageHistoryId).isEqualTo(historyEntryKey.getId());
     assertThat(domain.autorenewBillingEventHistoryId).isEqualTo(historyEntryKey.getId());
+    assertThat(domain.autorenewPollMessageHistoryId).isEqualTo(historyEntryKey.getId());
     assertThat(domain.getTransferData().getServerApproveBillingEventHistoryId())
         .isEqualTo(historyEntryKey.getId());
     assertThat(domain.getTransferData().getServerApproveAutorenewEventHistoryId())

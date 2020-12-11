@@ -75,16 +75,7 @@ import javax.persistence.Table;
 public class DomainHistory extends HistoryEntry implements SqlEntity {
 
   // Store DomainContent instead of DomainBase so we don't pick up its @Id
-  @Nullable
-  @AttributeOverrides({
-      @AttributeOverride(
-          name = "autorenewPollMessage.repoId",
-          column = @Column(name = "domainRepoId", insertable = false, updatable = false)),
-      @AttributeOverride(
-          name = "deletePollMessage.repoId",
-          column = @Column(name = "domainRepoId", insertable = false, updatable = false))
-  })
-  DomainContent domainContent;
+  @Nullable DomainContent domainContent;
 
   @Id
   @Access(AccessType.PROPERTY)
