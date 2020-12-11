@@ -148,6 +148,8 @@ interface RegistryToolComponent {
 
   void inject(SetNumInstancesCommand command);
 
+  void inject(SetSqlReplayCheckpointCommand command);
+
   void inject(SetupOteCommand command);
 
   void inject(UnlockDomainCommand command);
