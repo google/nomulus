@@ -750,6 +750,20 @@ public class DatabaseHelper {
             .build());
   }
 
+  /** Persists and returns a {@link Registrar} with the specified registrarId. */
+  public static Registrar persistNewRegistrar(String registrarId) {
+    return persistNewRegistrar(registrarId, registrarId + " name", Registrar.Type.REAL, 100L);
+  }
+
+  /** Persists and returns a list of {@link Registrar}s with the specified registrarIds. */
+  public static ImmutableList<Registrar> persistNewRegistrars(String... registrarIds) {
+    ImmutableList.Builder<Registrar> newRegistrars = new ImmutableList.Builder<>();
+    for (String registrarId : registrarIds) {
+      newRegistrars.add(persistNewRegistrar(registrarId));
+    }
+    return newRegistrars.build();
+  }
+
   private static Iterable<BillingEvent> getBillingEvents() {
     return transactIfJpaTm(
         () ->
