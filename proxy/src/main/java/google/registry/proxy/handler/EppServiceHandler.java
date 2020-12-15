@@ -34,7 +34,9 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Promise;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.function.Supplier;
 
 /** Handler that processes EPP protocol logic. */
@@ -52,18 +54,26 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
   /** Name of the HTTP header that stores the client certificate hash. */
   public static final String SSL_CLIENT_CERTIFICATE_HASH_FIELD = "X-SSL-Certificate";
 
+  /** Name of the HTTP header that stores the full client certificate. */
+  public static final String SSL_CLIENT_FULL_CERTIFICATE_FIELD = "X-SSL-Full-Certificate";
+
   /** Name of the HTTP header that stores the client IP address. */
   public static final String FORWARDED_FOR_FIELD = "X-Forwarded-For";
 
   /** Name of the HTTP header that indicates if the EPP session should be closed. */
   public static final String EPP_SESSION_FIELD = "Epp-Session";
 
+  /** Name of the HTTP header that indicates a successful login has occurred. */
+  public static final String EPP_LOGGED_IN_FIELD = "Logged-In";
+
   public static final String EPP_CONTENT_TYPE = "application/epp+xml";
 
   private final byte[] helloBytes;
 
   private String sslClientCertificateHash;
+  private X509Certificate sslClientCertificate;
   private String clientAddress;
+  private boolean isLoggedIn = false;
 
   public EppServiceHandler(
       String relayHost,
@@ -103,7 +113,8 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
             .addListener(
                 (Promise<X509Certificate> promise) -> {
                   if (promise.isSuccess()) {
-                    sslClientCertificateHash = getCertificateHash(promise.get());
+                    sslClientCertificate = promise.get();
+                    sslClientCertificateHash = getCertificateHash(sslClientCertificate);
                     // Set the client cert hash key attribute for both this channel,
                     // used for collecting metrics on specific clients.
                     ctx.channel().attr(CLIENT_CERTIFICATE_HASH_KEY).set(sslClientCertificateHash);
@@ -132,6 +143,17 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
         .set(FORWARDED_FOR_FIELD, clientAddress)
         .set(HttpHeaderNames.CONTENT_TYPE, EPP_CONTENT_TYPE)
         .set(HttpHeaderNames.ACCEPT, EPP_CONTENT_TYPE);
+    if (!isLoggedIn) {
+      try {
+        request
+            .headers()
+            .set(
+                SSL_CLIENT_FULL_CERTIFICATE_FIELD,
+                Base64.getEncoder().encodeToString(sslClientCertificate.getEncoded()));
+      } catch (CertificateEncodingException e) {
+        throw new RuntimeException("Cannot encode client certificate", e);
+      }
+    }
     return request;
   }
 
@@ -141,8 +163,12 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
     checkArgument(msg instanceof HttpResponse);
     HttpResponse response = (HttpResponse) msg;
     String sessionAliveValue = response.headers().get(EPP_SESSION_FIELD);
+    String loginValue = response.headers().get(EPP_LOGGED_IN_FIELD);
     if (sessionAliveValue != null && sessionAliveValue.equals("close")) {
       promise.addListener(ChannelFutureListener.CLOSE);
+    }
+    if (loginValue != null && loginValue.equals("true")) {
+      isLoggedIn = true;
     }
     super.write(ctx, msg, promise);
   }

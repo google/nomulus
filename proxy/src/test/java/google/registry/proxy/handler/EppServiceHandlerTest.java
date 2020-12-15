@@ -16,6 +16,7 @@ package google.registry.proxy.handler;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
+import static google.registry.proxy.TestUtils.SAMPLE_CERT;
 import static google.registry.proxy.TestUtils.assertHttpRequestEquivalent;
 import static google.registry.proxy.TestUtils.makeEppHttpResponse;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
@@ -43,6 +44,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.util.concurrent.Promise;
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -109,9 +112,23 @@ class EppServiceHandlerTest {
         cookies);
   }
 
+  private FullHttpRequest makeEppHttpRequestWithCertificate(String content, Cookie... cookies) {
+    return TestUtils.makeEppHttpRequestWithCertificate(
+        content,
+        RELAY_HOST,
+        RELAY_PATH,
+        ACCESS_TOKEN,
+        getCertificateHash(clientCertificate),
+        CLIENT_ADDRESS,
+        cookies);
+  }
+
   @BeforeEach
   void beforeEach() throws Exception {
-    clientCertificate = SelfSignedCaCertificate.create().cert();
+    CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    clientCertificate =
+        (X509Certificate)
+            cf.generateCertificate(new ByteArrayInputStream(SAMPLE_CERT.getBytes(UTF_8)));
     channel = setUpNewChannel(eppServiceHandler);
   }
 
@@ -194,7 +211,7 @@ class EppServiceHandlerTest {
     setHandshakeSuccess();
     // hello bytes should be passed to the next handler.
     FullHttpRequest helloRequest = channel.readInbound();
-    assertThat(helloRequest).isEqualTo(makeEppHttpRequest(HELLO));
+    assertThat(helloRequest).isEqualTo(makeEppHttpRequestWithCertificate(HELLO));
     // Nothing further to pass to the next handler.
     assertThat((Object) channel.readInbound()).isNull();
     assertThat(channel.isActive()).isTrue();
@@ -216,8 +233,30 @@ class EppServiceHandlerTest {
     String content = "<epp>stuff</epp>";
     channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
     FullHttpRequest request = channel.readInbound();
-    assertThat(request).isEqualTo(makeEppHttpRequest(content));
+    assertThat(request).isEqualTo(makeEppHttpRequestWithCertificate(content));
     // Nothing further to pass to the next handler.
+    assertThat((Object) channel.readInbound()).isNull();
+    assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_sendCertificateOnlyBeforeLogin() throws Exception {
+    setHandshakeSuccess();
+    // First inbound message is hello.
+    channel.readInbound();
+    String content = "<epp>stuff</epp>";
+    channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
+    FullHttpRequest request = channel.readInbound();
+    assertThat(request).isEqualTo(makeEppHttpRequestWithCertificate(content));
+    // Receive response indicating session is logged in
+    HttpResponse response = makeEppHttpResponse(content, HttpResponseStatus.OK);
+    response.headers().set("Logged-In", "true");
+    // Send another inbound message after login
+    channel.writeOutbound(response);
+    channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
+    request = channel.readInbound();
+    // Second request should not have full certificate
+    assertThat(request).isEqualTo(makeEppHttpRequest(content));
     assertThat((Object) channel.readInbound()).isNull();
     assertThat(channel.isActive()).isTrue();
   }
@@ -294,7 +333,8 @@ class EppServiceHandlerTest {
     String requestContent = "<epp>request</epp>";
     channel.writeInbound(Unpooled.wrappedBuffer(requestContent.getBytes(UTF_8)));
     FullHttpRequest request = channel.readInbound();
-    assertHttpRequestEquivalent(request, makeEppHttpRequest(requestContent, cookie1, cookie2));
+    assertHttpRequestEquivalent(
+        request, makeEppHttpRequestWithCertificate(requestContent, cookie1, cookie2));
     // Nothing further to pass to the next handler.
     assertThat((Object) channel.readInbound()).isNull();
     assertThat((Object) channel.readOutbound()).isNull();
@@ -317,13 +357,16 @@ class EppServiceHandlerTest {
     // First request written.
     channel.writeInbound(Unpooled.wrappedBuffer(requestContent1.getBytes(UTF_8)));
     FullHttpRequest request1 = channel.readInbound();
-    assertHttpRequestEquivalent(request1, makeEppHttpRequest(requestContent1, cookie1, cookie2));
+    assertHttpRequestEquivalent(
+        request1, makeEppHttpRequestWithCertificate(requestContent1, cookie1, cookie2));
     String responseContent2 = "<epp>response2</epp>";
     Cookie cookie3 = new DefaultCookie("name3", "value3");
     Cookie newCookie2 = new DefaultCookie("name2", "newValue");
     // Second response written.
-    channel.writeOutbound(
-        makeEppHttpResponse(responseContent2, HttpResponseStatus.OK, cookie3, newCookie2));
+    HttpResponse response =
+        makeEppHttpResponse(responseContent2, HttpResponseStatus.OK, cookie3, newCookie2);
+    response.headers().set("Logged-In", "true");
+    channel.writeOutbound(response);
     channel.readOutbound();
     String requestContent2 = "<epp>request2</epp>";
     // Second request written.

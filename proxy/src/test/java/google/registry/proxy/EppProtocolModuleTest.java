@@ -16,6 +16,7 @@ package google.registry.proxy;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.networking.handler.SslServerInitializer.CLIENT_CERTIFICATE_PROMISE_KEY;
+import static google.registry.proxy.TestUtils.SAMPLE_CERT;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.util.ResourceUtils.readResourceBytes;
 import static google.registry.util.X509Utils.getCertificateHash;
@@ -25,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.base.Throwables;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
 import google.registry.testing.FakeClock;
-import google.registry.util.SelfSignedCaCertificate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -36,6 +36,8 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.util.concurrent.Promise;
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,8 +98,8 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
     return buffer;
   }
 
-  private FullHttpRequest makeEppHttpRequest(byte[] content, Cookie... cookies) {
-    return TestUtils.makeEppHttpRequest(
+  private FullHttpRequest makeEppHttpRequestWithCertificate(byte[] content, Cookie... cookies) {
+    return TestUtils.makeEppHttpRequestWithCertificate(
         new String(content, UTF_8),
         PROXY_CONFIG.epp.relayHost,
         PROXY_CONFIG.epp.relayPath,
@@ -120,7 +122,10 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
   @Override
   void beforeEach() throws Exception {
     testComponent = makeTestComponent(new FakeClock());
-    certificate = SelfSignedCaCertificate.create().cert();
+    CertificateFactory cf = CertificateFactory.getInstance("X.509");
+    certificate =
+        (X509Certificate)
+            cf.generateCertificate(new ByteArrayInputStream(SAMPLE_CERT.getBytes(UTF_8)));
     initializeChannel(
         ch -> {
           ch.attr(REMOTE_ADDRESS_KEY).set(CLIENT_ADDRESS);
@@ -134,13 +139,15 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
   @Test
   void testSuccess_singleFrameInboundMessage() throws Exception {
     // First inbound message is hello.
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(HELLO_BYTES));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(HELLO_BYTES));
 
     byte[] inputBytes = readResourceBytes(getClass(), "login.xml").read();
 
     // Verify inbound message is as expected.
     assertThat(channel.writeInbound(getByteBufFromContent(inputBytes))).isTrue();
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(inputBytes));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes));
 
     // Nothing more to read.
     assertThat((Object) channel.readInbound()).isNull();
@@ -161,8 +168,10 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
                 Unpooled.wrappedBuffer(
                     getByteBufFromContent(inputBytes1), getByteBufFromContent(inputBytes2))))
         .isTrue();
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(inputBytes1));
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(inputBytes2));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes1));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes2));
 
     // Nothing more to read.
     assertThat((Object) channel.readInbound()).isNull();
@@ -186,11 +195,13 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
 
     // The second frame contains the first message, and part of the second message.
     assertThat(channel.writeInbound(inputBuffer.readBytes(inputBytes2.length))).isTrue();
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(inputBytes1));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes1));
 
     // The third frame contains the rest of the second message.
     assertThat(channel.writeInbound(inputBuffer)).isTrue();
-    assertThat((FullHttpRequest) channel.readInbound()).isEqualTo(makeEppHttpRequest(inputBytes2));
+    assertThat((FullHttpRequest) channel.readInbound())
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes2));
 
     // Nothing more to read.
     assertThat((Object) channel.readInbound()).isNull();
@@ -252,7 +263,7 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
     byte[] inputBytes1 = readResourceBytes(getClass(), "logout.xml").read();
     assertThat(channel.writeInbound(getByteBufFromContent(inputBytes1))).isTrue();
     assertThat((FullHttpRequest) channel.readInbound())
-        .isEqualTo(makeEppHttpRequest(inputBytes1, cookie1, cookie2));
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes1, cookie1, cookie2));
 
     // Second outbound message change cookies.
     byte[] outputBytes2 = readResourceBytes(getClass(), "logout_response.xml").read();
@@ -267,7 +278,7 @@ class EppProtocolModuleTest extends ProtocolModuleTest {
     byte[] inputBytes2 = readResourceBytes(getClass(), "login.xml").read();
     assertThat(channel.writeInbound(getByteBufFromContent(inputBytes2))).isTrue();
     assertThat((FullHttpRequest) channel.readInbound())
-        .isEqualTo(makeEppHttpRequest(inputBytes2, cookie1, cookie2, cookie3));
+        .isEqualTo(makeEppHttpRequestWithCertificate(inputBytes2, cookie1, cookie2, cookie3));
 
     // Nothing more to write or read.
     assertThat((Object) channel.readOutbound()).isNull();
