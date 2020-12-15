@@ -23,6 +23,8 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.ofy.ObjectifyService;
+import google.registry.persistence.BillingVKey.BillingEventVKey;
+import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import javax.annotation.Nullable;
@@ -82,10 +84,10 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
     instance.domainRepoId = checkArgumentNotNull(domainRepoId);
     instance.expirationTime = checkArgumentNotNull(expirationTime);
     instance.clientId = checkArgumentNotNull(clientId);
-    instance.billingEventOneTime = billingEventOneTime;
-    instance.billingEventOneTimeHistoryId = DomainBase.getHistoryId(billingEventOneTime);
-    instance.billingEventRecurring = billingEventRecurring;
-    instance.billingEventRecurringHistoryId = DomainBase.getHistoryId(billingEventRecurring);
+    instance.billingEventOneTime =
+        billingEventOneTime == null ? null : BillingEventVKey.create(billingEventOneTime);
+    instance.billingEventRecurring =
+        billingEventRecurring == null ? null : BillingRecurrenceVKey.create(billingEventRecurring);
     return instance;
   }
 
@@ -178,7 +180,6 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
   public GracePeriod cloneAfterOfyLoad(String domainRepoId) {
     GracePeriod clone = clone(this);
     clone.domainRepoId = checkArgumentNotNull(domainRepoId);
-    clone.restoreHistoryIds();
     return clone;
   }
 
@@ -190,7 +191,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
    */
   public GracePeriod cloneWithRecurringBillingEvent(VKey<BillingEvent.Recurring> recurring) {
     GracePeriod clone = clone(this);
-    clone.billingEventRecurring = recurring;
+    clone.billingEventRecurring = BillingRecurrenceVKey.create(recurring);
     return clone;
   }
 
@@ -232,9 +233,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
       instance.expirationTime = gracePeriod.expirationTime;
       instance.clientId = gracePeriod.clientId;
       instance.billingEventOneTime = gracePeriod.billingEventOneTime;
-      instance.billingEventOneTimeHistoryId = gracePeriod.billingEventOneTimeHistoryId;
       instance.billingEventRecurring = gracePeriod.billingEventRecurring;
-      instance.billingEventRecurringHistoryId = gracePeriod.billingEventRecurringHistoryId;
       return instance;
     }
   }

@@ -633,14 +633,13 @@ public class DomainBaseSqlTest {
                           "4-COM",
                           END_OF_TIME,
                           "registrar1",
-                          createLegacyVKey(
-                              BillingEvent.OneTime.class, oneTimeBillingEvent.getId())),
+                          oneTimeBillingEvent.createVKey()),
                       GracePeriod.createForRecurring(
                           GracePeriodStatus.AUTO_RENEW,
                           "4-COM",
                           END_OF_TIME,
                           "registrar1",
-                          createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId())));
+                          billEvent.createVKey()));
 
               jpaTm().insert(contact);
               jpaTm().insert(contact2);

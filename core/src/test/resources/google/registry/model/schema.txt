@@ -278,8 +278,8 @@ class google.registry.model.domain.DomainHistory {
 }
 class google.registry.model.domain.GracePeriod {
   google.registry.model.domain.rgp.GracePeriodStatus type;
-  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$OneTime> billingEventOneTime;
-  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> billingEventRecurring;
+  google.registry.persistence.BillingVKey$BillingEventVKey billingEventOneTime;
+  google.registry.persistence.BillingVKey$BillingRecurrenceVKey billingEventRecurring;
   java.lang.Long gracePeriodId;
   java.lang.String clientId;
   org.joda.time.DateTime expirationTime;
@@ -888,10 +888,17 @@ enum google.registry.model.transfer.TransferStatus {
   SERVER_APPROVED;
   SERVER_CANCELLED;
 }
-class google.registry.persistence.DomainHistoryVKey {
-  com.googlecode.objectify.Key<T> ofyKey;
-  java.lang.Class<? extends T> kind;
+class google.registry.persistence.BillingVKey$BillingEventVKey {
+  java.lang.Long billingId;
   java.lang.Long historyRevisionId;
-  java.lang.Object sqlKey;
+  java.lang.String repoId;
+}
+class google.registry.persistence.BillingVKey$BillingRecurrenceVKey {
+  java.lang.Long billingId;
+  java.lang.Long historyRevisionId;
+  java.lang.String repoId;
+}
+class google.registry.persistence.DomainHistoryVKey {
+  java.lang.Long historyRevisionId;
   java.lang.String repoId;
 }

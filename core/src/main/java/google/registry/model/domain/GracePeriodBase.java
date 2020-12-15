@@ -14,14 +14,14 @@
 
 package google.registry.model.domain;
 
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ModelUtils;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.persistence.BillingVKey.BillingEventVKey;
+import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.persistence.VKey;
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
@@ -68,24 +68,16 @@ public class GracePeriodBase extends ImmutableObject {
    * billingEventRecurring}) or for redemption grace periods (since deletes have no cost).
    */
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
-  @Column(name = "billing_event_id")
-  VKey<OneTime> billingEventOneTime = null;
-
-  @Ignore
-  @Column(name = "billing_event_history_id")
-  Long billingEventOneTimeHistoryId;
+  @Access(AccessType.FIELD)
+  BillingEventVKey billingEventOneTime = null;
 
   /**
    * The recurring billing event corresponding to the action that triggered this grace period, if
    * applicable - i.e. if the action was an autorenew - or null in all other cases.
    */
   // NB: Would @IgnoreSave(IfNull.class), but not allowed for @Embed collections.
-  @Column(name = "billing_recurrence_id")
-  VKey<BillingEvent.Recurring> billingEventRecurring = null;
-
-  @Ignore
-  @Column(name = "billing_recurrence_history_id")
-  Long billingEventRecurringHistoryId;
+  @Access(AccessType.FIELD)
+  BillingRecurrenceVKey billingEventRecurring = null;
 
   public long getGracePeriodId() {
     return gracePeriodId;
@@ -123,8 +115,7 @@ public class GracePeriodBase extends ImmutableObject {
    * period is not AUTO_RENEW.
    */
   public VKey<BillingEvent.OneTime> getOneTimeBillingEvent() {
-    restoreOfyKeys();
-    return billingEventOneTime;
+    return billingEventOneTime == null ? null : billingEventOneTime.createVKey();
   }
 
   /**
@@ -132,18 +123,7 @@ public class GracePeriodBase extends ImmutableObject {
    * period is AUTO_RENEW.
    */
   public VKey<BillingEvent.Recurring> getRecurringBillingEvent() {
-    restoreOfyKeys();
-    return billingEventRecurring;
-  }
-
-  /**
-   * Restores history ids for composite VKeys after a load from datastore.
-   *
-   * <p>For use by DomainContent.load() ONLY.
-   */
-  protected void restoreHistoryIds() {
-    billingEventOneTimeHistoryId = DomainBase.getHistoryId(billingEventOneTime);
-    billingEventRecurringHistoryId = DomainBase.getHistoryId(billingEventRecurring);
+    return billingEventRecurring == null ? null : billingEventRecurring.createVKey();
   }
 
   /**
@@ -152,7 +132,6 @@ public class GracePeriodBase extends ImmutableObject {
    */
   @Override
   protected Map<Field, Object> getSignificantFields() {
-    restoreOfyKeys();
     // Can't use streams or ImmutableMap because we can have null values.
     Map<Field, Object> result = new LinkedHashMap();
     for (Map.Entry<Field, Object> entry : ModelUtils.getFieldValues(this).entrySet()) {
@@ -161,34 +140,5 @@ public class GracePeriodBase extends ImmutableObject {
       }
     }
     return result;
-  }
-
-  /**
-   * Restores Ofy keys in the billing events.
-   *
-   * <p>This must be called by all methods that access the one time or recurring billing event keys.
-   * When the billing event keys are loaded from SQL, they are loaded as asymmetric keys because the
-   * database columns that we load them from do not contain all of the information necessary to
-   * reconsitute the Ofy side of the key. In other cases, we restore the Ofy key during the
-   * hibernate {@link javax.persistence.PostLoad} method from the other fields of the object, but we
-   * have been unable to make this work with hibernate's internal persistence model in this case
-   * because the {@link GracePeriod}'s hash code is evaluated prior to these calls, and would be
-   * invalidated by changing the fields.
-   */
-  private final synchronized void restoreOfyKeys() {
-    if (billingEventOneTime != null && !billingEventOneTime.maybeGetOfyKey().isPresent()) {
-      billingEventOneTime =
-          DomainBase.restoreOfyFrom(
-              Key.create(DomainBase.class, domainRepoId),
-              billingEventOneTime,
-              billingEventOneTimeHistoryId);
-    }
-    if (billingEventRecurring != null && !billingEventRecurring.maybeGetOfyKey().isPresent()) {
-      billingEventRecurring =
-          DomainBase.restoreOfyFrom(
-              Key.create(DomainBase.class, domainRepoId),
-              billingEventRecurring,
-              billingEventRecurringHistoryId);
-    }
   }
 }

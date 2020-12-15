@@ -192,8 +192,9 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
     return token;
   }
 
-  public Optional<VKey<HistoryEntry>> getRedemptionHistoryEntry() {
-    return Optional.ofNullable(redemptionHistoryEntry);
+  public Optional<VKey<? extends HistoryEntry>> getRedemptionHistoryEntry() {
+    return Optional.ofNullable(
+        redemptionHistoryEntry == null ? null : redemptionHistoryEntry.createDomainHistoryVKey());
   }
 
   public boolean isRedeemed() {
@@ -291,9 +292,10 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
       return this;
     }
 
-    public Builder setRedemptionHistoryEntry(DomainHistoryVKey redemptionHistoryEntry) {
+    public Builder setRedemptionHistoryEntry(VKey<? extends HistoryEntry> redemptionHistoryEntry) {
+      checkArgumentNotNull(redemptionHistoryEntry, "Redemption history entry must not be null");
       getInstance().redemptionHistoryEntry =
-          checkArgumentNotNull(redemptionHistoryEntry, "Redemption history entry must not be null");
+          DomainHistoryVKey.create(redemptionHistoryEntry.getOfyKey());
       return this;
     }
 
