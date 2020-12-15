@@ -15,6 +15,7 @@
 package google.registry.model.smd;
 
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
+import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.base.Supplier;
@@ -60,14 +61,14 @@ public class SignedMarkRevocationListDao {
    * the authoritative database.
    */
   static void trySave(SignedMarkRevocationList signedMarkRevocationList) {
-    try {
-      SignedMarkRevocationListDao.save(signedMarkRevocationList);
-      logger.atInfo().log(
-          "Inserted %,d signed mark revocations into Cloud SQL",
-          signedMarkRevocationList.revokes.size());
-    } catch (Throwable e) {
-      logger.atSevere().withCause(e).log("Error inserting signed mark revocations into Cloud SQL");
-    }
+    suppressExceptionUnlessInTest(
+        () -> {
+          SignedMarkRevocationListDao.save(signedMarkRevocationList);
+          logger.atInfo().log(
+              "Inserted %,d signed mark revocations into Cloud SQL.",
+              signedMarkRevocationList.revokes.size());
+        },
+        "Error inserting signed mark revocations into Cloud SQL.");
   }
 
   private static void save(SignedMarkRevocationList signedMarkRevocationList) {

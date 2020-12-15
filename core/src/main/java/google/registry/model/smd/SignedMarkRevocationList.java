@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.isEmpty;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
+import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -32,7 +33,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
-import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EmbedMap;
 import com.googlecode.objectify.annotation.Entity;
@@ -82,8 +82,6 @@ import org.joda.time.DateTime;
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 public class SignedMarkRevocationList extends ImmutableObject implements NonReplicatedEntity {
 
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
   @VisibleForTesting static final int SHARD_SIZE = 10000;
 
   /** Common ancestor for queries. */
@@ -121,12 +119,11 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
       memoizeWithShortExpiration(
           () -> {
             SignedMarkRevocationList datastoreList = loadFromDatastore();
-            // Also load the list from Cloud SQL, compare the two lists, and log if different.
-            try {
-              loadAndCompareCloudSqlList(datastoreList);
-            } catch (Throwable t) {
-              logger.atSevere().withCause(t).log("Error comparing signed mark revocation lists.");
-            }
+            suppressExceptionUnlessInTest(
+                () -> {
+                  loadAndCompareCloudSqlList(datastoreList);
+                },
+                "Error comparing signed mark revocation lists.");
             return datastoreList;
           });
 
@@ -229,11 +226,12 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
           Maps.difference(datastoreList.revokes, cloudSqlList.revokes);
       if (!diff.areEqual()) {
         if (diff.entriesDiffering().size() > 10) {
-          logger.atWarning().log(
+          String message =
               String.format(
                   "Unequal SM revocation lists detected, Cloud SQL list with revision id %d has %d"
                       + " different records than the current Datastore list.",
-                  cloudSqlList.revisionId, diff.entriesDiffering().size()));
+                  cloudSqlList.revisionId, diff.entriesDiffering().size());
+          throw new RuntimeException(message);
         } else {
           StringBuilder diffMessage = new StringBuilder("Unequal SM revocation lists detected:\n");
           diff.entriesDiffering()
@@ -243,11 +241,13 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
                           String.format(
                               "SMD %s has key %s in Datastore and key %s in Cloud SQL.\n",
                               label, valueDiff.leftValue(), valueDiff.rightValue())));
-          logger.atWarning().log(diffMessage.toString());
+          throw new RuntimeException(diffMessage.toString());
         }
       }
     } else {
-      logger.atWarning().log("Signed mark revocation list in Cloud SQL is empty.");
+      if (datastoreList.size() != 0) {
+        throw new RuntimeException("Signed mark revocation list in Cloud SQL is empty.");
+      }
     }
   }
 
