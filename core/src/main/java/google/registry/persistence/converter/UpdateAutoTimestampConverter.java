@@ -31,7 +31,14 @@ public class UpdateAutoTimestampConverter
 
   @Override
   public Timestamp convertToDatabaseColumn(UpdateAutoTimestamp entity) {
-    return Timestamp.from(DateTimeUtils.toZonedDateTime(jpaTm().getTransactionTime()).toInstant());
+    return Timestamp.from(
+        DateTimeUtils.toZonedDateTime(
+                UpdateAutoTimestamp.autoUpdateEnabled()
+                        || entity == null
+                        || entity.getTimestamp() == null
+                    ? jpaTm().getTransactionTime()
+                    : entity.getTimestamp())
+            .toInstant());
   }
 
   @Override

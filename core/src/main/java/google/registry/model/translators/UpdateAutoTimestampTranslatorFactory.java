@@ -46,7 +46,10 @@ public class UpdateAutoTimestampTranslatorFactory
       /** Save a timestamp, setting it to the current time. */
       @Override
       public Date saveValue(UpdateAutoTimestamp pojoValue) {
-        return tm().getTransactionTime().toDate();
-      }};
+        return UpdateAutoTimestamp.autoUpdateEnabled()
+            ? tm().getTransactionTime().toDate()
+            : pojoValue.getTimestamp().toDate();
+      }
+    };
   }
 }

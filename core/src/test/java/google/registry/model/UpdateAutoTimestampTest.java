@@ -15,64 +15,106 @@
 package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.common.CrossTldSingleton;
+import google.registry.persistence.VKey;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.FakeClock;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateAutoTimestamp}. */
+@DualDatabaseTest
 public class UpdateAutoTimestampTest {
+
+  FakeClock clock = new FakeClock();
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
+          .withJpaUnitTestEntities(UpdateAutoTimestampTestObject.class)
           .withOfyTestEntities(UpdateAutoTimestampTestObject.class)
+          .withClock(clock)
           .build();
 
   /** Timestamped class. */
   @Entity(name = "UatTestEntity")
+  @javax.persistence.Entity
   @EntityForTesting
   public static class UpdateAutoTimestampTestObject extends CrossTldSingleton {
+    @Ignore @javax.persistence.Id long id = SINGLETON_ID;
     UpdateAutoTimestamp updateTime = UpdateAutoTimestamp.create(null);
   }
 
   private UpdateAutoTimestampTestObject reload() {
-    return ofy().load().entity(new UpdateAutoTimestampTestObject()).now();
+    return tm().transact(
+            () ->
+                tm().load(
+                        VKey.create(
+                            UpdateAutoTimestampTestObject.class,
+                            1L,
+                            Key.create(new UpdateAutoTimestampTestObject()))));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSaveSetsTime() {
     DateTime transactionTime =
         tm().transact(
                 () -> {
                   UpdateAutoTimestampTestObject object = new UpdateAutoTimestampTestObject();
                   assertThat(object.updateTime.timestamp).isNull();
-                  ofy().save().entity(object);
+                  tm().insert(object);
                   return tm().getTransactionTime();
                 });
-    ofy().clearSessionCache();
+    tm().clearSessionCache();
     assertThat(reload().updateTime.timestamp).isEqualTo(transactionTime);
   }
 
-  @Test
+  @TestOfyAndSql
+  void testDisabledUpdates() throws Exception {
+    DateTime initialTime =
+        tm().transact(
+                () -> {
+                  tm().insert(new UpdateAutoTimestampTestObject());
+                  return tm().getTransactionTime();
+                });
+
+    UpdateAutoTimestampTestObject object = reload();
+    clock.advanceOneMilli();
+
+    try (UpdateAutoTimestamp.DisableAutoUpdateResource disabler =
+        new UpdateAutoTimestamp.DisableAutoUpdateResource()) {
+      DateTime secondTransactionTime =
+          tm().transact(
+                  () -> {
+                    tm().put(object);
+                    return tm().getTransactionTime();
+                  });
+      assertThat(secondTransactionTime).isGreaterThan(initialTime);
+    }
+    assertThat(reload().updateTime.timestamp).isEqualTo(initialTime);
+  }
+
+  @TestOfyAndSql
   void testResavingOverwritesOriginalTime() {
     DateTime transactionTime =
         tm().transact(
                 () -> {
                   UpdateAutoTimestampTestObject object = new UpdateAutoTimestampTestObject();
                   object.updateTime = UpdateAutoTimestamp.create(DateTime.now(UTC).minusDays(1));
-                  ofy().save().entity(object);
+                  tm().insert(object);
                   return tm().getTransactionTime();
                 });
-    ofy().clearSessionCache();
+    tm().clearSessionCache();
     assertThat(reload().updateTime.timestamp).isEqualTo(transactionTime);
   }
 }
