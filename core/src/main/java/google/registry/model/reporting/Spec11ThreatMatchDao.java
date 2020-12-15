@@ -21,10 +21,10 @@ import javax.persistence.TemporalType;
 import org.joda.time.LocalDate;
 
 /**
- * Data access object for {@link google.registry.model.reporting.Spec11ThreatMatch}.
+ * Data access object for {@link Spec11ThreatMatch}.
  *
- * <p>A JpaTransactionManager is passed into each static method because they are called from a BEAM
- * pipeline and we don't know where it's coming from.
+ * <p>The transaction manager is passed as a parameter because this could be called either from a
+ * BEAM pipeline or standard non-BEAM code.
  */
 public class Spec11ThreatMatchDao {
 

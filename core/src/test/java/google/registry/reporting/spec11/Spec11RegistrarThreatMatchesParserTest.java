@@ -34,7 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link Spec11RegistrarThreatMatchesParser}. */
-class Spec11RegistrarThreatMatchesParserTest {
+public class Spec11RegistrarThreatMatchesParserTest {
 
   private static final String TODAY = "2018-07-21";
   private static final String YESTERDAY = "2018-07-20";
@@ -67,6 +67,12 @@ class Spec11RegistrarThreatMatchesParserTest {
   }
 
   @Test
+  void testNonexistent_returnsEmpty() throws Exception {
+    assertThat(parser.getRegistrarThreatMatches(LocalDate.parse(YESTERDAY).minusYears(1)))
+        .isEmpty();
+  }
+
+  @Test
   void testFindPrevious_olderThanYesterdayFound() throws Exception {
     setupFile("spec11_fake_report_previous_day", "2018-07-14");
 
@@ -95,7 +101,7 @@ class Spec11RegistrarThreatMatchesParserTest {
   }
 
   /** The expected contents of the sample spec11 report file */
-  static ImmutableSet<RegistrarThreatMatches> sampleThreatMatches() throws Exception {
+  public static ImmutableSet<RegistrarThreatMatches> sampleThreatMatches() throws Exception {
     return ImmutableSet.of(getMatchA(), getMatchB());
   }
 
