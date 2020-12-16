@@ -26,6 +26,7 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.common.flogger.FluentLogger;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
@@ -33,6 +34,11 @@ import google.registry.keyring.kms.KmsKeyring;
 import google.registry.persistence.transaction.CloudSqlCredentialSupplier;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.JpaTransactionManagerImpl;
+import google.registry.privileges.secretmanager.SqlCredential;
+import google.registry.privileges.secretmanager.SqlCredentialStore;
+import google.registry.privileges.secretmanager.SqlUser;
+import google.registry.privileges.secretmanager.SqlUser.RobotId;
+import google.registry.privileges.secretmanager.SqlUser.RobotUser;
 import google.registry.tools.AuthModule.CloudSqlClientCredential;
 import google.registry.util.Clock;
 import java.lang.annotation.Documented;
@@ -47,6 +53,8 @@ import org.hibernate.cfg.Environment;
 /** Dagger module class for the persistence layer. */
 @Module
 public class PersistenceModule {
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   // This name must be the same as the one defined in persistence.xml.
   public static final String PERSISTENCE_UNIT_NAME = "nomulus";
   public static final String HIKARI_CONNECTION_TIMEOUT = "hibernate.hikari.connectionTimeout";
@@ -122,11 +130,17 @@ public class PersistenceModule {
   static JpaTransactionManager provideAppEngineJpaTm(
       @Config("cloudSqlUsername") String username,
       KmsKeyring kmsKeyring,
+      SqlCredentialStore credentialStore,
       @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
       Clock clock) {
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
     overrides.put(Environment.USER, username);
     overrides.put(Environment.PASS, kmsKeyring.getCloudSqlPassword());
+    validateCredentialStore(
+        credentialStore,
+        new RobotUser(RobotId.NOMULUS),
+        overrides.get(Environment.USER),
+        overrides.get(Environment.PASS));
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -136,6 +150,7 @@ public class PersistenceModule {
   static JpaTransactionManager provideNomulusToolJpaTm(
       @Config("toolsCloudSqlUsername") String username,
       KmsKeyring kmsKeyring,
+      SqlCredentialStore credentialStore,
       @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
       @CloudSqlClientCredential Credential credential,
       Clock clock) {
@@ -143,6 +158,11 @@ public class PersistenceModule {
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
     overrides.put(Environment.USER, username);
     overrides.put(Environment.PASS, kmsKeyring.getToolsCloudSqlPassword());
+    validateCredentialStore(
+        credentialStore,
+        new RobotUser(RobotId.TOOL),
+        overrides.get(Environment.USER),
+        overrides.get(Environment.PASS));
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -150,6 +170,7 @@ public class PersistenceModule {
   @Singleton
   @SocketFactoryJpaTm
   static JpaTransactionManager provideSocketFactoryJpaTm(
+      SqlCredentialStore credentialStore,
       @Config("beamCloudSqlUsername") String username,
       @Config("beamCloudSqlPassword") String password,
       @Config("beamHibernateHikariMaximumPoolSize") int hikariMaximumPoolSize,
@@ -159,6 +180,12 @@ public class PersistenceModule {
     overrides.put(Environment.USER, username);
     overrides.put(Environment.PASS, password);
     overrides.put(HIKARI_MAXIMUM_POOL_SIZE, String.valueOf(hikariMaximumPoolSize));
+    // TODO(b/175700623): consider assigning different logins to pipelines
+    validateCredentialStore(
+        credentialStore,
+        new RobotUser(RobotId.NOMULUS),
+        overrides.get(Environment.USER),
+        overrides.get(Environment.PASS));
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -201,6 +228,30 @@ public class PersistenceModule {
         emf != null,
         "Persistence.createEntityManagerFactory() returns a null EntityManagerFactory");
     return emf;
+  }
+
+  /** Verifies that the credential from the Secret Manager matches the one currently in use.
+   *
+   * <p>This is a helper for the transition to the Secret Manager, and will be removed once data
+   * and permissions are properly set up for all projects.
+   **/
+  private static void validateCredentialStore(
+      SqlCredentialStore credentialStore, SqlUser sqlUser, String login, String password) {
+    try {
+      SqlCredential credential = credentialStore.getCredential(sqlUser);
+      if (!credential.login().equals(login)) {
+        logger.atWarning().log(
+            "Wrong login for %s. Expecting %s, found %s.",
+            sqlUser.geUserName(), login, credential.login());
+        return;
+      }
+      if (!credential.password().equals(password)) {
+        logger.atWarning().log("Wrong password for %s.", sqlUser.geUserName());
+      }
+      logger.atWarning().log("Credentials in the kerying and the secret manager match.");
+    } catch (Throwable e) {
+      logger.atWarning().log(e.getMessage());
+    }
   }
 
   /** Dagger qualifier for {@link JpaTransactionManager} used for App Engine application. */

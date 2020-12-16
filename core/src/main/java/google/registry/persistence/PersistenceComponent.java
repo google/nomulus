@@ -20,6 +20,7 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.keyring.kms.KmsModule;
 import google.registry.persistence.PersistenceModule.AppEngineJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.util.UtilsModule;
 import javax.inject.Singleton;
 import javax.persistence.EntityManagerFactory;
@@ -32,6 +33,7 @@ import javax.persistence.EntityManagerFactory;
       CredentialModule.class,
       KmsModule.class,
       PersistenceModule.class,
+      SecretManagerModule.class,
       UtilsModule.class
     })
 public interface PersistenceComponent {

@@ -74,10 +74,12 @@ test {
   useJUnitPlatform()
 }
 
-// Sets up integration test with a registry environment. The target environment is
-// passed by the 'test.gcp_integration.env' property. Test runner must have been
-// authorized to access the corresponding GCP project, e.g., by running 'gcloud auth'
-// or placing a credential file at a well known place.
+// Sets up integration test with a registry environment. The target environment
+// is passed by the 'test.gcp_integration.env' property. Test runner must have
+// been authorized to access the corresponding GCP project, e.g., by running
+// 'gcloud auth application-default login' or by downloading a credential file
+// and assign the path to it to the GOOGLE_APPLICATION_CREDENTIALS environment
+// variable.
 //
 // A typical use case is to run tests from desktop that accesses Cloud resources. See
 // core/src/test/java/google/registry/beam/initsql/BeamJpaModuleTest.java for an example.
