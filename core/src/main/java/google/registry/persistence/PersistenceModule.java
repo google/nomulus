@@ -230,6 +230,11 @@ public class PersistenceModule {
     return emf;
   }
 
+  /** Verifies that the credential from the Secret Manager matches the one currently in use.
+   *
+   * <p>This is a helper for the transition to the Secret Manager, and will be removed once data
+   * and permissions are properly set up for all projects.
+   **/
   private static void validateCredentialStore(
       SqlCredentialStore credentialStore, SqlUser sqlUser, String login, String password) {
     try {
