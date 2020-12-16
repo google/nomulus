@@ -31,6 +31,7 @@ import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.JdbcJpaTm;
 import google.registry.persistence.PersistenceModule.SocketFactoryJpaTm;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.util.UtilsModule;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -168,6 +169,7 @@ public class BeamJpaModule {
         BeamJpaModule.class,
         KmsModule.class,
         PersistenceModule.class,
+        SecretManagerModule.class,
         UtilsModule.class
       })
   public interface JpaTransactionManagerComponent {

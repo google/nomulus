@@ -17,6 +17,8 @@ package google.registry.privileges.secretmanager;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.secretmanager.v1.SecretManagerServiceSettings;
 import com.google.cloud.secretmanager.v1.SecretVersion.State;
 import google.registry.privileges.secretmanager.SecretManagerClient.NoSuchSecretResourceException;
 import google.registry.privileges.secretmanager.SecretManagerClient.SecretAlreadyExistsException;
@@ -54,11 +56,14 @@ public class SecretManagerClientTest {
   private String secretId;
 
   @BeforeAll
-  static void beforeAll() {
+  static void beforeAll() throws IOException {
     String environmentName = System.getProperty("test.gcp_integration.env");
     if (environmentName != null) {
       secretManagerClient =
           SecretManagerModule.provideSecretManagerClient(
+              SecretManagerServiceSettings.newBuilder()
+                  .setCredentialsProvider(() -> GoogleCredentials.getApplicationDefault())
+                  .build(),
               String.format("domain-registry-%s", environmentName),
               new Retrier(new SystemSleeper(), 1));
       isUnitTest = false;

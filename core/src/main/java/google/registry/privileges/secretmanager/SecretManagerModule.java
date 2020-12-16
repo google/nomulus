@@ -16,13 +16,13 @@ package google.registry.privileges.secretmanager;
 
 
 import com.google.cloud.secretmanager.v1.SecretManagerServiceClient;
-import dagger.Component;
+import com.google.cloud.secretmanager.v1.SecretManagerServiceSettings;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.config.CredentialModule.DefaultCredential;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
-import google.registry.util.UtilsModule;
 import java.io.IOException;
 import javax.inject.Singleton;
 
@@ -32,20 +32,29 @@ public abstract class SecretManagerModule {
 
   @Provides
   @Singleton
-  static SecretManagerClient provideSecretManagerClient(
-      @Config("projectId") String project, Retrier retrier) {
+  static SecretManagerServiceSettings provideSecretManagerSetting(
+      @DefaultCredential GoogleCredentialsBundle credentialsBundle) {
     try {
-      SecretManagerServiceClient stub = SecretManagerServiceClient.create();
-      Runtime.getRuntime().addShutdownHook(new Thread(stub::close));
-      return new SecretManagerClientImpl(project, stub, retrier);
+      return SecretManagerServiceSettings.newBuilder()
+          .setCredentialsProvider(() -> credentialsBundle.getGoogleCredentials())
+          .build();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
+  @Provides
   @Singleton
-  @Component(modules = {ConfigModule.class, SecretManagerModule.class, UtilsModule.class})
-  public interface SecretManagerComponent {
-    SecretManagerClient secretManagerClient();
+  static SecretManagerClient provideSecretManagerClient(
+      SecretManagerServiceSettings serviceSettings,
+      @Config("projectId") String project,
+      Retrier retrier) {
+    try {
+      SecretManagerServiceClient stub = SecretManagerServiceClient.create(serviceSettings);
+      Runtime.getRuntime().addShutdownHook(new Thread(stub::close));
+      return new SecretManagerClientImpl(project, stub, retrier);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
