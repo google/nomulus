@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static java.util.function.Function.identity;
 
 import com.google.appengine.api.datastore.Key;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.persistence.BillingVKey.BillingEventVKey;
@@ -42,6 +43,7 @@ public class EppHistoryVKeyTranslatorFactory
   // a way to map the raw Datastore key to its VKey class. So, we use the kind path as the key of
   // the map, and the kind path is created by concatenating all the kind strings in a raw Datastore
   // key, e.g. the map key for ContactPollMessageVKey is "ContactResource/HistoryEntry/PollMessage".
+  @VisibleForTesting
   static final ImmutableMap<String, Class<? extends EppHistoryVKey>> kindPathToVKeyClass =
       ImmutableSet.of(DomainHistoryVKey.class, BillingEventVKey.class, BillingRecurrenceVKey.class)
           .stream()

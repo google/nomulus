@@ -96,9 +96,8 @@ class BillingVKeyTest {
 
     BillingVKeyTestEntity(
         VKey<BillingEvent.OneTime> onetime, VKey<BillingEvent.Recurring> recurring) {
-      this.billingEventVKey = onetime == null ? null : BillingEventVKey.create(onetime);
-      this.billingRecurrenceVKey =
-          recurring == null ? null : BillingRecurrenceVKey.create(recurring);
+      this.billingEventVKey = BillingEventVKey.create(onetime);
+      this.billingRecurrenceVKey = BillingRecurrenceVKey.create(recurring);
     }
 
     VKey<BillingEvent.OneTime> getBillingEventVKey() {

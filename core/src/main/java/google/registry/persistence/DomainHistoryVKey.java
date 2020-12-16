@@ -31,8 +31,7 @@ public class DomainHistoryVKey extends EppHistoryVKey<HistoryEntry, DomainBase> 
   private DomainHistoryVKey() {}
 
   private DomainHistoryVKey(String repoId, long historyRevisionId) {
-    this.repoId = repoId;
-    this.historyRevisionId = historyRevisionId;
+    super(repoId, historyRevisionId);
   }
 
   @Override

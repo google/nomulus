@@ -84,10 +84,8 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
     instance.domainRepoId = checkArgumentNotNull(domainRepoId);
     instance.expirationTime = checkArgumentNotNull(expirationTime);
     instance.clientId = checkArgumentNotNull(clientId);
-    instance.billingEventOneTime =
-        billingEventOneTime == null ? null : BillingEventVKey.create(billingEventOneTime);
-    instance.billingEventRecurring =
-        billingEventRecurring == null ? null : BillingRecurrenceVKey.create(billingEventRecurring);
+    instance.billingEventOneTime = BillingEventVKey.create(billingEventOneTime);
+    instance.billingEventRecurring = BillingRecurrenceVKey.create(billingEventRecurring);
     return instance;
   }
 

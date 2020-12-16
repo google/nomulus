@@ -14,7 +14,6 @@
 
 package google.registry.persistence;
 
-import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
@@ -22,6 +21,7 @@ import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.HistoryEntry;
+import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
@@ -37,8 +37,7 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
   BillingVKey() {}
 
   BillingVKey(String repoId, long historyRevisionId, long billingId) {
-    this.repoId = repoId;
-    this.historyRevisionId = historyRevisionId;
+    super(repoId, historyRevisionId);
     this.billingId = billingId;
   }
 
@@ -75,8 +74,10 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
     }
 
     /** Creates a {@link BillingEventVKey} instance from the given {@link Key} instance. */
-    public static BillingEventVKey create(Key<BillingEvent.OneTime> ofyKey) {
-      checkArgumentNotNull(ofyKey, "ofyKey must not be null");
+    public static BillingEventVKey create(@Nullable Key<BillingEvent.OneTime> ofyKey) {
+      if (ofyKey == null) {
+        return null;
+      }
       long billingEventId = ofyKey.getId();
       long historyRevisionId = ofyKey.getParent().getId();
       String repoId = ofyKey.getParent().getParent().getName();
@@ -84,9 +85,8 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
     }
 
     /** Creates a {@link BillingEventVKey} instance from the given {@link VKey} instance. */
-    public static BillingEventVKey create(VKey<BillingEvent.OneTime> vKey) {
-      checkArgumentNotNull(vKey, "vKey must not be null");
-      return create(vKey.getOfyKey());
+    public static BillingEventVKey create(@Nullable VKey<BillingEvent.OneTime> vKey) {
+      return vKey == null ? null : create(vKey.getOfyKey());
     }
   }
 
@@ -116,8 +116,10 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
     }
 
     /** Creates a {@link BillingRecurrenceVKey} instance from the given {@link Key} instance. */
-    public static BillingRecurrenceVKey create(Key<BillingEvent.Recurring> ofyKey) {
-      checkArgumentNotNull(ofyKey, "ofyKey must not be null");
+    public static BillingRecurrenceVKey create(@Nullable Key<BillingEvent.Recurring> ofyKey) {
+      if (ofyKey == null) {
+        return null;
+      }
       long billingEventId = ofyKey.getId();
       long historyRevisionId = ofyKey.getParent().getId();
       String repoId = ofyKey.getParent().getParent().getName();
@@ -125,9 +127,8 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
     }
 
     /** Creates a {@link BillingRecurrenceVKey} instance from the given {@link VKey} instance. */
-    public static BillingRecurrenceVKey create(VKey<BillingEvent.Recurring> vKey) {
-      checkArgumentNotNull(vKey, "vKey must not be null");
-      return create(vKey.getOfyKey());
+    public static BillingRecurrenceVKey create(@Nullable VKey<BillingEvent.Recurring> vKey) {
+      return vKey == null ? null : create(vKey.getOfyKey());
     }
   }
 }

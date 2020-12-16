@@ -79,3 +79,4 @@ V78__add_history_id_for_redemption_history_entry.sql
 V79__drop_foreign_keys_on_pollmessage.sql
 V80__defer_bill_event_key.sql
 V81__drop_spec11_fkeys.sql
+V82__add_columns_to_restore_symmetric_billing_vkey.sql

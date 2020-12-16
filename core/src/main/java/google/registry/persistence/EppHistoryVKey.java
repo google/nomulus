@@ -47,6 +47,14 @@ public abstract class EppHistoryVKey<K, E extends EppResource> extends Immutable
 
   Long historyRevisionId;
 
+  // Hibernate requires a default constructor.
+  EppHistoryVKey() {}
+
+  EppHistoryVKey(String repoId, long historyRevisionId) {
+    this.repoId = repoId;
+    this.historyRevisionId = historyRevisionId;
+  }
+
   /**
    * Returns the kind path for the ofyKey in this instance.
    *

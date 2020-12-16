@@ -90,9 +90,6 @@ public class GracePeriodTest {
     assertThat(gracePeriod.getType()).isEqualTo(GracePeriodStatus.AUTO_RENEW);
     assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
     assertThat(gracePeriod.getOneTimeBillingEvent()).isNull();
-    if (!gracePeriod.getRecurringBillingEvent().equals(recurringKey)) {
-      throw new RuntimeException("not equal");
-    }
     assertThat(gracePeriod.getRecurringBillingEvent()).isEqualTo(recurringKey);
     assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
