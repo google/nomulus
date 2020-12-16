@@ -65,7 +65,7 @@ class PresubmitCheck:
     for pattern in self.skipped_patterns:
       if pattern in file:
         return False
-    with open(file, "r") as f:
+    with open(file, "r", encoding='utf8') as f:
       file_content = f.read()
       matches = re.match(self.regex, file_content, re.DOTALL)
       if self.regex_type == FORBIDDEN:
@@ -241,7 +241,7 @@ def verify_flyway_index():
 
   # Remove the sequence numbers and compare against the index file contents.
   files = [filename[1] for filename in sorted(files)]
-  with open('db/src/main/resources/sql/flyway.txt') as index:
+  with open('db/src/main/resources/sql/flyway.txt', encoding='utf8') as index:
     indexed_files = index.read().splitlines()
   if files != indexed_files:
     unindexed = set(files) - set(indexed_files)
