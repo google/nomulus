@@ -49,7 +49,6 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.persistence.DomainHistoryVKey;
 import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -198,7 +197,7 @@ class AllocationTokenFlowUtilsTest {
         new AllocationToken.Builder()
             .setToken("tokeN")
             .setTokenType(SINGLE_USE)
-            .setRedemptionHistoryEntry(DomainHistoryVKey.create(historyEntryKey))
+            .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
             .build());
     assertThat(
             flowUtils

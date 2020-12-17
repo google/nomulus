@@ -63,11 +63,11 @@ public class GracePeriodTest {
     recurringKey =
         VKey.create(
             Recurring.class,
-            12345,
+            12345L,
             Key.create(
                 Key.create(Key.create(DomainBase.class, "1-TEST"), HistoryEntry.class, 343L),
                 Recurring.class,
-                12345));
+                12345L));
   }
 
   @Test
@@ -80,8 +80,6 @@ public class GracePeriodTest {
     assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
     assertThat(gracePeriod.hasBillingEvent()).isTrue();
-    assertThat(gracePeriod.billingEventOneTimeHistoryId).isEqualTo(12345L);
-    assertThat(gracePeriod.billingEventRecurringHistoryId).isNull();
   }
 
   @Test
@@ -96,8 +94,6 @@ public class GracePeriodTest {
     assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
     assertThat(gracePeriod.hasBillingEvent()).isTrue();
-    assertThat(gracePeriod.billingEventOneTimeHistoryId).isNull();
-    assertThat(gracePeriod.billingEventRecurringHistoryId).isEqualTo(343L);
   }
 
   @Test

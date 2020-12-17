@@ -533,7 +533,9 @@ CREATE TABLE public."GracePeriod" (
     expiration_time timestamp with time zone NOT NULL,
     type text NOT NULL,
     billing_event_history_id bigint,
-    billing_recurrence_history_id bigint
+    billing_recurrence_history_id bigint,
+    billing_event_domain_repo_id text,
+    billing_recurrence_domain_repo_id text
 );
 
 
@@ -552,7 +554,9 @@ CREATE TABLE public."GracePeriodHistory" (
     expiration_time timestamp with time zone NOT NULL,
     type text NOT NULL,
     domain_history_revision_id bigint,
-    grace_period_id bigint NOT NULL
+    grace_period_id bigint NOT NULL,
+    billing_event_domain_repo_id text,
+    billing_recurrence_domain_repo_id text
 );
 
 

@@ -875,16 +875,13 @@ public class DomainBaseTest extends EntityTestCase {
     ImmutableSet<BillEventInfo> historyIds =
         domain.getGracePeriods().stream()
             .map(
-                gp ->
-                    new BillEventInfo(
-                        gp.getRecurringBillingEvent(), gp.billingEventRecurringHistoryId,
-                        gp.getOneTimeBillingEvent(), gp.billingEventOneTimeHistoryId))
+                gp -> new BillEventInfo(gp.getRecurringBillingEvent(), gp.getOneTimeBillingEvent()))
             .collect(toImmutableSet());
     assertThat(historyIds)
         .isEqualTo(
             ImmutableSet.of(
-                new BillEventInfo(null, null, oneTimeBillKey, historyEntryKey.getId()),
-                new BillEventInfo(recurringBillKey, historyEntryKey.getId(), null, null)));
+                new BillEventInfo(null, oneTimeBillKey),
+                new BillEventInfo(recurringBillKey, null)));
   }
 
   static class BillEventInfo extends ImmutableObject {
@@ -895,13 +892,9 @@ public class DomainBaseTest extends EntityTestCase {
 
     BillEventInfo(
         VKey<BillingEvent.Recurring> billingEventRecurring,
-        Long billingEventRecurringHistoryId,
-        VKey<BillingEvent.OneTime> billingEventOneTime,
-        Long billingEventOneTimeHistoryId) {
+        VKey<BillingEvent.OneTime> billingEventOneTime) {
       this.billingEventRecurring = billingEventRecurring;
-      this.billingEventRecurringHistoryId = billingEventRecurringHistoryId;
       this.billingEventOneTime = billingEventOneTime;
-      this.billingEventOneTimeHistoryId = billingEventOneTimeHistoryId;
     }
   }
 }

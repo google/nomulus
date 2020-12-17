@@ -28,6 +28,7 @@ import com.googlecode.objectify.annotation.Parent;
 import com.googlecode.objectify.annotation.Serialize;
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.ofy.Ofy;
+import google.registry.persistence.EppHistoryVKey;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
@@ -173,7 +174,8 @@ public abstract class EntityTestCase {
           }
           // Descend into persisted ImmutableObject classes, but not anything else.
           if (ImmutableObject.class.isAssignableFrom(fieldClass)
-              && !VKey.class.isAssignableFrom(fieldClass)) {
+              && !VKey.class.isAssignableFrom(fieldClass)
+              && !EppHistoryVKey.class.isAssignableFrom(fieldClass)) {
             getAllPotentiallyIndexedFieldPaths(fieldClass).stream()
                 .map(subfield -> field.getName() + "." + subfield)
                 .distinct()

@@ -110,7 +110,6 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.persistence.DomainHistoryVKey;
 import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
 import java.util.Optional;
@@ -372,7 +371,7 @@ public class DomainCreateFlow implements TransactionalFlow {
         && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {
       entitiesToSave.add(
           allocationTokenFlowUtils.redeemToken(
-              allocationToken.get(), DomainHistoryVKey.create(Key.create(historyEntry))));
+              allocationToken.get(), HistoryEntry.createVKey(Key.create(historyEntry))));
     }
     enqueueTasks(newDomain, hasSignedMarks, hasClaimsNotice);
 
