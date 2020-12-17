@@ -67,7 +67,6 @@ public class Spec11RegistrarThreatMatchesParser {
     if (!gcsUtils.existsAndNotEmpty(spec11ReportFilename)) {
       return ImmutableSet.of();
     }
-    ImmutableSet.Builder<RegistrarThreatMatches> builder = ImmutableSet.builder();
     try (InputStream in = gcsUtils.openInputStream(spec11ReportFilename);
         InputStreamReader isr = new InputStreamReader(in, UTF_8)) {
       // Skip the header at line 0

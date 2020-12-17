@@ -15,7 +15,6 @@
 package google.registry.tools;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
@@ -26,6 +25,7 @@ import com.google.common.collect.Lists;
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.persistence.VKey;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -45,22 +45,26 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
   public void run() {
     ImmutableMap.Builder<String, AllocationToken> builder = new ImmutableMap.Builder<>();
     for (List<String> tokens : Lists.partition(mainParameters, BATCH_SIZE)) {
-      ImmutableList<Key<AllocationToken>> tokenKeys =
-          tokens.stream().map(t -> Key.create(AllocationToken.class, t)).collect(toImmutableList());
-      ofy().load().keys(tokenKeys).forEach((k, v) -> builder.put(k.getName(), v));
+      ImmutableList<VKey<AllocationToken>> tokenKeys =
+          tokens.stream()
+              .map(t -> VKey.create(AllocationToken.class, t))
+              .collect(toImmutableList());
+      tm().load(tokenKeys).forEach((k, v) -> builder.put(k.getSqlKey().toString(), v));
     }
     ImmutableMap<String, AllocationToken> loadedTokens = builder.build();
-    ImmutableMap<Key<DomainBase>, DomainBase> domains = loadRedeemedDomains(loadedTokens.values());
+    ImmutableMap<VKey<DomainBase>, DomainBase> domains = loadRedeemedDomains(loadedTokens.values());
 
     for (String token : mainParameters) {
       if (loadedTokens.containsKey(token)) {
         AllocationToken loadedToken = loadedTokens.get(token);
         System.out.println(loadedToken.toString());
-        if (!loadedToken.getRedemptionHistoryEntry().isPresent()) {
+        if (loadedToken.getRedemptionHistoryEntry().isEmpty()) {
           System.out.printf("Token %s was not redeemed.\n", token);
         } else {
+          Key<DomainBase> domainOfyKey =
+              loadedToken.getRedemptionHistoryEntry().get().getOfyKey().getParent();
           DomainBase domain =
-              domains.get(loadedToken.getRedemptionHistoryEntry().get().getOfyKey().getParent());
+              domains.get(VKey.create(DomainBase.class, domainOfyKey.getName(), domainOfyKey));
           if (domain == null) {
             System.out.printf("ERROR: Token %s was redeemed but domain can't be loaded.\n", token);
           } else {
@@ -76,19 +80,23 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
     }
   }
 
-  private static ImmutableMap<Key<DomainBase>, DomainBase> loadRedeemedDomains(
+  @SuppressWarnings("unchecked")
+  private static ImmutableMap<VKey<DomainBase>, DomainBase> loadRedeemedDomains(
       Collection<AllocationToken> tokens) {
-    ImmutableList<Key<DomainBase>> domainKeys =
+    ImmutableList<VKey<DomainBase>> domainKeys =
         tokens.stream()
             .map(AllocationToken::getRedemptionHistoryEntry)
             .filter(Optional::isPresent)
             .map(Optional::get)
             .map(key -> tm().load(key))
             .map(he -> (Key<DomainBase>) he.getParent())
+            .map(key -> VKey.create(DomainBase.class, key.getName(), key))
             .collect(toImmutableList());
-    ImmutableMap.Builder<Key<DomainBase>, DomainBase> domainsBuilder = new ImmutableMap.Builder<>();
-    for (List<Key<DomainBase>> keys : Lists.partition(domainKeys, BATCH_SIZE)) {
-      domainsBuilder.putAll(ofy().load().keys(keys));
+    ImmutableMap.Builder<VKey<DomainBase>, DomainBase> domainsBuilder =
+        new ImmutableMap.Builder<>();
+    for (List<VKey<DomainBase>> keys : Lists.partition(domainKeys, BATCH_SIZE)) {
+      tm().load(ImmutableList.copyOf(keys))
+          .forEach((k, v) -> domainsBuilder.put((VKey<DomainBase>) k, v));
     }
     return domainsBuilder.build();
   }

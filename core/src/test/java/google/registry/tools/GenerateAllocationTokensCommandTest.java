@@ -17,7 +17,8 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.assertAllocationTokens;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -43,8 +44,10 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.DeterministicStringGenerator.Rule;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.util.Retrier;
 import google.registry.util.StringGenerator.Alphabets;
 import java.io.File;
@@ -52,10 +55,10 @@ import java.util.Collection;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
 /** Unit tests for {@link GenerateAllocationTokensCommand}. */
+@DualDatabaseTest
 class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAllocationTokensCommand> {
 
   @BeforeEach
@@ -65,14 +68,14 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         new Retrier(new FakeSleeper(new FakeClock(DateTime.parse("2000-01-01TZ"))), 3);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_oneToken() throws Exception {
     runCommand("--prefix", "blah", "--number", "1", "--length", "9");
     assertAllocationTokens(createToken("blah123456789", null, null));
     assertInStdout("blah123456789");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_threeTokens() throws Exception {
     runCommand("--prefix", "foo", "--number", "3", "--length", "10");
     assertAllocationTokens(
@@ -82,14 +85,14 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     assertInStdout("foo123456789A\nfooBCDEFGHJKL\nfooMNPQRSTUVW");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_defaults() throws Exception {
     runCommand("--number", "1");
     assertAllocationTokens(createToken("123456789ABCDEFG", null, null));
     assertInStdout("123456789ABCDEFG");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_retry() throws Exception {
     command = spy(command);
     RemoteApiException fakeException = new RemoteApiException("foo", "foo", "foo", new Exception());
@@ -104,7 +107,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     verify(command, times(3)).saveTokens(ArgumentMatchers.any());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_tokenCollision() throws Exception {
     AllocationToken existingToken =
         persistResource(
@@ -117,24 +120,24 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     assertInStdout("DEADBEEFDEFGHJKLMNPQ");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_dryRun_outputsButDoesntSave() throws Exception {
     runCommand("--prefix", "foo", "--number", "2", "--length", "10", "--dry_run");
     assertAllocationTokens();
     assertInStdout("foo123456789A\nfooBCDEFGHJKL");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_largeNumberOfTokens() throws Exception {
     command.stringGenerator =
         new DeterministicStringGenerator(Alphabets.BASE_58, Rule.PREPEND_COUNTER);
     runCommand("--prefix", "ooo", "--number", "100", "--length", "16");
     // The deterministic string generator makes it too much hassle to assert about each token, so
     // just assert total number.
-    assertThat(ofy().load().type(AllocationToken.class).count()).isEqualTo(100);
+    assertThat(transactIfJpaTm(() -> tm().loadAll(AllocationToken.class).size())).isEqualTo(100);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_domainNames() throws Exception {
     createTld("tld");
     File domainNamesFile = tmpDir.resolve("domain_names.txt").toFile();
@@ -148,7 +151,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         "foo1.tld,123456789ABCDEFG\nboo2.tld,HJKLMNPQRSTUVWXY\nbaz9.tld,Zabcdefghijkmnop");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_promotionToken() throws Exception {
     DateTime promoStart = DateTime.now(UTC);
     DateTime promoEnd = promoStart.plusMonths(1);
@@ -182,24 +185,24 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
             .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_specifyTokens() throws Exception {
     runCommand("--tokens", "foobar,foobaz");
     assertAllocationTokens(createToken("foobar", null, null), createToken("foobaz", null, null));
     assertInStdout("foobar", "foobaz");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_specifyManyTokens() throws Exception {
     command.stringGenerator =
         new DeterministicStringGenerator(Alphabets.BASE_58, Rule.PREPEND_COUNTER);
     Collection<String> sampleTokens = command.stringGenerator.createStrings(13, 100);
     runCommand("--tokens", Joiner.on(",").join(sampleTokens));
     assertInStdout(Iterables.toArray(sampleTokens, String.class));
-    assertThat(ofy().load().type(AllocationToken.class).count()).isEqualTo(100);
+    assertThat(transactIfJpaTm(() -> tm().loadAll(AllocationToken.class).size())).isEqualTo(100);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_mustSpecifyNumberOfTokensOrDomainsFile() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommand("--prefix", "FEET"));
@@ -208,7 +211,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         .isEqualTo("Must specify exactly one of '--number', '--domain_names_file', and '--tokens'");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_mustNotSpecifyBothNumberOfTokensAndDomainsFile() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -223,7 +226,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         .isEqualTo("Must specify exactly one of '--number', '--domain_names_file', and '--tokens'");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_mustNotSpecifyBothNumberOfTokensAndTokenStrings() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -238,7 +241,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         .isEqualTo("Must specify exactly one of '--number', '--domain_names_file', and '--tokens'");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_mustNotSpecifyBothTokenStringsAndDomainsFile() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -253,7 +256,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         .isEqualTo("Must specify exactly one of '--number', '--domain_names_file', and '--tokens'");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_specifiesAlreadyExistingToken() throws Exception {
     runCommand("--tokens", "foobar");
     beforeEachCommandTestCase(); // reset the command variables
@@ -264,7 +267,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         .isEqualTo("Cannot create specified tokens; the following tokens already exist: [foobar]");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_invalidTokenType() {
     ParameterException thrown =
         assertThrows(
@@ -275,7 +278,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         .isEqualTo("Invalid value for -t parameter. Allowed values:[SINGLE_USE, UNLIMITED_USE]");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_invalidTokenStatusTransition() {
     assertThat(
             assertThrows(
@@ -290,7 +293,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
         .isInstanceOf(IllegalArgumentException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_lengthOfZero() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -302,7 +305,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
             "Token length should not be 0. To generate exact tokens, use the --tokens parameter.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_unlimitedUseMustHaveTransitions() {
     assertThat(
             assertThrows(

@@ -30,12 +30,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
 
+@DualDatabaseTest
 class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocationTokensCommand> {
 
-  @Test
+  @TestOfyAndSql
   void testUpdateTlds_setTlds() throws Exception {
     AllocationToken token =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("toRemove")).build());
@@ -43,7 +45,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).getAllowedTlds()).containsExactly("tld", "example");
   }
 
-  @Test
+  @TestOfyAndSql
   void testUpdateTlds_clearTlds() throws Exception {
     AllocationToken token =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("toRemove")).build());
@@ -51,7 +53,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).getAllowedTlds()).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testUpdateClientIds_setClientIds() throws Exception {
     AllocationToken token =
         persistResource(
@@ -61,7 +63,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .containsExactly("clientone", "clienttwo");
   }
 
-  @Test
+  @TestOfyAndSql
   void testUpdateClientIds_clearClientIds() throws Exception {
     AllocationToken token =
         persistResource(
@@ -70,14 +72,14 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).getAllowedRegistrarIds()).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testUpdateDiscountFraction() throws Exception {
     AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
     runCommandForced("--prefix", "token", "--discount_fraction", "0.15");
     assertThat(reloadResource(token).getDiscountFraction()).isEqualTo(0.15);
   }
 
-  @Test
+  @TestOfyAndSql
   void testUpdateDiscountPremiums() throws Exception {
     AllocationToken token =
         persistResource(
@@ -88,14 +90,14 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(token).shouldDiscountPremiums()).isFalse();
   }
 
-  @Test
+  @TestOfyAndSql
   void testUpdateDiscountYears() throws Exception {
     AllocationToken token = persistResource(builderWithPromo().setDiscountFraction(0.5).build());
     runCommandForced("--prefix", "token", "--discount_years", "4");
     assertThat(reloadResource(token).getDiscountYears()).isEqualTo(4);
   }
 
-  @Test
+  @TestOfyAndSql
   void testUpdateStatusTransitions() throws Exception {
     DateTime now = DateTime.now(UTC);
     AllocationToken token = persistResource(builderWithPromo().build());
@@ -110,7 +112,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .containsExactly(START_OF_TIME, NOT_STARTED, now.minusDays(1), VALID, now, CANCELLED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testUpdateStatusTransitions_badTransitions() {
     DateTime now = DateTime.now(UTC);
     persistResource(builderWithPromo().build());
@@ -130,7 +132,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .isEqualTo("tokenStatusTransitions map cannot transition from NOT_STARTED to ENDED.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testUpdate_onlyWithPrefix() throws Exception {
     AllocationToken token =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("tld")).build());
@@ -146,7 +148,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(otherToken).getAllowedTlds()).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testUpdate_onlyTokensProvided() throws Exception {
     AllocationToken firstToken =
         persistResource(builderWithPromo().setAllowedTlds(ImmutableSet.of("tld")).build());
@@ -170,7 +172,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloadResource(thirdToken).getAllowedTlds()).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testDoNothing() throws Exception {
     AllocationToken token =
         persistResource(
@@ -186,7 +188,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
     assertThat(reloaded.getDiscountFraction()).isEqualTo(token.getDiscountFraction());
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_bothTokensAndPrefix() {
     assertThat(
             assertThrows(
@@ -196,7 +198,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .isEqualTo("Must provide one of --tokens or --prefix, not both / neither");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_neitherTokensNorPrefix() {
     assertThat(
             assertThrows(
@@ -205,7 +207,7 @@ class UpdateAllocationTokensCommandTest extends CommandTestCase<UpdateAllocation
         .isEqualTo("Must provide one of --tokens or --prefix, not both / neither");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_emptyPrefix() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("--prefix", ""));

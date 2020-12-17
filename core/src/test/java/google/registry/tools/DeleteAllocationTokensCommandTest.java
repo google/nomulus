@@ -16,23 +16,28 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.reporting.HistoryEntry;
-import java.util.Collection;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
+import java.util.Arrays;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DeleteAllocationTokensCommand}. */
+@DualDatabaseTest
 class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocationTokensCommand> {
 
   private AllocationToken preRed1;
@@ -53,38 +58,38 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
     othrNot = persistToken("asdgfho7HASDS", null, false);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_deleteOnlyUnredeemedTokensWithPrefix() throws Exception {
     runCommandForced("--prefix", "prefix");
-    assertThat(reloadTokens(preNot1, preNot2)).isEmpty();
+    assertNonexistent(preNot1, preNot2);
     assertThat(reloadTokens(preRed1, preRed2, othrRed, othrNot))
         .containsExactly(preRed1, preRed2, othrRed, othrNot);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_deleteSingleAllocationToken() throws Exception {
     runCommandForced("--prefix", "asdgfho7HASDS");
-    assertThat(reloadTokens(othrNot)).isEmpty();
+    assertNonexistent(othrNot);
     assertThat(reloadTokens(preRed1, preRed2, preNot1, preNot2, othrRed))
         .containsExactly(preRed1, preRed2, preNot1, preNot2, othrRed);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_deleteParticularTokens() throws Exception {
     runCommandForced("--tokens", "prefix2978204,asdgfho7HASDS");
-    assertThat(reloadTokens(preNot1, othrNot)).isEmpty();
+    assertNonexistent(preNot1, othrNot);
     assertThat(reloadTokens(preRed1, preRed2, preNot2, othrRed))
         .containsExactly(preRed1, preRed2, preNot2, othrRed);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_deleteTokensWithNonExistentPrefix_doesNothing() throws Exception {
     runCommandForced("--prefix", "nonexistent");
     assertThat(reloadTokens(preRed1, preRed2, preNot1, preNot2, othrRed, othrNot))
         .containsExactly(preRed1, preRed2, preNot1, preNot2, othrRed, othrNot);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_dryRun_deletesNothing() throws Exception {
     runCommandForced("--prefix", "prefix", "--dry_run");
     assertThat(reloadTokens(preRed1, preRed2, preNot1, preNot2, othrRed, othrNot))
@@ -92,27 +97,27 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
     assertInStdout("Would delete tokens: prefix2978204, prefix8ZZZhs8");
   }
 
-  @Test
+  @TestOfyAndSql
   void test_defaultOptions_doesntDeletePerDomainTokens() throws Exception {
     AllocationToken preDom1 = persistToken("prefixasdfg897as", "foo.bar", false);
     AllocationToken preDom2 = persistToken("prefix98HAZXadbn", "foo.bar", true);
     runCommandForced("--prefix", "prefix");
-    assertThat(reloadTokens(preNot1, preNot2)).isEmpty();
+    assertNonexistent(preNot1, preNot2);
     assertThat(reloadTokens(preRed1, preRed2, preDom1, preDom2, othrRed, othrNot))
         .containsExactly(preRed1, preRed2, preDom1, preDom2, othrRed, othrNot);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_withDomains_doesDeletePerDomainTokens() throws Exception {
     AllocationToken preDom1 = persistToken("prefixasdfg897as", "foo.bar", false);
     AllocationToken preDom2 = persistToken("prefix98HAZXadbn", "foo.bar", true);
     runCommandForced("--prefix", "prefix", "--with_domains");
-    assertThat(reloadTokens(preNot1, preNot2, preDom1)).isEmpty();
+    assertNonexistent(preNot1, preNot2, preDom1);
     assertThat(reloadTokens(preRed1, preRed2, preDom2, othrRed, othrNot))
         .containsExactly(preRed1, preRed2, preDom2, othrRed, othrNot);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSkipUnlimitedUseTokens() throws Exception {
     AllocationToken unlimitedUseToken =
         persistResource(
@@ -124,17 +129,18 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
     assertThat(reloadTokens(unlimitedUseToken)).containsExactly(unlimitedUseToken);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_batching() throws Exception {
     for (int i = 0; i < 50; i++) {
       persistToken(String.format("batch%2d", i), null, i % 2 == 0);
     }
-    assertThat(ofy().load().type(AllocationToken.class).count()).isEqualTo(56);
+    assertThat(transactIfJpaTm(() -> tm().loadAll(AllocationToken.class).size())).isEqualTo(56);
     runCommandForced("--prefix", "batch");
-    assertThat(ofy().load().type(AllocationToken.class).count()).isEqualTo(56 - 25);
+    assertThat(transactIfJpaTm(() -> tm().loadAll(AllocationToken.class).size()))
+        .isEqualTo(56 - 25);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_prefixIsRequired() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, this::runCommandForced);
@@ -143,7 +149,7 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
         .isEqualTo("Must provide one of --tokens or --prefix, not both / neither");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_bothPrefixAndTokens() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -154,7 +160,7 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
         .isEqualTo("Must provide one of --tokens or --prefix, not both / neither");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_emptyPrefix() {
     IllegalArgumentException thrown =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("--prefix", ""));
@@ -177,7 +183,11 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
     return persistResource(builder.build());
   }
 
-  private static Collection<AllocationToken> reloadTokens(AllocationToken... tokens) {
-    return ofy().load().entities(tokens).values();
+  private static ImmutableList<AllocationToken> reloadTokens(AllocationToken... tokens) {
+    return transactIfJpaTm(() -> tm().loadAll(ImmutableSet.copyOf(tokens)));
+  }
+
+  private static void assertNonexistent(AllocationToken... tokens) {
+    Arrays.stream(tokens).forEach(t -> transactIfJpaTm(() -> assertThat(tm().exists(t)).isFalse()));
   }
 }
