@@ -19,6 +19,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.tmch.ClaimsListShardTest.createTestClaimsListShard;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
@@ -72,7 +74,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
   protected R reloadResourceByForeignKey(DateTime now) throws Exception {
     // Force the session to be cleared so that when we read it back, we read from Datastore and not
     // from the transaction's session cache.
-    ofy().clearSessionCache();
+    tm().clearSessionCache();
     return loadByForeignKey(getResourceClass(), getUniqueIdFromCommand(), now).orElse(null);
   }
 
@@ -83,9 +85,9 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
 
   protected <T extends EppResource> T reloadResourceAndCloneAtTime(T resource, DateTime now) {
     // Force the session to be cleared.
-    ofy().clearSessionCache();
+    tm().clearSessionCache();
     @SuppressWarnings("unchecked")
-    T refreshedResource = (T) ofy().load().entity(resource).now().cloneProjectedAtTime(now);
+    T refreshedResource = (T) transactIfJpaTm(() -> tm().load(resource)).cloneProjectedAtTime(now);
     return refreshedResource;
   }
 

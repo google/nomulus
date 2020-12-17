@@ -17,7 +17,6 @@ package google.registry.tools;
 import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -118,7 +117,7 @@ public abstract class CommandTestCase<C extends Command> {
     } finally {
       // Clear the session cache so that subsequent reads for verification purposes hit Datastore.
       // This primarily matters for AutoTimestamp fields, which otherwise won't have updated values.
-      ofy().clearSessionCache();
+      tm().clearSessionCache();
       // Reset back to UNITTEST environment.
       RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     }
@@ -192,7 +191,7 @@ public abstract class CommandTestCase<C extends Command> {
 
   /** Returns count of all poll messages in Datastore. */
   int getPollMessageCount() {
-    return ofy().load().type(PollMessage.class).count();
+    return transactIfJpaTm(() -> tm().loadAll(PollMessage.class).size());
   }
 
   /**

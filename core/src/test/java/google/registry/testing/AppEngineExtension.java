@@ -454,10 +454,6 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
           .setEnvIsAdmin(userInfo.isAdmin());
     }
 
-    if (clock != null) {
-      helper.setClock(() -> clock.nowUtc().getMillis());
-    }
-
     if (withLocalModules) {
       helper.setEnvInstance("0");
     }

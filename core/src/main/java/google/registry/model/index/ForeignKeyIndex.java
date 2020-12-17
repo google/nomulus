@@ -15,9 +15,11 @@
 package google.registry.model.index;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.TypeUtils.instantiate;
 
@@ -29,6 +31,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
@@ -44,6 +47,8 @@ import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.util.NonFinalForTesting;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -76,12 +81,20 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
   public static class ForeignKeyHostIndex extends ForeignKeyIndex<HostResource>
       implements DatastoreOnlyEntity {}
 
-  static final ImmutableMap<Class<? extends EppResource>, Class<? extends ForeignKeyIndex<?>>>
+  private static final ImmutableMap<
+          Class<? extends EppResource>, Class<? extends ForeignKeyIndex<?>>>
       RESOURCE_CLASS_TO_FKI_CLASS =
           ImmutableMap.of(
               ContactResource.class, ForeignKeyContactIndex.class,
               DomainBase.class, ForeignKeyDomainIndex.class,
               HostResource.class, ForeignKeyHostIndex.class);
+
+  private static final ImmutableMap<Class<? extends EppResource>, String>
+      RESOURCE_CLASS_TO_FKI_PROPERTY =
+          ImmutableMap.of(
+              ContactResource.class, "contactId",
+              DomainBase.class, "fullyQualifiedDomainName",
+              HostResource.class, "fullyQualifiedHostName");
 
   @Id String foreignKey;
 
@@ -179,9 +192,42 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    */
   public static <E extends EppResource> ImmutableMap<String, ForeignKeyIndex<E>> load(
       Class<E> clazz, Iterable<String> foreignKeys, final DateTime now) {
-    return ofy().load().type(mapToFkiClass(clazz)).ids(foreignKeys).entrySet().stream()
-        .filter(e -> now.isBefore(e.getValue().deletionTime))
-        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+    if (tm().isOfy()) {
+      return ofy().load().type(mapToFkiClass(clazz)).ids(foreignKeys).entrySet().stream()
+          .filter(e -> now.isBefore(e.getValue().deletionTime))
+          .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+    } else {
+      String property = RESOURCE_CLASS_TO_FKI_PROPERTY.get(clazz);
+      List<E> entities =
+          tm().transact(
+                  () -> {
+                    String entityName =
+                        jpaTm().getEntityManager().getMetamodel().entity(clazz).getName();
+                    return jpaTm()
+                        .getEntityManager()
+                        .createQuery(
+                            String.format(
+                                "FROM %s WHERE %s IN :propertyValue and deletionTime > :now ",
+                                entityName, property),
+                            clazz)
+                        .setParameter("propertyValue", foreignKeys)
+                        .setParameter("now", now)
+                        .getResultList();
+                  });
+      // We need to find and return the entities with the maximum deletionTime for each foreign key.
+      return Multimaps.index(entities, EppResource::getForeignKey).asMap().entrySet().stream()
+          .map(
+              entry ->
+                  Maps.immutableEntry(
+                      entry.getKey(),
+                      entry.getValue().stream()
+                          .max(Comparator.comparing(EppResource::getDeletionTime))
+                          .get()))
+          .collect(
+              toImmutableMap(
+                  Map.Entry::getKey,
+                  entry -> create(entry.getValue(), entry.getValue().getDeletionTime())));
+    }
   }
 
   static final CacheLoader<Key<ForeignKeyIndex<?>>, Optional<ForeignKeyIndex<?>>> CACHE_LOADER =
@@ -266,7 +312,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
               .filter(entry -> entry.getValue().isPresent())
               .filter(entry -> now.isBefore(entry.getValue().get().getDeletionTime()))
               .collect(
-                  ImmutableMap.toImmutableMap(
+                  toImmutableMap(
                       entry -> entry.getKey().getName(),
                       entry -> (ForeignKeyIndex<E>) entry.getValue().get()));
       return fkisFromCache;

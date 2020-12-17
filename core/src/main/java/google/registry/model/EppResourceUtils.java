@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.latestOf;
@@ -135,7 +136,7 @@ public final class EppResourceUtils {
         useCache
             ? ForeignKeyIndex.loadCached(clazz, ImmutableList.of(foreignKey), now)
                 .getOrDefault(foreignKey, null)
-            : ofy().load().type(ForeignKeyIndex.mapToFkiClass(clazz)).id(foreignKey).now();
+            : ForeignKeyIndex.load(clazz, foreignKey, now);
     // The value of fki.getResourceKey() might be null for hard-deleted prober data.
     if (fki == null || isAtOrAfter(now, fki.getDeletionTime()) || fki.getResourceKey() == null) {
       return Optional.empty();
@@ -143,7 +144,7 @@ public final class EppResourceUtils {
     T resource =
         useCache
             ? EppResource.loadCached(fki.getResourceKey())
-            : tm().maybeLoad(fki.getResourceKey()).orElse(null);
+            : transactIfJpaTm(() -> tm().maybeLoad(fki.getResourceKey()).orElse(null));
     if (resource == null || isAtOrAfter(now, resource.getDeletionTime())) {
       return Optional.empty();
     }
