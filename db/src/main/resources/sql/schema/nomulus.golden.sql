@@ -1429,6 +1429,22 @@ ALTER TABLE ONLY public."RegistryLock"
 
 
 --
+-- Name: DomainHost ukat9erbh52e4lg3jw6ai9wkjj9; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHost"
+    ADD CONSTRAINT ukat9erbh52e4lg3jw6ai9wkjj9 UNIQUE (domain_repo_id, host_repo_id);
+
+
+--
+-- Name: DomainHistoryHost ukt2e7ae3t8gcsxd13wjx2ka7ij; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DomainHistoryHost"
+    ADD CONSTRAINT ukt2e7ae3t8gcsxd13wjx2ka7ij UNIQUE (domain_history_history_revision_id, domain_history_domain_repo_id, host_repo_id);
+
+
+--
 -- Name: allocation_token_domain_name_idx; Type: INDEX; Schema: public; Owner: -
 --
 

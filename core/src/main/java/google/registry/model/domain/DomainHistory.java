@@ -96,7 +96,14 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   // TODO(b/166776754): Investigate if we can reuse domainContent.nsHosts for storing host keys.
   @Ignore
   @ElementCollection
-  @JoinTable(name = "DomainHistoryHost")
+  @JoinTable(
+      name = "DomainHistoryHost",
+      indexes = {
+        @Index(
+            columnList =
+                "domain_history_history_revision_id,domain_history_domain_repo_id,host_repo_id",
+            unique = true),
+      })
   @Column(name = "host_repo_id")
   Set<VKey<HostResource>> nsHosts;
 

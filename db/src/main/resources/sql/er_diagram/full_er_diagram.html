@@ -261,11 +261,11 @@ td.section {
     </tr> 
     <tr> 
      <td class="property_name">generated on</td> 
-     <td class="property_value">2020-12-16 16:26:53.180789</td> 
+     <td class="property_value">2020-12-21 17:41:57.553769</td> 
     </tr> 
     <tr>
      <td class="property_name">last flyway file</td>
-     <td id="lastFlywayFile" class="property_value">V82__add_columns_to_restore_symmetric_billing_vkey.sql</td>
+     <td id="lastFlywayFile" class="property_value">V83__add_indexes_on_domainhost.sql</td>
     </tr>
    </tbody>
   </table> 
@@ -284,7 +284,7 @@ td.section {
      generated on
     </text> 
     <text text-anchor="start" x="4631.68" y="-10.8" font-family="Helvetica,sans-Serif" font-size="14.00">
-     2020-12-16 16:26:53.180789
+     2020-12-21 17:41:57.553769
     </text> 
     <polygon fill="none" stroke="#888888" points="4544.18,-4 4544.18,-44 4809.18,-44 4809.18,-4 4544.18,-4" /> <!-- allocationtoken_a08ccbef --> 
     <g id="node1" class="node"> 
@@ -9921,6 +9921,34 @@ td.section {
      <td class="minwidth">domain_history_history_revision_id (0..many)→ <a href="#domainhistory_a54cc226">public.DomainHistory.history_revision_id</a></td> 
      <td class="minwidth"></td> 
     </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="3" class="section">Indexes</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="2" class="name">ukt2e7ae3t8gcsxd13wjx2ka7ij</td> 
+     <td class="description right">[unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">domain_history_history_revision_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">domain_history_domain_repo_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">host_repo_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
    </tbody>
   </table> 
   <p>&nbsp;</p> 
@@ -9967,6 +9995,29 @@ td.section {
      <td class="spacer"></td> 
      <td class="minwidth">host_repo_id (0..many)→ <a href="#host_f21b78de">public.Host.repo_id</a></td> 
      <td class="minwidth"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="3" class="section">Indexes</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="2" class="name">ukat9erbh52e4lg3jw6ai9wkjj9</td> 
+     <td class="description right">[unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">domain_repo_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">host_repo_id</td> 
+     <td class="minwidth">ascending</td> 
     </tr> 
    </tbody>
   </table> 
