@@ -43,7 +43,6 @@ import google.registry.backup.CommitLogImports;
 import google.registry.backup.VersionedEntity;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.ObjectifyService;
-import google.registry.model.ofy.Ofy;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.tools.LevelDbLogReader;
 import google.registry.util.SystemSleeper;
@@ -432,7 +431,6 @@ public final class Transforms {
     private final SerializableSupplier<JpaTransactionManager> jpaSupplier;
     private final SerializableFunction<T, Object> jpaConverter;
 
-    private transient Ofy ofy;
     private transient SystemSleeper sleeper;
 
     SqlBatchWriter(
@@ -448,7 +446,6 @@ public final class Transforms {
 
       try (AppEngineEnvironment env = new AppEngineEnvironment()) {
         ObjectifyService.initOfy();
-        ofy = ObjectifyService.ofy();
       }
 
       synchronized (SqlBatchWriter.class) {
