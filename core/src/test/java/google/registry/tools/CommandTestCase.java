@@ -18,6 +18,8 @@ import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -185,7 +187,7 @@ public abstract class CommandTestCase<C extends Command> {
 
   /** Reloads the given resource from Datastore. */
   <T> T reloadResource(T resource) {
-    return ofy().load().entity(resource).now();
+    return transactIfJpaTm(() -> tm().load(resource));
   }
 
   /** Returns count of all poll messages in Datastore. */

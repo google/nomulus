@@ -18,8 +18,8 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.partition;
 import static com.google.common.collect.Streams.stream;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -105,13 +105,17 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     }
 
     tokensToSave =
-        ofy().load().keys(getTokenKeys()).values().stream()
-            .collect(toImmutableMap(Function.identity(), this::updateToken))
-            .entrySet()
-            .stream()
-            .filter(entry -> !entry.getKey().equals(entry.getValue())) // only update changed tokens
-            .map(Map.Entry::getValue)
-            .collect(toImmutableSet());
+        transactIfJpaTm(
+            () ->
+                tm().load(getTokenKeys()).values().stream()
+                    .collect(toImmutableMap(Function.identity(), this::updateToken))
+                    .entrySet()
+                    .stream()
+                    .filter(
+                        entry ->
+                            !entry.getKey().equals(entry.getValue())) // only update changed tokens
+                    .map(Map.Entry::getValue)
+                    .collect(toImmutableSet()));
   }
 
   @Override
@@ -123,7 +127,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   protected String execute() {
     long numUpdated =
         stream(partition(tokensToSave, BATCH_SIZE))
-            .mapToLong(batch -> tm().transact(() -> saveBatch(batch)))
+            .mapToLong(batch -> tm().transact(() -> saveBatch(ImmutableList.copyOf(batch))))
             .sum();
     return String.format("Updated %d tokens in total.", numUpdated);
   }
@@ -141,9 +145,9 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     return builder.build();
   }
 
-  private long saveBatch(List<AllocationToken> batch) {
+  private long saveBatch(ImmutableList<AllocationToken> batch) {
     if (!dryRun) {
-      ofy().save().entities(batch);
+      tm().putAll(batch);
     }
     System.out.printf(
         "%s tokens: %s\n",

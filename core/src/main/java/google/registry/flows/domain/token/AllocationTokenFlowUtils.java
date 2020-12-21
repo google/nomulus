@@ -15,14 +15,13 @@
 package google.registry.flows.domain.token;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.net.InternetDomainName;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.EppException.AuthorizationErrorException;
@@ -153,14 +152,15 @@ public class AllocationTokenFlowUtils {
       // See https://tools.ietf.org/html/draft-ietf-regext-allocation-token-04#section-2.1
       throw new InvalidAllocationTokenException();
     }
-    AllocationToken tokenEntity = ofy().load().key(Key.create(AllocationToken.class, token)).now();
-    if (tokenEntity == null) {
+    Optional<AllocationToken> maybeTokenEntity =
+        tm().maybeLoad(VKey.create(AllocationToken.class, token));
+    if (maybeTokenEntity.isEmpty()) {
       throw new InvalidAllocationTokenException();
     }
-    if (tokenEntity.isRedeemed()) {
+    if (maybeTokenEntity.get().isRedeemed()) {
       throw new AlreadyRedeemedAllocationTokenException();
     }
-    return tokenEntity;
+    return maybeTokenEntity.get();
   }
 
   // Note: exception messages should be <= 32 characters long for domain check results

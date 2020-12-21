@@ -14,19 +14,19 @@
 
 package google.registry.tools;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.partition;
 import static com.google.common.collect.Streams.stream;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.token.AllocationToken;
+import google.registry.persistence.VKey;
 import java.util.List;
 
 /**
@@ -48,7 +48,7 @@ final class DeleteAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   private static final int BATCH_SIZE = 20;
   private static final Joiner JOINER = Joiner.on(", ");
 
-  private ImmutableSet<Key<AllocationToken>> tokensToDelete;
+  private ImmutableSet<VKey<AllocationToken>> tokensToDelete;
 
   @Override
   public void init() {
@@ -71,26 +71,24 @@ final class DeleteAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
   }
 
   /** Deletes a (filtered) batch of AllocationTokens and returns how many were deleted. */
-  private long deleteBatch(List<Key<AllocationToken>> batch) {
+  private long deleteBatch(List<VKey<AllocationToken>> batch) {
     // Load the tokens in the same transaction as they are deleted to verify they weren't redeemed
     // since the query ran. This also filters out per-domain tokens if they're not to be deleted.
-    ImmutableSet<AllocationToken> tokensToDelete =
-        ofy().load().keys(batch).values().stream()
-            .filter(t -> withDomains || !t.getDomainName().isPresent())
+    ImmutableSet<VKey<AllocationToken>> tokensToDelete =
+        tm().load(batch).values().stream()
+            .filter(t -> withDomains || t.getDomainName().isEmpty())
             .filter(t -> SINGLE_USE.equals(t.getTokenType()))
             .filter(t -> !t.isRedeemed())
+            .map(AllocationToken::createVKey)
             .collect(toImmutableSet());
     if (!dryRun) {
-      ofy().delete().entities(tokensToDelete);
+      tm().delete(tokensToDelete);
     }
     System.out.printf(
         "%s tokens: %s\n",
         dryRun ? "Would delete" : "Deleted",
         JOINER.join(
-            tokensToDelete.stream()
-                .map(AllocationToken::getToken)
-                .sorted()
-                .collect(toImmutableSet())));
+            tokensToDelete.stream().map(VKey::getSqlKey).sorted().collect(toImmutableList())));
     return tokensToDelete.size();
   }
 }

@@ -20,8 +20,8 @@ import static com.google.common.collect.Queues.newArrayDeque;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.StringGenerator.DEFAULT_PASSWORD_LENGTH;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -38,10 +38,10 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.common.io.Files;
-import com.googlecode.objectify.Key;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.persistence.VKey;
 import google.registry.tools.params.TransitionListParameter.TokenStatusTransitions;
 import google.registry.util.CollectionUtils;
 import google.registry.util.NonFinalForTesting;
@@ -258,8 +258,13 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
 
   @VisibleForTesting
   int saveTokens(final ImmutableSet<AllocationToken> tokens) {
-    Collection<AllocationToken> savedTokens =
-        dryRun ? tokens : tm().transact(() -> ofy().save().entities(tokens).now().values());
+    Collection<AllocationToken> savedTokens;
+    if (dryRun) {
+      savedTokens = tokens;
+    } else {
+      transactIfJpaTm(() -> tm().transact(() -> tm().putAll(tokens)));
+      savedTokens = tm().transact(() -> tm().loadAll(tokens));
+    }
     savedTokens.forEach(
         t -> System.out.println(SKIP_NULLS.join(t.getDomainName().orElse(null), t.getToken())));
     return savedTokens.size();
@@ -282,12 +287,14 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
   }
 
   private ImmutableSet<String> getExistingTokenStrings(ImmutableSet<String> candidates) {
-    ImmutableSet<Key<AllocationToken>> existingTokenKeys =
+    ImmutableSet<VKey<AllocationToken>> existingTokenKeys =
         candidates.stream()
-            .map(input -> Key.create(AllocationToken.class, input))
+            .map(input -> VKey.create(AllocationToken.class, input))
             .collect(toImmutableSet());
-    return ofy().load().keys(existingTokenKeys).values().stream()
-        .map(AllocationToken::getToken)
-        .collect(toImmutableSet());
+    return transactIfJpaTm(
+        () ->
+            tm().load(existingTokenKeys).values().stream()
+                .map(AllocationToken::getToken)
+                .collect(toImmutableSet()));
   }
 }
