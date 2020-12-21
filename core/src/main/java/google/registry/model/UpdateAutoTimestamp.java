@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 
 /**
- * A timestamp that auto-updates on each save to Datastore.
+ * A timestamp that auto-updates on each save to Datastore/Cloud SQL.
  *
  * @see UpdateAutoTimestampTranslatorFactory
  */
@@ -31,7 +31,7 @@ public class UpdateAutoTimestamp extends ImmutableObject {
   // When set to true, database converters/translators should do tha auto update.  When set to
   // false, auto update should be suspended (this exists to allow us to preserve the original value
   // during a replay).
-  static ThreadLocal<Boolean> autoUpdateEnabled = ThreadLocal.withInitial(() -> true);
+  private static ThreadLocal<Boolean> autoUpdateEnabled = ThreadLocal.withInitial(() -> true);
 
   DateTime timestamp;
 

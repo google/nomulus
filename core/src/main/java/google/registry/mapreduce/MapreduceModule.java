@@ -15,6 +15,7 @@
 package google.registry.mapreduce;
 
 import static google.registry.mapreduce.MapreduceRunner.PARAM_DRY_RUN;
+import static google.registry.mapreduce.MapreduceRunner.PARAM_FAST;
 import static google.registry.mapreduce.MapreduceRunner.PARAM_MAP_SHARDS;
 import static google.registry.mapreduce.MapreduceRunner.PARAM_REDUCE_SHARDS;
 import static google.registry.request.RequestParameters.extractBooleanParameter;
@@ -34,6 +35,12 @@ public final class MapreduceModule {
   @Parameter(PARAM_DRY_RUN)
   static boolean provideIsDryRun(HttpServletRequest req) {
     return extractBooleanParameter(req, PARAM_DRY_RUN);
+  }
+
+  @Provides
+  @Parameter(PARAM_FAST)
+  static boolean provideIsFast(HttpServletRequest req) {
+    return extractBooleanParameter(req, PARAM_FAST);
   }
 
   @Provides

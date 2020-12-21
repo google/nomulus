@@ -56,6 +56,19 @@ class ResaveAllEppResourcesActionTest extends MapreduceTestCase<ResaveAllEppReso
   }
 
   @Test
+  void test_fastMode_doesNotResaveEntityWithNoChanges() throws Exception {
+    ContactResource contact = persistActiveContact("test123");
+    DateTime creationTime = contact.getUpdateTimestamp().getTimestamp();
+    assertThat(ofy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
+        .isEqualTo(creationTime);
+    ofy().clearSessionCache();
+    action.isFast = true;
+    runMapreduce();
+    assertThat(ofy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
+        .isEqualTo(creationTime);
+  }
+
+  @Test
   void test_mapreduceResolvesPendingTransfer() throws Exception {
     DateTime now = DateTime.now(UTC);
     // Set up a contact with a transfer that implicitly completed five days ago.

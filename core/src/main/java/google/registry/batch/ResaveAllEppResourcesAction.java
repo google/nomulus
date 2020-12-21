@@ -14,6 +14,7 @@
 
 package google.registry.batch;
 
+import static google.registry.mapreduce.MapreduceRunner.PARAM_FAST;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -24,6 +25,7 @@ import google.registry.mapreduce.MapreduceRunner;
 import google.registry.mapreduce.inputs.EppResourceInputs;
 import google.registry.model.EppResource;
 import google.registry.request.Action;
+import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import javax.inject.Inject;
@@ -39,6 +41,14 @@ import javax.inject.Inject;
  * <p>Because there are no auth settings in the {@link Action} annotation, this command can only be
  * run internally, or by pretending to be internal by setting the X-AppEngine-QueueName header,
  * which only admin users can do.
+ *
+ * <p>If the <code>?fast=true</code> querystring parameter is passed, then entities that are not
+ * changed by {@link EppResource#cloneProjectedAtTime} will not be re-saved. This helps prevent
+ * mutation load on the DB and has the beneficial side effect of writing out smaller commit logs.
+ * Note that this does NOT pick up mutations caused by migrations using the {@link
+ * com.googlecode.objectify.annotation.OnLoad} annotation, so if you are running a one-off schema
+ * migration, do not use fast mode. Fast mode defaults to false for this reason, but is used by the
+ * monthly invocation of the mapreduce.
  */
 @Action(
     service = Action.Service.BACKEND,
@@ -48,7 +58,13 @@ public class ResaveAllEppResourcesAction implements Runnable {
 
   @Inject MapreduceRunner mrRunner;
   @Inject Response response;
-  @Inject ResaveAllEppResourcesAction() {}
+
+  @Inject
+  @Parameter(PARAM_FAST)
+  boolean isFast;
+
+  @Inject
+  ResaveAllEppResourcesAction() {}
 
   /**
    * The number of shards to run the map-only mapreduce on.
@@ -66,7 +82,7 @@ public class ResaveAllEppResourcesAction implements Runnable {
         .setModuleName("backend")
         .setDefaultMapShards(NUM_SHARDS)
         .runMapOnly(
-            new ResaveAllEppResourcesActionMapper(),
+            new ResaveAllEppResourcesActionMapper(isFast),
             ImmutableList.of(EppResourceInputs.createKeyInput(EppResource.class)))
         .sendLinkToMapreduceConsole(response);
   }
@@ -76,23 +92,33 @@ public class ResaveAllEppResourcesAction implements Runnable {
       extends Mapper<Key<EppResource>, Void, Void> {
 
     private static final long serialVersionUID = -7721628665138087001L;
-    public ResaveAllEppResourcesActionMapper() {}
+
+    private final boolean isFast;
+
+    ResaveAllEppResourcesActionMapper(boolean isFast) {
+      this.isFast = isFast;
+    }
 
     @Override
     public final void map(final Key<EppResource> resourceKey) {
-      tm()
-          .transact(
-              () -> {
-                EppResource projectedResource =
-                    ofy()
-                        .load()
-                        .key(resourceKey)
-                        .now()
-                        .cloneProjectedAtTime(tm().getTransactionTime());
-                ofy().save().entity(projectedResource).now();
-              });
-      getContext().incrementCounter(String.format("%s entities re-saved", resourceKey.getKind()));
+      boolean resaved =
+          tm().transact(
+                  () -> {
+                    EppResource originalResource = ofy().load().key(resourceKey).now();
+                    EppResource projectedResource =
+                        originalResource.cloneProjectedAtTime(tm().getTransactionTime());
+                    if (isFast && originalResource.equals(projectedResource)) {
+                      return false;
+                    } else {
+                      ofy().save().entity(projectedResource).now();
+                      return true;
+                    }
+                  });
+      getContext()
+          .incrementCounter(
+              String.format(
+                  "%s entities %s",
+                  resourceKey.getKind(), resaved ? "re-saved" : "with no changes skipped"));
     }
   }
 }
-

@@ -80,7 +80,7 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/task/resaveAllEppResources]]></url>
+    <url><![CDATA[/_dr/task/resaveAllEppResources?fast=true]]></url>
     <description>
       This job resaves all our resources, projected in time to "now".
       It is needed for "deleteOldCommitLogs" to work correctly.
