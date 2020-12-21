@@ -55,6 +55,7 @@ public class MapreduceRunner {
   public static final String PARAM_DRY_RUN = "dryRun";
   public static final String PARAM_MAP_SHARDS = "mapShards";
   public static final String PARAM_REDUCE_SHARDS = "reduceShards";
+  public static final String PARAM_FAST = "fast";
 
   private static final String BASE_URL = "/_dr/mapreduce/";
   private static final String QUEUE_NAME = "mapreduce";
