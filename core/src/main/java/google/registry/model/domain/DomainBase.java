@@ -75,7 +75,9 @@ public class DomainBase extends DomainContent
   }
 
   @ElementCollection
-  @JoinTable(name = "DomainHost")
+  @JoinTable(
+      name = "DomainHost",
+      indexes = {@Index(columnList = "domain_repo_id,host_repo_id", unique = true)})
   @Access(AccessType.PROPERTY)
   @Column(name = "host_repo_id")
   public Set<VKey<HostResource>> getNsHosts() {
