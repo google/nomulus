@@ -200,6 +200,9 @@ public interface TransactionManager {
    */
   <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys);
 
+  /** Loads the set of entities by their key id, nonexistent entiites are ignored. */
+  <T> ImmutableMap<VKey<? extends T>, T> loadExisting(Iterable<? extends VKey<? extends T>> keys);
+
   /** Loads all entities of the given type, returns empty if there is no such entity. */
   <T> ImmutableList<T> loadAll(Class<T> clazz);
 
@@ -207,6 +210,9 @@ public interface TransactionManager {
    * Loads all given entities from the database, throws NoSuchElementException if it doesn't exist.
    */
   <T> ImmutableList<T> loadAll(Iterable<T> entities);
+
+  /** Loads all given entities from the database if possible, nonexistent entiites are ignored. */
+  <T> ImmutableList<T> loadAllExisting(Iterable<T> entities);
 
   /** Deletes the entity by its id. */
   void delete(VKey<?> key);

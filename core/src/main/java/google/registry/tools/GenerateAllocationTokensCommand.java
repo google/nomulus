@@ -293,7 +293,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
             .collect(toImmutableSet());
     return transactIfJpaTm(
         () ->
-            tm().load(existingTokenKeys).values().stream()
+            tm().loadExisting(existingTokenKeys).values().stream()
                 .map(AllocationToken::getToken)
                 .collect(toImmutableSet()));
   }

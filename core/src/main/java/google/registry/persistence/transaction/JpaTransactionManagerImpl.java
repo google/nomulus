@@ -35,7 +35,7 @@ import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
 import java.lang.reflect.Field;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -357,6 +357,20 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys) {
+    ImmutableMap<VKey<? extends T>, T> existing = loadExisting(keys);
+    ImmutableSet<? extends VKey<? extends T>> missingKeys =
+        Streams.stream(keys).filter(k -> !existing.containsKey(k)).collect(toImmutableSet());
+    if (!missingKeys.isEmpty()) {
+      throw new NoSuchElementException(
+          String.format(
+              "Expected to find the following VKeys but they were missing: %s.", missingKeys));
+    }
+    return existing;
+  }
+
+  @Override
+  public <T> ImmutableMap<VKey<? extends T>, T> loadExisting(
+      Iterable<? extends VKey<? extends T>> keys) {
     checkArgumentNotNull(keys, "keys must be specified");
     assertInTransaction();
     return StreamSupport.stream(keys.spliterator(), false)
@@ -367,7 +381,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
                 new SimpleEntry<VKey<? extends T>, T>(
                     key, getEntityManager().find(key.getKind(), key.getSqlKey())))
         .filter(entry -> entry.getValue() != null)
-        .collect(toImmutableMap(Entry::getKey, Entry::getValue));
+        .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   @Override
@@ -385,6 +399,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public <T> ImmutableList<T> loadAll(Iterable<T> entities) {
     return Streams.stream(entities).map(this::load).collect(toImmutableList());
+  }
+
+  @Override
+  public <T> ImmutableList<T> loadAllExisting(Iterable<T> entities) {
+    return Streams.stream(entities).filter(this::exists).map(this::load).collect(toImmutableList());
   }
 
   private int internalDelete(VKey<?> key) {

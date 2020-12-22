@@ -815,7 +815,8 @@ public class Registrar extends ImmutableObject
               .map(Registry::createVKey)
               .collect(toImmutableSet());
       Set<VKey<Registry>> missingTldKeys =
-          Sets.difference(newTldKeys, transactIfJpaTm(() -> tm().load(newTldKeys)).keySet());
+          Sets.difference(
+              newTldKeys, transactIfJpaTm(() -> tm().loadExisting(newTldKeys)).keySet());
       checkArgument(missingTldKeys.isEmpty(), "Trying to set nonexisting TLDs: %s", missingTldKeys);
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(allowedTlds);
       return this;

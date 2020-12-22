@@ -316,8 +316,55 @@ public class TransactionManagerTest {
         Stream.concat(moreEntities.stream(), Stream.of(new TestEntity("dark", "matter")))
             .map(TestEntity::key)
             .collect(toImmutableList());
-    assertThat(tm().transact(() -> tm().load(keys)))
+    assertThat(
+            assertThrows(NoSuchElementException.class, () -> tm().transact(() -> tm().load(keys))))
+        .hasMessageThat()
+        .contains("dark");
+  }
+
+  @TestOfyAndSql
+  void loadExisting_missingKeys() {
+    assertAllEntitiesNotExist(moreEntities);
+    tm().transact(() -> tm().insertAll(moreEntities));
+    List<VKey<TestEntity>> keys =
+        Stream.concat(moreEntities.stream(), Stream.of(new TestEntity("dark", "matter")))
+            .map(TestEntity::key)
+            .collect(toImmutableList());
+    assertThat(tm().transact(() -> tm().loadExisting(keys)))
         .isEqualTo(Maps.uniqueIndex(moreEntities, TestEntity::key));
+  }
+
+  @TestOfyAndSql
+  void loadAll_success() {
+    tm().transact(() -> tm().insertAll(moreEntities));
+    assertThat(tm().transact(() -> tm().loadAll(moreEntities)))
+        .containsExactlyElementsIn(moreEntities);
+  }
+
+  @TestOfyAndSql
+  void loadAll_missingKeys() {
+    assertAllEntitiesNotExist(moreEntities);
+    tm().transact(() -> tm().insertAll(moreEntities));
+    ImmutableList<TestEntity> nonexistent = ImmutableList.of(new TestEntity("dark", "matter"));
+    assertThat(
+            assertThrows(
+                NoSuchElementException.class, () -> tm().transact(() -> tm().loadAll(nonexistent))))
+        .hasMessageThat()
+        .contains("dark");
+  }
+
+  @TestOfyAndSql
+  void loadAllExisting_missingKeys() {
+    tm().transact(() -> tm().insertAll(moreEntities));
+    tm().transact(() -> tm().delete(new TestEntity("entity1", "foo")));
+    assertThat(
+            tm().transact(
+                    () ->
+                        tm().loadAllExisting(moreEntities).stream()
+                            .map(TestEntity::key)
+                            .map(VKey::getSqlKey)
+                            .collect(toImmutableList())))
+        .containsExactly("entity2", "entity3");
   }
 
   @TestOfyOnly

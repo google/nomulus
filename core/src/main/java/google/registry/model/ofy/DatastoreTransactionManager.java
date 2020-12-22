@@ -16,6 +16,7 @@ package google.registry.model.ofy;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -23,6 +24,8 @@ import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Result;
@@ -197,6 +200,21 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys) {
+    ImmutableMap<VKey<? extends T>, T> result = loadExisting(keys);
+    ImmutableSet<? extends VKey<? extends T>> missingKeys =
+        Streams.stream(keys).filter(k -> !result.containsKey(k)).collect(toImmutableSet());
+    if (!missingKeys.isEmpty()) {
+      // Ofy ignores nonexistent keys but the method contract specifies to throw if nonexistent
+      throw new NoSuchElementException(
+          String.format(
+              "Expected to find the following VKeys but they were missing: %s.", missingKeys));
+    }
+    return result;
+  }
+
+  @Override
+  public <T> ImmutableMap<VKey<? extends T>, T> loadExisting(
+      Iterable<? extends VKey<? extends T>> keys) {
     // Keep track of the Key -> VKey mapping so we can translate them back.
     ImmutableMap<Key<T>, VKey<? extends T>> keyMap =
         StreamSupport.stream(keys.spliterator(), false)
@@ -217,6 +235,16 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> ImmutableList<T> loadAll(Iterable<T> entities) {
+    ImmutableList<T> result = loadAllExisting(entities);
+    if (result.size() != Iterables.size(entities)) {
+      throw new NoSuchElementException(
+          String.format("Attempted to load entities, some of which are missing: %s", entities));
+    }
+    return result;
+  }
+
+  @Override
+  public <T> ImmutableList<T> loadAllExisting(Iterable<T> entities) {
     return ImmutableList.copyOf(getOfy().load().entities(entities).values());
   }
 
