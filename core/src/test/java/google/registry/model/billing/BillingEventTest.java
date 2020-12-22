@@ -184,15 +184,16 @@ public class BillingEventTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testPersistence() {
-    assertThat(transactIfJpaTm(() -> tm().load(oneTime))).isEqualTo(oneTime);
-    assertThat(transactIfJpaTm(() -> tm().load(oneTimeSynthetic))).isEqualTo(oneTimeSynthetic);
-    assertThat(transactIfJpaTm(() -> tm().load(recurring))).isEqualTo(recurring);
-    assertThat(transactIfJpaTm(() -> tm().load(cancellationOneTime)))
+    assertThat(transactIfJpaTm(() -> tm().loadByEntity(oneTime))).isEqualTo(oneTime);
+    assertThat(transactIfJpaTm(() -> tm().loadByEntity(oneTimeSynthetic)))
+        .isEqualTo(oneTimeSynthetic);
+    assertThat(transactIfJpaTm(() -> tm().loadByEntity(recurring))).isEqualTo(recurring);
+    assertThat(transactIfJpaTm(() -> tm().loadByEntity(cancellationOneTime)))
         .isEqualTo(cancellationOneTime);
-    assertThat(transactIfJpaTm(() -> tm().load(cancellationRecurring)))
+    assertThat(transactIfJpaTm(() -> tm().loadByEntity(cancellationRecurring)))
         .isEqualTo(cancellationRecurring);
 
-    ofyTmOrDoNothing(() -> assertThat(tm().load(modification)).isEqualTo(modification));
+    ofyTmOrDoNothing(() -> assertThat(tm().loadByEntity(modification)).isEqualTo(modification));
   }
 
   @TestOfyOnly
@@ -220,8 +221,9 @@ public class BillingEventTest extends EntityTestCase {
   @TestOfyAndSql
   void testCancellationMatching() {
     VKey<?> recurringKey =
-        transactIfJpaTm(() -> tm().load(oneTimeSynthetic).getCancellationMatchingBillingEvent());
-    assertThat(transactIfJpaTm(() -> tm().load(recurringKey))).isEqualTo(recurring);
+        transactIfJpaTm(
+            () -> tm().loadByEntity(oneTimeSynthetic).getCancellationMatchingBillingEvent());
+    assertThat(transactIfJpaTm(() -> tm().loadByKey(recurringKey))).isEqualTo(recurring);
   }
 
   @TestOfyOnly

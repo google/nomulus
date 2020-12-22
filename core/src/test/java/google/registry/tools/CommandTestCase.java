@@ -186,12 +186,12 @@ public abstract class CommandTestCase<C extends Command> {
 
   /** Reloads the given resource from Datastore. */
   <T> T reloadResource(T resource) {
-    return transactIfJpaTm(() -> tm().load(resource));
+    return transactIfJpaTm(() -> tm().loadByEntity(resource));
   }
 
   /** Returns count of all poll messages in Datastore. */
   int getPollMessageCount() {
-    return transactIfJpaTm(() -> tm().loadAll(PollMessage.class).size());
+    return transactIfJpaTm(() -> tm().loadAllOf(PollMessage.class).size());
   }
 
   /**

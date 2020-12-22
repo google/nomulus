@@ -225,7 +225,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
         if (gracePeriod.getOneTimeBillingEvent() != null) {
           // Take the amount of amount of registration time being refunded off the expiration time.
           // This can be either add grace periods or renew grace periods.
-          BillingEvent.OneTime oneTime = tm().load(gracePeriod.getOneTimeBillingEvent());
+          BillingEvent.OneTime oneTime = tm().loadByKey(gracePeriod.getOneTimeBillingEvent());
           newExpirationTime = newExpirationTime.minusYears(oneTime.getPeriodYears());
         } else if (gracePeriod.getRecurringBillingEvent() != null) {
           // Take 1 year off the registration if in the autorenew grace period (no need to load the
@@ -372,12 +372,12 @@ public final class DomainDeleteFlow implements TransactionalFlow {
   private Money getGracePeriodCost(GracePeriod gracePeriod, DateTime now) {
     if (gracePeriod.getType() == GracePeriodStatus.AUTO_RENEW) {
       DateTime autoRenewTime =
-          tm().load(checkNotNull(gracePeriod.getRecurringBillingEvent()))
+          tm().loadByKey(checkNotNull(gracePeriod.getRecurringBillingEvent()))
               .getRecurrenceTimeOfYear()
               .getLastInstanceBeforeOrAt(now);
       return getDomainRenewCost(targetId, autoRenewTime, 1);
     }
-    return tm().load(checkNotNull(gracePeriod.getOneTimeBillingEvent())).getCost();
+    return tm().loadByKey(checkNotNull(gracePeriod.getOneTimeBillingEvent())).getCost();
   }
 
   @Nullable

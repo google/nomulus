@@ -78,7 +78,8 @@ public class AllocationTokenTest extends EntityTestCase {
                         .put(DateTime.now(UTC).plusWeeks(8), TokenStatus.ENDED)
                         .build())
                 .build());
-    assertThat(transactIfJpaTm(() -> tm().load(unlimitedUseToken))).isEqualTo(unlimitedUseToken);
+    assertThat(transactIfJpaTm(() -> tm().loadByEntity(unlimitedUseToken)))
+        .isEqualTo(unlimitedUseToken);
 
     DomainBase domain = persistActiveDomain("example.foo");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
@@ -91,7 +92,7 @@ public class AllocationTokenTest extends EntityTestCase {
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setTokenType(SINGLE_USE)
                 .build());
-    assertThat(transactIfJpaTm(() -> tm().load(singleUseToken))).isEqualTo(singleUseToken);
+    assertThat(transactIfJpaTm(() -> tm().loadByEntity(singleUseToken))).isEqualTo(singleUseToken);
   }
 
   @TestOfyOnly

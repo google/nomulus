@@ -150,7 +150,7 @@ class DomainRestoreRequestFlowTest
     DomainBase domain = reloadResourceByForeignKey();
     HistoryEntry historyEntryDomainRestore =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE);
-    assertThat(tm().load(domain.getAutorenewBillingEvent()).getEventTime())
+    assertThat(tm().loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(expirationTime);
     assertAboutDomains()
         .that(domain)
@@ -218,7 +218,7 @@ class DomainRestoreRequestFlowTest
     DomainBase domain = reloadResourceByForeignKey();
     HistoryEntry historyEntryDomainRestore =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE);
-    assertThat(tm().load(domain.getAutorenewBillingEvent()).getEventTime())
+    assertThat(tm().loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(newExpirationTime);
     assertAboutDomains()
         .that(domain)

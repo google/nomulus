@@ -64,7 +64,7 @@ class BillingVKeyTest {
 
     BillingVKeyTestEntity original = new BillingVKeyTestEntity(oneTimeVKey, recurringVKey);
     tm().transact(() -> tm().insert(original));
-    BillingVKeyTestEntity persisted = tm().transact(() -> tm().load(original.createVKey()));
+    BillingVKeyTestEntity persisted = tm().transact(() -> tm().loadByKey(original.createVKey()));
 
     assertThat(persisted).isEqualTo(original);
     assertThat(persisted.getBillingEventVKey()).isEqualTo(oneTimeVKey);
@@ -75,7 +75,7 @@ class BillingVKeyTest {
   void testHandleNullVKeyCorrectly() {
     BillingVKeyTestEntity original = new BillingVKeyTestEntity(null, null);
     tm().transact(() -> tm().insert(original));
-    BillingVKeyTestEntity persisted = tm().transact(() -> tm().load(original.createVKey()));
+    BillingVKeyTestEntity persisted = tm().transact(() -> tm().loadByKey(original.createVKey()));
 
     assertThat(persisted).isEqualTo(original);
   }

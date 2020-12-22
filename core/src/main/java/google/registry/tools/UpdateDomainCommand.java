@@ -329,7 +329,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       DomainBase domainBase, final DesignatedContact.Type contactType) {
     return domainBase.getContacts().stream()
         .filter(contact -> contact.getType().equals(contactType))
-        .map(contact -> tm().load(contact.getContactKey()).getContactId())
+        .map(contact -> tm().loadByKey(contact.getContactKey()).getContactId())
         .collect(toImmutableSet());
   }
 }

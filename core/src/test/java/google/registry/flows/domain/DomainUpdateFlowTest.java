@@ -330,7 +330,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertThat(domain.getNameservers()).hasSize(13);
     // getContacts does not return contacts of type REGISTRANT, so check these separately.
     assertThat(domain.getContacts()).hasSize(3);
-    assertThat(tm().load(domain.getRegistrant()).getContactId()).isEqualTo("max_test_7");
+    assertThat(tm().loadByKey(domain.getRegistrant()).getContactId()).isEqualTo("max_test_7");
     assertNoBillingEvents();
     assertDnsTasksEnqueued("example.tld");
   }
@@ -1238,7 +1238,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .setAllowedFullyQualifiedHostNames(ImmutableSet.of("ns1.example.foo"))
             .build());
     runFlow();
-    assertThat(tm().load(reloadResourceByForeignKey().getRegistrant()).getContactId())
+    assertThat(tm().loadByKey(reloadResourceByForeignKey().getRegistrant()).getContactId())
         .isEqualTo("sh8013");
   }
 
@@ -1252,9 +1252,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         .getContacts()
         .forEach(
             contact -> {
-              assertThat(tm().load(contact.getContactKey()).getContactId()).isEqualTo("mak21");
+              assertThat(tm().loadByKey(contact.getContactKey()).getContactId()).isEqualTo("mak21");
             });
-    assertThat(tm().load(reloadResourceByForeignKey().getRegistrant()).getContactId())
+    assertThat(tm().loadByKey(reloadResourceByForeignKey().getRegistrant()).getContactId())
         .isEqualTo("mak21");
 
     runFlow();
@@ -1263,9 +1263,10 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         .getContacts()
         .forEach(
             contact -> {
-              assertThat(tm().load(contact.getContactKey()).getContactId()).isEqualTo("sh8013");
+              assertThat(tm().loadByKey(contact.getContactKey()).getContactId())
+                  .isEqualTo("sh8013");
             });
-    assertThat(tm().load(reloadResourceByForeignKey().getRegistrant()).getContactId())
+    assertThat(tm().loadByKey(reloadResourceByForeignKey().getRegistrant()).getContactId())
         .isEqualTo("sh8013");
   }
 

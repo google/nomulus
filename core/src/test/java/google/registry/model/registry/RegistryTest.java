@@ -70,14 +70,15 @@ public class RegistryTest extends EntityTestCase {
     Registry registry =
         Registry.get("tld").asBuilder().setReservedLists(rl15).setPremiumList(pl).build();
     tm().transact(() -> tm().put(registry));
-    Registry persisted = tm().transact(() -> tm().load(Registry.createVKey(registry.tldStrId)));
+    Registry persisted =
+        tm().transact(() -> tm().loadByKey(Registry.createVKey(registry.tldStrId)));
     assertThat(persisted).isEqualTo(registry);
   }
 
   @TestOfyAndSql
   void testPersistence() {
     assertWithMessage("Registry not found").that(Registry.get("tld")).isNotNull();
-    assertThat(tm().transact(() -> tm().load(Registry.createVKey("tld"))))
+    assertThat(tm().transact(() -> tm().loadByKey(Registry.createVKey("tld"))))
         .isEqualTo(Registry.get("tld"));
   }
 
@@ -162,7 +163,7 @@ public class RegistryTest extends EntityTestCase {
         .containsExactlyElementsIn(
             tm().transact(
                     () ->
-                        tm().load(
+                        tm().loadByKeys(
                                 ImmutableSet.of(
                                     Registry.createVKey("foo"), Registry.createVKey("tld"))))
                 .values());

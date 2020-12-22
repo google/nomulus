@@ -241,14 +241,15 @@ class InitSqlPipelineTest {
     initSqlPipeline.run().waitUntilFinish();
     try (AppEngineEnvironment env = new AppEngineEnvironment("test")) {
       assertHostResourceEquals(
-          jpaTm().transact(() -> jpaTm().load(hostResource.createVKey())), hostResource);
-      assertThat(jpaTm().transact(() -> jpaTm().loadAll(Registrar.class)))
+          jpaTm().transact(() -> jpaTm().loadByKey(hostResource.createVKey())), hostResource);
+      assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Registrar.class)))
           .comparingElementsUsing(immutableObjectCorrespondence("lastUpdateTime"))
           .containsExactly(registrar1, registrar2);
-      assertThat(jpaTm().transact(() -> jpaTm().loadAll(ContactResource.class)))
+      assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class)))
           .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
           .containsExactly(contact1, contact2);
-      assertCleansedDomainEquals(jpaTm().transact(() -> jpaTm().load(domain.createVKey())), domain);
+      assertCleansedDomainEquals(
+          jpaTm().transact(() -> jpaTm().loadByKey(domain.createVKey())), domain);
     }
   }
 

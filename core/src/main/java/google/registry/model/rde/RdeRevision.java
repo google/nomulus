@@ -97,7 +97,7 @@ public final class RdeRevision extends BackupGroupRoot implements NonReplicatedE
     RdeRevisionId sqlKey = RdeRevisionId.create(tld, date.toLocalDate(), mode);
     Key<RdeRevision> ofyKey = Key.create(RdeRevision.class, id);
     Optional<RdeRevision> revisionOptional =
-        tm().maybeLoad(VKey.create(RdeRevision.class, sqlKey, ofyKey));
+        tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, sqlKey, ofyKey));
     return revisionOptional.map(rdeRevision -> rdeRevision.revision + 1).orElse(0);
   }
 
@@ -117,7 +117,7 @@ public final class RdeRevision extends BackupGroupRoot implements NonReplicatedE
     RdeRevisionId sqlKey = RdeRevisionId.create(tld, date.toLocalDate(), mode);
     Key<RdeRevision> ofyKey = Key.create(RdeRevision.class, triplet);
     Optional<RdeRevision> revisionOptional =
-        tm().maybeLoad(VKey.create(RdeRevision.class, sqlKey, ofyKey));
+        tm().loadByKeyIfPresent(VKey.create(RdeRevision.class, sqlKey, ofyKey));
     if (revision == 0) {
       revisionOptional.ifPresent(
           rdeRevision -> {

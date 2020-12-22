@@ -56,7 +56,7 @@ public final class TmchCrl extends CrossTldSingleton implements NonReplicatedEnt
         VKey.create(
             TmchCrl.class, SINGLETON_ID, Key.create(getCrossTldKey(), TmchCrl.class, SINGLETON_ID));
     // return the ofy() result during Datastore-primary phase
-    return ofyTm().transact(() -> ofyTm().maybeLoad(key));
+    return ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key));
   }
 
   /**

@@ -119,7 +119,7 @@ class WriteToSqlTest implements Serializable {
                         .localDbJpaTransactionManager()));
     testPipeline.run().waitUntilFinish();
 
-    ImmutableList<?> sqlContacts = jpaTm().transact(() -> jpaTm().loadAll(ContactResource.class));
+    ImmutableList<?> sqlContacts = jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class));
     assertThat(sqlContacts)
         .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
         .containsExactlyElementsIn(

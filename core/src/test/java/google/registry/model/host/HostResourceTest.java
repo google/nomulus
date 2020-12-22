@@ -93,7 +93,7 @@ class HostResourceTest extends EntityTestCase {
   void testPersistence() {
     HostResource newHost = host.asBuilder().setRepoId("NEWHOST").build();
     tm().transact(() -> tm().insert(newHost));
-    assertThat(ImmutableList.of(tm().transact(() -> tm().load(newHost.createVKey()))))
+    assertThat(ImmutableList.of(tm().transact(() -> tm().loadByKey(newHost.createVKey()))))
         .comparingElementsUsing(immutableObjectCorrespondence("revisions"))
         .containsExactly(newHost);
   }

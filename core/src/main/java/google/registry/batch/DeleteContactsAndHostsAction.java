@@ -345,7 +345,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
       String resourceClientId = resource.getPersistedCurrentSponsorClientId();
       if (resource instanceof HostResource && ((HostResource) resource).isSubordinate()) {
         resourceClientId =
-            tm().load(((HostResource) resource).getSuperordinateDomain())
+            tm().loadByKey(((HostResource) resource).getSuperordinateDomain())
                 .cloneProjectedAtTime(now)
                 .getCurrentSponsorClientId();
       }
@@ -465,7 +465,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
         if (host.isSubordinate()) {
           dnsQueue.addHostRefreshTask(host.getHostName());
           tm().put(
-                  tm().load(host.getSuperordinateDomain())
+                  tm().loadByKey(host.getSuperordinateDomain())
                       .asBuilder()
                       .removeSubordinateHost(host.getHostName())
                       .build());

@@ -291,13 +291,13 @@ class DomainTransferRequestFlowTest
     // Assert that the domain's TransferData server-approve billing events match the above.
     if (expectTransferBillingEvent) {
       assertBillingEventsEqual(
-          tm().load(domain.getTransferData().getServerApproveBillingEvent()),
+          tm().loadByKey(domain.getTransferData().getServerApproveBillingEvent()),
           optionalTransferBillingEvent.get());
     } else {
       assertThat(domain.getTransferData().getServerApproveBillingEvent()).isNull();
     }
     assertBillingEventsEqual(
-        tm().load(domain.getTransferData().getServerApproveAutorenewEvent()),
+        tm().loadByKey(domain.getTransferData().getServerApproveAutorenewEvent()),
         gainingClientAutorenew);
     // Assert that the full set of server-approve billing events is exactly the extra ones plus
     // the transfer billing event (if present) and the gaining client autorenew.
@@ -318,7 +318,7 @@ class DomainTransferRequestFlowTest
             BillingEvent.class),
         Sets.union(expectedServeApproveBillingEvents, extraBillingEvents));
     // The domain's autorenew billing event should still point to the losing client's event.
-    BillingEvent.Recurring domainAutorenewEvent = tm().load(domain.getAutorenewBillingEvent());
+    BillingEvent.Recurring domainAutorenewEvent = tm().loadByKey(domain.getAutorenewBillingEvent());
     assertThat(domainAutorenewEvent.getClientId()).isEqualTo("TheRegistrar");
     assertThat(domainAutorenewEvent.getRecurrenceEndTime()).isEqualTo(implicitTransferTime);
     // The original grace periods should remain untouched.
@@ -414,7 +414,7 @@ class DomainTransferRequestFlowTest
 
     // Assert that the poll messages show up in the TransferData server approve entities.
     assertPollMessagesEqual(
-        tm().load(domain.getTransferData().getServerApproveAutorenewPollMessage()),
+        tm().loadByKey(domain.getTransferData().getServerApproveAutorenewPollMessage()),
         autorenewPollMessage);
     // Assert that the full set of server-approve poll messages is exactly the server approve
     // OneTime messages to gaining and losing registrars plus the gaining client autorenew.
@@ -446,7 +446,8 @@ class DomainTransferRequestFlowTest
         .hasLastEppUpdateTime(implicitTransferTime)
         .and()
         .hasLastEppUpdateClientId("NewRegistrar");
-    assertThat(tm().load(domainAfterAutomaticTransfer.getAutorenewBillingEvent()).getEventTime())
+    assertThat(
+            tm().loadByKey(domainAfterAutomaticTransfer.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(expectedExpirationTime);
     // And after the expected grace time, the grace period should be gone.
     DomainBase afterGracePeriod =

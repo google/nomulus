@@ -475,7 +475,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(getPollMessages("TheRegistrar", deletionTime)).hasSize(1);
     assertThat(domain.getDeletePollMessage().getOfyKey())
         .isEqualTo(getOnlyPollMessage("TheRegistrar").createVKey().getOfyKey());
-    PollMessage.OneTime deletePollMessage = tm().load(domain.getDeletePollMessage());
+    PollMessage.OneTime deletePollMessage = tm().loadByKey(domain.getDeletePollMessage());
     assertThat(deletePollMessage.getMsg()).isEqualTo(expectedMessage);
   }
 
@@ -509,7 +509,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // Modify the autorenew poll message so that it has unacked messages in the past. This should
     // prevent it from being deleted when the domain is deleted.
     persistResource(
-        tm().load(reloadResourceByForeignKey().getAutorenewPollMessage())
+        tm().loadByKey(reloadResourceByForeignKey().getAutorenewPollMessage())
             .asBuilder()
             .setEventTime(A_MONTH_FROM_NOW.minusYears(3))
             .build());

@@ -75,7 +75,7 @@ final class DeleteAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     // Load the tokens in the same transaction as they are deleted to verify they weren't redeemed
     // since the query ran. This also filters out per-domain tokens if they're not to be deleted.
     ImmutableSet<VKey<AllocationToken>> tokensToDelete =
-        tm().load(batch).values().stream()
+        tm().loadByKeys(batch).values().stream()
             .filter(t -> withDomains || t.getDomainName().isEmpty())
             .filter(t -> SINGLE_USE.equals(t.getTokenType()))
             .filter(t -> !t.isRedeemed())

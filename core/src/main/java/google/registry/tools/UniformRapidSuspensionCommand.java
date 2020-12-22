@@ -162,7 +162,7 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
 
   private ImmutableSortedSet<String> getExistingNameservers(DomainBase domain) {
     ImmutableSortedSet.Builder<String> nameservers = ImmutableSortedSet.naturalOrder();
-    for (HostResource host : tm().load(domain.getNameservers()).values()) {
+    for (HostResource host : tm().loadByKeys(domain.getNameservers()).values()) {
       nameservers.add(host.getForeignKey());
     }
     return nameservers.build();

@@ -267,7 +267,7 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
                 public Optional<Registry> load(final String tld) {
                   // Enter a transaction-less context briefly; we don't want to enroll every TLD in
                   // a transaction that might be wrapping this call.
-                  return tm().doTransactionless(() -> tm().maybeLoad(createVKey(tld)));
+                  return tm().doTransactionless(() -> tm().loadByKeyIfPresent(createVKey(tld)));
                 }
 
                 @Override
@@ -275,7 +275,7 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
                   ImmutableMap<String, VKey<Registry>> keysMap =
                       toMap(ImmutableSet.copyOf(tlds), Registry::createVKey);
                   Map<VKey<? extends Registry>, Registry> entities =
-                      tm().doTransactionless(() -> tm().load(keysMap.values()));
+                      tm().doTransactionless(() -> tm().loadByKeys(keysMap.values()));
                   return Maps.transformEntries(
                       keysMap, (k, v) -> Optional.ofNullable(entities.getOrDefault(v, null)));
                 }
