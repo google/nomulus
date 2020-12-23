@@ -15,10 +15,24 @@
 package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 
+import dagger.Component;
+import google.registry.beam.initsql.BeamJpaModule;
+import google.registry.config.CredentialModule;
+import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.keyring.kms.KmsModule;
+import google.registry.persistence.PersistenceModule.TransactionIsolation;
+import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.testing.DatastoreEntityExtension;
+import google.registry.util.UtilsModule;
+import java.util.Optional;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import org.hibernate.cfg.Environment;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +43,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /** Unit tests for {@link PersistenceModule}. */
 @Testcontainers
-public class PersistenceModuleTest {
+class PersistenceModuleTest {
 
   @Container
   private final PostgreSQLContainer database =
@@ -63,5 +77,60 @@ public class PersistenceModuleTest {
     EntityManager em = emf.createEntityManager();
     assertThat(em.isOpen()).isTrue();
     em.close();
+  }
+
+  @Test
+  void appengineIsolation() {
+    assertThat(PersistenceModule.provideDefaultDatabaseConfigs().get(Environment.ISOLATION))
+        .isEqualTo(TransactionIsolation.TRANSACTION_SERIALIZABLE.name());
+  }
+
+  @Test
+  void beamIsolation_default() {
+    Optional<Provider<TransactionIsolation>> injected =
+        DaggerPersistenceModuleTest_BeamConfigTestComponent.builder()
+            .beamJpaModule(new BeamJpaModule(null, null))
+            .build()
+            .getIsolationOverride();
+    assertThat(injected).isNotNull();
+    assertThat(injected.get().get()).isNull();
+    assertThat(
+            PersistenceModule.provideBeamPipelineCloudSqlConfigs(
+                    "", "", PersistenceModule.provideDefaultDatabaseConfigs(), injected)
+                .get(Environment.ISOLATION))
+        .isEqualTo(TransactionIsolation.TRANSACTION_SERIALIZABLE.name());
+  }
+
+  @Test
+  void beamIsolation_override() {
+    Optional<Provider<TransactionIsolation>> injected =
+        DaggerPersistenceModuleTest_BeamConfigTestComponent.builder()
+            .beamJpaModule(
+                new BeamJpaModule(null, null, TransactionIsolation.TRANSACTION_READ_UNCOMMITTED))
+            .build()
+            .getIsolationOverride();
+    assertThat(injected).isNotNull();
+    assertThat(injected.get().get()).isEqualTo(TransactionIsolation.TRANSACTION_READ_UNCOMMITTED);
+    assertThat(
+            PersistenceModule.provideBeamPipelineCloudSqlConfigs(
+                    "", "", PersistenceModule.provideDefaultDatabaseConfigs(), injected)
+                .get(Environment.ISOLATION))
+        .isEqualTo(TransactionIsolation.TRANSACTION_READ_UNCOMMITTED.name());
+  }
+
+  @Singleton
+  @Component(
+      modules = {
+        BeamJpaModule.class,
+        ConfigModule.class,
+        CredentialModule.class,
+        KmsModule.class,
+        PersistenceModule.class,
+        SecretManagerModule.class,
+        UtilsModule.class
+      })
+  public interface BeamConfigTestComponent {
+    @Config("beamIsolationOverride")
+    Optional<Provider<TransactionIsolation>> getIsolationOverride();
   }
 }
