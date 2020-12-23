@@ -21,10 +21,8 @@ import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotInPendingDelete;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
 import static google.registry.model.EppResourceUtils.createRepoId;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
-import static google.registry.util.CollectionUtils.union;
 
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
@@ -137,13 +135,11 @@ public final class HostCreateFlow implements TransactionalFlow {
     ImmutableSet<ImmutableObject> entitiesToSave =
         ImmutableSet.of(
             newHost,
-            historyBuilder.build(),
+            historyBuilder.build().toChildHistoryEntity(),
             ForeignKeyIndex.create(newHost, newHost.getDeletionTime()),
             EppResourceIndex.create(Key.create(newHost)));
     if (superordinateDomain.isPresent()) {
-      entitiesToSave =
-          union(
-              entitiesToSave,
+      tm().update(
               superordinateDomain
                   .get()
                   .asBuilder()
@@ -153,7 +149,7 @@ public final class HostCreateFlow implements TransactionalFlow {
       // they are only written as NS records from the referencing domain.
       dnsQueue.addHostRefreshTask(targetId);
     }
-    ofy().save().entities(entitiesToSave);
+    tm().insertAll(entitiesToSave);
     return responseBuilder.setResData(HostCreateData.create(targetId, now)).build();
   }
 

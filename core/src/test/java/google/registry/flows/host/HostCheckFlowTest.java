@@ -24,16 +24,18 @@ import google.registry.flows.EppException;
 import google.registry.flows.ResourceCheckFlowTestCase;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.host.HostResource;
-import org.junit.jupiter.api.Test;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 
 /** Unit tests for {@link HostCheckFlow}. */
+@DualDatabaseTest
 class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, HostResource> {
 
   HostCheckFlowTest() {
     setEppInput("host_check.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testNothingExists() throws Exception {
     // These ids come from the check xml.
     doCheckTest(
@@ -42,7 +44,7 @@ class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, HostRes
         create(true, "ns3.example.tld", null));
   }
 
-  @Test
+  @TestOfyAndSql
   void testOneExists() throws Exception {
     persistActiveHost("ns1.example.tld");
     // These ids come from the check xml.
@@ -52,7 +54,7 @@ class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, HostRes
         create(true, "ns3.example.tld", null));
   }
 
-  @Test
+  @TestOfyAndSql
   void testOneExistsButWasDeleted() throws Exception {
     persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
     // These ids come from the check xml.
@@ -62,27 +64,27 @@ class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, HostRes
         create(true, "ns3.example.tld", null));
   }
 
-  @Test
+  @TestOfyAndSql
   void testXmlMatches() throws Exception {
     persistActiveHost("ns2.example.tld");
     runFlowAssertResponse(loadFile("host_check_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test50IdsAllowed() throws Exception {
     // Make sure we don't have a regression that reduces the number of allowed checks.
     setEppInput("host_check_50.xml");
     runFlow();
   }
 
-  @Test
+  @TestOfyAndSql
   void testTooManyIds() {
     setEppInput("host_check_51.xml");
     EppException thrown = assertThrows(TooManyResourceChecksException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-host-check");

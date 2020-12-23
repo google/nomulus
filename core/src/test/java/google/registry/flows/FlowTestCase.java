@@ -100,7 +100,11 @@ public abstract class FlowTestCase<F extends Flow> {
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder()
+          .withClock(clock)
+          .withDatastoreAndCloudSql()
+          .withTaskQueue()
+          .build();
 
   @BeforeEach
   public void beforeEachFlowTestCase() {
@@ -288,7 +292,7 @@ public abstract class FlowTestCase<F extends Flow> {
           e);
     }
     // Clear the cache so that we don't see stale results in tests.
-    ofy().clearSessionCache();
+    tm().clearSessionCache();
     return output;
   }
 

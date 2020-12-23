@@ -29,6 +29,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig;
+import google.registry.model.ImmutableObject;
+import google.registry.model.index.EppResourceIndex;
+import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
+import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
+import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
@@ -55,6 +60,18 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Retrier retrier = new Retrier(new SystemSleeper(), 3);
+
+  // The entity of classes in this set will be simply ignored when passed to modification
+  // operations, i.e. insert, put, update and delete. This is to help maintain a single code path
+  // when we switch from ofy() to tm() for the database migration as we don't need have a condition
+  // to exclude the Datastore specific entities when the underlying tm() is jpaTm().
+  // TODO(b/176108270): Remove this property after database migration.
+  private static final ImmutableSet<Class<? extends ImmutableObject>> IGNORED_ENTITY_CLASSES =
+      ImmutableSet.of(
+          EppResourceIndex.class,
+          ForeignKeyContactIndex.class,
+          ForeignKeyDomainIndex.class,
+          ForeignKeyHostIndex.class);
 
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;
@@ -228,6 +245,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void insert(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
+    if (isEntityOfIgnoredClass(entity)) {
+      return;
+    }
     assertInTransaction();
     getEntityManager().persist(entity);
     transactionInfo.get().addUpdate(entity);
@@ -253,6 +273,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void put(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
+    if (isEntityOfIgnoredClass(entity)) {
+      return;
+    }
     assertInTransaction();
     getEntityManager().merge(entity);
     transactionInfo.get().addUpdate(entity);
@@ -278,6 +301,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void update(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
+    if (isEntityOfIgnoredClass(entity)) {
+      return;
+    }
     assertInTransaction();
     checkArgument(exists(entity), "Given entity does not exist");
     getEntityManager().merge(entity);
@@ -414,6 +440,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void delete(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
+    if (isEntityOfIgnoredClass(entity)) {
+      return;
+    }
     assertInTransaction();
     Object managedEntity = entity;
     if (!getEntityManager().contains(entity)) {
@@ -462,6 +491,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       this.name = name;
       this.value = value;
     }
+  }
+
+  private static boolean isEntityOfIgnoredClass(Object entity) {
+    return IGNORED_ENTITY_CLASSES.contains(entity.getClass());
   }
 
   private static ImmutableSet<EntityId> getEntityIdsFromEntity(

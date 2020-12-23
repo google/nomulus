@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newHostResource;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrars;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResourceWithCommitLog;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -26,16 +27,19 @@ import static org.joda.time.DateTimeZone.UTC;
 import google.registry.model.host.HostResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Tests for {@link EppResourceUtils}. */
-public class EppResourceUtilsTest {
+@DualDatabaseTest
+class EppResourceUtilsTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
@@ -51,7 +55,7 @@ public class EppResourceUtilsTest {
     inject.setStaticField(Ofy.class, "clock", clock);
   }
 
-  @Test
+  @TestOfyAndSql
   void testLoadAtPointInTime_beforeCreated_returnsNull() {
     clock.advanceOneMilli();
     // Don't save a commit log, we shouldn't need one.
@@ -62,7 +66,7 @@ public class EppResourceUtilsTest {
     assertThat(loadAtPointInTime(host, clock.nowUtc().minus(Duration.millis(1))).now()).isNull();
   }
 
-  @Test
+  @TestOfyAndSql
   void testLoadAtPointInTime_atOrAfterLastAutoUpdateTime_returnsResource() {
     clock.advanceOneMilli();
     // Don't save a commit log, we shouldn't need one.
@@ -73,8 +77,9 @@ public class EppResourceUtilsTest {
     assertThat(loadAtPointInTime(host, clock.nowUtc()).now()).isEqualTo(host);
   }
 
-  @Test
+  @TestOfyOnly
   void testLoadAtPointInTime_usingIntactRevisionHistory_returnsMutationValue() {
+    persistNewRegistrars("OLD", "NEW");
     clock.advanceOneMilli();
     // Save resource with a commit log that we can read in later as a revisions map value.
     HostResource oldHost = persistResourceWithCommitLog(
@@ -94,7 +99,7 @@ public class EppResourceUtilsTest {
         .isEqualTo(oldHost);
   }
 
-  @Test
+  @TestOfyOnly
   void testLoadAtPointInTime_brokenRevisionHistory_returnsResourceAsIs() {
     // Don't save a commit log since we want to test the handling of a broken revisions key.
     HostResource oldHost = persistResource(
@@ -114,7 +119,7 @@ public class EppResourceUtilsTest {
     assertThat(loadAtPointInTime(host, clock.nowUtc().minusMillis(1)).now()).isEqualTo(host);
   }
 
-  @Test
+  @TestOfyOnly
   void testLoadAtPointInTime_fallback_returnsMutationValueForOldestRevision() {
     clock.advanceOneMilli();
     // Save a commit log that we can fall back to.
@@ -136,7 +141,7 @@ public class EppResourceUtilsTest {
         .isEqualTo(oldHost);
   }
 
-  @Test
+  @TestOfyOnly
   void testLoadAtPointInTime_ultimateFallback_onlyOneRevision_returnsCurrentResource() {
     clock.advanceOneMilli();
     // Don't save a commit log; we want to test that we load from the current resource.
@@ -151,7 +156,7 @@ public class EppResourceUtilsTest {
     assertThat(loadAtPointInTime(host, clock.nowUtc().minusMillis(1)).now()).isEqualTo(host);
   }
 
-  @Test
+  @TestOfyOnly
   void testLoadAtPointInTime_moreThanThirtyDaysInPast_historyIsPurged() {
     clock.advanceOneMilli();
     HostResource host =

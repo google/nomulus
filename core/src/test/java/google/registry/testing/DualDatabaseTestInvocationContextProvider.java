@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import google.registry.persistence.transaction.TransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import java.lang.reflect.Field;
@@ -160,6 +161,14 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
 
   private static boolean isDualDatabaseTest(ExtensionContext context) {
     Object testInstance = context.getTestInstance().orElseThrow(RuntimeException::new);
-    return testInstance.getClass().isAnnotationPresent(DualDatabaseTest.class);
+    // If the test method is declared in its parent class,
+    // e.g. google.registry.flows.ResourceFlowTestCase.testRequiresLogin,
+    // we don't consider it is a DualDatabaseTest. This is because there may exist some subclasses
+    // that have not been migrated to DualDatabaseTest.
+    boolean isDeclaredTestMethod =
+        ImmutableSet.copyOf(testInstance.getClass().getDeclaredMethods())
+            .contains(context.getTestMethod().orElseThrow(RuntimeException::new));
+    return testInstance.getClass().isAnnotationPresent(DualDatabaseTest.class)
+        && isDeclaredTestMethod;
   }
 }
