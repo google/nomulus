@@ -131,6 +131,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable, Sq
   private boolean isSuperuser;
 
   /** The lock that undoes this lock, if this lock has been unlocked and the domain locked again. */
+  // TODO(b/176498743): Lazy loading on scalar field not supported by default. See bug for details.
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "relockRevisionId", referencedColumnName = "revisionId")
   private RegistryLock relock;
