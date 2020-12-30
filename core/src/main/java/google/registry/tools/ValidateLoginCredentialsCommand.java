@@ -55,6 +55,7 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
       validateWith = PathParameter.InputFile.class)
   private Path clientCertificatePath;
 
+  // TODO(sarahbot@): Remove this after hash fallback is removed
   @Nullable
   @Parameter(
       names = {"-h", "--cert_hash"},
@@ -71,14 +72,15 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
     checkArgument(
         clientCertificatePath == null || isNullOrEmpty(clientCertificateHash),
         "Can't specify both --cert_hash and --cert_file");
+    String clientCertificate = "";
     if (clientCertificatePath != null) {
-      clientCertificateHash = getCertificateHash(
-          loadCertificate(new String(Files.readAllBytes(clientCertificatePath), US_ASCII)));
+      clientCertificate = new String(Files.readAllBytes(clientCertificatePath), US_ASCII);
+      clientCertificateHash = getCertificateHash(loadCertificate(clientCertificate));
     }
     Registrar registrar =
         checkArgumentPresent(
             Registrar.loadByClientId(clientId), "Registrar %s not found", clientId);
-    new TlsCredentials(true, clientCertificateHash, Optional.of(clientIpAddress))
+    new TlsCredentials(true, clientCertificateHash, clientCertificate, Optional.of(clientIpAddress))
         .validate(registrar, password);
     checkState(
         registrar.isLive(), "Registrar %s has non-live state: %s", clientId, registrar.getState());

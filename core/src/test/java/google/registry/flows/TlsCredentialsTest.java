@@ -57,7 +57,7 @@ final class TlsCredentialsTest {
 
   @Test
   void test_validateCertificate_canBeConfiguredToBypassCertHashes() throws Exception {
-    TlsCredentials tls = new TlsCredentials(false, "certHash", Optional.of("192.168.1.1"));
+    TlsCredentials tls = new TlsCredentials(false, "certHash", "cert", Optional.of("192.168.1.1"));
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()

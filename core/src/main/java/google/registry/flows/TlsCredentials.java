@@ -44,6 +44,9 @@ import javax.servlet.http.HttpServletRequest;
  * <dl>
  *   <dt>X-SSL-Certificate
  *   <dd>This field should contain a base64 encoded digest of the client's TLS certificate. It is
+ *       used only if the validation of the full certificate fails.
+ *   <dt>X-SSL-Full-Certificate
+ *   <dd>This field should contain a base64 encoding of the client's TLS certificate. It is
  *       validated during an EPP login command against a known good value that is transmitted out of
  *       band.
  *   <dt>X-Forwarded-For
@@ -57,15 +60,18 @@ public class TlsCredentials implements TransportCredentials {
 
   private final boolean requireSslCertificates;
   private final String clientCertificateHash;
+  private final String clientCertificate;
   private final InetAddress clientInetAddr;
 
   @Inject
   public TlsCredentials(
       @Config("requireSslCertificates") boolean requireSslCertificates,
       @Header("X-SSL-Certificate") String clientCertificateHash,
+      @Header("X-SSL-Full-Certificate") String clientCertificate,
       @Header("X-Forwarded-For") Optional<String> clientAddress) {
     this.requireSslCertificates = requireSslCertificates;
     this.clientCertificateHash = clientCertificateHash;
+    this.clientCertificate = clientCertificate;
     this.clientInetAddr = clientAddress.isPresent() ? parseInetAddress(clientAddress.get()) : null;
   }
 
@@ -118,6 +124,29 @@ public class TlsCredentials implements TransportCredentials {
    */
   @VisibleForTesting
   void validateCertificate(Registrar registrar) throws AuthenticationErrorException {
+    if (isNullOrEmpty(registrar.getClientCertificate())
+        && isNullOrEmpty(registrar.getFailoverClientCertificate())) {
+      if (requireSslCertificates) {
+        throw new RegistrarCertificateNotConfiguredException();
+      } else {
+        // If the environment is configured to allow missing SSL certificates and this certificate
+        // is missing, then bypass the certificate checks.
+        return;
+      }
+    }
+
+    if (isNullOrEmpty(clientCertificate)) {
+      logger.atInfo().log("Request did not include X-SSL-Full-Certificate");
+      throw new MissingRegistrarCertificateException();
+    }
+
+    // Check if the certificate is equal to the one on file for the registrar.
+    if (!clientCertificate.equals(registrar.getClientCertificate())
+        && !clientCertificate.equals(registrar.getFailoverClientCertificate())) {
+      logger.atWarning().log("bad certificate for %s.", registrar.getClientId());
+      throw new BadRegistrarCertificateException();
+    }
+
     if (isNullOrEmpty(registrar.getClientCertificateHash())
         && isNullOrEmpty(registrar.getFailoverClientCertificateHash())) {
       if (requireSslCertificates) {
@@ -195,6 +224,12 @@ public class TlsCredentials implements TransportCredentials {
     @Header("X-SSL-Certificate")
     static String provideClientCertificateHash(HttpServletRequest req) {
       return extractRequiredHeader(req, "X-SSL-Certificate");
+    }
+
+    @Provides
+    @Header("X-SSL-Full-Certificate")
+    static String provideClientCertificate(HttpServletRequest req) {
+      return extractRequiredHeader(req, "X-SSL-Full_Certificate");
     }
 
     @Provides

@@ -34,9 +34,10 @@ class EppLoginTlsTest extends EppTestCase {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  void setClientCertificateHash(String clientCertificateHash) {
+  void setCredentials(String clientCertificateHash, String clientCertificate) {
     setTransportCredentials(
-        new TlsCredentials(true, clientCertificateHash, Optional.of("192.168.1.100:54321")));
+        new TlsCredentials(
+            true, clientCertificateHash, clientCertificate, Optional.of("192.168.1.100:54321")));
   }
 
   @BeforeEach
@@ -56,14 +57,14 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testLoginLogout() throws Exception {
-    setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH);
+    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
   }
 
   @Test
   void testLogin_wrongPasswordFails() throws Exception {
-    setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH);
+    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
     // For TLS login, we also check the epp xml password.
     assertThatLogin("NewRegistrar", "incorrect")
         .hasResponse(
@@ -73,7 +74,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testMultiLogin() throws Exception {
-    setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH);
+    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -87,7 +88,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testNonAuthedLogin_fails() throws Exception {
-    setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH);
+    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
     assertThatLogin("TheRegistrar", "password2")
         .hasResponse(
             "response_error.xml",
@@ -97,7 +98,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testBadCertificate_failsBadCertificate2200() throws Exception {
-    setClientCertificateHash("laffo");
+    setCredentials("laffo", "cert");
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
             "response_error.xml",
@@ -107,7 +108,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testGfeDidntProvideClientCertificate_failsMissingCertificate2200() throws Exception {
-    setClientCertificateHash("");
+    setCredentials("", "");
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
             "response_error.xml",
@@ -116,7 +117,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testGoodPrimaryCertificate() throws Exception {
-    setClientCertificateHash(CertificateSamples.SAMPLE_CERT_HASH);
+    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -129,7 +130,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testGoodFailoverCertificate() throws Exception {
-    setClientCertificateHash(CertificateSamples.SAMPLE_CERT2_HASH);
+    setCredentials(CertificateSamples.SAMPLE_CERT2_HASH, CertificateSamples.SAMPLE_CERT2);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -142,7 +143,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testMissingPrimaryCertificateButHasFailover_usesFailover() throws Exception {
-    setClientCertificateHash(CertificateSamples.SAMPLE_CERT2_HASH);
+    setCredentials(CertificateSamples.SAMPLE_CERT2_HASH, CertificateSamples.SAMPLE_CERT2);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -155,7 +156,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testRegistrarHasNoCertificatesOnFile_fails() throws Exception {
-    setClientCertificateHash("laffo");
+    setCredentials("laffo", "cert");
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
