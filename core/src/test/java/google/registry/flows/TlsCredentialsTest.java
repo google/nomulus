@@ -56,7 +56,24 @@ final class TlsCredentialsTest {
   }
 
   @Test
-  void test_validateCertificate_canBeConfiguredToBypassCertHashes() throws Exception {
+  void testProvideClientCertificate() {
+    HttpServletRequest req = mock(HttpServletRequest.class);
+    when(req.getHeader("X-SSL-Full-Certificate")).thenReturn("data");
+    assertThat(TlsCredentials.EppTlsModule.provideClientCertificate(req)).isEqualTo("data");
+  }
+
+  @Test
+  void testProvideClientCertificate_missing() {
+    HttpServletRequest req = mock(HttpServletRequest.class);
+    BadRequestException thrown =
+        assertThrows(
+            BadRequestException.class,
+            () -> TlsCredentials.EppTlsModule.provideClientCertificate(req));
+    assertThat(thrown).hasMessageThat().contains("Missing header: X-SSL-Full-Certificate");
+  }
+
+  @Test
+  void test_validateCertificate_canBeConfiguredToBypassCerts() throws Exception {
     TlsCredentials tls = new TlsCredentials(false, "certHash", "cert", Optional.of("192.168.1.1"));
     persistResource(
         loadRegistrar("TheRegistrar")
