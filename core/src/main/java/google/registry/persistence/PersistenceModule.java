@@ -286,7 +286,7 @@ public abstract class PersistenceModule {
    * Transaction isolation levels supported by Cloud SQL (mysql and postgresql).
    *
    * <p>Enum names may be used for property-based configuration, and must match the corresponding
-   * variable names in {@link java.sql.Connection}.
+   * variable names in {@link Connection}.
    */
   public enum TransactionIsolationLevel {
     TRANSACTION_READ_UNCOMMITTED,
