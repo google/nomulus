@@ -15,9 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.request.RequestParameters.extractOptionalHeader;
-import static google.registry.request.RequestParameters.extractRequiredHeader;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -56,17 +54,17 @@ public class TlsCredentials implements TransportCredentials {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final boolean requireSslCertificates;
-  private final String clientCertificateHash;
-  private final InetAddress clientInetAddr;
+  private final Optional<String> clientCertificateHash;
+  private final Optional<InetAddress> clientInetAddr;
 
   @Inject
   public TlsCredentials(
       @Config("requireSslCertificates") boolean requireSslCertificates,
-      @Header("X-SSL-Certificate") String clientCertificateHash,
+      @Header("X-SSL-Certificate") Optional<String> clientCertificateHash,
       @Header("X-Forwarded-For") Optional<String> clientAddress) {
     this.requireSslCertificates = requireSslCertificates;
     this.clientCertificateHash = clientCertificateHash;
-    this.clientInetAddr = clientAddress.isPresent() ? parseInetAddress(clientAddress.get()) : null;
+    this.clientInetAddr = clientAddress.map(TlsCredentials::parseInetAddress);
   }
 
   static InetAddress parseInetAddress(String asciiAddr) {
@@ -97,10 +95,14 @@ public class TlsCredentials implements TransportCredentials {
           registrar.getClientId());
       return;
     }
-    for (CidrAddressBlock cidrAddressBlock : ipAddressAllowList) {
-      if (cidrAddressBlock.contains(clientInetAddr)) {
-        // IP address is in allow list; return early.
-        return;
+    // In the rare unexpected case that the client inet address wasn't passed along at all, then
+    // by default deny access.
+    if (clientInetAddr.isPresent()) {
+      for (CidrAddressBlock cidrAddressBlock : ipAddressAllowList) {
+        if (cidrAddressBlock.contains(clientInetAddr.get())) {
+          // IP address is in allow list; return early.
+          return;
+        }
       }
     }
     logger.atInfo().log(
@@ -118,8 +120,8 @@ public class TlsCredentials implements TransportCredentials {
    */
   @VisibleForTesting
   void validateCertificate(Registrar registrar) throws AuthenticationErrorException {
-    if (isNullOrEmpty(registrar.getClientCertificateHash())
-        && isNullOrEmpty(registrar.getFailoverClientCertificateHash())) {
+    if (!registrar.getClientCertificateHash().isPresent()
+        && !registrar.getFailoverClientCertificateHash().isPresent()) {
       if (requireSslCertificates) {
         throw new RegistrarCertificateNotConfiguredException();
       } else {
@@ -128,7 +130,7 @@ public class TlsCredentials implements TransportCredentials {
         return;
       }
     }
-    if (isNullOrEmpty(clientCertificateHash)) {
+    if (!clientCertificateHash.isPresent()) {
       logger.atInfo().log("Request did not include X-SSL-Certificate");
       throw new MissingRegistrarCertificateException();
     }
@@ -154,21 +156,21 @@ public class TlsCredentials implements TransportCredentials {
   @Override
   public String toString() {
     return toStringHelper(getClass())
-        .add("clientCertificateHash", clientCertificateHash)
-        .add("clientAddress", clientInetAddr)
+        .add("clientCertificateHash", clientCertificateHash.orElse(null))
+        .add("clientAddress", clientInetAddr.orElse(null))
         .toString();
   }
 
   /** Registrar certificate does not match stored certificate. */
   public static class BadRegistrarCertificateException extends AuthenticationErrorException {
-    public BadRegistrarCertificateException() {
+    BadRegistrarCertificateException() {
       super("Registrar certificate does not match stored certificate");
     }
   }
 
   /** Registrar certificate not present. */
   public static class MissingRegistrarCertificateException extends AuthenticationErrorException {
-    public MissingRegistrarCertificateException() {
+    MissingRegistrarCertificateException() {
       super("Registrar certificate not present");
     }
   }
@@ -176,14 +178,14 @@ public class TlsCredentials implements TransportCredentials {
   /** Registrar certificate is not configured. */
   public static class RegistrarCertificateNotConfiguredException
       extends AuthenticationErrorException {
-    public RegistrarCertificateNotConfiguredException() {
+    RegistrarCertificateNotConfiguredException() {
       super("Registrar certificate is not configured");
     }
   }
 
   /** Registrar IP address is not in stored allow list. */
   public static class BadRegistrarIpAddressException extends AuthenticationErrorException {
-    public BadRegistrarIpAddressException() {
+    BadRegistrarIpAddressException() {
       super("Registrar IP address is not in stored allow list");
     }
   }
@@ -191,10 +193,13 @@ public class TlsCredentials implements TransportCredentials {
   /** Dagger module for the EPP TLS endpoint. */
   @Module
   public static final class EppTlsModule {
+
     @Provides
     @Header("X-SSL-Certificate")
-    static String provideClientCertificateHash(HttpServletRequest req) {
-      return extractRequiredHeader(req, "X-SSL-Certificate");
+    static Optional<String> provideClientCertificateHash(HttpServletRequest req) {
+      // Note: This header is actually required, we just want to handle its absence explicitly
+      // by throwing an EPP exception rather than a generic Bad Request exception.
+      return extractOptionalHeader(req, "X-SSL-Certificate");
     }
 
     @Provides

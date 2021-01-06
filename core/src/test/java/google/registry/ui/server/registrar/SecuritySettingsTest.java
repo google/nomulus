@@ -15,6 +15,7 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2_HASH;
@@ -121,10 +122,10 @@ class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
         "op", "update", "id", CLIENT_ID, "args", jsonMap));
     assertThat(response).containsEntry("status", "SUCCESS");
     Registrar registrar = loadRegistrar(CLIENT_ID);
-    assertThat(registrar.getClientCertificate()).isEqualTo(SAMPLE_CERT3);
-    assertThat(registrar.getClientCertificateHash()).isEqualTo(SAMPLE_CERT3_HASH);
-    assertThat(registrar.getFailoverClientCertificate()).isNull();
-    assertThat(registrar.getFailoverClientCertificateHash()).isNull();
+    assertThat(registrar.getClientCertificate()).hasValue(SAMPLE_CERT3);
+    assertThat(registrar.getClientCertificateHash()).hasValue(SAMPLE_CERT3_HASH);
+    assertThat(registrar.getFailoverClientCertificate()).isEmpty();
+    assertThat(registrar.getFailoverClientCertificateHash()).isEmpty();
     assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
     verifyNotificationEmailsSent();
   }
@@ -138,8 +139,8 @@ class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
         "op", "update", "id", CLIENT_ID, "args", jsonMap));
     assertThat(response).containsEntry("status", "SUCCESS");
     Registrar registrar = loadRegistrar(CLIENT_ID);
-    assertThat(registrar.getFailoverClientCertificate()).isEqualTo(SAMPLE_CERT3);
-    assertThat(registrar.getFailoverClientCertificateHash()).isEqualTo(SAMPLE_CERT3_HASH);
+    assertThat(registrar.getFailoverClientCertificate()).hasValue(SAMPLE_CERT3);
+    assertThat(registrar.getFailoverClientCertificateHash()).hasValue(SAMPLE_CERT3_HASH);
     assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
     verifyNotificationEmailsSent();
   }
@@ -160,10 +161,10 @@ class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
         "op", "update", "id", CLIENT_ID, "args", jsonMap));
     assertThat(response).containsEntry("status", "SUCCESS");
     Registrar registrar = loadRegistrar(CLIENT_ID);
-    assertThat(registrar.getClientCertificate()).isEqualTo(SAMPLE_CERT);
-    assertThat(registrar.getClientCertificateHash()).isEqualTo(SAMPLE_CERT_HASH);
-    assertThat(registrar.getFailoverClientCertificate()).isEqualTo(SAMPLE_CERT2);
-    assertThat(registrar.getFailoverClientCertificateHash()).isEqualTo(SAMPLE_CERT2_HASH);
+    assertThat(registrar.getClientCertificate()).hasValue(SAMPLE_CERT);
+    assertThat(registrar.getClientCertificateHash()).hasValue(SAMPLE_CERT_HASH);
+    assertThat(registrar.getFailoverClientCertificate()).hasValue(SAMPLE_CERT2);
+    assertThat(registrar.getFailoverClientCertificateHash()).hasValue(SAMPLE_CERT2_HASH);
     assertMetric(CLIENT_ID, "update", "[OWNER]", "SUCCESS");
   }
 

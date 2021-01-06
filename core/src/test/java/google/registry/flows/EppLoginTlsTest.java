@@ -36,7 +36,8 @@ class EppLoginTlsTest extends EppTestCase {
 
   void setClientCertificateHash(String clientCertificateHash) {
     setTransportCredentials(
-        new TlsCredentials(true, clientCertificateHash, Optional.of("192.168.1.100:54321")));
+        new TlsCredentials(
+            true, Optional.ofNullable(clientCertificateHash), Optional.of("192.168.1.100:54321")));
   }
 
   @BeforeEach

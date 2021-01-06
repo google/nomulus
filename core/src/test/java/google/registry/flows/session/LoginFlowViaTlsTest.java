@@ -33,8 +33,10 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link LoginFlow} when accessed via a TLS transport. */
 public class LoginFlowViaTlsTest extends LoginFlowTestCase {
 
-  private static final String GOOD_CERT = CertificateSamples.SAMPLE_CERT_HASH;
-  private static final String BAD_CERT = CertificateSamples.SAMPLE_CERT2_HASH;
+  private static final Optional<String> GOOD_CERT =
+      Optional.of(CertificateSamples.SAMPLE_CERT_HASH);
+  private static final Optional<String> BAD_CERT =
+      Optional.of(CertificateSamples.SAMPLE_CERT2_HASH);
   private static final Optional<String> GOOD_IP = Optional.of("192.168.1.1");
   private static final Optional<String> BAD_IP = Optional.of("1.1.1.1");
   private static final Optional<String> GOOD_IPV6 = Optional.of("2001:db8::1");

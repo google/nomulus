@@ -14,7 +14,6 @@
 
 package google.registry.tools;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
@@ -250,22 +249,22 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   void testSuccess_certFile() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
-    assertThat(registrar.getClientCertificate()).isNull();
-    assertThat(registrar.getClientCertificateHash()).isNull();
+    assertThat(registrar.getClientCertificate()).isEmpty();
+    assertThat(registrar.getClientCertificateHash()).isEmpty();
     runCommand("--cert_file=" + getCertFilename(SAMPLE_CERT3), "--force", "NewRegistrar");
     registrar = loadRegistrar("NewRegistrar");
     // NB: Hash was computed manually using 'openssl x509 -fingerprint -sha256 -in ...' and then
     // converting the result from a hex string to non-padded base64 encoded string.
-    assertThat(registrar.getClientCertificate()).isEqualTo(SAMPLE_CERT3);
-    assertThat(registrar.getClientCertificateHash()).isEqualTo(SAMPLE_CERT3_HASH);
+    assertThat(registrar.getClientCertificate()).hasValue(SAMPLE_CERT3);
+    assertThat(registrar.getClientCertificateHash()).hasValue(SAMPLE_CERT3_HASH);
   }
 
   @Test
   void testFail_certFileWithViolation() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
-    assertThat(registrar.getClientCertificate()).isNull();
-    assertThat(registrar.getClientCertificateHash()).isNull();
+    assertThat(registrar.getClientCertificate()).isEmpty();
+    assertThat(registrar.getClientCertificateHash()).isEmpty();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -274,15 +273,15 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
         .isEqualTo(
             "Certificate validity period is too long; it must be less than or equal to 398"
                 + " days.");
-    assertThat(registrar.getClientCertificate()).isNull();
+    assertThat(registrar.getClientCertificate()).isEmpty();
   }
 
   @Test
   void testFail_certFileWithMultipleViolations() throws Exception {
     fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
-    assertThat(registrar.getClientCertificate()).isNull();
-    assertThat(registrar.getClientCertificateHash()).isNull();
+    assertThat(registrar.getClientCertificate()).isEmpty();
+    assertThat(registrar.getClientCertificateHash()).isEmpty();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -291,14 +290,14 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
         .isEqualTo(
             "Certificate is expired.\nCertificate validity period is too long; it must be less"
                 + " than or equal to 398 days.");
-    assertThat(registrar.getClientCertificate()).isNull();
+    assertThat(registrar.getClientCertificate()).isEmpty();
   }
 
   @Test
   void testFail_failoverCertFileWithViolation() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
-    assertThat(registrar.getFailoverClientCertificate()).isNull();
+    assertThat(registrar.getFailoverClientCertificate()).isEmpty();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -308,14 +307,14 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
         .isEqualTo(
             "Certificate validity period is too long; it must be less than or equal to 398"
                 + " days.");
-    assertThat(registrar.getFailoverClientCertificate()).isNull();
+    assertThat(registrar.getFailoverClientCertificate()).isEmpty();
   }
 
   @Test
   void testFail_failoverCertFileWithMultipleViolations() throws Exception {
     fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
-    assertThat(registrar.getFailoverClientCertificate()).isNull();
+    assertThat(registrar.getFailoverClientCertificate()).isEmpty();
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
@@ -325,17 +324,17 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
         .isEqualTo(
             "Certificate is expired.\nCertificate validity period is too long; it must be less"
                 + " than or equal to 398 days.");
-    assertThat(registrar.getFailoverClientCertificate()).isNull();
+    assertThat(registrar.getFailoverClientCertificate()).isEmpty();
   }
 
   @Test
   void testSuccess_failoverCertFile() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
-    assertThat(registrar.getFailoverClientCertificate()).isNull();
+    assertThat(registrar.getFailoverClientCertificate()).isEmpty();
     runCommand("--failover_cert_file=" + getCertFilename(SAMPLE_CERT3), "--force", "NewRegistrar");
     registrar = loadRegistrar("NewRegistrar");
-    assertThat(registrar.getFailoverClientCertificate()).isEqualTo(SAMPLE_CERT3);
+    assertThat(registrar.getFailoverClientCertificate()).hasValue(SAMPLE_CERT3);
   }
 
   @Test
@@ -345,9 +344,9 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
             .asBuilder()
             .setClientCertificate(SAMPLE_CERT, DateTime.now(UTC))
             .build());
-    assertThat(isNullOrEmpty(loadRegistrar("NewRegistrar").getClientCertificate())).isFalse();
+    assertThat(loadRegistrar("NewRegistrar").getClientCertificate()).isPresent();
     runCommand("--cert_file=/dev/null", "--force", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").getClientCertificate()).isNull();
+    assertThat(loadRegistrar("NewRegistrar").getClientCertificate()).isEmpty();
   }
 
   @Test

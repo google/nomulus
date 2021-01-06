@@ -310,7 +310,7 @@ public final class RequestParameters {
    * @param name case insensitive header name
    */
   public static Optional<String> extractOptionalHeader(HttpServletRequest req, String name) {
-    return Optional.ofNullable(req.getHeader(name));
+    return Optional.ofNullable(emptyToNull(req.getHeader(name)));
   }
 
   private RequestParameters() {}
