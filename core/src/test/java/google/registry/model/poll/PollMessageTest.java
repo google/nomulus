@@ -93,13 +93,16 @@ public class PollMessageTest extends EntityTestCase {
   void testCloudSqlSupportForPolymorphicVKey() {
     jpaTm().transact(() -> jpaTm().insert(oneTime));
     PollMessage persistedOneTime =
-        jpaTm().transact(() -> jpaTm().load(VKey.createSql(PollMessage.class, oneTime.getId())));
+        jpaTm()
+            .transact(() -> jpaTm().loadByKey(VKey.createSql(PollMessage.class, oneTime.getId())));
     assertThat(persistedOneTime).isInstanceOf(PollMessage.OneTime.class);
     assertThat(persistedOneTime).isEqualTo(oneTime);
 
     jpaTm().transact(() -> jpaTm().insert(autoRenew));
     PollMessage persistedAutoRenew =
-        jpaTm().transact(() -> jpaTm().load(VKey.createSql(PollMessage.class, autoRenew.getId())));
+        jpaTm()
+            .transact(
+                () -> jpaTm().loadByKey(VKey.createSql(PollMessage.class, autoRenew.getId())));
     assertThat(persistedAutoRenew).isInstanceOf(PollMessage.Autorenew.class);
     assertThat(persistedAutoRenew).isEqualTo(autoRenew);
   }
@@ -114,7 +117,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setMsg("Test poll message")
                 .setParent(historyEntry)
                 .build());
-    assertThat(tm().transact(() -> tm().load(pollMessage))).isEqualTo(pollMessage);
+    assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
   }
 
   @TestOfyAndSql
@@ -129,7 +132,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
                 .setTargetId("foobar.foo")
                 .build());
-    assertThat(tm().transact(() -> tm().load(pollMessage))).isEqualTo(pollMessage);
+    assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
   }
 
   @TestOfyOnly

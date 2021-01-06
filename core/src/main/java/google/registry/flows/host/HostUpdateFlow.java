@@ -139,7 +139,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
     String newHostName = firstNonNull(suppliedNewHostName, oldHostName);
     DomainBase oldSuperordinateDomain =
         existingHost.isSubordinate()
-            ? tm().load(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
+            ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
             : null;
     // Note that lookupSuperordinateDomain calls cloneProjectedAtTime on the domain for us.
     Optional<DomainBase> newSuperordinateDomain =
@@ -286,7 +286,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
         && Objects.equals(
             existingHost.getSuperordinateDomain(), newHost.getSuperordinateDomain())) {
       tm().put(
-              tm().load(existingHost.getSuperordinateDomain())
+              tm().loadByKey(existingHost.getSuperordinateDomain())
                   .asBuilder()
                   .removeSubordinateHost(existingHost.getHostName())
                   .addSubordinateHost(newHost.getHostName())
@@ -295,14 +295,14 @@ public final class HostUpdateFlow implements TransactionalFlow {
     }
     if (existingHost.isSubordinate()) {
       tm().put(
-              tm().load(existingHost.getSuperordinateDomain())
+              tm().loadByKey(existingHost.getSuperordinateDomain())
                   .asBuilder()
                   .removeSubordinateHost(existingHost.getHostName())
                   .build());
     }
     if (newHost.isSubordinate()) {
       tm().put(
-              tm().load(newHost.getSuperordinateDomain())
+              tm().loadByKey(newHost.getSuperordinateDomain())
                   .asBuilder()
                   .addSubordinateHost(newHost.getHostName())
                   .build());

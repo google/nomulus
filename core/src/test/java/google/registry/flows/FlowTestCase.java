@@ -203,7 +203,7 @@ public abstract class FlowTestCase<F extends Flow> {
     assertWithMessage("Billing event is present for grace period: " + gracePeriod)
         .that(gracePeriod.hasBillingEvent())
         .isTrue();
-    return tm().load(
+    return tm().loadByKey(
             firstNonNull(
                 gracePeriod.getOneTimeBillingEvent(), gracePeriod.getRecurringBillingEvent()));
   }

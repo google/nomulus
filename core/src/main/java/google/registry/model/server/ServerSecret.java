@@ -77,7 +77,7 @@ public class ServerSecret extends CrossTldSingleton implements NonReplicatedEnti
               // transactionally create a new ServerSecret (once per app setup) if necessary.
               // return the ofy() result during Datastore-primary phase
               ServerSecret secret =
-                  ofyTm().maybeLoad(key).orElseGet(() -> create(UUID.randomUUID()));
+                  ofyTm().loadByKeyIfPresent(key).orElseGet(() -> create(UUID.randomUUID()));
               // During a dual-write period, write it to both Datastore and SQL
               // even if we didn't have to retrieve it from the DB
               ofyTm().transact(() -> ofyTm().putWithoutBackup(secret));

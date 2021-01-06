@@ -144,7 +144,7 @@ public final class EppResourceUtils {
     T resource =
         useCache
             ? EppResource.loadCached(fki.getResourceKey())
-            : transactIfJpaTm(() -> tm().maybeLoad(fki.getResourceKey()).orElse(null));
+            : transactIfJpaTm(() -> tm().loadByKeyIfPresent(fki.getResourceKey()).orElse(null));
     if (resource == null || isAtOrAfter(now, resource.getDeletionTime())) {
       return Optional.empty();
     }

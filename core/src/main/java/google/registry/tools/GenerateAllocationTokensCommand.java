@@ -263,7 +263,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
       savedTokens = tokens;
     } else {
       transactIfJpaTm(() -> tm().transact(() -> tm().putAll(tokens)));
-      savedTokens = tm().transact(() -> tm().loadAll(tokens));
+      savedTokens = tm().transact(() -> tm().loadByEntities(tokens));
     }
     savedTokens.forEach(
         t -> System.out.println(SKIP_NULLS.join(t.getDomainName().orElse(null), t.getToken())));
@@ -293,7 +293,7 @@ class GenerateAllocationTokensCommand implements CommandWithRemoteApi {
             .collect(toImmutableSet());
     return transactIfJpaTm(
         () ->
-            tm().load(existingTokenKeys).values().stream()
+            tm().loadByKeysIfPresent(existingTokenKeys).values().stream()
                 .map(AllocationToken::getToken)
                 .collect(toImmutableSet()));
   }

@@ -197,7 +197,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     DomainBase domain = reloadResourceByForeignKey();
     HistoryEntry historyEntryDomainRenew =
         getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RENEW);
-    assertThat(tm().load(domain.getAutorenewBillingEvent()).getEventTime())
+    assertThat(tm().loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(newExpiration);
     assertAboutDomains()
         .that(domain)
@@ -494,7 +494,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     persistDomain();
     // Modify the autorenew poll message so that it has an undelivered message in the past.
     persistResource(
-        tm().load(reloadResourceByForeignKey().getAutorenewPollMessage())
+        tm().loadByKey(reloadResourceByForeignKey().getAutorenewPollMessage())
             .asBuilder()
             .setEventTime(expirationTime.minusYears(1))
             .build());

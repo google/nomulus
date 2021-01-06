@@ -203,7 +203,7 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
                         host,
                         // Note that loadAtPointInTime() does cloneProjectedAtTime(watermark) for
                         // us.
-                        loadAtPointInTime(tm().load(host.getSuperordinateDomain()), watermark)
+                        loadAtPointInTime(tm().loadByKey(host.getSuperordinateDomain()), watermark)
                             .now())
                     : marshaller.marshalExternalHost(host));
         cache.put(WatermarkModePair.create(watermark, RdeMode.FULL), result);

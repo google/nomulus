@@ -87,7 +87,8 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     // Force the session to be cleared.
     tm().clearSessionCache();
     @SuppressWarnings("unchecked")
-    T refreshedResource = (T) transactIfJpaTm(() -> tm().load(resource)).cloneProjectedAtTime(now);
+    T refreshedResource =
+        (T) transactIfJpaTm(() -> tm().loadByEntity(resource)).cloneProjectedAtTime(now);
     return refreshedResource;
   }
 

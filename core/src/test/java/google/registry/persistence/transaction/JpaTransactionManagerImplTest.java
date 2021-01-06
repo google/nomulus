@@ -136,7 +136,7 @@ class JpaTransactionManagerImplTest {
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isFalse();
     jpaTm().transact(() -> jpaTm().insert(theEntity));
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isTrue();
-    assertThat(jpaTm().transact(() -> jpaTm().load(theEntityKey))).isEqualTo(theEntity);
+    assertThat(jpaTm().transact(() -> jpaTm().loadByKey(theEntityKey))).isEqualTo(theEntity);
   }
 
   @Test
@@ -200,20 +200,20 @@ class JpaTransactionManagerImplTest {
   @Test
   void transactNewReadOnly_retriesJdbcConnectionExceptions() {
     JpaTransactionManager spyJpaTm = spy(jpaTm());
-    doThrow(JDBCConnectionException.class).when(spyJpaTm).load(any(VKey.class));
+    doThrow(JDBCConnectionException.class).when(spyJpaTm).loadByKey(any(VKey.class));
     spyJpaTm.transact(() -> spyJpaTm.insert(theEntity));
     assertThrows(
         JDBCConnectionException.class,
-        () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.load(theEntityKey)));
-    verify(spyJpaTm, times(3)).load(theEntityKey);
+        () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.loadByKey(theEntityKey)));
+    verify(spyJpaTm, times(3)).loadByKey(theEntityKey);
     Supplier<Runnable> supplier =
         () -> {
-          Runnable work = () -> spyJpaTm.load(theEntityKey);
+          Runnable work = () -> spyJpaTm.loadByKey(theEntityKey);
           work.run();
           return null;
         };
     assertThrows(JDBCConnectionException.class, () -> spyJpaTm.transactNewReadOnly(supplier));
-    verify(spyJpaTm, times(6)).load(theEntityKey);
+    verify(spyJpaTm, times(6)).loadByKey(theEntityKey);
   }
 
   @Test
@@ -223,31 +223,31 @@ class JpaTransactionManagerImplTest {
             new RuntimeException()
                 .initCause(new JDBCConnectionException("connection exception", new SQLException())))
         .when(spyJpaTm)
-        .load(any(VKey.class));
+        .loadByKey(any(VKey.class));
     spyJpaTm.transact(() -> spyJpaTm.insert(theEntity));
     assertThrows(
         RuntimeException.class,
-        () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.load(theEntityKey)));
-    verify(spyJpaTm, times(3)).load(theEntityKey);
+        () -> spyJpaTm.transactNewReadOnly(() -> spyJpaTm.loadByKey(theEntityKey)));
+    verify(spyJpaTm, times(3)).loadByKey(theEntityKey);
     Supplier<Runnable> supplier =
         () -> {
-          Runnable work = () -> spyJpaTm.load(theEntityKey);
+          Runnable work = () -> spyJpaTm.loadByKey(theEntityKey);
           work.run();
           return null;
         };
     assertThrows(RuntimeException.class, () -> spyJpaTm.transactNewReadOnly(supplier));
-    verify(spyJpaTm, times(6)).load(theEntityKey);
+    verify(spyJpaTm, times(6)).loadByKey(theEntityKey);
   }
 
   @Test
   void doTransactionless_retriesJdbcConnectionExceptions() {
     JpaTransactionManager spyJpaTm = spy(jpaTm());
-    doThrow(JDBCConnectionException.class).when(spyJpaTm).load(any(VKey.class));
+    doThrow(JDBCConnectionException.class).when(spyJpaTm).loadByKey(any(VKey.class));
     spyJpaTm.transact(() -> spyJpaTm.insert(theEntity));
     assertThrows(
         RuntimeException.class,
-        () -> spyJpaTm.doTransactionless(() -> spyJpaTm.load(theEntityKey)));
-    verify(spyJpaTm, times(3)).load(theEntityKey);
+        () -> spyJpaTm.doTransactionless(() -> spyJpaTm.loadByKey(theEntityKey)));
+    verify(spyJpaTm, times(3)).loadByKey(theEntityKey);
   }
 
   @Test
@@ -255,7 +255,7 @@ class JpaTransactionManagerImplTest {
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isFalse();
     jpaTm().transact(() -> jpaTm().insert(theEntity));
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isTrue();
-    assertThat(jpaTm().transact(() -> jpaTm().load(theEntityKey))).isEqualTo(theEntity);
+    assertThat(jpaTm().transact(() -> jpaTm().loadByKey(theEntityKey))).isEqualTo(theEntity);
     assertThrows(RollbackException.class, () -> jpaTm().transact(() -> jpaTm().insert(theEntity)));
   }
 
@@ -264,7 +264,7 @@ class JpaTransactionManagerImplTest {
     assertThat(jpaTm().transact(() -> jpaTm().exists(compoundIdEntity))).isFalse();
     jpaTm().transact(() -> jpaTm().insert(compoundIdEntity));
     assertThat(jpaTm().transact(() -> jpaTm().exists(compoundIdEntity))).isTrue();
-    assertThat(jpaTm().transact(() -> jpaTm().load(compoundIdEntityKey)))
+    assertThat(jpaTm().transact(() -> jpaTm().loadByKey(compoundIdEntityKey)))
         .isEqualTo(compoundIdEntity);
   }
 
@@ -275,7 +275,7 @@ class JpaTransactionManagerImplTest {
     jpaTm().transact(() -> jpaTm().insertAll(moreEntities));
     moreEntities.forEach(
         entity -> assertThat(jpaTm().transact(() -> jpaTm().exists(entity))).isTrue());
-    assertThat(jpaTm().transact(() -> jpaTm().loadAll(TestEntity.class)))
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(TestEntity.class)))
         .containsExactlyElementsIn(moreEntities);
   }
 
@@ -296,17 +296,17 @@ class JpaTransactionManagerImplTest {
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isFalse();
     jpaTm().transact(() -> jpaTm().put(theEntity));
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isTrue();
-    assertThat(jpaTm().transact(() -> jpaTm().load(theEntityKey))).isEqualTo(theEntity);
+    assertThat(jpaTm().transact(() -> jpaTm().loadByKey(theEntityKey))).isEqualTo(theEntity);
   }
 
   @Test
   void put_updatesExistingEntity() {
     jpaTm().transact(() -> jpaTm().insert(theEntity));
-    TestEntity persisted = jpaTm().transact(() -> jpaTm().load(theEntityKey));
+    TestEntity persisted = jpaTm().transact(() -> jpaTm().loadByKey(theEntityKey));
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
     jpaTm().transact(() -> jpaTm().put(theEntity));
-    persisted = jpaTm().transact(() -> jpaTm().load(theEntityKey));
+    persisted = jpaTm().transact(() -> jpaTm().loadByKey(theEntityKey));
     assertThat(persisted.data).isEqualTo("bar");
   }
 
@@ -317,7 +317,7 @@ class JpaTransactionManagerImplTest {
     jpaTm().transact(() -> jpaTm().putAll(moreEntities));
     moreEntities.forEach(
         entity -> assertThat(jpaTm().transact(() -> jpaTm().exists(entity))).isTrue());
-    assertThat(jpaTm().transact(() -> jpaTm().loadAll(TestEntity.class)))
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(TestEntity.class)))
         .containsExactlyElementsIn(moreEntities);
   }
 
@@ -325,22 +325,22 @@ class JpaTransactionManagerImplTest {
   void update_succeeds() {
     jpaTm().transact(() -> jpaTm().insert(theEntity));
     TestEntity persisted =
-        jpaTm().transact(() -> jpaTm().load(VKey.createSql(TestEntity.class, "theEntity")));
+        jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestEntity.class, "theEntity")));
     assertThat(persisted.data).isEqualTo("foo");
     theEntity.data = "bar";
     jpaTm().transact(() -> jpaTm().update(theEntity));
-    persisted = jpaTm().transact(() -> jpaTm().load(theEntityKey));
+    persisted = jpaTm().transact(() -> jpaTm().loadByKey(theEntityKey));
     assertThat(persisted.data).isEqualTo("bar");
   }
 
   @Test
   void updateCompoundIdEntity_succeeds() {
     jpaTm().transact(() -> jpaTm().insert(compoundIdEntity));
-    TestCompoundIdEntity persisted = jpaTm().transact(() -> jpaTm().load(compoundIdEntityKey));
+    TestCompoundIdEntity persisted = jpaTm().transact(() -> jpaTm().loadByKey(compoundIdEntityKey));
     assertThat(persisted.data).isEqualTo("foo");
     compoundIdEntity.data = "bar";
     jpaTm().transact(() -> jpaTm().update(compoundIdEntity));
-    persisted = jpaTm().transact(() -> jpaTm().load(compoundIdEntityKey));
+    persisted = jpaTm().transact(() -> jpaTm().loadByKey(compoundIdEntityKey));
     assertThat(persisted.data).isEqualTo("bar");
   }
 
@@ -361,7 +361,7 @@ class JpaTransactionManagerImplTest {
             new TestEntity("entity2", "bar_updated"),
             new TestEntity("entity3", "qux_updated"));
     jpaTm().transact(() -> jpaTm().updateAll(updated));
-    assertThat(jpaTm().transact(() -> jpaTm().loadAll(TestEntity.class)))
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(TestEntity.class)))
         .containsExactlyElementsIn(updated);
   }
 
@@ -376,7 +376,7 @@ class JpaTransactionManagerImplTest {
             theEntity);
     assertThrows(
         IllegalArgumentException.class, () -> jpaTm().transact(() -> jpaTm().updateAll(updated)));
-    assertThat(jpaTm().transact(() -> jpaTm().loadAll(TestEntity.class)))
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(TestEntity.class)))
         .containsExactlyElementsIn(moreEntities);
   }
 
@@ -384,7 +384,7 @@ class JpaTransactionManagerImplTest {
   void load_succeeds() {
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isFalse();
     jpaTm().transact(() -> jpaTm().insert(theEntity));
-    TestEntity persisted = jpaTm().transact(() -> jpaTm().load(theEntityKey));
+    TestEntity persisted = jpaTm().transact(() -> jpaTm().loadByKey(theEntityKey));
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
   }
@@ -393,14 +393,15 @@ class JpaTransactionManagerImplTest {
   void load_throwsOnMissingElement() {
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isFalse();
     assertThrows(
-        NoSuchElementException.class, () -> jpaTm().transact(() -> jpaTm().load(theEntityKey)));
+        NoSuchElementException.class,
+        () -> jpaTm().transact(() -> jpaTm().loadByKey(theEntityKey)));
   }
 
   @Test
   void maybeLoad_succeeds() {
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isFalse();
     jpaTm().transact(() -> jpaTm().insert(theEntity));
-    TestEntity persisted = jpaTm().transact(() -> jpaTm().maybeLoad(theEntityKey).get());
+    TestEntity persisted = jpaTm().transact(() -> jpaTm().loadByKeyIfPresent(theEntityKey).get());
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
   }
@@ -408,14 +409,15 @@ class JpaTransactionManagerImplTest {
   @Test
   void maybeLoad_nonExistentObject() {
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isFalse();
-    assertThat(jpaTm().transact(() -> jpaTm().maybeLoad(theEntityKey)).isPresent()).isFalse();
+    assertThat(jpaTm().transact(() -> jpaTm().loadByKeyIfPresent(theEntityKey)).isPresent())
+        .isFalse();
   }
 
   @Test
   void loadCompoundIdEntity_succeeds() {
     assertThat(jpaTm().transact(() -> jpaTm().exists(compoundIdEntity))).isFalse();
     jpaTm().transact(() -> jpaTm().insert(compoundIdEntity));
-    TestCompoundIdEntity persisted = jpaTm().transact(() -> jpaTm().load(compoundIdEntityKey));
+    TestCompoundIdEntity persisted = jpaTm().transact(() -> jpaTm().loadByKey(compoundIdEntityKey));
     assertThat(persisted.name).isEqualTo("compoundIdEntity");
     assertThat(persisted.age).isEqualTo(10);
     assertThat(persisted.data).isEqualTo("foo");
@@ -424,7 +426,8 @@ class JpaTransactionManagerImplTest {
   @Test
   void loadAll_succeeds() {
     jpaTm().transact(() -> jpaTm().insertAll(moreEntities));
-    ImmutableList<TestEntity> persisted = jpaTm().transact(() -> jpaTm().loadAll(TestEntity.class));
+    ImmutableList<TestEntity> persisted =
+        jpaTm().transact(() -> jpaTm().loadAllOf(TestEntity.class));
     assertThat(persisted).containsExactlyElementsIn(moreEntities);
   }
 

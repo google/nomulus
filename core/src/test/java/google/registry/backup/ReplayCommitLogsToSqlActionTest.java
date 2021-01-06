@@ -243,7 +243,7 @@ public class ReplayCommitLogsToSqlActionTest {
         CommitLogMutation.create(manifestKey, TestObject.create("existing", "b")));
     action.run();
     TestObject fromDatabase =
-        jpaTm().transact(() -> jpaTm().load(VKey.createSql(TestObject.class, "existing")));
+        jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestObject.class, "existing")));
     assertThat(fromDatabase.getField()).isEqualTo("b");
   }
 
@@ -276,7 +276,7 @@ public class ReplayCommitLogsToSqlActionTest {
     DomainBase domain = newDomainBase("example.tld");
     CommitLogMutation domainMutation =
         tm().transact(() -> CommitLogMutation.create(manifestKey, domain));
-    ContactResource contact = tm().transact(() -> tm().load(domain.getRegistrant()));
+    ContactResource contact = tm().transact(() -> tm().loadByKey(domain.getRegistrant()));
     CommitLogMutation contactMutation =
         tm().transact(() -> CommitLogMutation.create(manifestKey, contact));
 
@@ -348,7 +348,7 @@ public class ReplayCommitLogsToSqlActionTest {
     inOrder.verify(spy).delete(contact.createVKey());
     inOrder.verify(spy).put(putCaptor.capture());
     assertThat(putCaptor.getValue().getClass()).isEqualTo(ContactResource.class);
-    assertThat(jpaTm().transact(() -> jpaTm().load(contact.createVKey()).getEmailAddress()))
+    assertThat(jpaTm().transact(() -> jpaTm().loadByKey(contact.createVKey()).getEmailAddress()))
         .isEqualTo("replay@example.tld");
   }
 
@@ -450,7 +450,7 @@ public class ReplayCommitLogsToSqlActionTest {
         jpaTm()
             .transact(
                 () ->
-                    jpaTm().loadAll(TestObject.class).stream()
+                    jpaTm().loadAllOf(TestObject.class).stream()
                         .map(TestObject::getId)
                         .collect(toImmutableList()));
     assertThat(actualIds).containsExactlyElementsIn(expectedIds);

@@ -517,7 +517,7 @@ public class DomainFlowUtils {
    */
   public static void updateAutorenewRecurrenceEndTime(DomainBase domain, DateTime newEndTime) {
     Optional<PollMessage.Autorenew> autorenewPollMessage =
-        tm().maybeLoad(domain.getAutorenewPollMessage());
+        tm().loadByKeyIfPresent(domain.getAutorenewPollMessage());
 
     // Construct an updated autorenew poll message. If the autorenew poll message no longer exists,
     // create a new one at the same id. This can happen if a transfer was requested on a domain
@@ -542,7 +542,7 @@ public class DomainFlowUtils {
       ofy().save().entity(updatedAutorenewPollMessage);
     }
 
-    Recurring recurring = tm().load(domain.getAutorenewBillingEvent());
+    Recurring recurring = tm().loadByKey(domain.getAutorenewBillingEvent());
     ofy().save().entity(recurring.asBuilder().setRecurrenceEndTime(newEndTime).build());
   }
 
@@ -1022,7 +1022,7 @@ public class DomainFlowUtils {
     for (DesignatedContact contact : contacts) {
       builder.add(
           ForeignKeyedDesignatedContact.create(
-              contact.getType(), tm().load(contact.getContactKey()).getContactId()));
+              contact.getType(), tm().loadByKey(contact.getContactKey()).getContactId()));
     }
     return builder.build();
   }

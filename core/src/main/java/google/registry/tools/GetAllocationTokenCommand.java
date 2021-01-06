@@ -49,7 +49,8 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
           tokens.stream()
               .map(t -> VKey.create(AllocationToken.class, t))
               .collect(toImmutableList());
-      tm().load(tokenKeys).forEach((k, v) -> builder.put(k.getSqlKey().toString(), v));
+      tm().loadByKeysIfPresent(tokenKeys)
+          .forEach((k, v) -> builder.put(k.getSqlKey().toString(), v));
     }
     ImmutableMap<String, AllocationToken> loadedTokens = builder.build();
     ImmutableMap<VKey<DomainBase>, DomainBase> domains = loadRedeemedDomains(loadedTokens.values());
@@ -88,14 +89,14 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
             .map(AllocationToken::getRedemptionHistoryEntry)
             .filter(Optional::isPresent)
             .map(Optional::get)
-            .map(key -> tm().load(key))
+            .map(key -> tm().loadByKey(key))
             .map(he -> (Key<DomainBase>) he.getParent())
             .map(key -> VKey.create(DomainBase.class, key.getName(), key))
             .collect(toImmutableList());
     ImmutableMap.Builder<VKey<DomainBase>, DomainBase> domainsBuilder =
         new ImmutableMap.Builder<>();
     for (List<VKey<DomainBase>> keys : Lists.partition(domainKeys, BATCH_SIZE)) {
-      tm().load(ImmutableList.copyOf(keys))
+      tm().loadByKeys(ImmutableList.copyOf(keys))
           .forEach((k, v) -> domainsBuilder.put((VKey<DomainBase>) k, v));
     }
     return domainsBuilder.build();

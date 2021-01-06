@@ -342,7 +342,7 @@ public class RdapJsonFormatter {
     // Kick off the database loads of the nameservers that we will need, so it can load
     // asynchronously while we load and process the contacts.
     ImmutableSet<HostResource> loadedHosts =
-        ImmutableSet.copyOf(tm().load(domainBase.getNameservers()).values());
+        ImmutableSet.copyOf(tm().loadByKeys(domainBase.getNameservers()).values());
     // Load the registrant and other contacts and add them to the data.
     Map<Key<ContactResource>, ContactResource> loadedContacts =
         ofy()
@@ -429,7 +429,7 @@ public class RdapJsonFormatter {
         statuses.add(StatusValue.LINKED);
       }
       if (hostResource.isSubordinate()
-          && tm().load(hostResource.getSuperordinateDomain())
+          && tm().loadByKey(hostResource.getSuperordinateDomain())
               .cloneProjectedAtTime(getRequestTime())
               .getStatusValues()
               .contains(StatusValue.PENDING_TRANSFER)) {

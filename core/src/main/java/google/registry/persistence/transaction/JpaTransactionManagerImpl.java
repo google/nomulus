@@ -40,7 +40,7 @@ import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
 import java.lang.reflect.Field;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -356,33 +356,15 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> Optional<T> maybeLoad(VKey<T> key) {
+  public <T> Optional<T> loadByKeyIfPresent(VKey<T> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
     return Optional.ofNullable(getEntityManager().find(key.getKind(), key.getSqlKey()));
   }
 
   @Override
-  public <T> T load(VKey<T> key) {
-    checkArgumentNotNull(key, "key must be specified");
-    assertInTransaction();
-    T result = getEntityManager().find(key.getKind(), key.getSqlKey());
-    if (result == null) {
-      throw new NoSuchElementException(key.toString());
-    }
-    return result;
-  }
-
-  @Override
-  public <T> T load(T entity) {
-    checkArgumentNotNull(entity, "entity must be specified");
-    assertInTransaction();
-    return (T)
-        load(VKey.createSql(entity.getClass(), emf.getPersistenceUnitUtil().getIdentifier(entity)));
-  }
-
-  @Override
-  public <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys) {
+  public <T> ImmutableMap<VKey<? extends T>, T> loadByKeysIfPresent(
+      Iterable<? extends VKey<? extends T>> keys) {
     checkArgumentNotNull(keys, "keys must be specified");
     assertInTransaction();
     return StreamSupport.stream(keys.spliterator(), false)
@@ -393,11 +375,58 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
                 new SimpleEntry<VKey<? extends T>, T>(
                     key, getEntityManager().find(key.getKind(), key.getSqlKey())))
         .filter(entry -> entry.getValue() != null)
-        .collect(toImmutableMap(Entry::getKey, Entry::getValue));
+        .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   @Override
-  public <T> ImmutableList<T> loadAll(Class<T> clazz) {
+  public <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities) {
+    return Streams.stream(entities)
+        .filter(this::exists)
+        .map(this::loadByEntity)
+        .collect(toImmutableList());
+  }
+
+  @Override
+  public <T> T loadByKey(VKey<T> key) {
+    checkArgumentNotNull(key, "key must be specified");
+    assertInTransaction();
+    T result = getEntityManager().find(key.getKind(), key.getSqlKey());
+    if (result == null) {
+      throw new NoSuchElementException(key.toString());
+    }
+    return result;
+  }
+
+  @Override
+  public <T> ImmutableMap<VKey<? extends T>, T> loadByKeys(
+      Iterable<? extends VKey<? extends T>> keys) {
+    ImmutableMap<VKey<? extends T>, T> existing = loadByKeysIfPresent(keys);
+    ImmutableSet<? extends VKey<? extends T>> missingKeys =
+        Streams.stream(keys).filter(k -> !existing.containsKey(k)).collect(toImmutableSet());
+    if (!missingKeys.isEmpty()) {
+      throw new NoSuchElementException(
+          String.format(
+              "Expected to find the following VKeys but they were missing: %s.", missingKeys));
+    }
+    return existing;
+  }
+
+  @Override
+  public <T> T loadByEntity(T entity) {
+    checkArgumentNotNull(entity, "entity must be specified");
+    assertInTransaction();
+    return (T)
+        loadByKey(
+            VKey.createSql(entity.getClass(), emf.getPersistenceUnitUtil().getIdentifier(entity)));
+  }
+
+  @Override
+  public <T> ImmutableList<T> loadByEntities(Iterable<T> entities) {
+    return Streams.stream(entities).map(this::loadByEntity).collect(toImmutableList());
+  }
+
+  @Override
+  public <T> ImmutableList<T> loadAllOf(Class<T> clazz) {
     checkArgumentNotNull(clazz, "clazz must be specified");
     assertInTransaction();
     return ImmutableList.copyOf(
@@ -406,11 +435,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
                 String.format("SELECT entity FROM %s entity", getEntityType(clazz).getName()),
                 clazz)
             .getResultList());
-  }
-
-  @Override
-  public <T> ImmutableList<T> loadAll(Iterable<T> entities) {
-    return Streams.stream(entities).map(this::load).collect(toImmutableList());
   }
 
   private int internalDelete(VKey<?> key) {
