@@ -17,15 +17,11 @@ package google.registry.model.domain;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
-import google.registry.model.ModelUtils;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.persistence.BillingVKey.BillingEventVKey;
 import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.persistence.VKey;
-import java.lang.reflect.Field;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
@@ -124,21 +120,5 @@ public class GracePeriodBase extends ImmutableObject {
    */
   public VKey<BillingEvent.Recurring> getRecurringBillingEvent() {
     return billingEventRecurring == null ? null : billingEventRecurring.createVKey();
-  }
-
-  /**
-   * Override {@link ImmutableObject#getSignificantFields()} to exclude "id", which breaks equality
-   * testing in the unit tests.
-   */
-  @Override
-  protected Map<Field, Object> getSignificantFields() {
-    // Can't use streams or ImmutableMap because we can have null values.
-    Map<Field, Object> result = new LinkedHashMap();
-    for (Map.Entry<Field, Object> entry : ModelUtils.getFieldValues(this).entrySet()) {
-      if (!entry.getKey().getName().equals("id")) {
-        result.put(entry.getKey(), entry.getValue());
-      }
-    }
-    return result;
   }
 }
