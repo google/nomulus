@@ -299,11 +299,11 @@ public abstract class PersistenceModule {
     TransactionIsolationLevel() {
       try {
         // name() is final in parent class (Enum.java), therefore safe to call in constructor.
-        value = Connection.class.getDeclaredField(name()).getInt(null);
+        value = Connection.class.getField(name()).getInt(null);
       } catch (Exception e) {
         throw new IllegalStateException(
             String.format(
-                "%s Enum name %s has no matching declaration in java.sql.Connection.",
+                "%s Enum name %s has no matching public field in java.sql.Connection.",
                 getClass().getSimpleName(), name()));
       }
     }
