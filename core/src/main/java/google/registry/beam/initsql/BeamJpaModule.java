@@ -30,7 +30,7 @@ import google.registry.keyring.kms.KmsModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.JdbcJpaTm;
 import google.registry.persistence.PersistenceModule.SocketFactoryJpaTm;
-import google.registry.persistence.PersistenceModule.TransactionIsolation;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.util.UtilsModule;
@@ -58,7 +58,7 @@ public class BeamJpaModule {
 
   @Nullable private final String sqlAccessInfoFile;
   @Nullable private final String cloudKmsProjectId;
-  @Nullable private final TransactionIsolation isolationOverride;
+  @Nullable private final TransactionIsolationLevel isolationOverride;
 
   /**
    * Constructs a new instance of {@link BeamJpaModule}.
@@ -81,7 +81,7 @@ public class BeamJpaModule {
   public BeamJpaModule(
       @Nullable String sqlAccessInfoFile,
       @Nullable String cloudKmsProjectId,
-      @Nullable TransactionIsolation isolationOverride) {
+      @Nullable TransactionIsolationLevel isolationOverride) {
     this.sqlAccessInfoFile = sqlAccessInfoFile;
     this.cloudKmsProjectId = cloudKmsProjectId;
     this.isolationOverride = isolationOverride;
@@ -169,7 +169,7 @@ public class BeamJpaModule {
   @Provides
   @Config("beamIsolationOverride")
   @Nullable
-  TransactionIsolation providesIsolationOverride() {
+  TransactionIsolationLevel providesIsolationOverride() {
     return isolationOverride;
   }
 

@@ -43,6 +43,7 @@ import google.registry.privileges.secretmanager.SqlUser.RobotUser;
 import google.registry.tools.AuthModule.CloudSqlClientCredential;
 import google.registry.util.Clock;
 import java.lang.annotation.Documented;
+import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -113,14 +114,14 @@ public abstract class PersistenceModule {
   /**
    * Optionally overrides the isolation level in the config file.
    *
-   * <p>The binding for {@link TransactionIsolation} may be {@link Nullable}. As a result, it is a
-   * compile-time error to inject {@code Optional<TransactionIsolation>} (See {@link
+   * <p>The binding for {@link TransactionIsolationLevel} may be {@link Nullable}. As a result, it
+   * is a compile-time error to inject {@code Optional<TransactionIsolation>} (See {@link
    * BindsOptionalOf} for more information). User should inject {@code
    * Optional<Provider<TransactionIsolation>>} instead.
    */
   @BindsOptionalOf
   @Config("beamIsolationOverride")
-  abstract TransactionIsolation bindBeamIsolationOverride();
+  abstract TransactionIsolationLevel bindBeamIsolationOverride();
 
   @Provides
   @Singleton
@@ -129,7 +130,8 @@ public abstract class PersistenceModule {
       @Config("beamCloudSqlJdbcUrl") String jdbcUrl,
       @Config("beamCloudSqlInstanceConnectionName") String instanceConnectionName,
       @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs,
-      @Config("beamIsolationOverride") Optional<Provider<TransactionIsolation>> isolationOverride) {
+      @Config("beamIsolationOverride")
+          Optional<Provider<TransactionIsolationLevel>> isolationOverride) {
     return createPartialSqlConfigs(
         jdbcUrl, instanceConnectionName, defaultConfigs, isolationOverride);
   }
@@ -139,7 +141,7 @@ public abstract class PersistenceModule {
       String jdbcUrl,
       String instanceConnectionName,
       ImmutableMap<String, String> defaultConfigs,
-      Optional<Provider<TransactionIsolation>> isolationOverride) {
+      Optional<Provider<TransactionIsolationLevel>> isolationOverride) {
     HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
     overrides.put(Environment.URL, jdbcUrl);
     overrides.put(HIKARI_DS_SOCKET_FACTORY, "com.google.cloud.sql.postgres.SocketFactory");
@@ -283,13 +285,32 @@ public abstract class PersistenceModule {
   /**
    * Transaction isolation levels supported by Cloud SQL (mysql and postgresql).
    *
-   * <p>Enum names must match the corresponding variable names in {@link java.sql.Connection}.
+   * <p>Enum names may be used for property-based configuration, and must match the corresponding
+   * variable names in {@link java.sql.Connection}.
    */
-  public enum TransactionIsolation {
+  public enum TransactionIsolationLevel {
     TRANSACTION_READ_UNCOMMITTED,
     TRANSACTION_READ_COMMITTED,
     TRANSACTION_REPEATABLE_READ,
-    TRANSACTION_SERIALIZABLE
+    TRANSACTION_SERIALIZABLE;
+
+    private final int value;
+
+    TransactionIsolationLevel() {
+      try {
+        // name() is final in parent class (Enum.java), therefore safe to call in constructor.
+        value = Connection.class.getDeclaredField(name()).getInt(null);
+      } catch (Exception e) {
+        throw new IllegalStateException(
+            String.format(
+                "%s Enum name %s has no matching declaration in java.sql.Connection.",
+                getClass().getSimpleName(), name()));
+      }
+    }
+
+    public final int getValue() {
+      return value;
+    }
   }
 
   /** Dagger qualifier for {@link JpaTransactionManager} used for App Engine application. */

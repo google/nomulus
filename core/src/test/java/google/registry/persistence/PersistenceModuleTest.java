@@ -23,7 +23,7 @@ import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.keyring.kms.KmsModule;
-import google.registry.persistence.PersistenceModule.TransactionIsolation;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.util.UtilsModule;
@@ -82,12 +82,12 @@ class PersistenceModuleTest {
   @Test
   void appengineIsolation() {
     assertThat(PersistenceModule.provideDefaultDatabaseConfigs().get(Environment.ISOLATION))
-        .isEqualTo(TransactionIsolation.TRANSACTION_SERIALIZABLE.name());
+        .isEqualTo(TransactionIsolationLevel.TRANSACTION_SERIALIZABLE.name());
   }
 
   @Test
   void beamIsolation_default() {
-    Optional<Provider<TransactionIsolation>> injected =
+    Optional<Provider<TransactionIsolationLevel>> injected =
         DaggerPersistenceModuleTest_BeamConfigTestComponent.builder()
             .beamJpaModule(new BeamJpaModule(null, null))
             .build()
@@ -98,24 +98,26 @@ class PersistenceModuleTest {
             PersistenceModule.provideBeamPipelineCloudSqlConfigs(
                     "", "", PersistenceModule.provideDefaultDatabaseConfigs(), injected)
                 .get(Environment.ISOLATION))
-        .isEqualTo(TransactionIsolation.TRANSACTION_SERIALIZABLE.name());
+        .isEqualTo(TransactionIsolationLevel.TRANSACTION_SERIALIZABLE.name());
   }
 
   @Test
   void beamIsolation_override() {
-    Optional<Provider<TransactionIsolation>> injected =
+    Optional<Provider<TransactionIsolationLevel>> injected =
         DaggerPersistenceModuleTest_BeamConfigTestComponent.builder()
             .beamJpaModule(
-                new BeamJpaModule(null, null, TransactionIsolation.TRANSACTION_READ_UNCOMMITTED))
+                new BeamJpaModule(
+                    null, null, TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED))
             .build()
             .getIsolationOverride();
     assertThat(injected).isNotNull();
-    assertThat(injected.get().get()).isEqualTo(TransactionIsolation.TRANSACTION_READ_UNCOMMITTED);
+    assertThat(injected.get().get())
+        .isEqualTo(TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED);
     assertThat(
             PersistenceModule.provideBeamPipelineCloudSqlConfigs(
                     "", "", PersistenceModule.provideDefaultDatabaseConfigs(), injected)
                 .get(Environment.ISOLATION))
-        .isEqualTo(TransactionIsolation.TRANSACTION_READ_UNCOMMITTED.name());
+        .isEqualTo(TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED.name());
   }
 
   @Singleton
@@ -131,6 +133,6 @@ class PersistenceModuleTest {
       })
   public interface BeamConfigTestComponent {
     @Config("beamIsolationOverride")
-    Optional<Provider<TransactionIsolation>> getIsolationOverride();
+    Optional<Provider<TransactionIsolationLevel>> getIsolationOverride();
   }
 }
