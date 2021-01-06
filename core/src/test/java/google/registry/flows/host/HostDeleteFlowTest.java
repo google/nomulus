@@ -46,11 +46,13 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostDeleteFlow}. */
+@DualDatabaseTest
 class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResource> {
 
   @BeforeEach
@@ -58,13 +60,13 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     setEppInput("host_delete.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testDryRun() throws Exception {
     persistActiveHost("ns1.example.tld");
     dryRunFlowAssertResponse(loadFile("host_delete_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess() throws Exception {
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
@@ -82,7 +84,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertNoDnsTasksEnqueued();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_clTridNotSpecified() throws Exception {
     setEppInput("host_delete_no_cltrid.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"));
     persistActiveHost("ns1.example.tld");
@@ -101,14 +103,14 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertNoDnsTasksEnqueued();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_neverExisted() {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains("(ns1.example.tld)");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_existedButWasDeleted() {
     persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
     ResourceDoesNotExistException thrown =
@@ -126,25 +128,25 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertThat(e).hasMessageThat().contains(statusValue.getXmlName());
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_existedButWasClientDeleteProhibited() {
     doFailingStatusTest(
         StatusValue.CLIENT_DELETE_PROHIBITED, ResourceStatusProhibitsOperationException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_existedButWasServerDeleteProhibited() {
     doFailingStatusTest(
         StatusValue.SERVER_DELETE_PROHIBITED, ResourceStatusProhibitsOperationException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_existedButWasPendingDelete() {
     doFailingStatusTest(
         StatusValue.PENDING_DELETE, ResourceStatusProhibitsOperationException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_unauthorizedClient() {
     sessionMetadata.setClientId("NewRegistrar");
     persistActiveHost("ns1.example.tld");
@@ -152,7 +154,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserUnauthorizedClient() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     persistActiveHost("ns1.example.tld");
@@ -171,7 +173,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertNoDnsTasksEnqueued();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_authorizedClientReadFromSuperordinate() throws Exception {
     sessionMetadata.setClientId("TheRegistrar");
     createTld("tld");
@@ -191,7 +193,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     runFlowAssertResponse(loadFile("host_delete_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_unauthorizedClientReadFromSuperordinate() {
     sessionMetadata.setClientId("TheRegistrar");
     createTld("tld");
@@ -211,7 +213,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_authorizedClientReadFromTransferredSuperordinate() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     createTld("tld");
@@ -244,7 +246,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     runFlowAssertResponse(loadFile("host_delete_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_unauthorizedClientReadFromTransferredSuperordinate() {
     sessionMetadata.setClientId("NewRegistrar");
     createTld("tld");
@@ -277,7 +279,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_failfastWhenLinkedToDomain() {
     createTld("tld");
     persistResource(
@@ -289,14 +291,14 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonLowerCaseHostname() {
     setEppInput("host_delete.xml", ImmutableMap.of("HOSTNAME", "NS1.EXAMPLE.NET"));
     EppException thrown = assertThrows(HostNameNotLowerCaseException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonPunyCodedHostname() {
     setEppInput("host_delete.xml", ImmutableMap.of("HOSTNAME", "ns1.çauçalito.tld"));
     HostNameNotPunyCodedException thrown =
@@ -304,14 +306,14 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertThat(thrown).hasMessageThat().contains("expected ns1.xn--aualito-txac.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonCanonicalHostname() {
     setEppInput("host_delete.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld."));
     EppException thrown = assertThrows(HostNameNotNormalizedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
