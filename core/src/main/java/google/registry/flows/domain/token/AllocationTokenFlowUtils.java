@@ -153,7 +153,7 @@ public class AllocationTokenFlowUtils {
       throw new InvalidAllocationTokenException();
     }
     Optional<AllocationToken> maybeTokenEntity =
-        tm().maybeLoad(VKey.create(AllocationToken.class, token));
+        tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token));
     if (maybeTokenEntity.isEmpty()) {
       throw new InvalidAllocationTokenException();
     }

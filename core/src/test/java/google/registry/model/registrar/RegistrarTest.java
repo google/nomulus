@@ -131,7 +131,7 @@ class RegistrarTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testPersistence() {
-    assertThat(tm().transact(() -> tm().load(registrar.createVKey()))).isEqualTo(registrar);
+    assertThat(tm().transact(() -> tm().loadByKey(registrar.createVKey()))).isEqualTo(registrar);
   }
 
   @TestOfyOnly

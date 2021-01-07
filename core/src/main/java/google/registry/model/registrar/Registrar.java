@@ -819,7 +819,8 @@ public class Registrar extends ImmutableObject
               .map(Registry::createVKey)
               .collect(toImmutableSet());
       Set<VKey<Registry>> missingTldKeys =
-          Sets.difference(newTldKeys, transactIfJpaTm(() -> tm().load(newTldKeys)).keySet());
+          Sets.difference(
+              newTldKeys, transactIfJpaTm(() -> tm().loadByKeysIfPresent(newTldKeys)).keySet());
       checkArgument(missingTldKeys.isEmpty(), "Trying to set nonexisting TLDs: %s", missingTldKeys);
       getInstance().allowedTlds = ImmutableSortedSet.copyOf(allowedTlds);
       return this;
@@ -987,7 +988,7 @@ public class Registrar extends ImmutableObject
   public static Iterable<Registrar> loadAll() {
     return tm().isOfy()
         ? ImmutableList.copyOf(ofy().load().type(Registrar.class).ancestor(getCrossTldKey()))
-        : tm().transact(() -> tm().loadAll(Registrar.class));
+        : tm().transact(() -> tm().loadAllOf(Registrar.class));
   }
 
   /** Loads all registrar entities using an in-memory cache. */
@@ -998,7 +999,7 @@ public class Registrar extends ImmutableObject
   /** Loads and returns a registrar entity by its client id directly from Datastore. */
   public static Optional<Registrar> loadByClientId(String clientId) {
     checkArgument(!Strings.isNullOrEmpty(clientId), "clientId must be specified");
-    return transactIfJpaTm(() -> tm().maybeLoad(createVKey(clientId)));
+    return transactIfJpaTm(() -> tm().loadByKeyIfPresent(createVKey(clientId)));
   }
 
   /**

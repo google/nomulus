@@ -30,6 +30,7 @@ import google.registry.keyring.kms.KmsModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.JdbcJpaTm;
 import google.registry.persistence.PersistenceModule.SocketFactoryJpaTm;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.util.UtilsModule;
@@ -57,6 +58,7 @@ public class BeamJpaModule {
 
   @Nullable private final String sqlAccessInfoFile;
   @Nullable private final String cloudKmsProjectId;
+  @Nullable private final TransactionIsolationLevel isolationOverride;
 
   /**
    * Constructs a new instance of {@link BeamJpaModule}.
@@ -73,10 +75,20 @@ public class BeamJpaModule {
    *     real encrypted file on GCS as returned by {@link
    *     BackupPaths#getCloudSQLCredentialFilePatterns} or an unencrypted file on local filesystem
    *     with credentials to a test database.
+   * @param cloudKmsProjectId the GCP project where the credential decryption key can be found
+   * @param isolationOverride the desired Transaction Isolation level for all JDBC connections
    */
-  public BeamJpaModule(@Nullable String sqlAccessInfoFile, @Nullable String cloudKmsProjectId) {
+  public BeamJpaModule(
+      @Nullable String sqlAccessInfoFile,
+      @Nullable String cloudKmsProjectId,
+      @Nullable TransactionIsolationLevel isolationOverride) {
     this.sqlAccessInfoFile = sqlAccessInfoFile;
     this.cloudKmsProjectId = cloudKmsProjectId;
+    this.isolationOverride = isolationOverride;
+  }
+
+  public BeamJpaModule(@Nullable String sqlAccessInfoFile, @Nullable String cloudKmsProjectId) {
+    this(sqlAccessInfoFile, cloudKmsProjectId, null);
   }
 
   /** Returns true if the credential file is on GCS (and therefore expected to be encrypted). */
@@ -152,6 +164,13 @@ public class BeamJpaModule {
   @Config("beamCloudKmsKeyRing")
   static String keyRingName() {
     return "nomulus-tool-keyring";
+  }
+
+  @Provides
+  @Config("beamIsolationOverride")
+  @Nullable
+  TransactionIsolationLevel providesIsolationOverride() {
+    return isolationOverride;
   }
 
   @Provides

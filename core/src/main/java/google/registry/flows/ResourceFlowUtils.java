@@ -139,7 +139,7 @@ public final class ResourceFlowUtils {
       Class<R> clazz, String targetId, DateTime now, String clientId) throws EppException {
     VKey<R> key = loadAndGetKey(clazz, targetId, now);
     if (key != null) {
-      R resource = tm().load(key);
+      R resource = tm().loadByKey(key);
       // These are similar exceptions, but we can track them internally as log-based metrics.
       if (Objects.equals(clientId, resource.getPersistedCurrentSponsorClientId())) {
         throw new ResourceAlreadyExistsForThisClientException(targetId);

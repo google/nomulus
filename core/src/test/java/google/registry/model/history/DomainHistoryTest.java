@@ -71,7 +71,7 @@ public class DomainHistoryTest extends EntityTestCase {
     jpaTm()
         .transact(
             () -> {
-              DomainHistory fromDatabase = jpaTm().load(domainHistory.createVKey());
+              DomainHistory fromDatabase = jpaTm().loadByKey(domainHistory.createVKey());
               assertDomainHistoriesEqual(fromDatabase, domainHistory);
               assertThat(fromDatabase.getParentVKey()).isEqualTo(domainHistory.getParentVKey());
             });
@@ -87,7 +87,7 @@ public class DomainHistoryTest extends EntityTestCase {
     jpaTm()
         .transact(
             () -> {
-              DomainHistory fromDatabase = jpaTm().load(domainHistory.createVKey());
+              DomainHistory fromDatabase = jpaTm().loadByKey(domainHistory.createVKey());
               assertDomainHistoriesEqual(fromDatabase, domainHistory);
               assertThat(fromDatabase.getParentVKey()).isEqualTo(domainHistory.getParentVKey());
               assertThat(fromDatabase.getNsHosts())
@@ -125,8 +125,8 @@ public class DomainHistoryTest extends EntityTestCase {
     VKey<DomainHistory> domainHistoryVKey = domainHistory.createVKey();
     VKey<HistoryEntry> historyEntryVKey =
         VKey.createOfy(HistoryEntry.class, Key.create(domainHistory.asHistoryEntry()));
-    DomainHistory domainHistoryFromDb = tm().transact(() -> tm().load(domainHistoryVKey));
-    HistoryEntry historyEntryFromDb = tm().transact(() -> tm().load(historyEntryVKey));
+    DomainHistory domainHistoryFromDb = tm().transact(() -> tm().loadByKey(domainHistoryVKey));
+    HistoryEntry historyEntryFromDb = tm().transact(() -> tm().loadByKey(historyEntryVKey));
 
     assertThat(domainHistoryFromDb).isEqualTo(historyEntryFromDb);
   }
@@ -183,13 +183,13 @@ public class DomainHistoryTest extends EntityTestCase {
 
     // Load the DomainHistory object from the datastore.
     VKey<DomainHistory> domainHistoryVKey = domainHistory.createVKey();
-    DomainHistory domainHistoryFromDb = tm().transact(() -> tm().load(domainHistoryVKey));
+    DomainHistory domainHistoryFromDb = tm().transact(() -> tm().loadByKey(domainHistoryVKey));
 
     // attempt to write to SQL.
     jpaTm().transact(() -> jpaTm().insert(domainHistoryFromDb));
 
     // Reload and rewrite.
-    DomainHistory domainHistoryFromDb2 = tm().transact(() -> tm().load(domainHistoryVKey));
+    DomainHistory domainHistoryFromDb2 = tm().transact(() -> tm().loadByKey(domainHistoryVKey));
     jpaTm().transact(() -> jpaTm().put(domainHistoryFromDb2));
   }
 

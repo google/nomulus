@@ -62,7 +62,7 @@ public class ReservedListDualWriteDao {
   public static Optional<ReservedList> getLatestRevision(String reservedListName) {
     Optional<ReservedList> maybeDatastoreList =
         ofyTm()
-            .maybeLoad(
+            .loadByKeyIfPresent(
                 VKey.createOfy(
                     ReservedList.class,
                     Key.create(getCrossTldKey(), ReservedList.class, reservedListName)));

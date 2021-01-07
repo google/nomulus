@@ -69,7 +69,7 @@ public final class Registries {
                                   .stream()
                                   .map(Key::getName)
                                   .collect(toImmutableSet())
-                              : tm().loadAll(Registry.class).stream()
+                              : tm().loadAllOf(Registry.class).stream()
                                   .map(Registry::getTldStr)
                                   .collect(toImmutableSet());
                       return Registry.getAll(tlds).stream()

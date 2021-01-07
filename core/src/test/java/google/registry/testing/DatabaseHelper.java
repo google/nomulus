@@ -413,7 +413,7 @@ public class DatabaseHelper {
     // PremiumListUtils.savePremiumListAndEntries(). Clearing the session cache can help make sure
     // we always get the same list.
     tm().clearSessionCache();
-    return transactIfJpaTm(() -> tm().load(premiumList));
+    return transactIfJpaTm(() -> tm().loadByEntity(premiumList));
   }
 
   /** Creates and persists a tld. */
@@ -673,13 +673,13 @@ public class DatabaseHelper {
                 .build());
     // Modify the existing autorenew event to reflect the pending transfer.
     persistResource(
-        tm().load(domain.getAutorenewBillingEvent())
+        tm().loadByKey(domain.getAutorenewBillingEvent())
             .asBuilder()
             .setRecurrenceEndTime(expirationTime)
             .build());
     // Update the end time of the existing autorenew poll message. We must delete it if it has no
     // events left in it.
-    PollMessage.Autorenew autorenewPollMessage = tm().load(domain.getAutorenewPollMessage());
+    PollMessage.Autorenew autorenewPollMessage = tm().loadByKey(domain.getAutorenewPollMessage());
     if (autorenewPollMessage.getEventTime().isBefore(expirationTime)) {
       persistResource(
           autorenewPollMessage.asBuilder()
@@ -768,22 +768,22 @@ public class DatabaseHelper {
     return transactIfJpaTm(
         () ->
             Iterables.concat(
-                tm().loadAll(BillingEvent.OneTime.class),
-                tm().loadAll(BillingEvent.Recurring.class),
-                tm().loadAll(BillingEvent.Cancellation.class)));
+                tm().loadAllOf(BillingEvent.OneTime.class),
+                tm().loadAllOf(BillingEvent.Recurring.class),
+                tm().loadAllOf(BillingEvent.Cancellation.class)));
   }
 
   private static Iterable<BillingEvent> getBillingEvents(EppResource resource) {
     return transactIfJpaTm(
         () ->
             Iterables.concat(
-                tm().loadAll(BillingEvent.OneTime.class).stream()
+                tm().loadAllOf(BillingEvent.OneTime.class).stream()
                     .filter(oneTime -> oneTime.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList()),
-                tm().loadAll(BillingEvent.Recurring.class).stream()
+                tm().loadAllOf(BillingEvent.Recurring.class).stream()
                     .filter(recurring -> recurring.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList()),
-                tm().loadAll(BillingEvent.Cancellation.class).stream()
+                tm().loadAllOf(BillingEvent.Cancellation.class).stream()
                     .filter(
                         cancellation -> cancellation.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList())));
@@ -860,13 +860,13 @@ public class DatabaseHelper {
   }
 
   public static ImmutableList<PollMessage> getPollMessages() {
-    return ImmutableList.copyOf(transactIfJpaTm(() -> tm().loadAll(PollMessage.class)));
+    return ImmutableList.copyOf(transactIfJpaTm(() -> tm().loadAllOf(PollMessage.class)));
   }
 
   public static ImmutableList<PollMessage> getPollMessages(String clientId) {
     return transactIfJpaTm(
         () ->
-            tm().loadAll(PollMessage.class).stream()
+            tm().loadAllOf(PollMessage.class).stream()
                 .filter(pollMessage -> pollMessage.getClientId().equals(clientId))
                 .collect(toImmutableList()));
   }
@@ -874,7 +874,7 @@ public class DatabaseHelper {
   public static ImmutableList<PollMessage> getPollMessages(DomainContent domain) {
     return transactIfJpaTm(
         () ->
-            tm().loadAll(PollMessage.class).stream()
+            tm().loadAllOf(PollMessage.class).stream()
                 .filter(
                     pollMessage ->
                         pollMessage.getParentKey().getParent().getName().equals(domain.getRepoId()))
@@ -884,7 +884,7 @@ public class DatabaseHelper {
   public static ImmutableList<PollMessage> getPollMessages(String clientId, DateTime now) {
     return transactIfJpaTm(
         () ->
-            tm().loadAll(PollMessage.class).stream()
+            tm().loadAllOf(PollMessage.class).stream()
                 .filter(pollMessage -> pollMessage.getClientId().equals(clientId))
                 .filter(
                     pollMessage ->
@@ -898,7 +898,7 @@ public class DatabaseHelper {
       EppResource resource, String clientId, DateTime now) {
     return transactIfJpaTm(
         () ->
-            tm().loadAll(PollMessage.class).stream()
+            tm().loadAllOf(PollMessage.class).stream()
                 .filter(
                     pollMessage ->
                         pollMessage
@@ -942,7 +942,7 @@ public class DatabaseHelper {
   }
 
   public static void assertAllocationTokens(AllocationToken... expectedTokens) {
-    assertThat(transactIfJpaTm(() -> tm().loadAll(AllocationToken.class)))
+    assertThat(transactIfJpaTm(() -> tm().loadAllOf(AllocationToken.class)))
         .comparingElementsUsing(immutableObjectCorrespondence("updateTimestamp", "creationTime"))
         .containsExactlyElementsIn(expectedTokens);
   }
@@ -1018,7 +1018,7 @@ public class DatabaseHelper {
     // (unmarshalling entity protos to POJOs, nulling out empty collections, calling @OnLoad
     // methods, etc.) which is bypassed for entities loaded from the session cache.
     tm().clearSessionCache();
-    return transactIfJpaTm(() -> tm().load(resource));
+    return transactIfJpaTm(() -> tm().loadByEntity(resource));
   }
 
   /** Persists an EPP resource with the {@link EppResourceIndex} always going into bucket one. */
@@ -1037,7 +1037,7 @@ public class DatabaseHelper {
             });
     maybeAdvanceClock();
     tm().clearSessionCache();
-    return transactIfJpaTm(() -> tm().load(resource));
+    return transactIfJpaTm(() -> tm().loadByEntity(resource));
   }
 
   public static <R> void persistResources(final Iterable<R> resources) {
@@ -1059,7 +1059,7 @@ public class DatabaseHelper {
     // and not from the transaction's session cache.
     tm().clearSessionCache();
     for (R resource : resources) {
-      transactIfJpaTm(() -> tm().load(resource));
+      transactIfJpaTm(() -> tm().loadByEntity(resource));
     }
   }
 
@@ -1090,7 +1090,7 @@ public class DatabaseHelper {
             });
     maybeAdvanceClock();
     tm().clearSessionCache();
-    return transactIfJpaTm(() -> tm().load(resource));
+    return transactIfJpaTm(() -> tm().loadByEntity(resource));
   }
 
   /** Returns all of the history entries that are parented off the given EppResource. */
@@ -1101,11 +1101,11 @@ public class DatabaseHelper {
                 () -> {
                   ImmutableList<? extends HistoryEntry> unsorted = null;
                   if (resource instanceof ContactBase) {
-                    unsorted = tm().loadAll(ContactHistory.class);
+                    unsorted = tm().loadAllOf(ContactHistory.class);
                   } else if (resource instanceof HostBase) {
-                    unsorted = tm().loadAll(HostHistory.class);
+                    unsorted = tm().loadAllOf(HostHistory.class);
                   } else if (resource instanceof DomainContent) {
-                    unsorted = tm().loadAll(DomainHistory.class);
+                    unsorted = tm().loadAllOf(DomainHistory.class);
                   } else {
                     fail("Expected an EppResource instance, but got " + resource.getClass());
                   }
@@ -1161,7 +1161,7 @@ public class DatabaseHelper {
     return Iterables.getOnlyElement(
         transactIfJpaTm(
             () ->
-                tm().loadAll(PollMessage.class).stream()
+                tm().loadAllOf(PollMessage.class).stream()
                     .filter(
                         pollMessage -> pollMessage.getParentKey().equals(Key.create(historyEntry)))
                     .collect(toImmutableList())));
@@ -1194,7 +1194,7 @@ public class DatabaseHelper {
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
     tm().clearSessionCache();
-    return transactIfJpaTm(() -> tm().loadAll(resources));
+    return transactIfJpaTm(() -> tm().loadByEntities(resources));
   }
 
   public static void deleteResource(final Object resource) {
@@ -1219,7 +1219,7 @@ public class DatabaseHelper {
       // otherwise JPA would just return the input entity instead of actually creating a
       // clone.
       tm().transact(() -> tm().put(resource));
-      result = tm().transact(() -> tm().load(resource));
+      result = tm().transact(() -> tm().loadByEntity(resource));
     }
     maybeAdvanceClock();
     return result;

@@ -101,8 +101,8 @@ public final class DomainInfoFlow implements Flow {
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setDomain(domain).build());
     // Prefetch all referenced resources. Calling values() blocks until loading is done.
-    tm().load(domain.getNameservers());
-    tm().load(domain.getReferencedContacts());
+    tm().loadByKeys(domain.getNameservers());
+    tm().loadByKeys(domain.getReferencedContacts());
     // Registrars can only see a few fields on unauthorized domains.
     // This is a policy decision that is left up to us by the rfcs.
     DomainInfoData.Builder infoBuilder =
@@ -110,7 +110,7 @@ public final class DomainInfoFlow implements Flow {
             .setFullyQualifiedDomainName(domain.getDomainName())
             .setRepoId(domain.getRepoId())
             .setCurrentSponsorClientId(domain.getCurrentSponsorClientId())
-            .setRegistrant(tm().load(domain.getRegistrant()).getContactId());
+            .setRegistrant(tm().loadByKey(domain.getRegistrant()).getContactId());
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.
     if (clientId.equals(domain.getCurrentSponsorClientId()) || authInfo.isPresent()) {

@@ -53,7 +53,7 @@ class DomainHistoryVKeyTest {
     DomainHistoryVKey domainHistoryVKey = DomainHistoryVKey.create(ofyKey);
     TestEntity original = new TestEntity(domainHistoryVKey);
     tm().transact(() -> tm().insert(original));
-    TestEntity persisted = tm().transact(() -> tm().load(original.createVKey()));
+    TestEntity persisted = tm().transact(() -> tm().loadByKey(original.createVKey()));
     assertThat(persisted).isEqualTo(original);
     // Double check that the persisted.domainHistoryVKey is a symmetric VKey
     assertThat(persisted.domainHistoryVKey.createOfyKey())

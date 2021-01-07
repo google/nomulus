@@ -60,8 +60,8 @@ class TransactionTest {
     ofyTm()
         .transact(
             () -> {
-              assertThat(ofyTm().load(fooEntity.key())).isEqualTo(fooEntity);
-              assertThat(ofyTm().load(barEntity.key())).isEqualTo(barEntity);
+              assertThat(ofyTm().loadByKey(fooEntity.key())).isEqualTo(fooEntity);
+              assertThat(ofyTm().loadByKey(barEntity.key())).isEqualTo(barEntity);
             });
 
     txn = new Transaction.Builder().addDelete(barEntity.key()).build();
@@ -82,7 +82,7 @@ class TransactionTest {
     ofyTm()
         .transact(
             () -> {
-              assertThat(ofyTm().load(fooEntity.key())).isEqualTo(fooEntity);
+              assertThat(ofyTm().loadByKey(fooEntity.key())).isEqualTo(fooEntity);
               assertThat(ofyTm().exists(barEntity.key())).isEqualTo(false);
             });
   }
@@ -111,14 +111,14 @@ class TransactionTest {
                 jpaTm().insert(barEntity);
               });
       TransactionEntity txnEnt =
-          jpaTm().transact(() -> jpaTm().load(VKey.createSql(TransactionEntity.class, 1L)));
+          jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TransactionEntity.class, 1L)));
       Transaction txn = Transaction.deserialize(txnEnt.contents);
       txn.writeToDatastore();
       ofyTm()
           .transact(
               () -> {
-                assertThat(ofyTm().load(fooEntity.key())).isEqualTo(fooEntity);
-                assertThat(ofyTm().load(barEntity.key())).isEqualTo(barEntity);
+                assertThat(ofyTm().loadByKey(fooEntity.key())).isEqualTo(fooEntity);
+                assertThat(ofyTm().loadByKey(barEntity.key())).isEqualTo(barEntity);
               });
 
       // Verify that no transaction was persisted for the load transaction.

@@ -191,7 +191,7 @@ class DomainTransferApproveFlowTest
     assertAboutHistoryEntries().that(historyEntryTransferApproved).hasOtherClientId("NewRegistrar");
     assertTransferApproved(domain, originalTransferData);
     assertAboutDomains().that(domain).hasRegistrationExpirationTime(expectedExpirationTime);
-    assertThat(tm().load(domain.getAutorenewBillingEvent()).getEventTime())
+    assertThat(tm().loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(expectedExpirationTime);
     // The poll message (in the future) to the losing registrar for implicit ack should be gone.
     assertThat(getPollMessages(domain, "TheRegistrar", clock.nowUtc().plusMonths(1))).isEmpty();

@@ -29,17 +29,19 @@ import org.joda.time.DateTime;
  */
 public interface TransactionManager {
 
-  /** Returns {@code true} if the caller is in a transaction.
+  /**
+   * Returns {@code true} if the caller is in a transaction.
    *
-   *  <p>Note that this function is kept for backward compatibility. We will review the use case
-   *  later when adding the cloud sql implementation.
+   * <p>Note that this function is kept for backward compatibility. We will review the use case
+   * later when adding the cloud sql implementation.
    */
   boolean inTransaction();
 
-  /** Throws {@link IllegalStateException} if the caller is not in a transaction.
+  /**
+   * Throws {@link IllegalStateException} if the caller is not in a transaction.
    *
-   *  <p>Note that this function is kept for backward compatibility. We will review the use case
-   *  later when adding the cloud sql implementation.
+   * <p>Note that this function is kept for backward compatibility. We will review the use case
+   * later when adding the cloud sql implementation.
    */
   void assertInTransaction();
 
@@ -58,10 +60,11 @@ public interface TransactionManager {
    */
   <T> T transactNew(Supplier<T> work);
 
-  /** Pauses the current transaction (if any) and executes the work in a new transaction.
+  /**
+   * Pauses the current transaction (if any) and executes the work in a new transaction.
    *
-   *  <p>Note that this function is kept for backward compatibility. We will review the use case
-   *  later when adding the cloud sql implementation.
+   * <p>Note that this function is kept for backward compatibility. We will review the use case
+   * later when adding the cloud sql implementation.
    */
   void transactNew(Runnable work);
 
@@ -73,10 +76,11 @@ public interface TransactionManager {
    */
   <R> R transactNewReadOnly(Supplier<R> work);
 
-  /** Executes the work in a read-only transaction.
+  /**
+   * Executes the work in a read-only transaction.
    *
-   *  <p>Note that this function is kept for backward compatibility. We will review the use case
-   *  later when adding the cloud sql implementation.
+   * <p>Note that this function is kept for backward compatibility. We will review the use case
+   * later when adding the cloud sql implementation.
    */
   void transactNewReadOnly(Runnable work);
 
@@ -182,31 +186,60 @@ public interface TransactionManager {
   /** Returns whether the entity of given key exists. */
   <T> boolean exists(VKey<T> key);
 
-  /** Loads the entity by its id, returns empty if the entity doesn't exist. */
-  <T> Optional<T> maybeLoad(VKey<T> key);
-
-  /** Loads the entity by its id, throws NoSuchElementException if it doesn't exist. */
-  <T> T load(VKey<T> key);
+  /** Loads the entity by its key, returns empty if the entity doesn't exist. */
+  <T> Optional<T> loadByKeyIfPresent(VKey<T> key);
 
   /**
-   * Loads the given entity from the database, throws NoSuchElementException if it doesn't exist.
-   */
-  <T> T load(T entity);
-
-  /**
-   * Loads the set of entities by their key id.
+   * Loads the set of entities by their keys.
    *
-   * @throws NoSuchElementException if any of the keys are not found.
+   * <p>Nonexistent keys / entities are absent from the resulting map, but no {@link
+   * NoSuchElementException} will be thrown.
    */
-  <T> ImmutableMap<VKey<? extends T>, T> load(Iterable<? extends VKey<? extends T>> keys);
-
-  /** Loads all entities of the given type, returns empty if there is no such entity. */
-  <T> ImmutableList<T> loadAll(Class<T> clazz);
+  <T> ImmutableMap<VKey<? extends T>, T> loadByKeysIfPresent(
+      Iterable<? extends VKey<? extends T>> keys);
 
   /**
-   * Loads all given entities from the database, throws NoSuchElementException if it doesn't exist.
+   * Loads all given entities from the database if possible.
+   *
+   * <p>Nonexistent entities are absent from the resulting list, but no {@link
+   * NoSuchElementException} will be thrown.
    */
-  <T> ImmutableList<T> loadAll(Iterable<T> entities);
+  <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities);
+
+  /**
+   * Loads the entity by its key.
+   *
+   * @throws NoSuchElementException if this key does not correspond to an existing entity.
+   */
+  <T> T loadByKey(VKey<T> key);
+
+  /**
+   * Loads the set of entities by their keys.
+   *
+   * @throws NoSuchElementException if any of the keys do not correspond to an existing entity.
+   */
+  <T> ImmutableMap<VKey<? extends T>, T> loadByKeys(Iterable<? extends VKey<? extends T>> keys);
+
+  /**
+   * Loads the given entity from the database.
+   *
+   * @throws NoSuchElementException if the entity does not exist in the database.
+   */
+  <T> T loadByEntity(T entity);
+
+  /**
+   * Loads all given entities from the database.
+   *
+   * @throws NoSuchElementException if any of the entities do not exist in the database.
+   */
+  <T> ImmutableList<T> loadByEntities(Iterable<T> entities);
+
+  /**
+   * Returns a stream of all entities of the given type that exist in the database.
+   *
+   * <p>The resulting stream is empty if there are no entities of this type.
+   */
+  <T> ImmutableList<T> loadAllOf(Class<T> clazz);
 
   /** Deletes the entity by its id. */
   void delete(VKey<?> key);

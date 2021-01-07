@@ -91,7 +91,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
         .transact(
             () -> {
               ImmutableList<Spec11ThreatMatch> threatMatches =
-                  jpaTm().loadAll(Spec11ThreatMatch.class);
+                  jpaTm().loadAllOf(Spec11ThreatMatch.class);
               assertThat(threatMatches).hasSize(6);
               assertThat(
                       threatMatches.stream()
@@ -151,7 +151,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
         jpaTm()
             .transact(
                 () ->
-                    jpaTm().loadAll(Spec11ThreatMatch.class).stream()
+                    jpaTm().loadAllOf(Spec11ThreatMatch.class).stream()
                         .filter((match) -> match.getDomainName().equals("a.com"))
                         .findFirst()
                         .get()
@@ -177,7 +177,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
 
     runCommandForced();
     ImmutableList<Spec11ThreatMatch> threatMatches =
-        jpaTm().transact(() -> jpaTm().loadAll(Spec11ThreatMatch.class));
+        jpaTm().transact(() -> jpaTm().loadAllOf(Spec11ThreatMatch.class));
     assertAboutImmutableObjects()
         .that(Iterables.getOnlyElement(threatMatches))
         .isEqualExceptFields(previous, "id");
@@ -212,7 +212,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
         assertThrows(RuntimeException.class, this::runCommandForced);
     assertThat(runtimeException.getCause().getClass()).isEqualTo(IOException.class);
     assertThat(runtimeException).hasCauseThat().hasMessageThat().isEqualTo("hi");
-    jpaTm().transact(() -> assertThat(jpaTm().loadAll(Spec11ThreatMatch.class)).isEmpty());
+    jpaTm().transact(() -> assertThat(jpaTm().loadAllOf(Spec11ThreatMatch.class)).isEmpty());
   }
 
   @Test
@@ -249,7 +249,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
         .transact(
             () -> {
               ImmutableList<Spec11ThreatMatch> threatMatches =
-                  jpaTm().loadAll(Spec11ThreatMatch.class);
+                  jpaTm().loadAllOf(Spec11ThreatMatch.class);
               assertThat(threatMatches)
                   .comparingElementsUsing(immutableObjectCorrespondence("id", "domainRepoId"))
                   .containsExactly(

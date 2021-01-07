@@ -67,7 +67,7 @@ abstract class UpdateOrDeleteAllocationTokensCommand extends ConfirmingCommand
       checkArgument(!prefix.isEmpty(), "Provided prefix should not be blank");
       return transactIfJpaTm(
           () ->
-              tm().loadAll(AllocationToken.class).stream()
+              tm().loadAllOf(AllocationToken.class).stream()
                   .filter(token -> token.getToken().startsWith(prefix))
                   .map(AllocationToken::createVKey)
                   .collect(toImmutableSet()));

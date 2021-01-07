@@ -71,7 +71,7 @@ class ForeignKeyIndexTest extends EntityTestCase {
     HostResource host = persistActiveHost("ns1.example.com");
     ForeignKeyIndex<HostResource> fki =
         ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc());
-    assertThat(tm().load(fki.getResourceKey())).isEqualTo(host);
+    assertThat(tm().loadByKey(fki.getResourceKey())).isEqualTo(host);
     assertThat(fki.getDeletionTime()).isEqualTo(END_OF_TIME);
   }
 

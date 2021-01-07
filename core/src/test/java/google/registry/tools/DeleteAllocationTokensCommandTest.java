@@ -134,9 +134,9 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
     for (int i = 0; i < 50; i++) {
       persistToken(String.format("batch%2d", i), null, i % 2 == 0);
     }
-    assertThat(transactIfJpaTm(() -> tm().loadAll(AllocationToken.class).size())).isEqualTo(56);
+    assertThat(transactIfJpaTm(() -> tm().loadAllOf(AllocationToken.class).size())).isEqualTo(56);
     runCommandForced("--prefix", "batch");
-    assertThat(transactIfJpaTm(() -> tm().loadAll(AllocationToken.class).size()))
+    assertThat(transactIfJpaTm(() -> tm().loadAllOf(AllocationToken.class).size()))
         .isEqualTo(56 - 25);
   }
 
@@ -184,7 +184,7 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
   }
 
   private static ImmutableList<AllocationToken> reloadTokens(AllocationToken... tokens) {
-    return transactIfJpaTm(() -> tm().loadAll(ImmutableSet.copyOf(tokens)));
+    return transactIfJpaTm(() -> tm().loadByEntities(ImmutableSet.copyOf(tokens)));
   }
 
   private static void assertNonexistent(AllocationToken... tokens) {

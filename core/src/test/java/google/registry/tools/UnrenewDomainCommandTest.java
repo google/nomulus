@@ -120,7 +120,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     HistoryEntry synthetic = getOnlyHistoryEntryOfType(domain, SYNTHETIC);
 
     assertBillingEventsEqual(
-        tm().load(domain.getAutorenewBillingEvent()),
+        tm().loadByKey(domain.getAutorenewBillingEvent()),
         new BillingEvent.Recurring.Builder()
             .setParent(synthetic)
             .setReason(Reason.RENEW)

@@ -99,7 +99,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
   @Test
   void testFailure_missingClientCertificateHash() {
     persistResource(getRegistrarBuilder().build());
-    credentials = new TlsCredentials(true, null, GOOD_IP);
+    credentials = new TlsCredentials(true, Optional.empty(), GOOD_IP);
     doFailingTest("login_valid.xml", MissingRegistrarCertificateException.class);
   }
 

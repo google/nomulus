@@ -58,7 +58,7 @@ public class UpdateAutoTimestampTest {
   private UpdateAutoTimestampTestObject reload() {
     return tm().transact(
             () ->
-                tm().load(
+                tm().loadByKey(
                         VKey.create(
                             UpdateAutoTimestampTestObject.class,
                             1L,

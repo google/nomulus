@@ -107,7 +107,7 @@ final class UpdateAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     tokensToSave =
         transactIfJpaTm(
             () ->
-                tm().load(getTokenKeys()).values().stream()
+                tm().loadByKeys(getTokenKeys()).values().stream()
                     .collect(toImmutableMap(Function.identity(), this::updateToken))
                     .entrySet()
                     .stream()

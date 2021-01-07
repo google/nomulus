@@ -96,7 +96,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
       // the client id, needs to be read off of it.
       EppResource owningResource =
           existingHost.isSubordinate()
-              ? tm().load(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
+              ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
               : existingHost;
       verifyResourceOwnership(clientId, owningResource);
     }

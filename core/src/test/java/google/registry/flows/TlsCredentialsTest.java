@@ -15,6 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
@@ -22,9 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableSet;
+import google.registry.flows.TlsCredentials.BadRegistrarIpAddressException;
 import google.registry.flows.TlsCredentials.MissingRegistrarCertificateException;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.AppEngineExtension;
+import google.registry.util.CidrAddressBlock;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
@@ -46,17 +50,30 @@ final class TlsCredentialsTest {
   }
 
   @Test
-  void testProvideClientCertificateHash_missing() {
-    TlsCredentials tls = new TlsCredentials(false, Optional.empty(), Optional.of("192.168.1.1"));
+  void testClientCertificateHash_missing() {
+    TlsCredentials tls = new TlsCredentials(true, Optional.empty(), Optional.of("192.168.1.1"));
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(null, DateTime.now(UTC))
-            .setFailoverClientCertificate(null, DateTime.now(UTC))
+            .setClientCertificate(SAMPLE_CERT, DateTime.now(UTC))
             .build());
     assertThrows(
         MissingRegistrarCertificateException.class,
         () -> tls.validateCertificate(Registrar.loadByClientId("TheRegistrar").get()));
+  }
+
+  @Test
+  void test_missingIpAddress_doesntAllowAccess() {
+    TlsCredentials tls = new TlsCredentials(false, Optional.of("certHash"), Optional.empty());
+    persistResource(
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setClientCertificate(SAMPLE_CERT, DateTime.now(UTC))
+            .setIpAddressAllowList(ImmutableSet.of(CidrAddressBlock.create("3.5.8.13")))
+            .build());
+    assertThrows(
+        BadRegistrarIpAddressException.class,
+        () -> tls.validate(Registrar.loadByClientId("TheRegistrar").get(), "password"));
   }
 
   @Test

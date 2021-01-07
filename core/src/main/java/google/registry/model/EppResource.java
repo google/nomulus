@@ -360,13 +360,13 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
         @Override
         public EppResource load(VKey<? extends EppResource> key) {
-          return tm().doTransactionless(() -> tm().load(key));
+          return tm().doTransactionless(() -> tm().loadByKey(key));
         }
 
         @Override
         public Map<VKey<? extends EppResource>, EppResource> loadAll(
             Iterable<? extends VKey<? extends EppResource>> keys) {
-          return tm().doTransactionless(() -> tm().load(keys));
+          return tm().doTransactionless(() -> tm().loadByKeys(keys));
         }
       };
 
@@ -406,7 +406,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   public static ImmutableMap<VKey<? extends EppResource>, EppResource> loadCached(
       Iterable<VKey<? extends EppResource>> keys) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return tm().load(keys);
+      return tm().loadByKeys(keys);
     }
     try {
       return cacheEppResources.getAll(keys);
@@ -423,7 +423,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    */
   public static <T extends EppResource> T loadCached(VKey<T> key) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
-      return tm().load(key);
+      return tm().loadByKey(key);
     }
     try {
       // Safe to cast because loading a Key<T> returns an entity of type T.

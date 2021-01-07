@@ -56,7 +56,7 @@ public final class ResaveEppResourceCommand extends MutatingCommand {
             uniqueId);
     // Load the resource directly to bypass running cloneProjectedAtTime() automatically, which can
     // cause stageEntityChange() to fail due to implicit projection changes.
-    EppResource resource = tm().load(resourceKey);
+    EppResource resource = tm().loadByKey(resourceKey);
     stageEntityChange(resource, resource);
   }
 }

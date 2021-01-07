@@ -140,7 +140,8 @@ public class ContactResourceTest extends EntityTestCase {
             .transact(
                 () ->
                     jpaTm()
-                        .load(VKey.createSql(ContactResource.class, originalContact.getRepoId())));
+                        .loadByKey(
+                            VKey.createSql(ContactResource.class, originalContact.getRepoId())));
 
     ContactResource fixed =
         originalContact

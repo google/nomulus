@@ -108,7 +108,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testGfeDidntProvideClientCertificate_failsMissingCertificate2200() throws Exception {
-    setClientCertificateHash("");
+    setClientCertificateHash(null);
     assertThatLogin("NewRegistrar", "foo-BAR2")
         .hasResponse(
             "response_error.xml",

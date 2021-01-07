@@ -78,7 +78,7 @@ public class RegistrarDaoTest {
   @Test
   void update_worksSuccessfully() {
     jpaTm().transact(() -> jpaTm().insert(testRegistrar));
-    Registrar persisted = jpaTm().transact(() -> jpaTm().load(registrarKey));
+    Registrar persisted = jpaTm().transact(() -> jpaTm().loadByKey(registrarKey));
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
     jpaTm()
         .transact(
@@ -86,7 +86,7 @@ public class RegistrarDaoTest {
                 jpaTm()
                     .update(
                         persisted.asBuilder().setRegistrarName("changedRegistrarName").build()));
-    Registrar updated = jpaTm().transact(() -> jpaTm().load(registrarKey));
+    Registrar updated = jpaTm().transact(() -> jpaTm().loadByKey(registrarKey));
     assertThat(updated.getRegistrarName()).isEqualTo("changedRegistrarName");
   }
 
@@ -102,7 +102,7 @@ public class RegistrarDaoTest {
   void load_worksSuccessfully() {
     assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isFalse();
     jpaTm().transact(() -> jpaTm().insert(testRegistrar));
-    Registrar persisted = jpaTm().transact(() -> jpaTm().load(registrarKey));
+    Registrar persisted = jpaTm().transact(() -> jpaTm().loadByKey(registrarKey));
 
     assertThat(persisted.getClientId()).isEqualTo("registrarId");
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
