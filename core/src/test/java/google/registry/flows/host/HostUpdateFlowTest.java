@@ -18,7 +18,8 @@ import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
@@ -28,6 +29,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistActiveSubordinateHost;
 import static google.registry.testing.DatabaseHelper.persistDeletedHost;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -76,12 +78,14 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.testing.TestOfyAndSql;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HostUpdateFlow}. */
+@DualDatabaseTest
 class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResource> {
 
   private void setEppHostUpdateInput(
@@ -132,7 +136,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     return getUniqueIdFromCommand();
   }
 
-  @Test
+  @TestOfyAndSql
   void testDryRun() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
@@ -168,24 +172,29 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     return renamedHost;
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_rename_noOtherHostEverUsedTheOldName() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
     HostResource renamedHost = doSuccessfulTest();
     assertThat(renamedHost.isSubordinate()).isTrue();
     assertDnsTasksEnqueued("ns1.example.tld", "ns2.example.tld");
-    // The old ForeignKeyIndex is invalidated at the time we did the rename.
-    ForeignKeyIndex<HostResource> oldFkiBeforeRename =
-        ForeignKeyIndex.load(HostResource.class, oldHostName(), clock.nowUtc().minusMillis(1));
-    assertThat(oldFkiBeforeRename.getResourceKey()).isEqualTo(renamedHost.createVKey());
-    assertThat(oldFkiBeforeRename.getDeletionTime()).isEqualTo(clock.nowUtc());
+    // As we don't actually store ForeignKeyIndex<HostResource> entity in SQL database(it is
+    // reconstructed by reading the information from Host table), we can not reconstruct the entity
+    // for the old host name because of the rename so we just skip the check for SQL database.
+    if (tm().isOfy()) {
+      // The old ForeignKeyIndex is invalidated at the time we did the rename.
+      ForeignKeyIndex<HostResource> oldFkiBeforeRename =
+          ForeignKeyIndex.load(HostResource.class, oldHostName(), clock.nowUtc().minusMillis(1));
+      assertThat(oldFkiBeforeRename.getResourceKey()).isEqualTo(renamedHost.createVKey());
+      assertThat(oldFkiBeforeRename.getDeletionTime()).isEqualTo(clock.nowUtc());
+    }
     ForeignKeyIndex<HostResource> oldFkiAfterRename =
         ForeignKeyIndex.load(HostResource.class, oldHostName(), clock.nowUtc());
     assertThat(oldFkiAfterRename).isNull();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_withReferencingDomain() throws Exception {
     createTld("tld");
     createTld("xn--q9jyb4c");
@@ -207,7 +216,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
             .param("requestedTime", clock.nowUtc().toString()));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_nameUnchanged_superordinateDomainNeverTransferred() throws Exception {
     setEppInput("host_update_name_unchanged.xml");
     createTld("tld");
@@ -231,7 +240,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertDnsTasksEnqueued("ns1.example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_nameUnchanged_superordinateDomainWasTransferred() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     setEppInput("host_update_name_unchanged.xml");
@@ -257,7 +266,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertDnsTasksEnqueued("ns1.example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_internalToInternalOnSameDomain() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.tld",
@@ -286,12 +295,13 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasPersistedCurrentSponsorClientId("TheRegistrar")
         .and()
         .hasLastTransferTime(oneDayAgo);
-    DomainBase reloadedDomain = ofy().load().entity(domain).now().cloneProjectedAtTime(now);
+    DomainBase reloadedDomain =
+        transactIfJpaTm(() -> tm().loadByEntity(domain)).cloneProjectedAtTime(now);
     assertThat(reloadedDomain.getSubordinateHosts()).containsExactly("ns2.example.tld");
     assertDnsTasksEnqueued("ns1.example.tld", "ns2.example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_internalToInternalOnSameTld() throws Exception {
     setEppHostUpdateInput(
         "ns2.foo.tld",
@@ -320,14 +330,20 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasPersistedCurrentSponsorClientId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
-    assertThat(ofy().load().entity(foo).now().cloneProjectedAtTime(now).getSubordinateHosts())
+    assertThat(
+            transactIfJpaTm(() -> tm().loadByEntity(foo))
+                .cloneProjectedAtTime(now)
+                .getSubordinateHosts())
         .isEmpty();
-    assertThat(ofy().load().entity(example).now().cloneProjectedAtTime(now).getSubordinateHosts())
+    assertThat(
+            transactIfJpaTm(() -> tm().loadByEntity(example))
+                .cloneProjectedAtTime(now)
+                .getSubordinateHosts())
         .containsExactly("ns2.example.tld");
     assertDnsTasksEnqueued("ns2.foo.tld", "ns2.example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_internalToInternalOnDifferentTld() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo",
@@ -358,15 +374,15 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .and()
         .hasLastTransferTime(null);
     DomainBase reloadedFooDomain =
-        ofy().load().entity(fooDomain).now().cloneProjectedAtTime(now);
+        transactIfJpaTm(() -> tm().loadByEntity(fooDomain)).cloneProjectedAtTime(now);
     assertThat(reloadedFooDomain.getSubordinateHosts()).isEmpty();
     DomainBase reloadedTldDomain =
-        ofy().load().entity(tldDomain).now().cloneProjectedAtTime(now);
+        transactIfJpaTm(() -> tm().loadByEntity(tldDomain)).cloneProjectedAtTime(now);
     assertThat(reloadedTldDomain.getSubordinateHosts()).containsExactly("ns2.example.tld");
     assertDnsTasksEnqueued("ns1.example.foo", "ns2.example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_internalToExternal() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo",
@@ -374,6 +390,8 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         null,
         "<host:addr ip=\"v6\">1080:0:0:0:8:800:200C:417A</host:addr>");
     createTld("foo");
+    // This registrar should be superseded by domain's registrar.
+    persistNewRegistrar("Superseded");
     DomainBase domain =
         persistResource(
             newDomainBase("example.foo")
@@ -386,7 +404,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         persistResource(
             persistActiveSubordinateHost(oldHostName(), domain)
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId("ClientThatShouldBeSupersededByDomainClient")
+                .setPersistedCurrentSponsorClientId("Superseded")
                 .setLastTransferTime(oneDayAgo)
                 .build());
     assertThat(oldHost.isSubordinate()).isTrue();
@@ -403,12 +421,12 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasLastSuperordinateChange(clock.nowUtc());
     assertThat(renamedHost.getLastTransferTime()).isEqualTo(oneDayAgo);
     DomainBase reloadedDomain =
-        ofy().load().entity(domain).now().cloneProjectedAtTime(clock.nowUtc());
+        transactIfJpaTm(() -> tm().loadByEntity(domain)).cloneProjectedAtTime(clock.nowUtc());
     assertThat(reloadedDomain.getSubordinateHosts()).isEmpty();
     assertDnsTasksEnqueued("ns1.example.foo");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_externalToInternal() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
@@ -420,7 +438,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertNoDnsTasksEnqueued();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserExternalToInternal() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
@@ -439,12 +457,15 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasPersistedCurrentSponsorClientId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
-    assertThat(ofy().load().entity(domain).now().cloneProjectedAtTime(now).getSubordinateHosts())
+    assertThat(
+            transactIfJpaTm(() -> tm().loadByEntity(domain))
+                .cloneProjectedAtTime(now)
+                .getSubordinateHosts())
         .containsExactly("ns2.example.tld");
     assertDnsTasksEnqueued("ns2.example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_externalToExternal() throws Exception {
     setEppHostUpdateInput("ns1.example.foo", "ns2.example.tld", null, null);
     persistActiveHost(oldHostName());
@@ -452,7 +473,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserExternalToExternal() throws Exception {
     setEppHostUpdateInput("ns1.example.foo", "ns2.example.tld", null, null);
     persistActiveHost(oldHostName());
@@ -469,7 +490,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertNoDnsTasksEnqueued();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserClientUpdateProhibited() throws Exception {
     setEppInput("host_update_add_status.xml");
     persistResource(
@@ -491,7 +512,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasStatusValue(StatusValue.SERVER_UPDATE_PROHIBITED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_subordToSubord_lastTransferTimeFromPreviousSuperordinateWinsOut()
       throws Exception {
     setEppHostUpdateInput(
@@ -502,7 +523,8 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     createTld("tld");
     DateTime lastTransferTime = clock.nowUtc().minusDays(5);
     DomainBase foo =
-        newDomainBase("foo.tld").asBuilder().setLastTransferTime(lastTransferTime).build();
+        persistResource(
+            newDomainBase("foo.tld").asBuilder().setLastTransferTime(lastTransferTime).build());
     // Set the new domain to have a last transfer time that is different than the last transfer
     // time on the host in question.
     persistResource(
@@ -527,7 +549,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasLastTransferTime(lastTransferTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_subordToSubord_lastTransferTimeOnExistingHostWinsOut() throws Exception {
     setEppHostUpdateInput(
         "ns2.foo.tld",
@@ -536,10 +558,11 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         "<host:addr ip=\"v6\">1080:0:0:0:8:800:200C:417A</host:addr>");
     createTld("tld");
     DomainBase domain =
-        newDomainBase("foo.tld")
-            .asBuilder()
-            .setLastTransferTime(clock.nowUtc().minusDays(5))
-            .build();
+        persistResource(
+            newDomainBase("foo.tld")
+                .asBuilder()
+                .setLastTransferTime(clock.nowUtc().minusDays(5))
+                .build());
     // Set the new domain to have a last transfer time that is different than the last transfer
     // time on the host in question.
     persistResource(
@@ -565,7 +588,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasLastTransferTime(lastTransferTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_subordToSubord_lastTransferTimeOnExistingHostWinsOut_whenNullOnNewDomain()
       throws Exception {
     setEppHostUpdateInput(
@@ -575,10 +598,11 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         "<host:addr ip=\"v6\">1080:0:0:0:8:800:200C:417A</host:addr>");
     createTld("tld");
     DomainBase foo =
-        newDomainBase("foo.tld")
-            .asBuilder()
-            .setLastTransferTime(clock.nowUtc().minusDays(5))
-            .build();
+        persistResource(
+            newDomainBase("foo.tld")
+                .asBuilder()
+                .setLastTransferTime(clock.nowUtc().minusDays(5))
+                .build());
     // Set the new domain to have a null last transfer time.
     persistResource(newDomainBase("example.tld").asBuilder().setLastTransferTime(null).build());
     DateTime lastTransferTime = clock.nowUtc().minusDays(20);
@@ -600,7 +624,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasLastTransferTime(lastTransferTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_subordToSubord_lastTransferTimeOnExistingHostWins_whenNullOnBothDomains()
       throws Exception {
     setEppHostUpdateInput(
@@ -609,7 +633,8 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         "<host:addr ip=\"v4\">192.0.2.22</host:addr>",
         "<host:addr ip=\"v6\">1080:0:0:0:8:800:200C:417A</host:addr>");
     createTld("tld");
-    DomainBase foo = newDomainBase("foo.tld").asBuilder().setLastTransferTime(null).build();
+    DomainBase foo =
+        persistResource(newDomainBase("foo.tld").asBuilder().setLastTransferTime(null).build());
     // Set the new domain to have a null last transfer time.
     persistResource(newDomainBase("example.tld").asBuilder().setLastTransferTime(null).build());
     DateTime lastTransferTime = clock.nowUtc().minusDays(20);
@@ -631,7 +656,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasLastTransferTime(lastTransferTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_subordToSubord_lastTransferTimeIsNull_whenNullOnBoth() throws Exception {
     setEppHostUpdateInput(
         "ns2.foo.tld",
@@ -640,10 +665,11 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         "<host:addr ip=\"v6\">1080:0:0:0:8:800:200C:417A</host:addr>");
     createTld("tld");
     DomainBase foo =
-        newDomainBase("foo.tld")
-            .asBuilder()
-            .setLastTransferTime(clock.nowUtc().minusDays(5))
-            .build();
+        persistResource(
+            newDomainBase("foo.tld")
+                .asBuilder()
+                .setLastTransferTime(clock.nowUtc().minusDays(5))
+                .build());
     // Set the new domain to have a null last transfer time.
     persistResource(newDomainBase("example.tld").asBuilder().setLastTransferTime(null).build());
     persistResource(
@@ -662,7 +688,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasLastTransferTime(null);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_internalToExternal_lastTransferTimeFrozenWhenComingFromSuperordinate()
       throws Exception {
     setEppHostUpdateInput(
@@ -698,7 +724,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasLastSuperordinateChange(clock.nowUtc());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_internalToExternal_lastTransferTimeFrozenWhenComingFromHost() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo",
@@ -733,7 +759,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasLastTransferTime(lastTransferTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_internalToExternal_lastTransferTimeFrozenWhenDomainOverridesHost()
       throws Exception {
     setEppHostUpdateInput(
@@ -787,14 +813,14 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasLastTransferTime(hostTransferTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_externalToSubord_lastTransferTimeNotOverridden_whenLessRecent()
       throws Exception {
     doExternalToInternalLastTransferTimeTest(
         clock.nowUtc().minusDays(2), clock.nowUtc().minusDays(1));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_externalToSubord_lastTransferTimeNotOverridden_whenMoreRecent()
       throws Exception {
     doExternalToInternalLastTransferTimeTest(
@@ -802,12 +828,12 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
   }
 
   /** Test when the new superdordinate domain has never been transferred before. */
-  @Test
+  @TestOfyAndSql
   void testSuccess_externalToSubord_lastTransferTimeNotOverridden_whenNull() throws Exception {
     doExternalToInternalLastTransferTimeTest(clock.nowUtc().minusDays(2), null);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_superordinateMissing() throws Exception {
     createTld("tld");
     persistActiveHost(oldHostName());
@@ -816,7 +842,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertThat(thrown).hasMessageThat().contains("(example.tld)");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_superordinateInPendingDelete() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.tld",
@@ -841,14 +867,14 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .contains("Superordinate domain for this hostname is in pending delete");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_neverExisted_updateWithoutNameChange() throws Exception {
     setEppInput("host_update_name_unchanged.xml");
     ResourceDoesNotExistException thrown =
@@ -856,7 +882,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_existedButWasDeleted() throws Exception {
     persistDeletedHost(oldHostName(), clock.nowUtc().minusDays(1));
     ResourceDoesNotExistException thrown =
@@ -864,7 +890,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToCurrentName() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
@@ -875,7 +901,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertThat(thrown).hasMessageThat().contains("ns1.example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToNameOfExistingOtherHost() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
@@ -885,14 +911,14 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertThat(thrown).hasMessageThat().contains("ns2.example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_referToNonLowerCaseHostname() {
     setEppHostUpdateInput("ns1.EXAMPLE.tld", "ns2.example.tld", null, null);
     EppException thrown = assertThrows(HostNameNotLowerCaseException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToNonLowerCaseHostname() {
     persistActiveHost("ns1.example.tld");
     setEppHostUpdateInput("ns1.example.tld", "ns2.EXAMPLE.tld", null, null);
@@ -900,7 +926,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_referToNonPunyCodedHostname() {
     setEppHostUpdateInput("ns1.çauçalito.tld", "ns1.sausalito.tld", null, null);
     HostNameNotPunyCodedException thrown =
@@ -908,7 +934,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertThat(thrown).hasMessageThat().contains("expected ns1.xn--aualito-txac.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToNonPunyCodedHostname() {
     persistActiveHost("ns1.sausalito.tld");
     setEppHostUpdateInput("ns1.sausalito.tld", "ns1.çauçalito.tld", null, null);
@@ -917,7 +943,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertThat(thrown).hasMessageThat().contains("expected ns1.xn--aualito-txac.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_referToNonCanonicalHostname() {
     persistActiveHost("ns1.example.tld.");
     setEppHostUpdateInput("ns1.example.tld.", "ns2.example.tld", null, null);
@@ -925,7 +951,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToNonCanonicalHostname() {
     persistActiveHost("ns1.example.tld");
     setEppHostUpdateInput("ns1.example.tld", "ns2.example.tld.", null, null);
@@ -933,7 +959,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_subordinateNeedsIps() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.tld",
@@ -947,7 +973,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_subordinateToExternal_mustRemoveAllIps() throws Exception {
     setEppHostUpdateInput("ns1.example.tld", "ns2.example.com", null, null);
     createTld("tld");
@@ -956,7 +982,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_subordinateToExternal_cantAddAnIp() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.tld", "ns2.example.com", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
@@ -966,7 +992,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_addRemoveSameStatusValues() throws Exception {
     createTld("tld");
     persistActiveDomain("example.tld");
@@ -980,7 +1006,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_addRemoveSameInetAddresses() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
@@ -993,7 +1019,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_clientUpdateProhibited_removed() throws Exception {
     setEppInput("host_update_remove_client_update_prohibited.xml");
     persistResource(
@@ -1008,7 +1034,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .doesNotHaveStatusValue(StatusValue.CLIENT_UPDATE_PROHIBITED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_clientUpdateProhibited() throws Exception {
     createTld("tld");
     persistResource(
@@ -1022,7 +1048,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_serverUpdateProhibited() throws Exception {
     createTld("tld");
     persistResource(
@@ -1036,7 +1062,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertThat(thrown).hasMessageThat().contains("serverUpdateProhibited");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_pendingDelete() throws Exception {
     createTld("tld");
     persistResource(
@@ -1050,7 +1076,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertThat(thrown).hasMessageThat().contains("pendingDelete");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_statusValueNotClientSettable() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
@@ -1059,7 +1085,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserStatusValueNotClientSettable() throws Exception {
     setEppInput("host_update_prohibited_status.xml");
     createTld("tld");
@@ -1071,7 +1097,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_unauthorizedClient() {
     sessionMetadata.setClientId("NewRegistrar");
     persistActiveHost("ns1.example.tld");
@@ -1079,7 +1105,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserUnauthorizedClient() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     persistActiveHost(oldHostName());
@@ -1089,7 +1115,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         CommitMode.DRY_RUN, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_authorizedClientReadFromSuperordinate() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     createTld("tld");
@@ -1111,7 +1137,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_unauthorizedClientReadFromSuperordinate() {
     sessionMetadata.setClientId("NewRegistrar");
     createTld("tld");
@@ -1133,7 +1159,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_authorizedClientReadFromTransferredSuperordinate() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     createTld("tld");
@@ -1151,7 +1177,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_unauthorizedClientReadFromTransferredSuperordinate() {
     sessionMetadata.setClientId("TheRegistrar");
     createTld("tld");
@@ -1169,7 +1195,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_newSuperordinateOwnedByDifferentRegistrar() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
@@ -1179,7 +1205,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     persistResource(
         newDomainBase("example.tld")
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("NewRegistar")
+            .setPersistedCurrentSponsorClientId("NewRegistrar")
             .build());
     HostResource host =
         persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.foo"));
@@ -1189,7 +1215,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_newSuperordinateWasTransferredToDifferentRegistrar() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
@@ -1207,7 +1233,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_newSuperordinateWasTransferredToCorrectRegistrar() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
@@ -1246,17 +1272,17 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToBadCharacter() throws Exception {
     doFailingHostNameTest("foo bar", InvalidHostNameException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToNotPunyCoded() throws Exception {
     doFailingHostNameTest("みんな", HostNameNotPunyCodedException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToTooLong() throws Exception {
     // Host names can be max 253 chars.
     String suffix = ".example.tld";
@@ -1264,38 +1290,38 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     doFailingHostNameTest(tooLong, HostNameTooLongException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToTooShallowPublicSuffix() throws Exception {
     doFailingHostNameTest("example.com", HostNameTooShallowException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToTooShallowCcTld() throws Exception {
     doFailingHostNameTest("foo.co.uk", HostNameTooShallowException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToBarePublicSuffix() throws Exception {
     doFailingHostNameTest("com", HostNameTooShallowException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToBareCcTld() throws Exception {
     doFailingHostNameTest("co.uk", HostNameTooShallowException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_renameToTooShallowNewTld() throws Exception {
     doFailingHostNameTest("example.lol", HostNameTooShallowException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_ccTldInBailiwick() throws Exception {
     createTld("co.uk");
     doFailingHostNameTest("foo.co.uk", HostNameTooShallowException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_metadata() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
@@ -1311,7 +1337,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasMetadataRequestedByRegistrar(false);
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     createTld("tld");
     persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.tld"));
