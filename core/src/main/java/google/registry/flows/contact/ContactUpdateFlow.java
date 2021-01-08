@@ -24,7 +24,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.contact.ContactFlowUtils.validateAsciiPostalInfo;
 import static google.registry.flows.contact.ContactFlowUtils.validateContactAgainstPolicy;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -151,7 +150,8 @@ public final class ContactUpdateFlow implements TransactionalFlow {
     }
     validateAsciiPostalInfo(newContact.getInternationalizedPostalInfo());
     validateContactAgainstPolicy(newContact);
-    ofy().save().<Object>entities(newContact, historyBuilder.build());
+    tm().insert(historyBuilder.build().toChildHistoryEntity());
+    tm().update(newContact);
     return responseBuilder.build();
   }
 

@@ -24,16 +24,18 @@ import google.registry.flows.EppException;
 import google.registry.flows.ResourceCheckFlowTestCase;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.contact.ContactResource;
-import org.junit.jupiter.api.Test;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 
 /** Unit tests for {@link ContactCheckFlow}. */
+@DualDatabaseTest
 class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, ContactResource> {
 
   ContactCheckFlowTest() {
     setEppInput("contact_check.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testNothingExists() throws Exception {
     // These ids come from the check xml.
     doCheckTest(
@@ -42,7 +44,7 @@ class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, C
         create(true, "8013sah", null));
   }
 
-  @Test
+  @TestOfyAndSql
   void testOneExists() throws Exception {
     persistActiveContact("sh8013");
     // These ids come from the check xml.
@@ -52,7 +54,7 @@ class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, C
         create(true, "8013sah", null));
   }
 
-  @Test
+  @TestOfyAndSql
   void testOneExistsButWasDeleted() throws Exception {
     persistDeletedContact("sh8013", clock.nowUtc().minusDays(1));
     // These ids come from the check xml.
@@ -62,27 +64,27 @@ class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, C
         create(true, "8013sah", null));
   }
 
-  @Test
+  @TestOfyAndSql
   void testXmlMatches() throws Exception {
     persistActiveContact("sah8013");
     runFlowAssertResponse(loadFile("contact_check_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test50IdsAllowed() throws Exception {
     // Make sure we don't have a regression that reduces the number of allowed checks.
     setEppInput("contact_check_50.xml");
     runFlow();
   }
 
-  @Test
+  @TestOfyAndSql
   void testTooManyIds() {
     setEppInput("contact_check_51.xml");
     EppException thrown = assertThrows(TooManyResourceChecksException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-check");
