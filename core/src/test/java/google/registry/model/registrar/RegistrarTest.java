@@ -190,18 +190,18 @@ class RegistrarTest extends EntityTestCase {
     fakeClock.advanceOneMilli();
     registrar = registrar.asBuilder().setClientCertificate(SAMPLE_CERT, fakeClock.nowUtc()).build();
     assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.nowUtc());
-    assertThat(registrar.getClientCertificate()).isEqualTo(SAMPLE_CERT);
-    assertThat(registrar.getClientCertificateHash()).isEqualTo(SAMPLE_CERT_HASH);
+    assertThat(registrar.getClientCertificate()).hasValue(SAMPLE_CERT);
+    assertThat(registrar.getClientCertificateHash()).hasValue(SAMPLE_CERT_HASH);
   }
 
   @TestOfyAndSql
   void testDeleteCertificateHash_alsoDeletesHash() {
-    assertThat(registrar.getClientCertificateHash()).isNotNull();
+    assertThat(registrar.getClientCertificateHash()).isPresent();
     fakeClock.advanceOneMilli();
     registrar = registrar.asBuilder().setClientCertificate(null, fakeClock.nowUtc()).build();
     assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.nowUtc());
-    assertThat(registrar.getClientCertificate()).isNull();
-    assertThat(registrar.getClientCertificateHash()).isNull();
+    assertThat(registrar.getClientCertificate()).isEmpty();
+    assertThat(registrar.getClientCertificateHash()).isEmpty();
   }
 
   @TestOfyAndSql
@@ -213,21 +213,21 @@ class RegistrarTest extends EntityTestCase {
             .setFailoverClientCertificate(SAMPLE_CERT2, fakeClock.nowUtc())
             .build();
     assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.nowUtc());
-    assertThat(registrar.getFailoverClientCertificate()).isEqualTo(SAMPLE_CERT2);
-    assertThat(registrar.getFailoverClientCertificateHash()).isEqualTo(SAMPLE_CERT2_HASH);
+    assertThat(registrar.getFailoverClientCertificate()).hasValue(SAMPLE_CERT2);
+    assertThat(registrar.getFailoverClientCertificateHash()).hasValue(SAMPLE_CERT2_HASH);
   }
 
   @TestOfyAndSql
   void testDeleteFailoverCertificateHash_alsoDeletesHash() {
     registrar =
         registrar.asBuilder().setFailoverClientCertificate(SAMPLE_CERT, fakeClock.nowUtc()).build();
-    assertThat(registrar.getFailoverClientCertificateHash()).isNotNull();
+    assertThat(registrar.getFailoverClientCertificateHash()).isPresent();
     fakeClock.advanceOneMilli();
     registrar =
         registrar.asBuilder().setFailoverClientCertificate(null, fakeClock.nowUtc()).build();
     assertThat(registrar.getLastCertificateUpdateTime()).isEqualTo(fakeClock.nowUtc());
-    assertThat(registrar.getFailoverClientCertificate()).isNull();
-    assertThat(registrar.getFailoverClientCertificateHash()).isNull();
+    assertThat(registrar.getFailoverClientCertificate()).isEmpty();
+    assertThat(registrar.getFailoverClientCertificateHash()).isEmpty();
   }
 
   @TestOfyAndSql

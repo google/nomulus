@@ -95,7 +95,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     assertThat(registrar.getState()).isEqualTo(Registrar.State.ACTIVE);
     assertThat(registrar.getAllowedTlds()).isEmpty();
     assertThat(registrar.getIpAddressAllowList()).isEmpty();
-    assertThat(registrar.getClientCertificateHash()).isNull();
+    assertThat(registrar.getClientCertificateHash()).isEmpty();
     assertThat(registrar.getPhonePasscode()).isEqualTo("01234");
     assertThat(registrar.getCreationTime()).isIn(Range.closed(before, after));
     assertThat(registrar.getLastUpdateTime()).isEqualTo(registrar.getCreationTime());
@@ -383,7 +383,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
 
     Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
     assertThat(registrar).isPresent();
-    assertThat(registrar.get().getClientCertificateHash()).isEqualTo(SAMPLE_CERT3_HASH);
+    assertThat(registrar.get().getClientCertificateHash()).hasValue(SAMPLE_CERT3_HASH);
   }
 
   @Test
@@ -467,10 +467,10 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     Optional<Registrar> registrarOptional = Registrar.loadByClientId("clientz");
     assertThat(registrarOptional).isPresent();
     Registrar registrar = registrarOptional.get();
-    assertThat(registrar.getClientCertificate()).isNull();
-    assertThat(registrar.getClientCertificateHash()).isNull();
-    assertThat(registrar.getFailoverClientCertificate()).isEqualTo(SAMPLE_CERT3);
-    assertThat(registrar.getFailoverClientCertificateHash()).isEqualTo(SAMPLE_CERT3_HASH);
+    assertThat(registrar.getClientCertificate()).isEmpty();
+    assertThat(registrar.getClientCertificateHash()).isEmpty();
+    assertThat(registrar.getFailoverClientCertificate()).hasValue(SAMPLE_CERT3);
+    assertThat(registrar.getFailoverClientCertificateHash()).hasValue(SAMPLE_CERT3_HASH);
   }
 
   @Test

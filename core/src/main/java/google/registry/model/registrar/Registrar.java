@@ -537,20 +537,24 @@ public class Registrar extends ImmutableObject
     return LIVE_STATES.contains(state) && PUBLICLY_VISIBLE_TYPES.contains(type);
   }
 
-  public String getClientCertificate() {
-    return clientCertificate;
+  /** Returns the client certificate string if it has been set, or empty otherwise. */
+  public Optional<String> getClientCertificate() {
+    return Optional.ofNullable(clientCertificate);
   }
 
-  public String getClientCertificateHash() {
-    return clientCertificateHash;
+  /** Returns the client certificate hash if it has been set, or empty otherwise. */
+  public Optional<String> getClientCertificateHash() {
+    return Optional.ofNullable(clientCertificateHash);
   }
 
-  public String getFailoverClientCertificate() {
-    return failoverClientCertificate;
+  /** Returns the failover client certificate string if it has been set, or empty otherwise. */
+  public Optional<String> getFailoverClientCertificate() {
+    return Optional.ofNullable(failoverClientCertificate);
   }
 
-  public String getFailoverClientCertificateHash() {
-    return failoverClientCertificateHash;
+  /** Returns the failover client certificate hash if it has been set, or empty otherwise. */
+  public Optional<String> getFailoverClientCertificateHash() {
+    return Optional.ofNullable(failoverClientCertificateHash);
   }
 
   public ImmutableList<CidrAddressBlock> getIpAddressAllowList() {

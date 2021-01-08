@@ -371,7 +371,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
     clock.setTo(DateTime.parse("2020-11-02T00:00:00Z"));
     doTestUpdate(
         Role.OWNER,
-        Registrar::getClientCertificate,
+        r -> r.getClientCertificate().orElse(null),
         CertificateSamples.SAMPLE_CERT3,
         (builder, s) -> builder.setClientCertificate(s, clock.nowUtc()));
   }
@@ -431,7 +431,7 @@ class RegistrarSettingsActionTest extends RegistrarSettingsActionTestCase {
     clock.setTo(DateTime.parse("2020-11-02T00:00:00Z"));
     doTestUpdate(
         Role.OWNER,
-        Registrar::getFailoverClientCertificate,
+        r -> r.getFailoverClientCertificate().orElse(null),
         CertificateSamples.SAMPLE_CERT3,
         (builder, s) -> builder.setFailoverClientCertificate(s, clock.nowUtc()));
   }

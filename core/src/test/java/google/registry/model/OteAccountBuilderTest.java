@@ -163,9 +163,9 @@ public final class OteAccountBuilderTest {
         .buildAndPersist();
 
     assertThat(Registrar.loadByClientId("myclientid-3").get().getClientCertificateHash())
-        .isEqualTo(SAMPLE_CERT_HASH);
+        .hasValue(SAMPLE_CERT_HASH);
     assertThat(Registrar.loadByClientId("myclientid-3").get().getClientCertificate())
-        .isEqualTo(SAMPLE_CERT);
+        .hasValue(SAMPLE_CERT);
   }
 
   @Test

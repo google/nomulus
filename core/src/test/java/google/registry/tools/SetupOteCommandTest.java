@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registrar.Registrar.State.ACTIVE;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
@@ -105,7 +106,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     assertThat(registrar.getState()).isEqualTo(ACTIVE);
     assertThat(registrar.verifyPassword(password)).isTrue();
     assertThat(registrar.getIpAddressAllowList()).isEqualTo(ipAllowList);
-    assertThat(registrar.getClientCertificateHash()).isEqualTo(SAMPLE_CERT_HASH);
+    assertThat(registrar.getClientCertificateHash()).hasValue(SAMPLE_CERT_HASH);
   }
 
   private void verifyRegistrarContactCreation(String registrarName, String email) {

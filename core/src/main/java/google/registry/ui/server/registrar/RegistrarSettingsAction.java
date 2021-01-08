@@ -334,8 +334,9 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
    * Returns true if the registrar should accept the new certificate. Returns false if the
    * certificate is already the one stored for the registrar.
    */
-  private boolean validateCertificate(String existingCertificate, String certificateString) {
-    if ((existingCertificate == null) || !existingCertificate.equals(certificateString)) {
+  private boolean validateCertificate(
+      Optional<String> existingCertificate, String certificateString) {
+    if (!existingCertificate.isPresent() || !existingCertificate.get().equals(certificateString)) {
         certificateChecker.validateCertificate(certificateString);
       return true;
     }

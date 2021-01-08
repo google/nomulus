@@ -61,6 +61,7 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
       description = "Hash of the client certificate.")
   private String clientCertificateHash;
 
+  @Nullable
   @Parameter(
       names = {"-i", "--ip_address"},
       description = "Client ip address to pretend to use")
@@ -78,7 +79,8 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
     Registrar registrar =
         checkArgumentPresent(
             Registrar.loadByClientId(clientId), "Registrar %s not found", clientId);
-    new TlsCredentials(true, clientCertificateHash, Optional.of(clientIpAddress))
+    new TlsCredentials(
+            true, Optional.ofNullable(clientCertificateHash), Optional.ofNullable(clientIpAddress))
         .validate(registrar, password);
     checkState(
         registrar.isLive(), "Registrar %s has non-live state: %s", clientId, registrar.getState());
