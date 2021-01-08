@@ -21,7 +21,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -101,7 +100,8 @@ public final class ContactDeleteFlow implements TransactionalFlow {
         .setType(HistoryEntry.Type.CONTACT_PENDING_DELETE)
         .setModificationTime(now)
         .setParent(Key.create(existingContact));
-    ofy().save().<Object>entities(newContact, historyBuilder.build());
+    tm().insert(historyBuilder.build().toChildHistoryEntity());
+    tm().update(newContact);
     return responseBuilder.setResultFromCode(SUCCESS_WITH_ACTION_PENDING).build();
   }
 }

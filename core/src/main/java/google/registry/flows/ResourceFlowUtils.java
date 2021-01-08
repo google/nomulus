@@ -14,14 +14,11 @@
 
 package google.registry.flows;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.intersection;
+import static google.registry.model.EppResourceUtils.getLinkedDomainKeys;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.EppResourceUtils.queryForLinkedDomains;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -50,7 +47,6 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
@@ -60,7 +56,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import javax.persistence.Query;
 import org.joda.time.DateTime;
 
 /** Static utility functions for resource flows. */
@@ -70,14 +65,6 @@ public final class ResourceFlowUtils {
 
   /** In {@link #failfastForAsyncDelete}, check this (arbitrary) number of query results. */
   private static final int FAILFAST_CHECK_COUNT = 5;
-
-  // We have to use the native SQL query here because DomainHost table doesn't have its entity
-  // class so we cannot reference its property like domainHost.hostRepoId in a JPQL query.
-  private static final String HOST_LINKED_DOMAIN_QUERY =
-      "SELECT d.repo_id FROM \"Domain\" d "
-          + "JOIN \"DomainHost\" dh ON dh.domain_repo_id = d.repo_id "
-          + "WHERE d.deletion_time > :now "
-          + "AND dh.host_repo_id = :fkRepoId";
 
   /** Check that the given clientId corresponds to the owner of given resource. */
   public static void verifyResourceOwnership(String myClientId, EppResource resource)
@@ -93,10 +80,6 @@ public final class ResourceFlowUtils {
       final DateTime now,
       final Class<R> resourceClass,
       final Function<DomainBase, ImmutableSet<?>> getPotentialReferences) throws EppException {
-    checkArgument(
-        resourceClass.equals(ContactResource.class) || resourceClass.equals(HostResource.class),
-        "resourceClass must be either ContactResource or HostResource, but it is %s",
-        resourceClass);
     // Enter a transactionless context briefly.
     EppException failfastException =
         tm().doTransactionless(
@@ -111,44 +94,13 @@ public final class ResourceFlowUtils {
                    * actual reference then we can reliably fail. If we don't find any, we can't
                    * trust the query and need to do the full mapreduce.
                    */
-                  Iterable<VKey<DomainBase>> keys;
-                  if (tm().isOfy()) {
-                    keys =
-                        queryForLinkedDomains(fki.getResourceKey().getOfyKey(), now)
-                            .limit(FAILFAST_CHECK_COUNT)
-                            .keys()
-                            .list()
-                            .stream()
-                            .map(DomainBase::createVKey)
-                            .collect(toImmutableSet());
-                  } else {
-                    Query query;
-                    if (resourceClass.equals(ContactResource.class)) {
-                      // TODO(shicong): Add a query to get contact's linked domain.
-                      throw new UnsupportedOperationException(
-                          "Query contact's linked domain is not supported");
-                    } else {
-                      query =
-                          jpaTm().getEntityManager().createNativeQuery(HOST_LINKED_DOMAIN_QUERY);
-                    }
-                    keys =
-                        (Iterable<VKey<DomainBase>>)
-                            query
-                                .setParameter("now", now.toDate())
-                                .setParameter("fkRepoId", fki.getResourceKey().getSqlKey())
-                                .setMaxResults(FAILFAST_CHECK_COUNT)
-                                .getResultStream()
-                                .map(
-                                    repoId ->
-                                        DomainBase.createVKey(
-                                            Key.create(DomainBase.class, (String) repoId)))
-                                .collect(toImmutableSet());
-                  }
+                  Iterable<VKey<DomainBase>> keys =
+                      getLinkedDomainKeys(fki.getResourceKey(), now, FAILFAST_CHECK_COUNT);
 
                   VKey<R> resourceVKey = fki.getResourceKey();
                   Predicate<DomainBase> predicate =
                       domain -> getPotentialReferences.apply(domain).contains(resourceVKey);
-                  return tm().load(keys).values().stream().anyMatch(predicate)
+                  return tm().loadByKeys(keys).values().stream().anyMatch(predicate)
                       ? new ResourceToDeleteIsReferencedException()
                       : null;
                 });
