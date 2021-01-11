@@ -23,10 +23,12 @@ import com.google.common.truth.Correspondence.BinaryPredicate;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.SimpleSubjectBuilder;
 import com.google.common.truth.Subject;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 /** Truth subject for asserting things about ImmutableObjects that are not built in. */
@@ -49,6 +51,26 @@ public final class ImmutableObjectSubject extends Subject {
     if (actual != null) {
       Map<Field, Object> actualFields = filterFields(actual, ignoredFields);
       Map<Field, Object> expectedFields = filterFields(expected, ignoredFields);
+      assertThat(actualFields).containsExactlyEntriesIn(expectedFields);
+    }
+  }
+
+  /**
+   * Checks that {@code expected} has the same contents as {@code actual} except for fields that are
+   * marked with {@link ImmutableObject.DoNotCompare}.
+   *
+   * <p>This is used to verify that entities stored in both cloud SQL and Datastore are identical.
+   */
+  public void isEqualAcrossDatabases(@Nullable ImmutableObject expected) {
+    if (actual == null) {
+      assertThat(expected).isNull();
+    } else {
+      assertThat(expected).isNotNull();
+    }
+    if (actual != null) {
+      Map<Field, Object> actualFields = filterFields(actual, ImmutableObject.DoNotCompare.class);
+      Map<Field, Object> expectedFields =
+          filterFields(expected, ImmutableObject.DoNotCompare.class);
       assertThat(actualFields).containsExactlyEntriesIn(expectedFields);
     }
   }
@@ -95,6 +117,28 @@ public final class ImmutableObjectSubject extends Subject {
     for (Map.Entry<Field, Object> entry : originalFields.entrySet()) {
       if (!ignoredFieldSet.contains(entry.getKey().getName())) {
         result.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return result;
+  }
+
+  /** Filter out fields with the given annotation. */
+  public static Map<Field, Object> filterFields(
+      ImmutableObject original, Class<? extends Annotation> annotation) {
+    Map<Field, Object> originalFields = ModelUtils.getFieldValues(original);
+    // don't use ImmutableMap or a stream->collect model since we can have nulls
+    Map<Field, Object> result = new LinkedHashMap<>();
+    for (Map.Entry<Field, Object> entry : originalFields.entrySet()) {
+      if (!entry.getKey().isAnnotationPresent(annotation)) {
+
+        // Perform any necessary substitutions.
+        if (entry.getKey().isAnnotationPresent(ImmutableObject.EmptySetToNull.class)
+            && entry.getValue() != null
+            && ((Set<?>) entry.getValue()).isEmpty()) {
+          result.put(entry.getKey(), null);
+        } else {
+          result.put(entry.getKey(), entry.getValue());
+        }
       }
     }
     return result;

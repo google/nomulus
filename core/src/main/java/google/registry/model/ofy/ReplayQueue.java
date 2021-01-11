@@ -14,7 +14,18 @@
 
 package google.registry.model.ofy;
 
+import static google.registry.model.ofy.EntityWritePriorities.getEntityPriority;
+import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+
+import com.google.common.collect.ImmutableMap;
+import com.googlecode.objectify.Key;
 import google.registry.config.RegistryEnvironment;
+import google.registry.model.UpdateAutoTimestamp;
+import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreEntity;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -24,23 +35,79 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class ReplayQueue {
 
-  static ConcurrentLinkedQueue<TransactionInfo> queue =
-      new ConcurrentLinkedQueue<TransactionInfo>();
+  static ConcurrentLinkedQueue<ImmutableMap<Key<?>, Object>> queue =
+      new ConcurrentLinkedQueue<ImmutableMap<Key<?>, Object>>();
 
   static void addInTests(TransactionInfo info) {
     if (RegistryEnvironment.get() == RegistryEnvironment.UNITTEST) {
-      queue.add(info);
+      // Transform the entities to be persisted to the set of values as they were actually
+      // persisted.
+      ImmutableMap.Builder<Key<?>, Object> builder = new ImmutableMap.Builder<Key<?>, Object>();
+      for (ImmutableMap.Entry<Key<?>, Object> entry : info.getChanges().entrySet()) {
+        if (entry.getValue().equals(TransactionInfo.Delete.SENTINEL)) {
+          builder.put(entry.getKey(), entry.getValue());
+        } else {
+          // The value is an entity object that has not yet been persisted, and thus some of the
+          // special transformations that we do (notably the auto-timestamp transformations) have
+          // not been applied.  Converting the object to an entity and then back again performs
+          // those transformations so that we persist the same values to SQL that we have in
+          // Datastore.
+          builder.put(entry.getKey(), ofy().toPojo(ofy().toEntity(entry.getValue())));
+        }
+      }
+      queue.add(builder.build());
     }
   }
 
-  public static void replay() {
-    TransactionInfo info;
-    while ((info = queue.poll()) != null) {
-      info.saveToJpa();
+  /** Replay all transactions, return the set of keys that were replayed. */
+  public static ImmutableMap<Key<?>, Object> replay() {
+    // We can't use an ImmutableMap.Builder here, we need to be able to overwrite existing values
+    // and the builder doesn't support that.
+    Map<Key<?>, Object> result = new HashMap<Key<?>, Object>();
+    ImmutableMap<Key<?>, Object> changes;
+    while ((changes = queue.poll()) != null) {
+      saveToJpa(changes);
+      result.putAll(changes);
     }
+
+    return ImmutableMap.copyOf(result);
   }
 
   public static void clear() {
     queue.clear();
+  }
+
+  /** Returns the priority of the entity type in the map entry. */
+  private static int getPriority(ImmutableMap.Entry<Key<?>, Object> entry) {
+    return getEntityPriority(
+        entry.getKey().getKind(), entry.getValue().equals(TransactionInfo.Delete.SENTINEL));
+  }
+
+  private static int compareByPriority(
+      ImmutableMap.Entry<Key<?>, Object> a, ImmutableMap.Entry<Key<?>, Object> b) {
+    return getPriority(a) - getPriority(b);
+  }
+
+  private static void saveToJpa(ImmutableMap<Key<?>, Object> changes) {
+    try (UpdateAutoTimestamp.DisableAutoUpdateResource disabler =
+        UpdateAutoTimestamp.disableAutoUpdate()) {
+      // Sort the changes into an order that will work for insertion into the database.
+      jpaTm()
+          .transact(
+              () -> {
+                changes.entrySet().stream()
+                    .sorted(ReplayQueue::compareByPriority)
+                    .forEach(
+                        entry -> {
+                          if (entry.getValue().equals(TransactionInfo.Delete.SENTINEL)) {
+                            jpaTm().delete(VKey.from(entry.getKey()));
+                          } else {
+                            ((DatastoreEntity) entry.getValue())
+                                .toSqlEntity()
+                                .ifPresent(jpaTm()::put);
+                          }
+                        });
+              });
+    }
   }
 }

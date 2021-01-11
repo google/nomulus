@@ -112,7 +112,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = new ReplayExtension(clock);
+  final ReplayExtension replayExtension = new ReplayExtension(clock, false);
 
   private DomainBase domain;
   private HistoryEntry earlierHistoryEntry;

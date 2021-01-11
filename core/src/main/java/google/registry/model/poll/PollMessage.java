@@ -52,6 +52,7 @@ import google.registry.persistence.WithLongVKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
@@ -185,6 +186,7 @@ public abstract class PollMessage extends ImmutableObject
   @Override
   public abstract VKey<? extends PollMessage> createVKey();
 
+  /** Static VKey factory method for use by VKeyTranslatorFactory. */
   public static VKey<PollMessage> createVKey(Key<PollMessage> key) {
     return VKey.create(PollMessage.class, key.getId(), key);
   }
@@ -289,7 +291,7 @@ public abstract class PollMessage extends ImmutableObject
 
     @Transient List<ContactTransferResponse> contactTransferResponses;
 
-    @Transient
+    @Transient @ImmutableObject.DoNotCompare
     List<DomainPendingActionNotificationResponse> domainPendingActionNotificationResponses;
 
     @Transient List<DomainTransferResponse> domainTransferResponses;
@@ -353,6 +355,11 @@ public abstract class PollMessage extends ImmutableObject
     @Override
     public VKey<OneTime> createVKey() {
       return VKey.create(OneTime.class, getId(), Key.create(this));
+    }
+
+    /** Converts an unspecialized VKey&lt;PollMessage&gt; to a VKey of the derived class. */
+    public static @Nullable VKey<OneTime> convertVKey(@Nullable VKey<OneTime> key) {
+      return key == null ? null : VKey.create(OneTime.class, key.getSqlKey(), key.getOfyKey());
     }
 
     @Override
@@ -454,6 +461,11 @@ public abstract class PollMessage extends ImmutableObject
     @Override
     public VKey<Autorenew> createVKey() {
       return VKey.create(Autorenew.class, getId(), Key.create(this));
+    }
+
+    /** Converts an unspecialized VKey&lt;PollMessage&gt; to a VKey of the derived class. */
+    public static @Nullable VKey<Autorenew> convertVKey(VKey<Autorenew> key) {
+      return key == null ? null : VKey.create(Autorenew.class, key.getSqlKey(), key.getOfyKey());
     }
 
     @Override

@@ -104,6 +104,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
                 "domain_history_history_revision_id,domain_history_domain_repo_id,host_repo_id",
             unique = true),
       })
+  @ImmutableObject.EmptySetToNull
   @Column(name = "host_repo_id")
   Set<VKey<HostResource>> nsHosts;
 
@@ -180,7 +181,9 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
    * #getDomainTransactionRecords()}.
    */
   @Access(AccessType.PROPERTY)
-  @OneToMany(cascade = {CascadeType.ALL})
+  @OneToMany(
+      cascade = {CascadeType.ALL},
+      fetch = FetchType.EAGER)
   @JoinColumn(name = "historyRevisionId", referencedColumnName = "historyRevisionId")
   @JoinColumn(name = "domainRepoId", referencedColumnName = "domainRepoId")
   @SuppressWarnings("unused")

@@ -14,7 +14,19 @@
 
 package google.registry.testing;
 
+import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.googlecode.objectify.Key;
+import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.ReplayQueue;
+import google.registry.model.ofy.TransactionInfo;
+import google.registry.persistence.VKey;
+import java.util.Optional;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -26,13 +38,18 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * that extension are also replayed. If AppEngineExtension is not used,
  * JpaTransactionManagerExtension must be, and this extension should be ordered _after_
  * JpaTransactionManagerExtension so that writes to SQL work.
+ *
+ * <p>If the "compare" flag is set in the constructor, this will also compare all touched objects in
+ * both databases after performing the replay.
  */
 public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
   FakeClock clock;
+  boolean compare;
 
-  public ReplayExtension(FakeClock clock) {
+  public ReplayExtension(FakeClock clock, boolean compare) {
     this.clock = clock;
+    this.compare = compare;
   }
 
   @Override
@@ -51,8 +68,48 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     replayToSql();
   }
 
+  private static ImmutableSet<String> NON_REPLICATED_TYPES =
+      ImmutableSet.of(
+          "PremiumList",
+          "PremiumListRevision",
+          "PremiumListEntry",
+          "ReservedList",
+          "RdeRevision",
+          "KmsSecretRevision",
+          "ServerSecret",
+          "SignedMarkRevocationList",
+          "ClaimsListShard",
+          "TmchCrl",
+          "EppResourceIndex",
+          "ForeignKeyIndex",
+          "ForeignKeyHostIndex",
+          "ForeignKeyContactIndex",
+          "ForeignKeyDomainIndex");
+
   public void replayToSql() {
     DatabaseHelper.setAlwaysSaveWithBackup(false);
-    ReplayQueue.replay();
+    ImmutableMap<Key<?>, Object> changes = ReplayQueue.replay();
+
+    // Compare JPA to OFY, if requested.
+    if (compare) {
+      for (ImmutableMap.Entry<Key<?>, Object> entry : changes.entrySet()) {
+        // Don't verify non-replicated types.
+        if (NON_REPLICATED_TYPES.contains(entry.getKey().getKind())) {
+          continue;
+        }
+
+        VKey<?> vkey = VKey.from(entry.getKey());
+        Optional<?> ofyValue = ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(vkey));
+        Optional<?> jpaValue = jpaTm().transact(() -> jpaTm().loadByKeyIfPresent(vkey));
+        if (entry.getValue().equals(TransactionInfo.Delete.SENTINEL)) {
+          assertThat(jpaValue.isPresent()).isFalse();
+          assertThat(ofyValue.isPresent()).isFalse();
+        } else {
+          assertAboutImmutableObjects()
+              .that((ImmutableObject) jpaValue.get())
+              .isEqualAcrossDatabases((ImmutableObject) ofyValue.get());
+        }
+      }
+    }
   }
 }
