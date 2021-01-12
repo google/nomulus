@@ -828,9 +828,8 @@ task buildToolImage(dependsOn: nomulus, type: Exec) {
   commandLine 'docker', 'build', '-t', 'nomulus-tool', '.'
 }
 
-task generateInitSqlPipelineGraph(type: Test) {
-  include "**/InitSqlPipelineGraphTest.*"
-  testNameIncludePatterns = ["**createPipeline_compareGraph"]
+task generateInitSqlPipelineGraph(type: FilteringTest) {
+  tests = ['InitSqlPipelineGraphTest.createPipeline_compareGraph']
   ignoreFailures = true
 }
 

@@ -16,6 +16,7 @@ package google.registry.beam.initsql;
 
 import google.registry.beam.initsql.BeamJpaModule.JpaTransactionManagerComponent;
 import google.registry.beam.initsql.Transforms.SerializableSupplier;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import javax.annotation.Nullable;
 import org.apache.beam.sdk.transforms.SerializableFunction;
@@ -28,21 +29,32 @@ public class JpaSupplierFactory implements SerializableSupplier<JpaTransactionMa
   @Nullable private final String cloudKmsProjectId;
   private final SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager>
       jpaGetter;
+  @Nullable private final TransactionIsolationLevel isolationLevelOverride;
 
   public JpaSupplierFactory(
       String credentialFileUrl,
       @Nullable String cloudKmsProjectId,
       SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager> jpaGetter) {
+    this(credentialFileUrl, cloudKmsProjectId, jpaGetter, null);
+  }
+
+  public JpaSupplierFactory(
+      String credentialFileUrl,
+      @Nullable String cloudKmsProjectId,
+      SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager> jpaGetter,
+      @Nullable TransactionIsolationLevel isolationLevelOverride) {
     this.credentialFileUrl = credentialFileUrl;
     this.cloudKmsProjectId = cloudKmsProjectId;
     this.jpaGetter = jpaGetter;
+    this.isolationLevelOverride = isolationLevelOverride;
   }
 
   @Override
   public JpaTransactionManager get() {
     return jpaGetter.apply(
         DaggerBeamJpaModule_JpaTransactionManagerComponent.builder()
-            .beamJpaModule(new BeamJpaModule(credentialFileUrl, cloudKmsProjectId))
+            .beamJpaModule(
+                new BeamJpaModule(credentialFileUrl, cloudKmsProjectId, isolationLevelOverride))
             .build());
   }
 }

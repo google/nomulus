@@ -34,6 +34,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import java.io.Serializable;
 import java.util.Collection;
@@ -77,14 +78,22 @@ import org.joda.time.DateTime;
  *       HistoryEntry}.
  *   <li>{@link BillingEvent.OneTime}: references {@code Registrar}, {@code DomainBase}, {@code
  *       BillingEvent.Recurring}, {@code HistoryEntry} and {@code AllocationToken}.
- *   <li>{@link BillingEvent.Modification}: SQL model TBD. Will reference {@code Registrar}, {@code
- *       DomainBase} and {@code BillingEvent.OneTime}.
  *   <li>{@link BillingEvent.Cancellation}: references {@code Registrar}, {@code DomainBase}, {@code
  *       BillingEvent.Recurring}, {@code BillingEvent.OneTime}, and {@code HistoryEntry}.
  *   <li>{@link PollMessage}: references {@code Registrar}, {@code DomainBase}, {@code
  *       ContactResource}, {@code HostResource}, and {@code HistoryEntry}.
  *   <li>{@link DomainBase}, original copy from Datastore.
  * </ol>
+ *
+ * <p>This pipeline expects that the source Datastore has at least one entity in each of the types
+ * above. This assumption allows us to construct a simpler pipeline graph that can be visually
+ * examined, and is true in all intended use cases. However, tests must not violate this assumption
+ * when setting up data, otherwise they may run into foreign key constraint violations. The reason
+ * is that this pipeline uses the {@link Wait} transform to order the persistence by entity type.
+ * However, the wait is skipped if the target type has no data, resulting in subsequent entity types
+ * starting prematurely. E.g., if a Datastore has no {@code RegistrarContact} entities, the pipeline
+ * may start writing {@code DomainBase} entities before all {@code Registry}, {@code Registrar} and
+ * {@code ContactResource} entities have been persisted.
  */
 public class InitSqlPipeline implements Serializable {
 
@@ -93,24 +102,23 @@ public class InitSqlPipeline implements Serializable {
    * DomainBase}.
    */
   private static final ImmutableList<Class<?>> PHASE_ONE_ORDERED =
-      ImmutableList.of(Registry.class, Registrar.class, ContactResource.class);
+      ImmutableList.of(
+          Registry.class, Registrar.class, ContactResource.class, RegistrarContact.class);
 
   /**
    * Datastore kinds to be written to the SQL database after the cleansed version of {@link
    * DomainBase}.
-   *
-   * <p>The following entities are missing from the list:
-   *
-   * <ul>
-   *   <li>Those not modeled in JPA yet, e.g., {@code BillingEvent.Modification}.
-   *   <li>Those waiting for sanitation, e.g., {@code HistoryEntry}, which would have duplicate keys
-   *       after converting to SQL model.
-   *   <li>Those that have foreign key constraints on the above.
-   * </ul>
    */
-  // TODO(weiminyu): add more entities when available.
   private static final ImmutableList<Class<?>> PHASE_TWO_ORDERED =
-      ImmutableList.of(HostResource.class);
+      ImmutableList.of(
+          HostResource.class,
+          HistoryEntry.class,
+          AllocationToken.class,
+          BillingEvent.Recurring.class,
+          BillingEvent.OneTime.class,
+          BillingEvent.Cancellation.class,
+          PollMessage.class,
+          DomainBase.class);
 
   private final InitSqlPipelineOptions options;
 
@@ -226,7 +234,11 @@ public class InitSqlPipeline implements Serializable {
             transformId,
             options.getMaxConcurrentSqlWriters(),
             options.getSqlWriteBatchSize(),
-            new JpaSupplierFactory(credentialFileUrl, options.getCloudKmsProjectId(), jpaGetter)));
+            new JpaSupplierFactory(
+                credentialFileUrl,
+                options.getCloudKmsProjectId(),
+                jpaGetter,
+                TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED)));
   }
 
   private static ImmutableList<String> toKindStrings(Collection<Class<?>> entityClasses) {

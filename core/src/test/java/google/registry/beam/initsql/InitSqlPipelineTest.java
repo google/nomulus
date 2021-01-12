@@ -17,9 +17,12 @@ package google.registry.beam.initsql;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
+import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistSimpleResource;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
@@ -27,7 +30,10 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.backup.AppEngineEnvironment;
 import google.registry.beam.TestPipelineExtension;
+import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.billing.BillingEvent.Flag;
+import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainAuthInfo;
@@ -36,6 +42,7 @@ import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -43,6 +50,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
@@ -58,6 +66,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -69,14 +78,24 @@ import org.junit.jupiter.api.io.TempDir;
 class InitSqlPipelineTest {
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
+  /**
+   * All kinds of entities to be set up in the Datastore. Must contain all kinds known to {@link
+   * InitSqlPipeline}.
+   */
   private static final ImmutableList<Class<?>> ALL_KINDS =
       ImmutableList.of(
           Registry.class,
           Registrar.class,
           ContactResource.class,
-          HostResource.class,
+          RegistrarContact.class,
           DomainBase.class,
-          HistoryEntry.class);
+          HostResource.class,
+          HistoryEntry.class,
+          AllocationToken.class,
+          BillingEvent.Recurring.class,
+          BillingEvent.OneTime.class,
+          BillingEvent.Cancellation.class,
+          PollMessage.class);
 
   private transient FakeClock fakeClock = new FakeClock(START_TIME);
 
@@ -152,16 +171,75 @@ class InitSqlPipelineTest {
                   .setCreationClientId(registrar1.getClientId())
                   .setPersistedCurrentSponsorClientId(registrar1.getClientId())
                   .build());
-      historyEntry = persistResource(new HistoryEntry.Builder().setParent(domainKey).build());
+      persistSimpleResource(
+          new RegistrarContact.Builder()
+              .setParent(registrar1)
+              .setName("John Abused")
+              .setEmailAddress("johnabuse@example.com")
+              .setVisibleInWhoisAsAdmin(true)
+              .setVisibleInWhoisAsTech(false)
+              .setPhoneNumber("+1.2125551213")
+              .setFaxNumber("+1.2125551213")
+              .setTypes(ImmutableSet.of(RegistrarContact.Type.ABUSE, RegistrarContact.Type.ADMIN))
+              .build());
+      historyEntry =
+          persistResource(
+              new HistoryEntry.Builder()
+                  .setParent(domainKey)
+                  .setModificationTime(fakeClock.nowUtc())
+                  .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                  .build());
+      persistResource(
+          new AllocationToken.Builder().setToken("abc123").setTokenType(SINGLE_USE).build());
       Key<HistoryEntry> historyEntryKey = Key.create(historyEntry);
-      Key<BillingEvent.OneTime> oneTimeBillKey =
-          Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
-      VKey<BillingEvent.Recurring> recurringBillKey =
-          VKey.from(Key.create(historyEntryKey, BillingEvent.Recurring.class, 2));
-      VKey<PollMessage.Autorenew> autorenewPollKey =
-          VKey.from(Key.create(historyEntryKey, PollMessage.Autorenew.class, 3));
-      VKey<PollMessage.OneTime> onetimePollKey =
-          VKey.from(Key.create(historyEntryKey, PollMessage.OneTime.class, 1));
+      BillingEvent.OneTime onetimeBillEvent =
+          new BillingEvent.OneTime.Builder()
+              .setId(1)
+              .setReason(Reason.RENEW)
+              .setTargetId("example.com")
+              .setClientId("TheRegistrar")
+              .setCost(Money.parse("USD 44.00"))
+              .setPeriodYears(4)
+              .setEventTime(fakeClock.nowUtc())
+              .setBillingTime(fakeClock.nowUtc())
+              .setParent(historyEntryKey)
+              .build();
+      persistResource(onetimeBillEvent);
+      Key<BillingEvent.OneTime> oneTimeBillKey = Key.create(onetimeBillEvent);
+      BillingEvent.Recurring recurringBillEvent =
+          new BillingEvent.Recurring.Builder()
+              .setId(2)
+              .setReason(Reason.RENEW)
+              .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+              .setTargetId("example.com")
+              .setClientId("TheRegistrar")
+              .setEventTime(fakeClock.nowUtc())
+              .setRecurrenceEndTime(END_OF_TIME)
+              .setParent(historyEntryKey)
+              .build();
+      persistResource(recurringBillEvent);
+      VKey<BillingEvent.Recurring> recurringBillKey = recurringBillEvent.createVKey();
+      PollMessage.Autorenew autorenewPollMessage =
+          new PollMessage.Autorenew.Builder()
+              .setId(3L)
+              .setTargetId("example.com")
+              .setClientId("TheRegistrar")
+              .setEventTime(fakeClock.nowUtc())
+              .setMsg("Domain was auto-renewed.")
+              .setParent(historyEntry)
+              .build();
+      persistResource(autorenewPollMessage);
+      VKey<PollMessage.Autorenew> autorenewPollKey = autorenewPollMessage.createVKey();
+      PollMessage.OneTime oneTimePollMessage =
+          new PollMessage.OneTime.Builder()
+              .setId(1L)
+              .setParent(historyEntry)
+              .setEventTime(fakeClock.nowUtc())
+              .setClientId("TheRegistrar")
+              .setMsg(DomainFlowUtils.COLLISION_MESSAGE)
+              .build();
+      persistResource(oneTimePollMessage);
+      VKey<PollMessage.OneTime> onetimePollKey = oneTimePollMessage.createVKey();
       domain =
           persistResource(
               new DomainBase.Builder()
@@ -220,6 +298,16 @@ class InitSqlPipelineTest {
                           "TheRegistrar",
                           null))
                   .build());
+      persistResource(
+          new BillingEvent.Cancellation.Builder()
+              .setReason(Reason.RENEW)
+              .setTargetId(domain.getDomainName())
+              .setClientId(domain.getCurrentSponsorClientId())
+              .setEventTime(fakeClock.nowUtc())
+              .setBillingTime(fakeClock.nowUtc())
+              .setRecurringEventKey(recurringBillEvent.createVKey())
+              .setParent(historyEntryKey)
+              .build());
       exportDir = store.export(exportRootDir.getAbsolutePath(), ALL_KINDS, ImmutableSet.of());
       commitLogDir = Files.createDirectory(tmpDir.resolve("commits")).toFile();
     }
@@ -248,8 +336,7 @@ class InitSqlPipelineTest {
       assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class)))
           .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
           .containsExactly(contact1, contact2);
-      assertCleansedDomainEquals(
-          jpaTm().transact(() -> jpaTm().loadByKey(domain.createVKey())), domain);
+      assertDomainEquals(jpaTm().transact(() -> jpaTm().loadByKey(domain.createVKey())), domain);
     }
   }
 
@@ -261,29 +348,26 @@ class InitSqlPipelineTest {
         .isEqualTo(expected.getSuperordinateDomain().getSqlKey());
   }
 
-  private static void assertCleansedDomainEquals(DomainBase actual, DomainBase expected) {
+  private static void assertDomainEquals(DomainBase actual, DomainBase expected) {
     assertAboutImmutableObjects()
         .that(actual)
         .isEqualExceptFields(
             expected,
-            "adminContact",
-            "registrantContact",
-            "gracePeriods",
-            "dsData",
-            "allContacts",
             "revisions",
             "updateTimestamp",
-            "autorenewBillingEvent",
-            "autorenewBillingEventHistoryId",
             "autorenewPollMessage",
-            "autorenewPollMessageHistoryId",
             "deletePollMessage",
-            "deletePollMessageHistoryId",
             "nsHosts",
+            "gracePeriods",
             "transferData");
     assertThat(actual.getAdminContact().getSqlKey())
         .isEqualTo(expected.getAdminContact().getSqlKey());
     assertThat(actual.getRegistrant().getSqlKey()).isEqualTo(expected.getRegistrant().getSqlKey());
-    // TODO(weiminyu): compare gracePeriods, allContacts and dsData, when SQL model supports them.
+    assertThat(actual.getNsHosts()).isEqualTo(expected.getNsHosts());
+    assertThat(actual.getAutorenewPollMessage().getOfyKey())
+        .isEqualTo(expected.getAutorenewPollMessage().getOfyKey());
+    assertThat(actual.getDeletePollMessage().getOfyKey())
+        .isEqualTo(expected.getDeletePollMessage().getOfyKey());
+    // TODO(weiminyu): check gracePeriods and transferData when it is easier to do
   }
 }
