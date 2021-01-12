@@ -14,12 +14,17 @@
 
 package google.registry.model.contact;
 
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshalInput;
 import static google.registry.model.eppcommon.EppXmlTransformer.validateInput;
 import static google.registry.xml.ValidationMode.LENIENT;
 import static google.registry.xml.XmlTestUtils.assertXmlEquals;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.ImmutableList;
+import google.registry.model.contact.ContactCommand.Update;
+import google.registry.model.contact.ContactCommand.Update.Change;
+import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.EppLoader;
 import org.junit.jupiter.api.Test;
@@ -59,6 +64,28 @@ public class ContactCommandTest {
   @Test
   void testUpdate() throws Exception {
     doXmlRoundtripTest("contact_update.xml");
+  }
+
+  @Test
+  void testUpdate_individualStreetFieldsGetPopulatedCorrectly() throws Exception {
+    EppLoader eppLoader = new EppLoader(this, "contact_update.xml");
+    Update command =
+        (Update)
+            (((ResourceCommandWrapper) (eppLoader.getEpp().getCommandWrapper().getCommand()))
+                .getResourceCommand());
+    Change change = command.getInnerChange();
+    assertThat(change.getInternationalizedPostalInfo().getAddress())
+        .isEqualTo(
+            new ContactAddress.Builder()
+                .setCity("Dulles")
+                .setCountryCode("US")
+                .setState("VA")
+                .setZip("20166-6503")
+                .setStreet(
+                    ImmutableList.of(
+                        "124 Example Dr.",
+                        "Suite 200")) // streetLine1 and streetLine2 get set inside the builder
+                .build());
   }
 
   @Test
