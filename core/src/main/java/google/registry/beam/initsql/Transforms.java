@@ -353,7 +353,6 @@ public final class Transforms {
   }
 
   private static SqlEntity toSqlEntity(Object ofyEntity) {
-    // TODO(weiminyu): try HistoryEntry.toSqlEntities()
     if (ofyEntity instanceof HistoryEntry) {
       HistoryEntry ofyHistory = (HistoryEntry) ofyEntity;
       return (SqlEntity) ofyHistory.toChildHistoryEntity();
@@ -518,7 +517,7 @@ public final class Transforms {
         ImmutableList<Object> ofyEntities =
             Streams.stream(kv.getValue())
                 .map(this.jpaConverter::apply)
-                // TODO(weiminyu): post migration delete the line below.
+                // TODO(b/177340730): post migration delete the line below.
                 .filter(Objects::nonNull)
                 .collect(ImmutableList.toImmutableList());
         try {
@@ -534,7 +533,6 @@ public final class Transforms {
      * Writes entities in a failed batch one by one to identify the first bad entity and throws a
      * {@link RuntimeException} on it.
      */
-    // TODO(weiminyu): collect all bad entities and save them on the side.
     private void processSingly(ImmutableList<Object> ofyEntities) {
       for (Object ofyEntity : ofyEntities) {
         try {
