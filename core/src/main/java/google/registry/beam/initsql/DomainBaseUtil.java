@@ -26,17 +26,15 @@ final class DomainBaseUtil {
   private DomainBaseUtil() {}
 
   /**
-   * Removes {@link google.registry.model.billing.BillingEvent.Recurring}, {@link
-   * google.registry.model.poll.PollMessage PollMessages} and {@link
-   * google.registry.model.host.HostResource name servers} from a Datastore {@link Entity} that
-   * represents an Ofy {@link google.registry.model.domain.DomainBase}. This breaks the cycle of
-   * foreign key constraints between these entity kinds, allowing {@code DomainBases} to be inserted
-   * into the SQL database. See {@link InitSqlPipeline} for a use case, where the full {@code
-   * DomainBases} are written again during the last stage of the pipeline.
+   * Removes properties that contain foreign keys from a Datastore {@link Entity} that represents an
+   * Ofy {@link google.registry.model.domain.DomainBase}. This breaks the cycle of foreign key
+   * constraints between entity kinds, allowing {@code DomainBases} to be inserted into the SQL
+   * database. See {@link InitSqlPipeline} for a use case, where the full {@code DomainBases} are
+   * written again during the last stage of the pipeline.
    *
    * <p>The returned object may be in bad state. Specifically, {@link
    * google.registry.model.eppcommon.StatusValue#INACTIVE} is not added after name servers are
-   * removed. This only impacts tests.
+   * removed. This only impacts tests that manipulate Datastore entities directly.
    *
    * <p>This operation is performed on an Datastore {@link Entity} instead of Ofy Java object
    * because Objectify requires access to a Datastore service when converting an Ofy object to a
@@ -69,6 +67,9 @@ final class DomainBaseUtil {
     clone.removeProperty("nsHosts");
     domainBase.getProperties().keySet().stream()
         .filter(s -> s.startsWith("transferData."))
+        .forEach(s -> clone.removeProperty(s));
+    domainBase.getProperties().keySet().stream()
+        .filter(s -> s.startsWith("gracePeriods."))
         .forEach(s -> clone.removeProperty(s));
     return clone;
   }

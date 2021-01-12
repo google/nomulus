@@ -179,6 +179,7 @@ public class DomainBaseUtilTest {
             .setNameservers(ImmutableSet.of())
             .setDeletePollMessage(null)
             .setTransferData(null)
+            .setGracePeriods(ImmutableSet.of())
             .build();
     DomainBase domainTransformedByUtil =
         (DomainBase) ofy().toPojo(DomainBaseUtil.removeBillingAndPollAndHosts(domainEntity));
@@ -199,6 +200,7 @@ public class DomainBaseUtilTest {
             .setNameservers(ImmutableSet.of())
             .setDeletePollMessage(null)
             .setTransferData(null)
+            .setGracePeriods(ImmutableSet.of())
             .build();
     Entity entityWithoutFkeys = tm().transact(() -> ofy().toEntity(domainWithoutFKeys));
     DomainBase domainTransformedByUtil =

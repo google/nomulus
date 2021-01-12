@@ -17,11 +17,9 @@ package google.registry.beam.initsql;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Throwables.throwIfUnchecked;
 import static google.registry.beam.initsql.BackupPaths.getCommitLogTimestamp;
 import static google.registry.beam.initsql.BackupPaths.getExportFilePatterns;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.JpaRetries.isFailedTxnRetriable;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.setJpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -38,27 +36,34 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
+import com.googlecode.objectify.Key;
 import google.registry.backup.AppEngineEnvironment;
 import google.registry.backup.CommitLogImports;
 import google.registry.backup.VersionedEntity;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.ObjectifyService;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
+import google.registry.schema.replay.SqlEntity;
 import google.registry.tools.LevelDbLogReader;
-import google.registry.util.SystemSleeper;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.Compression;
 import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.FileIO.ReadableFile;
 import org.apache.beam.sdk.io.fs.EmptyMatchTreatment;
 import org.apache.beam.sdk.io.fs.MatchResult.Metadata;
+import org.apache.beam.sdk.metrics.Counter;
+import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.Flatten;
@@ -78,7 +83,6 @@ import org.apache.beam.sdk.values.TupleTag;
 import org.apache.beam.sdk.values.TupleTagList;
 import org.apache.beam.sdk.values.TypeDescriptor;
 import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
 /**
  * {@link PTransform Pipeline transforms} used in pipelines that load from both Datastore export
@@ -288,7 +292,7 @@ public final class Transforms {
         maxWriters,
         batchSize,
         jpaSupplier,
-        (e) -> ofy().toPojo(e.getEntity().get()),
+        Transforms::convertVersionedEntityToSqlEntity,
         TypeDescriptor.of(VersionedEntity.class));
   }
 
@@ -329,9 +333,48 @@ public final class Transforms {
             .apply("Batch output by shard " + transformId, GroupIntoBatches.ofSize(batchSize))
             .apply(
                 "Write in batch for " + transformId,
-                ParDo.of(new SqlBatchWriter<T>(jpaSupplier, jpaConverter)));
+                ParDo.of(new SqlBatchWriter<T>(transformId, jpaSupplier, jpaConverter)));
       }
     };
+  }
+
+  private static Key toOfyKey(Object ofyEntity) {
+    return Key.create(ofyEntity);
+  }
+
+  private static boolean isMigratable(Entity entity) {
+    if (entity.getKind().equals("HistoryEntry")) {
+      // DOMAIN_APPLICATION_CREATE is deprecated type and should not be migrated.
+      // The Enum name DOMAIN_APPLICATION_CREATE no longer exists in Java and cannot
+      // be deserialized.
+      return !Objects.equals(entity.getProperty("type"), "DOMAIN_APPLICATION_CREATE");
+    }
+    return true;
+  }
+
+  private static SqlEntity toSqlEntity(Object ofyEntity) {
+    if (ofyEntity instanceof HistoryEntry) {
+      HistoryEntry ofyHistory = (HistoryEntry) ofyEntity;
+      return (SqlEntity) ofyHistory.toChildHistoryEntity();
+    }
+    return ((DatastoreAndSqlEntity) ofyEntity).toSqlEntity().get();
+  }
+
+  /**
+   * Converts a {@link VersionedEntity} to an JPA entity for persistence.
+   *
+   * @return An object to be persisted to SQL, or null if the input is not to be migrated. (Not
+   *     using Optional in return because as a one-use method, we do not want to invest the effort
+   *     to make Optional work with BEAM)
+   */
+  @Nullable
+  private static Object convertVersionedEntityToSqlEntity(VersionedEntity dsEntity) {
+    return dsEntity
+        .getEntity()
+        .filter(Transforms::isMigratable)
+        .map(e -> ofy().toPojo(e))
+        .map(Transforms::toSqlEntity)
+        .orElse(null);
   }
 
   /** Interface for serializable {@link Supplier suppliers}. */
@@ -428,22 +471,22 @@ public final class Transforms {
     private static int instanceCount = 0;
     private static JpaTransactionManager originalJpa;
 
+    private Counter counter;
+
     private final SerializableSupplier<JpaTransactionManager> jpaSupplier;
     private final SerializableFunction<T, Object> jpaConverter;
 
-    private transient SystemSleeper sleeper;
-
     SqlBatchWriter(
+        String type,
         SerializableSupplier<JpaTransactionManager> jpaSupplier,
         SerializableFunction<T, Object> jpaConverter) {
+      counter = Metrics.counter("SQL_WRITE", type);
       this.jpaSupplier = jpaSupplier;
       this.jpaConverter = jpaConverter;
     }
 
     @Setup
     public void setup() {
-      sleeper = new SystemSleeper();
-
       try (AppEngineEnvironment env = new AppEngineEnvironment()) {
         ObjectifyService.initOfy();
       }
@@ -474,31 +517,29 @@ public final class Transforms {
         ImmutableList<Object> ofyEntities =
             Streams.stream(kv.getValue())
                 .map(this.jpaConverter::apply)
+                // TODO(b/177340730): post migration delete the line below.
+                .filter(Objects::nonNull)
                 .collect(ImmutableList.toImmutableList());
-        retry(() -> jpaTm().transact(() -> jpaTm().putAll(ofyEntities)));
+        try {
+          jpaTm().transact(() -> jpaTm().putAll(ofyEntities));
+          counter.inc(ofyEntities.size());
+        } catch (RuntimeException e) {
+          processSingly(ofyEntities);
+        }
       }
     }
 
-    // TODO(b/160632289): Enhance Retrier and use it here.
-    private void retry(Runnable runnable) {
-      int maxAttempts = 5;
-      int initialDelayMillis = 100;
-      double jitterRatio = 0.2;
-
-      for (int attempt = 0; attempt < maxAttempts; attempt++) {
+    /**
+     * Writes entities in a failed batch one by one to identify the first bad entity and throws a
+     * {@link RuntimeException} on it.
+     */
+    private void processSingly(ImmutableList<Object> ofyEntities) {
+      for (Object ofyEntity : ofyEntities) {
         try {
-          runnable.run();
-          return;
-        } catch (Throwable throwable) {
-          if (!isFailedTxnRetriable(throwable)) {
-            throwIfUnchecked(throwable);
-            throw new RuntimeException(throwable);
-          }
-          int sleepMillis = (1 << attempt) * initialDelayMillis;
-          int jitter =
-              ThreadLocalRandom.current().nextInt((int) (sleepMillis * jitterRatio))
-                  - (int) (sleepMillis * jitterRatio / 2);
-          sleeper.sleepUninterruptibly(Duration.millis(sleepMillis + jitter));
+          jpaTm().transact(() -> jpaTm().put(ofyEntity));
+          counter.inc();
+        } catch (RuntimeException e) {
+          throw new RuntimeException(toOfyKey(ofyEntity).toString(), e);
         }
       }
     }
