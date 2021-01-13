@@ -15,6 +15,7 @@
 package google.registry.flows.contact;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.newContactResource;
@@ -31,10 +32,12 @@ import google.registry.flows.contact.ContactFlowUtils.DeclineContactDisclosureFi
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.contact.ContactResource;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactCreateFlow}. */
+@DualDatabaseTest
 class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, ContactResource> {
 
   ContactCreateFlowTest() {
@@ -51,27 +54,29 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
         .hasOnlyOneHistoryEntryWhich()
         .hasNoXml();
     assertNoBillingEvents();
-    assertEppResourceIndexEntityFor(reloadResourceByForeignKey());
+    if (tm().isOfy()) {
+      assertEppResourceIndexEntityFor(reloadResourceByForeignKey());
+    }
   }
 
-  @Test
+  @TestOfyAndSql
   void testDryRun() throws Exception {
     dryRunFlowAssertResponse(loadFile("contact_create_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_neverExisted() throws Exception {
     doSuccessfulTest();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_existedButWasDeleted() throws Exception {
     persistDeletedContact(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
     clock.advanceOneMilli();
     doSuccessfulTest();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_alreadyExists() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     ResourceAlreadyExistsForThisClientException thrown =
@@ -83,7 +88,7 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_resourceContention() throws Exception {
     String targetId = getUniqueIdFromCommand();
     persistResource(
@@ -99,13 +104,13 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_nonAsciiInLocAddress() throws Exception {
     setEppInput("contact_create_hebrew_loc.xml");
     doSuccessfulTest();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonAsciiInIntAddress() {
     setEppInput("contact_create_hebrew_int.xml");
     EppException thrown =
@@ -113,7 +118,7 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_declineDisclosure() {
     setEppInput("contact_create_decline_disclosure.xml");
     EppException thrown =
@@ -121,7 +126,7 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-create");

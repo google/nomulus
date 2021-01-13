@@ -35,6 +35,7 @@ import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.PostLoad;
 import javax.persistence.Transient;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
@@ -177,12 +178,7 @@ public class Address extends ImmutableObject implements Jsonifiable {
    * persisted in the Datastore. TODO(shicong): Delete this method after database migration.
    */
   void onLoad(@AlsoLoad("street") List<String> street) {
-    if (street == null || street.size() == 0) {
-      return;
-    }
-    streetLine1 = street.get(0);
-    streetLine2 = street.size() >= 2 ? street.get(1) : null;
-    streetLine3 = street.size() >= 3 ? street.get(2) : null;
+    mapStreetListToIndividualFields(street);
   }
 
   /**
@@ -201,5 +197,24 @@ public class Address extends ImmutableObject implements Jsonifiable {
             : Stream.of(streetLine1, streetLine2, streetLine3)
                 .filter(Objects::nonNull)
                 .collect(toImmutableList());
+  }
+
+  /**
+   * Sets {@link #streetLine1}, {@link #streetLine2} and {@link #streetLine3} when the entity is
+   * reconstructed from XML message.
+   *
+   * <p>This is a callback function that JAXB invokes after unmarshalling the XML message.
+   */
+  void afterUnmarshal(Unmarshaller unmarshaller, Object parent) {
+    mapStreetListToIndividualFields(street);
+  }
+
+  private void mapStreetListToIndividualFields(List<String> street) {
+    if (street == null || street.size() == 0) {
+      return;
+    }
+    streetLine1 = street.get(0);
+    streetLine2 = street.size() >= 2 ? street.get(1) : null;
+    streetLine3 = street.size() >= 3 ? street.get(2) : null;
   }
 }

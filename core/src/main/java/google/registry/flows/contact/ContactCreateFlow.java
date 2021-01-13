@@ -19,9 +19,9 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist
 import static google.registry.flows.contact.ContactFlowUtils.validateAsciiPostalInfo;
 import static google.registry.flows.contact.ContactFlowUtils.validateContactAgainstPolicy;
 import static google.registry.model.EppResourceUtils.createRepoId;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
@@ -95,11 +95,12 @@ public final class ContactCreateFlow implements TransactionalFlow {
         .setModificationTime(now)
         .setXmlBytes(null)  // We don't want to store contact details in the history entry.
         .setParent(Key.create(newContact));
-    ofy().save().entities(
-        newContact,
-        historyBuilder.build(),
-        ForeignKeyIndex.create(newContact, newContact.getDeletionTime()),
-        EppResourceIndex.create(Key.create(newContact)));
+    tm().insertAll(
+            ImmutableSet.of(
+                newContact,
+                historyBuilder.build().toChildHistoryEntity(),
+                ForeignKeyIndex.create(newContact, newContact.getDeletionTime()),
+                EppResourceIndex.create(Key.create(newContact))));
     return responseBuilder
         .setResData(ContactCreateData.create(newContact.getContactId(), now))
         .build();
