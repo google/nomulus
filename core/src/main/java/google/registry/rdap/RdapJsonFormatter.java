@@ -425,7 +425,7 @@ public class RdapJsonFormatter {
     if (outputDataType == OutputDataType.FULL) {
       ImmutableSet.Builder<StatusValue> statuses = new ImmutableSet.Builder<>();
       statuses.addAll(hostResource.getStatusValues());
-      if (isLinked(Key.create(hostResource), getRequestTime())) {
+      if (isLinked(hostResource.createVKey(), getRequestTime())) {
         statuses.add(StatusValue.LINKED);
       }
       if (hostResource.isSubordinate()
@@ -562,7 +562,7 @@ public class RdapJsonFormatter {
           .statusBuilder()
           .addAll(
               makeStatusValueList(
-                  isLinked(Key.create(contactResource), getRequestTime())
+                  isLinked(contactResource.createVKey(), getRequestTime())
                       ? union(contactResource.getStatusValues(), StatusValue.LINKED)
                       : contactResource.getStatusValues(),
                   false,

@@ -17,6 +17,7 @@ package google.registry.model;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
@@ -28,7 +29,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Result;
-import com.googlecode.objectify.cmd.Query;
 import com.googlecode.objectify.util.ResultNow;
 import google.registry.config.RegistryConfig;
 import google.registry.model.EppResource.BuilderWithTransferData;
@@ -37,6 +37,7 @@ import google.registry.model.EppResource.ResourceWithTransferData;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
@@ -44,11 +45,13 @@ import google.registry.model.registry.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.persistence.VKey;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 import javax.annotation.Nullable;
+import javax.persistence.Query;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
 
@@ -56,6 +59,22 @@ import org.joda.time.Interval;
 public final class EppResourceUtils {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+  private static final String CONTACT_LINKED_DOMAIN_QUERY =
+      "SELECT repoId FROM Domain "
+          + "WHERE (adminContact = :fkRepoId "
+          + "OR billingContact = :fkRepoId "
+          + "OR techContact = :fkRepoId "
+          + "OR registrantContact = :fkRepoId) "
+          + "AND deletionTime > :now";
+
+  // We have to use the native SQL query here because DomainHost table doesn't have its entity
+  // class so we cannot reference its property like domainHost.hostRepoId in a JPQL query.
+  private static final String HOST_LINKED_DOMAIN_QUERY =
+      "SELECT d.repo_id FROM \"Domain\" d "
+          + "JOIN \"DomainHost\" dh ON dh.domain_repo_id = d.repo_id "
+          + "WHERE d.deletion_time > :now "
+          + "AND dh.host_repo_id = :fkRepoId";
 
   /** Returns the full domain repoId in the format HEX-TLD for the specified long id and tld. */
   public static String createDomainRepoId(long repoId, String tld) {
@@ -365,21 +384,63 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Returns a query for domains or applications that reference a specified contact or host.
+   * Returns a set of {@link VKey} for domains that reference a specified contact or host.
    *
-   * <p>This is an eventually consistent query.
+   * <p>This is an eventually consistent query if used for Datastore.
    *
    * @param key the referent key
    * @param now the logical time of the check
+   * @param limit the maximum number of returned keys
    */
-  public static Query<DomainBase> queryForLinkedDomains(
-      Key<? extends EppResource> key, DateTime now) {
-    boolean isContactKey = key.getKind().equals(Key.getKind(ContactResource.class));
-    return ofy()
-        .load()
-        .type(DomainBase.class)
-        .filter(isContactKey ? "allContacts.contact" : "nsHosts", key)
-        .filter("deletionTime >", now);
+  public static ImmutableSet<VKey<DomainBase>> getLinkedDomainKeys(
+      VKey<? extends EppResource> key, DateTime now, int limit) {
+    checkArgument(
+        key.getKind().equals(ContactResource.class) || key.getKind().equals(HostResource.class),
+        "key must be either VKey<ContactResource> or VKey<HostResource>, but it is %s",
+        key);
+    boolean isContactKey = key.getKind().equals(ContactResource.class);
+    if (tm().isOfy()) {
+      return ofy()
+          .load()
+          .type(DomainBase.class)
+          .filter(isContactKey ? "allContacts.contact" : "nsHosts", key.getOfyKey())
+          .filter("deletionTime >", now)
+          .limit(limit)
+          .keys()
+          .list()
+          .stream()
+          .map(DomainBase::createVKey)
+          .collect(toImmutableSet());
+    } else {
+      return tm().transact(
+              () -> {
+                Query query;
+                if (isContactKey) {
+                  query =
+                      jpaTm()
+                          .getEntityManager()
+                          .createQuery(CONTACT_LINKED_DOMAIN_QUERY, String.class)
+                          .setParameter("fkRepoId", key)
+                          .setParameter("now", now);
+                } else {
+                  query =
+                      jpaTm()
+                          .getEntityManager()
+                          .createNativeQuery(HOST_LINKED_DOMAIN_QUERY)
+                          .setParameter("fkRepoId", key.getSqlKey())
+                          .setParameter("now", now.toDate());
+                }
+                return (ImmutableSet<VKey<DomainBase>>)
+                    query
+                        .setMaxResults(limit)
+                        .getResultStream()
+                        .map(
+                            repoId ->
+                                DomainBase.createVKey(
+                                    Key.create(DomainBase.class, (String) repoId)))
+                        .collect(toImmutableSet());
+              });
+    }
   }
 
   /**
@@ -390,8 +451,8 @@ public final class EppResourceUtils {
    * @param key the referent key
    * @param now the logical time of the check
    */
-  public static boolean isLinked(Key<? extends EppResource> key, DateTime now) {
-    return queryForLinkedDomains(key, now).limit(1).count() > 0;
+  public static boolean isLinked(VKey<? extends EppResource> key, DateTime now) {
+    return getLinkedDomainKeys(key, now, 1).size() > 0;
   }
 
   private EppResourceUtils() {}

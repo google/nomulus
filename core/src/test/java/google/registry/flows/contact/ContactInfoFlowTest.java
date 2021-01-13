@@ -38,10 +38,12 @@ import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactInfoFlow}. */
+@DualDatabaseTest
 class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactResource> {
 
   ContactInfoFlowTest() {
@@ -94,7 +96,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     return contact;
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess() throws Exception {
     persistContactResource(true);
     // Check that the persisted contact info was returned.
@@ -107,7 +109,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertNoBillingEvents();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_linked() throws Exception {
     createTld("foobar");
     persistResource(newDomainBase("example.foobar", persistContactResource(true)));
@@ -121,7 +123,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertNoBillingEvents();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_owningRegistrarWithoutAuthInfo_seesAuthInfo() throws Exception {
     setEppInput("contact_info_no_authinfo.xml");
     persistContactResource(true);
@@ -135,7 +137,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertNoBillingEvents();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_otherRegistrar_notAuthorized() throws Exception {
     setClientIdForFlow("NewRegistrar");
     persistContactResource(true);
@@ -145,7 +147,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_otherRegistrarWithoutAuthInfoAsSuperuser_doesNotSeeAuthInfo() throws Exception {
     setClientIdForFlow("NewRegistrar");
     setEppInput("contact_info_no_authinfo.xml");
@@ -162,7 +164,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertNoBillingEvents();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_otherRegistrarWithAuthInfoAsSuperuser_seesAuthInfo() throws Exception {
     setClientIdForFlow("NewRegistrar");
     persistContactResource(true);
@@ -178,7 +180,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertNoBillingEvents();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
@@ -186,7 +188,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_existedButWasDeleted() throws Exception {
     persistContactResource(false);
     ResourceDoesNotExistException thrown =
@@ -195,7 +197,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     persistContactResource(true);
     runFlow();

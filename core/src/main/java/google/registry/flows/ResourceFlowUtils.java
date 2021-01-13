@@ -15,8 +15,8 @@
 package google.registry.flows;
 
 import static com.google.common.collect.Sets.intersection;
+import static google.registry.model.EppResourceUtils.getLinkedDomainKeys;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.EppResourceUtils.queryForLinkedDomains;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -94,14 +94,13 @@ public final class ResourceFlowUtils {
                    * actual reference then we can reliably fail. If we don't find any, we can't
                    * trust the query and need to do the full mapreduce.
                    */
-                  Iterable<Key<DomainBase>> keys =
-                      queryForLinkedDomains(fki.getResourceKey().getOfyKey(), now)
-                          .limit(FAILFAST_CHECK_COUNT)
-                          .keys();
+                  Iterable<VKey<DomainBase>> keys =
+                      getLinkedDomainKeys(fki.getResourceKey(), now, FAILFAST_CHECK_COUNT);
+
                   VKey<R> resourceVKey = fki.getResourceKey();
                   Predicate<DomainBase> predicate =
                       domain -> getPotentialReferences.apply(domain).contains(resourceVKey);
-                  return ofy().load().keys(keys).values().stream().anyMatch(predicate)
+                  return tm().loadByKeys(keys).values().stream().anyMatch(predicate)
                       ? new ResourceToDeleteIsReferencedException()
                       : null;
                 });

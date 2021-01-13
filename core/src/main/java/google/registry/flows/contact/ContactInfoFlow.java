@@ -20,7 +20,6 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.model.EppResourceUtils.isLinked;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
@@ -77,7 +76,7 @@ public final class ContactInfoFlow implements Flow {
         clientId.equals(contact.getCurrentSponsorClientId()) || authInfo.isPresent();
     ImmutableSet.Builder<StatusValue> statusValues = new ImmutableSet.Builder<>();
     statusValues.addAll(contact.getStatusValues());
-    if (isLinked(Key.create(contact), now)) {
+    if (isLinked(contact.createVKey(), now)) {
       statusValues.add(StatusValue.LINKED);
     }
     return responseBuilder
