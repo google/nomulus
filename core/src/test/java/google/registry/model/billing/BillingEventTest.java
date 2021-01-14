@@ -318,13 +318,8 @@ public class BillingEventTest extends EntityTestCase {
             historyEntry2,
             "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
-    newCancellation = newCancellation.asBuilder().setId(cancellationOneTime.getId()).build();
-
-    // TODO(b/168537779): Remove setRecurringEventKey after symmetric VKey can be reconstructed
-    // correctly.
-    assertThat(newCancellation)
-        .isEqualTo(
-            cancellationOneTime.asBuilder().setOneTimeEventKey(oneTime.createVKey()).build());
+    assertThat(newCancellation.asBuilder().setId(cancellationOneTime.getId()).build())
+        .isEqualTo(cancellationOneTime);
   }
 
   @TestOfyAndSql
@@ -340,13 +335,8 @@ public class BillingEventTest extends EntityTestCase {
             historyEntry2,
             "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
-    newCancellation = newCancellation.asBuilder().setId(cancellationRecurring.getId()).build();
-
-    // TODO(b/168537779): Remove setRecurringEventKey after symmetric VKey can be reconstructed
-    // correctly.
-    assertThat(newCancellation)
-        .isEqualTo(
-            cancellationRecurring.asBuilder().setRecurringEventKey(recurring.createVKey()).build());
+    assertThat(newCancellation.asBuilder().setId(cancellationRecurring.getId()).build())
+        .isEqualTo(cancellationRecurring);
   }
 
   @TestOfyAndSql

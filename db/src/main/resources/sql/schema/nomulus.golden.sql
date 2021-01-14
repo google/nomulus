@@ -70,7 +70,11 @@ CREATE TABLE public."BillingCancellation" (
     domain_name text NOT NULL,
     billing_time timestamp with time zone,
     billing_event_id bigint,
-    billing_recurrence_id bigint
+    billing_recurrence_id bigint,
+    billing_event_history_id bigint,
+    billing_event_domain_repo_id text,
+    billing_recurrence_history_id bigint,
+    billing_recurrence_domain_repo_id text
 );
 
 

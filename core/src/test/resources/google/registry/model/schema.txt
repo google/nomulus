@@ -8,8 +8,8 @@ class google.registry.model.billing.BillingEvent$Cancellation {
   @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> parent;
   google.registry.model.billing.BillingEvent$Reason reason;
-  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$OneTime> refOneTime;
-  google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> refRecurring;
+  google.registry.persistence.BillingVKey$BillingEventVKey refOneTime;
+  google.registry.persistence.BillingVKey$BillingRecurrenceVKey refRecurring;
   java.lang.String clientId;
   java.lang.String targetId;
   java.util.Set<google.registry.model.billing.BillingEvent$Flag> flags;
