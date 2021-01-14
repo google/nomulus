@@ -71,8 +71,8 @@ public class ContactCommandTest {
     EppLoader eppLoader = new EppLoader(this, "contact_update.xml");
     Update command =
         (Update)
-            (((ResourceCommandWrapper) (eppLoader.getEpp().getCommandWrapper().getCommand()))
-                .getResourceCommand());
+            ((ResourceCommandWrapper) (eppLoader.getEpp().getCommandWrapper().getCommand()))
+                .getResourceCommand();
     Change change = command.getInnerChange();
     assertThat(change.getInternationalizedPostalInfo().getAddress())
         .isEqualTo(
