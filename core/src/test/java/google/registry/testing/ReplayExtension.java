@@ -47,9 +47,17 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   FakeClock clock;
   boolean compare;
 
-  public ReplayExtension(FakeClock clock, boolean compare) {
+  private ReplayExtension(FakeClock clock, boolean compare) {
     this.clock = clock;
     this.compare = compare;
+  }
+
+  public static ReplayExtension createWithCompare(FakeClock clock) {
+    return new ReplayExtension(clock, true);
+  }
+
+  public static ReplayExtension createWithoutCompare(FakeClock clock) {
+    return new ReplayExtension(clock, false);
   }
 
   @Override
