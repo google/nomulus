@@ -40,7 +40,11 @@
         domain_name text not null,
         billing_time timestamptz,
         billing_event_id int8,
+        billing_event_history_id int8,
+        billing_event_domain_repo_id text,
         billing_recurrence_id int8,
+        billing_recurrence_history_id int8,
+        billing_recurrence_domain_repo_id text,
         primary key (billing_cancellation_id)
     );
 

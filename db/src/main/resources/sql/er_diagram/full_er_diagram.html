@@ -261,11 +261,11 @@ td.section {
     </tr> 
     <tr> 
      <td class="property_name">generated on</td> 
-     <td class="property_value">2020-12-21 17:41:57.553769</td> 
+     <td class="property_value">2021-01-14 16:15:20.755734</td> 
     </tr> 
     <tr>
      <td class="property_name">last flyway file</td>
-     <td id="lastFlywayFile" class="property_value">V83__add_indexes_on_domainhost.sql</td>
+     <td id="lastFlywayFile" class="property_value">V84__add_vkey_columns_in_billing_cancellation.sql</td>
     </tr>
    </tbody>
   </table> 
@@ -284,7 +284,7 @@ td.section {
      generated on
     </text> 
     <text text-anchor="start" x="4631.68" y="-10.8" font-family="Helvetica,sans-Serif" font-size="14.00">
-     2020-12-21 17:41:57.553769
+     2021-01-14 16:15:20.755734
     </text> 
     <polygon fill="none" stroke="#888888" points="4544.18,-4 4544.18,-44 4809.18,-44 4809.18,-4 4544.18,-4" /> <!-- allocationtoken_a08ccbef --> 
     <g id="node1" class="node"> 
@@ -1585,122 +1585,154 @@ td.section {
     </g> <!-- billingevent_a57d1815&#45;&gt;registrar_6e1503e3 --> 
     <g id="edge49" class="edge"> 
      <title>billingevent_a57d1815:w-&gt;registrar_6e1503e3:e</title> 
-     <path fill="none" stroke="black" d="M3729.91,-2819.46C3495.02,-2860.9 3500.01,-3711.62 3311,-3870.89 2833.78,-4273.03 2543.56,-4058.89 1919.5,-4058.89 1919.5,-4058.89 1919.5,-4058.89 793.5,-4058.89 461.51,-4058.89 436.41,-3790.28 324,-3477.89 313.46,-3448.59 329.1,-1318.84 301.49,-1156.65" /> 
+     <path fill="none" stroke="black" d="M3729.91,-2819.46C3495.02,-2860.9 3500.01,-3711.62 3311,-3870.89 2833.78,-4273.03 2543.56,-4058.89 1919.5,-4058.89 1919.5,-4058.89 1919.5,-4058.89 793.5,-4058.89 484.43,-4058.89 437.49,-3833.37 324,-3545.89 312.22,-3516.05 329.91,-1319.42 301.5,-1156.44" /> 
      <polygon fill="black" stroke="black" points="3738.04,-2818.76 3748.39,-2822.38 3743.02,-2818.32 3748,-2817.89 3748,-2817.89 3748,-2817.89 3743.02,-2818.32 3747.61,-2813.41 3738.04,-2818.76 3738.04,-2818.76" /> 
      <ellipse fill="none" stroke="black" cx="3734.05" cy="-2819.1" rx="4" ry="4" /> 
-     <polygon fill="black" stroke="black" points="293.63,-1149.52 303.04,-1146.15 303.72,-1148.03 294.3,-1151.4 293.63,-1149.52" /> 
-     <polyline fill="none" stroke="black" points="298,-1146.89 299.68,-1151.6 " /> 
-     <polygon fill="black" stroke="black" points="295.31,-1154.23 304.73,-1150.86 305.4,-1152.74 295.98,-1156.11 295.31,-1154.23" /> 
-     <polyline fill="none" stroke="black" points="299.68,-1151.6 301.37,-1156.31 " /> 
+     <polygon fill="black" stroke="black" points="293.65,-1149.55 303.04,-1146.11 303.73,-1147.99 294.34,-1151.43 293.65,-1149.55" /> 
+     <polyline fill="none" stroke="black" points="298,-1146.89 299.72,-1151.59 " /> 
+     <polygon fill="black" stroke="black" points="295.37,-1154.25 304.76,-1150.81 305.45,-1152.68 296.06,-1156.12 295.37,-1154.25" /> 
+     <polyline fill="none" stroke="black" points="299.72,-1151.59 301.44,-1156.28 " /> 
      <text text-anchor="start" x="1834" y="-4067.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       fk_billing_event_registrar_id
      </text> 
     </g> <!-- billingcancellation_6eedf614 --> 
     <g id="node3" class="node"> 
      <title>billingcancellation_6eedf614</title> 
-     <polygon fill="#ebcef2" stroke="transparent" points="643.5,-3434.89 643.5,-3453.89 820.5,-3453.89 820.5,-3434.89 643.5,-3434.89" /> 
-     <text text-anchor="start" x="645.5" y="-3441.69" font-family="Helvetica,sans-Serif" font-weight="bold" font-style="italic" font-size="14.00">
+     <polygon fill="#ebcef2" stroke="transparent" points="619.5,-3510.89 619.5,-3529.89 843.5,-3529.89 843.5,-3510.89 619.5,-3510.89" /> 
+     <text text-anchor="start" x="621.5" y="-3517.69" font-family="Helvetica,sans-Serif" font-weight="bold" font-style="italic" font-size="14.00">
       public.BillingCancellation
      </text> 
-     <polygon fill="#ebcef2" stroke="transparent" points="820.5,-3434.89 820.5,-3453.89 946.5,-3453.89 946.5,-3434.89 820.5,-3434.89" /> 
-     <text text-anchor="start" x="907.5" y="-3440.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <polygon fill="#ebcef2" stroke="transparent" points="843.5,-3510.89 843.5,-3529.89 969.5,-3529.89 969.5,-3510.89 843.5,-3510.89" /> 
+     <text text-anchor="start" x="930.5" y="-3516.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       [table]
      </text> 
-     <text text-anchor="start" x="645.5" y="-3422.69" font-family="Helvetica,sans-Serif" font-weight="bold" font-style="italic" font-size="14.00">
+     <text text-anchor="start" x="621.5" y="-3498.69" font-family="Helvetica,sans-Serif" font-weight="bold" font-style="italic" font-size="14.00">
       billing_cancellation_id
      </text> 
-     <text text-anchor="start" x="814.5" y="-3421.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="837.5" y="-3497.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
-     <text text-anchor="start" x="822.5" y="-3421.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="845.5" y="-3497.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       int8 not null
      </text> 
-     <text text-anchor="start" x="645.5" y="-3402.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="621.5" y="-3478.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       registrar_id
      </text> 
-     <text text-anchor="start" x="814.5" y="-3402.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="837.5" y="-3478.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
-     <text text-anchor="start" x="822.5" y="-3402.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="845.5" y="-3478.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       text not null
      </text> 
-     <text text-anchor="start" x="645.5" y="-3383.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="621.5" y="-3459.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       domain_history_revision_id
      </text> 
-     <text text-anchor="start" x="814.5" y="-3383.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="837.5" y="-3459.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
-     <text text-anchor="start" x="822.5" y="-3383.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="845.5" y="-3459.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       int8 not null
      </text> 
-     <text text-anchor="start" x="645.5" y="-3364.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="621.5" y="-3440.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       domain_repo_id
      </text> 
-     <text text-anchor="start" x="814.5" y="-3364.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="837.5" y="-3440.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
-     <text text-anchor="start" x="822.5" y="-3364.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="845.5" y="-3440.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       text not null
      </text> 
-     <text text-anchor="start" x="645.5" y="-3345.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="621.5" y="-3421.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       event_time
      </text> 
-     <text text-anchor="start" x="814.5" y="-3345.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="837.5" y="-3421.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
-     <text text-anchor="start" x="822.5" y="-3345.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="845.5" y="-3421.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       timestamptz not null
      </text> 
-     <text text-anchor="start" x="645.5" y="-3326.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="621.5" y="-3402.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       flags
      </text> 
-     <text text-anchor="start" x="814.5" y="-3326.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="837.5" y="-3402.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
-     <text text-anchor="start" x="822.5" y="-3326.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="845.5" y="-3402.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       _text
      </text> 
-     <text text-anchor="start" x="645.5" y="-3307.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="621.5" y="-3383.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       reason
      </text> 
-     <text text-anchor="start" x="814.5" y="-3307.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="837.5" y="-3383.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
-     <text text-anchor="start" x="822.5" y="-3307.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="845.5" y="-3383.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       text not null
      </text> 
-     <text text-anchor="start" x="645.5" y="-3288.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="621.5" y="-3364.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       domain_name
      </text> 
-     <text text-anchor="start" x="814.5" y="-3288.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="837.5" y="-3364.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
-     <text text-anchor="start" x="822.5" y="-3288.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="845.5" y="-3364.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       text not null
      </text> 
-     <text text-anchor="start" x="645.5" y="-3269.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="621.5" y="-3345.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       billing_time
      </text> 
-     <text text-anchor="start" x="814.5" y="-3269.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="837.5" y="-3345.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
-     <text text-anchor="start" x="822.5" y="-3269.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="845.5" y="-3345.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       timestamptz
      </text> 
-     <text text-anchor="start" x="645.5" y="-3250.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="621.5" y="-3326.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       billing_event_id
      </text> 
-     <text text-anchor="start" x="814.5" y="-3250.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="837.5" y="-3326.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
-     <text text-anchor="start" x="822.5" y="-3250.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="845.5" y="-3326.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       int8
      </text> 
-     <text text-anchor="start" x="645.5" y="-3231.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="621.5" y="-3307.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       billing_recurrence_id
      </text> 
-     <text text-anchor="start" x="814.5" y="-3231.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     <text text-anchor="start" x="837.5" y="-3307.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
      </text> 
-     <text text-anchor="start" x="822.5" y="-3231.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="845.5" y="-3307.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       int8
      </text> 
-     <polygon fill="none" stroke="#888888" points="642,-3224.89 642,-3454.89 947,-3454.89 947,-3224.89 642,-3224.89" /> 
+     <text text-anchor="start" x="621.5" y="-3288.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+      billing_event_history_id
+     </text> 
+     <text text-anchor="start" x="837.5" y="-3288.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     </text> 
+     <text text-anchor="start" x="845.5" y="-3288.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+      int8
+     </text> 
+     <text text-anchor="start" x="621.5" y="-3269.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+      billing_event_domain_repo_id
+     </text> 
+     <text text-anchor="start" x="837.5" y="-3269.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     </text> 
+     <text text-anchor="start" x="845.5" y="-3269.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+      text
+     </text> 
+     <text text-anchor="start" x="621.5" y="-3250.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+      billing_recurrence_history_id
+     </text> 
+     <text text-anchor="start" x="837.5" y="-3250.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     </text> 
+     <text text-anchor="start" x="845.5" y="-3250.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+      int8
+     </text> 
+     <text text-anchor="start" x="621.5" y="-3231.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+      billing_recurrence_domain_repo_id
+     </text> 
+     <text text-anchor="start" x="837.5" y="-3231.69" font-family="Helvetica,sans-Serif" font-size="14.00"> 
+     </text> 
+     <text text-anchor="start" x="845.5" y="-3231.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+      text
+     </text> 
+     <polygon fill="none" stroke="#888888" points="618.5,-3224.89 618.5,-3530.89 970.5,-3530.89 970.5,-3224.89 618.5,-3224.89" /> 
     </g> <!-- billingcancellation_6eedf614&#45;&gt;billingevent_a57d1815 --> 
     <g id="edge3" class="edge"> 
      <title>billingcancellation_6eedf614:w-&gt;billingevent_a57d1815:e</title> 
-     <path fill="none" stroke="black" d="M634.18,-3237.93C635.63,-3231.81 639.1,-3225.25 643.5,-3220.89 657.8,-3206.71 986.58,-3218.26 1006,-3212.89 1370.72,-3112.09 1385.72,-2907.54 1746,-2791.89 1892.79,-2744.77 1946.98,-2810.88 2091,-2755.89 2100.22,-2752.37 2099.73,-2746.27 2109,-2742.89 2296.58,-2674.53 2357.48,-2717.23 2557,-2709.89 2637.61,-2706.93 2857.67,-2658.68 2920,-2709.89 2951.86,-2736.06 2907.3,-2773.38 2938,-2800.89 2971.28,-2830.72 3694.85,-2867.97 3739.5,-2869.89 3762.51,-2870.88 4137.47,-2885.93 4154,-2869.89 4161.24,-2862.87 4165.93,-2849.9 4163.39,-2842.49" /> 
-     <polygon fill="black" stroke="black" points="637.88,-3245.02 638.51,-3255.97 640.19,-3249.46 642.5,-3253.89 642.5,-3253.89 642.5,-3253.89 640.19,-3249.46 646.49,-3251.81 637.88,-3245.02 637.88,-3245.02" /> 
-     <ellipse fill="none" stroke="black" cx="636.03" cy="-3241.48" rx="4" ry="4" /> 
+     <path fill="none" stroke="black" d="M606.39,-3316.51C598.68,-3290.39 606.53,-3234.01 619.5,-3220.89 634.6,-3205.62 985.3,-3218.6 1006,-3212.89 1370.78,-3112.34 1385.72,-2907.54 1746,-2791.89 1892.79,-2744.77 1946.98,-2810.88 2091,-2755.89 2100.22,-2752.37 2099.73,-2746.27 2109,-2742.89 2296.58,-2674.53 2357.48,-2717.23 2557,-2709.89 2637.61,-2706.93 2857.67,-2658.68 2920,-2709.89 2951.86,-2736.06 2907.3,-2773.38 2938,-2800.89 2971.28,-2830.72 3694.85,-2867.97 3739.5,-2869.89 3762.51,-2870.88 4137.47,-2885.93 4154,-2869.89 4161.24,-2862.87 4165.93,-2849.9 4163.39,-2842.49" /> 
+     <polygon fill="black" stroke="black" points="611.79,-3322.48 615.16,-3332.91 615.14,-3326.19 618.5,-3329.89 618.5,-3329.89 618.5,-3329.89 615.14,-3326.19 621.84,-3326.87 611.79,-3322.48 611.79,-3322.48" /> 
+     <ellipse fill="none" stroke="black" cx="609.1" cy="-3319.51" rx="4" ry="4" /> 
      <polygon fill="black" stroke="black" points="4153.06,-2841.61 4158.61,-2833.29 4160.27,-2834.4 4154.72,-2842.72 4153.06,-2841.61" /> 
      <polyline fill="none" stroke="black" points="4155,-2836.89 4159.16,-2839.67 " /> 
      <polygon fill="black" stroke="black" points="4157.22,-2844.38 4162.77,-2836.06 4164.43,-2837.17 4158.88,-2845.49 4157.22,-2844.38" /> 
@@ -1711,9 +1743,9 @@ td.section {
     </g> <!-- billingcancellation_6eedf614&#45;&gt;billingrecurrence_5fa2cb01 --> 
     <g id="edge6" class="edge"> 
      <title>billingcancellation_6eedf614:w-&gt;billingrecurrence_5fa2cb01:e</title> 
-     <path fill="none" stroke="black" d="M659.11,-3227.14C729.56,-3211.1 993.25,-3225.41 1006,-3212.89 1041.16,-3178.38 990.5,-2806.01 1024,-2769.89 1131.1,-2654.41 1598,-2776.82 1728,-2687.89 1742.11,-2678.24 1731.42,-2662.82 1746,-2653.89 1857.25,-2585.75 2825.38,-2725.71 2920,-2635.89 2963.13,-2594.95 2894.83,-2409.79 2938,-2368.89 2951.65,-2355.96 3263.09,-2377.58 3276.5,-2364.39 3283.8,-2357.21 3288.58,-2344.07 3286.01,-2336.56" /> 
-     <polygon fill="black" stroke="black" points="651.56,-3230.66 640.6,-3230.81 647.03,-3232.78 642.5,-3234.89 642.5,-3234.89 642.5,-3234.89 647.03,-3232.78 644.4,-3238.97 651.56,-3230.66 651.56,-3230.66" /> 
-     <ellipse fill="none" stroke="black" cx="655.19" cy="-3228.97" rx="4" ry="4" /> 
+     <path fill="none" stroke="black" d="M607.65,-3296.33C602.89,-3273.59 609.33,-3231.16 619.5,-3220.89 634.61,-3205.63 990.66,-3227.93 1006,-3212.89 1041.18,-3178.41 990.5,-2806.01 1024,-2769.89 1131.1,-2654.41 1598,-2776.82 1728,-2687.89 1742.11,-2678.24 1731.42,-2662.82 1746,-2653.89 1857.25,-2585.75 2825.38,-2725.71 2920,-2635.89 2963.13,-2594.95 2894.83,-2409.79 2938,-2368.89 2951.65,-2355.96 3263.09,-2377.58 3276.5,-2364.39 3283.8,-2357.21 3288.58,-2344.07 3286.01,-2336.56" /> 
+     <polygon fill="black" stroke="black" points="612.52,-3302.87 614.89,-3313.58 615.51,-3306.88 618.5,-3310.89 618.5,-3310.89 618.5,-3310.89 615.51,-3306.88 622.11,-3308.2 612.52,-3302.87 612.52,-3302.87" /> 
+     <ellipse fill="none" stroke="black" cx="610.13" cy="-3299.67" rx="4" ry="4" /> 
      <polygon fill="black" stroke="black" points="3275.56,-2335.61 3281.1,-2327.29 3282.77,-2328.39 3277.23,-2336.72 3275.56,-2335.61" /> 
      <polyline fill="none" stroke="black" points="3277.5,-2330.89 3281.66,-2333.66 " /> 
      <polygon fill="black" stroke="black" points="3279.72,-2338.38 3285.27,-2330.06 3286.93,-2331.17 3281.39,-2339.49 3279.72,-2338.38" /> 
@@ -1724,40 +1756,40 @@ td.section {
     </g> <!-- billingcancellation_6eedf614&#45;&gt;domainhistory_a54cc226 --> 
     <g id="edge26" class="edge"> 
      <title>billingcancellation_6eedf614:w-&gt;domainhistory_a54cc226:e</title> 
-     <path fill="none" stroke="black" d="M631.63,-3383.48C626.83,-3406.25 633.22,-3448.73 643.5,-3458.89 741.94,-3556.24 821.4,-3495.21 955,-3458.89 1519.98,-3305.29 1658.18,-3186.18 2091,-2791.89 2101.12,-2782.67 2096.81,-2773.13 2109,-2766.89 2129.82,-2756.23 2513.42,-2750.39 2530,-2766.89 2544.12,-2780.94 2551.7,-2927.88 2537.94,-2963.26" /> 
-     <polygon fill="black" stroke="black" points="636.52,-3376.91 646.11,-3371.58 639.51,-3372.9 642.5,-3368.89 642.5,-3368.89 642.5,-3368.89 639.51,-3372.9 638.89,-3366.2 636.52,-3376.91 636.52,-3376.91" /> 
-     <ellipse fill="none" stroke="black" cx="634.13" cy="-3380.12" rx="4" ry="4" /> 
+     <path fill="none" stroke="black" d="M607.63,-3459.48C602.83,-3482.25 609.22,-3524.73 619.5,-3534.89 732.95,-3647.09 825.81,-3581.19 978.5,-3534.89 1547.49,-3362.36 1663.24,-3204.86 2091,-2791.89 2100.85,-2782.38 2096.81,-2773.13 2109,-2766.89 2129.82,-2756.23 2513.42,-2750.39 2530,-2766.89 2544.12,-2780.94 2551.7,-2927.88 2537.94,-2963.26" /> 
+     <polygon fill="black" stroke="black" points="612.52,-3452.91 622.11,-3447.58 615.51,-3448.9 618.5,-3444.89 618.5,-3444.89 618.5,-3444.89 615.51,-3448.9 614.89,-3442.2 612.52,-3452.91 612.52,-3452.91" /> 
+     <ellipse fill="none" stroke="black" cx="610.13" cy="-3456.12" rx="4" ry="4" /> 
      <polygon fill="black" stroke="black" points="2535.37,-2973.52 2527.97,-2966.79 2529.32,-2965.31 2536.72,-2972.04 2535.37,-2973.52" /> 
      <polyline fill="none" stroke="black" points="2531,-2970.89 2534.36,-2967.19 " /> 
      <polygon fill="black" stroke="black" points="2538.74,-2969.82 2531.34,-2963.09 2532.68,-2961.61 2540.08,-2968.34 2538.74,-2969.82" /> 
      <polyline fill="none" stroke="black" points="2534.36,-2967.19 2537.73,-2963.49 " /> 
-     <text text-anchor="start" x="1397" y="-3353.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="1397" y="-3421.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       fk_billing_cancellation_domain_history
      </text> 
     </g> <!-- billingcancellation_6eedf614&#45;&gt;domainhistory_a54cc226 --> 
     <g id="edge27" class="edge"> 
      <title>billingcancellation_6eedf614:w-&gt;domainhistory_a54cc226:e</title> 
-     <path fill="none" stroke="black" d="M633.73,-3403.63C632.09,-3421.8 637.53,-3450.28 643.5,-3458.89 649.73,-3467.87 2098.26,-4028.87 2109,-4030.89 2131.99,-4035.22 2513.21,-4047.18 2530,-4030.89 2537.24,-4023.87 2541.93,-4010.9 2539.39,-4003.49" /> 
-     <polygon fill="black" stroke="black" points="637.63,-3396.63 646.43,-3390.08 640.07,-3392.26 642.5,-3387.89 642.5,-3387.89 642.5,-3387.89 640.07,-3392.26 638.57,-3385.7 637.63,-3396.63 637.63,-3396.63" /> 
-     <ellipse fill="none" stroke="black" cx="635.68" cy="-3400.12" rx="4" ry="4" /> 
+     <path fill="none" stroke="black" d="M609.64,-3479.69C607.92,-3497.92 613.28,-3526.46 619.5,-3534.89 802.74,-3783.18 987.14,-3651.65 1280,-3748.89 1649.35,-3871.54 1725.04,-3967.37 2109,-4030.89 2132.08,-4034.71 2513.21,-4047.18 2530,-4030.89 2537.24,-4023.87 2541.93,-4010.9 2539.39,-4003.49" /> 
+     <polygon fill="black" stroke="black" points="613.61,-3472.62 622.43,-3466.09 616.06,-3468.25 618.5,-3463.89 618.5,-3463.89 618.5,-3463.89 616.06,-3468.25 614.57,-3461.69 613.61,-3472.62 613.61,-3472.62" /> 
+     <ellipse fill="none" stroke="black" cx="611.65" cy="-3476.1" rx="4" ry="4" /> 
      <polygon fill="black" stroke="black" points="2529.06,-4002.61 2534.61,-3994.29 2536.27,-3995.4 2530.72,-4003.72 2529.06,-4002.61" /> 
      <polyline fill="none" stroke="black" points="2531,-3997.89 2535.16,-4000.67 " /> 
      <polygon fill="black" stroke="black" points="2533.22,-4005.38 2538.77,-3997.06 2540.43,-3998.17 2534.88,-4006.49 2533.22,-4005.38" /> 
      <polyline fill="none" stroke="black" points="2535.16,-4000.67 2539.32,-4003.44 " /> 
-     <text text-anchor="start" x="1397" y="-3887.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <text text-anchor="start" x="1397" y="-3930.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       fk_billing_cancellation_domain_history
      </text> 
     </g> <!-- billingcancellation_6eedf614&#45;&gt;registrar_6e1503e3 --> 
     <g id="edge48" class="edge"> 
      <title>billingcancellation_6eedf614:w-&gt;registrar_6e1503e3:e</title> 
-     <path fill="none" stroke="black" d="M624.17,-3406.65C469.05,-3402.48 402.53,-3343.69 324,-3201.89 310.72,-3177.92 325.28,-1306.24 301.22,-1156.4" /> 
-     <polygon fill="black" stroke="black" points="632.5,-3406.76 642.44,-3411.39 637.5,-3406.83 642.5,-3406.89 642.5,-3406.89 642.5,-3406.89 637.5,-3406.83 642.56,-3402.39 632.5,-3406.76 632.5,-3406.76" /> 
-     <ellipse fill="none" stroke="black" cx="628.5" cy="-3406.71" rx="4" ry="4" /> 
-     <polygon fill="black" stroke="black" points="293.58,-1149.44 303.06,-1146.24 303.7,-1148.13 294.23,-1151.34 293.58,-1149.44" /> 
-     <polyline fill="none" stroke="black" points="298,-1146.89 299.6,-1151.63 " /> 
-     <polygon fill="black" stroke="black" points="295.19,-1154.18 304.66,-1150.97 305.3,-1152.87 295.83,-1156.07 295.19,-1154.18" /> 
-     <polyline fill="none" stroke="black" points="299.6,-1151.63 301.21,-1156.36 " /> 
-     <text text-anchor="start" x="341" y="-3405.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <path fill="none" stroke="black" d="M600.43,-3482.49C434.73,-3474.96 393.77,-3362.09 324,-3201.89 313.06,-3176.77 325.47,-1306.15 301.23,-1156.39" /> 
+     <polygon fill="black" stroke="black" points="608.5,-3482.67 618.4,-3487.39 613.5,-3482.78 618.5,-3482.89 618.5,-3482.89 618.5,-3482.89 613.5,-3482.78 618.6,-3478.39 608.5,-3482.67 608.5,-3482.67" /> 
+     <ellipse fill="none" stroke="black" cx="604.5" cy="-3482.58" rx="4" ry="4" /> 
+     <polygon fill="black" stroke="black" points="293.59,-1149.45 303.06,-1146.23 303.7,-1148.12 294.23,-1151.34 293.59,-1149.45" /> 
+     <polyline fill="none" stroke="black" points="298,-1146.89 299.61,-1151.63 " /> 
+     <polygon fill="black" stroke="black" points="295.2,-1154.18 304.66,-1150.96 305.31,-1152.86 295.84,-1156.08 295.2,-1154.18" /> 
+     <polyline fill="none" stroke="black" points="299.61,-1151.63 301.22,-1156.36 " /> 
+     <text text-anchor="start" x="341" y="-3482.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       fk_billing_cancellation_registrar_id
      </text> 
     </g> <!-- domain_6c51cffa --> 
@@ -2204,13 +2236,13 @@ td.section {
     </g> <!-- domain_6c51cffa&#45;&gt;billingcancellation_6eedf614 --> 
     <g id="edge2" class="edge"> 
      <title>domain_6c51cffa:w-&gt;billingcancellation_6eedf614:e</title> 
-     <path fill="none" stroke="black" d="M1290.44,-2141.21C1267.78,-2177.5 1295.24,-2309.24 1280,-2347.89 1209.29,-2527.18 1087.08,-2515.78 1024,-2697.89 986.96,-2804.84 1022.71,-3094.95 1006,-3206.89 991.65,-3303.03 1044.32,-3417.52 957.55,-3425.46" /> 
+     <path fill="none" stroke="black" d="M1290.44,-2141.21C1267.78,-2177.5 1295.24,-2309.24 1280,-2347.89 1209.29,-2527.18 1087.08,-2515.78 1024,-2697.89 1005.48,-2751.37 1010.38,-3150.47 1006,-3206.89 1001.16,-3269.12 1032.75,-3477.32 980.44,-3499.9" /> 
      <polygon fill="black" stroke="black" points="1297.42,-2137.03 1308.31,-2135.75 1301.71,-2134.46 1306,-2131.89 1306,-2131.89 1306,-2131.89 1301.71,-2134.46 1303.69,-2128.03 1297.42,-2137.03 1297.42,-2137.03" /> 
      <ellipse fill="none" stroke="black" cx="1293.99" cy="-2139.09" rx="4" ry="4" /> 
-     <polygon fill="black" stroke="black" points="948.72,-3430.84 948.28,-3420.85 950.28,-3420.77 950.71,-3430.76 948.72,-3430.84" /> 
-     <polyline fill="none" stroke="black" points="947.5,-3425.89 952.5,-3425.68 " /> 
-     <polygon fill="black" stroke="black" points="953.71,-3430.63 953.28,-3420.64 955.28,-3420.55 955.71,-3430.54 953.71,-3430.63" /> 
-     <polyline fill="none" stroke="black" points="952.5,-3425.68 957.49,-3425.46 " /> 
+     <polygon fill="black" stroke="black" points="972.46,-3506.6 970.5,-3496.79 972.46,-3496.4 974.42,-3506.21 972.46,-3506.6" /> 
+     <polyline fill="none" stroke="black" points="970.5,-3501.89 975.4,-3500.91 " /> 
+     <polygon fill="black" stroke="black" points="977.37,-3505.62 975.4,-3495.81 977.36,-3495.42 979.33,-3505.22 977.37,-3505.62" /> 
+     <polyline fill="none" stroke="black" points="975.4,-3500.91 980.31,-3499.93 " /> 
      <text text-anchor="start" x="1024" y="-2701.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       fk_domain_transfer_billing_cancellation_id
      </text> 
@@ -4871,14 +4903,14 @@ td.section {
     </g> <!-- domainhistory_a54cc226&#45;&gt;registrar_6e1503e3 --> 
     <g id="edge62" class="edge"> 
      <title>domainhistory_a54cc226:w-&gt;registrar_6e1503e3:e</title> 
-     <path fill="none" stroke="black" d="M2098.83,-3957.99C1884.6,-3924.04 343.86,-3447.42 324,-3420.89 305.79,-3396.57 327.78,-1314.96 301.37,-1156.43" /> 
-     <polygon fill="black" stroke="black" points="2107.05,-3958.85 2116.53,-3964.37 2112.03,-3959.37 2117,-3959.89 2117,-3959.89 2117,-3959.89 2112.03,-3959.37 2117.47,-3955.42 2107.05,-3958.85 2107.05,-3958.85" /> 
-     <ellipse fill="none" stroke="black" cx="2103.08" cy="-3958.43" rx="4" ry="4" /> 
-     <polygon fill="black" stroke="black" points="293.62,-1149.5 303.05,-1146.17 303.71,-1148.06 294.29,-1151.39 293.62,-1149.5" /> 
-     <polyline fill="none" stroke="black" points="298,-1146.89 299.67,-1151.61 " /> 
-     <polygon fill="black" stroke="black" points="295.28,-1154.22 304.71,-1150.88 305.38,-1152.77 295.95,-1156.1 295.28,-1154.22" /> 
-     <polyline fill="none" stroke="black" points="299.67,-1151.61 301.33,-1156.32 " /> 
-     <text text-anchor="start" x="1059" y="-3728.69" font-family="Helvetica,sans-Serif" font-size="14.00">
+     <path fill="none" stroke="black" d="M2098.85,-3958.39C1877.93,-3929.96 331.75,-3507.85 324,-3497.89 304.72,-3473.1 328.69,-1320.67 301.48,-1156.76" /> 
+     <polygon fill="black" stroke="black" points="2107.03,-3959.07 2116.63,-3964.38 2112.02,-3959.48 2117,-3959.89 2117,-3959.89 2117,-3959.89 2112.02,-3959.48 2117.37,-3955.41 2107.03,-3959.07 2107.03,-3959.07" /> 
+     <ellipse fill="none" stroke="black" cx="2103.05" cy="-3958.74" rx="4" ry="4" /> 
+     <polygon fill="black" stroke="black" points="293.62,-1149.5 303.05,-1146.17 303.71,-1148.06 294.28,-1151.38 293.62,-1149.5" /> 
+     <polyline fill="none" stroke="black" points="298,-1146.89 299.66,-1151.61 " /> 
+     <polygon fill="black" stroke="black" points="295.28,-1154.21 304.71,-1150.89 305.38,-1152.77 295.95,-1156.1 295.28,-1154.21" /> 
+     <polyline fill="none" stroke="black" points="299.66,-1151.61 301.33,-1156.32 " /> 
+     <text text-anchor="start" x="1059" y="-3763.69" font-family="Helvetica,sans-Serif" font-size="14.00">
       fk_domain_history_registrar_id
      </text> 
     </g> <!-- domainhost_1ea127c2 --> 
@@ -6542,6 +6574,26 @@ td.section {
      <td class="spacer"></td> 
      <td class="minwidth">billing_recurrence_id</td> 
      <td class="minwidth">int8</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">billing_event_history_id</td> 
+     <td class="minwidth">int8</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">billing_event_domain_repo_id</td> 
+     <td class="minwidth">text</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">billing_recurrence_history_id</td> 
+     <td class="minwidth">int8</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">billing_recurrence_domain_repo_id</td> 
+     <td class="minwidth">text</td> 
     </tr> 
     <tr> 
      <td colspan="3"></td> 

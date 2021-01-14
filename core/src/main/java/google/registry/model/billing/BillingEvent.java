@@ -46,6 +46,8 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
+import google.registry.persistence.BillingVKey.BillingEventVKey;
+import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithLongVKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
@@ -572,8 +574,7 @@ public abstract class BillingEvent extends ImmutableObject
      * <p>Although the type is {@link Key} the name "ref" is preserved for historical reasons.
      */
     @IgnoreSave(IfNull.class)
-    @Column(name = "billing_event_id")
-    VKey<BillingEvent.OneTime> refOneTime = null;
+    BillingEventVKey refOneTime = null;
 
     /**
      * The recurring billing event to cancel, or null for non-autorenew cancellations.
@@ -581,15 +582,14 @@ public abstract class BillingEvent extends ImmutableObject
      * <p>Although the type is {@link Key} the name "ref" is preserved for historical reasons.
      */
     @IgnoreSave(IfNull.class)
-    @Column(name = "billing_recurrence_id")
-    VKey<BillingEvent.Recurring> refRecurring = null;
+    BillingRecurrenceVKey refRecurring = null;
 
     public DateTime getBillingTime() {
       return billingTime;
     }
 
     public VKey<? extends BillingEvent> getEventKey() {
-      return firstNonNull(refOneTime, refRecurring);
+      return firstNonNull(refOneTime, refRecurring).createVKey();
     }
 
     /** The mapping from billable grace period types to originating billing event reasons. */
@@ -656,12 +656,12 @@ public abstract class BillingEvent extends ImmutableObject
       }
 
       public Builder setOneTimeEventKey(VKey<BillingEvent.OneTime> eventKey) {
-        getInstance().refOneTime = eventKey;
+        getInstance().refOneTime = BillingEventVKey.create(eventKey);
         return this;
       }
 
       public Builder setRecurringEventKey(VKey<BillingEvent.Recurring> eventKey) {
-        getInstance().refRecurring = eventKey;
+        getInstance().refRecurring = BillingRecurrenceVKey.create(eventKey);
         return this;
       }
 
