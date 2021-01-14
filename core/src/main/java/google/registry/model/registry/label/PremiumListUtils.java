@@ -111,9 +111,8 @@ public final class PremiumListUtils {
             label, registry.getTldStr(), checkResults.premiumPrice(), priceFromSql);
       }
     } catch (Throwable t) {
-      //      logger.atSevere().withCause(t).log(
-      //          "Error loading price of domain %s.%s from Cloud SQL.", label,
-      // registry.getTldStr());
+      logger.atSevere().withCause(t).log(
+          "Error loading price of domain %s.%s from Cloud SQL.", label, registry.getTldStr());
     }
     return checkResults.premiumPrice();
   }
