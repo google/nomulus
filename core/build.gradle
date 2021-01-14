@@ -600,7 +600,6 @@ task compileProdJS(type: JavaExec) {
   closureArgs << "--js=${jsDir}/soyutils_usegoog.js"
   closureArgs << "--js=${cssSourceDir}/registrar_bin.css.js"
   closureArgs << "--js=${jsSourceDir}/**.js"
-  // TODO(shicong) Verify the compiled JS file works in Alpha
   closureArgs << "--js=${externsDir}/json.js"
   closureArgs << "--js=${soySourceDir}/**.js"
   args closureArgs

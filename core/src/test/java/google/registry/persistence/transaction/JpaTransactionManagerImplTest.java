@@ -48,8 +48,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  * Unit tests for SQL only APIs defined in {@link JpaTransactionManagerImpl}. Note that the tests
  * for common APIs in {@link TransactionManager} are added in {@link TransactionManagerTest}.
  *
- * <p>TODO(shicong): Remove duplicate tests that covered by TransactionManagerTest by refactoring
- * the test schema.
+ * <p>TODO(b/177587763): Remove duplicate tests that covered by TransactionManagerTest by
+ * refactoring the test schema.
  */
 class JpaTransactionManagerImplTest {
 

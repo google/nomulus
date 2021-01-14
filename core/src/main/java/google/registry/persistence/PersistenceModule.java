@@ -351,8 +351,8 @@ public abstract class PersistenceModule {
   @interface BeamPipelineCloudSqlConfigs {}
 
   /** Dagger qualifier for the default Hibernate configurations. */
-  // TODO(shicong): Change annotations in this class to none public or put them in a top level
-  //  package
+  // TODO(b/177568911): Change annotations in this class to none public or put them in a top level
+  // package.
   @Qualifier
   @Documented
   public @interface DefaultHibernateConfigs {}

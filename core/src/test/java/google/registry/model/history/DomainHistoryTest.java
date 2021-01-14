@@ -221,8 +221,7 @@ public class DomainHistoryTest extends EntityTestCase {
         .setGracePeriods(
             ImmutableSet.of(
                 GracePeriod.create(
-                        GracePeriodStatus.ADD, "domainRepoId", END_OF_TIME, "clientId", null)
-                    .cloneWithPrepopulatedId()))
+                    GracePeriodStatus.ADD, "domainRepoId", END_OF_TIME, "clientId", null)))
         .build();
   }
 

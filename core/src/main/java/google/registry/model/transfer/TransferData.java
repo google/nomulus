@@ -69,7 +69,7 @@ public abstract class TransferData<
   Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities;
 
   // The following 3 fields are the replacement for serverApproveEntities in Cloud SQL.
-  // TODO(shicong): Add getter/setter for these 3 fields and use them in the application code.
+  // TODO(b/177589157): Make transfer flows work with Cloud SQL.
   @Ignore
   @Column(name = "transfer_gaining_poll_message_id")
   Long gainingTransferPollMessageId;
