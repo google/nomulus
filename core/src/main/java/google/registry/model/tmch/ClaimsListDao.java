@@ -58,7 +58,7 @@ public class ClaimsListDao {
 
   /**
    * Returns the most recent revision of the {@link ClaimsListShard} in Cloud SQL, if it exists.
-   * TODO(shicong): Change this method to package level access after dual-read phase.
+   * TODO(b/177569979): Change this method to package level access after dual-read phase.
    * ClaimsListShard uses this method to retrieve claims list in Cloud SQL for the comparison, and
    * ClaimsListShard is not in this package.
    */

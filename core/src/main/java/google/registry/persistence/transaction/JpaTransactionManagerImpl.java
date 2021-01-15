@@ -76,8 +76,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;
   private final Clock clock;
-  // TODO(shicong): Investigate alternatives for managing transaction information. ThreadLocal adds
-  //  an unnecessary restriction that each request has to be processed by one thread synchronously.
+  // TODO(b/177588434): Investigate alternatives for managing transaction information. ThreadLocal
+  // adds an unnecessary restriction that each request has to be processed by one thread
+  // synchronously.
   private final ThreadLocal<TransactionInfo> transactionInfo =
       ThreadLocal.withInitial(TransactionInfo::new);
 

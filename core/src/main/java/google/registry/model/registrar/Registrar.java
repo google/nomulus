@@ -234,7 +234,7 @@ public class Registrar extends ImmutableObject
    * Unique registrar client id. Must conform to "clIDType" as defined in RFC5730.
    *
    * @see <a href="http://tools.ietf.org/html/rfc5730#section-4.2">Shared Structure Schema</a>
-   *     <p>TODO(shicong): Rename this field to clientId
+   *     <p>TODO(b/177568946): Rename this field to registrarId.
    */
   @Id
   @javax.persistence.Id

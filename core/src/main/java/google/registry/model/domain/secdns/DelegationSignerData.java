@@ -35,7 +35,7 @@ import javax.xml.bind.annotation.XmlType;
  *
  * @see <a href="http://tools.ietf.org/html/rfc5910">RFC 5910</a>
  * @see <a href="http://tools.ietf.org/html/rfc4034">RFC 4034</a>
- *     <p>TODO(shicong): Rename this class to DomainDsData.
+ *     <p>TODO(b/177567432): Rename this class to DomainDsData.
  */
 @Embed
 @XmlType(name = "dsData")

@@ -20,7 +20,6 @@ import javax.persistence.Converter;
 
 /**
  * JPA {@link AttributeConverter} for storing/retrieving {@code List<CidrAddressBlock>} objects.
- * TODO(shicong): Investigate if we can have one converter for any List type
  */
 @Converter(autoApply = true)
 public class CidrAddressBlockListConverter extends StringListConverterBase<CidrAddressBlock> {
