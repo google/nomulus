@@ -16,20 +16,24 @@ package google.registry.tools.javascrap;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntryDao;
+import google.registry.persistence.VKey;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.tools.CommandWithRemoteApi;
 import google.registry.tools.ConfirmingCommand;
@@ -130,7 +134,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
   private DateTime getLockCompletionTimestamp(DomainBase domainBase, DateTime now) {
     // Best-effort, if a domain was URS-locked we should use that time
     // If we can't find that, return now.
-    return ofy().load().type(HistoryEntry.class).ancestor(domainBase).list().stream()
+    return Streams.stream(HistoryEntryDao.loadHistoryObjectsForResource(domainBase.createVKey()))
         // sort by modification time descending so we get the most recent one if it was locked twice
         .sorted(Comparator.comparing(HistoryEntry::getModificationTime).reversed())
         .filter(entry -> entry.getReason().equals("Uniform Rapid Suspension"))
@@ -140,18 +144,14 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
   }
 
   private ImmutableList<DomainBase> getLockedDomainsWithoutLocks(DateTime now) {
-    return ImmutableList.copyOf(
-        ofy()
-            .load()
-            .keys(
-                roids.stream()
-                    .map(roid -> Key.create(DomainBase.class, roid))
-                    .collect(toImmutableList()))
-            .values()
-            .stream()
-            .filter(d -> d.getDeletionTime().isAfter(now))
-            .filter(d -> d.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES))
-            .filter(d -> !RegistryLockDao.getMostRecentByRepoId(d.getRepoId()).isPresent())
-            .collect(toImmutableList()));
+    ImmutableList<VKey<DomainBase>> domainKeys =
+        roids.stream().map(roid -> VKey.create(DomainBase.class, roid)).collect(toImmutableList());
+    ImmutableCollection<DomainBase> domains =
+        transactIfJpaTm(() -> tm().loadByKeys(domainKeys)).values();
+    return domains.stream()
+        .filter(d -> d.getDeletionTime().isAfter(now))
+        .filter(d -> d.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES))
+        .filter(d -> RegistryLockDao.getMostRecentByRepoId(d.getRepoId()).isEmpty())
+        .collect(toImmutableList());
   }
 }

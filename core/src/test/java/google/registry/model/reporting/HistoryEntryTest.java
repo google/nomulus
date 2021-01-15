@@ -14,22 +14,29 @@
 
 package google.registry.model.reporting;
 
-import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import google.registry.model.EntityTestCase;
+import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link HistoryEntry}. */
+@DualDatabaseTest
 class HistoryEntryTest extends EntityTestCase {
 
   private HistoryEntry historyEntry;
@@ -37,6 +44,7 @@ class HistoryEntryTest extends EntityTestCase {
   @BeforeEach
   void setUp() {
     createTld("foobar");
+    DomainBase domain = persistActiveDomain("foo.foobar");
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
             .setTld("foobar")
@@ -46,13 +54,13 @@ class HistoryEntryTest extends EntityTestCase {
             .build();
     // Set up a new persisted HistoryEntry entity.
     historyEntry =
-        new HistoryEntry.Builder()
-            .setParent(newDomainBase("foo.foobar"))
+        new DomainHistory.Builder()
+            .setParent(domain)
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .setModificationTime(fakeClock.nowUtc())
-            .setClientId("foo")
+            .setClientId("TheRegistrar")
             .setOtherClientId("otherClient")
             .setTrid(Trid.create("ABC-123", "server-trid"))
             .setBySuperuser(false)
@@ -63,13 +71,23 @@ class HistoryEntryTest extends EntityTestCase {
     persistResource(historyEntry);
   }
 
-  @Test
+  @TestOfyAndSql
   void testPersistence() {
-    assertThat(ofy().load().entity(historyEntry).now()).isEqualTo(historyEntry);
+    transactIfJpaTm(
+        () -> {
+          HistoryEntry fromDatabase = tm().loadByEntity(historyEntry);
+          assertAboutImmutableObjects()
+              .that(fromDatabase)
+              .isEqualExceptFields(historyEntry, "nsHosts", "domainTransactionRecords");
+          assertAboutImmutableObjects()
+              .that(Iterables.getOnlyElement(fromDatabase.getDomainTransactionRecords()))
+              .isEqualExceptFields(
+                  Iterables.getOnlyElement(historyEntry.getDomainTransactionRecords()), "id");
+        });
   }
 
-  @Test
+  @TestOfyOnly
   void testIndexing() throws Exception {
-    verifyIndexing(historyEntry, "modificationTime", "clientId");
+    verifyIndexing(historyEntry.asHistoryEntry(), "modificationTime", "clientId");
   }
 }

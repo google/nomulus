@@ -95,7 +95,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                 registrarLol)
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc().minusYears(3))
-            .setCreationClientId("foo")
+            .setCreationClientId("TheRegistrar")
             .build());
 
     // deleted domain in lol
@@ -128,7 +128,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                     registrarLol)
                 .asBuilder()
                 .setCreationTimeForTest(clock.nowUtc().minusYears(3))
-                .setCreationClientId("foo")
+                .setCreationClientId("TheRegistrar")
                 .setDeletionTime(clock.nowUtc().minusDays(1))
                 .build());
     // cat.みんな
@@ -168,7 +168,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                 registrarIdn)
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc().minusYears(3))
-            .setCreationClientId("foo")
+            .setCreationClientId("TheRegistrar")
             .build());
 
     // 1.tld
@@ -208,7 +208,7 @@ class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
                 registrar1Tld)
             .asBuilder()
             .setCreationTimeForTest(clock.nowUtc().minusYears(3))
-            .setCreationClientId("foo")
+            .setCreationClientId("TheRegistrar")
             .build());
 
     // history entries

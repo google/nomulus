@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.model.ofy.DatastoreTransactionManager.toChildHistoryEntryIfPossible;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.util.AbstractMap.SimpleEntry;
 import static java.util.stream.Collectors.joining;
@@ -34,6 +35,7 @@ import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
+import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
@@ -250,8 +252,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return;
     }
     assertInTransaction();
-    getEntityManager().persist(entity);
-    transactionInfo.get().addUpdate(entity);
+    // Necessary due to the changes in HistoryEntry representation during the migration to SQL
+    Object toPersist = toChildHistoryEntryIfPossible(entity);
+    getEntityManager().persist(toPersist);
+    transactionInfo.get().addUpdate(toPersist);
   }
 
   @Override
@@ -278,8 +282,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return;
     }
     assertInTransaction();
-    getEntityManager().merge(entity);
-    transactionInfo.get().addUpdate(entity);
+    // Necessary due to the changes in HistoryEntry representation during the migration to SQL
+    Object toPersist = toChildHistoryEntryIfPossible(entity);
+    getEntityManager().merge(toPersist);
+    transactionInfo.get().addUpdate(toPersist);
   }
 
   @Override
@@ -307,8 +313,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
     assertInTransaction();
     checkArgument(exists(entity), "Given entity does not exist");
-    getEntityManager().merge(entity);
-    transactionInfo.get().addUpdate(entity);
+    // Necessary due to the changes in HistoryEntry representation during the migration to SQL
+    Object toPersist = toChildHistoryEntryIfPossible(entity);
+    getEntityManager().merge(toPersist);
+    transactionInfo.get().addUpdate(toPersist);
   }
 
   @Override
@@ -339,6 +347,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public boolean exists(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
+    entity = toChildHistoryEntryIfPossible(entity);
     EntityType<?> entityType = getEntityType(entity.getClass());
     ImmutableSet<EntityId> entityIds = getEntityIdsFromEntity(entityType, entity);
     return exists(entityType.getName(), entityIds);
@@ -382,6 +391,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities) {
     return Streams.stream(entities)
+        .map(DatastoreTransactionManager::toChildHistoryEntryIfPossible)
         .filter(this::exists)
         .map(this::loadByEntity)
         .collect(toImmutableList());
@@ -416,9 +426,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> T loadByEntity(T entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
+    entity = toChildHistoryEntryIfPossible(entity);
+    // If the caller requested a HistoryEntry, load the corresponding *History class
+    T possibleChild = toChildHistoryEntryIfPossible(entity);
     return (T)
         loadByKey(
-            VKey.createSql(entity.getClass(), emf.getPersistenceUnitUtil().getIdentifier(entity)));
+            VKey.createSql(
+                possibleChild.getClass(),
+                emf.getPersistenceUnitUtil().getIdentifier(possibleChild)));
   }
 
   @Override
@@ -469,6 +484,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return;
     }
     assertInTransaction();
+    entity = toChildHistoryEntryIfPossible(entity);
     Object managedEntity = entity;
     if (!getEntityManager().contains(entity)) {
       managedEntity = getEntityManager().merge(entity);

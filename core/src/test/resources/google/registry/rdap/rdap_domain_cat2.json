@@ -33,7 +33,7 @@
   "events": [
     {
       "eventAction": "registration",
-      "eventActor": "foo",
+      "eventActor": "TheRegistrar",
       "eventDate": "1997-01-01T00:00:00.000Z"
     },
     {
