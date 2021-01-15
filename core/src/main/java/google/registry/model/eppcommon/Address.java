@@ -175,7 +175,7 @@ public class Address extends ImmutableObject implements Jsonifiable {
    * entity from Datastore.
    *
    * <p>This callback method is used by Objectify to set streetLine[1,2,3] fields as they are not
-   * persisted in the Datastore. TODO(shicong): Delete this method after database migration.
+   * persisted in the Datastore.
    */
   void onLoad(@AlsoLoad("street") List<String> street) {
     mapStreetListToIndividualFields(street);
