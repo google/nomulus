@@ -21,9 +21,12 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static google.registry.model.EppResourceUtils.isLinked;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.rdap.RdapIcannStandardInformation.CONTACT_REDACTED_VALUE;
 import static google.registry.util.CollectionUtils.union;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -52,6 +55,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.VKey;
 import google.registry.rdap.RdapDataStructures.Event;
 import google.registry.rdap.RdapDataStructures.EventAction;
@@ -74,6 +78,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -880,8 +885,8 @@ public class RdapJsonFormatter {
     // 2.3.2.3 An event of *eventAction* type *transfer*, with the last date and time that the
     // domain was transferred. The event of *eventAction* type *transfer* MUST be omitted if the
     // domain name has not been transferred since it was created.
-    for (HistoryEntry historyEntry :
-        ofy().load().type(HistoryEntry.class).ancestor(resource).order("modificationTime")) {
+    Iterable<? extends HistoryEntry> historyEntries = loadHistoryEntriesForResource(resource);
+    for (HistoryEntry historyEntry : historyEntries) {
       EventAction rdapEventAction =
           HISTORY_ENTRY_TYPE_TO_RDAP_EVENT_ACTION_MAP.get(historyEntry.getType());
       // Only save the historyEntries if this is a type we care about.
@@ -930,13 +935,26 @@ public class RdapJsonFormatter {
     return eventsBuilder.build();
   }
 
-  /**
-   * Creates an RDAP event object as defined by RFC 7483.
-   */
+  private static Iterable<? extends HistoryEntry> loadHistoryEntriesForResource(
+      EppResource resource) {
+    if (tm().isOfy()) {
+      return ofy().load().type(HistoryEntry.class).ancestor(resource).order("modificationTime");
+    } else {
+      Iterable<? extends HistoryEntry> historyEntries =
+          jpaTm()
+              .transact(
+                  () ->
+                      HistoryEntryDao.loadHistoryObjectsForResource(
+                          resource.createVKey(), START_OF_TIME, END_OF_TIME));
+      return Streams.stream(historyEntries)
+          .sorted(Comparator.comparing(HistoryEntry::getModificationTime))
+          .collect(toImmutableList());
+    }
+  }
+
+  /** Creates an RDAP event object as defined by RFC 7483. */
   private static Event makeEvent(
-      EventAction eventAction,
-      @Nullable String eventActor,
-      DateTime eventDate) {
+      EventAction eventAction, @Nullable String eventActor, DateTime eventDate) {
     Event.Builder builder = Event.builder()
         .setEventAction(eventAction)
         .setEventDate(eventDate);

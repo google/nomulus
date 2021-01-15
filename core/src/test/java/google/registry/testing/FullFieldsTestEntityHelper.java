@@ -398,7 +398,7 @@ public final class FullFieldsTestEntityHelper {
         .setPeriod(period)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
         .setModificationTime(modificationTime)
-        .setClientId("foo")
+        .setClientId(resource.getPersistedCurrentSponsorClientId())
         .setTrid(Trid.create("ABC-123", "server-trid"))
         .setBySuperuser(false)
         .setReason(reason)

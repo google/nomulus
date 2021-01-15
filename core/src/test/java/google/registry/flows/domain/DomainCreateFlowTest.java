@@ -525,8 +525,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     clock.advanceOneMilli();
     runFlow();
     assertSuccessfulCreate("tld", ImmutableSet.of(), token);
-    HistoryEntry historyEntry =
-        ofy().load().type(HistoryEntry.class).ancestor(reloadResourceByForeignKey()).first().now();
+    HistoryEntry historyEntry = getHistoryEntries(reloadResourceByForeignKey()).get(0);
     assertThat(ofy().load().entity(token).now().getRedemptionHistoryEntry())
         .hasValue(HistoryEntry.createVKey(Key.create(historyEntry)));
   }

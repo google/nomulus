@@ -30,6 +30,7 @@ import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Result;
 import google.registry.model.contact.ContactHistory;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
@@ -293,6 +294,21 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   /**
+   * Executes the given {@link Result} instance synchronously if not in a transaction.
+   *
+   * <p>The {@link Result} instance contains a task that will be executed by Objectify
+   * asynchronously. If it is in a transaction, we don't need to execute the task immediately
+   * because it is guaranteed to be done by the end of the transaction. However, if it is not in a
+   * transaction, we need to execute it in case the following code expects that happens before
+   * themselves.
+   */
+  private void syncIfTransactionless(Result<?> result) {
+    if (!inTransaction()) {
+      result.now();
+    }
+  }
+
+  /**
    * The following three methods exist due to the migration to Cloud SQL.
    *
    * <p>In Cloud SQL, {@link HistoryEntry} objects are represented instead as {@link DomainHistory},
@@ -309,34 +325,23 @@ public class DatastoreTransactionManager implements TransactionManager {
     syncIfTransactionless(getOfy().save().entity(entity));
   }
 
-  @SuppressWarnings("unchecked")
-  private <T> T toChildHistoryEntryIfPossible(@Nullable T obj) {
-    // NB: The Key of the object in question may not necessarily be the resulting class that we
-    // wish to have. Because all *History classes are @EntitySubclasses, their Keys will have type
-    // HistoryEntry -- even if you create them based off the *History class.
-    if (obj != null && HistoryEntry.class.isAssignableFrom(obj.getClass())) {
-      return (T) ((HistoryEntry) obj).toChildHistoryEntity();
-    }
-    return obj;
-  }
-
   @Nullable
   private <T> T loadNullable(VKey<T> key) {
     return toChildHistoryEntryIfPossible(getOfy().load().key(key.getOfyKey()).now());
   }
 
-  /**
-   * Executes the given {@link Result} instance synchronously if not in a transaction.
-   *
-   * <p>The {@link Result} instance contains a task that will be executed by Objectify
-   * asynchronously. If it is in a transaction, we don't need to execute the task immediately
-   * because it is guaranteed to be done by the end of the transaction. However, if it is not in a
-   * transaction, we need to execute it in case the following code expects that happens before
-   * themselves.
-   */
-  private void syncIfTransactionless(Result<?> result) {
-    if (!inTransaction()) {
-      result.now();
+  /** Converts a nonnull {@link HistoryEntry} to the child format, e.g. {@link DomainHistory} */
+  @SuppressWarnings("unchecked")
+  public static <T> T toChildHistoryEntryIfPossible(@Nullable T obj) {
+    // NB: The Key of the object in question may not necessarily be the resulting class that we
+    // wish to have. Because all *History classes are @EntitySubclasses, their Keys will have type
+    // HistoryEntry -- even if you create them based off the *History class.
+    if (obj instanceof HistoryEntry
+        && !(obj instanceof ContactHistory)
+        && !(obj instanceof DomainHistory)
+        && !(obj instanceof HostHistory)) {
+      return (T) ((HistoryEntry) obj).toChildHistoryEntity();
     }
+    return obj;
   }
 }

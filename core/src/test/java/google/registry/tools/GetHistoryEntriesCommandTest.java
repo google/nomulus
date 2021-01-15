@@ -22,12 +22,14 @@ import static google.registry.testing.FullFieldsTestEntityHelper.makeHistoryEntr
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.Period;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GetClaimsListCommand}. */
+@DualDatabaseTest
 class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesCommand> {
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2000-01-01T00:00:00Z"));
@@ -40,7 +42,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
     domain = persistActiveDomain("example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_works() throws Exception {
     persistResource(
         makeHistoryEntry(
@@ -51,7 +53,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             clock.nowUtc()));
     runCommand("--id=example.tld", "--type=DOMAIN");
     assertStdoutIs(
-        "Client: foo\n"
+        "Client: TheRegistrar\n"
             + "Time: 2000-01-01T00:00:00.000Z\n"
             + "Client TRID: ABC-123\n"
             + "Server TRID: server-trid\n"
@@ -60,7 +62,57 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             + "\n");
   }
 
-  @Test
+  @TestOfyAndSql
+  void testSuccess_nothingBefore() throws Exception {
+    persistResource(
+        makeHistoryEntry(
+            domain,
+            HistoryEntry.Type.DOMAIN_CREATE,
+            Period.create(1, Period.Unit.YEARS),
+            "created",
+            clock.nowUtc()));
+    runCommand("--before", clock.nowUtc().minusMinutes(1).toString());
+    assertStdoutIs("");
+  }
+
+  @TestOfyAndSql
+  void testSuccess_nothingAfter() throws Exception {
+    persistResource(
+        makeHistoryEntry(
+            domain,
+            HistoryEntry.Type.DOMAIN_CREATE,
+            Period.create(1, Period.Unit.YEARS),
+            "created",
+            clock.nowUtc()));
+    runCommand("--after", clock.nowUtc().plusMinutes(1).toString());
+    assertStdoutIs("");
+  }
+
+  @TestOfyAndSql
+  void testSuccess_withinRange() throws Exception {
+    persistResource(
+        makeHistoryEntry(
+            domain,
+            HistoryEntry.Type.DOMAIN_CREATE,
+            Period.create(1, Period.Unit.YEARS),
+            "created",
+            clock.nowUtc()));
+    runCommand(
+        "--after",
+        clock.nowUtc().minusMinutes(1).toString(),
+        "--before",
+        clock.nowUtc().plusMinutes(1).toString());
+    assertStdoutIs(
+        "Client: TheRegistrar\n"
+            + "Time: 2000-01-01T00:00:00.000Z\n"
+            + "Client TRID: ABC-123\n"
+            + "Server TRID: server-trid\n"
+            + "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+            + "<xml/>\n"
+            + "\n");
+  }
+
+  @TestOfyAndSql
   void testSuccess_noTrid() throws Exception {
     persistResource(
         makeHistoryEntry(
@@ -74,7 +126,7 @@ class GetHistoryEntriesCommandTest extends CommandTestCase<GetHistoryEntriesComm
             .build());
     runCommand("--id=example.tld", "--type=DOMAIN");
     assertStdoutIs(
-        "Client: foo\n"
+        "Client: TheRegistrar\n"
             + "Time: 2000-01-01T00:00:00.000Z\n"
             + "Client TRID: null\n"
             + "Server TRID: null\n"

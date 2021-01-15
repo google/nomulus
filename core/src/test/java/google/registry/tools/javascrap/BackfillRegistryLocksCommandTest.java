@@ -37,15 +37,17 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.DeterministicStringGenerator;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.tools.CommandTestCase;
 import google.registry.util.StringGenerator.Alphabets;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link BackfillRegistryLocksCommand}. */
+@DualDatabaseTest
 class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryLocksCommand> {
 
   @BeforeEach
@@ -57,7 +59,7 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
     command.stringGenerator = new DeterministicStringGenerator(Alphabets.BASE_58);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSimpleBackfill() throws Exception {
     DomainBase domain = persistLockedDomain("example.tld");
     Truth8.assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId())).isEmpty();
@@ -69,7 +71,7 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
     Truth8.assertThat(lockOptional.get().getLockCompletionTimestamp()).isPresent();
   }
 
-  @Test
+  @TestOfyAndSql
   void testBackfill_onlyLockedDomains() throws Exception {
     DomainBase neverLockedDomain = persistActiveDomain("neverlocked.tld");
     DomainBase previouslyLockedDomain = persistLockedDomain("unlocked.tld");
@@ -89,7 +91,7 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
     assertThat(Iterables.getOnlyElement(locks).getDomainName()).isEqualTo("locked.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testBackfill_skipsDeletedDomains() throws Exception {
     DomainBase domain = persistDeletedDomain("example.tld", fakeClock.nowUtc());
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
@@ -98,7 +100,7 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
     Truth8.assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId())).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testBackfill_skipsDomains_ifLockAlreadyExists() throws Exception {
     DomainBase domain = persistLockedDomain("example.tld");
 
@@ -123,7 +125,7 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
         .isEqualTo(previousLock.getLockCompletionTimestamp());
   }
 
-  @Test
+  @TestOfyAndSql
   void testBackfill_usesUrsTime_ifExists() throws Exception {
     DateTime ursTime = fakeClock.nowUtc();
     DomainBase ursDomain = persistLockedDomain("urs.tld");
@@ -151,7 +153,7 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
     assertThat(nonUrsLock.getLockCompletionTimestamp()).hasValue(fakeClock.nowUtc());
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_mustProvideDomainRoids() {
     assertThat(assertThrows(IllegalArgumentException.class, this::runCommandForced))
         .hasMessageThat()

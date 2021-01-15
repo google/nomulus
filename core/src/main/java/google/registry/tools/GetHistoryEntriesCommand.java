@@ -16,6 +16,8 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -25,14 +27,16 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.EppResource;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.VKey;
 import google.registry.tools.CommandUtilities.ResourceType;
 import google.registry.xml.XmlTransformer;
 import org.joda.time.DateTime;
 
 /** Command to show history entries. */
-@Parameters(separators = " =",
-  commandDescription = "Show history entries that occurred in a given time range")
+@Parameters(
+    separators = " =",
+    commandDescription = "Show history entries that occurred in a given time range")
 final class GetHistoryEntriesCommand implements CommandWithRemoteApi {
 
   @Parameter(
@@ -45,33 +49,26 @@ final class GetHistoryEntriesCommand implements CommandWithRemoteApi {
       description = "Only show history entries that occurred at or before this time")
   private DateTime before = END_OF_TIME;
 
-  @Parameter(
-    names = "--type",
-    description = "Resource type.")
+  @Parameter(names = "--type", description = "Resource type.")
   private ResourceType type;
 
-  @Parameter(
-    names = "--id",
-    description = "Foreign key of the resource.")
+  @Parameter(names = "--id", description = "Foreign key of the resource.")
   private String uniqueId;
 
   @Override
   public void run() {
-    VKey<? extends EppResource> parentKey = null;
+    Iterable<? extends HistoryEntry> historyEntries;
     if (type != null || uniqueId != null) {
       checkArgument(
           type != null && uniqueId != null,
           "If either of 'type' or 'id' are set then both must be");
-      parentKey = type.getKey(uniqueId, DateTime.now(UTC));
+      VKey<? extends EppResource> parentKey = type.getKey(uniqueId, DateTime.now(UTC));
       checkArgumentNotNull(parentKey, "Invalid resource ID");
+      historyEntries = loadEntriesForSingleResource(parentKey);
+    } else {
+      historyEntries = loadAllHistoryEntries();
     }
-    for (HistoryEntry entry :
-        (parentKey == null
-                ? ofy().load().type(HistoryEntry.class)
-                : ofy().load().type(HistoryEntry.class).ancestor(parentKey.getOfyKey()))
-            .order("modificationTime")
-            .filter("modificationTime >=", after)
-            .filter("modificationTime <=", before)) {
+    for (HistoryEntry entry : historyEntries) {
       System.out.printf(
           "Client: %s\nTime: %s\nClient TRID: %s\nServer TRID: %s\n%s\n",
           entry.getClientId(),
@@ -81,6 +78,35 @@ final class GetHistoryEntriesCommand implements CommandWithRemoteApi {
           entry.getXmlBytes() == null
               ? String.format("[no XML stored for %s]\n", entry.getType())
               : XmlTransformer.prettyPrint(entry.getXmlBytes()));
+    }
+  }
+
+  private Iterable<? extends HistoryEntry> loadEntriesForSingleResource(
+      VKey<? extends EppResource> parentKey) {
+    if (tm().isOfy()) {
+      return ofy()
+          .load()
+          .type(HistoryEntry.class)
+          .ancestor(parentKey.getOfyKey())
+          .order("modificationTime")
+          .filter("modificationTime >=", after)
+          .filter("modificationTime <=", before);
+    } else {
+      return jpaTm()
+          .transact(() -> HistoryEntryDao.loadHistoryObjectsForResource(parentKey, after, before));
+    }
+  }
+
+  private Iterable<? extends HistoryEntry> loadAllHistoryEntries() {
+    if (tm().isOfy()) {
+      return ofy()
+          .load()
+          .type(HistoryEntry.class)
+          .order("modificationTime")
+          .filter("modificationTime >=", after)
+          .filter("modificationTime <=", before);
+    } else {
+      return jpaTm().transact(() -> HistoryEntryDao.loadAllHistoryObjects(after, before));
     }
   }
 }

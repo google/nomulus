@@ -313,7 +313,7 @@ class RdapTestHelper {
       }
       builder.append(
           String.format(
-              "Different: %s -> %s\ninstead of %s\n\n",
+              "Actual: %s -> %s\nExpected: %s\n\n",
               name, jsonifyAndIndent(actual), jsonifyAndIndent(expected)));
     }
   }
