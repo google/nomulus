@@ -54,9 +54,37 @@ public abstract class ImmutableObject implements Cloneable {
   @Target(FIELD)
   public @interface DoNotHydrate {}
 
-  @Ignore
-  @XmlTransient
-  Integer hashCode;
+  /**
+   * Indicates that the field should be ignored when comparing an object in the datastore to the
+   * corresponding object in Cloud SQL.
+   */
+  @Documented
+  @Retention(RUNTIME)
+  @Target(FIELD)
+  public @interface DoNotCompare {}
+
+  /**
+   * Indicates that the field stores a null value to indicate an empty set. This is also used in
+   * object comparison.
+   */
+  @Documented
+  @Retention(RUNTIME)
+  @Target(FIELD)
+  public @interface EmptySetToNull {}
+
+  /**
+   * Indicates that the field does not take part in the immutability contract.
+   *
+   * <p>Certain fields currently get modified by hibernate and there is nothing we can do about it.
+   * As well as violating immutability, this breaks hashing and equality comparisons, so we mark
+   * these fields with this annotation to exclude them from most operations.
+   */
+  @Documented
+  @Retention(RUNTIME)
+  @Target(FIELD)
+  public @interface Insignificant {}
+
+  @Ignore @XmlTransient protected Integer hashCode;
 
   private boolean equalsImmutableObject(ImmutableObject other) {
     return getClass().equals(other.getClass())
@@ -71,7 +99,14 @@ public abstract class ImmutableObject implements Cloneable {
    * <p>Isolated into a method so that derived classes can override it.
    */
   protected Map<Field, Object> getSignificantFields() {
-    return ModelUtils.getFieldValues(this);
+    // Can't use streams or ImmutableMap because we can have null values.
+    Map<Field, Object> result = new LinkedHashMap();
+    for (Map.Entry<Field, Object> entry : ModelUtils.getFieldValues(this).entrySet()) {
+      if (!entry.getKey().isAnnotationPresent(Insignificant.class)) {
+        result.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return result;
   }
 
   @Override

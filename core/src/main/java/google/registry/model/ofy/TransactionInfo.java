@@ -20,24 +20,20 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.filterValues;
 import static com.google.common.collect.Maps.toMap;
 import static google.registry.model.ofy.CommitLogBucket.getArbitraryBucketId;
-import static google.registry.model.ofy.EntityWritePriorities.getEntityPriority;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
-import google.registry.persistence.VKey;
-import google.registry.schema.replay.DatastoreEntity;
 import java.util.Map;
 import org.joda.time.DateTime;
 
 /** Metadata for an {@link Ofy} transaction that saves commit logs. */
-class TransactionInfo {
+public class TransactionInfo {
 
   @VisibleForTesting
-  enum Delete {
+  public enum Delete {
     SENTINEL
   }
 
@@ -87,6 +83,10 @@ class TransactionInfo {
     return ImmutableSet.copyOf(changesBuilder.build().keySet());
   }
 
+  ImmutableMap<Key<?>, Object> getChanges() {
+    return changesBuilder.build();
+  }
+
   ImmutableSet<Key<?>> getDeletes() {
     return ImmutableSet.copyOf(
         filterValues(changesBuilder.build(), Delete.SENTINEL::equals).keySet());
@@ -99,36 +99,5 @@ class TransactionInfo {
         .stream()
         .filter(not(Delete.SENTINEL::equals))
         .collect(toImmutableSet());
-  }
-
-  /** Returns the weight of the entity type in the map entry. */
-  @VisibleForTesting
-  static int getWeight(ImmutableMap.Entry<Key<?>, Object> entry) {
-    return getEntityPriority(entry.getKey().getKind(), entry.getValue().equals(Delete.SENTINEL));
-  }
-
-  private static int compareByWeight(
-      ImmutableMap.Entry<Key<?>, Object> a, ImmutableMap.Entry<Key<?>, Object> b) {
-    return getWeight(a) - getWeight(b);
-  }
-
-  void saveToJpa() {
-    // Sort the changes into an order that will work for insertion into the database.
-    jpaTm()
-        .transact(
-            () -> {
-              changesBuilder.build().entrySet().stream()
-                  .sorted(TransactionInfo::compareByWeight)
-                  .forEach(
-                      entry -> {
-                        if (entry.getValue().equals(Delete.SENTINEL)) {
-                          jpaTm().delete(VKey.from(entry.getKey()));
-                        } else {
-                          ((DatastoreEntity) entry.getValue())
-                              .toSqlEntity()
-                              .ifPresent(jpaTm()::put);
-                        }
-                      });
-            });
   }
 }

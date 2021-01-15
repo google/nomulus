@@ -49,7 +49,9 @@ public class DomainTransactionRecord extends ImmutableObject
 
   @Id
   @Ignore
+  @ImmutableObject.DoNotCompare
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @ImmutableObject.Insignificant
   Long id;
 
   /** The TLD this record operates on. */

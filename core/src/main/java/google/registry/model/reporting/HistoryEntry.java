@@ -198,6 +198,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
    * transaction counts (such as contact or host mutations).
    */
   @Transient // domain-specific
+  @ImmutableObject.EmptySetToNull
   protected Set<DomainTransactionRecord> domainTransactionRecords;
 
   public long getId() {

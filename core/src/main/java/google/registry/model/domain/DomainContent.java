@@ -50,6 +50,7 @@ import com.googlecode.objectify.condition.IfNull;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
+import google.registry.model.ImmutableObject.EmptySetToNull;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.contact.ContactResource;
@@ -132,7 +133,7 @@ public class DomainContent extends EppResource
   @Index String tld;
 
   /** References to hosts that are the nameservers for the domain. */
-  @Index @Transient Set<VKey<HostResource>> nsHosts;
+  @EmptySetToNull @Index @Transient Set<VKey<HostResource>> nsHosts;
 
   /**
    * The union of the contacts visible via {@link #getContacts} and {@link #getRegistrant}.
@@ -319,6 +320,11 @@ public class DomainContent extends EppResource
     autorenewPollMessageHistoryId = getHistoryId(autorenewPollMessage);
     autorenewBillingEventHistoryId = getHistoryId(autorenewBillingEvent);
     deletePollMessageHistoryId = getHistoryId(deletePollMessage);
+
+    // Fix PollMessage VKeys.
+    autorenewPollMessage = PollMessage.Autorenew.convertVKey(autorenewPollMessage);
+    deletePollMessage = PollMessage.OneTime.convertVKey(deletePollMessage);
+
     dsData =
         nullToEmptyImmutableCopy(dsData).stream()
             .map(dsData -> dsData.cloneWithDomainRepoId(getRepoId()))
