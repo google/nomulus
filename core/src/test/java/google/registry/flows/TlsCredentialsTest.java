@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.TlsCredentials.BadRegistrarIpAddressException;
 import google.registry.flows.TlsCredentials.MissingRegistrarCertificateException;
+import google.registry.flows.TlsCredentials.RegistrarCertificateNotConfiguredException;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
@@ -50,8 +51,9 @@ final class TlsCredentialsTest {
   }
 
   @Test
-  void testClientCertificateHash_missing() {
-    TlsCredentials tls = new TlsCredentials(true, Optional.empty(), Optional.of("192.168.1.1"));
+  void testClientCertificateAndHash_missing() {
+    TlsCredentials tls =
+        new TlsCredentials(true, Optional.empty(), Optional.empty(), Optional.of("192.168.1.1"));
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -64,7 +66,8 @@ final class TlsCredentialsTest {
 
   @Test
   void test_missingIpAddress_doesntAllowAccess() {
-    TlsCredentials tls = new TlsCredentials(false, Optional.of("certHash"), Optional.empty());
+    TlsCredentials tls =
+        new TlsCredentials(false, Optional.of("certHash"), Optional.empty(), Optional.empty());
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -79,7 +82,41 @@ final class TlsCredentialsTest {
   @Test
   void test_validateCertificate_canBeConfiguredToBypassCertHashes() throws Exception {
     TlsCredentials tls =
-        new TlsCredentials(false, Optional.of("certHash"), Optional.of("192.168.1.1"));
+        new TlsCredentials(
+            false, Optional.of("certHash"), Optional.of("cert"), Optional.of("192.168.1.1"));
+    persistResource(
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setClientCertificate(null, DateTime.now(UTC))
+            .setFailoverClientCertificate(null, DateTime.now(UTC))
+            .build());
+    // This would throw a RegistrarCertificateNotConfiguredException if cert hashes were not
+    // bypassed
+    tls.validateCertificate(Registrar.loadByClientId("TheRegistrar").get());
+  }
+
+  void testProvideClientCertificate() {
+    HttpServletRequest req = mock(HttpServletRequest.class);
+    when(req.getHeader("X-SSL-Full-Certificate")).thenReturn("data");
+    assertThat(TlsCredentials.EppTlsModule.provideClientCertificate(req)).isEqualTo("data");
+  }
+
+  @Test
+  void testClientCertificate_notConfigured() {
+    TlsCredentials tls =
+        new TlsCredentials(
+            true, Optional.of("hash"), Optional.of(SAMPLE_CERT), Optional.of("192.168.1.1"));
+    persistResource(loadRegistrar("TheRegistrar").asBuilder().build());
+    assertThrows(
+        RegistrarCertificateNotConfiguredException.class,
+        () -> tls.validateCertificate(Registrar.loadByClientId("TheRegistrar").get()));
+  }
+
+  @Test
+  void test_validateCertificate_canBeConfiguredToBypassCerts() throws Exception {
+    TlsCredentials tls =
+        new TlsCredentials(
+            false, Optional.of("certHash"), Optional.of("cert"), Optional.of("192.168.1.1"));
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()

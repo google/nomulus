@@ -64,7 +64,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
     runCommand(
         "--client=NewRegistrar",
         "--password=" + PASSWORD,
-        "--cert_hash=" + CERT_HASH,
+        "--cert_file=" + getCertFilename(CertificateSamples.SAMPLE_CERT),
         "--ip_address=" + CLIENT_IP);
   }
 
@@ -83,7 +83,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
                 runCommand(
                     "--client=NewRegistrar",
                     "--password=" + PASSWORD,
-                    "--cert_hash=" + CERT_HASH,
+                    "--cert_file=" + getCertFilename(CertificateSamples.SAMPLE_CERT),
                     "--ip_address=" + CLIENT_IP));
     assertThat(thrown)
         .hasMessageThat()
@@ -91,7 +91,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
   }
 
   @Test
-  void testFailure_loginWithBadPassword() {
+  void testFailure_loginWithBadPassword() throws Exception {
     EppException thrown =
         assertThrows(
             BadRegistrarPasswordException.class,
@@ -99,7 +99,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
                 runCommand(
                     "--client=NewRegistrar",
                     "--password=" + new StringBuilder(PASSWORD).reverse(),
-                    "--cert_hash=" + CERT_HASH,
+                    "--cert_file=" + getCertFilename(CertificateSamples.SAMPLE_CERT),
                     "--ip_address=" + CLIENT_IP));
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }

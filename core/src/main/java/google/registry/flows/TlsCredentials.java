@@ -42,6 +42,9 @@ import javax.servlet.http.HttpServletRequest;
  * <dl>
  *   <dt>X-SSL-Certificate
  *   <dd>This field should contain a base64 encoded digest of the client's TLS certificate. It is
+ *       used only if the validation of the full certificate fails.
+ *   <dt>X-SSL-Full-Certificate
+ *   <dd>This field should contain a base64 encoding of the client's TLS certificate. It is
  *       validated during an EPP login command against a known good value that is transmitted out of
  *       band.
  *   <dt>X-Forwarded-For
@@ -55,15 +58,18 @@ public class TlsCredentials implements TransportCredentials {
 
   private final boolean requireSslCertificates;
   private final Optional<String> clientCertificateHash;
+  private final Optional<String> clientCertificate;
   private final Optional<InetAddress> clientInetAddr;
 
   @Inject
   public TlsCredentials(
       @Config("requireSslCertificates") boolean requireSslCertificates,
       @Header("X-SSL-Certificate") Optional<String> clientCertificateHash,
+      @Header("X-SSL-Full-Certificate") Optional<String> clientCertificate,
       @Header("X-Forwarded-For") Optional<String> clientAddress) {
     this.requireSslCertificates = requireSslCertificates;
     this.clientCertificateHash = clientCertificateHash;
+    this.clientCertificate = clientCertificate;
     this.clientInetAddr = clientAddress.map(TlsCredentials::parseInetAddress);
   }
 
@@ -91,7 +97,7 @@ public class TlsCredentials implements TransportCredentials {
     ImmutableList<CidrAddressBlock> ipAddressAllowList = registrar.getIpAddressAllowList();
     if (ipAddressAllowList.isEmpty()) {
       logger.atInfo().log(
-          "Skipping IP allow list check because %s doesn't have an IP allow list",
+          "Skipping IP allow list check because %s doesn't have an IP allow list.",
           registrar.getClientId());
       return;
     }
@@ -115,11 +121,46 @@ public class TlsCredentials implements TransportCredentials {
   /**
    * Verifies client SSL certificate is permitted to issue commands as {@code registrar}.
    *
-   * @throws MissingRegistrarCertificateException if frontend didn't send certificate hash header
+   * @throws MissingRegistrarCertificateException if frontend didn't send certificate header
    * @throws BadRegistrarCertificateException if registrar requires certificate and it didn't match
    */
   @VisibleForTesting
   void validateCertificate(Registrar registrar) throws AuthenticationErrorException {
+    // Check that certificate is present in registrar object
+    if (!registrar.getClientCertificate().isPresent()
+        && !registrar.getFailoverClientCertificate().isPresent()) {
+      // Log an error and validate using certificate hash instead
+      // TODO(sarahbot): throw a RegistrarCertificateNotConfiguredException once hash is no longer
+      // used as failover
+      logger.atWarning().log(
+          "There is no certificate configured for registrar %s.", registrar.getClientId());
+    }
+    // Check that the request included the full certificate
+    else if (!clientCertificate.isPresent()) {
+      // Log an error and validate using certificate hash instead
+      // TODO(sarahbot): throw a MissingRegistrarCertificateException once hash is no longer used as
+      // failover
+      logger.atWarning().log(
+          "Request from registrar %s did not include X-SSL-Full-Certificate.",
+          registrar.getClientId());
+    } else {
+      // Check if the certificate is equal to the one on file for the registrar.
+      if (clientCertificate.equals(registrar.getClientCertificate())
+          || clientCertificate.equals(registrar.getFailoverClientCertificate())) {
+        // successfully validated, return here since hash validation is not necessary
+        return;
+      }
+      // Log an error and validate using certificate hash instead
+      // TODO(sarahbot): throw a BadRegistrarCertificateException once hash is no longer used as
+      // failover
+      logger.atWarning().log("Non-matching certificate for registrar %s.", registrar.getClientId());
+    }
+    validateCertificateHash(registrar);
+  }
+
+  private void validateCertificateHash(Registrar registrar) throws AuthenticationErrorException {
+    // Check the certificate hash as a failover
+    // TODO(sarahbot): Remove hash checks once certificate checks are working.
     if (!registrar.getClientCertificateHash().isPresent()
         && !registrar.getFailoverClientCertificateHash().isPresent()) {
       if (requireSslCertificates) {
@@ -130,14 +171,17 @@ public class TlsCredentials implements TransportCredentials {
         return;
       }
     }
+    // Check that the request included the certificate hash
     if (!clientCertificateHash.isPresent()) {
-      logger.atInfo().log("Request did not include X-SSL-Certificate");
+      logger.atInfo().log(
+          "Request from registrar %s did not include X-SSL-Certificate.", registrar.getClientId());
       throw new MissingRegistrarCertificateException();
     }
+    // Check if the certificate hash is equal to the one on file for the registrar.
     if (!clientCertificateHash.equals(registrar.getClientCertificateHash())
         && !clientCertificateHash.equals(registrar.getFailoverClientCertificateHash())) {
       logger.atWarning().log(
-          "bad certificate hash (%s) for %s, wanted either %s or %s",
+          "Non-matching certificate hash (%s) for %s, wanted either %s or %s.",
           clientCertificateHash,
           registrar.getClientId(),
           registrar.getClientCertificateHash(),
@@ -200,6 +244,14 @@ public class TlsCredentials implements TransportCredentials {
       // Note: This header is actually required, we just want to handle its absence explicitly
       // by throwing an EPP exception rather than a generic Bad Request exception.
       return extractOptionalHeader(req, "X-SSL-Certificate");
+    }
+
+    @Provides
+    @Header("X-SSL-Full-Certificate")
+    static Optional<String> provideClientCertificate(HttpServletRequest req) {
+      // Note: This header is actually required, we just want to handle its absence explicitly
+      // by throwing an EPP exception rather than a generic Bad Request exception.
+      return extractOptionalHeader(req, "X-SSL-Full_Certificate");
     }
 
     @Provides
