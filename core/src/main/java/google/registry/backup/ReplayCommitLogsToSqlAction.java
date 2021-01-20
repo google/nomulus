@@ -85,7 +85,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     Optional<Lock> lock =
         Lock.acquire(
             this.getClass().getSimpleName(), null, LEASE_LENGTH, requestStatusChecker, false);
-    if (lock.isEmpty()) {
+    if (!lock.isPresent()) {
       String message = "Can't acquire SQL commit log replay lock, aborting.";
       logger.atSevere().log(message);
       // App Engine will retry on any non-2xx status code, which we don't want in this case.
@@ -182,7 +182,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
   }
 
   private static int compareByWeight(VersionedEntity a, VersionedEntity b) {
-    return getEntityPriority(a.key().getKind(), a.getEntity().isEmpty())
-        - getEntityPriority(b.key().getKind(), b.getEntity().isEmpty());
+    return getEntityPriority(a.key().getKind(), !a.getEntity().isPresent())
+        - getEntityPriority(b.key().getKind(), !b.getEntity().isPresent());
   }
 }
