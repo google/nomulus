@@ -154,7 +154,7 @@ public class AllocationTokenFlowUtils {
     }
     Optional<AllocationToken> maybeTokenEntity =
         tm().loadByKeyIfPresent(VKey.create(AllocationToken.class, token));
-    if (maybeTokenEntity.isEmpty()) {
+    if (!maybeTokenEntity.isPresent()) {
       throw new InvalidAllocationTokenException();
     }
     if (maybeTokenEntity.get().isRedeemed()) {

@@ -59,7 +59,7 @@ final class GetAllocationTokenCommand implements CommandWithRemoteApi {
       if (loadedTokens.containsKey(token)) {
         AllocationToken loadedToken = loadedTokens.get(token);
         System.out.println(loadedToken.toString());
-        if (loadedToken.getRedemptionHistoryEntry().isEmpty()) {
+        if (!loadedToken.getRedemptionHistoryEntry().isPresent()) {
           System.out.printf("Token %s was not redeemed.\n", token);
         } else {
           Key<DomainBase> domainOfyKey =

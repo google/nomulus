@@ -76,7 +76,7 @@ final class DeleteAllocationTokensCommand extends UpdateOrDeleteAllocationTokens
     // since the query ran. This also filters out per-domain tokens if they're not to be deleted.
     ImmutableSet<VKey<AllocationToken>> tokensToDelete =
         tm().loadByKeys(batch).values().stream()
-            .filter(t -> withDomains || t.getDomainName().isEmpty())
+            .filter(t -> withDomains || !t.getDomainName().isPresent())
             .filter(t -> SINGLE_USE.equals(t.getTokenType()))
             .filter(t -> !t.isRedeemed())
             .map(AllocationToken::createVKey)
