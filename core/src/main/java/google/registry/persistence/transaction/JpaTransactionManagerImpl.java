@@ -116,8 +116,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T transact(Supplier<T> work) {
-    // TODO(shicong): Investigate removing transactNew functionality after migration as it may
-    //  be same as this one.
     return retrier.callWithRetry(
         () -> {
           if (inTransaction()) {
@@ -197,6 +195,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         });
   }
 
+  // TODO(b/177674699): Remove all transactNew methods as they are same as transact after the
+  // database migration.
   @Override
   public <T> T transactNew(Supplier<T> work) {
     return transact(work);
