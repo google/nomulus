@@ -134,9 +134,8 @@ public class TlsCredentials implements TransportCredentials {
       // used as failover
       logger.atWarning().log(
           "There is no certificate configured for registrar %s.", registrar.getClientId());
-    }
-    // Check that the request included the full certificate
-    else if (!clientCertificate.isPresent()) {
+    } else if (!clientCertificate.isPresent()) {
+      // Check that the request included the full certificate
       // Log an error and validate using certificate hash instead
       // TODO(sarahbot): throw a MissingRegistrarCertificateException once hash is no longer used as
       // failover
