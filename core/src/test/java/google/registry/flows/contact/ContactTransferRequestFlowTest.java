@@ -30,6 +30,7 @@ import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -104,9 +105,7 @@ class ContactTransferRequestFlowTest
                 // Make the server-approve entities field a no-op comparison; it's easier to
                 // do this comparison separately below.
                 .setServerApproveEntities(
-                    contact.getTransferData().getServerApproveEntities().isEmpty()
-                        ? null
-                        : contact.getTransferData().getServerApproveEntities())
+                    forceEmptyToNull(contact.getTransferData().getServerApproveEntities()))
                 .build());
     assertNoBillingEvents();
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc())).hasSize(1);

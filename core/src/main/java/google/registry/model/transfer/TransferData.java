@@ -14,6 +14,9 @@
 
 package google.registry.model.transfer;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
+import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableList;
@@ -84,6 +87,12 @@ public abstract class TransferData<
   @Column(name = "transfer_history_entry_id")
   Long historyEntryId;
 
+  // The pollMessageId1 and pollMessageId2 are used to store the IDs for gaining and losing poll
+  // messages in Cloud SQL, and they are added to replace the VKeys in serverApproveEntities.
+  // Although we can distinguish which is which when we construct the TransferData instance from
+  // the transfer request flow, when the instance is loaded from Datastore, we cannot make this
+  // distinction because they are just VKeys. Also, the only way we use serverApproveEntities is to
+  // just delete all the entities referenced by the VKeys, so we don't need to make the distinction.
   @Ignore
   @Column(name = "transfer_poll_message_id_1")
   Long pollMessageId1;
@@ -173,24 +182,24 @@ public abstract class TransferData<
   static void mapServerApproveEntitiesToFields(
       Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities,
       TransferData transferData) {
-    if (serverApproveEntities == null || serverApproveEntities.isEmpty()) {
+    if (isNullOrEmpty(serverApproveEntities)) {
       transferData.historyEntryId = null;
       transferData.repoId = null;
       transferData.pollMessageId1 = null;
       transferData.pollMessageId2 = null;
       return;
     }
-    // Element in serverApproveEntities should have the exact same Key<HistoryEntry> as its parent.
-    // So, we can use any to set historyEntryId and repoId.
+    // Each element in serverApproveEntities should have the exact same Key<HistoryEntry> as its
+    // parent. So, we can use any to set historyEntryId and repoId.
     Key<?> key = serverApproveEntities.iterator().next().getOfyKey();
     transferData.historyEntryId = key.getParent().getId();
     transferData.repoId = key.getParent().getParent().getName();
 
     ImmutableList<Long> sortedPollMessageIds = getSortedPollMessageIds(serverApproveEntities);
-    if (sortedPollMessageIds.size() > 1) {
+    if (sortedPollMessageIds.size() >= 1) {
       transferData.pollMessageId1 = sortedPollMessageIds.get(0);
     }
-    if (sortedPollMessageIds.size() == 2) {
+    if (sortedPollMessageIds.size() >= 2) {
       transferData.pollMessageId2 = sortedPollMessageIds.get(1);
     }
   }
@@ -200,16 +209,11 @@ public abstract class TransferData<
    */
   private static ImmutableList<Long> getSortedPollMessageIds(
       Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
-    ImmutableList.Builder<Long> unsorted = new ImmutableList.Builder<>();
-    if (serverApproveEntities != null) {
-      serverApproveEntities.forEach(
-          entityKey -> {
-            if (PollMessage.class.isAssignableFrom(entityKey.getKind())) {
-              unsorted.add((long) entityKey.getSqlKey());
-            }
-          });
-    }
-    return ImmutableList.sortedCopyOf(unsorted.build());
+    return nullToEmpty(serverApproveEntities).stream()
+        .filter(vKey -> PollMessage.class.isAssignableFrom(vKey.getKind()))
+        .map(vKey -> (long) vKey.getSqlKey())
+        .sorted()
+        .collect(toImmutableList());
   }
 
   /** Builder for {@link TransferData} because it is immutable. */

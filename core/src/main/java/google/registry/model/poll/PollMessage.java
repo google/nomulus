@@ -16,6 +16,7 @@ package google.registry.model.poll;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -382,10 +383,10 @@ public abstract class PollMessage extends ImmutableObject
     @OnLoad
     void onLoad() {
       super.onLoad();
-      if (contactPendingActionNotificationResponses != null) {
+      if (!isNullOrEmpty(contactPendingActionNotificationResponses)) {
         pendingActionNotificationResponse = contactPendingActionNotificationResponses.get(0);
       }
-      if (contactTransferResponses != null) {
+      if (!isNullOrEmpty(contactTransferResponses)) {
         contactId = contactTransferResponses.get(0).getContactId();
         transferResponse = contactTransferResponses.get(0);
       }
