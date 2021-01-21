@@ -54,28 +54,28 @@ public class TransferDataTest {
     transferBillingEventKey =
         VKey.create(
             BillingEvent.OneTime.class,
-            12345,
-            Key.create(historyEntryKey, BillingEvent.OneTime.class, 12345));
+            12345L,
+            Key.create(historyEntryKey, BillingEvent.OneTime.class, 12345L));
     otherServerApproveBillingEventKey =
         VKey.create(
             BillingEvent.Cancellation.class,
-            2468,
-            Key.create(historyEntryKey, BillingEvent.Cancellation.class, 2468));
+            2468L,
+            Key.create(historyEntryKey, BillingEvent.Cancellation.class, 2468L));
     recurringBillingEventKey =
         VKey.create(
             BillingEvent.Recurring.class,
-            13579,
-            Key.create(historyEntryKey, BillingEvent.Recurring.class, 13579));
+            13579L,
+            Key.create(historyEntryKey, BillingEvent.Recurring.class, 13579L));
     autorenewPollMessageKey =
         VKey.create(
             PollMessage.Autorenew.class,
-            67890,
-            Key.create(historyEntryKey, PollMessage.Autorenew.class, 67890));
+            67890L,
+            Key.create(historyEntryKey, PollMessage.Autorenew.class, 67890L));
     otherServerApprovePollMessageKey =
         VKey.create(
             PollMessage.OneTime.class,
-            314159,
-            Key.create(historyEntryKey, PollMessage.OneTime.class, 314159));
+            314159L,
+            Key.create(historyEntryKey, PollMessage.OneTime.class, 314159L));
   }
 
   @Test

@@ -23,7 +23,6 @@ import static google.registry.flows.contact.ContactFlowUtils.createGainingTransf
 import static google.registry.flows.contact.ContactFlowUtils.createLosingTransferPollMessage;
 import static google.registry.flows.contact.ContactFlowUtils.createTransferResponse;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -145,12 +144,13 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
         .setTransferData(pendingTransferData)
         .addStatusValue(StatusValue.PENDING_TRANSFER)
         .build();
-    ofy().save().<Object>entities(
-        newContact,
-        historyEntry,
-        requestPollMessage,
-        serverApproveGainingPollMessage,
-        serverApproveLosingPollMessage);
+    tm().update(newContact);
+    tm().insertAll(
+            ImmutableSet.of(
+                historyEntry.toChildHistoryEntity(),
+                requestPollMessage,
+                serverApproveGainingPollMessage,
+                serverApproveLosingPollMessage));
     return responseBuilder
         .setResultFromCode(SUCCESS_WITH_ACTION_PENDING)
         .setResData(createTransferResponse(targetId, newContact.getTransferData()))

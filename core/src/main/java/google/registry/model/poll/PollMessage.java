@@ -378,6 +378,47 @@ public abstract class PollMessage extends ImmutableObject
           .build();
     }
 
+    @Override
+    @OnLoad
+    void onLoad() {
+      super.onLoad();
+      if (contactPendingActionNotificationResponses != null) {
+        pendingActionNotificationResponse = contactPendingActionNotificationResponses.get(0);
+      }
+      if (contactTransferResponses != null) {
+        contactId = contactTransferResponses.get(0).getContactId();
+        transferResponse = contactTransferResponses.get(0);
+      }
+    }
+
+    @Override
+    @PostLoad
+    void postLoad() {
+      super.postLoad();
+      if (pendingActionNotificationResponse != null) {
+        contactPendingActionNotificationResponses =
+            ImmutableList.of(
+                ContactPendingActionNotificationResponse.create(
+                    pendingActionNotificationResponse.nameOrId.value,
+                    pendingActionNotificationResponse.getActionResult(),
+                    pendingActionNotificationResponse.getTrid(),
+                    pendingActionNotificationResponse.processedDate));
+      }
+      if (contactId != null && transferResponse != null) {
+        contactTransferResponses =
+            ImmutableList.of(
+                new ContactTransferResponse.Builder()
+                    .setContactId(contactId)
+                    .setGainingClientId(transferResponse.getGainingClientId())
+                    .setLosingClientId(transferResponse.getLosingClientId())
+                    .setTransferStatus(transferResponse.getTransferStatus())
+                    .setTransferRequestTime(transferResponse.getTransferRequestTime())
+                    .setPendingTransferExpirationTime(
+                        transferResponse.getPendingTransferExpirationTime())
+                    .build());
+      }
+    }
+
     /** A builder for {@link OneTime} since it is immutable. */
     public static class Builder extends PollMessage.Builder<OneTime, Builder> {
 
@@ -396,6 +437,10 @@ public abstract class PollMessage extends ImmutableObject
                     .filter(ContactPendingActionNotificationResponse.class::isInstance)
                     .map(ContactPendingActionNotificationResponse.class::cast)
                     .collect(toImmutableList()));
+        if (getInstance().contactPendingActionNotificationResponses != null) {
+          getInstance().pendingActionNotificationResponse =
+              getInstance().contactPendingActionNotificationResponses.get(0);
+        }
         getInstance().contactTransferResponses =
             forceEmptyToNull(
                 responseData
@@ -403,6 +448,11 @@ public abstract class PollMessage extends ImmutableObject
                     .filter(ContactTransferResponse.class::isInstance)
                     .map(ContactTransferResponse.class::cast)
                     .collect(toImmutableList()));
+        if (getInstance().contactTransferResponses != null) {
+          getInstance().contactId = getInstance().contactTransferResponses.get(0).getContactId();
+          getInstance().transferResponse = getInstance().contactTransferResponses.get(0);
+        }
+
         getInstance().domainPendingActionNotificationResponses =
             forceEmptyToNull(
                 responseData

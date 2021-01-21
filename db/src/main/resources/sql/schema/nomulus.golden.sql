@@ -210,8 +210,8 @@ CREATE TABLE public."Contact" (
     search_name text,
     voice_phone_extension text,
     voice_phone_number text,
-    transfer_gaining_poll_message_id bigint,
-    transfer_losing_poll_message_id bigint,
+    transfer_poll_message_id_1 bigint,
+    transfer_poll_message_id_2 bigint,
     transfer_client_txn_id text,
     transfer_server_txn_id text,
     transfer_gaining_registrar_id text,
@@ -219,7 +219,9 @@ CREATE TABLE public."Contact" (
     transfer_pending_expiration_time timestamp with time zone,
     transfer_request_time timestamp with time zone,
     transfer_status text,
-    update_timestamp timestamp with time zone
+    update_timestamp timestamp with time zone,
+    transfer_history_entry_id bigint,
+    transfer_repo_id text
 );
 
 
@@ -273,8 +275,8 @@ CREATE TABLE public."ContactHistory" (
     addr_local_org text,
     addr_local_type text,
     search_name text,
-    transfer_gaining_poll_message_id bigint,
-    transfer_losing_poll_message_id bigint,
+    transfer_poll_message_id_1 bigint,
+    transfer_poll_message_id_2 bigint,
     transfer_client_txn_id text,
     transfer_server_txn_id text,
     transfer_gaining_registrar_id text,
@@ -292,7 +294,9 @@ CREATE TABLE public."ContactHistory" (
     last_epp_update_time timestamp with time zone,
     statuses text[],
     contact_repo_id text NOT NULL,
-    update_timestamp timestamp with time zone
+    update_timestamp timestamp with time zone,
+    transfer_history_entry_id bigint,
+    transfer_repo_id text
 );
 
 
@@ -351,8 +355,8 @@ CREATE TABLE public."Domain" (
     billing_contact text,
     registrant_contact text,
     tech_contact text,
-    transfer_gaining_poll_message_id bigint,
-    transfer_losing_poll_message_id bigint,
+    transfer_poll_message_id_1 bigint,
+    transfer_poll_message_id_2 bigint,
     transfer_billing_cancellation_id bigint,
     transfer_billing_event_id bigint,
     transfer_billing_recurrence_id bigint,
@@ -377,7 +381,9 @@ CREATE TABLE public."Domain" (
     deletion_poll_message_history_id bigint,
     transfer_billing_recurrence_history_id bigint,
     transfer_autorenew_poll_message_history_id bigint,
-    transfer_billing_event_history_id bigint
+    transfer_billing_event_history_id bigint,
+    transfer_history_entry_id bigint,
+    transfer_repo_id text
 );
 
 
@@ -438,8 +444,8 @@ CREATE TABLE public."DomainHistory" (
     transfer_renew_period_unit text,
     transfer_renew_period_value integer,
     transfer_registration_expiration_time timestamp with time zone,
-    transfer_gaining_poll_message_id bigint,
-    transfer_losing_poll_message_id bigint,
+    transfer_poll_message_id_1 bigint,
+    transfer_poll_message_id_2 bigint,
     transfer_client_txn_id text,
     transfer_server_txn_id text,
     transfer_gaining_registrar_id text,
@@ -465,7 +471,9 @@ CREATE TABLE public."DomainHistory" (
     deletion_poll_message_history_id bigint,
     transfer_billing_recurrence_history_id bigint,
     transfer_autorenew_poll_message_history_id bigint,
-    transfer_billing_event_history_id bigint
+    transfer_billing_event_history_id bigint,
+    transfer_history_entry_id bigint,
+    transfer_repo_id text
 );
 
 

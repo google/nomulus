@@ -109,6 +109,7 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,7 +117,6 @@ import javax.annotation.Nullable;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeComparator;
 import org.joda.time.DateTimeZone;
 
 /** Static utils for setting up test resources. */
@@ -532,11 +532,14 @@ public class DatabaseHelper {
       DateTime requestTime,
       DateTime expirationTime,
       DateTime now) {
-    HistoryEntry historyEntryContactTransfer = persistResource(
-        new HistoryEntry.Builder()
-            .setType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST)
-            .setParent(contact)
-            .build());
+    HistoryEntry historyEntryContactTransfer =
+        persistResource(
+            new HistoryEntry.Builder()
+                .setType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST)
+                .setParent(persistResource(contact))
+                .setModificationTime(now)
+                .build()
+                .toChildHistoryEntity());
     return persistResource(
         contact
             .asBuilder()
@@ -1115,7 +1118,8 @@ public class DatabaseHelper {
                               historyEntry ->
                                   historyEntry.getParent().getName().equals(resource.getRepoId()))
                           .collect(toImmutableList());
-                  return ImmutableList.sortedCopyOf(DateTimeComparator.getInstance(), filtered);
+                  return ImmutableList.sortedCopyOf(
+                      Comparator.comparing(HistoryEntry::getModificationTime), filtered);
                 });
   }
 

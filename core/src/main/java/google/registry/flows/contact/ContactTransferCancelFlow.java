@@ -22,9 +22,9 @@ import static google.registry.flows.ResourceFlowUtils.verifyTransferInitiator;
 import static google.registry.flows.contact.ContactFlowUtils.createLosingTransferPollMessage;
 import static google.registry.flows.contact.ContactFlowUtils.createTransferResponse;
 import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -90,7 +90,8 @@ public final class ContactTransferCancelFlow implements TransactionalFlow {
     // Create a poll message for the losing client.
     PollMessage losingPollMessage =
         createLosingTransferPollMessage(targetId, newContact.getTransferData(), historyEntry);
-    ofy().save().<Object>entities(newContact, historyEntry, losingPollMessage);
+    tm().insertAll(ImmutableSet.of(historyEntry.toChildHistoryEntity(), losingPollMessage));
+    tm().update(newContact);
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
     tm().delete(existingContact.getTransferData().getServerApproveEntities());

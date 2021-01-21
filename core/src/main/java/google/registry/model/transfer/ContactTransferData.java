@@ -14,6 +14,7 @@
 
 package google.registry.model.transfer;
 
+
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Unindex;
 import javax.persistence.Embeddable;
