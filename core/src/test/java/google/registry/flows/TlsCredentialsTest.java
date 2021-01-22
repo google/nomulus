@@ -18,17 +18,20 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static org.joda.time.DateTimeZone.UTC;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.TlsCredentials.BadRegistrarIpAddressException;
 import google.registry.flows.TlsCredentials.MissingRegistrarCertificateException;
 import google.registry.flows.TlsCredentials.RegistrarCertificateNotConfiguredException;
+import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.FakeClock;
 import google.registry.util.CidrAddressBlock;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -43,6 +46,16 @@ final class TlsCredentialsTest {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
+  protected final FakeClock clock = new FakeClock();
+
+  private final CertificateChecker certificateChecker =
+      new CertificateChecker(
+          ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+          30,
+          2048,
+          ImmutableSet.of("secp256r1", "secp384r1"),
+          clock);
+
   @Test
   void testProvideClientCertificateHash() {
     HttpServletRequest req = mock(HttpServletRequest.class);
@@ -53,11 +66,16 @@ final class TlsCredentialsTest {
   @Test
   void testClientCertificateAndHash_missing() {
     TlsCredentials tls =
-        new TlsCredentials(true, Optional.empty(), Optional.empty(), Optional.of("192.168.1.1"));
+        new TlsCredentials(
+            true,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.of("192.168.1.1"),
+            certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(SAMPLE_CERT, DateTime.now(UTC))
+            .setClientCertificate(SAMPLE_CERT, clock.nowUtc())
             .build());
     assertThrows(
         MissingRegistrarCertificateException.class,
@@ -67,11 +85,12 @@ final class TlsCredentialsTest {
   @Test
   void test_missingIpAddress_doesntAllowAccess() {
     TlsCredentials tls =
-        new TlsCredentials(false, Optional.of("certHash"), Optional.empty(), Optional.empty());
+        new TlsCredentials(
+            false, Optional.of("certHash"), Optional.empty(), Optional.empty(), certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(SAMPLE_CERT, DateTime.now(UTC))
+            .setClientCertificate(SAMPLE_CERT, clock.nowUtc())
             .setIpAddressAllowList(ImmutableSet.of(CidrAddressBlock.create("3.5.8.13")))
             .build());
     assertThrows(
@@ -83,12 +102,16 @@ final class TlsCredentialsTest {
   void test_validateCertificate_canBeConfiguredToBypassCertHashes() throws Exception {
     TlsCredentials tls =
         new TlsCredentials(
-            false, Optional.of("certHash"), Optional.of("cert"), Optional.of("192.168.1.1"));
+            false,
+            Optional.of("certHash"),
+            Optional.of("cert"),
+            Optional.of("192.168.1.1"),
+            certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(null, DateTime.now(UTC))
-            .setFailoverClientCertificate(null, DateTime.now(UTC))
+            .setClientCertificate(null, clock.nowUtc())
+            .setFailoverClientCertificate(null, clock.nowUtc())
             .build());
     // This would throw a RegistrarCertificateNotConfiguredException if cert hashes were not
     // bypassed
@@ -105,7 +128,11 @@ final class TlsCredentialsTest {
   void testClientCertificate_notConfigured() {
     TlsCredentials tls =
         new TlsCredentials(
-            true, Optional.of("hash"), Optional.of(SAMPLE_CERT), Optional.of("192.168.1.1"));
+            true,
+            Optional.of("hash"),
+            Optional.of(SAMPLE_CERT),
+            Optional.of("192.168.1.1"),
+            certificateChecker);
     persistResource(loadRegistrar("TheRegistrar").asBuilder().build());
     assertThrows(
         RegistrarCertificateNotConfiguredException.class,
@@ -116,12 +143,16 @@ final class TlsCredentialsTest {
   void test_validateCertificate_canBeConfiguredToBypassCerts() throws Exception {
     TlsCredentials tls =
         new TlsCredentials(
-            false, Optional.of("certHash"), Optional.of("cert"), Optional.of("192.168.1.1"));
+            false,
+            Optional.of("certHash"),
+            Optional.of("cert"),
+            Optional.of("192.168.1.1"),
+            certificateChecker);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientCertificate(null, DateTime.now(UTC))
-            .setFailoverClientCertificate(null, DateTime.now(UTC))
+            .setClientCertificate(null, clock.nowUtc())
+            .setFailoverClientCertificate(null, clock.nowUtc())
             .build());
     // This would throw a RegistrarCertificateNotConfiguredException if cert hashes wren't bypassed.
     tls.validateCertificate(Registrar.loadByClientId("TheRegistrar").get());

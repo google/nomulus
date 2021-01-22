@@ -89,14 +89,14 @@ public class CertificateChecker {
    * Checks the given certificate string for violations and throws an exception if any violations
    * exist.
    */
-  public void validateCertificate(String certificateString) {
+  public void validateCertificate(String certificateString) throws InsecureCertificateException {
     ImmutableSet<CertificateViolation> violations = checkCertificate(certificateString);
     if (!violations.isEmpty()) {
       String displayMessages =
           violations.stream()
               .map(violation -> getViolationDisplayMessage(violation))
               .collect(Collectors.joining("\n"));
-      throw new IllegalArgumentException(displayMessages);
+      throw new InsecureCertificateException(violations, displayMessages);
     }
   }
 
@@ -256,6 +256,16 @@ public class CertificateChecker {
      */
     public String getDisplayMessage(CertificateChecker certificateChecker) {
       return certificateChecker.getViolationDisplayMessage(this);
+    }
+  }
+
+  /** Exception to throw when a certificate has security violations. */
+  public static class InsecureCertificateException extends Exception {
+    ImmutableSet<CertificateViolation> violations;
+
+    InsecureCertificateException(ImmutableSet<CertificateViolation> violations, String message) {
+      super(message);
+      this.violations = violations;
     }
   }
 }

@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.certs.CertificateChecker;
+import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
@@ -265,9 +266,9 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getClientCertificate()).isEmpty();
     assertThat(registrar.getClientCertificateHash()).isEmpty();
-    IllegalArgumentException thrown =
+    InsecureCertificateException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            InsecureCertificateException.class,
             () -> runCommand("--cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
     assertThat(thrown.getMessage())
         .isEqualTo(
@@ -282,9 +283,9 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getClientCertificate()).isEmpty();
     assertThat(registrar.getClientCertificateHash()).isEmpty();
-    IllegalArgumentException thrown =
+    InsecureCertificateException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            InsecureCertificateException.class,
             () -> runCommand("--cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
     assertThat(thrown.getMessage())
         .isEqualTo(
@@ -298,9 +299,9 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getFailoverClientCertificate()).isEmpty();
-    IllegalArgumentException thrown =
+    InsecureCertificateException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            InsecureCertificateException.class,
             () ->
                 runCommand("--failover_cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
     assertThat(thrown.getMessage())
@@ -315,9 +316,9 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
     fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
     Registrar registrar = loadRegistrar("NewRegistrar");
     assertThat(registrar.getFailoverClientCertificate()).isEmpty();
-    IllegalArgumentException thrown =
+    InsecureCertificateException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            InsecureCertificateException.class,
             () ->
                 runCommand("--failover_cert_file=" + getCertFilename(), "--force", "NewRegistrar"));
     assertThat(thrown.getMessage())

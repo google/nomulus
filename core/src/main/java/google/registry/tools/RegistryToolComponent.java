@@ -168,6 +168,8 @@ interface RegistryToolComponent {
 
   void inject(ValidateEscrowDepositCommand command);
 
+  void inject(ValidateLoginCredentialsCommand command);
+
   void inject(WhoisQueryCommand command);
 
   AppEngineConnection appEngineConnection();

@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.testing.TestLogHandlerUtils.findFirstLogMessageByPrefix;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -27,8 +28,10 @@ import static org.mockito.Mockito.verify;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
+import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppOutput.ResponseOrGreeting;
 import google.registry.model.eppoutput.EppResponse;
@@ -38,6 +41,7 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import java.util.List;
 import java.util.Optional;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -53,6 +57,16 @@ class FlowRunnerTest {
   private final EppMetric.Builder eppMetricBuilder = EppMetric.builderForRequest(new FakeClock());
 
   private final TestLogHandler handler = new TestLogHandler();
+
+  protected final FakeClock clock = new FakeClock();
+
+  private final CertificateChecker certificateChecker =
+      new CertificateChecker(
+          ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
+          30,
+          2048,
+          ImmutableSet.of("secp256r1", "secp384r1"),
+          clock);
 
   static class TestCommandFlow implements Flow {
     @Override
@@ -139,7 +153,11 @@ class FlowRunnerTest {
   void testRun_loggingStatement_tlsCredentials() throws Exception {
     flowRunner.credentials =
         new TlsCredentials(
-            true, Optional.of("abc123def"), Optional.of("cert"), Optional.of("127.0.0.1"));
+            true,
+            Optional.of("abc123def"),
+            Optional.of("cert"),
+            Optional.of("127.0.0.1"),
+            certificateChecker);
     flowRunner.run(eppMetricBuilder);
     assertThat(Splitter.on("\n\t").split(findFirstLogMessageByPrefix(handler, "EPP Command\n\t")))
         .contains("TlsCredentials{clientCertificateHash=abc123def, clientAddress=/127.0.0.1}");

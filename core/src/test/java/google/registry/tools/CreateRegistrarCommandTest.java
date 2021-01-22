@@ -38,6 +38,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Range;
 import com.google.common.net.MediaType;
 import google.registry.flows.certs.CertificateChecker;
+import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.registrar.Registrar;
 import java.io.IOException;
 import java.util.Optional;
@@ -389,9 +390,9 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFail_clientCertFileFlagWithViolation() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
-    IllegalArgumentException thrown =
+    InsecureCertificateException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            InsecureCertificateException.class,
             () ->
                 runCommandForced(
                     "--name=blobio",
@@ -419,9 +420,9 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFail_clientCertFileFlagWithMultipleViolations() throws Exception {
     fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
-    IllegalArgumentException thrown =
+    InsecureCertificateException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            InsecureCertificateException.class,
             () ->
                 runCommandForced(
                     "--name=blobio",
@@ -476,9 +477,9 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFail_failoverClientCertFileFlagWithViolations() throws Exception {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
-    IllegalArgumentException thrown =
+    InsecureCertificateException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            InsecureCertificateException.class,
             () ->
                 runCommandForced(
                     "--name=blobio",
@@ -506,9 +507,9 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @Test
   void testFail_failoverClientCertFileFlagWithMultipleViolations() throws Exception {
     fakeClock.setTo(DateTime.parse("2055-11-01T00:00:00Z"));
-    IllegalArgumentException thrown =
+    InsecureCertificateException thrown =
         assertThrows(
-            IllegalArgumentException.class,
+            InsecureCertificateException.class,
             () ->
                 runCommandForced(
                     "--name=blobio",

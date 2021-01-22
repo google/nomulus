@@ -39,6 +39,7 @@ import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryEnvironment;
 import google.registry.flows.certs.CertificateChecker;
+import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registrar.RegistrarContact.Type;
@@ -337,7 +338,11 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   private boolean validateCertificate(
       Optional<String> existingCertificate, String certificateString) {
     if (!existingCertificate.isPresent() || !existingCertificate.get().equals(certificateString)) {
+      try {
         certificateChecker.validateCertificate(certificateString);
+      } catch (InsecureCertificateException e) {
+        throw new IllegalArgumentException(e.getMessage());
+      }
       return true;
     }
     return false;
