@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.domain.rgp.GracePeriodStatus.AUTO_RENEW;
+import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
@@ -139,6 +140,11 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
               + " deleted at the end of its current registration period.")
   Boolean autorenews;
 
+  @Parameter(
+      names = {"--force_in_pending_delete"},
+      description = "Force a superuser update even on domains that are in pending delete")
+  boolean forceInPendingDelete;
+
   @Override
   protected void initMutatingEppToolCommand() {
     if (!nameservers.isEmpty()) {
@@ -185,6 +191,12 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
           !domainBase.getStatusValues().contains(SERVER_UPDATE_PROHIBITED),
           "The domain '%s' has status SERVER_UPDATE_PROHIBITED. Verify that you are allowed "
               + "to make updates, and if so, use the domain_unlock command to enable updates.",
+          domain);
+      checkArgument(
+          !domainBase.getStatusValues().contains(PENDING_DELETE) || forceInPendingDelete,
+          "The domain '%s' has status PENDING_DELETE. Verify that you really are intending to "
+              + "update a domain in pending delete (this is uncommon), and if so, pass the "
+              + "--force_in_pending_delete parameter to allow this update.",
           domain);
 
       // Use TreeSets so that the results are always in the same order (this makes testing easier).

@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.rgp.GracePeriodStatus.AUTO_RENEW;
+import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -335,6 +336,39 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
   }
 
   @Test
+  void testSuccess_canUpdatePendingDeleteDomain_whenSuperuserPassesOverrideFlag() throws Exception {
+    ContactResource adminContact1 = persistResource(newContactResource("crr-admin1"));
+    ContactResource adminContact2 = persistResource(newContactResource("crr-admin2"));
+    ContactResource techContact1 = persistResource(newContactResource("crr-tech1"));
+    ContactResource techContact2 = persistResource(newContactResource("crr-tech2"));
+    VKey<ContactResource> adminResourceKey1 = adminContact1.createVKey();
+    VKey<ContactResource> adminResourceKey2 = adminContact2.createVKey();
+    VKey<ContactResource> techResourceKey1 = techContact1.createVKey();
+    VKey<ContactResource> techResourceKey2 = techContact2.createVKey();
+
+    persistResource(
+        newDomainBase("example.tld")
+            .asBuilder()
+            .setContacts(
+                ImmutableSet.of(
+                    DesignatedContact.create(DesignatedContact.Type.ADMIN, adminResourceKey1),
+                    DesignatedContact.create(DesignatedContact.Type.ADMIN, adminResourceKey2),
+                    DesignatedContact.create(DesignatedContact.Type.TECH, techResourceKey1),
+                    DesignatedContact.create(DesignatedContact.Type.TECH, techResourceKey2)))
+            .setStatusValues(ImmutableSet.of(PENDING_DELETE))
+            .build());
+
+    runCommandForced(
+        "--client=NewRegistrar",
+        "--admins=crr-admin2,crr-admin3",
+        "--techs=crr-tech2,crr-tech3",
+        "--superuser",
+        "--force_in_pending_delete",
+        "example.tld");
+    eppVerifier.expectSuperuser().verifySent("domain_update_set_contacts.xml");
+  }
+
+  @Test
   void testFailure_cantUpdateRegistryLockedDomainEvenAsSuperuser() {
     HostResource host = persistActiveHost("ns1.zdns.google");
     ImmutableSet<VKey<HostResource>> nameservers = ImmutableSet.of(host.createVKey());
@@ -356,7 +390,30 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                     "example.tld"));
     assertThat(e)
         .hasMessageThat()
-        .containsMatch("The domain 'example.tld' has status SERVER_UPDATE_PROHIBITED");
+        .contains("The domain 'example.tld' has status SERVER_UPDATE_PROHIBITED.");
+  }
+
+  @Test
+  void testFailure_cantUpdatePendingDeleteDomainEvenAsSuperuser_withoutPassingOverrideFlag() {
+    HostResource host = persistActiveHost("ns1.zdns.google");
+    ImmutableSet<VKey<HostResource>> nameservers = ImmutableSet.of(host.createVKey());
+    persistResource(
+        newDomainBase("example.tld")
+            .asBuilder()
+            .setStatusValues(ImmutableSet.of(PENDING_DELETE))
+            .setNameservers(nameservers)
+            .build());
+
+    Exception e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--client=NewRegistrar",
+                    "--statuses=clientRenewProhibited,serverHold",
+                    "--superuser",
+                    "example.tld"));
+    assertThat(e).hasMessageThat().contains("The domain 'example.tld' has status PENDING_DELETE.");
   }
 
   @Test
