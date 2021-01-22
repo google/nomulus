@@ -191,7 +191,6 @@ class RdapJsonFormatterTest {
                     hostResourceIpv6,
                     registrar)
                 .asBuilder()
-                .setCreationClientId("foo")
                 .setCreationTimeForTest(clock.nowUtc().minusMonths(4))
                 .setLastEppUpdateTime(clock.nowUtc().minusMonths(3))
                 .build());
@@ -206,7 +205,6 @@ class RdapJsonFormatterTest {
                     null,
                     registrar)
                 .asBuilder()
-                .setCreationClientId("foo")
                 .setCreationTimeForTest(clock.nowUtc())
                 .setLastEppUpdateTime(null)
                 .build());

@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,16 +14,18 @@
 
 package google.registry.model.reporting;
 
-import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
@@ -32,19 +34,20 @@ import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 
-/** Unit tests for {@link HistoryEntry}. */
 @DualDatabaseTest
-class HistoryEntryTest extends EntityTestCase {
+public class HistoryEntryDaoTest extends EntityTestCase {
 
+  private DomainBase domain;
   private HistoryEntry historyEntry;
 
   @BeforeEach
-  void setUp() {
+  void beforeEach() {
+    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
     createTld("foobar");
-    DomainBase domain = persistActiveDomain("foo.foobar");
+    domain = persistActiveDomain("foo.foobar");
     DomainTransactionRecord transactionRecord =
         new DomainTransactionRecord.Builder()
             .setTld("foobar")
@@ -72,22 +75,53 @@ class HistoryEntryTest extends EntityTestCase {
   }
 
   @TestOfyAndSql
-  void testPersistence() {
-    transactIfJpaTm(
-        () -> {
-          HistoryEntry fromDatabase = tm().loadByEntity(historyEntry);
-          assertAboutImmutableObjects()
-              .that(fromDatabase)
-              .isEqualExceptFields(historyEntry, "nsHosts", "domainTransactionRecords");
-          assertAboutImmutableObjects()
-              .that(Iterables.getOnlyElement(fromDatabase.getDomainTransactionRecords()))
-              .isEqualExceptFields(
-                  Iterables.getOnlyElement(historyEntry.getDomainTransactionRecords()), "id");
-        });
+  void testSimpleLoadAll() {
+    assertThat(HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, END_OF_TIME))
+        .comparingElementsUsing(immutableObjectCorrespondence("nsHosts"))
+        .containsExactly(historyEntry);
   }
 
-  @TestOfyOnly
-  void testIndexing() throws Exception {
-    verifyIndexing(historyEntry.asHistoryEntry(), "modificationTime", "clientId");
+  @TestOfyAndSql
+  void testSkips_tooEarly() {
+    assertThat(HistoryEntryDao.loadAllHistoryObjects(fakeClock.nowUtc().plusMillis(1), END_OF_TIME))
+        .isEmpty();
+  }
+
+  @TestOfyAndSql
+  void testSkips_tooLate() {
+    assertThat(
+            HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, fakeClock.nowUtc().minusMillis(1)))
+        .isEmpty();
+  }
+
+  @TestOfyAndSql
+  void testLoadByResource() {
+    transactIfJpaTm(
+        () ->
+            assertThat(HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey()))
+                .comparingElementsUsing(immutableObjectCorrespondence("nsHosts"))
+                .containsExactly(historyEntry));
+  }
+
+  @TestOfyAndSql
+  void testLoadByResource_skips_tooEarly() {
+    assertThat(
+            HistoryEntryDao.loadHistoryObjectsForResource(
+                domain.createVKey(), fakeClock.nowUtc().plusMillis(1), END_OF_TIME))
+        .isEmpty();
+  }
+
+  @TestOfyAndSql
+  void testLoadByResource_skips_tooLate() {
+    assertThat(
+            HistoryEntryDao.loadHistoryObjectsForResource(
+                domain.createVKey(), START_OF_TIME, fakeClock.nowUtc().minusMillis(1)))
+        .isEmpty();
+  }
+
+  @TestOfyAndSql
+  void testLoadByResource_noEntriesForResource() {
+    DomainBase newDomain = persistResource(newDomainBase("new.foobar"));
+    assertThat(HistoryEntryDao.loadHistoryObjectsForResource(newDomain.createVKey())).isEmpty();
   }
 }

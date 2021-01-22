@@ -52,6 +52,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.persistence.VKey;
 import google.registry.rdap.RdapDataStructures.Event;
 import google.registry.rdap.RdapDataStructures.EventAction;
@@ -880,8 +881,9 @@ public class RdapJsonFormatter {
     // 2.3.2.3 An event of *eventAction* type *transfer*, with the last date and time that the
     // domain was transferred. The event of *eventAction* type *transfer* MUST be omitted if the
     // domain name has not been transferred since it was created.
-    for (HistoryEntry historyEntry :
-        ofy().load().type(HistoryEntry.class).ancestor(resource).order("modificationTime")) {
+    Iterable<? extends HistoryEntry> historyEntries =
+        HistoryEntryDao.loadHistoryObjectsForResource(resource.createVKey());
+    for (HistoryEntry historyEntry : historyEntries) {
       EventAction rdapEventAction =
           HISTORY_ENTRY_TYPE_TO_RDAP_EVENT_ACTION_MAP.get(historyEntry.getType());
       // Only save the historyEntries if this is a type we care about.
@@ -930,13 +932,9 @@ public class RdapJsonFormatter {
     return eventsBuilder.build();
   }
 
-  /**
-   * Creates an RDAP event object as defined by RFC 7483.
-   */
+  /** Creates an RDAP event object as defined by RFC 7483. */
   private static Event makeEvent(
-      EventAction eventAction,
-      @Nullable String eventActor,
-      DateTime eventDate) {
+      EventAction eventAction, @Nullable String eventActor, DateTime eventDate) {
     Event.Builder builder = Event.builder()
         .setEventAction(eventAction)
         .setEventDate(eventDate);
