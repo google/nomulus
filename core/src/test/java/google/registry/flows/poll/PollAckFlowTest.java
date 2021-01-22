@@ -174,9 +174,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   void testFailure_noSuchMessage() throws Exception {
     assertTransactionalFlow(true);
     Exception e = assertThrows(MessageDoesNotExistException.class, this::runFlow);
-    assertThat(e)
-        .hasMessageThat()
-        .containsMatch(String.format("(1-3-EXAMPLE-4-%d-2011)", MESSAGE_ID));
+    assertThat(e).hasMessageThat().contains(String.format("(1-3-EXAMPLE-4-%d-2011)", MESSAGE_ID));
   }
 
   @Test
@@ -255,8 +253,6 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
             .build());
     assertTransactionalFlow(true);
     Exception e = assertThrows(MessageDoesNotExistException.class, this::runFlow);
-    assertThat(e)
-        .hasMessageThat()
-        .containsMatch(String.format("(1-3-EXAMPLE-4-%d-2011)", MESSAGE_ID));
+    assertThat(e).hasMessageThat().contains(String.format("(1-3-EXAMPLE-4-%d-2011)", MESSAGE_ID));
   }
 }
