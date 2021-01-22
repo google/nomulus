@@ -53,7 +53,7 @@ class TmchCertificateAuthorityTest {
     CertificateExpiredException e =
         assertThrows(
             CertificateExpiredException.class, tmchCertificateAuthority::getAndValidateRoot);
-    assertThat(e).hasMessageThat().containsMatch("NotAfter: Sun Jul 23 23:59:59 UTC 2023");
+    assertThat(e).hasMessageThat().contains("NotAfter: Sun Jul 23 23:59:59 UTC 2023");
   }
 
   @Test
@@ -64,7 +64,7 @@ class TmchCertificateAuthorityTest {
     CertificateNotYetValidException e =
         assertThrows(
             CertificateNotYetValidException.class, tmchCertificateAuthority::getAndValidateRoot);
-    assertThat(e).hasMessageThat().containsMatch("NotBefore: Wed Jul 24 00:00:00 UTC 2013");
+    assertThat(e).hasMessageThat().contains("NotBefore: Wed Jul 24 00:00:00 UTC 2013");
   }
 
   @Test

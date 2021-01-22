@@ -61,7 +61,7 @@ public class CompareDbBackupsTest {
     URL backupRootFolder = Resources.getResource("google/registry/tools/datastore-export");
     CompareDbBackups.main(new String[] {backupRootFolder.getPath(), backupRootFolder.getPath()});
     String output = new String(stdout.toByteArray(), UTF_8);
-    assertThat(output).containsMatch("Both sets have the same 41 entities");
+    assertThat(output).contains("Both sets have the same 41 entities");
   }
 
   @Test

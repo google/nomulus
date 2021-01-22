@@ -919,7 +919,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
             .addStatusValue(SERVER_UPDATE_PROHIBITED)
             .build());
     Exception e = assertThrows(ResourceStatusProhibitsOperationException.class, this::runFlow);
-    assertThat(e).hasMessageThat().containsMatch("serverUpdateProhibited");
+    assertThat(e).hasMessageThat().contains("serverUpdateProhibited");
   }
 
   @Test
@@ -937,7 +937,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistReferencedEntities();
     persistDomain();
     Exception e = assertThrows(StatusNotClientSettableException.class, this::runFlow);
-    assertThat(e).hasMessageThat().containsMatch("serverUpdateProhibited");
+    assertThat(e).hasMessageThat().contains("serverUpdateProhibited");
   }
 
   @Test
