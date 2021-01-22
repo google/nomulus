@@ -17,7 +17,6 @@ package google.registry.flows.contact;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
-import static google.registry.testing.DatabaseHelper.deleteResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,11 +31,13 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ContactTransferQueryFlow}. */
+@DualDatabaseTest
 class ContactTransferQueryFlowTest
     extends ContactTransferFlowTestCase<ContactTransferQueryFlow, ContactResource> {
 
@@ -68,65 +69,65 @@ class ContactTransferQueryFlowTest
     runFlow();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess() throws Exception {
     doSuccessfulTest("contact_transfer_query.xml", "contact_transfer_query_response.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_withContactRoid() throws Exception {
     doSuccessfulTest("contact_transfer_query_with_roid.xml", "contact_transfer_query_response.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_sponsoringClient() throws Exception {
     setClientIdForFlow("TheRegistrar");
     doSuccessfulTest("contact_transfer_query.xml", "contact_transfer_query_response.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_withAuthinfo() throws Exception {
     setClientIdForFlow("ClientZ");
     doSuccessfulTest("contact_transfer_query_with_authinfo.xml",
         "contact_transfer_query_response.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_clientApproved() throws Exception {
     changeTransferStatus(TransferStatus.CLIENT_APPROVED);
     doSuccessfulTest("contact_transfer_query.xml",
         "contact_transfer_query_response_client_approved.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_clientRejected() throws Exception {
     changeTransferStatus(TransferStatus.CLIENT_REJECTED);
     doSuccessfulTest("contact_transfer_query.xml",
         "contact_transfer_query_response_client_rejected.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_clientCancelled() throws Exception {
     changeTransferStatus(TransferStatus.CLIENT_CANCELLED);
     doSuccessfulTest("contact_transfer_query.xml",
         "contact_transfer_query_response_client_cancelled.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_serverApproved() throws Exception {
     changeTransferStatus(TransferStatus.SERVER_APPROVED);
     doSuccessfulTest("contact_transfer_query.xml",
         "contact_transfer_query_response_server_approved.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_serverCancelled() throws Exception {
     changeTransferStatus(TransferStatus.SERVER_CANCELLED);
     doSuccessfulTest("contact_transfer_query.xml",
         "contact_transfer_query_response_server_cancelled.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_pendingDeleteContact() throws Exception {
     changeTransferStatus(TransferStatus.SERVER_CANCELLED);
     contact = persistResource(
@@ -135,7 +136,7 @@ class ContactTransferQueryFlowTest
         "contact_transfer_query_response_server_cancelled.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_badContactPassword() {
     // Change the contact's password so it does not match the password in the file.
     contact =
@@ -151,7 +152,7 @@ class ContactTransferQueryFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_badContactRoid() {
     // Set the contact to a different ROID, but don't persist it; this is just so the substitution
     // code above will write the wrong ROID into the file.
@@ -163,7 +164,7 @@ class ContactTransferQueryFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_neverBeenTransferred() {
     changeTransferStatus(null);
     EppException thrown =
@@ -173,7 +174,7 @@ class ContactTransferQueryFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_unrelatedClient() {
     setClientIdForFlow("ClientZ");
     EppException thrown =
@@ -183,7 +184,7 @@ class ContactTransferQueryFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_deletedContact() throws Exception {
     contact =
         persistResource(contact.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
@@ -194,9 +195,9 @@ class ContactTransferQueryFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonexistentContact() throws Exception {
-    deleteResource(contact);
+    persistResource(contact.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("contact_transfer_query.xml"));
@@ -204,7 +205,7 @@ class ContactTransferQueryFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-transfer-query");

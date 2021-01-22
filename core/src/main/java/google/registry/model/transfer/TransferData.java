@@ -14,15 +14,25 @@
 
 package google.registry.model.transfer;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
+import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.googlecode.objectify.Key;
+import com.googlecode.objectify.annotation.AlsoLoad;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
+import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.poll.PollMessage;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.Set;
@@ -32,6 +42,7 @@ import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 
 /**
@@ -68,15 +79,27 @@ public abstract class TransferData<
   @IgnoreSave(IfNull.class)
   Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities;
 
-  // The following 3 fields are the replacement for serverApproveEntities in Cloud SQL.
-  // TODO(b/177589157): Make transfer flows work with Cloud SQL.
   @Ignore
-  @Column(name = "transfer_gaining_poll_message_id")
-  Long gainingTransferPollMessageId;
+  @Column(name = "transfer_repo_id")
+  String repoId;
 
   @Ignore
-  @Column(name = "transfer_losing_poll_message_id")
-  Long losingTransferPollMessageId;
+  @Column(name = "transfer_history_entry_id")
+  Long historyEntryId;
+
+  // The pollMessageId1 and pollMessageId2 are used to store the IDs for gaining and losing poll
+  // messages in Cloud SQL, and they are added to replace the VKeys in serverApproveEntities.
+  // Although we can distinguish which is which when we construct the TransferData instance from
+  // the transfer request flow, when the instance is loaded from Datastore, we cannot make this
+  // distinction because they are just VKeys. Also, the only way we use serverApproveEntities is to
+  // just delete all the entities referenced by the VKeys, so we don't need to make the distinction.
+  @Ignore
+  @Column(name = "transfer_poll_message_id_1")
+  Long pollMessageId1;
+
+  @Ignore
+  @Column(name = "transfer_poll_message_id_2")
+  Long pollMessageId2;
 
   public abstract boolean isEmpty();
 
@@ -116,6 +139,83 @@ public abstract class TransferData<
     return newBuilder;
   }
 
+  void onLoad(
+      @AlsoLoad("serverApproveEntities")
+          Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
+    mapServerApproveEntitiesToFields(serverApproveEntities, this);
+  }
+
+  @PostLoad
+  void postLoad() {
+    mapFieldsToServerApproveEntities();
+  }
+
+  /**
+   * Reconstructs serverApproveEntities set from the individual fields, e.g. repoId, historyEntryId,
+   * pollMessageId1.
+   */
+  void mapFieldsToServerApproveEntities() {
+    if (repoId == null) {
+      return;
+    }
+    Key<? extends EppResource> eppKey;
+    if (getClass().equals(DomainBase.class)) {
+      eppKey = Key.create(DomainBase.class, repoId);
+    } else {
+      eppKey = Key.create(ContactResource.class, repoId);
+    }
+    Key<HistoryEntry> historyEntryKey = Key.create(eppKey, HistoryEntry.class, historyEntryId);
+    ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>> entityKeysBuilder =
+        new ImmutableSet.Builder<>();
+    if (pollMessageId1 != null) {
+      Key<PollMessage> ofyKey = Key.create(historyEntryKey, PollMessage.class, pollMessageId1);
+      entityKeysBuilder.add(PollMessage.createVKey(ofyKey));
+    }
+    if (pollMessageId2 != null) {
+      Key<PollMessage> ofyKey = Key.create(historyEntryKey, PollMessage.class, pollMessageId2);
+      entityKeysBuilder.add(PollMessage.createVKey(ofyKey));
+    }
+    serverApproveEntities = entityKeysBuilder.build();
+  }
+
+  /** Maps serverApproveEntities set to the individual fields. */
+  static void mapServerApproveEntitiesToFields(
+      Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities,
+      TransferData transferData) {
+    if (isNullOrEmpty(serverApproveEntities)) {
+      transferData.historyEntryId = null;
+      transferData.repoId = null;
+      transferData.pollMessageId1 = null;
+      transferData.pollMessageId2 = null;
+      return;
+    }
+    // Each element in serverApproveEntities should have the exact same Key<HistoryEntry> as its
+    // parent. So, we can use any to set historyEntryId and repoId.
+    Key<?> key = serverApproveEntities.iterator().next().getOfyKey();
+    transferData.historyEntryId = key.getParent().getId();
+    transferData.repoId = key.getParent().getParent().getName();
+
+    ImmutableList<Long> sortedPollMessageIds = getSortedPollMessageIds(serverApproveEntities);
+    if (sortedPollMessageIds.size() >= 1) {
+      transferData.pollMessageId1 = sortedPollMessageIds.get(0);
+    }
+    if (sortedPollMessageIds.size() >= 2) {
+      transferData.pollMessageId2 = sortedPollMessageIds.get(1);
+    }
+  }
+
+  /**
+   * Gets poll message IDs from the given serverApproveEntities and sorted the IDs in natural order.
+   */
+  private static ImmutableList<Long> getSortedPollMessageIds(
+      Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
+    return nullToEmpty(serverApproveEntities).stream()
+        .filter(vKey -> PollMessage.class.isAssignableFrom(vKey.getKind()))
+        .map(vKey -> (long) vKey.getSqlKey())
+        .sorted()
+        .collect(toImmutableList());
+  }
+
   /** Builder for {@link TransferData} because it is immutable. */
   public abstract static class Builder<T extends TransferData, B extends Builder<T, B>>
       extends BaseTransferObject.Builder<T, B> {
@@ -141,6 +241,7 @@ public abstract class TransferData<
 
     @Override
     public T build() {
+      mapServerApproveEntitiesToFields(getInstance().serverApproveEntities, getInstance());
       return super.build();
     }
   }
