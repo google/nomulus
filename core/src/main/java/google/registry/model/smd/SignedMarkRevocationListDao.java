@@ -14,28 +14,122 @@
 
 package google.registry.model.smd;
 
-import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.Iterables.isEmpty;
 import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
+import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
+import static google.registry.model.ofy.ObjectifyService.allocateId;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import com.google.common.base.Supplier;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
+import google.registry.util.CollectionUtils;
+import java.util.Map;
 import java.util.Optional;
 import javax.persistence.EntityManager;
+import org.joda.time.DateTime;
 
 public class SignedMarkRevocationListDao {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private static final Supplier<Optional<SignedMarkRevocationList>> CACHE =
-      memoizeWithShortExpiration(SignedMarkRevocationListDao::getLatestRevision);
+  @VisibleForTesting static final int SHARD_SIZE = 10000;
 
-  /** Returns the most recent revision of the {@link SignedMarkRevocationList}, from cache. */
-  public static Optional<SignedMarkRevocationList> getLatestRevisionCached() {
-    return CACHE.get();
+  /**
+   * Loads the {@link SignedMarkRevocationList} from the specified primary database, and attempts to
+   * load from the secondary database. If the load the secondary database fails, or the list from
+   * the secondary database does not match the list from the primary database, the error will be
+   * logged but no exception will be thrown.
+   */
+  static SignedMarkRevocationList load(String primaryDatabase) {
+    SignedMarkRevocationList primaryList;
+    switch (primaryDatabase) {
+      case "Datastore":
+        primaryList = loadFromDatastore().get();
+        break;
+      case "Cloud SQL":
+        primaryList = loadFromCloudSql().get();
+        break;
+      default:
+        throw new IllegalArgumentException("Unrecognized value for primary database.");
+    }
+    suppressExceptionUnlessInTest(
+        () -> loadAndCompare(primaryList, primaryDatabase),
+        "Error loading and comparing the list from the secondary database.");
+    return primaryList;
   }
 
-  public static Optional<SignedMarkRevocationList> getLatestRevision() {
+  /**
+   * Loads the list from the secondary database and compares it to the list from the primary
+   * database.
+   */
+  private static void loadAndCompare(SignedMarkRevocationList primaryList, String primaryDatabase) {
+    Optional<SignedMarkRevocationList> secondaryList =
+        primaryDatabase.equals("Datastore") ? loadFromCloudSql() : loadFromDatastore();
+    if (secondaryList.isPresent()) {
+      MapDifference<String, DateTime> diff =
+          Maps.difference(primaryList.revokes, secondaryList.get().revokes);
+      if (!diff.areEqual()) {
+        if (diff.entriesDiffering().size() > 10) {
+          String message =
+              String.format(
+                  "Unequal SM revocation lists detected, secondary database list with revision id"
+                      + " %d has %d different records than the current primary database list.",
+                  secondaryList.get().revisionId, diff.entriesDiffering().size());
+          throw new RuntimeException(message);
+        } else {
+          StringBuilder diffMessage = new StringBuilder("Unequal SM revocation lists detected:\n");
+          diff.entriesDiffering()
+              .forEach(
+                  (label, valueDiff) ->
+                      diffMessage.append(
+                          String.format(
+                              "SMD %s has key %s in primary database and key %s in secondary"
+                                  + " database.\n",
+                              label, valueDiff.leftValue(), valueDiff.rightValue())));
+          throw new RuntimeException(diffMessage.toString());
+        }
+      }
+    } else {
+      if (primaryList.size() != 0) {
+        throw new RuntimeException("Signed mark revocation list in secondary database is empty.");
+      }
+    }
+  }
+
+  /** Loads the shards from Datastore and combines them into one list. */
+  private static Optional<SignedMarkRevocationList> loadFromDatastore() {
+    return tm().transactNewReadOnly(
+            () -> {
+              Iterable<SignedMarkRevocationList> shards =
+                  ofy().load().type(SignedMarkRevocationList.class).ancestor(getCrossTldKey());
+              DateTime creationTime =
+                  isEmpty(shards)
+                      ? START_OF_TIME
+                      : checkNotNull(Iterables.get(shards, 0).creationTime, "creationTime");
+              ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
+              for (SignedMarkRevocationList shard : shards) {
+                revokes.putAll(shard.revokes);
+                checkState(
+                    creationTime.equals(shard.creationTime),
+                    "Inconsistent creation times: %s vs. %s",
+                    creationTime,
+                    shard.creationTime);
+              }
+              return Optional.of(SignedMarkRevocationList.create(creationTime, revokes.build()));
+            });
+  }
+
+  private static Optional<SignedMarkRevocationList> loadFromCloudSql() {
     return jpaTm()
         .transact(
             () -> {
@@ -54,24 +148,60 @@ public class SignedMarkRevocationListDao {
   }
 
   /**
-   * Try to save the given {@link SignedMarkRevocationList} into Cloud SQL. If the save fails, the
+   * Save the given {@link SignedMarkRevocationList} into the specified primary database, and
+   * attempts to save to the secondary database. If the save to the secondary database fails, the
    * error will be logged but no exception will be thrown.
-   *
-   * <p>This method is used during the dual-write phase of database migration as Datastore is still
-   * the authoritative database.
    */
-  static void trySave(SignedMarkRevocationList signedMarkRevocationList) {
-    suppressExceptionUnlessInTest(
-        () -> {
-          SignedMarkRevocationListDao.save(signedMarkRevocationList);
-          logger.atInfo().log(
-              "Inserted %,d signed mark revocations into Cloud SQL.",
-              signedMarkRevocationList.revokes.size());
-        },
-        "Error inserting signed mark revocations into Cloud SQL.");
+  static void save(String primaryDatabase, SignedMarkRevocationList signedMarkRevocationList) {
+    if (primaryDatabase.equals("Datastore")) {
+      saveToDatastore(signedMarkRevocationList.revokes, signedMarkRevocationList.creationTime);
+      suppressExceptionUnlessInTest(
+          () -> SignedMarkRevocationListDao.saveToCloudSql(signedMarkRevocationList),
+          "Error inserting signed mark revocations into Cloud SQL.");
+    } else if (primaryDatabase.equals("Cloud SQL")) {
+      SignedMarkRevocationListDao.saveToCloudSql(signedMarkRevocationList);
+      suppressExceptionUnlessInTest(
+          () ->
+              saveToDatastore(
+                  signedMarkRevocationList.revokes, signedMarkRevocationList.creationTime),
+          "Error inserting signed mark revocations into Datastore.");
+    } else {
+      throw new IllegalArgumentException("Unrecognized value for primary database.");
+    }
   }
 
-  private static void save(SignedMarkRevocationList signedMarkRevocationList) {
+  private static void saveToCloudSql(SignedMarkRevocationList signedMarkRevocationList) {
     jpaTm().transact(() -> jpaTm().getEntityManager().persist(signedMarkRevocationList));
+    logger.atInfo().log(
+        "Inserted %,d signed mark revocations into Cloud SQL.",
+        signedMarkRevocationList.revokes.size());
+  }
+
+  private static void saveToDatastore(Map<String, DateTime> revokes, DateTime creationTime) {
+    tm().transact(
+            () -> {
+              ofy()
+                  .deleteWithoutBackup()
+                  .keys(
+                      ofy()
+                          .load()
+                          .type(SignedMarkRevocationList.class)
+                          .ancestor(getCrossTldKey())
+                          .keys());
+              ofy()
+                  .saveWithoutBackup()
+                  .entities(
+                      CollectionUtils.partitionMap(revokes, SHARD_SIZE).stream()
+                          .map(
+                              shardRevokes -> {
+                                SignedMarkRevocationList shard =
+                                    SignedMarkRevocationList.create(creationTime, shardRevokes);
+                                shard.id = allocateId();
+                                shard.isShard =
+                                    true; // Avoid the exception in disallowUnshardedSaves().
+                                return shard;
+                              })
+                          .collect(toImmutableList()));
+            });
   }
 }
