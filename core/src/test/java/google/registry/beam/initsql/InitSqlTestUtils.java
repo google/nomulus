@@ -92,16 +92,10 @@ public final class InitSqlTestUtils {
    * VersionedEntities} contains exactly the same elements in the {@code expected} array.
    *
    * <p>This method makes assertions in the pipeline and only use {@link PAssert} on the result.
-   * This has two advantages over {@code PAssert}:
-   *
-   * <ul>
-   *   <li>It supports assertions on 'containsExactlyElementsIn', which is not available in {@code
-   *       PAssert}.
-   *   <li>It supports assertions on Objectify entities, which {@code PAssert} cannot not do.
-   *       Compared with PAssert-compatible options like {@code google.registry.tools.EntityWrapper}
-   *       or {@link EntityProto}, Objectify entities in Java give better-formatted error messages
-   *       when assertions fail.
-   * </ul>
+   * This way it supports assertions on Objectify entities, which {@code PAssert} cannot do ( since
+   * we have not implemented Coders for them). Compared with PAssert-compatible options like {@code
+   * google.registry.tools.EntityWrapper} or {@link EntityProto}, Objectify entities in Java give
+   * better-formatted error messages when assertions fail.
    *
    * <p>Each {@code expected} {@link KV key-value pair} refers to a versioned state of an Ofy
    * entity. The {@link KV#getKey key} is the timestamp, while the {@link KV#getValue value} is

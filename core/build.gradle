@@ -172,6 +172,8 @@ dependencies {
 
   compile deps['com.beust:jcommander']
   compile deps['com.google.api:gax']
+  compile deps['com.google.api.grpc:proto-google-cloud-datastore-v1']
+  compile deps['com.google.api.grpc:proto-google-common-protos']
   compile deps['com.google.api.grpc:proto-google-cloud-secretmanager-v1']
   compile deps['com.google.api-client:google-api-client']
   compile deps['com.google.api-client:google-api-client-appengine']
@@ -196,6 +198,8 @@ dependencies {
   compile deps['com.google.appengine:appengine-remote-api']
   compile deps['com.google.auth:google-auth-library-credentials']
   compile deps['com.google.auth:google-auth-library-oauth2-http']
+  compile deps['com.google.cloud.bigdataoss:util']
+  compile deps['com.google.cloud.datastore:datastore-v1-proto-client']
   compile deps['com.google.cloud.sql:jdbc-socket-factory-core']
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
   compile deps['com.google.cloud:google-cloud-secretmanager']
@@ -735,6 +739,13 @@ project.tasks.create('initSqlPipeline', JavaExec) {
             : sourceSets.main.runtimeClasspath
   }
 }
+
+// Caller must provide projectId, GCP region, runner, and the kinds to delete
+// (comma-separated kind names or '*' for all). E.g.:
+// nom_build :core:bulkDeleteDatastore --args="--project=domain-registry-crash \
+//     --region=us-central1 --runner=DataflowRunner --kindsToDelete=*"
+createToolTask(
+    'bulkDeleteDatastore', 'google.registry.beam.datastore.BulkDeletePipeline')
 
 project.tasks.create('generateSqlSchema', JavaExec) {
   classpath = sourceSets.nonprod.runtimeClasspath
