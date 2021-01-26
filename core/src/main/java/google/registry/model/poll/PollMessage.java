@@ -359,8 +359,13 @@ public abstract class PollMessage extends ImmutableObject
     }
 
     /** Converts an unspecialized VKey&lt;PollMessage&gt; to a VKey of the derived class. */
-    public static @Nullable VKey<OneTime> convertVKey(@Nullable VKey<OneTime> key) {
-      return key == null ? null : VKey.create(OneTime.class, key.getSqlKey(), key.getOfyKey());
+    public static @Nullable VKey<OneTime> convertVKey(@Nullable VKey<? extends PollMessage> key) {
+      if (key == null) {
+        return null;
+      }
+      Key<OneTime> ofyKey =
+          Key.create(key.getOfyKey().getParent(), OneTime.class, key.getOfyKey().getId());
+      return VKey.create(OneTime.class, key.getSqlKey(), ofyKey);
     }
 
     @Override
@@ -383,6 +388,7 @@ public abstract class PollMessage extends ImmutableObject
     @OnLoad
     void onLoad() {
       super.onLoad();
+      // Take the Objectify-specific fields and map them to the SQL-specific fields, if applicable
       if (!isNullOrEmpty(contactPendingActionNotificationResponses)) {
         pendingActionNotificationResponse = contactPendingActionNotificationResponses.get(0);
       }
@@ -390,36 +396,70 @@ public abstract class PollMessage extends ImmutableObject
         contactId = contactTransferResponses.get(0).getContactId();
         transferResponse = contactTransferResponses.get(0);
       }
+      if (!isNullOrEmpty(domainPendingActionNotificationResponses)) {
+        pendingActionNotificationResponse = domainPendingActionNotificationResponses.get(0);
+      }
+      if (!isNullOrEmpty(domainTransferResponses)) {
+        fullyQualifiedDomainName = domainTransferResponses.get(0).getFullyQualifiedDomainName();
+        transferResponse = domainTransferResponses.get(0);
+        extendedRegistrationExpirationTime =
+            domainTransferResponses.get(0).getExtendedRegistrationExpirationTime();
+      }
     }
 
     @Override
     @PostLoad
     void postLoad() {
       super.postLoad();
+      // Take the SQL-specific fields and map them to the Objectify-specific fields, if applicable
       if (pendingActionNotificationResponse != null) {
-        contactPendingActionNotificationResponses =
-            ImmutableList.of(
-                ContactPendingActionNotificationResponse.create(
-                    pendingActionNotificationResponse.nameOrId.value,
-                    pendingActionNotificationResponse.getActionResult(),
-                    pendingActionNotificationResponse.getTrid(),
-                    pendingActionNotificationResponse.processedDate));
+        if (contactId != null) {
+          contactPendingActionNotificationResponses =
+              ImmutableList.of(
+                  ContactPendingActionNotificationResponse.create(
+                      pendingActionNotificationResponse.nameOrId.value,
+                      pendingActionNotificationResponse.getActionResult(),
+                      pendingActionNotificationResponse.getTrid(),
+                      pendingActionNotificationResponse.processedDate));
+        } else if (fullyQualifiedDomainName != null) {
+          domainPendingActionNotificationResponses =
+              ImmutableList.of(
+                  DomainPendingActionNotificationResponse.create(
+                      pendingActionNotificationResponse.nameOrId.value,
+                      pendingActionNotificationResponse.getActionResult(),
+                      pendingActionNotificationResponse.getTrid(),
+                      pendingActionNotificationResponse.processedDate));
+        }
       }
-      if (contactId != null && transferResponse != null) {
-        // The transferResponse is currently an unspecialized TransferResponse instance, create a
-        // ContactTransferResponse so that the value is consistently specialized and store it in the
-        // list representation for datastore.
-        transferResponse =
-            new ContactTransferResponse.Builder()
-                .setContactId(contactId)
-                .setGainingClientId(transferResponse.getGainingClientId())
-                .setLosingClientId(transferResponse.getLosingClientId())
-                .setTransferStatus(transferResponse.getTransferStatus())
-                .setTransferRequestTime(transferResponse.getTransferRequestTime())
-                .setPendingTransferExpirationTime(
-                    transferResponse.getPendingTransferExpirationTime())
-                .build();
-        contactTransferResponses = ImmutableList.of((ContactTransferResponse) transferResponse);
+      if (transferResponse != null) {
+        // The transferResponse is currently an unspecialized TransferResponse instance, create the
+        // appropriate subclass so that the value is consistently specialized
+        if (contactId != null) {
+          transferResponse =
+              new ContactTransferResponse.Builder()
+                  .setContactId(contactId)
+                  .setGainingClientId(transferResponse.getGainingClientId())
+                  .setLosingClientId(transferResponse.getLosingClientId())
+                  .setTransferStatus(transferResponse.getTransferStatus())
+                  .setTransferRequestTime(transferResponse.getTransferRequestTime())
+                  .setPendingTransferExpirationTime(
+                      transferResponse.getPendingTransferExpirationTime())
+                  .build();
+          contactTransferResponses = ImmutableList.of((ContactTransferResponse) transferResponse);
+        } else if (fullyQualifiedDomainName != null) {
+          transferResponse =
+              new DomainTransferResponse.Builder()
+                  .setFullyQualifiedDomainName(fullyQualifiedDomainName)
+                  .setGainingClientId(transferResponse.getGainingClientId())
+                  .setLosingClientId(transferResponse.getLosingClientId())
+                  .setTransferStatus(transferResponse.getTransferStatus())
+                  .setTransferRequestTime(transferResponse.getTransferRequestTime())
+                  .setPendingTransferExpirationTime(
+                      transferResponse.getPendingTransferExpirationTime())
+                  .setExtendedRegistrationExpirationTime(extendedRegistrationExpirationTime)
+                  .build();
+          domainTransferResponses = ImmutableList.of((DomainTransferResponse) transferResponse);
+        }
       }
     }
 
@@ -441,10 +481,7 @@ public abstract class PollMessage extends ImmutableObject
                     .filter(ContactPendingActionNotificationResponse.class::isInstance)
                     .map(ContactPendingActionNotificationResponse.class::cast)
                     .collect(toImmutableList()));
-        if (getInstance().contactPendingActionNotificationResponses != null) {
-          getInstance().pendingActionNotificationResponse =
-              getInstance().contactPendingActionNotificationResponses.get(0);
-        }
+
         getInstance().contactTransferResponses =
             forceEmptyToNull(
                 responseData
@@ -452,10 +489,6 @@ public abstract class PollMessage extends ImmutableObject
                     .filter(ContactTransferResponse.class::isInstance)
                     .map(ContactTransferResponse.class::cast)
                     .collect(toImmutableList()));
-        if (getInstance().contactTransferResponses != null) {
-          getInstance().contactId = getInstance().contactTransferResponses.get(0).getContactId();
-          getInstance().transferResponse = getInstance().contactTransferResponses.get(0);
-        }
 
         getInstance().domainPendingActionNotificationResponses =
             forceEmptyToNull(
@@ -471,13 +504,36 @@ public abstract class PollMessage extends ImmutableObject
                     .filter(DomainTransferResponse.class::isInstance)
                     .map(DomainTransferResponse.class::cast)
                     .collect(toImmutableList()));
+
         getInstance().hostPendingActionNotificationResponses =
             forceEmptyToNull(
-                responseData
-                    .stream()
+                responseData.stream()
                     .filter(HostPendingActionNotificationResponse.class::isInstance)
                     .map(HostPendingActionNotificationResponse.class::cast)
                     .collect(toImmutableList()));
+
+        // Set the generic pending-action field as appropriate
+        if (getInstance().contactPendingActionNotificationResponses != null) {
+          getInstance().pendingActionNotificationResponse =
+              getInstance().contactPendingActionNotificationResponses.get(0);
+        } else if (getInstance().domainPendingActionNotificationResponses != null) {
+          getInstance().pendingActionNotificationResponse =
+              getInstance().domainPendingActionNotificationResponses.get(0);
+        } else if (getInstance().hostPendingActionNotificationResponses != null) {
+          getInstance().pendingActionNotificationResponse =
+              getInstance().hostPendingActionNotificationResponses.get(0);
+        }
+        // Set the generic transfer response field as appropriate
+        if (getInstance().contactTransferResponses != null) {
+          getInstance().contactId = getInstance().contactTransferResponses.get(0).getContactId();
+          getInstance().transferResponse = getInstance().contactTransferResponses.get(0);
+        } else if (getInstance().domainTransferResponses != null) {
+          getInstance().fullyQualifiedDomainName =
+              getInstance().domainTransferResponses.get(0).getFullyQualifiedDomainName();
+          getInstance().transferResponse = getInstance().domainTransferResponses.get(0);
+          getInstance().extendedRegistrationExpirationTime =
+              getInstance().domainTransferResponses.get(0).getExtendedRegistrationExpirationTime();
+        }
         return this;
       }
     }
@@ -518,8 +574,13 @@ public abstract class PollMessage extends ImmutableObject
     }
 
     /** Converts an unspecialized VKey&lt;PollMessage&gt; to a VKey of the derived class. */
-    public static @Nullable VKey<Autorenew> convertVKey(VKey<Autorenew> key) {
-      return key == null ? null : VKey.create(Autorenew.class, key.getSqlKey(), key.getOfyKey());
+    public static @Nullable VKey<Autorenew> convertVKey(VKey<? extends PollMessage> key) {
+      if (key == null) {
+        return null;
+      }
+      Key<Autorenew> ofyKey =
+          Key.create(key.getOfyKey().getParent(), Autorenew.class, key.getOfyKey().getId());
+      return VKey.create(Autorenew.class, key.getSqlKey(), ofyKey);
     }
 
     @Override

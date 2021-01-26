@@ -25,7 +25,6 @@ import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurr
 import static google.registry.flows.domain.DomainTransferUtils.createGainingTransferPollMessage;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
 import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_NACKED;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -41,7 +40,6 @@ import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
-import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
@@ -102,11 +100,11 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
     }
     DomainBase newDomain =
         denyPendingTransfer(existingDomain, TransferStatus.CLIENT_REJECTED, now, clientId);
-    ofy().save().<ImmutableObject>entities(
-        newDomain,
-        historyEntry,
-        createGainingTransferPollMessage(
-            targetId, newDomain.getTransferData(), null, historyEntry));
+    tm().putAll(
+            newDomain,
+            historyEntry,
+            createGainingTransferPollMessage(
+                targetId, newDomain.getTransferData(), null, historyEntry));
     // Reopen the autorenew event and poll message that we closed for the implicit transfer. This
     // may end up recreating the poll message if it was deleted upon the transfer request.
     updateAutorenewRecurrenceEndTime(existingDomain, END_OF_TIME);

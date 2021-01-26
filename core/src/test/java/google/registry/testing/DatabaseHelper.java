@@ -326,8 +326,7 @@ public class DatabaseHelper {
    * Returns a persisted domain that is the passed-in domain modified to be deleted at the specified
    * time.
    */
-  public static DomainBase persistDomainAsDeleted(
-      DomainBase domain, DateTime deletionTime) {
+  public static DomainBase persistDomainAsDeleted(DomainBase domain, DateTime deletionTime) {
     return persistResource(domain.asBuilder().setDeletionTime(deletionTime).build());
   }
 
@@ -347,7 +346,7 @@ public class DatabaseHelper {
   }
 
   public static ReservedList persistReservedList(
-    String listName, boolean shouldPublish, String... lines) {
+      String listName, boolean shouldPublish, String... lines) {
     ReservedList reservedList =
         new ReservedList.Builder()
             .setName(listName)
@@ -512,10 +511,7 @@ public class DatabaseHelper {
   }
 
   public static BillingEvent.OneTime createBillingEventForTransfer(
-      DomainBase domain,
-      HistoryEntry historyEntry,
-      DateTime costLookupTime,
-      DateTime eventTime) {
+      DomainBase domain, HistoryEntry historyEntry, DateTime costLookupTime, DateTime eventTime) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.TRANSFER)
         .setTargetId(domain.getDomainName())
@@ -530,10 +526,7 @@ public class DatabaseHelper {
   }
 
   public static ContactResource persistContactWithPendingTransfer(
-      ContactResource contact,
-      DateTime requestTime,
-      DateTime expirationTime,
-      DateTime now) {
+      ContactResource contact, DateTime requestTime, DateTime expirationTime, DateTime now) {
     HistoryEntry historyEntryContactTransfer =
         persistResource(
             new HistoryEntry.Builder()
@@ -587,26 +580,29 @@ public class DatabaseHelper {
     String domainName = String.format("%s.%s", label, tld);
     String repoId = generateNewDomainRoid(tld);
     DomainBase domain =
-        new DomainBase.Builder()
-            .setRepoId(repoId)
-            .setDomainName(domainName)
-            .setPersistedCurrentSponsorClientId("TheRegistrar")
-            .setCreationClientId("TheRegistrar")
-            .setCreationTimeForTest(creationTime)
-            .setRegistrationExpirationTime(expirationTime)
-            .setRegistrant(contact.createVKey())
-            .setContacts(
-                ImmutableSet.of(
-                    DesignatedContact.create(Type.ADMIN, contact.createVKey()),
-                    DesignatedContact.create(Type.TECH, contact.createVKey())))
-            .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")))
-            .addGracePeriod(
-                GracePeriod.create(GracePeriodStatus.ADD, repoId, now.plusDays(10), "foo", null))
-            .build();
-    HistoryEntry historyEntryDomainCreate =
         persistResource(
-            new HistoryEntry.Builder()
+            new DomainBase.Builder()
+                .setRepoId(repoId)
+                .setDomainName(domainName)
+                .setPersistedCurrentSponsorClientId("TheRegistrar")
+                .setCreationClientId("TheRegistrar")
+                .setCreationTimeForTest(creationTime)
+                .setRegistrationExpirationTime(expirationTime)
+                .setRegistrant(contact.createVKey())
+                .setContacts(
+                    ImmutableSet.of(
+                        DesignatedContact.create(Type.ADMIN, contact.createVKey()),
+                        DesignatedContact.create(Type.TECH, contact.createVKey())))
+                .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")))
+                .addGracePeriod(
+                    GracePeriod.create(
+                        GracePeriodStatus.ADD, repoId, now.plusDays(10), "TheRegistrar", null))
+                .build());
+    DomainHistory historyEntryDomainCreate =
+        persistResource(
+            new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setModificationTime(now)
                 .setParent(domain)
                 .build());
     BillingEvent.Recurring autorenewEvent =
@@ -643,18 +639,17 @@ public class DatabaseHelper {
       DateTime requestTime,
       DateTime expirationTime,
       DateTime extendedRegistrationExpirationTime) {
-    HistoryEntry historyEntryDomainTransfer =
+    DomainHistory historyEntryDomainTransfer =
         persistResource(
-            new HistoryEntry.Builder()
+            new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
                 .setModificationTime(tm().transact(() -> tm().getTransactionTime()))
                 .setParent(domain)
                 .build());
-    BillingEvent.OneTime transferBillingEvent = persistResource(createBillingEventForTransfer(
-            domain,
-            historyEntryDomainTransfer,
-            requestTime,
-            expirationTime));
+    BillingEvent.OneTime transferBillingEvent =
+        persistResource(
+            createBillingEventForTransfer(
+                domain, historyEntryDomainTransfer, requestTime, expirationTime));
     BillingEvent.Recurring gainingClientAutorenewEvent =
         persistResource(
             new BillingEvent.Recurring.Builder()
@@ -678,18 +673,18 @@ public class DatabaseHelper {
                 .build());
     // Modify the existing autorenew event to reflect the pending transfer.
     persistResource(
-        tm().loadByKey(domain.getAutorenewBillingEvent())
-            .asBuilder()
-            .setRecurrenceEndTime(expirationTime)
-            .build());
+        transactIfJpaTm(
+            () ->
+                tm().loadByKey(domain.getAutorenewBillingEvent())
+                    .asBuilder()
+                    .setRecurrenceEndTime(expirationTime)
+                    .build()));
     // Update the end time of the existing autorenew poll message. We must delete it if it has no
     // events left in it.
-    PollMessage.Autorenew autorenewPollMessage = tm().loadByKey(domain.getAutorenewPollMessage());
+    PollMessage.Autorenew autorenewPollMessage =
+        transactIfJpaTm(() -> tm().loadByKey(domain.getAutorenewPollMessage()));
     if (autorenewPollMessage.getEventTime().isBefore(expirationTime)) {
-      persistResource(
-          autorenewPollMessage.asBuilder()
-              .setAutorenewEndTime(expirationTime)
-              .build());
+      persistResource(autorenewPollMessage.asBuilder().setAutorenewEndTime(expirationTime).build());
     } else {
       deleteResource(autorenewPollMessage);
     }
@@ -928,11 +923,8 @@ public class DatabaseHelper {
   }
 
   public static PollMessage getOnlyPollMessage(
-      String clientId,
-      DateTime now,
-      Class<? extends PollMessage> subType) {
-    return getPollMessages(clientId, now)
-        .stream()
+      String clientId, DateTime now, Class<? extends PollMessage> subType) {
+    return getPollMessages(clientId, now).stream()
         .filter(subType::isInstance)
         .map(subType::cast)
         .collect(onlyElement());
@@ -957,10 +949,7 @@ public class DatabaseHelper {
     return createDomainRepoId(ObjectifyService.allocateId(), tld);
   }
 
-  /**
-   * Returns a newly allocated, globally unique contact/host repoId of the format
-   * HEX_TLD-ROID.
-   */
+  /** Returns a newly allocated, globally unique contact/host repoId of the format HEX_TLD-ROID. */
   public static String generateNewContactHostRoid() {
     return createRepoId(ObjectifyService.allocateId(), getContactAndHostRoidSuffix());
   }
@@ -1131,8 +1120,7 @@ public class DatabaseHelper {
    */
   public static ImmutableList<HistoryEntry> getHistoryEntriesOfType(
       EppResource resource, final HistoryEntry.Type type) {
-    return getHistoryEntries(resource)
-        .stream()
+    return getHistoryEntries(resource).stream()
         .filter(entry -> entry.getType() == type)
         .collect(toImmutableList());
   }
@@ -1143,7 +1131,7 @@ public class DatabaseHelper {
    */
   public static HistoryEntry getOnlyHistoryEntryOfType(
       EppResource resource, final HistoryEntry.Type type) {
-    List<HistoryEntry> historyEntries =  getHistoryEntriesOfType(resource, type);
+    List<HistoryEntry> historyEntries = getHistoryEntriesOfType(resource, type);
     assertThat(historyEntries).hasSize(1);
     return historyEntries.get(0);
   }
@@ -1151,13 +1139,16 @@ public class DatabaseHelper {
   private static HistoryEntry.Type getHistoryEntryType(EppResource resource) {
     if (resource instanceof ContactResource) {
       return resource.getRepoId() != null
-          ? HistoryEntry.Type.CONTACT_CREATE : HistoryEntry.Type.CONTACT_UPDATE;
+          ? HistoryEntry.Type.CONTACT_CREATE
+          : HistoryEntry.Type.CONTACT_UPDATE;
     } else if (resource instanceof HostResource) {
       return resource.getRepoId() != null
-          ? HistoryEntry.Type.HOST_CREATE : HistoryEntry.Type.HOST_UPDATE;
+          ? HistoryEntry.Type.HOST_CREATE
+          : HistoryEntry.Type.HOST_UPDATE;
     } else if (resource instanceof DomainBase) {
       return resource.getRepoId() != null
-          ? HistoryEntry.Type.DOMAIN_CREATE : HistoryEntry.Type.DOMAIN_UPDATE;
+          ? HistoryEntry.Type.DOMAIN_CREATE
+          : HistoryEntry.Type.DOMAIN_UPDATE;
     } else {
       throw new AssertionError();
     }
@@ -1215,7 +1206,7 @@ public class DatabaseHelper {
     tm().clearSessionCache();
   }
 
-  /** Force the create and update timestamps to get written into the resource. **/
+  /** Force the create and update timestamps to get written into the resource. */
   public static <R> R cloneAndSetAutoTimestamps(final R resource) {
     R result;
     if (tm().isOfy()) {

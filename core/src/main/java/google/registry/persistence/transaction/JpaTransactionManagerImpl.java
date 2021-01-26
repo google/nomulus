@@ -289,6 +289,15 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public void putAll(Object... entities) {
+    checkArgumentNotNull(entities, "entities must be specified");
+    assertInTransaction();
+    for (Object entity : entities) {
+      put(entity);
+    }
+  }
+
+  @Override
   public void putAll(ImmutableCollection<?> entities) {
     checkArgumentNotNull(entities, "entities must be specified");
     assertInTransaction();

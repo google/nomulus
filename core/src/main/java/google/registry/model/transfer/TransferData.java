@@ -167,7 +167,7 @@ public abstract class TransferData<
       return;
     }
     Key<? extends EppResource> eppKey;
-    if (getClass().equals(DomainBase.class)) {
+    if (getClass().equals(DomainTransferData.class)) {
       eppKey = Key.create(DomainBase.class, repoId);
     } else {
       eppKey = Key.create(ContactResource.class, repoId);
