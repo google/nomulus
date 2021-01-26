@@ -155,12 +155,14 @@ class FlowRunnerTest {
         new TlsCredentials(
             true,
             Optional.of("abc123def"),
-            Optional.of("cert"),
+            Optional.of("cert046F5A3"),
             Optional.of("127.0.0.1"),
             certificateChecker);
     flowRunner.run(eppMetricBuilder);
     assertThat(Splitter.on("\n\t").split(findFirstLogMessageByPrefix(handler, "EPP Command\n\t")))
-        .contains("TlsCredentials{clientCertificateHash=abc123def, clientAddress=/127.0.0.1}");
+        .contains(
+            "TlsCredentials{clientCertificate=cert046F5A3, clientCertificateHash=abc123def,"
+                + " clientAddress=/127.0.0.1}");
   }
 
   @Test
