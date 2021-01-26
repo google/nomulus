@@ -16,6 +16,7 @@ package google.registry.model;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.truth.TruthUtils.assertNullnessParity;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Correspondence;
@@ -62,11 +63,7 @@ public final class ImmutableObjectSubject extends Subject {
    * <p>This is used to verify that entities stored in both cloud SQL and Datastore are identical.
    */
   public void isEqualAcrossDatabases(@Nullable ImmutableObject expected) {
-    if (actual == null) {
-      assertThat(expected).isNull();
-    } else {
-      assertThat(expected).isNotNull();
-    }
+    assertNullnessParity(actual, expected);
     if (actual != null) {
       Map<Field, Object> actualFields = filterFields(actual, ImmutableObject.DoNotCompare.class);
       Map<Field, Object> expectedFields =
@@ -109,7 +106,8 @@ public final class ImmutableObjectSubject extends Subject {
     }
   }
 
-  public static Map<Field, Object> filterFields(ImmutableObject original, String... ignoredFields) {
+  private static Map<Field, Object> filterFields(
+      ImmutableObject original, String... ignoredFields) {
     ImmutableSet<String> ignoredFieldSet = ImmutableSet.copyOf(ignoredFields);
     Map<Field, Object> originalFields = ModelUtils.getFieldValues(original);
     // don't use ImmutableMap or a stream->collect model since we can have nulls
@@ -123,7 +121,7 @@ public final class ImmutableObjectSubject extends Subject {
   }
 
   /** Filter out fields with the given annotation. */
-  public static Map<Field, Object> filterFields(
+  private static Map<Field, Object> filterFields(
       ImmutableObject original, Class<? extends Annotation> annotation) {
     Map<Field, Object> originalFields = ModelUtils.getFieldValues(original);
     // don't use ImmutableMap or a stream->collect model since we can have nulls
