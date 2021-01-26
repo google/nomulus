@@ -223,6 +223,7 @@ public class TlsCredentials implements TransportCredentials {
   @Override
   public String toString() {
     return toStringHelper(getClass())
+        .add("clientCertificate", clientCertificate.orElse(null))
         .add("clientCertificateHash", clientCertificateHash.orElse(null))
         .add("clientAddress", clientInetAddr.orElse(null))
         .toString();
