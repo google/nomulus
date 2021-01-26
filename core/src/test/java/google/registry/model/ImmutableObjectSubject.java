@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.truth.TruthUtils.assertNullnessParity;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Correspondence;
 import com.google.common.truth.Correspondence.BinaryPredicate;
@@ -62,21 +63,7 @@ public final class ImmutableObjectSubject extends Subject {
   }
 
   private static String formatItems(String prefix, Iterator<?> iter) {
-    StringBuilder message = new StringBuilder(prefix);
-    boolean first = true;
-    while (iter.hasNext()) {
-      if (!first) {
-        message.append(", ");
-      }
-      message.append(iter.next());
-      first = false;
-    }
-    return message.toString();
-  }
-
-  /** Null-safe function to get the class name. */
-  private static String getClassName(Object object) {
-    return object != null ? object.getClass().getName() : "null";
+    return prefix + Joiner.on(", ").join(iter);
   }
 
   /**
@@ -86,121 +73,131 @@ public final class ImmutableObjectSubject extends Subject {
    * <p>This is used to verify that entities stored in both cloud SQL and Datastore are identical.
    */
   public void isEqualAcrossDatabases(@Nullable ImmutableObject expected) {
-    checkObjectAcrossDatabases(actual, expected, getClassName(actual));
+    checkObjectAcrossDatabases(
+        actual, expected, actual != null ? actual.getClass().getName() : "null");
   }
 
   // The following "check" methods implement a recursive check of immutable object equality across
-  // databases.  All of them function in both assertive and predicate modes: if "{@code path}" is
-  // provided (not null) then they throw {@link AssertionError}'s with detailed error messages.  If
+  // databases.  All of them function in both assertive and predicate modes: if "path" is
+  // provided (not null) then they throw AssertionError's with detailed error messages.  If
   // it is null, they return true for equal objects and false for inequal ones.
+  //
+  // The reason for this dual-mode behavior is that all of these methods can either be used in the
+  // context of a test assertion (in which case we want a detailed error message describing exactly
+  // the location in a complex object where a difference was discovered) or in the context of a
+  // membership check in a set (in which case we don't care about the specific location of the first
+  // difference, we just want to be able to determine if the object "is equal to" another object as
+  // efficiently as possible -- see checkSetAcrossDatabase()).
 
   @VisibleForTesting
   static boolean checkObjectAcrossDatabases(
       @Nullable Object actual, @Nullable Object expected, @Nullable String path) {
-    if (actual != expected && (actual == null || !actual.equals(expected))) {
-      // They're different, do a more detailed comparison.
+    if (Objects.equals(actual, expected)) {
+      return true;
+    }
 
-      // Check for null first
-      if (actual == null && expected != null) {
-        if (path != null) {
-          throw new AssertionError("At " + path + ": expected " + expected + "got null.");
-        } else {
-          return false;
-        }
-      } else if (actual != null && expected == null) {
-        if (path != null) {
-          throw new AssertionError("At " + path + ": expected null, got " + actual);
-        } else {
-          return false;
-        }
+    // They're different, do a more detailed comparison.
 
-        // For immutable objects, we have to recurse since the contained
-        // object could have DoNotCompare fields, too.
-      } else if (expected instanceof ImmutableObject) {
-        // We only verify that actual is an ImmutableObject so we get a good error message instead
-        // of a context-less ClassCastException.
-        if (!(actual instanceof ImmutableObject)) {
-          if (path != null) {
-            throw new AssertionError("At " + path + ": " + actual + " is not an immutable object.");
-          } else {
-            return false;
-          }
-        }
-
-        if (!checkImmutableAcrossDatabases(
-            (ImmutableObject) actual, (ImmutableObject) expected, path)) {
-          return false;
-        }
-      } else if (expected instanceof Map) {
-        if (!(actual instanceof Map)) {
-          if (path != null) {
-            throw new AssertionError("At " + path + ": " + actual + " is not a Map.");
-          } else {
-            return false;
-          }
-        }
-
-        // We could do better performance-wise by assuming that keys can be compared across
-        // databases using .equals() -- then we could just iterate over the entries and verify that
-        // the key has the same value in the other set.  However, there is currently no way for us
-        // to guard against the invalidation of this assumption, and it's less code to simply reuse
-        // the set comparison.  As long as the performance is adequate in the context of a test, it
-        // doesn't seem like a good idea to try to optimize this.
-        if (!checkSetAcrossDatabases(
-            ((Map<?, ?>) actual).entrySet(), ((Map<?, ?>) expected).entrySet(), path, "Map")) {
-          return false;
-        }
-      } else if (expected instanceof Set) {
-        if (!(actual instanceof Set)) {
-          if (path != null) {
-            throw new AssertionError("At " + path + ": " + actual + " is not a Set.");
-          } else {
-            return false;
-          }
-        }
-
-        if (!checkSetAcrossDatabases((Set<?>) actual, (Set<?>) expected, path, "Set")) {
-          return false;
-        }
-      } else if (expected instanceof Collection) {
-        if (!(actual instanceof Collection)) {
-          if (path != null) {
-            throw new AssertionError("At " + path + ": " + actual + " is not a Collection.");
-          } else {
-            return false;
-          }
-        }
-
-        if (!checkListAcrossDatabases((Collection<?>) actual, (Collection<?>) expected, path)) {
-          return false;
-        }
-
-        // Give Map.Entry special treatment to facilitate the use of Set comparison for verification
-        // of Map.
-      } else if (expected instanceof Map.Entry) {
-        if (!(actual instanceof Map.Entry)) {
-          if (path != null) {
-            throw new AssertionError("At " + path + ": " + actual + " is not a Map.Entry.");
-          } else {
-            return false;
-          }
-        }
-
-        if (!checkObjectAcrossDatabases(
-                ((Map.Entry<?, ?>) actual).getKey(), ((Map.Entry<?, ?>) expected).getKey(), path)
-            || !checkObjectAcrossDatabases(
-                ((Map.Entry<?, ?>) actual).getValue(),
-                ((Map.Entry<?, ?>) expected).getValue(),
-                path)) {
-          return false;
-        }
+    // Check for null first
+    if (actual == null && expected != null) {
+      if (path != null) {
+        throw new AssertionError("At " + path + ": expected " + expected + "got null.");
       } else {
-        if (!actual.equals(expected)) {
-          if (path != null) {
-            throw new AssertionError("At " + path + ": " + actual + " is not equal to " + expected);
-          } else {
-            return false;
-          }
+        return false;
+      }
+    } else if (actual != null && expected == null) {
+      if (path != null) {
+        throw new AssertionError("At " + path + ": expected null, got " + actual);
+      } else {
+        return false;
+      }
+
+      // For immutable objects, we have to recurse since the contained
+      // object could have DoNotCompare fields, too.
+    } else if (expected instanceof ImmutableObject) {
+      // We only verify that actual is an ImmutableObject so we get a good error message instead
+      // of a context-less ClassCastException.
+      if (!(actual instanceof ImmutableObject)) {
+        if (path != null) {
+          throw new AssertionError("At " + path + ": " + actual + " is not an immutable object.");
+        } else {
+          return false;
+        }
+      }
+
+      if (!checkImmutableAcrossDatabases(
+          (ImmutableObject) actual, (ImmutableObject) expected, path)) {
+        return false;
+      }
+    } else if (expected instanceof Map) {
+      if (!(actual instanceof Map)) {
+        if (path != null) {
+          throw new AssertionError("At " + path + ": " + actual + " is not a Map.");
+        } else {
+          return false;
+        }
+      }
+
+      // We could do better performance-wise by assuming that keys can be compared across
+      // databases using .equals() -- then we could just iterate over the entries and verify that
+      // the key has the same value in the other set.  However, there is currently no way for us
+      // to guard against the invalidation of this assumption, and it's less code to simply reuse
+      // the set comparison.  As long as the performance is adequate in the context of a test, it
+      // doesn't seem like a good idea to try to optimize this.
+      if (!checkSetAcrossDatabases(
+          ((Map<?, ?>) actual).entrySet(), ((Map<?, ?>) expected).entrySet(), path, "Map")) {
+        return false;
+      }
+    } else if (expected instanceof Set) {
+      if (!(actual instanceof Set)) {
+        if (path != null) {
+          throw new AssertionError("At " + path + ": " + actual + " is not a Set.");
+        } else {
+          return false;
+        }
+      }
+
+      if (!checkSetAcrossDatabases((Set<?>) actual, (Set<?>) expected, path, "Set")) {
+        return false;
+      }
+    } else if (expected instanceof Collection) {
+      if (!(actual instanceof Collection)) {
+        if (path != null) {
+          throw new AssertionError("At " + path + ": " + actual + " is not a Collection.");
+        } else {
+          return false;
+        }
+      }
+
+      if (!checkListAcrossDatabases((Collection<?>) actual, (Collection<?>) expected, path)) {
+        return false;
+      }
+
+      // Give Map.Entry special treatment to facilitate the use of Set comparison for verification
+      // of Map.
+    } else if (expected instanceof Map.Entry) {
+      if (!(actual instanceof Map.Entry)) {
+        if (path != null) {
+          throw new AssertionError("At " + path + ": " + actual + " is not a Map.Entry.");
+        } else {
+          return false;
+        }
+      }
+
+      if (!checkObjectAcrossDatabases(
+              ((Map.Entry<?, ?>) actual).getKey(), ((Map.Entry<?, ?>) expected).getKey(), path)
+          || !checkObjectAcrossDatabases(
+              ((Map.Entry<?, ?>) actual).getValue(),
+              ((Map.Entry<?, ?>) expected).getValue(),
+              path)) {
+        return false;
+      }
+    } else {
+      if (!actual.equals(expected)) {
+        if (path != null) {
+          throw new AssertionError("At " + path + ": " + actual + " is not equal to " + expected);
+        } else {
+          return false;
         }
       }
     }
