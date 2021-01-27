@@ -22,6 +22,7 @@ import static google.registry.testing.truth.TruthUtils.assertNullnessParity;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.truth.Correspondence;
 import com.google.common.truth.Correspondence.BinaryPredicate;
 import com.google.common.truth.FailureMetadata;
@@ -31,12 +32,13 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
 import javax.annotation.Nullable;
 
 /** Truth subject for asserting things about ImmutableObjects that are not built in. */
@@ -99,13 +101,10 @@ public final class ImmutableObjectSubject extends Subject {
 
     // They're different, do a more detailed comparison.
 
-    // Variable for storing the result of nested checks.
-    ComparisonResult result;
-
-    // Check for null first
-    if (actual == null && expected != null) {
+    // Check for null first (we can assume both variables are not null at this point).
+    if (actual == null) {
       return ComparisonResult.createFailure(path, "expected ", expected, "got null.");
-    } else if (actual != null && expected == null) {
+    } else if (expected == null) {
       return ComparisonResult.createFailure(path, "expected null, got ", actual);
 
       // For immutable objects, we have to recurse since the contained
@@ -117,49 +116,30 @@ public final class ImmutableObjectSubject extends Subject {
         return ComparisonResult.createFailure(path, actual, " is not an immutable object.");
       }
 
-      if ((result =
-              checkImmutableAcrossDatabases(
-                  (ImmutableObject) actual, (ImmutableObject) expected, path))
-          .isFailure()) {
-        return result;
-      }
+      return checkImmutableAcrossDatabases(
+          (ImmutableObject) actual, (ImmutableObject) expected, path);
     } else if (expected instanceof Map) {
       if (!(actual instanceof Map)) {
         return ComparisonResult.createFailure(path, actual, " is not a Map.");
       }
 
-      // We could do better performance-wise by assuming that keys can be compared across
-      // databases using .equals() -- then we could just iterate over the entries and verify that
-      // the key has the same value in the other set.  However, there is currently no way for us
-      // to guard against the invalidation of this assumption, and it's less code to simply reuse
-      // the set comparison.  As long as the performance is adequate in the context of a test, it
-      // doesn't seem like a good idea to try to optimize this.
-      if ((result =
-              checkSetAcrossDatabases(
-                  ((Map<?, ?>) actual).entrySet(), ((Map<?, ?>) expected).entrySet(), path, "Map"))
-          .isFailure()) {
-        return result;
-      }
+      // This would likely be more efficient if we could assume that keys can be compared across
+      // databases using .equals(), however we cannot guarantee key equality so the simplest and
+      // most correct way to accomplish this is by reusing the set comparison.
+      return checkSetAcrossDatabases(
+          ((Map<?, ?>) actual).entrySet(), ((Map<?, ?>) expected).entrySet(), path, "Map");
     } else if (expected instanceof Set) {
       if (!(actual instanceof Set)) {
         return ComparisonResult.createFailure(path, actual, " is not a Set.");
       }
 
-      if ((result = checkSetAcrossDatabases((Set<?>) actual, (Set<?>) expected, path, "Set"))
-          .isFailure()) {
-        return result;
-      }
+      return checkSetAcrossDatabases((Set<?>) actual, (Set<?>) expected, path, "Set");
     } else if (expected instanceof Collection) {
       if (!(actual instanceof Collection)) {
         return ComparisonResult.createFailure(path, actual, " is not a Collection.");
       }
 
-      if ((result =
-              checkListAcrossDatabases((Collection<?>) actual, (Collection<?>) expected, path))
-          .isFailure()) {
-        return result;
-      }
-
+      return checkListAcrossDatabases((Collection<?>) actual, (Collection<?>) expected, path);
       // Give Map.Entry special treatment to facilitate the use of Set comparison for verification
       // of Map.
     } else if (expected instanceof Map.Entry) {
@@ -169,6 +149,7 @@ public final class ImmutableObjectSubject extends Subject {
 
       // Check both the key and value.  We can always ignore the path here, this should only be
       // called from within a set comparison.
+      ComparisonResult result;
       if ((result =
               checkObjectAcrossDatabases(
                   ((Map.Entry<?, ?>) actual).getKey(), ((Map.Entry<?, ?>) expected).getKey(), null))
@@ -184,9 +165,9 @@ public final class ImmutableObjectSubject extends Subject {
         return result;
       }
     } else {
-      if (!actual.equals(expected)) {
-        return ComparisonResult.createFailure(path, actual, " is not equal to ", expected);
-      }
+      // Since we know that the objects are not equal and since any other types can not be expected
+      // to contain DoNotCompare elements, this condition is always a failure.
+      return ComparisonResult.createFailure(path, actual, " is not equal to ", expected);
     }
 
     return ComparisonResult.createSuccess();
@@ -198,11 +179,13 @@ public final class ImmutableObjectSubject extends Subject {
     // the other, as the cross database checks don't require strict equality.  Instead we have to do
     // an N^2 comparison to search for an equivalent element.
 
-    // Objects in expected that aren't in actual.
-    Set<Object> missing = new HashSet<>();
+    // Objects in expected that aren't in actual.  We use "identity sets" here and below because we
+    // want to keep track of the _objects themselves_ rather than rely upon any overridable notion
+    // of equality.
+    Set<Object> missing = path != null ? Sets.newIdentityHashSet() : null;
 
-    // Objects from actual that have matching elements in equal.
-    Set<Object> found = new HashSet<>();
+    // Objects from actual that have matching elements in expected.
+    Set<Object> found = Sets.newIdentityHashSet();
 
     // Build missing and found.
     for (Object expectedElem : expected) {
@@ -211,14 +194,14 @@ public final class ImmutableObjectSubject extends Subject {
         if (!checkObjectAcrossDatabases(actualElem, expectedElem, null).isFailure()) {
           gotMatch = true;
 
-          // If the element matches multiple elements in "expected," we have a basic problem with
-          // this kind of set that we'll want to know about.
-          if (found.contains(actualElem)) {
+          // Add the element to the set of expected elements that were "found" in actual.  If the
+          // element matches multiple elements in "expected," we have a basic problem with this
+          // kind of set that we'll want to know about.
+          if (!found.add(actualElem)) {
             return ComparisonResult.createFailure(
-                path, "element " + actualElem + " matches multiple elements in " + expected);
+                path, "element ", actualElem, " matches multiple elements in ", expected);
           }
 
-          found.add(actualElem);
           break;
         }
       }
@@ -231,20 +214,23 @@ public final class ImmutableObjectSubject extends Subject {
       }
     }
 
-    // Build a set of all objects in actual that don't have counterparts in expected.
-    Set<Object> unexpected = path != null ? new HashSet<>() : null;
-    for (Object actualElem : actual) {
-      if (!found.contains(actualElem)) {
-        if (path != null) {
-          unexpected.add(actualElem);
-        } else {
-          return ComparisonResult.createFailure();
-        }
-      }
-    }
+    if (path != null) {
+      // Provide a detailed message consisting of any missing or unexpected items.
 
-    if (!missing.isEmpty() || (unexpected != null && !unexpected.isEmpty())) {
-      if (path != null) {
+      // Build a set of all objects in actual that don't have counterparts in expected.
+      Set<Object> unexpected =
+          actual.stream()
+              .filter(actualElem -> !found.contains(actualElem))
+              .collect(
+                  Collector.of(
+                      Sets::newIdentityHashSet,
+                      Set::add,
+                      (result, values) -> {
+                        result.addAll(values);
+                        return result;
+                      }));
+
+      if (!missing.isEmpty() || (unexpected != null && !unexpected.isEmpty())) {
         String message = type + " does not contain the expected contents.";
         if (!missing.isEmpty()) {
           message += "  It is missing: " + formatItems(missing.iterator());
@@ -255,9 +241,12 @@ public final class ImmutableObjectSubject extends Subject {
         }
 
         return ComparisonResult.createFailure(path, message);
-      } else {
-        return ComparisonResult.createFailure();
       }
+
+      // We just need to check if there were any objects in "actual" that were not in "expected"
+      // (where "found" is a proxy for "expected").
+    } else if (actual.stream().anyMatch(Predicate.not(found::contains))) {
+      return ComparisonResult.createFailure();
     }
 
     return ComparisonResult.createSuccess();
@@ -303,7 +292,7 @@ public final class ImmutableObjectSubject extends Subject {
         return ComparisonResult.createFailure(path, "is missing field ", entry.getKey().getName());
       }
 
-      // Verify that the field values are the same.  We can use "equals()" as a quick check.
+      // Verify that the field values are the same.
       Object expectedFieldValue = entry.getValue();
       Object actualFieldValue = actualFields.get(entry.getKey());
       ComparisonResult result =
