@@ -14,6 +14,7 @@
 
 package google.registry.model;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.truth.TruthUtils.assertNullnessParity;
@@ -62,10 +63,6 @@ public final class ImmutableObjectSubject extends Subject {
     }
   }
 
-  private static String formatItems(String prefix, Iterator<?> iter) {
-    return prefix + Joiner.on(", ").join(iter);
-  }
-
   /**
    * Checks that {@code expected} has the same contents as {@code actual} except for fields that are
    * marked with {@link ImmutableObject.DoNotCompare}.
@@ -73,8 +70,12 @@ public final class ImmutableObjectSubject extends Subject {
    * <p>This is used to verify that entities stored in both cloud SQL and Datastore are identical.
    */
   public void isEqualAcrossDatabases(@Nullable ImmutableObject expected) {
-    checkObjectAcrossDatabases(
-        actual, expected, actual != null ? actual.getClass().getName() : "null");
+    ComparisonResult result =
+        checkObjectAcrossDatabases(
+            actual, expected, actual != null ? actual.getClass().getName() : "null");
+    if (result.isFailure()) {
+      throw new AssertionError(result.getMessage());
+    }
   }
 
   // The following "check" methods implement a recursive check of immutable object equality across
@@ -90,27 +91,22 @@ public final class ImmutableObjectSubject extends Subject {
   // efficiently as possible -- see checkSetAcrossDatabase()).
 
   @VisibleForTesting
-  static boolean checkObjectAcrossDatabases(
+  static ComparisonResult checkObjectAcrossDatabases(
       @Nullable Object actual, @Nullable Object expected, @Nullable String path) {
     if (Objects.equals(actual, expected)) {
-      return true;
+      return ComparisonResult.createSuccess();
     }
 
     // They're different, do a more detailed comparison.
 
+    // Variable for storing the result of nested checks.
+    ComparisonResult result;
+
     // Check for null first
     if (actual == null && expected != null) {
-      if (path != null) {
-        throw new AssertionError("At " + path + ": expected " + expected + "got null.");
-      } else {
-        return false;
-      }
+      return ComparisonResult.createFailure(path, "expected ", expected, "got null.");
     } else if (actual != null && expected == null) {
-      if (path != null) {
-        throw new AssertionError("At " + path + ": expected null, got " + actual);
-      } else {
-        return false;
-      }
+      return ComparisonResult.createFailure(path, "expected null, got ", actual);
 
       // For immutable objects, we have to recurse since the contained
       // object could have DoNotCompare fields, too.
@@ -118,24 +114,18 @@ public final class ImmutableObjectSubject extends Subject {
       // We only verify that actual is an ImmutableObject so we get a good error message instead
       // of a context-less ClassCastException.
       if (!(actual instanceof ImmutableObject)) {
-        if (path != null) {
-          throw new AssertionError("At " + path + ": " + actual + " is not an immutable object.");
-        } else {
-          return false;
-        }
+        return ComparisonResult.createFailure(path, actual, " is not an immutable object.");
       }
 
-      if (!checkImmutableAcrossDatabases(
-          (ImmutableObject) actual, (ImmutableObject) expected, path)) {
-        return false;
+      if ((result =
+              checkImmutableAcrossDatabases(
+                  (ImmutableObject) actual, (ImmutableObject) expected, path))
+          .isFailure()) {
+        return result;
       }
     } else if (expected instanceof Map) {
       if (!(actual instanceof Map)) {
-        if (path != null) {
-          throw new AssertionError("At " + path + ": " + actual + " is not a Map.");
-        } else {
-          return false;
-        }
+        return ComparisonResult.createFailure(path, actual, " is not a Map.");
       }
 
       // We could do better performance-wise by assuming that keys can be compared across
@@ -144,68 +134,65 @@ public final class ImmutableObjectSubject extends Subject {
       // to guard against the invalidation of this assumption, and it's less code to simply reuse
       // the set comparison.  As long as the performance is adequate in the context of a test, it
       // doesn't seem like a good idea to try to optimize this.
-      if (!checkSetAcrossDatabases(
-          ((Map<?, ?>) actual).entrySet(), ((Map<?, ?>) expected).entrySet(), path, "Map")) {
-        return false;
+      if ((result =
+              checkSetAcrossDatabases(
+                  ((Map<?, ?>) actual).entrySet(), ((Map<?, ?>) expected).entrySet(), path, "Map"))
+          .isFailure()) {
+        return result;
       }
     } else if (expected instanceof Set) {
       if (!(actual instanceof Set)) {
-        if (path != null) {
-          throw new AssertionError("At " + path + ": " + actual + " is not a Set.");
-        } else {
-          return false;
-        }
+        return ComparisonResult.createFailure(path, actual, " is not a Set.");
       }
 
-      if (!checkSetAcrossDatabases((Set<?>) actual, (Set<?>) expected, path, "Set")) {
-        return false;
+      if ((result = checkSetAcrossDatabases((Set<?>) actual, (Set<?>) expected, path, "Set"))
+          .isFailure()) {
+        return result;
       }
     } else if (expected instanceof Collection) {
       if (!(actual instanceof Collection)) {
-        if (path != null) {
-          throw new AssertionError("At " + path + ": " + actual + " is not a Collection.");
-        } else {
-          return false;
-        }
+        return ComparisonResult.createFailure(path, actual, " is not a Collection.");
       }
 
-      if (!checkListAcrossDatabases((Collection<?>) actual, (Collection<?>) expected, path)) {
-        return false;
+      if ((result =
+              checkListAcrossDatabases((Collection<?>) actual, (Collection<?>) expected, path))
+          .isFailure()) {
+        return result;
       }
 
       // Give Map.Entry special treatment to facilitate the use of Set comparison for verification
       // of Map.
     } else if (expected instanceof Map.Entry) {
       if (!(actual instanceof Map.Entry)) {
-        if (path != null) {
-          throw new AssertionError("At " + path + ": " + actual + " is not a Map.Entry.");
-        } else {
-          return false;
-        }
+        return ComparisonResult.createFailure(path, actual, " is not a Map.Entry.");
       }
 
-      if (!checkObjectAcrossDatabases(
-              ((Map.Entry<?, ?>) actual).getKey(), ((Map.Entry<?, ?>) expected).getKey(), path)
-          || !checkObjectAcrossDatabases(
-              ((Map.Entry<?, ?>) actual).getValue(),
-              ((Map.Entry<?, ?>) expected).getValue(),
-              path)) {
-        return false;
+      // Check both the key and value.  We can always ignore the path here, this should only be
+      // called from within a set comparison.
+      if ((result =
+              checkObjectAcrossDatabases(
+                  ((Map.Entry<?, ?>) actual).getKey(), ((Map.Entry<?, ?>) expected).getKey(), null))
+          .isFailure()) {
+        return result;
+      }
+      if ((result =
+              checkObjectAcrossDatabases(
+                  ((Map.Entry<?, ?>) actual).getValue(),
+                  ((Map.Entry<?, ?>) expected).getValue(),
+                  null))
+          .isFailure()) {
+        return result;
       }
     } else {
       if (!actual.equals(expected)) {
-        if (path != null) {
-          throw new AssertionError("At " + path + ": " + actual + " is not equal to " + expected);
-        } else {
-          return false;
-        }
+        return ComparisonResult.createFailure(path, actual, " is not equal to ", expected);
       }
     }
 
-    return true;
+    return ComparisonResult.createSuccess();
   }
 
-  private static boolean checkSetAcrossDatabases(
+  private static ComparisonResult checkSetAcrossDatabases(
       Set<?> actual, Set<?> expected, String path, String type) {
     // Unfortunately, we can't just check to see whether one set "contains" all of the elements of
     // the other, as the cross database checks don't require strict equality.  Instead we have to do
@@ -221,8 +208,16 @@ public final class ImmutableObjectSubject extends Subject {
     for (Object expectedElem : expected) {
       boolean gotMatch = false;
       for (Object actualElem : actual) {
-        if (checkObjectAcrossDatabases(actualElem, expectedElem, null)) {
+        if (!checkObjectAcrossDatabases(actualElem, expectedElem, null).isFailure()) {
           gotMatch = true;
+
+          // If the element matches multiple elements in "expected," we have a basic problem with
+          // this kind of set that we'll want to know about.
+          if (found.contains(actualElem)) {
+            return ComparisonResult.createFailure(
+                path, "element " + actualElem + " matches multiple elements in " + expected);
+          }
+
           found.add(actualElem);
           break;
         }
@@ -230,7 +225,7 @@ public final class ImmutableObjectSubject extends Subject {
 
       if (!gotMatch) {
         if (path == null) {
-          return false;
+          return ComparisonResult.createFailure();
         }
         missing.add(expectedElem);
       }
@@ -243,32 +238,32 @@ public final class ImmutableObjectSubject extends Subject {
         if (path != null) {
           unexpected.add(actualElem);
         } else {
-          return false;
+          return ComparisonResult.createFailure();
         }
       }
     }
 
     if (!missing.isEmpty() || (unexpected != null && !unexpected.isEmpty())) {
       if (path != null) {
-        String message = "At " + path + ": " + type + " does not contain the expected contents.";
+        String message = type + " does not contain the expected contents.";
         if (!missing.isEmpty()) {
-          message += formatItems("  It is missing: ", missing.iterator());
+          message += "  It is missing: " + formatItems(missing.iterator());
         }
 
         if (!unexpected.isEmpty()) {
-          message += formatItems("  It contains additional elements: ", unexpected.iterator());
+          message += "  It contains additional elements: " + formatItems(unexpected.iterator());
         }
 
-        throw new AssertionError(message);
+        return ComparisonResult.createFailure(path, message);
       } else {
-        return false;
+        return ComparisonResult.createFailure();
       }
     }
 
-    return true;
+    return ComparisonResult.createSuccess();
   }
 
-  private static boolean checkListAcrossDatabases(
+  private static ComparisonResult checkListAcrossDatabases(
       Collection<?> actual, Collection<?> expected, @Nullable String path) {
     Iterator<?> actualIter = actual.iterator();
     Iterator<?> expectedIter = expected.iterator();
@@ -276,72 +271,96 @@ public final class ImmutableObjectSubject extends Subject {
     while (actualIter.hasNext() && expectedIter.hasNext()) {
       Object actualItem = actualIter.next();
       Object expectedItem = expectedIter.next();
-      if (!checkObjectAcrossDatabases(
-          actualItem, expectedItem, path != null ? path + "[" + index + "]" : null)) {
-        return false;
+      ComparisonResult result =
+          checkObjectAcrossDatabases(
+              actualItem, expectedItem, path != null ? path + "[" + index + "]" : null);
+      if (result.isFailure()) {
+        return result;
       }
       ++index;
     }
 
     if (actualIter.hasNext()) {
-      if (path != null) {
-        throw new AssertionError(
-            formatItems("At " + path + ": has additional items: ", actualIter));
-      } else {
-        return false;
-      }
+      return ComparisonResult.createFailure(
+          path, "has additional items: ", formatItems(actualIter));
     }
 
     if (expectedIter.hasNext()) {
-      if (path != null) {
-        throw new AssertionError(formatItems("At " + path + ": missing items: ", expectedIter));
-      } else {
-        return false;
-      }
+      return ComparisonResult.createFailure(path, "missing items: ", formatItems(expectedIter));
     }
 
-    return true;
+    return ComparisonResult.createSuccess();
   }
 
   /** Recursive helper for isEqualAcrossDatabases. */
-  private static boolean checkImmutableAcrossDatabases(
+  private static ComparisonResult checkImmutableAcrossDatabases(
       ImmutableObject actual, ImmutableObject expected, String path) {
     Map<Field, Object> actualFields = filterFields(actual, ImmutableObject.DoNotCompare.class);
     Map<Field, Object> expectedFields = filterFields(expected, ImmutableObject.DoNotCompare.class);
 
     for (Map.Entry<Field, Object> entry : expectedFields.entrySet()) {
       if (!actualFields.containsKey(entry.getKey())) {
-        if (path != null) {
-          throw new AssertionError("At " + path + ": is missing field " + entry.getKey().getName());
-        } else {
-          return false;
-        }
+        return ComparisonResult.createFailure(path, "is missing field ", entry.getKey().getName());
       }
 
       // Verify that the field values are the same.  We can use "equals()" as a quick check.
       Object expectedFieldValue = entry.getValue();
       Object actualFieldValue = actualFields.get(entry.getKey());
-      if (!checkObjectAcrossDatabases(
-          actualFieldValue,
-          expectedFieldValue,
-          path != null ? path + "." + entry.getKey().getName() : null)) {
-        return false;
+      ComparisonResult result =
+          checkObjectAcrossDatabases(
+              actualFieldValue,
+              expectedFieldValue,
+              path != null ? path + "." + entry.getKey().getName() : null);
+      if (result.isFailure()) {
+        return result;
       }
     }
 
     // Check for fields in actual that are not in expected.
     for (Map.Entry<Field, Object> entry : actualFields.entrySet()) {
       if (!expectedFields.containsKey(entry.getKey())) {
-        if (path != null) {
-          throw new AssertionError(
-              "At " + path + ": has additional field " + entry.getKey().getName());
-        } else {
-          return false;
-        }
+        return ComparisonResult.createFailure(
+            path, "has additional field ", entry.getKey().getName());
       }
     }
 
-    return true;
+    return ComparisonResult.createSuccess();
+  }
+
+  private static String formatItems(Iterator<?> iter) {
+    return Joiner.on(", ").join(iter);
+  }
+
+  /** Encapsulates success/failure result in recursive comparison with optional error string. */
+  static class ComparisonResult {
+    boolean succeeded;
+    String message;
+
+    private ComparisonResult(boolean succeeded, @Nullable String message) {
+      this.succeeded = succeeded;
+      this.message = message;
+    }
+
+    static ComparisonResult createFailure() {
+      return new ComparisonResult(false, null);
+    }
+
+    static ComparisonResult createFailure(@Nullable String path, Object... message) {
+      return new ComparisonResult(false, "At " + path + ": " + Joiner.on("").join(message));
+    }
+
+    static ComparisonResult createSuccess() {
+      return new ComparisonResult(true, null);
+    }
+
+    String getMessage() {
+      checkNotNull(message);
+      return message;
+    }
+
+    boolean isFailure() {
+      return !succeeded;
+    }
   }
 
   /**

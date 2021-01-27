@@ -15,6 +15,7 @@
 package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ImmutableObjectSubject.ComparisonResult;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.checkObjectAcrossDatabases;
 import static org.junit.Assert.assertThrows;
@@ -38,8 +39,8 @@ public class ImmutableObjectSubjectTest {
         .that(makeTestAtom(null))
         .isEqualAcrossDatabases(makeTestAtom(null));
 
-    assertThat(checkObjectAcrossDatabases(null, makeTestAtom("foo"), null)).isFalse();
-    assertThat(checkObjectAcrossDatabases(null, makeTestAtom("foo"), null)).isFalse();
+    assertThat(checkObjectAcrossDatabases(null, makeTestAtom("foo"), null).isFailure()).isTrue();
+    assertThat(checkObjectAcrossDatabases(null, makeTestAtom("foo"), null).isFailure()).isTrue();
   }
 
   @Test
@@ -47,7 +48,8 @@ public class ImmutableObjectSubjectTest {
     TestImmutableObject actual = makeTestObj();
     assertAboutImmutableObjects().that(actual).isEqualAcrossDatabases(actual);
     assertAboutImmutableObjects().that(actual).isEqualAcrossDatabases(makeTestObj());
-    assertThat(checkObjectAcrossDatabases(makeTestObj(), makeTestObj(), null)).isTrue();
+    assertThat(checkObjectAcrossDatabases(makeTestObj(), makeTestObj(), null).isFailure())
+        .isFalse();
   }
 
   @Test
@@ -63,8 +65,10 @@ public class ImmutableObjectSubjectTest {
         .hasMessageThat()
         .contains(
             "At google.registry.model.ImmutableObjectSubjectTest$TestImmutableObject.stringField:");
-    assertThat(checkObjectAcrossDatabases(makeTestObj(), makeTestObj().withStringField(null), null))
-        .isFalse();
+    assertThat(
+            checkObjectAcrossDatabases(makeTestObj(), makeTestObj().withStringField(null), null)
+                .isFailure())
+        .isTrue();
   }
 
   @Test
@@ -110,8 +114,10 @@ public class ImmutableObjectSubjectTest {
         .contains(
             "At google.registry.model.ImmutableObjectSubjectTest$"
                 + "TestImmutableObject.nested.stringField:");
-    assertThat(checkObjectAcrossDatabases(makeTestObj(), makeTestObj().withNested(null), null))
-        .isFalse();
+    assertThat(
+            checkObjectAcrossDatabases(makeTestObj(), makeTestObj().withNested(null), null)
+                .isFailure())
+        .isTrue();
   }
 
   @Test
@@ -174,21 +180,24 @@ public class ImmutableObjectSubjectTest {
                 + "TestImmutableObject.list: has additional items");
     assertThat(
             checkObjectAcrossDatabases(
-                makeTestObj(),
-                makeTestObj()
-                    .withList(ImmutableList.of(makeTestAtom("baz"), makeTestAtom("gauze"))),
-                null))
-        .isFalse();
+                    makeTestObj(),
+                    makeTestObj()
+                        .withList(ImmutableList.of(makeTestAtom("baz"), makeTestAtom("gauze"))),
+                    null)
+                .isFailure())
+        .isTrue();
     assertThat(
             checkObjectAcrossDatabases(
-                makeTestObj(), makeTestObj().withList(ImmutableList.of()), null))
-        .isFalse();
+                    makeTestObj(), makeTestObj().withList(ImmutableList.of()), null)
+                .isFailure())
+        .isTrue();
     assertThat(
             checkObjectAcrossDatabases(
-                makeTestObj(),
-                makeTestObj().withList(ImmutableList.of(makeTestAtom("gauze"))),
-                null))
-        .isFalse();
+                    makeTestObj(),
+                    makeTestObj().withList(ImmutableList.of(makeTestAtom("gauze"))),
+                    null)
+                .isFailure())
+        .isTrue();
   }
 
   @Test
@@ -221,16 +230,67 @@ public class ImmutableObjectSubjectTest {
                 "Set does not contain the expected contents.  "
                     + "It is missing: .*jim.*  It contains additional elements: .*bob",
                 Pattern.DOTALL));
+
+    // Trickery here to verify that multiple items that both match existing items in the set trigger
+    // an error: we can add two of the same items because equality for purposes of the set includes
+    // the DoNotCompare field.
+    e =
+        assertThrows(
+            AssertionError.class,
+            () ->
+                assertAboutImmutableObjects()
+                    .that(makeTestObj())
+                    .isEqualAcrossDatabases(
+                        makeTestObj()
+                            .withSet(ImmutableSet.of(makeTestAtom("bob"), makeTestAtom("bob")))));
+    assertThat(e)
+        .hasMessageThat()
+        .containsMatch(
+            Pattern.compile(
+                "At google.registry.model.ImmutableObjectSubjectTest\\$TestImmutableObject.set: "
+                    + "element .*bob.* matches multiple elements in .*bob.*bob",
+                Pattern.DOTALL));
+    e =
+        assertThrows(
+            AssertionError.class,
+            () ->
+                assertAboutImmutableObjects()
+                    .that(
+                        makeTestObj()
+                            .withSet(ImmutableSet.of(makeTestAtom("bob"), makeTestAtom("bob"))))
+                    .isEqualAcrossDatabases(makeTestObj()));
+    assertThat(e)
+        .hasMessageThat()
+        .containsMatch(
+            Pattern.compile(
+                "At google.registry.model.ImmutableObjectSubjectTest\\$TestImmutableObject.set: "
+                    + "Set does not contain the expected contents.  It contains additional "
+                    + "elements: .*bob",
+                Pattern.DOTALL));
+
     assertThat(
             checkObjectAcrossDatabases(
-                makeTestObj(),
-                makeTestObj().withSet(ImmutableSet.of(makeTestAtom("bob"), makeTestAtom("robert"))),
-                null))
-        .isFalse();
+                    makeTestObj(),
+                    makeTestObj()
+                        .withSet(ImmutableSet.of(makeTestAtom("bob"), makeTestAtom("robert"))),
+                    null)
+                .isFailure())
+        .isTrue();
     assertThat(
             checkObjectAcrossDatabases(
-                makeTestObj(), makeTestObj().withSet(ImmutableSet.of()), null))
-        .isFalse();
+                    makeTestObj(), makeTestObj().withSet(ImmutableSet.of()), null)
+                .isFailure())
+        .isTrue();
+    assertThat(
+            checkObjectAcrossDatabases(
+                    makeTestObj(),
+                    makeTestObj()
+                        .withSet(ImmutableSet.of(makeTestAtom("bob"), makeTestAtom("bob"))),
+                    null)
+                .isFailure())
+        .isTrue();
+    // We don't test the case where actual's set contains multiple items matching the single item in
+    // the expected set: that path is the same as the "additional contents" path.
   }
 
   @Test
@@ -266,48 +326,44 @@ public class ImmutableObjectSubjectTest {
                 Pattern.DOTALL));
     assertThat(
             checkObjectAcrossDatabases(
-                makeTestObj(),
-                makeTestObj()
-                    .withMap(
-                        ImmutableMap.of(
-                            makeTestAtom("key"), makeTestAtom("val"),
-                            makeTestAtom("otherk"), makeTestAtom("otherv"))),
-                null))
-        .isFalse();
+                    makeTestObj(),
+                    makeTestObj()
+                        .withMap(
+                            ImmutableMap.of(
+                                makeTestAtom("key"), makeTestAtom("val"),
+                                makeTestAtom("otherk"), makeTestAtom("otherv"))),
+                    null)
+                .isFailure())
+        .isTrue();
     assertThat(
             checkObjectAcrossDatabases(
-                makeTestObj(), makeTestObj().withMap(ImmutableMap.of()), null))
-        .isFalse();
+                    makeTestObj(), makeTestObj().withMap(ImmutableMap.of()), null)
+                .isFailure())
+        .isTrue();
   }
 
   @Test
   void testCrossDatabase_typeChecks() {
-    AssertionError e =
-        assertThrows(
-            AssertionError.class, () -> checkObjectAcrossDatabases("blech", makeTestObj(), "xxx"));
-    assertThat(e).hasMessageThat().contains("At xxx: blech is not an immutable object.");
-    assertThat(checkObjectAcrossDatabases("blech", makeTestObj(), null)).isFalse();
+    ComparisonResult result = checkObjectAcrossDatabases("blech", makeTestObj(), "xxx");
+    assertThat(result.getMessage()).isEqualTo("At xxx: blech is not an immutable object.");
+    assertThat(result.isFailure()).isTrue();
+    assertThat(checkObjectAcrossDatabases("blech", makeTestObj(), null).isFailure()).isTrue();
 
-    e =
-        assertThrows(
-            AssertionError.class,
-            () -> checkObjectAcrossDatabases("blech", ImmutableMap.of(), "xxx"));
-    assertThat(e).hasMessageThat().contains("At xxx: blech is not a Map.");
-    assertThat(checkObjectAcrossDatabases("blech", ImmutableMap.of(), null)).isFalse();
+    result = checkObjectAcrossDatabases("blech", ImmutableMap.of(), "xxx");
+    assertThat(result.getMessage()).isEqualTo("At xxx: blech is not a Map.");
+    assertThat(result.isFailure()).isTrue();
+    assertThat(checkObjectAcrossDatabases("blech", ImmutableMap.of(), null).isFailure()).isTrue();
 
-    e =
-        assertThrows(
-            AssertionError.class,
-            () -> checkObjectAcrossDatabases("blech", ImmutableList.of(), "xxx"));
-    assertThat(e).hasMessageThat().contains("At xxx: blech is not a Collection.");
-    assertThat(checkObjectAcrossDatabases("blech", ImmutableList.of(), null)).isFalse();
+    result = checkObjectAcrossDatabases("blech", ImmutableList.of(), "xxx");
+    assertThat(result.getMessage()).isEqualTo("At xxx: blech is not a Collection.");
+    assertThat(result.isFailure()).isTrue();
+    assertThat(checkObjectAcrossDatabases("blech", ImmutableList.of(), null).isFailure()).isTrue();
 
     for (ImmutableMap.Entry<String, String> entry : ImmutableMap.of("foo", "bar").entrySet()) {
-      e =
-          assertThrows(
-              AssertionError.class, () -> checkObjectAcrossDatabases("blech", entry, "xxx"));
-      assertThat(e).hasMessageThat().contains("At xxx: blech is not a Map.Entry.");
-      assertThat(checkObjectAcrossDatabases("blech", entry, null)).isFalse();
+      result = checkObjectAcrossDatabases("blech", entry, "xxx");
+      assertThat(result.getMessage()).isEqualTo("At xxx: blech is not a Map.Entry.");
+      assertThat(result.isFailure()).isTrue();
+      assertThat(checkObjectAcrossDatabases("blech", entry, "xxx").isFailure()).isTrue();
     }
   }
 
@@ -325,9 +381,11 @@ public class ImmutableObjectSubjectTest {
         .contains(
             "At google.registry.model.ImmutableObjectSubjectTest$DerivedImmutableObject: "
                 + "has additional field extraField");
+
     assertThat(
-            checkObjectAcrossDatabases(DerivedImmutableObject.create(), makeTestAtom(null), null))
-        .isFalse();
+            checkObjectAcrossDatabases(DerivedImmutableObject.create(), makeTestAtom(null), null)
+                .isFailure())
+        .isTrue();
   }
 
   @Test
