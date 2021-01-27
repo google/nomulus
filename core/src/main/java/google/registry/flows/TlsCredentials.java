@@ -289,7 +289,7 @@ public class TlsCredentials implements TransportCredentials {
     static Optional<String> provideClientCertificate(HttpServletRequest req) {
       // Note: This header is actually required, we just want to handle its absence explicitly
       // by throwing an EPP exception rather than a generic Bad Request exception.
-      return extractOptionalHeader(req, "X-SSL-Full_Certificate");
+      return extractOptionalHeader(req, "X-SSL-Full-Certificate");
     }
 
     @Provides

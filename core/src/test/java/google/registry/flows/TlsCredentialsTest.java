@@ -118,10 +118,11 @@ final class TlsCredentialsTest {
     tls.validateCertificate(Registrar.loadByClientId("TheRegistrar").get());
   }
 
+  @Test
   void testProvideClientCertificate() {
     HttpServletRequest req = mock(HttpServletRequest.class);
     when(req.getHeader("X-SSL-Full-Certificate")).thenReturn("data");
-    assertThat(TlsCredentials.EppTlsModule.provideClientCertificate(req)).isEqualTo("data");
+    assertThat(TlsCredentials.EppTlsModule.provideClientCertificate(req)).hasValue("data");
   }
 
   @Test
