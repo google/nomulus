@@ -230,7 +230,7 @@ public final class ImmutableObjectSubject extends Subject {
                         return result;
                       }));
 
-      if (!missing.isEmpty() || (unexpected != null && !unexpected.isEmpty())) {
+      if (!missing.isEmpty() || !unexpected.isEmpty()) {
         String message = type + " does not contain the expected contents.";
         if (!missing.isEmpty()) {
           message += "  It is missing: " + formatItems(missing.iterator());
