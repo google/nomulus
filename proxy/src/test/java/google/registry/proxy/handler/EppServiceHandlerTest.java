@@ -21,6 +21,7 @@ import static google.registry.proxy.TestUtils.assertHttpRequestEquivalent;
 import static google.registry.proxy.TestUtils.makeEppHttpResponse;
 import static google.registry.proxy.handler.ProxyProtocolHandler.REMOTE_ADDRESS_KEY;
 import static google.registry.util.X509Utils.getCertificateHash;
+import static google.registry.util.X509Utils.loadCertificate;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -47,6 +48,7 @@ import io.netty.util.concurrent.Promise;
 import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -237,6 +239,23 @@ class EppServiceHandlerTest {
     // Nothing further to pass to the next handler.
     assertThat((Object) channel.readInbound()).isNull();
     assertThat(channel.isActive()).isTrue();
+  }
+
+  @Test
+  void testSuccess_requestContainsEncodedCertificate() throws Exception {
+    setHandshakeSuccess();
+    // First inbound message is hello.
+    channel.readInbound();
+    String content = "<epp>stuff</epp>";
+    channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
+    FullHttpRequest request = channel.readInbound();
+    assertThat(request).isEqualTo(makeEppHttpRequestWithCertificate(content));
+    String encodedCert = request.headers().get("X-SSL-Full-Certificate");
+    assertThat(encodedCert).isNotEqualTo(SAMPLE_CERT);
+    X509Certificate decodedCert =
+        loadCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(encodedCert)));
+    X509Certificate pemCert = loadCertificate(SAMPLE_CERT);
+    assertThat(decodedCert).isEqualTo(pemCert);
   }
 
   @Test

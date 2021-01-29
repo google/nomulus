@@ -18,6 +18,8 @@ import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.X509Utils.encodeX509Certificate;
+import static google.registry.util.X509Utils.encodeX509CertificateFromPemString;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
@@ -31,6 +33,7 @@ import google.registry.testing.CertificateSamples;
 import google.registry.testing.SystemPropertyExtension;
 import google.registry.util.SelfSignedCaCertificate;
 import java.io.StringWriter;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -67,6 +70,8 @@ class EppLoginTlsTest extends EppTestCase {
       Logger.getLogger(TlsCredentials.class.getCanonicalName());
   private final TestLogHandler handler = new TestLogHandler();
 
+  private String encodedCertString;
+
   void setCredentials(String clientCertificateHash, String clientCertificate) {
     setTransportCredentials(
         new TlsCredentials(
@@ -78,7 +83,7 @@ class EppLoginTlsTest extends EppTestCase {
   }
 
   @BeforeEach
-  void beforeEach() {
+  void beforeEach() throws CertificateException {
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -91,18 +96,19 @@ class EppLoginTlsTest extends EppTestCase {
             .setClientCertificate(CertificateSamples.SAMPLE_CERT2, DateTime.now(UTC))
             .build());
     loggerToIntercept.addHandler(handler);
+    encodedCertString = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT3);
   }
 
   @Test
   void testLoginLogout() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(null, encodedCertString);
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
   }
 
   @Test
   void testLogin_wrongPasswordFails() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, encodedCertString);
     // For TLS login, we also check the epp xml password.
     assertThatLogin("NewRegistrar", "incorrect")
         .hasResponse(
@@ -112,7 +118,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testMultiLogin() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, encodedCertString);
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
     assertThatLogoutSucceeds();
     assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
@@ -126,7 +132,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testNonAuthedLogin_fails() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
+    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, encodedCertString);
     assertThatLogin("TheRegistrar", "password2")
         .hasResponse(
             "response_error.xml",
@@ -155,7 +161,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testGoodPrimaryCertificate() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(null, encodedCertString);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -168,7 +174,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testGoodFailoverCertificate() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(null, encodedCertString);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -181,7 +187,7 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testMissingPrimaryCertificateButHasFailover_usesFailover() throws Exception {
-    setCredentials(CertificateSamples.SAMPLE_CERT3_HASH, CertificateSamples.SAMPLE_CERT3);
+    setCredentials(null, encodedCertString);
     DateTime now = DateTime.now(UTC);
     persistResource(
         loadRegistrar("NewRegistrar")
@@ -210,8 +216,9 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testCertificateDoesNotMeetRequirements_fails() throws Exception {
+    String proxyEncoded = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT);
     // SAMPLE_CERT has a validity period that is too long
-    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
+    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, proxyEncoded);
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -232,7 +239,6 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   void testCertificateDoesNotMeetMultipleRequirements_fails() throws Exception {
-
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
                 "test", clock.nowUtc().plusDays(100), clock.nowUtc().plusDays(5000))
@@ -244,8 +250,10 @@ class EppLoginTlsTest extends EppTestCase {
       pw.writeObject(generator);
     }
 
+    String proxyEncoded = encodeX509Certificate(certificate);
+
     // SAMPLE_CERT has a validity period that is too long
-    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, sw.toString());
+    setCredentials(null, proxyEncoded);
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -270,7 +278,8 @@ class EppLoginTlsTest extends EppTestCase {
   void testCertificateDoesNotMeetRequirementsInProduction_succeeds() throws Exception {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     // SAMPLE_CERT has a validity period that is too long
-    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, CertificateSamples.SAMPLE_CERT);
+    String proxyEncoded = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT);
+    setCredentials(null, proxyEncoded);
     persistResource(
         loadRegistrar("NewRegistrar")
             .asBuilder()
@@ -287,5 +296,62 @@ class EppLoginTlsTest extends EppTestCase {
             "Registrar certificate used for NewRegistrar does not meet certificate requirements:"
                 + " Certificate validity period is too long; it must be less than or equal to 398"
                 + " days.");
+  }
+
+  @Test
+  void testRegistrarCertificateContainsExtraMetadata_succeeds() throws Exception {
+    String certPem =
+        String.format(
+            "Bag Attributes\n"
+                + "    localKeyID: 1F 1C 3A 3A 4C 03 EC C4 BC 7A C3 21 A9 F2 13 66 21 B8 7B 26 \n"
+                + "subject=/C=US/ST=New York/L=New"
+                + " York/O=Test/OU=ABC/CN=tester.test/emailAddress=test-certificate@test.test\n"
+                + "issuer=/C=US/ST=NY/L=NYC/O=ABC/OU=TEST CA/CN=TEST"
+                + " CA/emailAddress=testing@test.test\n"
+                + "%s",
+            CertificateSamples.SAMPLE_CERT3);
+
+    setCredentials(null, encodeX509CertificateFromPemString(certPem));
+    DateTime now = DateTime.now(UTC);
+    persistResource(
+        loadRegistrar("NewRegistrar")
+            .asBuilder()
+            .setClientCertificate(certPem, now)
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, now)
+            .build());
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+  }
+
+  @Test
+  void testRegistrarCertificateContainsExtraMetadataAndViolations_fails() throws Exception {
+    String certPem =
+        String.format(
+            "Bag Attributes\n"
+                + "    localKeyID: 1F 1C 3A 3A 4C 03 EC C4 BC 7A C3 21 A9 F2 13 66 21 B8 7B 26 \n"
+                + "subject=/C=US/ST=New York/L=New"
+                + " York/O=Test/OU=ABC/CN=tester.test/emailAddress=test-certificate@test.test\n"
+                + "issuer=/C=US/ST=NY/L=NYC/O=ABC/OU=TEST CA/CN=TEST"
+                + " CA/emailAddress=testing@test.test\n"
+                + "%s",
+            CertificateSamples.SAMPLE_CERT);
+
+    setCredentials(null, encodeX509CertificateFromPemString(certPem));
+    DateTime now = DateTime.now(UTC);
+    persistResource(
+        loadRegistrar("NewRegistrar")
+            .asBuilder()
+            .setClientCertificate(certPem, now)
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, now)
+            .build());
+    assertThatLogin("NewRegistrar", "foo-BAR2")
+        .hasResponse(
+            "response_error.xml",
+            ImmutableMap.of(
+                "CODE",
+                "2200",
+                "MSG",
+                "Registrar certificate contains the following security violations:\n"
+                    + "Certificate validity period is too long; it must be less than or equal to"
+                    + " 398 days."));
   }
 }

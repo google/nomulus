@@ -32,6 +32,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CRLException;
 import java.security.cert.CRLReason;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateParsingException;
@@ -39,6 +40,7 @@ import java.security.cert.CertificateRevokedException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -175,6 +177,21 @@ public final class X509Utils {
       throw new CRLException("CRL has expired.\n" + newCrl);
     }
     newCrl.verify(rootCert.getPublicKey());
+  }
+
+  /** Constructs an X.509 certificate from a PEM string and encodes it. */
+  public static String encodeX509CertificateFromPemString(String certificateString)
+      throws CertificateException {
+    return encodeX509Certificate(loadCertificate(certificateString));
+  }
+
+  /**
+   * Encodes an X.509 certificate in the same form that the proxy encodes a certificate before
+   * passing it via an HTTP header.
+   */
+  public static String encodeX509Certificate(X509Certificate certificate)
+      throws CertificateEncodingException {
+    return Base64.getEncoder().encodeToString(certificate.getEncoded());
   }
 
   private X509Utils() {}

@@ -90,7 +90,19 @@ public class CertificateChecker {
    * exist.
    */
   public void validateCertificate(String certificateString) throws InsecureCertificateException {
-    ImmutableSet<CertificateViolation> violations = checkCertificate(certificateString);
+    handleCertViolations(checkCertificate(certificateString));
+  }
+
+  /**
+   * Checks the given certificate string for violations and throws an exception if any violations
+   * exist.
+   */
+  public void validateCertificate(X509Certificate certificate) throws InsecureCertificateException {
+    handleCertViolations(checkCertificate(certificate));
+  }
+
+  private void handleCertViolations(ImmutableSet<CertificateViolation> violations)
+      throws InsecureCertificateException {
     if (!violations.isEmpty()) {
       String displayMessages =
           violations.stream()

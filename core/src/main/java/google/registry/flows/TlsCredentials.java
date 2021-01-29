@@ -16,6 +16,7 @@ package google.registry.flows;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static google.registry.request.RequestParameters.extractOptionalHeader;
+import static google.registry.util.X509Utils.loadCertificate;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -32,7 +33,11 @@ import google.registry.flows.certs.CertificateChecker.InsecureCertificateExcepti
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Header;
 import google.registry.util.CidrAddressBlock;
+import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -149,14 +154,31 @@ public class TlsCredentials implements TransportCredentials {
           "Request from registrar %s did not include X-SSL-Full-Certificate.",
           registrar.getClientId());
     } else {
+      X509Certificate passedCert;
+      Optional<X509Certificate> storedCert;
+      Optional<X509Certificate> storedFailoverCert;
+
+      try {
+        storedCert = deserializePemCert(registrar.getClientCertificate());
+        storedFailoverCert = deserializePemCert(registrar.getFailoverClientCertificate());
+        passedCert = decodeCertString(clientCertificate.get());
+      } catch (Exception e) {
+        // TODO(Sarahbot@): remove this catch once we know it's working
+        logger.atWarning().log(
+            "Error converting certificate string to certificate for %s: %s",
+            registrar.getClientId(), e);
+        validateCertificateHash(registrar);
+        return;
+      }
+
       // Check if the certificate is equal to the one on file for the registrar.
-      if (clientCertificate.equals(registrar.getClientCertificate())
-          || clientCertificate.equals(registrar.getFailoverClientCertificate())) {
+      if (passedCert.equals(storedCert.orElse(null))
+          || passedCert.equals(storedFailoverCert.orElse(null))) {
         // Check certificate for any requirement violations
         // TODO(Sarahbot@): Throw exceptions instead of just logging once requirement enforcement
         // begins
         try {
-          certificateChecker.validateCertificate(clientCertificate.get());
+          certificateChecker.validateCertificate(passedCert);
         } catch (InsecureCertificateException e) {
           // throw exception in unit tests and Sandbox
           if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
@@ -218,6 +240,22 @@ public class TlsCredentials implements TransportCredentials {
     if (!registrar.verifyPassword(password)) {
       throw new BadRegistrarPasswordException();
     }
+  }
+
+  // Converts a PEM formatted certificate string into an X509Certificate
+  private Optional<X509Certificate> deserializePemCert(Optional<String> certificateString)
+      throws CertificateException {
+    if (certificateString.isPresent()) {
+      return Optional.of(loadCertificate(certificateString.get()));
+    }
+    return Optional.empty();
+  }
+
+  // Decodes the string representation of an encoded certificate back into an X509Certificate
+  private X509Certificate decodeCertString(String encodedCertString) throws CertificateException {
+    byte decodedCert[] = Base64.getDecoder().decode(encodedCertString);
+    ByteArrayInputStream inputStream = new ByteArrayInputStream(decodedCert);
+    return loadCertificate(inputStream);
   }
 
   @Override

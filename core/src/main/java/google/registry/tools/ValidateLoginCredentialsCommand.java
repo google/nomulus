@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
+import static google.registry.util.X509Utils.encodeX509CertificateFromPemString;
 import static google.registry.util.X509Utils.getCertificateHash;
 import static google.registry.util.X509Utils.loadCertificate;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -77,10 +78,11 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
     checkArgument(
         clientCertificatePath == null || isNullOrEmpty(clientCertificateHash),
         "Can't specify both --cert_hash and --cert_file");
-    String clientCertificate = "";
+    String encodedCertificate = "";
     if (clientCertificatePath != null) {
-      clientCertificate = new String(Files.readAllBytes(clientCertificatePath), US_ASCII);
-      clientCertificateHash = getCertificateHash(loadCertificate(clientCertificate));
+      String certificateString = new String(Files.readAllBytes(clientCertificatePath), US_ASCII);
+      encodedCertificate = encodeX509CertificateFromPemString(certificateString);
+      clientCertificateHash = getCertificateHash(loadCertificate(clientCertificatePath));
     }
     Registrar registrar =
         checkArgumentPresent(
@@ -88,7 +90,7 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
     new TlsCredentials(
             true,
             Optional.ofNullable(clientCertificateHash),
-            Optional.ofNullable(clientCertificate),
+            Optional.ofNullable(encodedCertificate),
             Optional.ofNullable(clientIpAddress),
             certificateChecker)
         .validate(registrar, password);
