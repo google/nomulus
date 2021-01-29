@@ -17,7 +17,6 @@ package google.registry.testing;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -26,6 +25,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.ReplayQueue;
 import google.registry.model.ofy.TransactionInfo;
 import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreEntity;
 import java.util.Optional;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -106,16 +106,20 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
           continue;
         }
 
+        // Since the object may have changed in datastore by the time we're doing the replay, we
+        // have to compare the current value in SQL (which we just mutated) against the value that
+        // we originally would have persisted (that being the object in the entry).
         VKey<?> vkey = VKey.from(entry.getKey());
-        Optional<?> ofyValue = ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(vkey));
         Optional<?> jpaValue = jpaTm().transact(() -> jpaTm().loadByKeyIfPresent(vkey));
         if (entry.getValue().equals(TransactionInfo.Delete.SENTINEL)) {
           assertThat(jpaValue.isPresent()).isFalse();
-          assertThat(ofyValue.isPresent()).isFalse();
         } else {
+          ImmutableObject immutJpaObject = (ImmutableObject) jpaValue.get();
+          assertAboutImmutableObjects().that(immutJpaObject).hasCorrectHashValue();
           assertAboutImmutableObjects()
-              .that((ImmutableObject) jpaValue.get())
-              .isEqualAcrossDatabases((ImmutableObject) ofyValue.get());
+              .that(immutJpaObject)
+              .isEqualAcrossDatabases(
+                  (ImmutableObject) ((DatastoreEntity) entry.getValue()).toSqlEntity().get());
         }
       }
     }
