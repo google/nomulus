@@ -17,7 +17,6 @@ package google.registry.model;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.truth.TruthUtils.assertNullnessParity;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
