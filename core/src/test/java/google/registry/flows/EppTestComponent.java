@@ -45,12 +45,8 @@ import javax.inject.Singleton;
 
 /** Dagger component for running EPP tests. */
 @Singleton
-@Component(
-    modules = {
-        ConfigModule.class,
-        EppTestComponent.FakesAndMocksModule.class
-    })
-interface EppTestComponent {
+@Component(modules = {ConfigModule.class, EppTestComponent.FakesAndMocksModule.class})
+public interface EppTestComponent {
 
   RequestComponent startRequest();
 

@@ -25,11 +25,6 @@
     <property name="tld" direction="asc"/>
     <property name="creationTime" direction="desc"/>
   </datastore-index>
-  <!-- For finding non-autorenewing domains to be deleted. -->
-  <datastore-index kind="DomainBase" ancestor="false" source="manual">
-    <property name="autorenewEndTime" direction="asc"/>
-    <property name="deletionTime" direction="desc"/>
-  </datastore-index>
   <!-- For finding host resources by registrar. -->
   <datastore-index kind="HostResource" ancestor="false" source="manual">
     <property name="currentSponsorClientId" direction="asc"/>

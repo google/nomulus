@@ -1,4 +1,4 @@
-// Copyright 2020 The Nomulus Authors. All Rights Reserved.
+// Copyright 2021 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.flows.FlowUtils.marshalWithLenientRetry;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppController;
@@ -40,7 +42,6 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.inject.Inject;
@@ -122,13 +123,11 @@ public class DeleteExpiredDomainsAction implements Runnable {
         "Deleting non-renewing domains with autorenew end times up through %s.", runTime);
 
     // Note: This query is (and must be) non-transactional, and thus, is only eventually consistent.
-    List<DomainBase> domainsToDelete =
-        ofy()
-            .load()
-            .type(DomainBase.class)
-            .filter("autorenewEndTime <=", runTime)
-            .filter("deletionTime >=", runTime)
-            .list();
+    ImmutableList<DomainBase> domainsToDelete =
+        ofy().load().type(DomainBase.class).filter("autorenewEndTime <=", runTime).list().stream()
+            // Datastore can't do two inequalities in one query, so the second happens in-memory.
+            .filter(d -> d.getDeletionTime().isEqual(END_OF_TIME))
+            .collect(toImmutableList());
     if (domainsToDelete.isEmpty()) {
       logger.atInfo().log("Found 0 domains to delete.");
       response.setPayload("Found 0 domains to delete.");
@@ -156,12 +155,12 @@ public class DeleteExpiredDomainsAction implements Runnable {
                 () -> {
                   DomainBase transDomain = tm().loadByKey(domain.createVKey());
                   if (!domain.getAutorenewEndTime().isPresent()
-                      || domain.getAutorenewEndTime().get().isBefore(tm().getTransactionTime())) {
+                      || domain.getAutorenewEndTime().get().isAfter(tm().getTransactionTime())) {
                     logger.atSevere().log(
                         "Failed to delete domain %s because of its autorenew end time: %s.",
                         transDomain.getDomainName(), transDomain.getAutorenewEndTime());
                     return Optional.empty();
-                  } else if (domain.getDeletionTime().isBefore(tm().getTransactionTime())) {
+                  } else if (domain.getDeletionTime().isBefore(END_OF_TIME)) {
                     logger.atSevere().log(
                         "Failed to delete domain %s because it was already deleted on %s.",
                         transDomain.getDomainName(), transDomain.getDeletionTime());
