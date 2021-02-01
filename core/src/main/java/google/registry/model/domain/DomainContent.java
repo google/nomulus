@@ -14,6 +14,7 @@
 
 package google.registry.model.domain;
 
+import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
@@ -50,7 +51,6 @@ import com.googlecode.objectify.condition.IfNull;
 import google.registry.flows.ResourceFlowUtils;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
-import google.registry.model.ImmutableObject.EmptySetToNull;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.contact.ContactResource;
@@ -66,6 +66,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.util.CollectionUtils;
+import google.registry.util.DateTimeUtils;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -284,9 +285,10 @@ public class DomainContent extends EppResource
   /**
    * When the domain's autorenewal status will expire.
    *
-   * <p>This will be null for the vast majority of domains because all domains autorenew
-   * indefinitely by default and autorenew can only be countermanded by administrators, typically
-   * for reasons of the URS process or termination of a registrar for nonpayment.
+   * <p>This will be {@link DateTimeUtils#END_OF_TIME} for the vast majority of domains because all
+   * domains autorenew indefinitely by default and autorenew can only be countermanded by
+   * administrators, typically for reasons of the URS process or termination of a registrar for
+   * nonpayment.
    *
    * <p>When a domain is scheduled to not autorenew, this field is set to the current value of its
    * {@link #registrationExpirationTime}, after which point the next invocation of a periodic
@@ -295,10 +297,16 @@ public class DomainContent extends EppResource
    * difference domains that have reached their life and must be deleted now, and domains that
    * happen to be in the autorenew grace period now but should be deleted in roughly a year.
    */
-  @Nullable @Index DateTime autorenewEndTime;
+  @Index DateTime autorenewEndTime;
 
   @OnLoad
   void load() {
+    // Back fill with correct END_OF_TIME sentinel value.
+    // TODO(mcilwain): Remove this once back-filling is complete.
+    if (autorenewEndTime == null) {
+      autorenewEndTime = END_OF_TIME;
+    }
+
     // Reconstitute all of the contacts so that they have VKeys.
     allContacts =
         allContacts.stream().map(DesignatedContact::reconstitute).collect(toImmutableSet());
@@ -403,8 +411,20 @@ public class DomainContent extends EppResource
     return smdId;
   }
 
+  /**
+   * Returns the autorenew end time if there is one, otherwise empty.
+   *
+   * <p>Note that {@link DateTimeUtils#END_OF_TIME} is used as a sentinel value in the database
+   * representation to signify that autorenew doesn't end, and is mapped to empty here for the
+   * purposes of more legible business logic.
+   */
   public Optional<DateTime> getAutorenewEndTime() {
-    return Optional.ofNullable(autorenewEndTime);
+    // TODO(mcilwain): Remove null handling for autorenewEndTime once data migration away from null
+    //                 is complete.
+    return Optional.ofNullable(
+        (autorenewEndTime == null || autorenewEndTime.equals(END_OF_TIME))
+            ? null
+            : autorenewEndTime);
   }
 
   @Override
@@ -779,6 +799,8 @@ public class DomainContent extends EppResource
       } else { // There are nameservers, so make sure INACTIVE isn't there.
         removeStatusValue(StatusValue.INACTIVE);
       }
+      // If there is no autorenew end time, set it to END_OF_TIME.
+      instance.autorenewEndTime = firstNonNull(getInstance().autorenewEndTime, END_OF_TIME);
 
       checkArgumentNotNull(emptyToNull(instance.fullyQualifiedDomainName), "Missing domainName");
       if (instance.getRegistrant() == null
@@ -958,8 +980,15 @@ public class DomainContent extends EppResource
       return thisCastToDerived();
     }
 
+    /**
+     * Sets the autorenew end time, or clears it if empty is passed.
+     *
+     * <p>Note that {@link DateTimeUtils#END_OF_TIME} is used as a sentinel value in the database
+     * representation to signify that autorenew doesn't end, and is mapped to empty here for the
+     * purposes of more legible business logic.
+     */
     public B setAutorenewEndTime(Optional<DateTime> autorenewEndTime) {
-      getInstance().autorenewEndTime = autorenewEndTime.orElse(null);
+      getInstance().autorenewEndTime = autorenewEndTime.orElse(END_OF_TIME);
       return thisCastToDerived();
     }
 
