@@ -22,11 +22,11 @@ import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnle
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.smd.SignedMarkRevocationList.SHARD_SIZE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.MapDifference;
@@ -42,13 +42,13 @@ public class SignedMarkRevocationListDao {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @VisibleForTesting static final int SHARD_SIZE = 10000;
-
   /**
-   * Loads the {@link SignedMarkRevocationList} from the specified primary database, and attempts to
-   * load from the secondary database. If the load the secondary database fails, or the list from
-   * the secondary database does not match the list from the primary database, the error will be
-   * logged but no exception will be thrown.
+   * Loads the {@link SignedMarkRevocationList}.
+   *
+   * <p>loads the list from the specified primary database, and attempts to load from the secondary
+   * database. If the load the secondary database fails, or the list from the secondary database
+   * does not match the list from the primary database, the error will be logged but no exception
+   * will be thrown.
    */
   static SignedMarkRevocationList load(String primaryDatabase) {
     SignedMarkRevocationList primaryList;
@@ -63,7 +63,7 @@ public class SignedMarkRevocationListDao {
         throw new IllegalArgumentException("Unrecognized value for primary database.");
     }
     suppressExceptionUnlessInTest(
-        () -> loadAndCompare(primaryList, primaryDatabase),
+        () -> loadAndCompare(primaryDatabase, primaryList),
         "Error loading and comparing the list from the secondary database.");
     return primaryList;
   }
@@ -72,7 +72,7 @@ public class SignedMarkRevocationListDao {
    * Loads the list from the secondary database and compares it to the list from the primary
    * database.
    */
-  private static void loadAndCompare(SignedMarkRevocationList primaryList, String primaryDatabase) {
+  private static void loadAndCompare(String primaryDatabase, SignedMarkRevocationList primaryList) {
     Optional<SignedMarkRevocationList> secondaryList =
         primaryDatabase.equals("Datastore") ? loadFromCloudSql() : loadFromDatastore();
     if (secondaryList.isPresent()) {
@@ -148,9 +148,11 @@ public class SignedMarkRevocationListDao {
   }
 
   /**
-   * Save the given {@link SignedMarkRevocationList} into the specified primary database, and
-   * attempts to save to the secondary database. If the save to the secondary database fails, the
-   * error will be logged but no exception will be thrown.
+   * Save the given {@link SignedMarkRevocationList}
+   *
+   * <p>Saves the list to the specified primary database, and attempts to save to the secondary
+   * database. If the save to the secondary database fails, the error will be logged but no
+   * exception will be thrown.
    */
   static void save(String primaryDatabase, SignedMarkRevocationList signedMarkRevocationList) {
     if (primaryDatabase.equals("Datastore")) {
