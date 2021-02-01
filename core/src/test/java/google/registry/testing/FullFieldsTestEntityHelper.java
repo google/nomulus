@@ -392,17 +392,18 @@ public final class FullFieldsTestEntityHelper {
       Period period,
       String reason,
       DateTime modificationTime) {
-    HistoryEntry.Builder builder = new HistoryEntry.Builder()
-        .setParent(resource)
-        .setType(type)
-        .setPeriod(period)
-        .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-        .setModificationTime(modificationTime)
-        .setClientId(resource.getPersistedCurrentSponsorClientId())
-        .setTrid(Trid.create("ABC-123", "server-trid"))
-        .setBySuperuser(false)
-        .setReason(reason)
-        .setRequestedByRegistrar(false);
+    HistoryEntry.Builder builder =
+        new HistoryEntry.Builder()
+            .setParent(resource)
+            .setType(type)
+            .setPeriod(period)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(modificationTime)
+            .setClientId(resource.getPersistedCurrentSponsorClientId())
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason(reason)
+            .setRequestedByRegistrar(false);
     return builder.build();
   }
 }
