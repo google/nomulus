@@ -50,4 +50,19 @@ public class PremiumEntry extends ImmutableObject implements Serializable, SqlEn
   public Optional<DatastoreEntity> toDatastoreEntity() {
     return Optional.empty(); // PremiumList is dually-written
   }
+
+  public BigDecimal getPrice() {
+    return price;
+  }
+
+  public String getDomainLabel() {
+    return domainLabel;
+  }
+
+  public static PremiumEntry create(BigDecimal price, String domainLabel) {
+    PremiumEntry result = new PremiumEntry();
+    result.price = price;
+    result.domainLabel = domainLabel;
+    return result;
+  }
 }

@@ -16,14 +16,13 @@ package google.registry.tools.server;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.registry.label.PremiumListUtils.deletePremiumList;
-import static google.registry.model.registry.label.PremiumListUtils.getPremiumPrice;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadPremiumListEntries;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
+import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeJsonResponse;
 import org.joda.money.Money;
@@ -46,7 +45,7 @@ public class CreatePremiumListActionTest {
   @BeforeEach
   void beforeEach() {
     createTlds("foo", "xn--q9jyb4c", "how");
-    deletePremiumList(PremiumList.getUncached("foo").get());
+    PremiumListDualDao.delete(PremiumListDualDao.getLatestRevision("foo").get());
     action = new CreatePremiumListAction();
     response = new FakeJsonResponse();
     action.response = response;
@@ -78,7 +77,8 @@ public class CreatePremiumListActionTest {
     action.override = true;
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    assertThat(loadPremiumListEntries(PremiumList.getUncached("zanzibar").get())).hasSize(1);
+    assertThat(loadPremiumListEntries(PremiumListDualDao.getLatestRevision("zanzibar").get()))
+        .hasSize(1);
   }
 
   @Test
@@ -87,8 +87,10 @@ public class CreatePremiumListActionTest {
     action.inputData = "rich,USD 25\nricher,USD 1000\n";
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    assertThat(loadPremiumListEntries(PremiumList.getUncached("foo").get())).hasSize(2);
-    assertThat(getPremiumPrice("rich", Registry.get("foo"))).hasValue(Money.parse("USD 25"));
-    assertThat(getPremiumPrice("diamond", Registry.get("foo"))).isEmpty();
+    PremiumList premiumList = PremiumListDualDao.getLatestRevision("foo").get();
+    assertThat(loadPremiumListEntries(premiumList)).hasSize(2);
+    assertThat(PremiumListDualDao.getPremiumPrice("rich", Registry.get("foo")))
+        .hasValue(Money.parse("USD 25"));
+    assertThat(PremiumListDualDao.getPremiumPrice("diamond", Registry.get("foo"))).isEmpty();
   }
 }

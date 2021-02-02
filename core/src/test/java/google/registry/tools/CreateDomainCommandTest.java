@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList;
+import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.testing.DeterministicStringGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,7 +101,7 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
     persistResource(
         Registry.get("baar")
             .asBuilder()
-            .setPremiumList(PremiumList.getUncached("baar").get())
+            .setPremiumList(PremiumListDualDao.getLatestRevision("baar").get())
             .build());
     runCommandForced(
         "--client=NewRegistrar",

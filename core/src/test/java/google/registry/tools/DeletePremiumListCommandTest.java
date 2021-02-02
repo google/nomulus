@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
+import google.registry.model.registry.label.PremiumListDualDao;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DeletePremiumListCommand}. */
@@ -36,7 +37,7 @@ class DeletePremiumListCommandTest extends CommandTestCase<DeletePremiumListComm
     PremiumList premiumList = persistPremiumList("xn--q9jyb4c", "blah,USD 100");
     assertThat(loadPremiumListEntries(premiumList)).hasSize(1);
     runCommand("--force", "--name=xn--q9jyb4c");
-    assertThat(PremiumList.getUncached("xn--q9jyb4c")).isEmpty();
+    assertThat(PremiumListDualDao.getLatestRevision("xn--q9jyb4c")).isEmpty();
 
     // Ensure that the Datastore premium list entry entities were deleted correctly.
     assertThat(ofy().load()
@@ -64,7 +65,7 @@ class DeletePremiumListCommandTest extends CommandTestCase<DeletePremiumListComm
         assertThrows(
             IllegalArgumentException.class,
             () -> runCommandForced("--name=" + premiumList.getName()));
-    assertThat(PremiumList.getUncached(premiumList.getName())).isPresent();
+    assertThat(PremiumListDualDao.getLatestRevision(premiumList.getName())).isPresent();
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Cannot delete premium list because it is used on these tld(s): xn--q9jyb4c");

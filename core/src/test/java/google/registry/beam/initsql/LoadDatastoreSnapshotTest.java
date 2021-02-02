@@ -29,6 +29,9 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import java.io.File;
@@ -38,6 +41,7 @@ import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollectionTuple;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -83,6 +87,15 @@ class LoadDatastoreSnapshotTest {
   transient Path tmpDir;
 
   @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
+
+  @RegisterExtension
+  final transient JpaIntegrationTestExtension jpaIntegrationTestExtension =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
+
+  @RegisterExtension
+  @Order(value = 1)
+  final transient DatastoreEntityExtension datastoreEntityExtension =
+      new DatastoreEntityExtension();
 
   @RegisterExtension
   final transient TestPipelineExtension testPipeline =

@@ -68,7 +68,7 @@ public class DomainBaseUtilTest {
 
   @RegisterExtension
   AppEngineExtension appEngineRule =
-      AppEngineExtension.builder().withDatastore().withClock(fakeClock).build();
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
 
   @RegisterExtension InjectExtension injectRule = new InjectExtension();
 

@@ -15,25 +15,23 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.registry.label.PremiumListUtils.deletePremiumList;
-import static google.registry.model.registry.label.PremiumListUtils.doesPremiumListExist;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registry.label.PremiumList;
+import google.registry.model.registry.label.PremiumListDualDao;
 import javax.annotation.Nullable;
 
 /**
- * Command to delete a {@link PremiumList} in Datastore. This command will fail if the premium
- * list is currently in use on a tld.
+ * Command to delete a {@link PremiumList} in Datastore. This command will fail if the premium list
+ * is currently in use on a tld.
  */
 @Parameters(separators = " =", commandDescription = "Delete a PremiumList from Datastore.")
 final class DeletePremiumListCommand extends ConfirmingCommand implements CommandWithRemoteApi {
 
-  @Nullable
-  PremiumList premiumList;
+  @Nullable PremiumList premiumList;
 
   @Parameter(
       names = {"-n", "--name"},
@@ -44,10 +42,10 @@ final class DeletePremiumListCommand extends ConfirmingCommand implements Comman
   @Override
   protected void init() {
     checkArgument(
-        doesPremiumListExist(name),
+        PremiumListDualDao.exists(name),
         "Cannot delete the premium list %s because it doesn't exist.",
         name);
-    premiumList = PremiumList.getUncached(name).get();
+    premiumList = PremiumListDualDao.getLatestRevision(name).get();
     ImmutableSet<String> tldsUsedOn = premiumList.getReferencingTlds();
     checkArgument(
         tldsUsedOn.isEmpty(),
@@ -62,7 +60,7 @@ final class DeletePremiumListCommand extends ConfirmingCommand implements Comman
 
   @Override
   protected String execute() {
-    deletePremiumList(premiumList);
+    PremiumListDualDao.delete(premiumList);
     return String.format("Deleted premium list '%s'.\n", premiumList.getName());
   }
 }

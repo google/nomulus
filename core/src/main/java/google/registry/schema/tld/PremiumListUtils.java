@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
@@ -35,12 +34,9 @@ import org.joda.time.DateTime;
 /** Static utility methods for {@link PremiumList}. */
 public class PremiumListUtils {
 
-  public static PremiumList parseToPremiumList(String name, String inputData) {
-    List<String> inputDataPreProcessed =
-        Splitter.on('\n').omitEmptyStrings().splitToList(inputData);
-
+  public static PremiumList parseToPremiumList(String name, List<String> inputData) {
     ImmutableMap<String, PremiumListEntry> prices =
-        new PremiumList.Builder().setName(name).build().parse(inputDataPreProcessed);
+        new PremiumList.Builder().setName(name).build().parse(inputData);
     ImmutableSet<CurrencyUnit> currencies =
         prices.values().stream()
             .map(e -> e.getValue().getCurrencyUnit())

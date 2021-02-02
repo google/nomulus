@@ -15,19 +15,16 @@
 package google.registry.tools.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.registry.label.PremiumListUtils.savePremiumListAndEntries;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.registry.label.PremiumList;
+import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
-import google.registry.schema.tld.PremiumListDao;
 import java.util.List;
-import java.util.Optional;
 import javax.inject.Inject;
 
 /**
@@ -48,10 +45,9 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
   @Inject UpdatePremiumListAction() {}
 
   @Override
-  protected void saveToDatastore() {
-    Optional<PremiumList> existingPremiumList = PremiumList.getUncached(name);
+  protected void save() {
     checkArgument(
-        existingPremiumList.isPresent(),
+        PremiumListDualDao.exists(name),
         "Could not update premium list %s because it doesn't exist.",
         name);
 
@@ -59,8 +55,7 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
     logInputData();
     List<String> inputDataPreProcessed =
         Splitter.on('\n').omitEmptyStrings().splitToList(inputData);
-    PremiumList newPremiumList =
-        savePremiumListAndEntries(existingPremiumList.get(), inputDataPreProcessed);
+    PremiumList newPremiumList = PremiumListDualDao.save(name, inputDataPreProcessed);
 
     String message =
         String.format(
@@ -68,19 +63,5 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
             newPremiumList.getName(), inputDataPreProcessed.size());
     logger.atInfo().log(message);
     response.setPayload(ImmutableMap.of("status", "success", "message", message));
-  }
-
-  @Override
-  protected void saveToCloudSql() {
-    logger.atInfo().log("Updating premium list '%s' in Cloud SQL.", name);
-    // TODO(mcilwain): Add logInputData() call here once DB migration is complete.
-    PremiumList premiumList = parseToPremiumList(name, inputData);
-    PremiumListDao.update(premiumList);
-    String message =
-        String.format(
-            "Updated premium list '%s' with %d entries.",
-            premiumList.getName(), premiumList.getLabelsToPrices().size());
-    logger.atInfo().log(message);
-    // TODO(mcilwain): Call response.setPayload() here once DB migration is complete.
   }
 }

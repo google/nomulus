@@ -27,6 +27,9 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import java.io.File;
@@ -44,6 +47,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -53,7 +57,7 @@ import org.junit.jupiter.api.io.TempDir;
  *
  * <p>This class implements {@link Serializable} so that test {@link DoFn} classes may be inlined.
  */
-class ExportloadingTransformsTest implements Serializable {
+class ExportLoadingTransformsTest implements Serializable {
 
   private static final DateTime START_TIME = DateTime.parse("2000-01-01T00:00:00.0Z");
 
@@ -67,6 +71,15 @@ class ExportloadingTransformsTest implements Serializable {
   transient Path tmpDir;
 
   @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
+
+  @RegisterExtension
+  final transient JpaIntegrationTestExtension jpaIntegrationTestExtension =
+      new JpaTestRules.Builder().buildIntegrationTestRule();
+
+  @RegisterExtension
+  @Order(value = 1)
+  final transient DatastoreEntityExtension datastoreEntityExtension =
+      new DatastoreEntityExtension();
 
   @RegisterExtension
   final transient TestPipelineExtension testPipeline =
