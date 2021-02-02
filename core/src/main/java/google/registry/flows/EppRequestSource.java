@@ -22,5 +22,6 @@ public enum EppRequestSource {
   TLS,
   TOOL,
   CHECK_API,
-  UNIT_TEST
+  UNIT_TEST,
+  BACKEND
 }

@@ -104,11 +104,14 @@ public final class ExtensionManager {
         clientId, flowClass.getSimpleName(), undeclaredUris);
   }
 
+  private static final ImmutableSet<EppRequestSource> ALLOWED_METADATA_EPP_REQUEST_SOURCES =
+      ImmutableSet.of(EppRequestSource.TOOL, EppRequestSource.BACKEND);
+
   private void checkForRestrictedExtensions(
       ImmutableSet<Class<? extends CommandExtension>> suppliedExtensions)
       throws OnlyToolCanPassMetadataException, UnauthorizedForSuperuserExtensionException {
     if (suppliedExtensions.contains(MetadataExtension.class)
-        && !eppRequestSource.equals(EppRequestSource.TOOL)) {
+        && !ALLOWED_METADATA_EPP_REQUEST_SOURCES.contains(eppRequestSource)) {
       throw new OnlyToolCanPassMetadataException();
     }
     // Can't use suppliedExtension.contains() here because the SuperuserExtension has child classes.
