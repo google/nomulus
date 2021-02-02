@@ -21,13 +21,13 @@ import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.datastore.v1.Entity;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.extensions.gcp.options.GcpOptions;
 import org.apache.beam.sdk.io.gcp.datastore.DatastoreIO;
@@ -41,6 +41,7 @@ import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.Reshuffle;
 import org.apache.beam.sdk.transforms.View;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PBegin;
@@ -99,27 +100,32 @@ public class BulkDeletePipeline {
     pipeline.run();
   }
 
+  @SuppressWarnings("deprecation") // org.apache.beam.sdk.transforms.Reshuffle
   private void setupPipeline() {
-    checkState(!FORBIDDEN_PROJECTS.contains(options.getProject()));
-    ImmutableList<String> kindsToDeleteParam = parseKindsToDelete(options);
+    checkState(
+        !FORBIDDEN_PROJECTS.contains(options.getProject()),
+        "Bulk delete is forbidden in %s",
+        options.getProject());
 
-    // Preallocate tags to label entities grouped by kind. In the case of delete-all, we
-    // must use a guess.
-    TupleTagList deletionTags =
-        getDeletionTags(
-            kindsToDeleteParam.equals(ImmutableList.of("*"))
-                ? options.getNumOfKindsHint()
-                : kindsToDeleteParam.size());
+    // Pre-allocated tags to label entities by kind. In the case of delete-all, we must use a guess.
+    TupleTagList deletionTags;
+    PCollection<String> kindsToDelete;
 
-    PCollection<String> kindsToDelete =
-        pipeline.apply(
-            "DiscoverEntityKinds", discoverEntityKinds(options.getProject(), kindsToDeleteParam));
+    if (options.getKindsToDelete().equals("*")) {
+      deletionTags = getDeletionTags(options.getNumOfKindsHint());
+      kindsToDelete =
+          pipeline.apply("DiscoverEntityKinds", discoverEntityKinds(options.getProject()));
+    } else {
+      ImmutableList<String> kindsToDeleteParam = parseKindsToDelete(options);
+      deletionTags = getDeletionTags(kindsToDeleteParam.size());
+      kindsToDelete = pipeline.apply("UseProvidedKinds", Create.of(kindsToDeleteParam));
+    }
 
-    // Map each kind to a TupleTag: all entities of a kind will be added to a PCollection with
-    // the mapped tag. Ideally no two kinds share a tag, otherwise the pipeline may not reach
-    // optimal parallelism.
+    // Map each kind to a tag. The "SplitByKind" stage below will group entities by kind using
+    // this mapping. In practice, this has been effective at avoiding entity group contentions.
     PCollectionView<Map<String, TupleTag<Entity>>> kindToTagMapping =
-        mapKindsToDeletionTags(kindsToDelete, deletionTags).apply("GetKindsToTagMap", View.asMap());
+        mapKindsToDeletionTags(kindsToDelete, deletionTags)
+            .apply("GetKindsToTagMap", View.asSingleton());
 
     PCollectionTuple entities =
         kindsToDelete
@@ -134,6 +140,9 @@ public class BulkDeletePipeline {
     for (TupleTag<?> tag : deletionTags.getAll()) {
       entities
           .get((TupleTag<Entity>) tag)
+          // Reshuffle calls GroupByKey which is one way to trigger load rebalance in the pipeline.
+          // Using the deprecated "Reshuffle" for convenience given the short life of this tool.
+          .apply("RebalanceLoad", Reshuffle.viaRandomKey())
           .apply(
               "DeleteEntities_" + tag.getId(),
               DatastoreIO.v1().deleteEntity().withProjectId(options.getProject()));
@@ -175,51 +184,48 @@ public class BulkDeletePipeline {
     return TupleTagList.of(builder.build());
   }
 
-  /**
-   * Returns a {@link PTransform} that finds the entity kinds to delete.
-   *
-   * <p>If {@code kindsToDelete} contains a single {@code "*"}, a query to the Datastore will be
-   * made to discover all kinds in it. Otherwise, elements in {@code kindsToDelete} will be added to
-   * the output of the transform.
-   */
+  /** Returns a {@link PTransform} that finds all entity kinds in Datastore. */
   @VisibleForTesting
-  static PTransform<PBegin, PCollection<String>> discoverEntityKinds(
-      String project, ImmutableList<String> kindsToDelete) {
+  static PTransform<PBegin, PCollection<String>> discoverEntityKinds(String project) {
     return new PTransform<PBegin, PCollection<String>>() {
       @Override
       public PCollection<String> expand(PBegin input) {
-        checkState(!kindsToDelete.isEmpty(), "kindsToDelete undefined.");
-        if (Objects.equals(kindsToDelete, ImmutableList.of("*"))) {
-          return input
-              .apply(
-                  "LoadEntityMetaData",
-                  DatastoreIO.v1()
-                      .read()
-                      .withProjectId(project)
-                      .withLiteralGqlQuery("select * from __Stat_Kind__"))
-              .apply(
-                  "GetKindNames",
-                  ParDo.of(
-                      new DoFn<Entity, String>() {
-                        @ProcessElement
-                        public void processElement(
-                            @Element Entity entity, OutputReceiver<String> out) {
-                          String kind = entity.getPropertiesMap().get("kind_name").getStringValue();
-                          if (kind.startsWith("_")) {
-                            return;
-                          }
-                          out.output(kind);
+        // Use the __kind__ table to discover entity kinds. Data in the more informational
+        // __Stat_Kind__ table may be up to 48-hour stale.
+        return input
+            .apply(
+                "LoadEntityMetaData",
+                DatastoreIO.v1()
+                    .read()
+                    .withProjectId(project)
+                    .withLiteralGqlQuery("select * from __kind__"))
+            .apply(
+                "GetKindNames",
+                ParDo.of(
+                    new DoFn<Entity, String>() {
+                      @ProcessElement
+                      public void processElement(
+                          @Element Entity entity, OutputReceiver<String> out) {
+                        String kind = entity.getKey().getPath(0).getName();
+                        if (kind.startsWith("_")) {
+                          return;
                         }
-                      }));
-        }
-        return input.apply("UseProvidedQuery", Create.of(kindsToDelete));
+                        out.output(kind);
+                      }
+                    }));
       }
     };
   }
 
   @VisibleForTesting
-  static PCollection<KV<String, TupleTag<Entity>>> mapKindsToDeletionTags(
+  static PCollection<Map<String, TupleTag<Entity>>> mapKindsToDeletionTags(
       PCollection<String> kinds, TupleTagList tags) {
+    // Generate a mapping of strings in 'kinds' to TupleTags in 'tags' by:
+    // 1. Turn all strings in 'kinds' to KVs with the same key but different value.
+    // 2. Apply a GroupBy transform so that all KV instances will be gathered by
+    //    one worker and turned into a single <"", Iterable<String>> object.
+    // 3. Pass the output of step 2 to MapKindsToTags which generates the mapping
+    //    from the strings to the tags.
     return kinds
         .apply(
             "AssignSingletonKeyToKinds",
@@ -238,7 +244,7 @@ public class BulkDeletePipeline {
   }
 
   private static class MapKindsToTags
-      extends DoFn<KV<String, Iterable<String>>, KV<String, TupleTag<Entity>>> {
+      extends DoFn<KV<String, Iterable<String>>, Map<String, TupleTag<Entity>>> {
     private final TupleTagList tupleTags;
 
     MapKindsToTags(TupleTagList tupleTags) {
@@ -248,14 +254,16 @@ public class BulkDeletePipeline {
     @ProcessElement
     public void processElement(
         @Element KV<String, Iterable<String>> kv,
-        OutputReceiver<KV<String, TupleTag<Entity>>> out) {
+        OutputReceiver<Map<String, TupleTag<Entity>>> out) {
       // Sort kinds so that mapping is deterministic.
       ImmutableSortedSet<String> sortedKinds = ImmutableSortedSet.copyOf(kv.getValue());
       Iterator<String> kinds = sortedKinds.iterator();
       Iterator<TupleTag<?>> tags = tupleTags.getAll().iterator();
 
+      ImmutableMap.Builder<String, TupleTag<Entity>> mapBuilder = new ImmutableMap.Builder();
+
       while (kinds.hasNext() && tags.hasNext()) {
-        out.output(KV.of(kinds.next(), (TupleTag<Entity>) tags.next()));
+        mapBuilder.put(kinds.next(), (TupleTag<Entity>) tags.next());
       }
 
       if (kinds.hasNext()) {
@@ -268,9 +276,12 @@ public class BulkDeletePipeline {
       while (kinds.hasNext()) {
         tags = tupleTags.getAll().iterator();
         while (kinds.hasNext() && tags.hasNext()) {
-          out.output(KV.of(kinds.next(), (TupleTag<Entity>) tags.next()));
+          mapBuilder.put(kinds.next(), (TupleTag<Entity>) tags.next());
         }
       }
+      ImmutableMap<String, TupleTag<Entity>> map = mapBuilder.build();
+      logger.atInfo().log("Kind-to-Tag mapping:\n%s", map);
+      out.output(map);
     }
   }
 

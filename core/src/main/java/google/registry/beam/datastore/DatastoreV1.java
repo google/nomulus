@@ -111,7 +111,8 @@ public class DatastoreV1 {
    *
    * <p>This class is adapted from {@link org.apache.beam.sdk.io.gcp.datastore.DatastoreV1.Read}. It
    * uses literal GQL queries in the input {@link PCollection} instead of a constant query provided
-   * to the builder. Only the {@link #expand} method is modified from the original.
+   * to the builder. Only the {@link #expand} method is modified from the original. Everything else
+   * including comments have been copied verbatim.
    */
   @AutoValue
   public abstract static class MultiRead
