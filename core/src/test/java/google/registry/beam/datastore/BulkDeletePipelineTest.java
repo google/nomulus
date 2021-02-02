@@ -34,6 +34,7 @@ import org.apache.beam.sdk.transforms.Count;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.View;
+import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionTuple;
 import org.apache.beam.sdk.values.PCollectionView;
@@ -65,10 +66,10 @@ class BulkDeletePipelineTest implements Serializable {
   void mapKindsToTags() {
     TupleTagList tags = getDeletionTags(2);
     PCollection<String> kinds = testPipeline.apply("InjectKinds", Create.of("A", "B"));
-    PCollection<Map<String, TupleTag<Entity>>> kindToTagMapping =
+    PCollection<KV<String, TupleTag<Entity>>> kindToTagMapping =
         BulkDeletePipeline.mapKindsToDeletionTags(kinds, tags);
-    PAssert.that(kindToTagMapping)
-        .containsInAnyOrder(
+    PAssert.thatMap(kindToTagMapping)
+        .isEqualTo(
             ImmutableMap.of(
                 "A", new TupleTag<Entity>("0"),
                 "B", new TupleTag<Entity>("1")));
@@ -79,10 +80,10 @@ class BulkDeletePipelineTest implements Serializable {
   void mapKindsToTags_fewerKindsThanTags() {
     TupleTagList tags = getDeletionTags(3);
     PCollection<String> kinds = testPipeline.apply("InjectKinds", Create.of("A", "B"));
-    PCollection<Map<String, TupleTag<Entity>>> kindToTagMapping =
+    PCollection<KV<String, TupleTag<Entity>>> kindToTagMapping =
         BulkDeletePipeline.mapKindsToDeletionTags(kinds, tags);
-    PAssert.that(kindToTagMapping)
-        .containsInAnyOrder(
+    PAssert.thatMap(kindToTagMapping)
+        .isEqualTo(
             ImmutableMap.of(
                 "A", new TupleTag<Entity>("0"),
                 "B", new TupleTag<Entity>("1")));
@@ -93,10 +94,10 @@ class BulkDeletePipelineTest implements Serializable {
   void mapKindsToTags_moreKindsThanTags() {
     TupleTagList tags = getDeletionTags(2);
     PCollection<String> kinds = testPipeline.apply("InjectKinds", Create.of("A", "B", "C"));
-    PCollection<Map<String, TupleTag<Entity>>> kindToTagMapping =
+    PCollection<KV<String, TupleTag<Entity>>> kindToTagMapping =
         BulkDeletePipeline.mapKindsToDeletionTags(kinds, tags);
-    PAssert.that(kindToTagMapping)
-        .containsInAnyOrder(
+    PAssert.thatMap(kindToTagMapping)
+        .isEqualTo(
             ImmutableMap.of(
                 "A", new TupleTag<Entity>("0"),
                 "B", new TupleTag<Entity>("1"),
@@ -109,7 +110,7 @@ class BulkDeletePipelineTest implements Serializable {
     TupleTagList tags = getDeletionTags(2);
     PCollection<String> kinds = testPipeline.apply("InjectKinds", Create.of("A", "B"));
     PCollectionView<Map<String, TupleTag<Entity>>> kindToTagMapping =
-        BulkDeletePipeline.mapKindsToDeletionTags(kinds, tags).apply(View.asSingleton());
+        BulkDeletePipeline.mapKindsToDeletionTags(kinds, tags).apply(View.asMap());
     Entity entityA = createTestEntity("A", 1);
     Entity entityB = createTestEntity("B", 2);
     PCollection<Entity> entities =

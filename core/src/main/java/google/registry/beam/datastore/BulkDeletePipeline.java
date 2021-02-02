@@ -21,7 +21,6 @@ import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.flogger.FluentLogger;
@@ -124,8 +123,7 @@ public class BulkDeletePipeline {
     // Map each kind to a tag. The "SplitByKind" stage below will group entities by kind using
     // this mapping. In practice, this has been effective at avoiding entity group contentions.
     PCollectionView<Map<String, TupleTag<Entity>>> kindToTagMapping =
-        mapKindsToDeletionTags(kindsToDelete, deletionTags)
-            .apply("GetKindsToTagMap", View.asSingleton());
+        mapKindsToDeletionTags(kindsToDelete, deletionTags).apply("GetKindsToTagMap", View.asMap());
 
     PCollectionTuple entities =
         kindsToDelete
@@ -218,7 +216,7 @@ public class BulkDeletePipeline {
   }
 
   @VisibleForTesting
-  static PCollection<Map<String, TupleTag<Entity>>> mapKindsToDeletionTags(
+  static PCollection<KV<String, TupleTag<Entity>>> mapKindsToDeletionTags(
       PCollection<String> kinds, TupleTagList tags) {
     // Generate a mapping of strings in 'kinds' to TupleTags in 'tags' by:
     // 1. Turn all strings in 'kinds' to KVs with the same key but different value.
@@ -244,7 +242,7 @@ public class BulkDeletePipeline {
   }
 
   private static class MapKindsToTags
-      extends DoFn<KV<String, Iterable<String>>, Map<String, TupleTag<Entity>>> {
+      extends DoFn<KV<String, Iterable<String>>, KV<String, TupleTag<Entity>>> {
     private final TupleTagList tupleTags;
 
     MapKindsToTags(TupleTagList tupleTags) {
@@ -254,16 +252,14 @@ public class BulkDeletePipeline {
     @ProcessElement
     public void processElement(
         @Element KV<String, Iterable<String>> kv,
-        OutputReceiver<Map<String, TupleTag<Entity>>> out) {
+        OutputReceiver<KV<String, TupleTag<Entity>>> out) {
       // Sort kinds so that mapping is deterministic.
       ImmutableSortedSet<String> sortedKinds = ImmutableSortedSet.copyOf(kv.getValue());
       Iterator<String> kinds = sortedKinds.iterator();
       Iterator<TupleTag<?>> tags = tupleTags.getAll().iterator();
 
-      ImmutableMap.Builder<String, TupleTag<Entity>> mapBuilder = new ImmutableMap.Builder();
-
       while (kinds.hasNext() && tags.hasNext()) {
-        mapBuilder.put(kinds.next(), (TupleTag<Entity>) tags.next());
+        out.output(KV.of(kinds.next(), (TupleTag<Entity>) tags.next()));
       }
 
       if (kinds.hasNext()) {
@@ -276,12 +272,9 @@ public class BulkDeletePipeline {
       while (kinds.hasNext()) {
         tags = tupleTags.getAll().iterator();
         while (kinds.hasNext() && tags.hasNext()) {
-          mapBuilder.put(kinds.next(), (TupleTag<Entity>) tags.next());
+          out.output(KV.of(kinds.next(), (TupleTag<Entity>) tags.next()));
         }
       }
-      ImmutableMap<String, TupleTag<Entity>> map = mapBuilder.build();
-      logger.atInfo().log("Kind-to-Tag mapping:\n%s", map);
-      out.output(map);
     }
   }
 
