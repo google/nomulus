@@ -218,12 +218,6 @@ public class BulkDeletePipeline {
   @VisibleForTesting
   static PCollection<KV<String, TupleTag<Entity>>> mapKindsToDeletionTags(
       PCollection<String> kinds, TupleTagList tags) {
-    // Generate a mapping of strings in 'kinds' to TupleTags in 'tags' by:
-    // 1. Turn all strings in 'kinds' to KVs with the same key but different value.
-    // 2. Apply a GroupBy transform so that all KV instances will be gathered by
-    //    one worker and turned into a single <"", Iterable<String>> object.
-    // 3. Pass the output of step 2 to MapKindsToTags which generates the mapping
-    //    from the strings to the tags.
     return kinds
         .apply(
             "AssignSingletonKeyToKinds",
