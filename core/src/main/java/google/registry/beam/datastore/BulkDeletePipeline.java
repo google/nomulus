@@ -116,6 +116,9 @@ public class BulkDeletePipeline {
           pipeline.apply("DiscoverEntityKinds", discoverEntityKinds(options.getProject()));
     } else {
       ImmutableList<String> kindsToDeleteParam = parseKindsToDelete(options);
+      checkState(
+          !kindsToDeleteParam.contains("*"),
+          "The --kindsToDelete argument should not contain both '*' and other kinds.");
       deletionTags = getDeletionTags(kindsToDeleteParam.size());
       kindsToDelete = pipeline.apply("UseProvidedKinds", Create.of(kindsToDeleteParam));
     }
