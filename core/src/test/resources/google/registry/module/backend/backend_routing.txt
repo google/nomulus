@@ -9,6 +9,7 @@ PATH                                   CLASS                              METHOD
 /_dr/task/checkDatastoreBackup         CheckBackupAction                  POST,GET y  INTERNAL,API APP ADMIN
 /_dr/task/copyDetailReports            CopyDetailReportsAction            POST     n  INTERNAL,API APP ADMIN
 /_dr/task/deleteContactsAndHosts       DeleteContactsAndHostsAction       GET      n  INTERNAL,API APP ADMIN
+/_dr/task/deleteExpiredDomains         DeleteExpiredDomainsAction         POST     n  INTERNAL,API APP ADMIN
 /_dr/task/deleteLoadTestData           DeleteLoadTestDataAction           POST     n  INTERNAL,API APP ADMIN
 /_dr/task/deleteOldCommitLogs          DeleteOldCommitLogsAction          GET      n  INTERNAL,API APP ADMIN
 /_dr/task/deleteProberData             DeleteProberDataAction             POST     n  INTERNAL,API APP ADMIN

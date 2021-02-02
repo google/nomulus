@@ -24,6 +24,8 @@ import google.registry.dns.writer.VoidDnsWriterModule;
 import google.registry.export.DriveModule;
 import google.registry.export.datastore.DatastoreAdminModule;
 import google.registry.export.sheet.SheetsServiceModule;
+import google.registry.flows.ServerTridProviderModule;
+import google.registry.flows.custom.CustomLogicFactoryModule;
 import google.registry.gcs.GcsServiceModule;
 import google.registry.groups.DirectoryModule;
 import google.registry.groups.GroupsModule;
@@ -54,6 +56,7 @@ import javax.inject.Singleton;
       BigqueryModule.class,
       ConfigModule.class,
       CredentialModule.class,
+      CustomLogicFactoryModule.class,
       DatastoreAdminModule.class,
       DatastoreServiceModule.class,
       DirectoryModule.class,
@@ -68,6 +71,7 @@ import javax.inject.Singleton;
       KeyringModule.class,
       KmsModule.class,
       NetHttpTransportModule.class,
+      ServerTridProviderModule.class,
       SheetsServiceModule.class,
       StackdriverModule.class,
       URLFetchServiceModule.class,
