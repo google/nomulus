@@ -221,6 +221,8 @@ public class BulkDeletePipeline {
   @VisibleForTesting
   static PCollection<KV<String, TupleTag<Entity>>> mapKindsToDeletionTags(
       PCollection<String> kinds, TupleTagList tags) {
+    // The first two stages send all strings in the 'kinds' PCollection to one worker which
+    // performs the mapping in the last stage.
     return kinds
         .apply(
             "AssignSingletonKeyToKinds",
