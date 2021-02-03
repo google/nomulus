@@ -337,10 +337,16 @@
     <url-pattern>/_dr/task/refreshDnsOnHostRename</url-pattern>
   </servlet-mapping>
 
-  <!--  Mapreduce to expand recurring billing events into OneTimes. -->
+  <!-- Mapreduce to expand recurring billing events into OneTimes. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
     <url-pattern>/_dr/task/expandRecurringBillingEvents</url-pattern>
+  </servlet-mapping>
+
+  <!-- Background action to delete domains past end of autorenewal. -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/deleteExpiredDomains</url-pattern>
   </servlet-mapping>
 
   <!-- Mapreduce to import contacts from escrow file -->
