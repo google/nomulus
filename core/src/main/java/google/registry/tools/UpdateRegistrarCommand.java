@@ -14,7 +14,6 @@
 
 package google.registry.tools;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
@@ -49,10 +48,5 @@ final class UpdateRegistrarCommand extends CreateOrUpdateRegistrarCommand {
               + " \"nomulus registrar_contact\" command on this registrar to set a WHOIS abuse"
               + " contact.");
     }
-  }
-
-  @Override
-  void saveToCloudSql(Registrar registrar) {
-    jpaTm().update(registrar);
   }
 }

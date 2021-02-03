@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3_HASH;
@@ -37,7 +36,6 @@ import google.registry.flows.certs.CertificateChecker.InsecureCertificateExcepti
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
-import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
 import java.util.Optional;
@@ -58,19 +56,6 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
             2048,
             ImmutableSet.of("secp256r1", "secp384r1"),
             fakeClock);
-  }
-
-  @Test
-  void testSuccess_alsoUpdateInCloudSql() throws Exception {
-    assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isFalse();
-    jpaTm().transact(() -> jpaTm().insert(loadRegistrar("NewRegistrar")));
-    runCommand("--password=some_password", "--force", "NewRegistrar");
-    assertThat(loadRegistrar("NewRegistrar").verifyPassword("some_password")).isTrue();
-    assertThat(
-            jpaTm()
-                .transact(() -> jpaTm().loadByKey(VKey.createSql(Registrar.class, "NewRegistrar")))
-                .verifyPassword("some_password"))
-        .isTrue();
   }
 
   @Test

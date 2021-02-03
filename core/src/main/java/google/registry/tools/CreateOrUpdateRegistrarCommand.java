@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.isNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.RegistrarUtils.normalizeRegistrarName;
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -29,7 +28,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.common.flogger.FluentLogger;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
@@ -56,8 +54,6 @@ import org.joda.time.DateTime;
 
 /** Shared base class for commands to create or update a {@link Registrar}. */
 abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
-
-  static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject CertificateChecker certificateChecker;
 
@@ -457,26 +453,4 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
       stageEntityChange(oldRegistrar, newRegistrar);
     }
   }
-
-  @Override
-  protected String execute() throws Exception {
-    // Save registrar to Datastore and output its response
-    logger.atInfo().log(super.execute());
-
-    String cloudSqlMessage;
-    try {
-      jpaTm()
-          .transact(
-              () ->
-                  getChangedEntities().forEach(newEntity -> saveToCloudSql((Registrar) newEntity)));
-      cloudSqlMessage =
-          String.format("Updated %d entities in Cloud SQL.\n", getChangedEntities().size());
-    } catch (Throwable t) {
-      cloudSqlMessage = "Unexpected error saving registrar to Cloud SQL from nomulus tool command";
-      logger.atSevere().withCause(t).log(cloudSqlMessage);
-    }
-    return cloudSqlMessage;
-  }
-
-  abstract void saveToCloudSql(Registrar registrar);
 }
