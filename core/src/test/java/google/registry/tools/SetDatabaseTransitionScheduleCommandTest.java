@@ -27,15 +27,20 @@ import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
 import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.common.TimedTransitionProperty;
+import google.registry.model.ofy.DatastoreTransactionManager;
+import google.registry.model.ofy.Ofy;
+import google.registry.persistence.transaction.TransactionManager;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link UpdateDatabaseTransitionScheduleCommand}. */
-public class UpdateDatabaseTransitionScheduleCommandTest
-    extends CommandTestCase<UpdateDatabaseTransitionScheduleCommand> {
+/** Unit tests for {@link SetDatabaseTransitionScheduleCommand}. */
+public class SetDatabaseTransitionScheduleCommandTest
+    extends CommandTestCase<SetDatabaseTransitionScheduleCommand> {
 
   Key<DatabaseTransitionSchedule> key;
+  private final TransactionManager tm = new DatastoreTransactionManager(new Ofy(fakeClock));
 
   @BeforeEach
   void setup() {
@@ -49,9 +54,8 @@ public class UpdateDatabaseTransitionScheduleCommandTest
     runCommandForced(
         "--transition_id=TEST", String.format("--transition_schedule=%s=DATASTORE", START_OF_TIME));
     assertThat(
-            DatabaseTransitionSchedule.get(TransitionId.TEST)
-                .get()
-                .getPrimaryDatabase(fakeClock.nowUtc()))
+            tm.transact(
+                () -> DatabaseTransitionSchedule.get(TransitionId.TEST).get().getPrimaryDatabase()))
         .isEqualTo(PrimaryDatabase.DATASTORE);
     String changes = command.prompt();
     assertThat(changes).contains("Create DatabaseTransitionSchedule");
@@ -77,12 +81,17 @@ public class UpdateDatabaseTransitionScheduleCommandTest
         String.format(
             "--transition_schedule=%s=DATASTORE,%s=CLOUD_SQL,%s=DATASTORE",
             START_OF_TIME, fakeClock.nowUtc().minusDays(1), fakeClock.nowUtc().plusDays(5)));
-    assertThat(DatabaseTransitionSchedule.get(TransitionId.TEST).get().getDatabaseTransitions())
-        .hasSize(3);
     assertThat(
-            DatabaseTransitionSchedule.get(TransitionId.TEST)
-                .get()
-                .getPrimaryDatabase(fakeClock.nowUtc().plusDays(5)))
+            tm.transact(
+                () ->
+                    DatabaseTransitionSchedule.get(TransitionId.TEST)
+                        .get()
+                        .getDatabaseTransitions()))
+        .hasSize(3);
+    fakeClock.advanceBy(Duration.standardDays(5));
+    assertThat(
+            tm.transact(
+                () -> DatabaseTransitionSchedule.get(TransitionId.TEST).get().getPrimaryDatabase()))
         .isEqualTo(PrimaryDatabase.DATASTORE);
     String changes = command.prompt();
     assertThat(changes).contains("Update DatabaseTransitionSchedule");

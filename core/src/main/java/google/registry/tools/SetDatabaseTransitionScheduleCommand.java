@@ -30,7 +30,7 @@ import org.joda.time.DateTime;
 @Parameters(
     separators = " =",
     commandDescription = "Set the database transition schedule for transition id.")
-public class UpdateDatabaseTransitionScheduleCommand extends MutatingCommand {
+public class SetDatabaseTransitionScheduleCommand extends MutatingCommand {
 
   @Parameter(
       names = "--transition_schedule",

@@ -43,7 +43,7 @@ public class GetDatabaseTransitionScheduleCommandTest
         DatabaseTransitionSchedule.create(TransitionId.TEST, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
     runCommand("TEST");
-    assertStdoutIs("TEST : {1970-01-01T00:00:00.000Z=DATASTORE}\n");
+    assertStdoutIs("TEST: {1970-01-01T00:00:00.000Z=DATASTORE}\n");
   }
 
   @Test
@@ -65,12 +65,14 @@ public class GetDatabaseTransitionScheduleCommandTest
                 PrimaryDatabase.CLOUD_SQL),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule2 =
-        DatabaseTransitionSchedule.create(TransitionId.SMD, databaseTransitions2);
+        DatabaseTransitionSchedule.create(
+            TransitionId.SIGNED_MARK_REVOCATION_LIST, databaseTransitions2);
     ofyTm().transactNew(() -> ofyTm().put(schedule2));
-    runCommand("TEST", "SMD");
+    runCommand("TEST", "SIGNED_MARK_REVOCATION_LIST");
     assertStdoutIs(
-        "TEST : {1970-01-01T00:00:00.000Z=DATASTORE}\n"
-            + "SMD : {1970-01-01T00:00:00.000Z=DATASTORE, 2020-10-01T00:00:00.000Z=CLOUD_SQL}\n");
+        "TEST: {1970-01-01T00:00:00.000Z=DATASTORE}\n"
+            + "SIGNED_MARK_REVOCATION_LIST: {1970-01-01T00:00:00.000Z=DATASTORE,"
+            + " 2020-10-01T00:00:00.000Z=CLOUD_SQL}\n");
   }
 
   @Test
@@ -97,9 +99,11 @@ public class GetDatabaseTransitionScheduleCommandTest
         DatabaseTransitionSchedule.create(TransitionId.TEST, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> runCommand("TEST", "SMD"));
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommand("TEST", "SIGNED_MARK_REVOCATION_LIST"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("A database transition schedule for SMD does not exist");
+        .contains("A database transition schedule for SIGNED_MARK_REVOCATION_LIST does not exist");
   }
 }

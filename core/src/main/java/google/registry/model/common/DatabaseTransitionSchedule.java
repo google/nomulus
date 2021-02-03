@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.config.RegistryConfig.getSingletonCacheRefreshDuration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -53,8 +54,10 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
 
   /** The id of the transition schedule. */
   public enum TransitionId {
-    TEST,
-    SMD
+    /** The schedule for the migration of the SignedMarkRevocationList entity. */
+    SIGNED_MARK_REVOCATION_LIST,
+    /** Transition ID used for tests. */
+    TEST
   }
 
   /**
@@ -111,8 +114,8 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
   }
 
   /** Returns the database that is indicated as primary at the given time. */
-  public PrimaryDatabase getPrimaryDatabase(DateTime now) {
-    return databaseTransitions.getValueAtTime(now);
+  public PrimaryDatabase getPrimaryDatabase() {
+    return databaseTransitions.getValueAtTime(tm().getTransactionTime());
   }
 
   /** Returns the database transitions as a map of start time to primary database. */
@@ -142,6 +145,6 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
 
   @Override
   public String toString() {
-    return String.format("%s : %s", transitionId, databaseTransitions.toValueMap());
+    return String.format("%s: %s", transitionId, databaseTransitions.toValueMap());
   }
 }

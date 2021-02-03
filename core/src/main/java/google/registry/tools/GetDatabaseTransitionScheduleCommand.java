@@ -26,19 +26,19 @@ import java.util.List;
 @Parameters(separators = " =", commandDescription = "Show database transition schedule")
 final class GetDatabaseTransitionScheduleCommand implements CommandWithRemoteApi {
 
-  @Parameter(description = "Transition id string for the schedule to get", required = true)
-  private List<String> mainParameters;
+  @Parameter(description = "Transition id(s) for the schedules to get", required = true)
+  private List<TransitionId> mainParameters;
 
   @Override
   public void run() {
-    for (String id : mainParameters) {
+    for (TransitionId transitionId : mainParameters) {
       DatabaseTransitionSchedule schedule =
           checkArgumentPresent(
-              DatabaseTransitionSchedule.get(TransitionId.valueOf(id)),
+              DatabaseTransitionSchedule.get(transitionId),
               "A database transition schedule for %s does not exist",
-              id);
+              transitionId);
 
-      System.out.println(schedule.toString());
+      System.out.println(schedule);
     }
   }
 }
