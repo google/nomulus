@@ -29,6 +29,7 @@ import google.registry.flows.TlsCredentials;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.tools.params.PathParameter;
+import google.registry.util.Clock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -72,6 +73,7 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
   private String clientIpAddress = "10.0.0.1";
 
   @Inject CertificateChecker certificateChecker;
+  @Inject Clock clock;
 
   @Override
   public void run() throws Exception {
@@ -92,7 +94,8 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
             Optional.ofNullable(clientCertificateHash),
             Optional.ofNullable(encodedCertificate),
             Optional.ofNullable(clientIpAddress),
-            certificateChecker)
+            certificateChecker,
+            clock)
         .validate(registrar, password);
     checkState(
         registrar.isLive(), "Registrar %s has non-live state: %s", clientId, registrar.getState());

@@ -71,7 +71,8 @@ final class TlsCredentialsTest {
             Optional.empty(),
             Optional.empty(),
             Optional.of("192.168.1.1"),
-            certificateChecker);
+            certificateChecker,
+            clock);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -86,7 +87,12 @@ final class TlsCredentialsTest {
   void test_missingIpAddress_doesntAllowAccess() {
     TlsCredentials tls =
         new TlsCredentials(
-            false, Optional.of("certHash"), Optional.empty(), Optional.empty(), certificateChecker);
+            false,
+            Optional.of("certHash"),
+            Optional.empty(),
+            Optional.empty(),
+            certificateChecker,
+            clock);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -106,7 +112,8 @@ final class TlsCredentialsTest {
             Optional.of("certHash"),
             Optional.of("cert"),
             Optional.of("192.168.1.1"),
-            certificateChecker);
+            certificateChecker,
+            clock);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()
@@ -133,7 +140,8 @@ final class TlsCredentialsTest {
             Optional.of("hash"),
             Optional.of(SAMPLE_CERT),
             Optional.of("192.168.1.1"),
-            certificateChecker);
+            certificateChecker,
+            clock);
     persistResource(loadRegistrar("TheRegistrar").asBuilder().build());
     assertThrows(
         RegistrarCertificateNotConfiguredException.class,
@@ -148,7 +156,8 @@ final class TlsCredentialsTest {
             Optional.of("certHash"),
             Optional.of("cert"),
             Optional.of("192.168.1.1"),
-            certificateChecker);
+            certificateChecker,
+            clock);
     persistResource(
         loadRegistrar("TheRegistrar")
             .asBuilder()

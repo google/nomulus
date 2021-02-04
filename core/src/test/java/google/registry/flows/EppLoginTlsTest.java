@@ -79,7 +79,8 @@ class EppLoginTlsTest extends EppTestCase {
             Optional.ofNullable(clientCertificateHash),
             Optional.ofNullable(clientCertificate),
             Optional.of("192.168.1.100:54321"),
-            certificateChecker));
+            certificateChecker,
+            clock));
   }
 
   @BeforeEach
@@ -275,7 +276,8 @@ class EppLoginTlsTest extends EppTestCase {
 
   @Test
   // TODO(sarahbot@): Remove this test once requirements are enforced in production
-  void testCertificateDoesNotMeetRequirementsInProduction_succeeds() throws Exception {
+  void testCertificateDoesNotMeetRequirementsInProduction_beforeStartDate_succeeds()
+      throws Exception {
     RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
     // SAMPLE_CERT has a validity period that is too long
     String proxyEncoded = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT);
@@ -288,7 +290,9 @@ class EppLoginTlsTest extends EppTestCase {
             .build());
     // Even though the certificate contains security violations, the login will succeed in
     // production
-    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+    assertThatLogin("NewRegistrar", "foo-BAR2")
+        .atTime(DateTime.parse("2020-01-01T16:00:00Z"))
+        .hasSuccessfulLogin();
     assertAboutLogs()
         .that(handler)
         .hasLogAtLevelWithMessage(
@@ -296,6 +300,31 @@ class EppLoginTlsTest extends EppTestCase {
             "Registrar certificate used for NewRegistrar does not meet certificate requirements:"
                 + " Certificate validity period is too long; it must be less than or equal to 398"
                 + " days.");
+  }
+
+  @Test
+  void testCertificateDoesNotMeetRequirementsInProduction_afterStartDate_fails() throws Exception {
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
+    String proxyEncoded = encodeX509CertificateFromPemString(CertificateSamples.SAMPLE_CERT);
+    // SAMPLE_CERT has a validity period that is too long
+    setCredentials(CertificateSamples.SAMPLE_CERT_HASH, proxyEncoded);
+    persistResource(
+        loadRegistrar("NewRegistrar")
+            .asBuilder()
+            .setClientCertificate(CertificateSamples.SAMPLE_CERT, clock.nowUtc())
+            .setFailoverClientCertificate(CertificateSamples.SAMPLE_CERT2, clock.nowUtc())
+            .build());
+    assertThatLogin("NewRegistrar", "foo-BAR2")
+        .atTime(DateTime.parse("2021-04-01T16:00:00Z"))
+        .hasResponse(
+            "response_error.xml",
+            ImmutableMap.of(
+                "CODE",
+                "2200",
+                "MSG",
+                "Registrar certificate contains the following security violations:\n"
+                    + "Certificate validity period is too long; it must be less than or equal to"
+                    + " 398 days."));
   }
 
   @Test

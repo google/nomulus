@@ -157,7 +157,8 @@ class FlowRunnerTest {
             Optional.of("abc123def"),
             Optional.of("cert046F5A3"),
             Optional.of("127.0.0.1"),
-            certificateChecker);
+            certificateChecker,
+            clock);
     flowRunner.run(eppMetricBuilder);
     assertThat(Splitter.on("\n\t").split(findFirstLogMessageByPrefix(handler, "EPP Command\n\t")))
         .contains(
