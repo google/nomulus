@@ -176,7 +176,38 @@ PRESUBMITS = {
         "js",
         {"/node_modules/", "google/registry/ui/js/util.js", "registrar_bin."},
     ):
-        "JavaScript files should not include console logging."
+        "JavaScript files should not include console logging.",
+    # SQL injection protection rule for java source file:
+    # The sql template passed to createQuery/createNativeQuery methods must be
+    # a variable name in UPPER_CASE_UNDERSCORE format, i.e., a static final
+    # String variable. This forces the use of parameter-binding on all queries
+    # that take parameters.
+    # The rule would forbid invocation of createQuery(Criteria). However, this
+    # can be handled by adding a helper method in an exempted class to make
+    # the calls.
+    PresubmitCheck(
+        r".*\.create(Native)?Query\((?!\s*[A-Z_]+(,|\s*\)))",
+        "java",
+        # ActivityReportingQueryBuilder deals with Dremel queries
+        {"src/test", "ActivityReportingQueryBuilder.java",
+         # TODO(b/179158393): Remove everything below
+         "ClaimsListDao.java",
+         "CursorDao.java",
+         "ForeignKeyIndex.java",
+         "HistoryEntryDao.java",
+         "JpaTransactionManagerImpl.java",
+         "KmsSecretRevisionSqlDao.java",
+         "PremiumListDao.java",
+         "Registrar.java",
+         "RegistryLockDao.java",
+         "ReservedListSqlDao.java",
+         "SignedMarkRevocationListDao.java",
+         "Spec11ThreatMatchDao.java",
+         "SqlReplayCheckpoint.java",
+         "TmchCrl.java",
+         },
+    ):
+        "Sql template must be a constant assigned to a static final variable."
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to
