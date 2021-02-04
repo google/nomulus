@@ -65,13 +65,18 @@ public enum Auth {
   AUTH_PUBLIC_OR_INTERNAL(
       ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API), AuthLevel.APP, UserPolicy.PUBLIC),
 
-  /**
-   * Allows only admins or App Engine task-queue access.
-   */
+  /** Allows only admins or App Engine task-queue access. */
   AUTH_INTERNAL_OR_ADMIN(
-      ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API),
-      AuthLevel.APP,
-      UserPolicy.ADMIN);
+      ImmutableList.of(AuthMethod.INTERNAL, AuthMethod.API), AuthLevel.APP, UserPolicy.ADMIN),
+
+  /**
+   * Allows only App Engine task-queue access.
+   *
+   * <p>In general, prefer AUTH_INTERNAL_OR_ADMIN. This level of access should be reserved for
+   * endpoints that have some sensitivity (it was introduced to mitigate a remote-shell
+   * vulnerability).
+   */
+  AUTH_INTERNAL_ONLY(ImmutableList.of(AuthMethod.INTERNAL), AuthLevel.APP, UserPolicy.IGNORED);
 
   private final AuthSettings authSettings;
 
