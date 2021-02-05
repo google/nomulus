@@ -197,8 +197,8 @@ PRESUBMITS = {
         # Line 3: , or the closing parenthesis, marking the end of the first
         #    parameter
         r'.*\.create(Native)?Query\('
-        '(?!(\s*([A-Z_]+|"([^"]|\\")*"(\s*\+\s*"([^"]|\\")*")*)'
-        '(,|\s*\))))',
+        r'(?!(\s*([A-Z_]+|"([^"]|\\")*"(\s*\+\s*"([^"]|\\")*")*)'
+        r'(,|\s*\))))',
         "java",
         # ActivityReportingQueryBuilder deals with Dremel queries
         {"src/test", "ActivityReportingQueryBuilder.java",
