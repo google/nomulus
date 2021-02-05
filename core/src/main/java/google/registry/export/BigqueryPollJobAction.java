@@ -45,13 +45,16 @@ import org.joda.time.Duration;
 /**
  * An action which polls the state of a bigquery job. If it is completed then it will log its
  * completion state; otherwise it will return a failure code so that the task will be retried.
+ *
+ * <p>Note that this is AUTH_INTERNAL_ONLY: we don't allow "admin" for this to mitigate a
+ * vulnerability, see b/177308043.
  */
 @Action(
     service = Action.Service.BACKEND,
     path = BigqueryPollJobAction.PATH,
     method = {Action.Method.GET, Action.Method.POST},
     automaticallyPrintOk = true,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+    auth = Auth.AUTH_INTERNAL_ONLY)
 public class BigqueryPollJobAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();

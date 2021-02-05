@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.request.auth.Auth.AUTH_INTERNAL_ONLY;
 import static google.registry.request.auth.Auth.AUTH_INTERNAL_OR_ADMIN;
 import static google.registry.request.auth.Auth.AUTH_PUBLIC;
 import static org.mockito.ArgumentMatchers.any;
@@ -140,6 +141,17 @@ public final class RequestHandlerTest {
     }
   }
 
+  @Action(
+      service = Action.Service.DEFAULT,
+      path = "/auth/internal",
+      auth = AUTH_INTERNAL_ONLY,
+      method = GET)
+  public class AuthInternalAction extends AuthBase {
+    AuthInternalAction(AuthResult authResult) {
+      super(authResult);
+    }
+  }
+
   public class Component {
 
     private RequestModule requestModule = null;
@@ -178,6 +190,10 @@ public final class RequestHandlerTest {
 
     public AuthAdminUserAction authAdminUserAction() {
       return new AuthAdminUserAction(component.getRequestModule().provideAuthResult());
+    }
+
+    public AuthInternalAction authInternalAction() {
+      return new AuthInternalAction(component.getRequestModule().provideAuthResult());
     }
   }
 
@@ -461,5 +477,33 @@ public final class RequestHandlerTest {
     assertThat(providedAuthResult.userAuthInfo().get().user()).isEqualTo(testUser);
     assertThat(providedAuthResult.userAuthInfo().get().oauthTokenInfo()).isEmpty();
     assertMetric("/auth/adminUser", GET, AuthLevel.USER, true);
+  }
+
+  @Test
+  void testInternalAuthNeeded_failure() throws Exception {
+    when(req.getMethod()).thenReturn("GET");
+    when(req.getRequestURI()).thenReturn("/auth/internal");
+    when(requestAuthenticator.authorize(AUTH_INTERNAL_ONLY.authSettings(), req))
+        .thenReturn(Optional.empty());
+
+    handler.handleRequest(req, rsp);
+
+    verify(rsp).sendError(403, "Not authorized");
+    assertThat(providedAuthResult).isNull();
+  }
+
+  @Test
+  void testInternalAuthNeeded_success() throws Exception {
+    when(req.getMethod()).thenReturn("GET");
+    when(req.getRequestURI()).thenReturn("/auth/internal");
+    when(requestAuthenticator.authorize(AUTH_INTERNAL_ONLY.authSettings(), req))
+        .thenReturn(Optional.of(AuthResult.create(AuthLevel.APP)));
+
+    handler.handleRequest(req, rsp);
+
+    assertThat(providedAuthResult).isNotNull();
+    assertThat(providedAuthResult.authLevel()).isEqualTo(AuthLevel.APP);
+    assertThat(providedAuthResult.userAuthInfo()).isEmpty();
+    assertMetric("/auth/internal", GET, AuthLevel.APP, true);
   }
 }
