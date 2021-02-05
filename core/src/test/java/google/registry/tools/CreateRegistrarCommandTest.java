@@ -17,7 +17,6 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT3_HASH;
@@ -111,28 +110,6 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
             eq(ImmutableMap.of("clientId", "clientz")),
             eq(MediaType.PLAIN_TEXT_UTF_8),
             eq(new byte[0]));
-  }
-
-  @Test
-  void testSuccess_alsoSaveToCloudSql() throws Exception {
-    runCommandForced(
-        "--name=blobio",
-        "--password=\"some_password\"",
-        "--registrar_type=REAL",
-        "--iana_id=8",
-        "--passcode=01234",
-        "--icann_referral_email=foo@bar.test",
-        "--street=\"123 Fake St\"",
-        "--city Fakington",
-        "--state MA",
-        "--zip 00351",
-        "--cc US",
-        "clientz");
-
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
-    assertThat(registrar).isPresent();
-    assertThat(registrar.get().verifyPassword("some_password")).isTrue();
-    assertThat(jpaTm().transact(() -> jpaTm().exists(registrar.get()))).isTrue();
   }
 
   @Test
