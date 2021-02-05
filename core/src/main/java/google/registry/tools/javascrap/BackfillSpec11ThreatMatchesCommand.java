@@ -61,8 +61,6 @@ public class BackfillSpec11ThreatMatchesCommand extends ConfirmingCommand
     implements CommandWithRemoteApi {
 
   private static final LocalDate START_DATE = new LocalDate(2019, 1, 1);
-  private static final String SELECT_DISTINCT_STM_CHECK_DATE_QUERY =
-      "SELECT DISTINCT stm.checkDate FROM Spec11ThreatMatch stm";
 
   @Parameter(
       names = {"-o", "--overwrite_existing_dates"},
@@ -210,7 +208,8 @@ public class BackfillSpec11ThreatMatchesCommand extends ConfirmingCommand
             () ->
                 jpaTm()
                     .getEntityManager()
-                    .createQuery(SELECT_DISTINCT_STM_CHECK_DATE_QUERY, LocalDate.class)
+                    .createQuery(
+                        "SELECT DISTINCT stm.checkDate FROM Spec11ThreatMatch stm", LocalDate.class)
                     .getResultStream()
                     .collect(toImmutableSet()));
   }
