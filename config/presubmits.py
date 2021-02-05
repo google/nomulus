@@ -188,12 +188,14 @@ PRESUBMITS = {
     # TODO(b/179158393): enable the 'ConstantName' Java style check to ensure
     # that non-final variables do not use the UPPER_CASE_UNDERSCORE format.
     PresubmitCheck(
-        # Line 1: the method names we check and the opening parenthesis
-        # Line 2: Patterns of the first parameter to exclude:
+        # Line 1: the method names we check and the opening parenthesis, which
+        #    marks the beginning of the first parameter
+        # Line 2: The first parameter is a match if is NOT any of the following:
         #    - final variable name: \s*([A-Z_]+
         #    - string literal: "([^"]|\\")*"
         #    - concatenation of literals: (\s*\+\s*"([^"]|\\")*")*
-        # Line 3: , or the closing parenthesis
+        # Line 3: , or the closing parenthesis, marking the end of the first
+        #    parameter
         r'.*\.create(Native)?Query\('
         '(?!(\s*([A-Z_]+|"([^"]|\\")*"(\s*\+\s*"([^"]|\\")*")*)'
         '(,|\s*\))))',
