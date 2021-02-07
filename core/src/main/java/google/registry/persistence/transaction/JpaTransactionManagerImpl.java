@@ -458,6 +458,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     assertInTransaction();
     EntityType<?> entityType = getEntityType(key.getKind());
     ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getSqlKey());
+    // TODO(b/179158393): use Criteria for query to leave not doubt about sql injection risk.
     String sql =
         String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
     Query query = getEntityManager().createQuery(sql);
