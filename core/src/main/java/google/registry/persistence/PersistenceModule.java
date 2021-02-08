@@ -162,13 +162,12 @@ public abstract class PersistenceModule {
       @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
       Clock clock) {
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
-    overrides.put(Environment.USER, username);
-    overrides.put(Environment.PASS, kmsKeyring.getCloudSqlPassword());
-    validateCredentialStore(
+    validateAndSetCredential(
         credentialStore,
         new RobotUser(RobotId.NOMULUS),
-        overrides.get(Environment.USER),
-        overrides.get(Environment.PASS));
+        overrides,
+        username,
+        kmsKeyring.getCloudSqlPassword());
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -184,13 +183,12 @@ public abstract class PersistenceModule {
       Clock clock) {
     CloudSqlCredentialSupplier.setupCredentialSupplier(credential);
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
-    overrides.put(Environment.USER, username);
-    overrides.put(Environment.PASS, kmsKeyring.getToolsCloudSqlPassword());
-    validateCredentialStore(
+    validateAndSetCredential(
         credentialStore,
         new RobotUser(RobotId.TOOL),
-        overrides.get(Environment.USER),
-        overrides.get(Environment.PASS));
+        overrides,
+        username,
+        kmsKeyring.getToolsCloudSqlPassword());
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -205,15 +203,10 @@ public abstract class PersistenceModule {
       @BeamPipelineCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
       Clock clock) {
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
-    overrides.put(Environment.USER, username);
-    overrides.put(Environment.PASS, password);
     overrides.put(HIKARI_MAXIMUM_POOL_SIZE, String.valueOf(hikariMaximumPoolSize));
     // TODO(b/175700623): consider assigning different logins to pipelines
-    validateCredentialStore(
-        credentialStore,
-        new RobotUser(RobotId.NOMULUS),
-        overrides.get(Environment.USER),
-        overrides.get(Environment.PASS));
+    validateAndSetCredential(
+        credentialStore, new RobotUser(RobotId.NOMULUS), overrides, username, password);
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -258,24 +251,33 @@ public abstract class PersistenceModule {
     return emf;
   }
 
-  /** Verifies that the credential from the Secret Manager matches the one currently in use.
+  /**
+   * Verifies that the credential from the Secret Manager matches the one currently in use, and
+   * configures JPA with the credential from the Secret Manager.
    *
-   * <p>This is a helper for the transition to the Secret Manager, and will be removed once data
-   * and permissions are properly set up for all projects.
-   **/
-  private static void validateCredentialStore(
-      SqlCredentialStore credentialStore, SqlUser sqlUser, String login, String password) {
+   * <p>This is a helper for the transition to the Secret Manager, and will be removed once data and
+   * permissions are properly set up for all projects.
+   */
+  private static void validateAndSetCredential(
+      SqlCredentialStore credentialStore,
+      SqlUser sqlUser,
+      Map<String, String> overrides,
+      String expectedLogin,
+      String expectedPassword) {
     try {
       SqlCredential credential = credentialStore.getCredential(sqlUser);
-      if (!credential.login().equals(login)) {
-        logger.atWarning().log(
-            "Wrong login for %s. Expecting %s, found %s.",
-            sqlUser.geUserName(), login, credential.login());
-        return;
-      }
-      if (!credential.password().equals(password)) {
-        logger.atWarning().log("Wrong password for %s.", sqlUser.geUserName());
-      }
+      checkState(
+          credential.login().equals(expectedLogin),
+          "Wrong login for %s. Expecting %s, found %s.",
+          sqlUser.geUserName(),
+          expectedLogin,
+          credential.login());
+      checkState(
+          credential.password().equals(expectedPassword),
+          "Wrong password for %s.",
+          sqlUser.geUserName());
+      overrides.put(Environment.USER, credential.login());
+      overrides.put(Environment.PASS, credential.password());
       logger.atWarning().log("Credentials in the kerying and the secret manager match.");
     } catch (Throwable e) {
       logger.atWarning().log(e.getMessage());
