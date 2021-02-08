@@ -105,8 +105,6 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
   private static final Supplier<SignedMarkRevocationList> CACHE =
       memoizeWithShortExpiration(
           () -> {
-            // (TODO(Sarahbot@): Load value for primary database from Datastore once go/r3pr/926 is
-            // submitted
             return SignedMarkRevocationListDao.load();
           });
 
@@ -142,8 +140,6 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
 
   /** Save this list to Datastore in sharded form and to Cloud SQL. Returns {@code this}. */
   public SignedMarkRevocationList save() {
-    // (TODO(Sarahbot@): Load value for primary database from Datastore once go/r3pr/926 is
-    // submitted
     SignedMarkRevocationListDao.save(this);
     return this;
   }

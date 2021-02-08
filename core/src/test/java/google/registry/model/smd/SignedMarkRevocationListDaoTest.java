@@ -93,12 +93,10 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
   @TestOfyAndSql
   void testSaveAndLoad_datastorePrimary_emptyList() {
     SignedMarkRevocationList list =
-        SignedMarkRevocationList.create(fakeClock.nowUtc(), ImmutableMap.of());
+        SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of());
     SignedMarkRevocationListDao.save(list);
     SignedMarkRevocationList fromDb = SignedMarkRevocationListDao.load();
-    assertAboutImmutableObjects()
-        .that(fromDb)
-        .isEqualExceptFields(list, "creationTime", "revisionId");
+    assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list, "revisionId");
   }
 
   @TestOfyAndSql

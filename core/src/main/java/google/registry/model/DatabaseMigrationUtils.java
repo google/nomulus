@@ -14,7 +14,6 @@
 
 package google.registry.model;
 
-
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.common.DatabaseTransitionSchedule;
