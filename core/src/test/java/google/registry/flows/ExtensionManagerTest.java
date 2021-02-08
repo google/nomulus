@@ -86,7 +86,7 @@ class ExtensionManagerTest {
   }
 
   @Test
-  void testBlacklistedExtensions_forbiddenWhenUndeclared() {
+  void testDenylistedExtensions_forbiddenWhenUndeclared() {
     ExtensionManager manager =
         new TestInstanceBuilder()
             .setEppRequestSource(EppRequestSource.TOOL)
@@ -100,7 +100,7 @@ class ExtensionManagerTest {
   }
 
   @Test
-  void testBlacklistedExtensions_allowedWhenDeclared() throws Exception {
+  void testDenylistedExtensions_allowedWhenDeclared() throws Exception {
     ExtensionManager manager =
         new TestInstanceBuilder()
             .setEppRequestSource(EppRequestSource.TOOL)
