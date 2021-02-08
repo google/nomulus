@@ -140,18 +140,6 @@ public class SignedMarkRevocationListTest {
   }
 
   @Test
-  void test_getCreationTime_missingInCloudSQL() {
-    clock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
-    createSaveGetHelper(1);
-    jpaTm().transact(() -> jpaTm().delete(SignedMarkRevocationListDao.load("Cloud SQL")));
-    RuntimeException thrown =
-        assertThrows(RuntimeException.class, () -> SignedMarkRevocationList.get());
-    assertThat(thrown)
-        .hasMessageThat()
-        .isEqualTo("Signed mark revocation list in secondary database is empty.");
-  }
-
-  @Test
   void test_getCreationTime_unequalListsInDatabases() {
     clock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
     createSaveGetHelper(1);

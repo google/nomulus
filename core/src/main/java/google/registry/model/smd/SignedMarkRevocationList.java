@@ -107,7 +107,7 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
           () -> {
             // (TODO(Sarahbot@): Load value for primary database from Datastore once go/r3pr/926 is
             // submitted
-            return SignedMarkRevocationListDao.load("Datastore");
+            return SignedMarkRevocationListDao.load();
           });
 
   /** Return a single logical instance that combines all Datastore shards. */
@@ -144,7 +144,7 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
   public SignedMarkRevocationList save() {
     // (TODO(Sarahbot@): Load value for primary database from Datastore once go/r3pr/926 is
     // submitted
-    SignedMarkRevocationListDao.save("Datastore", this);
+    SignedMarkRevocationListDao.save(this);
     return this;
   }
 
