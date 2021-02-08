@@ -938,7 +938,7 @@ soy.$$HTML5_VOID_ELEMENTS_ = new RegExp(
  */
 soy.$$stripHtmlTags = function(value, opt_tagAllowList) {
   if (!opt_tagAllowList) {
-    // If we have no white-list, then use a fast track which elides all tags.
+    // If we have no allowlist, then use a fast track which elides all tags.
     return String(value)
         .replace(soy.esc.$$HTML_TAG_REGEX_, '')
         // This is just paranoia since callers should normalize the result
@@ -1003,7 +1003,7 @@ soy.$$stripHtmlTags = function(value, opt_tagAllowList) {
   // Now html contains no tags or less-than characters that could become
   // part of a tag via a replacement operation and tags only contains
   // approved tags.
-  // Reinsert the white-listed tags.
+  // Reinsert the allowlisted tags.
   html = html.replace(/\[(\d+)\]/g, function(_, index) {
     if (attrs[index] && tags[index]) {
       return tags[index].substr(0, tags[index].length - 1) + attrs[index] + '>';

@@ -47,8 +47,8 @@ public final class ExtensionManager {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  /** Blacklist of extension URIs that cause an error if they are used without being declared. */
-  private static final ImmutableSet<String> UNDECLARED_URIS_BLACKLIST = FEE_EXTENSION_URIS;
+  /** Denylist of extension URIs that cause an error if they are used without being declared. */
+  private static final ImmutableSet<String> UNDECLARED_URIS_DENYLIST = FEE_EXTENSION_URIS;
 
   private final ImmutableSet.Builder<Class<? extends CommandExtension>> implementedBuilder =
       new ImmutableSet.Builder<>();
@@ -95,7 +95,7 @@ public final class ExtensionManager {
     if (undeclaredUris.isEmpty()) {
       return;
     }
-    Set<String> undeclaredUrisThatError = intersection(undeclaredUris, UNDECLARED_URIS_BLACKLIST);
+    Set<String> undeclaredUrisThatError = intersection(undeclaredUris, UNDECLARED_URIS_DENYLIST);
     if (!undeclaredUrisThatError.isEmpty()) {
       throw new UndeclaredServiceExtensionException(undeclaredUrisThatError);
     }
