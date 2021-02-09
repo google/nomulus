@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
+import google.registry.config.RegistryEnvironment;
 import google.registry.model.EntityTestCase;
 import google.registry.model.common.DatabaseTransitionSchedule;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
@@ -34,6 +35,7 @@ import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.SystemPropertyExtension;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -51,6 +53,10 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
   @RegisterExtension
   @Order(value = 1)
   final DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
+
+  @RegisterExtension
+  @Order(value = Integer.MAX_VALUE)
+  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   @BeforeEach
   void setup() {
@@ -181,5 +187,49 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
         .contains(
             "SMD mark has key 1984-12-25T21:00:00.000Z in CLOUD_SQL and key"
                 + " 1984-12-25T23:00:00.000Z in secondary database.");
+  }
+
+  @TestOfyAndSql
+  void testLoad_cloudSqlPrimary_unequalLists_succeedsInProduction() {
+    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
+    fakeClock.advanceBy(Duration.standardDays(5));
+    SignedMarkRevocationList list =
+        SignedMarkRevocationList.create(
+            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
+    SignedMarkRevocationListDao.save(list);
+    SignedMarkRevocationList list2 =
+        SignedMarkRevocationList.create(
+            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(3)));
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(list2));
+    SignedMarkRevocationList fromDb = SignedMarkRevocationListDao.load();
+    assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list2, "revisionId");
+  }
+
+  @TestOfyAndSql
+  void testLoad_datastorePrimary_noListInCloudSql() {
+    SignedMarkRevocationList list =
+        SignedMarkRevocationList.create(
+            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
+    SignedMarkRevocationListDao.save(list);
+    jpaTm().transact(() -> jpaTm().delete(list));
+    RuntimeException thrown =
+        assertThrows(RuntimeException.class, () -> SignedMarkRevocationListDao.load());
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Signed mark revocation list in secondary database is empty.");
+  }
+
+  @TestOfyAndSql
+  void testLoad_cloudSqlPrimary_noListInDatastore() {
+    fakeClock.advanceBy(Duration.standardDays(5));
+    SignedMarkRevocationList list =
+        SignedMarkRevocationList.create(
+            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
+    jpaTm().transact(() -> jpaTm().getEntityManager().persist(list));
+    RuntimeException thrown =
+        assertThrows(RuntimeException.class, () -> SignedMarkRevocationListDao.load());
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Signed mark revocation list in secondary database is empty.");
   }
 }

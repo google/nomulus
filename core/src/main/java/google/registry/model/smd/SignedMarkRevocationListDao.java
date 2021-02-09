@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.isEmpty;
 import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
+import static google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase.CLOUD_SQL;
 import static google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase.DATASTORE;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
@@ -45,34 +46,36 @@ import org.joda.time.DateTime;
 public class SignedMarkRevocationListDao {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final TransitionId TRANSITION_ID = TransitionId.SIGNED_MARK_REVOCATION_LIST;
 
   /**
    * Loads the {@link SignedMarkRevocationList}.
    *
-   * <p>loads the list from the specified primary database, and attempts to load from the secondary
+   * <p>Loads the list from the specified primary database, and attempts to load from the secondary
    * database. If the load the secondary database fails, or the list from the secondary database
    * does not match the list from the primary database, the error will be logged but no exception
    * will be thrown.
    */
   static SignedMarkRevocationList load() {
     PrimaryDatabase primaryDatabase =
-        tm().transactNew(() -> DatabaseMigrationUtils.getPrimaryDatabase(TRANSITION_ID));
-    SignedMarkRevocationList primaryList;
-    switch (primaryDatabase) {
-      case DATASTORE:
-        primaryList = loadFromDatastore().get();
-        break;
-      case CLOUD_SQL:
-        primaryList = loadFromCloudSql().get();
-        break;
-      default:
-        throw new IllegalArgumentException("Unrecognized value for primary database.");
+        tm().transactNew(
+                () ->
+                    DatabaseMigrationUtils.getPrimaryDatabase(
+                        TransitionId.SIGNED_MARK_REVOCATION_LIST));
+    Optional<SignedMarkRevocationList> primaryList;
+    if (primaryDatabase.equals(DATASTORE)) {
+      primaryList = loadFromDatastore();
+    } else if (primaryDatabase.equals(CLOUD_SQL)) {
+      primaryList = loadFromCloudSql();
+    } else {
+      throw new IllegalArgumentException("Unrecognized value for primary database.");
+    }
+    if (!primaryList.isPresent()) {
+      throw new RuntimeException(String.format("List not found in %s", primaryDatabase.name()));
     }
     suppressExceptionUnlessInTest(
-        () -> loadAndCompare(primaryDatabase, primaryList),
+        () -> loadAndCompare(primaryDatabase, primaryList.get()),
         "Error loading and comparing the list from the secondary database.");
-    return primaryList;
+    return primaryList.get();
   }
 
   /**
@@ -83,7 +86,7 @@ public class SignedMarkRevocationListDao {
       PrimaryDatabase primaryDatabase, SignedMarkRevocationList primaryList) {
     Optional<SignedMarkRevocationList> secondaryList =
         primaryDatabase.equals(DATASTORE) ? loadFromCloudSql() : loadFromDatastore();
-    if (secondaryList.isPresent()) {
+    if (secondaryList.isPresent() && secondaryList.get().size() > 0) {
       MapDifference<String, DateTime> diff =
           Maps.difference(primaryList.revokes, secondaryList.get().revokes);
       if (!diff.areEqual()) {
@@ -166,24 +169,24 @@ public class SignedMarkRevocationListDao {
    */
   static void save(SignedMarkRevocationList signedMarkRevocationList) {
     PrimaryDatabase primaryDatabase =
-        tm().transactNew(() -> DatabaseMigrationUtils.getPrimaryDatabase(TRANSITION_ID));
-    switch (primaryDatabase) {
-      case DATASTORE:
-        saveToDatastore(signedMarkRevocationList.revokes, signedMarkRevocationList.creationTime);
-        suppressExceptionUnlessInTest(
-            () -> SignedMarkRevocationListDao.saveToCloudSql(signedMarkRevocationList),
-            "Error inserting signed mark revocations into Cloud SQL.");
-        break;
-      case CLOUD_SQL:
-        SignedMarkRevocationListDao.saveToCloudSql(signedMarkRevocationList);
-        suppressExceptionUnlessInTest(
-            () ->
-                saveToDatastore(
-                    signedMarkRevocationList.revokes, signedMarkRevocationList.creationTime),
-            "Error inserting signed mark revocations into Datastore.");
-        break;
-      default:
-        throw new IllegalArgumentException("Unrecognized value for primary database.");
+        tm().transactNew(
+                () ->
+                    DatabaseMigrationUtils.getPrimaryDatabase(
+                        TransitionId.SIGNED_MARK_REVOCATION_LIST));
+    if (primaryDatabase.equals(DATASTORE)) {
+      saveToDatastore(signedMarkRevocationList.revokes, signedMarkRevocationList.creationTime);
+      suppressExceptionUnlessInTest(
+          () -> SignedMarkRevocationListDao.saveToCloudSql(signedMarkRevocationList),
+          "Error inserting signed mark revocations into Cloud SQL.");
+    } else if (primaryDatabase.equals(CLOUD_SQL)) {
+      SignedMarkRevocationListDao.saveToCloudSql(signedMarkRevocationList);
+      suppressExceptionUnlessInTest(
+          () ->
+              saveToDatastore(
+                  signedMarkRevocationList.revokes, signedMarkRevocationList.creationTime),
+          "Error inserting signed mark revocations into Datastore.");
+    } else {
+      throw new IllegalArgumentException("Unrecognized value for primary database.");
     }
   }
 

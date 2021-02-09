@@ -103,10 +103,7 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
    * single {@link SignedMarkRevocationList} object.
    */
   private static final Supplier<SignedMarkRevocationList> CACHE =
-      memoizeWithShortExpiration(
-          () -> {
-            return SignedMarkRevocationListDao.load();
-          });
+      memoizeWithShortExpiration(SignedMarkRevocationListDao::load);
 
   /** Return a single logical instance that combines all Datastore shards. */
   public static SignedMarkRevocationList get() {
