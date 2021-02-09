@@ -70,7 +70,7 @@ public class SignedMarkRevocationListDao {
       throw new IllegalArgumentException("Unrecognized value for primary database.");
     }
     if (!primaryList.isPresent()) {
-      throw new RuntimeException(String.format("List not found in %s", primaryDatabase.name()));
+      throw new RuntimeException(String.format("List not found in %s.", primaryDatabase.name()));
     }
     suppressExceptionUnlessInTest(
         () -> loadAndCompare(primaryDatabase, primaryList.get()),
