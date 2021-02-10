@@ -221,7 +221,7 @@ public abstract class PersistenceModule {
         logger.atWarning().log("Credentials in the kerying and the secret manager match.");
       }
     } catch (Exception e) {
-      logger.atWarning().withCause(e).log("Failed to get SQL credential from Secret Manager");
+      logger.atWarning().withCause(e).log("Failed to get SQL credential from Secret Manager.");
     }
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
