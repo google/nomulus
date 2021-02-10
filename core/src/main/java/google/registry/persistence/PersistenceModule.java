@@ -214,7 +214,7 @@ public abstract class PersistenceModule {
       SqlCredential credential = credentialStore.getCredential(new RobotUser(RobotId.NOMULUS));
       if (!Objects.equals(username, credential.login())) {
         logger.atWarning().log(
-            "Wrong login for nomulus. Expecting %s, found %s.", username, credential.login());
+            "Wrong username for nomulus. Expecting %s, found %s.", username, credential.login());
       } else if (!Objects.equals(password, credential.password())) {
         logger.atWarning().log("Wrong password for nomulus.");
       } else {
@@ -296,7 +296,7 @@ public abstract class PersistenceModule {
       overrides.put(Environment.PASS, credential.password());
       logger.atWarning().log("Credentials in the kerying and the secret manager match.");
     } catch (Throwable e) {
-      logger.atWarning().withCause(e).log("Failed to get SQL credential from Secret Manager");
+      logger.atSevere().withCause(e).log("Failed to get SQL credential from Secret Manager");
     }
   }
 
