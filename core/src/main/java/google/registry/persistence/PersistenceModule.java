@@ -46,6 +46,7 @@ import java.lang.annotation.Documented;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
@@ -204,9 +205,24 @@ public abstract class PersistenceModule {
       Clock clock) {
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
     overrides.put(HIKARI_MAXIMUM_POOL_SIZE, String.valueOf(hikariMaximumPoolSize));
+    overrides.put(Environment.USER, username);
+    overrides.put(Environment.PASS, password);
     // TODO(b/175700623): consider assigning different logins to pipelines
-    validateAndSetCredential(
-        credentialStore, new RobotUser(RobotId.NOMULUS), overrides, username, password);
+    // TODO(b/179839014): Make SqlCredentialStore injectable in BEAM
+    // Note: the logs below appear in the pipeline's Worker logs, not the Job log.
+    try {
+      SqlCredential credential = credentialStore.getCredential(new RobotUser(RobotId.NOMULUS));
+      if (!Objects.equals(username, credential.login())) {
+        logger.atWarning().log(
+            "Wrong login for nomulus. Expecting %s, found %s.", username, credential.login());
+      }
+      if (!Objects.equals(password, credential.password())) {
+        logger.atWarning().log("Wrong password for nomulus.");
+      }
+      logger.atWarning().log("Credentials in the kerying and the secret manager match.");
+    } catch (Exception e) {
+      logger.atWarning().withCause(e).log("Failed to get SQL credential from Secret Manager");
+    }
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -280,7 +296,7 @@ public abstract class PersistenceModule {
       overrides.put(Environment.PASS, credential.password());
       logger.atWarning().log("Credentials in the kerying and the secret manager match.");
     } catch (Throwable e) {
-      logger.atWarning().log(e.getMessage());
+      logger.atWarning().withCause(e).log("Failed to get SQL credential from Secret Manager");
     }
   }
 
