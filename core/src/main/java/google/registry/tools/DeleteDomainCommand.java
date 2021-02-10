@@ -37,7 +37,10 @@ final class DeleteDomainCommand extends MutatingEppToolCommand {
 
   @Parameter(
       names = {"--immediately"},
-      description = "Whether to bypass grace periods and delete the domain immediately.")
+      description =
+          "Whether to bypass grace periods and delete the domain immediately. This should only be"
+              + " used in exceptional circumstances as it violates the normal expected domain"
+              + " lifecycle.")
   private boolean immediately = false;
 
   @Parameter(
