@@ -215,11 +215,11 @@ public abstract class PersistenceModule {
       if (!Objects.equals(username, credential.login())) {
         logger.atWarning().log(
             "Wrong login for nomulus. Expecting %s, found %s.", username, credential.login());
-      }
-      if (!Objects.equals(password, credential.password())) {
+      } else if (!Objects.equals(password, credential.password())) {
         logger.atWarning().log("Wrong password for nomulus.");
+      } else {
+        logger.atWarning().log("Credentials in the kerying and the secret manager match.");
       }
-      logger.atWarning().log("Credentials in the kerying and the secret manager match.");
     } catch (Exception e) {
       logger.atWarning().withCause(e).log("Failed to get SQL credential from Secret Manager");
     }
