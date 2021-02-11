@@ -144,6 +144,16 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
             rootKey, serverApproveAutorenewPollMessage, serverApproveAutorenewPollMessageHistoryId);
   }
 
+  /**
+   * Fix the VKey "kind" for the PollMessage keys.
+   *
+   * <p>For use by DomainBase/DomainHistory OnLoad methods ONLY.
+   */
+  public void convertVKeys() {
+    serverApproveAutorenewPollMessage =
+        PollMessage.Autorenew.convertVKey(serverApproveAutorenewPollMessage);
+  }
+
   @SuppressWarnings("unused") // For Hibernate.
   private void loadServerApproveBillingEventHistoryId(
       @AlsoLoad("serverApproveBillingEvent") VKey<BillingEvent.OneTime> val) {

@@ -337,6 +337,10 @@ public class DomainContent extends EppResource
         nullToEmptyImmutableCopy(dsData).stream()
             .map(dsData -> dsData.cloneWithDomainRepoId(getRepoId()))
             .collect(toImmutableSet());
+
+    if (transferData != null) {
+      transferData.convertVKeys();
+    }
   }
 
   @PostLoad
