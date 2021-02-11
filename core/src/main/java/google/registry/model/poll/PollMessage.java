@@ -295,7 +295,7 @@ public abstract class PollMessage extends ImmutableObject
     @Transient @ImmutableObject.DoNotCompare
     List<DomainPendingActionNotificationResponse> domainPendingActionNotificationResponses;
 
-    @Transient List<DomainTransferResponse> domainTransferResponses;
+    @Transient @ImmutableObject.DoNotCompare List<DomainTransferResponse> domainTransferResponses;
 
     @Transient List<HostPendingActionNotificationResponse> hostPendingActionNotificationResponses;
 

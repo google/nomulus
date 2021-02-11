@@ -15,6 +15,7 @@
 package google.registry.model.transfer;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static google.registry.model.ImmutableObject.DoNotCompare;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -76,6 +77,7 @@ public abstract class TransferData<
    * be deleted.
    */
   @Transient
+  @DoNotCompare
   @IgnoreSave(IfNull.class)
   Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities;
 
