@@ -32,6 +32,7 @@ import com.google.common.base.Throwables;
 import google.registry.proxy.TestUtils;
 import google.registry.proxy.handler.HttpsRelayServiceHandler.NonOkHttpResponseException;
 import google.registry.proxy.metric.FrontendMetrics;
+import google.registry.util.ProxyHttpHeaders;
 import google.registry.util.SelfSignedCaCertificate;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -250,7 +251,7 @@ class EppServiceHandlerTest {
     channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
     FullHttpRequest request = channel.readInbound();
     assertThat(request).isEqualTo(makeEppHttpRequestWithCertificate(content));
-    String encodedCert = request.headers().get("X-SSL-Full-Certificate");
+    String encodedCert = request.headers().get(ProxyHttpHeaders.FULL_CERTIFICATE);
     assertThat(encodedCert).isNotEqualTo(SAMPLE_CERT);
     X509Certificate decodedCert =
         loadCertificate(new ByteArrayInputStream(Base64.getDecoder().decode(encodedCert)));
@@ -269,7 +270,7 @@ class EppServiceHandlerTest {
     assertThat(request).isEqualTo(makeEppHttpRequestWithCertificate(content));
     // Receive response indicating session is logged in
     HttpResponse response = makeEppHttpResponse(content, HttpResponseStatus.OK);
-    response.headers().set("Logged-In", "true");
+    response.headers().set(ProxyHttpHeaders.LOGGED_IN, "true");
     // Send another inbound message after login
     channel.writeOutbound(response);
     channel.writeInbound(Unpooled.wrappedBuffer(content.getBytes(UTF_8)));
@@ -297,7 +298,7 @@ class EppServiceHandlerTest {
     setHandshakeSuccess();
     String content = "<epp>stuff</epp>";
     HttpResponse response = makeEppHttpResponse(content, HttpResponseStatus.OK);
-    response.headers().set("Epp-Session", "close");
+    response.headers().set(ProxyHttpHeaders.EPP_SESSION, "close");
     channel.writeOutbound(response);
     ByteBuf expectedResponse = channel.readOutbound();
     assertThat(Unpooled.wrappedBuffer(content.getBytes(UTF_8))).isEqualTo(expectedResponse);
@@ -384,7 +385,7 @@ class EppServiceHandlerTest {
     // Second response written.
     HttpResponse response =
         makeEppHttpResponse(responseContent2, HttpResponseStatus.OK, cookie3, newCookie2);
-    response.headers().set("Logged-In", "true");
+    response.headers().set(ProxyHttpHeaders.LOGGED_IN, "true");
     channel.writeOutbound(response);
     channel.readOutbound();
     String requestContent2 = "<epp>request2</epp>";

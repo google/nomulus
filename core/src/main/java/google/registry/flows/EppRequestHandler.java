@@ -25,6 +25,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.request.Response;
+import google.registry.util.ProxyHttpHeaders;
 import javax.inject.Inject;
 
 /** Handle an EPP request and response. */
@@ -72,7 +73,7 @@ public class EppRequestHandler {
       // See: https://tools.ietf.org/html/rfc5734#section-2
       if (eppOutput.isResponse()
           && eppOutput.getResponse().getResult().getCode() == SUCCESS_AND_CLOSE) {
-        response.setHeader("Epp-Session", "close");
+        response.setHeader(ProxyHttpHeaders.EPP_SESSION, "close");
       }
       // If a login request returns a success, a logged-in header is added to the response to inform
       // the proxy that it is no longer necessary to send the full client certificate to the backend
@@ -80,7 +81,7 @@ public class EppRequestHandler {
       if (eppOutput.isResponse()
           && eppOutput.getResponse().isLoginResponse()
           && eppOutput.isSuccess()) {
-        response.setHeader("Logged-In", "true");
+        response.setHeader(ProxyHttpHeaders.LOGGED_IN, "true");
       }
     } catch (Exception e) {
       logger.atWarning().withCause(e).log("handleEppCommand general exception");

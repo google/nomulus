@@ -33,6 +33,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.CidrAddressBlock;
+import google.registry.util.ProxyHttpHeaders;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
@@ -59,7 +60,7 @@ final class TlsCredentialsTest {
   @Test
   void testProvideClientCertificateHash() {
     HttpServletRequest req = mock(HttpServletRequest.class);
-    when(req.getHeader("X-SSL-Certificate")).thenReturn("data");
+    when(req.getHeader(ProxyHttpHeaders.CERTIFICATE_HASH)).thenReturn("data");
     assertThat(TlsCredentials.EppTlsModule.provideClientCertificateHash(req)).hasValue("data");
   }
 
@@ -128,7 +129,7 @@ final class TlsCredentialsTest {
   @Test
   void testProvideClientCertificate() {
     HttpServletRequest req = mock(HttpServletRequest.class);
-    when(req.getHeader("X-SSL-Full-Certificate")).thenReturn("data");
+    when(req.getHeader(ProxyHttpHeaders.FULL_CERTIFICATE)).thenReturn("data");
     assertThat(TlsCredentials.EppTlsModule.provideClientCertificate(req)).hasValue("data");
   }
 
