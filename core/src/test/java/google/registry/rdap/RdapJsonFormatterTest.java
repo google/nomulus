@@ -47,14 +47,16 @@ import google.registry.rdap.RdapObjectClasses.RdapEntity;
 import google.registry.rdap.RdapObjectClasses.ReplyPayloadBase;
 import google.registry.rdap.RdapObjectClasses.TopLevelReplyObject;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdapJsonFormatter}. */
+@DualDatabaseTest
 class RdapJsonFormatterTest {
 
   @RegisterExtension
@@ -300,41 +302,41 @@ class RdapJsonFormatterTest {
     return new Gson().fromJson(loadFile(this.getClass(), expectedFileName), JsonObject.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testRegistrar() {
     assertThat(rdapJsonFormatter.createRdapRegistrarEntity(registrar, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_registrar.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRegistrar_summary() {
     assertThat(
             rdapJsonFormatter.createRdapRegistrarEntity(registrar, OutputDataType.SUMMARY).toJson())
         .isEqualTo(loadJson("rdapjson_registrar_summary.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testHost_ipv4() {
     assertThat(
             rdapJsonFormatter.createRdapNameserver(hostResourceIpv4, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_ipv4.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testHost_ipv6() {
     assertThat(
             rdapJsonFormatter.createRdapNameserver(hostResourceIpv6, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_ipv6.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testHost_both() {
     assertThat(
             rdapJsonFormatter.createRdapNameserver(hostResourceBoth, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_host_both.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testHost_both_summary() {
     assertThat(
             rdapJsonFormatter
@@ -343,7 +345,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_host_both_summary.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testHost_noAddresses() {
     assertThat(
             rdapJsonFormatter
@@ -352,7 +354,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_host_no_addresses.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testHost_notLinked() {
     assertThat(
             rdapJsonFormatter
@@ -361,7 +363,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_host_not_linked.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testHost_superordinateHasPendingTransfer() {
     assertThat(
             rdapJsonFormatter
@@ -370,7 +372,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_host_pending_transfer.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRegistrant() {
     assertThat(
             rdapJsonFormatter
@@ -382,7 +384,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_registrant.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRegistrant_summary() {
     assertThat(
             rdapJsonFormatter
@@ -394,7 +396,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_registrant_summary.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRegistrant_loggedOut() {
     rdapJsonFormatter.rdapAuthorization = RdapAuthorization.PUBLIC_AUTHORIZATION;
     assertThat(
@@ -407,7 +409,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_registrant_logged_out.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRegistrant_baseHasNoTrailingSlash() {
     // First, make sure we have a trailing slash at the end by default!
     // This test tries to change the default state, if the default doesn't have a /, then this test
@@ -426,7 +428,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_registrant.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testAdmin() {
     assertThat(
             rdapJsonFormatter
@@ -438,7 +440,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_admincontact.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testTech() {
     assertThat(
             rdapJsonFormatter
@@ -448,7 +450,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_techcontact.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRolelessContact() {
     assertThat(
             rdapJsonFormatter
@@ -458,7 +460,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_rolelesscontact.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testUnlinkedContact() {
     assertThat(
             rdapJsonFormatter
@@ -468,26 +470,26 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_unlinkedcontact.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testDomain_full() {
     assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_domain_full.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testDomain_summary() {
     assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.SUMMARY).toJson())
         .isEqualTo(loadJson("rdapjson_domain_summary.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testDomain_logged_out() {
     rdapJsonFormatter.rdapAuthorization = RdapAuthorization.PUBLIC_AUTHORIZATION;
     assertThat(rdapJsonFormatter.createRdapDomain(domainBaseFull, OutputDataType.FULL).toJson())
         .isEqualTo(loadJson("rdapjson_domain_logged_out.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testDomain_noNameserversNoTransfersMultipleRoleContact() {
     assertThat(
             rdapJsonFormatter
@@ -496,7 +498,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_domain_no_nameservers.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testError() {
     assertThat(
             RdapObjectClasses.ErrorResponse.create(
@@ -505,7 +507,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_error.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testTopLevel() {
     assertThat(
             TopLevelReplyObject.create(
@@ -517,7 +519,7 @@ class RdapJsonFormatterTest {
         .isEqualTo(loadJson("rdapjson_toplevel.json"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testTopLevel_domain() {
     assertThat(
             TopLevelReplyObject.create(

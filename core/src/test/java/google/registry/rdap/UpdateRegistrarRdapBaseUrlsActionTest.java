@@ -35,13 +35,15 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateRegistrarRdapBaseUrlsAction}. */
+@DualDatabaseTest
 public final class UpdateRegistrarRdapBaseUrlsActionTest {
 
   /**
@@ -160,7 +162,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
             .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testUnknownIana_cleared() {
     // The IANA ID isn't in the JSON_LIST_REPLY
     persistRegistrar("someRegistrar", 4123L, Registrar.Type.REAL, "http://rdap.example/blah");
@@ -172,7 +174,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
     assertThat(loadRegistrar("someRegistrar").getRdapBaseUrls()).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testKnownIana_changed() {
     // The IANA ID is in the JSON_LIST_REPLY
     persistRegistrar("someRegistrar", 1448L, Registrar.Type.REAL, "http://rdap.example/blah");
@@ -185,7 +187,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
         .containsExactly("https://rdap.blacknight.com");
   }
 
-  @Test
+  @TestOfyAndSql
   void testKnownIana_notReal_noChange() {
     // The IANA ID is in the JSON_LIST_REPLY
     persistRegistrar("someRegistrar", 9999L, Registrar.Type.INTERNAL, "http://rdap.example/blah");
@@ -198,7 +200,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
         .containsExactly("http://rdap.example/blah");
   }
 
-  @Test
+  @TestOfyAndSql
   void testKnownIana_notReal_nullIANA_noChange() {
     persistRegistrar("someRegistrar", null, Registrar.Type.TEST, "http://rdap.example/blah");
 
@@ -210,7 +212,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
         .containsExactly("http://rdap.example/blah");
   }
 
-  @Test
+  @TestOfyAndSql
   void testKnownIana_multipleValues() {
     // The IANA ID is in the JSON_LIST_REPLY
     persistRegistrar("registrar4000", 4000L, Registrar.Type.REAL, "http://rdap.example/blah");
@@ -227,7 +229,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
         .containsExactly("https://rdap.example.com");
   }
 
-  @Test
+  @TestOfyAndSql
   void testNoTlds() {
     deleteTld("tld");
     assertThat(assertThrows(IllegalArgumentException.class, action::run))
@@ -235,7 +237,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
         .isEqualTo("There must exist at least one REAL TLD.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testOnlyTestTlds() {
     persistResource(Registry.get("tld").asBuilder().setTldType(TldType.TEST).build());
     assertThat(assertThrows(IllegalArgumentException.class, action::run))
@@ -243,7 +245,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
         .isEqualTo("There must exist at least one REAL TLD.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSecondTldSucceeds() {
     createTld("secondtld");
     httpTransport = new TestHttpTransport();
@@ -261,7 +263,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
     action.run();
   }
 
-  @Test
+  @TestOfyAndSql
   void testBothFail() {
     createTld("secondtld");
     httpTransport = new TestHttpTransport();
@@ -281,7 +283,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
         .isEqualTo("Error contacting MosAPI server. Tried TLDs [secondtld, tld]");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailureCause_ignoresLoginFailure() {
     // Login failures aren't particularly interesting so we should log them, but the final
     // throwable should be some other failure if one existed
