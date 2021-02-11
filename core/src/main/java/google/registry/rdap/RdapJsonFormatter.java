@@ -20,8 +20,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.ImmutableSetMultimap.toImmutableSetMultimap;
 import static google.registry.model.EppResourceUtils.isLinked;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.rdap.RdapIcannStandardInformation.CONTACT_REDACTED_VALUE;
 import static google.registry.util.CollectionUtils.union;
 
@@ -35,7 +35,6 @@ import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.InetAddresses;
 import com.google.gson.JsonArray;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactAddress;
@@ -77,7 +76,6 @@ import java.net.URI;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -343,15 +341,11 @@ public class RdapJsonFormatter {
     // Kick off the database loads of the nameservers that we will need, so it can load
     // asynchronously while we load and process the contacts.
     ImmutableSet<HostResource> loadedHosts =
-        ImmutableSet.copyOf(tm().loadByKeys(domainBase.getNameservers()).values());
+        transactIfJpaTm(
+            () -> ImmutableSet.copyOf(tm().loadByKeys(domainBase.getNameservers()).values()));
     // Load the registrant and other contacts and add them to the data.
-    Map<Key<ContactResource>, ContactResource> loadedContacts =
-        ofy()
-            .load()
-            .keys(
-                domainBase.getReferencedContacts().stream()
-                    .map(VKey::getOfyKey)
-                    .collect(toImmutableSet()));
+    ImmutableMap<VKey<? extends ContactResource>, ContactResource> loadedContacts =
+        transactIfJpaTm(() -> tm().loadByKeysIfPresent(domainBase.getReferencedContacts()));
     // RDAP Response Profile 2.7.3, A domain MUST have the REGISTRANT, ADMIN, TECH roles and MAY
     // have others. We also add the BILLING.
     //
@@ -359,16 +353,16 @@ public class RdapJsonFormatter {
     // fields we don't want to show (as opposed to not having contacts at all) because of GDPR etc.
     //
     // the GDPR redaction is handled in createRdapContactEntity
-    ImmutableSetMultimap<Key<ContactResource>, Type> contactsToRoles =
+    ImmutableSetMultimap<VKey<ContactResource>, Type> contactsToRoles =
         Streams.concat(
                 domainBase.getContacts().stream(),
                 Stream.of(DesignatedContact.create(Type.REGISTRANT, domainBase.getRegistrant())))
             .sorted(DESIGNATED_CONTACT_ORDERING)
             .collect(
                 toImmutableSetMultimap(
-                    contact -> contact.getContactKey().getOfyKey(), DesignatedContact::getType));
+                    DesignatedContact::getContactKey, DesignatedContact::getType));
 
-    for (Key<ContactResource> contactKey : contactsToRoles.keySet()) {
+    for (VKey<ContactResource> contactKey : contactsToRoles.keySet()) {
       Set<RdapEntity.Role> roles =
           contactsToRoles.get(contactKey).stream()
               .map(RdapJsonFormatter::convertContactTypeToRdapRole)
@@ -430,10 +424,12 @@ public class RdapJsonFormatter {
         statuses.add(StatusValue.LINKED);
       }
       if (hostResource.isSubordinate()
-          && tm().loadByKey(hostResource.getSuperordinateDomain())
-              .cloneProjectedAtTime(getRequestTime())
-              .getStatusValues()
-              .contains(StatusValue.PENDING_TRANSFER)) {
+          && transactIfJpaTm(
+              () ->
+                  tm().loadByKey(hostResource.getSuperordinateDomain())
+                      .cloneProjectedAtTime(getRequestTime())
+                      .getStatusValues()
+                      .contains(StatusValue.PENDING_TRANSFER))) {
         statuses.add(StatusValue.PENDING_TRANSFER);
       }
       builder

@@ -392,22 +392,6 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
     return setOtherQueryAttributes(query, deletedItemHandling, resultSetMaxSize);
   }
 
-  /** Handles searches by key using a simple string. */
-  static <T extends EppResource> Query<T> queryItemsByKey(
-      Class<T> clazz,
-      String queryString,
-      DeletedItemHandling deletedItemHandling,
-      int resultSetMaxSize) {
-    if (queryString.length() < RdapSearchPattern.MIN_INITIAL_STRING_LENGTH) {
-      throw new UnprocessableEntityException(
-          String.format(
-              "Initial search string must be at least %d characters",
-              RdapSearchPattern.MIN_INITIAL_STRING_LENGTH));
-    }
-    Query<T> query = ofy().load().type(clazz).filterKey("=", Key.create(clazz, queryString));
-    return setOtherQueryAttributes(query, deletedItemHandling, resultSetMaxSize);
-  }
-
   static <T extends EppResource> Query<T> setOtherQueryAttributes(
       Query<T> query, DeletedItemHandling deletedItemHandling, int resultSetMaxSize) {
     if (deletedItemHandling != DeletedItemHandling.INCLUDE) {

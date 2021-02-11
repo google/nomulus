@@ -14,7 +14,8 @@
 
 package google.registry.rdap;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.rdap.RdapUtils.getRegistrarByIanaIdentifier;
 import static google.registry.rdap.RdapUtils.getRegistrarByName;
 import static google.registry.request.Action.Method.GET;
@@ -23,9 +24,9 @@ import static google.registry.request.Action.Method.HEAD;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Longs;
 import com.google.re2j.Pattern;
-import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.registrar.Registrar;
+import google.registry.persistence.VKey;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapObjectClasses.RdapEntity;
@@ -69,13 +70,14 @@ public class RdapEntityAction extends RdapActionBase {
     // RDAP Technical Implementation Guide 2.3.1 - MUST support contact entity lookup using the
     // handle
     if (ROID_PATTERN.matcher(pathSearchString).matches()) {
-      Key<ContactResource> contactKey = Key.create(ContactResource.class, pathSearchString);
-      ContactResource contactResource = ofy().load().key(contactKey).now();
+      VKey<ContactResource> contactVKey = VKey.create(ContactResource.class, pathSearchString);
+      Optional<ContactResource> contactResource =
+          transactIfJpaTm(() -> tm().loadByKeyIfPresent(contactVKey));
       // As per Andy Newton on the regext mailing list, contacts by themselves have no role, since
       // they are global, and might have different roles for different domains.
-      if (contactResource != null && isAuthorized(contactResource)) {
+      if (contactResource.isPresent() && isAuthorized(contactResource.get())) {
         return rdapJsonFormatter.createRdapContactEntity(
-            contactResource, ImmutableSet.of(), OutputDataType.FULL);
+            contactResource.get(), ImmutableSet.of(), OutputDataType.FULL);
       }
     }
 

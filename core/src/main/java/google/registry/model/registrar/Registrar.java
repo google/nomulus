@@ -996,6 +996,13 @@ public class Registrar extends ImmutableObject
     return CACHE_BY_CLIENT_ID.get().values();
   }
 
+  /** Loads all registrar keys using an in-memory cache. */
+  public static ImmutableSet<VKey<Registrar>> loadAllKeysCached() {
+    return CACHE_BY_CLIENT_ID.get().keySet().stream()
+        .map(Registrar::createVKey)
+        .collect(toImmutableSet());
+  }
+
   /** Loads and returns a registrar entity by its client id directly from Datastore. */
   public static Optional<Registrar> loadByClientId(String clientId) {
     checkArgument(!Strings.isNullOrEmpty(clientId), "clientId must be specified");
