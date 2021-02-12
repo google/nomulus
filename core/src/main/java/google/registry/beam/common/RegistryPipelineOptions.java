@@ -33,8 +33,8 @@ public interface RegistryPipelineOptions extends GcpOptions {
    * Verifies that the GCP project and Registry environment in {@code option} are consistent.
    *
    * <p>This method may modify the system property ("google.registry.environment" which is defined
-   * in {@link RegistryEnvironment}). Tests calling this method must restore the original environment
-   * on completion.
+   * in {@link RegistryEnvironment}). Tests calling this method must restore the original
+   * environment on completion.
    */
   static void validateRegistryPipelineOptions(RegistryPipelineOptions option) {
     RegistryEnvironment environment = option.getRegistryEnvironment();

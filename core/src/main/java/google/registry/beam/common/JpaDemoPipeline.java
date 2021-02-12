@@ -28,9 +28,7 @@ import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 
-/**
- * Toy pipeline that demonstrates how to use {@link JpaTransactionManager} in BEAM pipelines.
- */
+/** Toy pipeline that demonstrates how to use {@link JpaTransactionManager} in BEAM pipelines. */
 public class JpaDemoPipeline implements Serializable {
 
   public static void main(String[] args) {
