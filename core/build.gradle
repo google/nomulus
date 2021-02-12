@@ -204,6 +204,7 @@ dependencies {
   runtimeOnly deps['com.google.cloud.sql:postgres-socket-factory']
   compile deps['com.google.cloud:google-cloud-secretmanager']
   compile deps['com.google.code.gson:gson']
+  compile deps['com.google.auto.service:auto-service-annotations']
   compile deps['com.google.auto.value:auto-value-annotations']
   compile deps['com.google.code.findbugs:jsr305']
   compile deps['com.google.dagger:dagger']
@@ -300,11 +301,7 @@ dependencies {
   compile project(path: ':db', configuration: 'compileApi')
   testRuntime project(':db')
 
-  // Include auto-value in compile until nebula-lint understands
-  // annotationProcessor
-  gradleLint.ignore('unused-dependency') {
-    compile deps['com.google.auto.value:auto-value']
-  }
+  annotationProcessor deps['com.google.auto.service:auto-service']
   annotationProcessor deps['com.google.auto.value:auto-value']
   testAnnotationProcessor deps['com.google.auto.value:auto-value']
   annotationProcessor deps['com.google.dagger:dagger-compiler']
@@ -317,7 +314,7 @@ dependencies {
   testCompile deps['com.google.monitoring-client:contrib']
   testCompile deps['com.google.truth:truth']
   testCompile deps['com.google.truth.extensions:truth-java8-extension']
-  testCompile deps['org.hamcrest:hamcrest-all']
+  testCompile deps['org.hamcrest:hamcrest']
   testCompile deps['org.hamcrest:hamcrest-core']
   testCompile deps['org.hamcrest:hamcrest-library']
   testCompile deps['junit:junit']
@@ -715,6 +712,10 @@ createToolTask(
     'devTool',
     'google.registry.tools.DevTool',
     sourceSets.nonprod)
+
+
+createToolTask(
+        'jpaDemoPipeline', 'google.registry.beam.common.JpaDemoPipeline')
 
 project.tasks.create('initSqlPipeline', JavaExec) {
   main = 'google.registry.beam.initsql.InitSqlPipeline'

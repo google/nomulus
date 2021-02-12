@@ -73,7 +73,13 @@
       "moduleLicense": "The 3-Clause BSD License"
     },
     {
+      "moduleLicense": "BSD Licence 3"
+    },
+    {
       "moduleLicense": "BSD License"
+    },
+    {
+      "moduleLicense": "BSD License 3"
     },
     {
       "moduleLicense": "BSD New License"
@@ -229,6 +235,13 @@
     {
       "moduleLicense": "Public Domain",
       "moduleName": "org.tukaani:xz"
+    },
+    {
+      // "Apache License, Version 2.0". The plugin is able to parse
+      // 2.11.3 correctly but not this version.
+      "moduleLicense": null,
+      "moduleVersion": "2.12.1",
+      "moduleName": "com.fasterxml.jackson:jackson-bom"
     },
     {
       // Actually Eclipse Public License v2.0

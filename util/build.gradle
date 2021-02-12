@@ -41,7 +41,7 @@ dependencies {
   testCompile deps['com.google.truth:truth']
   testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
-  testCompile deps['org.hamcrest:hamcrest-all']
+  testCompile deps['org.hamcrest:hamcrest']
   testCompile deps['org.hamcrest:hamcrest-core']
   testCompile deps['org.mockito:mockito-core']
   testCompile deps['org.mockito:mockito-junit-jupiter']
