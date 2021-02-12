@@ -101,6 +101,16 @@ public class TransactionManagerFactory {
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
   }
 
+  /**
+   * Makes {@link #jpaTm()} return the {@link JpaTransactionManager} instance provided by {@code
+   * jpaTmSupplier} from now on. This method should only be called by an implementor of {@link
+   * org.apache.beam.sdk.harness.JvmInitializer}.
+   */
+  public static void setJpaTmOnBeamWorker(Supplier<JpaTransactionManager> jpaTmSupplier) {
+    checkNotNull(jpaTmSupplier, "jpaTmSupplier");
+    jpaTm = Suppliers.memoize(jpaTmSupplier::get);
+  }
+
   /** Sets the return of {@link #tm()} to the given instance of {@link TransactionManager}. */
   @VisibleForTesting
   public static void setTm(TransactionManager newTm) {

@@ -124,6 +124,28 @@ public abstract class PersistenceModule {
   @Config("beamIsolationOverride")
   abstract TransactionIsolationLevel bindBeamIsolationOverride();
 
+  /**
+   * Optionally overrides the maximum connection pool size for JPA.
+   *
+   * <p>If present, this binding overrides the {@code HIKARI_MAXIMUM_POOL_SIZE} value set in {@link
+   * #provideDefaultDatabaseConfigs()}. The default value is tuned for the Registry server on
+   * AppEngine. Other applications such as the Nomulus tool and the BEAM pipeline, should override
+   * it.
+   */
+  @BindsOptionalOf
+  @Config("jpaMaxPoolSizeOverride")
+  abstract Integer bindJpaMaxPoolSizeOverride();
+
+  /**
+   * Optionally overrides the Cloud SQL database instance's connection name.
+   *
+   * <p>This allows connections to alternative database instances, e.g., the read-only replica or a
+   * test database.
+   */
+  @BindsOptionalOf
+  @Config("instanceConnectionNameOverride")
+  abstract String instanceConnectionNameOverride();
+
   @Provides
   @Singleton
   @BeamPipelineCloudSqlConfigs
@@ -169,6 +191,36 @@ public abstract class PersistenceModule {
         overrides,
         username,
         kmsKeyring.getCloudSqlPassword());
+    return new JpaTransactionManagerImpl(create(overrides), clock);
+  }
+
+  @Provides
+  @Singleton
+  @BeamJpaTm
+  static JpaTransactionManager provideBeamJpaTm(
+      SqlCredentialStore credentialStore,
+      @Config("instanceConnectionNameOverride")
+          Optional<Provider<String>> instanceConnectionNameOverride,
+      @Config("jpaMaxPoolSizeOverride") Optional<Integer> jpaMaxConnectionPoolSizeOverride,
+      @Config("beamIsolationOverride")
+          Optional<Provider<TransactionIsolationLevel>> isolationOverride,
+      @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
+      Clock clock) {
+    HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
+    // TODO(b/175700623): make sql username configurable from config file.
+    SqlCredential credential = credentialStore.getCredential(new RobotUser(RobotId.NOMULUS));
+    overrides.put(Environment.USER, credential.login());
+    overrides.put(Environment.PASS, credential.password());
+    instanceConnectionNameOverride
+        .map(Provider::get)
+        .ifPresent(
+            instanceConnectionName ->
+                overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, instanceConnectionName));
+    jpaMaxConnectionPoolSizeOverride.ifPresent(
+        maxPoolSize -> overrides.put(HIKARI_MAXIMUM_POOL_SIZE, String.valueOf(maxPoolSize)));
+    isolationOverride
+        .map(Provider::get)
+        .ifPresent(isolation -> overrides.put(Environment.ISOLATION, isolation.name()));
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -335,6 +387,12 @@ public abstract class PersistenceModule {
   @Qualifier
   @Documented
   @interface AppEngineJpaTm {}
+
+  /** Dagger qualifier for {@link JpaTransactionManager} used inside BEAM pipelines. */
+  // Note: @SocketFactoryJpaTm will be phased out in favor of this qualifier.
+  @Qualifier
+  @Documented
+  public @interface BeamJpaTm {}
 
   /** Dagger qualifier for {@link JpaTransactionManager} used for Nomulus tool. */
   @Qualifier
