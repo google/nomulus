@@ -15,24 +15,13 @@
 package google.registry.model.smd;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.Iterables.isEmpty;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
-import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.allocateId;
-import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.Maps;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EmbedMap;
 import com.googlecode.objectify.annotation.Entity;
@@ -45,9 +34,7 @@ import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.schema.replay.NonReplicatedEntity;
-import google.registry.util.CollectionUtils;
 import java.util.Map;
-import java.util.Optional;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -116,16 +103,7 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
    * single {@link SignedMarkRevocationList} object.
    */
   private static final Supplier<SignedMarkRevocationList> CACHE =
-      memoizeWithShortExpiration(
-          () -> {
-            SignedMarkRevocationList datastoreList = loadFromDatastore();
-            suppressExceptionUnlessInTest(
-                () -> {
-                  loadAndCompareCloudSqlList(datastoreList);
-                },
-                "Error comparing signed mark revocation lists.");
-            return datastoreList;
-          });
+      memoizeWithShortExpiration(SignedMarkRevocationListDao::load);
 
   /** Return a single logical instance that combines all Datastore shards. */
   public static SignedMarkRevocationList get() {
@@ -159,96 +137,8 @@ public class SignedMarkRevocationList extends ImmutableObject implements NonRepl
 
   /** Save this list to Datastore in sharded form and to Cloud SQL. Returns {@code this}. */
   public SignedMarkRevocationList save() {
-    saveToDatastore();
-    SignedMarkRevocationListDao.trySave(this);
+    SignedMarkRevocationListDao.save(this);
     return this;
-  }
-
-  /** Loads the shards from Datastore and combines them into one list. */
-  private static SignedMarkRevocationList loadFromDatastore() {
-    return tm().transactNewReadOnly(
-            () -> {
-              Iterable<SignedMarkRevocationList> shards =
-                  ofy().load().type(SignedMarkRevocationList.class).ancestor(getCrossTldKey());
-              DateTime creationTime =
-                  isEmpty(shards)
-                      ? START_OF_TIME
-                      : checkNotNull(Iterables.get(shards, 0).creationTime, "creationTime");
-              ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
-              for (SignedMarkRevocationList shard : shards) {
-                revokes.putAll(shard.revokes);
-                checkState(
-                    creationTime.equals(shard.creationTime),
-                    "Inconsistent creation times: %s vs. %s",
-                    creationTime,
-                    shard.creationTime);
-              }
-              return create(creationTime, revokes.build());
-            });
-  }
-
-  /** Save this list to Datastore in sharded form. */
-  private SignedMarkRevocationList saveToDatastore() {
-    tm().transact(
-            () -> {
-              ofy()
-                  .deleteWithoutBackup()
-                  .keys(
-                      ofy()
-                          .load()
-                          .type(SignedMarkRevocationList.class)
-                          .ancestor(getCrossTldKey())
-                          .keys());
-              ofy()
-                  .saveWithoutBackup()
-                  .entities(
-                      CollectionUtils.partitionMap(revokes, SHARD_SIZE).stream()
-                          .map(
-                              shardRevokes -> {
-                                SignedMarkRevocationList shard = create(creationTime, shardRevokes);
-                                shard.id = allocateId();
-                                shard.isShard =
-                                    true; // Avoid the exception in disallowUnshardedSaves().
-                                return shard;
-                              })
-                          .collect(toImmutableList()));
-            });
-    return this;
-  }
-
-  private static void loadAndCompareCloudSqlList(SignedMarkRevocationList datastoreList) {
-    // Lifted with some modifications from ClaimsListShard
-    Optional<SignedMarkRevocationList> maybeCloudSqlList =
-        SignedMarkRevocationListDao.getLatestRevision();
-    if (maybeCloudSqlList.isPresent()) {
-      SignedMarkRevocationList cloudSqlList = maybeCloudSqlList.get();
-      MapDifference<String, DateTime> diff =
-          Maps.difference(datastoreList.revokes, cloudSqlList.revokes);
-      if (!diff.areEqual()) {
-        if (diff.entriesDiffering().size() > 10) {
-          String message =
-              String.format(
-                  "Unequal SM revocation lists detected, Cloud SQL list with revision id %d has %d"
-                      + " different records than the current Datastore list.",
-                  cloudSqlList.revisionId, diff.entriesDiffering().size());
-          throw new RuntimeException(message);
-        } else {
-          StringBuilder diffMessage = new StringBuilder("Unequal SM revocation lists detected:\n");
-          diff.entriesDiffering()
-              .forEach(
-                  (label, valueDiff) ->
-                      diffMessage.append(
-                          String.format(
-                              "SMD %s has key %s in Datastore and key %s in Cloud SQL.\n",
-                              label, valueDiff.leftValue(), valueDiff.rightValue())));
-          throw new RuntimeException(diffMessage.toString());
-        }
-      }
-    } else {
-      if (datastoreList.size() != 0) {
-        throw new RuntimeException("Signed mark revocation list in Cloud SQL is empty.");
-      }
-    }
   }
 
   /** As a safety mechanism, fail if someone tries to save this class directly. */

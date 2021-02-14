@@ -96,15 +96,15 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
       TimedTransitionProperty.forMapify(PrimaryDatabase.DATASTORE, PrimaryDatabaseTransition.class);
 
   /** A cache that loads the {@link DatabaseTransitionSchedule} for a given id. */
-  private static final LoadingCache<String, Optional<DatabaseTransitionSchedule>> CACHE =
+  private static final LoadingCache<TransitionId, Optional<DatabaseTransitionSchedule>> CACHE =
       CacheBuilder.newBuilder()
           .expireAfterWrite(
               java.time.Duration.ofMillis(getSingletonCacheRefreshDuration().getMillis()))
           .build(
-              new CacheLoader<String, Optional<DatabaseTransitionSchedule>>() {
+              new CacheLoader<TransitionId, Optional<DatabaseTransitionSchedule>>() {
                 @Override
-                public Optional<DatabaseTransitionSchedule> load(String transitionId) {
-                  return DatabaseTransitionSchedule.get(TransitionId.valueOf(transitionId));
+                public Optional<DatabaseTransitionSchedule> load(TransitionId transitionId) {
+                  return DatabaseTransitionSchedule.get(transitionId);
                 }
               });
 
@@ -136,7 +136,7 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
    * <p>WARNING: The schedule returned by this method could be up to 10 minutes out of date.
    */
   public static Optional<DatabaseTransitionSchedule> getCached(TransitionId id) {
-    return CACHE.getUnchecked(id.name());
+    return CACHE.getUnchecked(id);
   }
 
   /** Returns the schedule for a given id. */
