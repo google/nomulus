@@ -1,0 +1,149 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="1000">
+      <msg>Command completed successfully</msg>
+    </result>
+    <resData>
+      <domain:chkData xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:cd>
+          <domain:name avail="0">reserved.tld</domain:name>
+          <domain:reason>Reserved</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="0">allowedinsunrise.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="0">allowedinsunrise.tld</domain:name>
+          <domain:reason>In use</domain:reason>
+        </domain:cd>
+        <domain:cd>
+          <domain:name avail="0">premiumcollision.tld</domain:name>
+          <domain:reason>Cannot be delegated</domain:reason>
+        </domain:cd>
+      </domain:chkData>
+    </resData>
+    <extension>
+      <fee:chkData xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:class>reserved</fee:class>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>transfer</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:class>reserved</fee:class>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>transfer</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:class>reserved</fee:class>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>transfer</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">11.00</fee:fee>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>premiumcollision.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:class>reserved</fee:class>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>premiumcollision.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">70.00</fee:fee>
+          <fee:class>premium</fee:class>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>premiumcollision.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>transfer</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="renew">70.00</fee:fee>
+          <fee:class>premium</fee:class>
+        </fee:cd>
+        <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+          <fee:name>premiumcollision.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+          <fee:fee description="restore">17.00</fee:fee>
+        </fee:cd>
+      </fee:chkData>
+    </extension>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>

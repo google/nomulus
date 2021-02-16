@@ -1,0 +1,116 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <check>
+      <domain:check xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>reserved.tld</domain:name>
+        <domain:name>allowedinsunrise.tld</domain:name>
+        <domain:name>allowedinsunrise.tld</domain:name>
+        <domain:name>premiumcollision.tld</domain:name>
+      </domain:check>
+    </check>
+   <extension>
+      <launch:check xmlns:launch="urn:ietf:params:xml:ns:launch-1.0" type="avail">
+        <launch:phase name="foo">custom</launch:phase>
+      </launch:check>
+      <fee:check xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
+        <fee:domain>
+          <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>transfer</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>reserved.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>transfer</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>transfer</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>allowedinsunrise.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>premiumcollision.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>create</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>premiumcollision.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>renew</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>premiumcollision.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>transfer</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+        <fee:domain>
+          <fee:name>premiumcollision.tld</fee:name>
+          <fee:currency>USD</fee:currency>
+          <fee:command>restore</fee:command>
+          <fee:period unit="y">1</fee:period>
+        </fee:domain>
+      </fee:check>
+    </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>
