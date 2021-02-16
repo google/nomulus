@@ -417,6 +417,11 @@ public abstract class PollMessage extends ImmutableObject
                     .setPendingTransferExpirationTime(
                         transferResponse.getPendingTransferExpirationTime())
                     .build());
+
+        // The transferResponse is currently an unspecialized TransferResponse instance, use the
+        // ContactTransferResponse that we just created so that the value is consistently
+        // specialized.
+        transferResponse = contactTransferResponses.get(0);
       }
     }
 
