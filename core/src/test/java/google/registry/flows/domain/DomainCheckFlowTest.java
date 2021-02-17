@@ -887,6 +887,20 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_response_v06.xml"));
   }
 
+  @Test
+  void testFeeExtension_reservedName_restoreFeeWithDupes_v06() throws Exception {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setReservedLists(createReservedList())
+            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .build());
+    // The domain needs to exist in order for it to be loaded to check for restore fee.
+    persistActiveDomain("allowedinsunrise.tld");
+    setEppInput("domain_check_fee_reserved_dupes_v06.xml");
+    runFlowAssertResponse(loadFile("domain_check_fee_reserved_response_dupes_v06.xml"));
+  }
+
   /** The tests must be split up for version 11, which allows only one command at a time. */
   @Test
   void testFeeExtension_reservedName_v11_create() throws Exception {
@@ -963,6 +977,20 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .build());
     setEppInput("domain_check_fee_reserved_v12.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_response_v12.xml"));
+  }
+
+  @Test
+  void testFeeExtension_reservedName_restoreFeeWithDupes_v12() throws Exception {
+    persistResource(
+        Registry.get("tld")
+            .asBuilder()
+            .setReservedLists(createReservedList())
+            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .build());
+    // The domain needs to exist in order for it to be loaded to check for restore fee.
+    persistActiveDomain("allowedinsunrise.tld");
+    setEppInput("domain_check_fee_reserved_dupes_v12.xml");
+    runFlowAssertResponse(loadFile("domain_check_fee_reserved_dupes_response_v12.xml"));
   }
 
   @Test

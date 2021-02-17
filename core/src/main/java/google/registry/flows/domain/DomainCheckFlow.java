@@ -301,6 +301,7 @@ public final class DomainCheckFlow implements Flow {
           feeCheck.getItems().stream()
               .filter(fc -> fc.getCommandName() == CommandName.RESTORE)
               .map(FeeCheckCommandExtensionItem::getDomainName)
+              .distinct()
               .collect(toImmutableList());
     } else if (feeCheck.getItems().stream()
         .anyMatch(fc -> fc.getCommandName() == CommandName.RESTORE)) {

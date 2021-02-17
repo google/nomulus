@@ -1,0 +1,33 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <check>
+      <domain:check xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>reserved.tld</domain:name>
+        <domain:name>allowedinsunrise.tld</domain:name>
+        <domain:name>allowedinsunrise.tld</domain:name>
+        <domain:name>premiumcollision.tld</domain:name>
+      </domain:check>
+    </check>
+   <extension>
+      <launch:check xmlns:launch="urn:ietf:params:xml:ns:launch-1.0" type="avail">
+        <launch:phase name="foo">custom</launch:phase>
+      </launch:check>
+      <fee:check xmlns:fee="urn:ietf:params:xml:ns:fee-0.12">
+        <fee:currency>USD</fee:currency>
+        <fee:command name="create">
+          <fee:period unit="y">1</fee:period>
+        </fee:command>
+        <fee:command name="renew">
+          <fee:period unit="y">1</fee:period>
+        </fee:command>
+        <fee:command name="transfer">
+          <fee:period unit="y">1</fee:period>
+        </fee:command>
+        <fee:command name="restore">
+          <fee:period unit="y">1</fee:period>
+        </fee:command>
+      </fee:check>
+    </extension>
+    <clTRID>ABC-12345</clTRID>
+  </command>
+</epp>
