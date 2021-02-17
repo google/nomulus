@@ -62,6 +62,8 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
     DOMAIN_LABEL_LISTS,
     /** The schedule for the migration of the {@link SignedMarkRevocationList} entity. */
     SIGNED_MARK_REVOCATION_LIST,
+    /** The schedule for all asynchronously-replayed entities, ones not dually-written. */
+    REPLAYED_ENTITIES,
   }
 
   /**

@@ -17,10 +17,12 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.injectTmForDualDatabaseTest;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.restoreTmAfterDualDatabaseTest;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -40,10 +42,16 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyFilter;
+import google.registry.model.common.DatabaseTransitionSchedule;
+import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
+import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
+import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
+import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
@@ -390,6 +398,14 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
         loadInitialData();
       }
     } else {
+      // If we're using SQL, set replayed entities to use SQL
+      DatabaseTransitionSchedule schedule =
+          DatabaseTransitionSchedule.create(
+              TransitionId.REPLAYED_ENTITIES,
+              TimedTransitionProperty.fromValueMap(
+                  ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.CLOUD_SQL),
+                  PrimaryDatabaseTransition.class));
+      tm().transactNew(() -> ofy().saveWithoutBackup().entity(schedule).now());
       if (withCloudSql && !withJpaUnitTest && !withoutCannedData) {
         loadInitialData();
       }

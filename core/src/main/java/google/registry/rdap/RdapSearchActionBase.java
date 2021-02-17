@@ -16,6 +16,7 @@ package google.registry.rdap;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
@@ -24,6 +25,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.EppResource;
 import google.registry.model.registrar.Registrar;
+import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.BaseSearchResponse;
@@ -40,8 +42,10 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.inject.Inject;
+import javax.persistence.criteria.CriteriaBuilder;
 
 /**
  * Base RDAP (new WHOIS) action for domain, nameserver and entity search requests.
@@ -161,14 +165,63 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
     if (desiredRegistrar.isPresent()) {
       query = query.filter("currentSponsorClientId", desiredRegistrar.get());
     }
-    if (!checkForVisibility) {
-      return RdapResultSet.create(query.list());
+    List<T> queryResult = query.list();
+    if (checkForVisibility) {
+      return filterResourcesByVisibility(queryResult, querySizeLimit);
+    } else {
+      return RdapResultSet.create(queryResult);
     }
+  }
+
+  /**
+   * In Cloud SQL, builds and runs the given query, and checks for permissioning if necessary.
+   *
+   * @param builder a query builder that represents the various SELECT FROM, WHERE, ORDER BY and
+   *     (etc) clauses that make up this SQL query
+   * @param checkForVisibility true if the results should be checked to make sure they are visible;
+   *     normally this should be equal to the shouldIncludeDeleted setting, but in cases where the
+   *     query could not check deletion status (due to Datastore limitations such as the limit of
+   *     one field queried for inequality, for instance), it may need to be set to true even when
+   *     not including deleted records
+   * @param querySizeLimit the maximum number of items the query is expected to return, usually
+   *     because the limit has been set
+   * @return an {@link RdapResultSet} object containing the list of resources and an incompleteness
+   *     warning flag, which is set to MIGHT_BE_INCOMPLETE iff any resources were excluded due to
+   *     lack of visibility, and the resulting list of resources is less than the maximum allowable,
+   *     and the number of items returned by the query is greater than or equal to the maximum
+   *     number we might have expected
+   */
+  <T extends EppResource> RdapResultSet<T> getMatchingResourcesSql(
+      CriteriaQueryBuilder<T> builder, boolean checkForVisibility, int querySizeLimit) {
+    jpaTm().assertInTransaction();
+    Optional<String> desiredRegistrar = getDesiredRegistrar();
+    if (desiredRegistrar.isPresent()) {
+      builder =
+          builder.where(
+              jpaTm().getEntityManager().getCriteriaBuilder()::equal,
+              "currentSponsorClientId",
+              desiredRegistrar.get());
+    }
+    List<T> queryResult =
+        jpaTm()
+            .getEntityManager()
+            .createQuery(builder.build())
+            .setMaxResults(querySizeLimit)
+            .getResultList();
+    if (checkForVisibility) {
+      return filterResourcesByVisibility(queryResult, querySizeLimit);
+    } else {
+      return RdapResultSet.create(queryResult);
+    }
+  }
+
+  private <T extends EppResource> RdapResultSet<T> filterResourcesByVisibility(
+      List<T> queryResult, int querySizeLimit) {
     // If we are including deleted resources, we need to check that we're authorized for each one.
     List<T> resources = new ArrayList<>();
     int numResourcesQueried = 0;
     boolean someExcluded = false;
-    for (T resource : query) {
+    for (T resource : queryResult) {
       if (shouldBeVisible(resource)) {
         resources.add(resource);
       } else {
@@ -268,8 +321,8 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
   // to be (more) sure we got everything.
   int getStandardQuerySizeLimit() {
     return shouldIncludeDeleted()
-            ? (RESULT_SET_SIZE_SCALING_FACTOR * (rdapResultSetMaxSize + 1))
-            : (rdapResultSetMaxSize + 1);
+        ? (RESULT_SET_SIZE_SCALING_FACTOR * (rdapResultSetMaxSize + 1))
+        : (rdapResultSetMaxSize + 1);
   }
 
   /**
@@ -311,14 +364,68 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
       query = query.filter(filterField, partialStringQuery.getInitialString());
     } else {
       // Ignore the suffix; the caller will need to filter on the suffix, if any.
-      query = query
-          .filter(filterField + " >=", partialStringQuery.getInitialString())
-          .filter(filterField + " <", partialStringQuery.getNextInitialString());
+      query =
+          query
+              .filter(filterField + " >=", partialStringQuery.getInitialString())
+              .filter(filterField + " <", partialStringQuery.getNextInitialString());
     }
     if (cursorString.isPresent()) {
       query = query.filter(filterField + " >", cursorString.get());
     }
     return setOtherQueryAttributes(query, deletedItemHandling, resultSetMaxSize);
+  }
+
+  /**
+   * In Cloud SQL, handles prefix searches in cases where, if we need to filter out deleted items,
+   * there are no pending deletes.
+   *
+   * <p>In such cases, it is sufficient to check whether {@code deletionTime} is equal to {@code
+   * END_OF_TIME}, because any other value means it has already been deleted. This allows us to use
+   * an equality query for the deletion time.
+   *
+   * @param clazz the type of resource to be queried
+   * @param filterField the database field of interest
+   * @param partialStringQuery the details of the search string; if there is no wildcard, an
+   *     equality query is used; if there is a wildcard, a range query is used instead; the initial
+   *     string should not be empty, and any search suffix will be ignored, so the caller must
+   *     filter the results if a suffix is specified
+   * @param cursorString if a cursor is present, this parameter should specify the cursor string, to
+   *     skip any results up to and including the string; empty() if there is no cursor
+   * @param deletedItemHandling whether to include or exclude deleted items
+   * @return a {@link CriteriaQueryBuilder} object representing the query so far
+   */
+  static <T extends EppResource> CriteriaQueryBuilder<T> queryItemsSql(
+      Class<T> clazz,
+      String filterField,
+      RdapSearchPattern partialStringQuery,
+      Optional<String> cursorString,
+      DeletedItemHandling deletedItemHandling) {
+    jpaTm().assertInTransaction();
+    if (partialStringQuery.getInitialString().length()
+        < RdapSearchPattern.MIN_INITIAL_STRING_LENGTH) {
+      throw new UnprocessableEntityException(
+          String.format(
+              "Initial search string must be at least %d characters",
+              RdapSearchPattern.MIN_INITIAL_STRING_LENGTH));
+    }
+    CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
+    CriteriaQueryBuilder<T> builder = CriteriaQueryBuilder.create(clazz);
+    if (partialStringQuery.getHasWildcard()) {
+      builder =
+          builder.where(
+              criteriaBuilder::like,
+              filterField,
+              String.format("%s%%", partialStringQuery.getInitialString()));
+    } else {
+      // no wildcard means we use a standard equals query
+      builder =
+          builder.where(criteriaBuilder::equal, filterField, partialStringQuery.getInitialString());
+    }
+    if (cursorString.isPresent()) {
+      builder = builder.where(criteriaBuilder::greaterThan, filterField, cursorString.get());
+    }
+    builder = builder.orderBy(criteriaBuilder::asc, filterField);
+    return setDeletedItemHandlingSql(builder, deletedItemHandling);
   }
 
   /**
@@ -331,9 +438,9 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
    * @param filterField the database field of interest
    * @param queryString the search string
    * @param cursorField the field which should be compared to the cursor string, or empty() if the
-   *        key should be compared to a key created from the cursor string
+   *     key should be compared to a key created from the cursor string
    * @param cursorString if a cursor is present, this parameter should specify the cursor string, to
-   *        skip any results up to and including the string; empty() if there is no cursor
+   *     skip any results up to and including the string; empty() if there is no cursor
    * @param deletedItemHandling whether to include or exclude deleted items
    * @param resultSetMaxSize the maximum number of results to return
    * @return the query object
@@ -363,6 +470,50 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
     return setOtherQueryAttributes(query, deletedItemHandling, resultSetMaxSize);
   }
 
+  /**
+   * In Cloud SQL, handles searches using a simple string rather than an {@link RdapSearchPattern}.
+   *
+   * <p>Since the filter is not an inequality, we can support also checking a cursor string against
+   * a different field (which involves an inequality on that field).
+   *
+   * @param clazz the type of resource to be queried
+   * @param filterField the database field of interest
+   * @param queryString the search string
+   * @param cursorField the field which should be compared to the cursor string, or empty() if the
+   *     key should be compared to a key created from the cursor string
+   * @param cursorString if a cursor is present, this parameter should specify the cursor string, to
+   *     skip any results up to and including the string; empty() if there is no cursor
+   * @param deletedItemHandling whether to include or exclude deleted items
+   * @return a {@link CriteriaQueryBuilder} object representing the query so far
+   */
+  static <T extends EppResource> CriteriaQueryBuilder<T> queryItemsSql(
+      Class<T> clazz,
+      String filterField,
+      String queryString,
+      Optional<String> cursorField,
+      Optional<String> cursorString,
+      DeletedItemHandling deletedItemHandling) {
+    if (queryString.length() < RdapSearchPattern.MIN_INITIAL_STRING_LENGTH) {
+      throw new UnprocessableEntityException(
+          String.format(
+              "Initial search string must be at least %d characters",
+              RdapSearchPattern.MIN_INITIAL_STRING_LENGTH));
+    }
+    jpaTm().assertInTransaction();
+    CriteriaQueryBuilder<T> builder = CriteriaQueryBuilder.create(clazz);
+    CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
+    builder = builder.where(criteriaBuilder::equal, filterField, queryString);
+    if (cursorString.isPresent()) {
+      if (cursorField.isPresent()) {
+        builder =
+            builder.where(criteriaBuilder::greaterThan, cursorField.get(), cursorString.get());
+      } else {
+        builder = builder.where(criteriaBuilder::greaterThan, "repoId", cursorString.get());
+      }
+    }
+    return setDeletedItemHandlingSql(builder, deletedItemHandling);
+  }
+
   /** Handles searches where the field to be searched is the key. */
   static <T extends EppResource> Query<T> queryItemsByKey(
       Class<T> clazz,
@@ -382,14 +533,35 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
       query = query.filterKey("=", Key.create(clazz, partialStringQuery.getInitialString()));
     } else {
       // Ignore the suffix; the caller will need to filter on the suffix, if any.
-      query = query
-          .filterKey(">=", Key.create(clazz, partialStringQuery.getInitialString()))
-          .filterKey("<", Key.create(clazz, partialStringQuery.getNextInitialString()));
+      query =
+          query
+              .filterKey(">=", Key.create(clazz, partialStringQuery.getInitialString()))
+              .filterKey("<", Key.create(clazz, partialStringQuery.getNextInitialString()));
     }
     if (cursorString.isPresent()) {
       query = query.filterKey(">", Key.create(clazz, cursorString.get()));
     }
     return setOtherQueryAttributes(query, deletedItemHandling, resultSetMaxSize);
+  }
+
+  /** In Cloud SQL, handles searches where the field to be searched is the key. */
+  static <T extends EppResource> CriteriaQueryBuilder<T> queryItemsByKeySql(
+      Class<T> clazz,
+      RdapSearchPattern partialStringQuery,
+      Optional<String> cursorString,
+      DeletedItemHandling deletedItemHandling) {
+    jpaTm().assertInTransaction();
+    return queryItemsSql(clazz, "repoId", partialStringQuery, cursorString, deletedItemHandling);
+  }
+
+  static <T extends EppResource> CriteriaQueryBuilder<T> setDeletedItemHandlingSql(
+      CriteriaQueryBuilder<T> builder, DeletedItemHandling deletedItemHandling) {
+    if (!Objects.equals(deletedItemHandling, DeletedItemHandling.INCLUDE)) {
+      builder =
+          builder.where(
+              jpaTm().getEntityManager().getCriteriaBuilder()::equal, "deletionTime", END_OF_TIME);
+    }
+    return builder;
   }
 
   static <T extends EppResource> Query<T> setOtherQueryAttributes(

@@ -43,14 +43,16 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.TestOfyAndSql;
 import java.net.URLDecoder;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapEntitySearchAction}. */
+@DualDatabaseTest
 class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySearchAction> {
 
   RdapEntitySearchActionTest() {
@@ -209,9 +211,9 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
               .asBuilder()
               .setRepoId(String.format("%04d-ROID", i))
               .build();
+      resourcesBuilder.add(contact);
       resourcesBuilder.add(makeHistoryEntry(
           contact, HistoryEntry.Type.CONTACT_CREATE, null, "created", clock.nowUtc()));
-      resourcesBuilder.add(contact);
     }
     persistResources(resourcesBuilder.build());
     for (int i = 1; i <= numRegistrars; i++) {
@@ -386,7 +388,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     }
   }
 
-  @Test
+  @TestOfyAndSql
   void testInvalidPath_rejected() {
     action.requestPath = actionPath + "/path";
     action.run();
@@ -394,7 +396,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(Optional.empty(), 400);
   }
 
-  @Test
+  @TestOfyAndSql
   void testInvalidRequest_rejected() {
     action.run();
     assertThat(parseJsonObject(response.getPayload()))
@@ -405,7 +407,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(Optional.empty(), 400);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_suffixRejected() {
     assertThat(generateActualJsonWithFullName("exam*ple"))
         .isEqualTo(
@@ -417,7 +419,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(Optional.empty(), 422);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatch_suffixRejected() {
     assertThat(generateActualJsonWithHandle("exam*ple"))
         .isEqualTo(
@@ -429,7 +431,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(Optional.empty(), 422);
   }
 
-  @Test
+  @TestOfyAndSql
   void testMultipleWildcards_rejected() {
     assertThat(generateActualJsonWithHandle("*.*"))
         .isEqualTo(
@@ -441,7 +443,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(Optional.empty(), 422);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNoCharactersToMatch_rejected() {
     rememberWildcardType("*");
     assertThat(generateActualJsonWithHandle("*"))
@@ -453,7 +455,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(Optional.empty(), 422);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFewerThanTwoCharactersToMatch_rejected() {
     rememberWildcardType("a*");
     assertThat(generateActualJsonWithHandle("a*"))
@@ -465,7 +467,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(Optional.empty(), 422);
   }
 
-  @Test
+  @TestOfyAndSql
   void testInvalidSubtype_rejected() {
     action.subtypeParam = Optional.of("Space Aliens");
     assertThat(generateActualJsonWithFullName("Blinky (赤ベイ)"))
@@ -478,14 +480,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(Optional.empty(), 400);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_found() {
     login("2-RegistrarTest");
     runSuccessfulNameTestWithBlinky("Blinky (赤ベイ)", "rdap_contact.json");
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_found_subtypeAll() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("aLl");
@@ -493,7 +495,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_found_subtypeContacts() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("cONTACTS");
@@ -501,7 +503,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_notFound_subtypeRegistrars() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("Registrars");
@@ -509,7 +511,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_found_specifyingSameRegistrar() {
     login("2-RegistrarTest");
     action.registrarParam = Optional.of("2-RegistrarTest");
@@ -517,7 +519,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_notFound_specifyingOtherRegistrar() {
     login("2-RegistrarTest");
     action.registrarParam = Optional.of("2-RegistrarInact");
@@ -525,7 +527,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_found_asAdministrator() {
     loginAsAdmin();
     rememberWildcardType("Blinky (赤ベイ)");
@@ -533,27 +535,27 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_notFound_notLoggedIn() {
     runNotFoundNameTest("Blinky (赤ベイ)");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_notFound_loggedInAsOtherRegistrar() {
     login("2-Registrar");
     runNotFoundNameTest("Blinky (赤ベイ)");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_found_wildcard() {
     login("2-RegistrarTest");
     runSuccessfulNameTestWithBlinky("Blinky*", "rdap_contact.json");
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_found_wildcardSpecifyingSameRegistrar() {
     login("2-RegistrarTest");
     action.registrarParam = Optional.of("2-RegistrarTest");
@@ -561,7 +563,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_notFound_wildcardSpecifyingOtherRegistrar() {
     login("2-RegistrarTest");
     action.registrarParam = Optional.of("2-RegistrarInact");
@@ -569,7 +571,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_found_wildcardBoth() {
     login("2-RegistrarTest");
     rememberWildcardType("Blin*");
@@ -579,14 +581,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(2);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_notFound_deleted() {
     login("2-RegistrarTest");
     runNotFoundNameTest("Cl*");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_notFound_deletedWhenLoggedInAsOtherRegistrar() {
     login("2-RegistrarTest");
     action.includeDeletedParam = Optional.of(true);
@@ -594,7 +596,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_notFound_deletedWhenLoggedInAsSameRegistrar() {
     login("2-Registrar");
     action.includeDeletedParam = Optional.of(true);
@@ -602,7 +604,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContact_notFound_deletedWhenLoggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
@@ -610,7 +612,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_found() {
     login("2-RegistrarTest");
     runSuccessfulNameTest(
@@ -618,7 +620,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_found_subtypeAll() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("all");
@@ -627,7 +629,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_found_subtypeRegistrars() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("REGISTRARS");
@@ -636,7 +638,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_notFound_subtypeContacts() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("contacts");
@@ -644,7 +646,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_found_specifyingSameRegistrar() {
     action.registrarParam = Optional.of("2-Registrar");
     runSuccessfulNameTest(
@@ -652,25 +654,26 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_notFound_specifyingDifferentRegistrar() {
     action.registrarParam = Optional.of("2-RegistrarTest");
     runNotFoundNameTest("Yes Virginia <script>");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContacts_nonTruncated() {
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(4, 0, registrarTest);
     rememberWildcardType("Entity *");
+    // JsonObject foo = generateActualJsonWithFullName("Entity *");
     assertThat(generateActualJsonWithFullName("Entity *"))
         .isEqualTo(generateExpectedJson("rdap_nontruncated_contacts.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(4);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContacts_truncated() {
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(5, 0, registrarTest);
@@ -683,7 +686,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContacts_reallyTruncated() {
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(9, 0, registrarTest);
@@ -697,7 +700,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchContacts_cursorNavigation() throws Exception {
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(9, 0, registrarTest);
@@ -716,7 +719,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
             "Entity 9"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrars_nonTruncated() {
     createManyContactsAndRegistrars(0, 4, registrarTest);
     rememberWildcardType("Entity *");
@@ -726,7 +729,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrars_truncated() {
     createManyContactsAndRegistrars(0, 5, registrarTest);
     rememberWildcardType("Entity *");
@@ -738,7 +741,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrars_reallyTruncated() {
     createManyContactsAndRegistrars(0, 9, registrarTest);
     rememberWildcardType("Entity *");
@@ -750,7 +753,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrars_cursorNavigation() throws Exception {
     createManyContactsAndRegistrars(0, 13, registrarTest);
     checkCursorNavigation(
@@ -772,7 +775,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
             "Entity 9"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrars_cursorNavigationThroughAll() throws Exception {
     createManyContactsAndRegistrars(0, 13, registrarTest);
     action.subtypeParam = Optional.of("registrars");
@@ -798,7 +801,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
             "Yes Virginia <script>"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchMix_truncated() {
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(3, 3, registrarTest);
@@ -811,7 +814,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(3, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchMix_cursorNavigation() throws Exception {
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(3, 3, registrarTest);
@@ -827,7 +830,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
             "Entity 6"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchMix_subtypeContacts() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("contacts");
@@ -839,7 +842,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(4);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchMix_subtypeRegistrars() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("registrars");
@@ -849,13 +852,13 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_notFound_inactive() {
     runNotFoundNameTest("No Way");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_notFound_inactiveAsDifferentRegistrar() {
     action.includeDeletedParam = Optional.of(true);
     login("2-Registrar");
@@ -863,7 +866,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_found_inactiveAsSameRegistrar() {
     action.includeDeletedParam = Optional.of(true);
     login("2-RegistrarInact");
@@ -871,7 +874,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_found_inactiveAsAdmin() {
     action.includeDeletedParam = Optional.of(true);
     loginAsAdmin();
@@ -879,13 +882,13 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_notFound_test() {
     runNotFoundNameTest("Da Test Registrar");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_notFound_testAsDifferentRegistrar() {
     action.includeDeletedParam = Optional.of(true);
     login("2-Registrar");
@@ -893,7 +896,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_found_testAsSameRegistrar() {
     action.includeDeletedParam = Optional.of(true);
     login("2-RegistrarTest");
@@ -902,7 +905,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchRegistrar_found_testAsAdmin() {
     action.includeDeletedParam = Optional.of(true);
     loginAsAdmin();
@@ -911,14 +914,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found() {
     login("2-RegistrarTest");
     runSuccessfulHandleTestWithBlinky("2-ROID", "rdap_contact.json");
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found_subtypeAll() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("all");
@@ -926,7 +929,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found_subtypeContacts() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("contacts");
@@ -934,7 +937,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_notFound_subtypeRegistrars() {
     login("2-RegistrarTest");
     action.subtypeParam = Optional.of("reGistrars");
@@ -942,28 +945,28 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found_specifyingSameRegistrar() {
     action.registrarParam = Optional.of("2-RegistrarTest");
     runSuccessfulHandleTestWithBlinky("2-ROID", "rdap_contact_no_personal_data_with_remark.json");
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_notFound_specifyingDifferentRegistrar() {
     action.registrarParam = Optional.of("2-Registrar");
     runNotFoundHandleTest("2-ROID");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_notFound_deleted() {
     login("2-RegistrarTest");
     runNotFoundHandleTest("6-ROID");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_notFound_deletedWhenLoggedInAsOtherRegistrar() {
     login("2-RegistrarTest");
     action.includeDeletedParam = Optional.of(true);
@@ -971,7 +974,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found_deletedWhenLoggedInAsSameRegistrar() {
     login("2-Registrar");
     action.includeDeletedParam = Optional.of(true);
@@ -985,7 +988,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found_deletedWhenLoggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
@@ -999,14 +1002,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_notFound_deletedWildcard() {
     login("2-RegistrarTest");
     runNotFoundHandleTest("6-ROI*");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_notFound_deletedWildcardWhenLoggedInAsOtherRegistrar() {
     login("2-RegistrarTest");
     action.includeDeletedParam = Optional.of(true);
@@ -1014,7 +1017,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found_deletedWildcardWhenLoggedInAsSameRegistrar() {
     login("2-Registrar");
     action.includeDeletedParam = Optional.of(true);
@@ -1028,7 +1031,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found_deletedWildcardWhenLoggedInAsAdmin() {
     loginAsAdmin();
     action.includeDeletedParam = Optional.of(true);
@@ -1042,48 +1045,48 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrar_found() {
     runSuccessfulHandleTest("20", "20", "Yes Virginia <script>", "rdap_registrar.json");
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrar_found_subtypeAll() {
     action.subtypeParam = Optional.of("all");
     runSuccessfulHandleTest("20", "20", "Yes Virginia <script>", "rdap_registrar.json");
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrar_found_subtypeRegistrars() {
     action.subtypeParam = Optional.of("registrars");
     runSuccessfulHandleTest("20", "20", "Yes Virginia <script>", "rdap_registrar.json");
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrar_notFound_subtypeContacts() {
     action.subtypeParam = Optional.of("contacts");
     runNotFoundHandleTest("20");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrar_found_specifyingSameRegistrar() {
     action.registrarParam = Optional.of("2-Registrar");
     runSuccessfulHandleTest("20", "20", "Yes Virginia <script>", "rdap_registrar.json");
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrar_notFound_specifyingDifferentRegistrar() {
     action.registrarParam = Optional.of("2-RegistrarTest");
     runNotFoundHandleTest("20");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found_wildcardWithResultSetSizeOne() {
     login("2-RegistrarTest");
     action.rdapResultSetMaxSize = 1;
@@ -1091,14 +1094,14 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found_wildcard() {
     login("2-RegistrarTest");
     runSuccessfulHandleTestWithBlinky("2-RO*", "rdap_contact.json");
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found_wildcardSpecifyingSameRegistrar() {
     action.registrarParam = Optional.of("2-RegistrarTest");
     login("2-RegistrarTest");
@@ -1106,7 +1109,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_notFound_wildcardSpecifyingDifferentRegistrar() {
     action.registrarParam = Optional.of("2-Registrar");
     login("2-RegistrarTest");
@@ -1114,20 +1117,20 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_found_deleted() {
     login("2-RegistrarTest");
     runSuccessfulHandleTestWithBlinky("2-RO*", "rdap_contact.json");
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_notFound_wildcard() {
     runNotFoundHandleTest("20*");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_cursorNavigationWithFullLastPage() throws Exception {
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(12, 0, registrarTest);
@@ -1150,7 +1153,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
             "Entity 12"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchContact_cursorNavigationWithPartialLastPage() throws Exception {
     login("2-RegistrarTest");
     createManyContactsAndRegistrars(13, 0, registrarTest);
@@ -1174,13 +1177,13 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
             "Entity 13"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrar_notFound_wildcard() {
     runNotFoundHandleTest("3test*");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrars_cursorNavigationThroughAll() throws Exception {
     createManyContactsAndRegistrars(0, 13, registrarTest);
     action.subtypeParam = Optional.of("registrars");
@@ -1206,7 +1209,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
             "Yes Virginia <script>"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchMix_found_truncated() {
     createManyContactsAndRegistrars(30, 0, registrarTest);
     rememberWildcardType("00*");
@@ -1216,13 +1219,13 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrar_notFound_inactive() {
     runNotFoundHandleTest("21");
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrar_notFound_inactiveAsDifferentRegistrar() {
     action.includeDeletedParam = Optional.of(true);
     login("2-Registrar");
@@ -1230,7 +1233,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyErrorMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrar_found_inactiveAsSameRegistrar() {
     action.includeDeletedParam = Optional.of(true);
     login("2-RegistrarInact");
@@ -1238,7 +1241,7 @@ class RdapEntitySearchActionTest extends RdapSearchActionTestCase<RdapEntitySear
     verifyMetrics(0);
   }
 
-  @Test
+  @TestOfyAndSql
   void testHandleMatchRegistrar_found_inactiveAsAdmin() {
     action.includeDeletedParam = Optional.of(true);
     loginAsAdmin();

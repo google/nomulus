@@ -15,7 +15,9 @@
 package google.registry.rdap;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.rdap.RdapUtils.getRegistrarByIanaIdentifier;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
@@ -29,6 +31,9 @@ import com.google.common.primitives.Longs;
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.registrar.Registrar;
+import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.CriteriaQueryBuilder;
+import google.registry.rdap.RdapAuthorization.Role;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
@@ -112,7 +117,6 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
   /** Parses the parameters and calls the appropriate search function. */
   @Override
   public EntitySearchResponse getSearchResponse(boolean isHeadRequest) {
-
     // RDAP syntax example: /rdap/entities?fn=Bobby%20Joe*.
     if (Booleans.countTrue(fnParam.isPresent(), handleParam.isPresent()) != 1) {
       throw new BadRequestException("You must specify either fn=XXXX or handle=YYYY");
@@ -214,9 +218,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
     // Don't allow wildcard suffixes when searching for entities.
     if (partialStringQuery.getHasWildcard() && (partialStringQuery.getSuffix() != null)) {
       throw new UnprocessableEntityException(
-          partialStringQuery.getHasWildcard()
-              ? "Suffixes not allowed in wildcard entity name searches"
-              : "Suffixes not allowed when searching for deleted entities");
+          "Suffixes not allowed in wildcard entity name searches");
     }
     // For wildcards, make sure the initial string is long enough, except in the special case of
     // searching for all registrars, where we aren't worried about inefficient searches.
@@ -225,9 +227,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
         && (partialStringQuery.getInitialString().length()
             < RdapSearchPattern.MIN_INITIAL_STRING_LENGTH)) {
       throw new UnprocessableEntityException(
-          partialStringQuery.getHasWildcard()
-              ? "Initial search string required in wildcard entity name searches"
-              : "Initial search string required when searching for deleted entities");
+          "Initial search string required in wildcard entity name searches");
     }
     // Get the registrar matches. If we have a registrar cursor, weed out registrars up to and
     // including the one we ended with last time. We can skip registrars if subtype is CONTACTS.
@@ -262,18 +262,39 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
           || (cursorType == CursorType.REGISTRAR)) {
         resultSet = RdapResultSet.create(ImmutableList.of());
       } else {
-        Query<ContactResource> query =
-            queryItems(
-                ContactResource.class,
-                "searchName",
-                partialStringQuery,
-                cursorQueryString, // if we get this far, and there's a cursor, it must be a contact
-                DeletedItemHandling.EXCLUDE,
-                rdapResultSetMaxSize + 1);
-        if (rdapAuthorization.role() != RdapAuthorization.Role.ADMINISTRATOR) {
-          query = query.filter("currentSponsorClientId in", rdapAuthorization.clientIds());
+        if (isDatastore()) {
+          Query<ContactResource> query =
+              queryItems(
+                  ContactResource.class,
+                  "searchName",
+                  partialStringQuery,
+                  cursorQueryString, // if we get here and there's a cursor, it must be a contact
+                  DeletedItemHandling.EXCLUDE,
+                  rdapResultSetMaxSize + 1);
+          if (!rdapAuthorization.role().equals(Role.ADMINISTRATOR)) {
+            query = query.filter("currentSponsorClientId in", rdapAuthorization.clientIds());
+          }
+          resultSet = getMatchingResources(query, false, rdapResultSetMaxSize + 1);
+        } else {
+          resultSet =
+              jpaTm()
+                  .transact(
+                      () -> {
+                        CriteriaQueryBuilder<ContactResource> builder =
+                            queryItemsSql(
+                                ContactResource.class,
+                                "searchName",
+                                partialStringQuery,
+                                cursorQueryString,
+                                DeletedItemHandling.EXCLUDE);
+                        if (!rdapAuthorization.role().equals(Role.ADMINISTRATOR)) {
+                          builder =
+                              builder.whereFieldIsIn(
+                                  "currentSponsorClientId", rdapAuthorization.clientIds());
+                        }
+                        return getMatchingResourcesSql(builder, false, rdapResultSetMaxSize + 1);
+                      });
         }
-        resultSet = getMatchingResources(query, false, rdapResultSetMaxSize + 1);
       }
     }
     return makeSearchResults(resultSet, registrars, QueryType.FULL_NAME);
@@ -303,15 +324,15 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
       if (subtype == Subtype.REGISTRARS) {
         contactResourceList = ImmutableList.of();
       } else {
-        ContactResource contactResource =
-            ofy()
-                .load()
-                .type(ContactResource.class)
-                .id(partialStringQuery.getInitialString())
-                .now();
+        Optional<ContactResource> contactResource =
+            transactIfJpaTm(
+                () ->
+                    tm().loadByKeyIfPresent(
+                            VKey.create(
+                                ContactResource.class, partialStringQuery.getInitialString())));
         contactResourceList =
-            ((contactResource != null) && shouldBeVisible(contactResource))
-                ? ImmutableList.of(contactResource)
+            (contactResource.isPresent() && shouldBeVisible(contactResource.get()))
+                ? ImmutableList.of(contactResource.get())
                 : ImmutableList.of();
       }
       ImmutableList<Registrar> registrarList;
@@ -365,16 +386,31 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
       if (subtype == Subtype.REGISTRARS) {
         contactResultSet = RdapResultSet.create(ImmutableList.of());
       } else {
-        contactResultSet =
-            getMatchingResources(
-                queryItemsByKey(
-                    ContactResource.class,
-                    partialStringQuery,
-                    cursorQueryString,
-                    getDeletedItemHandling(),
-                    querySizeLimit),
-                shouldIncludeDeleted(),
-                querySizeLimit);
+        if (isDatastore()) {
+          contactResultSet =
+              getMatchingResources(
+                  queryItemsByKey(
+                      ContactResource.class,
+                      partialStringQuery,
+                      cursorQueryString,
+                      getDeletedItemHandling(),
+                      querySizeLimit),
+                  shouldIncludeDeleted(),
+                  querySizeLimit);
+        } else {
+          contactResultSet =
+              jpaTm()
+                  .transact(
+                      () ->
+                          getMatchingResourcesSql(
+                              queryItemsByKeySql(
+                                  ContactResource.class,
+                                  partialStringQuery,
+                                  cursorQueryString,
+                                  getDeletedItemHandling()),
+                              shouldIncludeDeleted(),
+                              querySizeLimit));
+        }
       }
       return makeSearchResults(contactResultSet, registrars, QueryType.HANDLE);
     }
