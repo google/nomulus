@@ -406,22 +406,20 @@ public abstract class PollMessage extends ImmutableObject
                     pendingActionNotificationResponse.processedDate));
       }
       if (contactId != null && transferResponse != null) {
-        contactTransferResponses =
-            ImmutableList.of(
-                new ContactTransferResponse.Builder()
-                    .setContactId(contactId)
-                    .setGainingClientId(transferResponse.getGainingClientId())
-                    .setLosingClientId(transferResponse.getLosingClientId())
-                    .setTransferStatus(transferResponse.getTransferStatus())
-                    .setTransferRequestTime(transferResponse.getTransferRequestTime())
-                    .setPendingTransferExpirationTime(
-                        transferResponse.getPendingTransferExpirationTime())
-                    .build());
-
-        // The transferResponse is currently an unspecialized TransferResponse instance, use the
-        // ContactTransferResponse that we just created so that the value is consistently
-        // specialized.
-        transferResponse = contactTransferResponses.get(0);
+        // The transferResponse is currently an unspecialized TransferResponse instance, create a
+        // ContactTransferResponse so that the value is consistently specialized and store it in the
+        // list representation for datastore.
+        transferResponse =
+            new ContactTransferResponse.Builder()
+                .setContactId(contactId)
+                .setGainingClientId(transferResponse.getGainingClientId())
+                .setLosingClientId(transferResponse.getLosingClientId())
+                .setTransferStatus(transferResponse.getTransferStatus())
+                .setTransferRequestTime(transferResponse.getTransferRequestTime())
+                .setPendingTransferExpirationTime(
+                    transferResponse.getPendingTransferExpirationTime())
+                .build();
+        contactTransferResponses = ImmutableList.of((ContactTransferResponse) transferResponse);
       }
     }
 
