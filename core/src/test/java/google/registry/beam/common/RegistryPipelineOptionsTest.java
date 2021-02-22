@@ -42,7 +42,7 @@ class RegistryPipelineOptionsTest {
   }
 
   @Test
-  void environment() {
+  void environment_fromArgs() {
     assertThat(
             PipelineOptionsFactory.fromArgs("--registryEnvironment=ALPHA")
                 .as(RegistryPipelineOptions.class)

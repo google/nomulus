@@ -30,7 +30,9 @@ public interface RegistryPipelineOptions extends GcpOptions {
   void setRegistryEnvironment(RegistryEnvironment environment);
 
   /**
-   * Verifies that the GCP project and Registry environment in {@code option} are consistent.
+   * Validates the GCP project and Registry environment settings in {@code option}. If project is
+   * undefined, it is set according to the Registry environment; if project is defined but
+   * inconsistent with the Registry environment, an {@link IllegalArgumentException} will be thrown.
    *
    * <p>This method may modify the system property ("google.registry.environment" which is defined
    * in {@link RegistryEnvironment}). Tests calling this method must restore the original
