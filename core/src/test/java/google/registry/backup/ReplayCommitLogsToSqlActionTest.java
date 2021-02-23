@@ -53,6 +53,7 @@ import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.server.Lock;
 import google.registry.model.tmch.ClaimsListShard;
@@ -93,13 +94,14 @@ public class ReplayCommitLogsToSqlActionTest {
           .withClock(fakeClock)
           .withOfyTestEntities(TestObject.class)
           .withJpaUnitTestEntities(
-              RegistrarContact.class,
-              TestObject.class,
-              SqlReplayCheckpoint.class,
               ContactResource.class,
+              DelegationSignerData.class,
               DomainBase.class,
               GracePeriod.class,
-              DelegationSignerData.class)
+              PremiumList.class,
+              RegistrarContact.class,
+              SqlReplayCheckpoint.class,
+              TestObject.class)
           .build();
 
   /** Local GCS service. */

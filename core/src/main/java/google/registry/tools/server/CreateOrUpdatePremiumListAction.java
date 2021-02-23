@@ -45,24 +45,14 @@ public abstract class CreateOrUpdatePremiumListAction implements Runnable {
   @Override
   public void run() {
     try {
-      saveToDatastore();
+      save();
     } catch (IllegalArgumentException e) {
       logger.atInfo().withCause(e).log(
           "Usage error in attempting to save premium list from nomulus tool command");
       response.setPayload(ImmutableMap.of("error", e.toString(), "status", "error"));
-      return;
     } catch (Exception e) {
       logger.atSevere().withCause(e).log(
           "Unexpected error saving premium list to Datastore from nomulus tool command");
-      response.setPayload(ImmutableMap.of("error", e.toString(), "status", "error"));
-      return;
-    }
-
-    try {
-      saveToCloudSql();
-    } catch (Throwable e) {
-      logger.atSevere().withCause(e).log(
-          "Unexpected error saving premium list to Cloud SQL from nomulus tool command");
       response.setPayload(ImmutableMap.of("error", e.toString(), "status", "error"));
     }
   }
@@ -78,9 +68,6 @@ public abstract class CreateOrUpdatePremiumListAction implements Runnable {
                     : (inputData.substring(0, MAX_LOGGING_PREMIUM_LIST_LENGTH) + "<truncated>")));
   }
 
-  /** Saves the premium list to Datastore. */
-  protected abstract void saveToDatastore();
-
-  /** Saves the premium list to Cloud SQL. */
-  protected abstract void saveToCloudSql();
+  /** Saves the premium list to both Datastore and Cloud SQL. */
+  protected abstract void save();
 }

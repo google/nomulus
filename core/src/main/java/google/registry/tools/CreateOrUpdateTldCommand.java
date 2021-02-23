@@ -31,6 +31,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.model.registry.label.PremiumList;
+import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.tools.params.OptionalStringParameter;
 import google.registry.tools.params.TransitionListParameter.BillingCostTransitions;
 import google.registry.tools.params.TransitionListParameter.TldStateTransitions;
@@ -342,7 +343,8 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
 
       if (premiumListName != null) {
         if (premiumListName.isPresent()) {
-          Optional<PremiumList> premiumList = PremiumList.getUncached(premiumListName.get());
+          Optional<PremiumList> premiumList =
+              PremiumListDualDao.getLatestRevision(premiumListName.get());
           checkArgument(
               premiumList.isPresent(),
               String.format("The premium list '%s' doesn't exist", premiumListName.get()));

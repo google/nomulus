@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.testing.AppEngineExtension;
 import java.math.BigDecimal;
@@ -34,7 +35,8 @@ class PremiumListUtilsTest {
   @Test
   void parseInputToPremiumList_works() {
     PremiumList premiumList =
-        parseToPremiumList("testlist", "foo,USD 99.50\n" + "bar,USD 30\n" + "baz,USD 10\n");
+        parseToPremiumList(
+            "testlist", ImmutableList.of("foo,USD 99.50", "bar,USD 30", "baz,USD 10"));
     assertThat(premiumList.getName()).isEqualTo("testlist");
     assertThat(premiumList.getLabelsToPrices())
         .containsExactly("foo", twoDigits(99.50), "bar", twoDigits(30), "baz", twoDigits(10));
@@ -47,7 +49,7 @@ class PremiumListUtilsTest {
             IllegalArgumentException.class,
             () ->
                 parseToPremiumList(
-                    "testlist", "foo,USD 99.50\n" + "bar,USD 30\n" + "baz,JPY 990\n"));
+                    "testlist", ImmutableList.of("foo,USD 99.50", "bar,USD 30", "baz,JPY 990")));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("The Cloud SQL schema requires exactly one currency, but got: [JPY, USD]");

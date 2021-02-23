@@ -15,11 +15,11 @@
 package google.registry.model.pricing;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.model.registry.label.PremiumListUtils.getPremiumPrice;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 
 import com.google.common.net.InternetDomainName;
 import google.registry.model.registry.Registry;
+import google.registry.model.registry.label.PremiumListDualDao;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.money.Money;
@@ -38,7 +38,7 @@ public final class StaticPremiumListPricingEngine implements PremiumPricingEngin
     String tld = getTldFromDomainName(fullyQualifiedDomainName);
     String label = InternetDomainName.from(fullyQualifiedDomainName).parts().get(0);
     Registry registry = Registry.get(checkNotNull(tld, "tld"));
-    Optional<Money> premiumPrice = getPremiumPrice(label, registry);
+    Optional<Money> premiumPrice = PremiumListDualDao.getPremiumPrice(label, registry);
     return DomainPrices.create(
         premiumPrice.isPresent(),
         premiumPrice.orElse(registry.getStandardCreateCost()),

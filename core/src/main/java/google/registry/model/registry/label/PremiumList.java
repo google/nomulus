@@ -18,23 +18,12 @@ import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.hash.Funnels.stringFunnel;
 import static com.google.common.hash.Funnels.unencodedCharsFunnel;
-import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
-import static google.registry.config.RegistryConfig.getSingletonCachePersistDuration;
-import static google.registry.config.RegistryConfig.getStaticPremiumListMaxCachedEntries;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
-import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.BloomFilter;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -46,18 +35,14 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registry.Registry;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.schema.replay.NonReplicatedEntity;
-import google.registry.schema.tld.PremiumListDao;
-import google.registry.util.NonFinalForTesting;
+import google.registry.schema.tld.PremiumListSqlDao;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -72,7 +57,6 @@ import javax.persistence.Transient;
 import org.hibernate.LazyInitializationException;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
-import org.joda.time.Duration;
 
 /**
  * A premium list entity that is used to check domain label prices.
@@ -171,122 +155,9 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
     }
   }
 
-  /**
-   * In-memory cache for premium lists.
-   *
-   * <p>This is cached for a shorter duration because we need to periodically reload this entity to
-   * check if a new revision has been published, and if so, then use that.
-   */
-  @NonFinalForTesting
-  static LoadingCache<String, PremiumList> cachePremiumLists =
-      createCachePremiumLists(getDomainLabelListCacheDuration());
-
-  @VisibleForTesting
-  public static void setPremiumListCacheForTest(Optional<Duration> expiry) {
-    Duration effectiveExpiry = expiry.orElse(getDomainLabelListCacheDuration());
-    cachePremiumLists = createCachePremiumLists(effectiveExpiry);
-  }
-
-  @VisibleForTesting
-  static LoadingCache<String, PremiumList> createCachePremiumLists(Duration cachePersistDuration) {
-    return CacheBuilder.newBuilder()
-        .expireAfterWrite(java.time.Duration.ofMillis(cachePersistDuration.getMillis()))
-        .build(
-            new CacheLoader<String, PremiumList>() {
-              @Override
-              public PremiumList load(final String name) {
-                return tm().doTransactionless(() -> loadPremiumList(name));
-              }
-            });
-  }
-
-  private static PremiumList loadPremiumList(String name) {
-    return tm().isOfy()
-        ? ofy().load().type(PremiumList.class).parent(getCrossTldKey()).id(name).now()
-        : PremiumListDao.getLatestRevision(name).orElseThrow(NoSuchElementException::new);
-  }
-
-  /**
-   * In-memory cache for {@link PremiumListRevision}s, used for retrieving Bloom filters quickly.
-   *
-   * <p>This is cached for a long duration (essentially indefinitely) because a given {@link
-   * PremiumListRevision} is immutable and cannot ever be changed once created, so its cache need
-   * not ever expire.
-   */
-  static final LoadingCache<Key<PremiumListRevision>, PremiumListRevision>
-      cachePremiumListRevisions =
-          CacheBuilder.newBuilder()
-              .expireAfterWrite(
-                  java.time.Duration.ofMillis(getSingletonCachePersistDuration().getMillis()))
-              .build(
-                  new CacheLoader<Key<PremiumListRevision>, PremiumListRevision>() {
-                    @Override
-                    public PremiumListRevision load(final Key<PremiumListRevision> revisionKey) {
-                      return tm().doTransactionless(() -> ofy().load().key(revisionKey).now());
-                    }
-                  });
-
-  /**
-   * In-memory cache for {@link PremiumListEntry}s for a given label and {@link PremiumListRevision}
-   *
-   * <p>Because the PremiumList itself makes up part of the PremiumListRevision's key, this is
-   * specific to a given premium list. Premium list entries might not be present, as indicated by
-   * the Optional wrapper, and we want to cache that as well.
-   *
-   * <p>This is cached for a long duration (essentially indefinitely) because a given {@link
-   * PremiumListRevision} and its child {@link PremiumListEntry}s are immutable and cannot ever be
-   * changed once created, so the cache need not ever expire.
-   *
-   * <p>A maximum size is set here on the cache because it can potentially grow too big to fit in
-   * memory if there are a large number of distinct premium list entries being queried (both those
-   * that exist, as well as those that might exist according to the Bloom filter, must be cached).
-   * The entries judged least likely to be accessed again will be evicted first.
-   */
-  @NonFinalForTesting
-  static LoadingCache<Key<PremiumListEntry>, Optional<PremiumListEntry>> cachePremiumListEntries =
-      createCachePremiumListEntries(getSingletonCachePersistDuration());
-
-  @VisibleForTesting
-  public static void setPremiumListEntriesCacheForTest(Optional<Duration> expiry) {
-    Duration effectiveExpiry = expiry.orElse(getSingletonCachePersistDuration());
-    cachePremiumListEntries = createCachePremiumListEntries(effectiveExpiry);
-  }
-
-  @VisibleForTesting
-  static LoadingCache<Key<PremiumListEntry>, Optional<PremiumListEntry>>
-      createCachePremiumListEntries(Duration cachePersistDuration) {
-    return CacheBuilder.newBuilder()
-        .expireAfterWrite(java.time.Duration.ofMillis(cachePersistDuration.getMillis()))
-        .maximumSize(getStaticPremiumListMaxCachedEntries())
-        .build(
-            new CacheLoader<Key<PremiumListEntry>, Optional<PremiumListEntry>>() {
-              @Override
-              public Optional<PremiumListEntry> load(final Key<PremiumListEntry> entryKey) {
-                return tm().doTransactionless(
-                        () -> Optional.ofNullable(ofy().load().key(entryKey).now()));
-              }
-            });
-  }
-
   @VisibleForTesting
   public Key<PremiumListRevision> getRevisionKey() {
     return revisionKey;
-  }
-
-  /** Returns the PremiumList with the specified name, from cache. */
-  public static Optional<PremiumList> getCached(String name) {
-    try {
-      return Optional.of(cachePremiumLists.get(name));
-    } catch (InvalidCacheLoadException e) {
-      return Optional.empty();
-    } catch (ExecutionException e) {
-      throw new UncheckedExecutionException("Could not retrieve premium list named " + name, e);
-    }
-  }
-
-  /** Returns the PremiumList with the specified name, uncached. */
-  public static Optional<PremiumList> getUncached(String name) {
-    return Optional.ofNullable(loadPremiumList(name));
   }
 
   /** Returns the {@link CurrencyUnit} used for this list. */
@@ -300,7 +171,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
    * <p>Note that this is lazily loaded and thus will throw a {@link LazyInitializationException} if
    * used outside the transaction in which the given entity was loaded. You generally should not be
    * using this anyway as it's inefficient to load all of the PremiumEntry rows if you don't need
-   * them. To check prices, use {@link PremiumListDao#getPremiumPrice} instead.
+   * them. To check prices, use {@link PremiumListSqlDao#getPremiumPrice} instead.
    */
   @Nullable
   public ImmutableMap<String, BigDecimal> getLabelsToPrices() {

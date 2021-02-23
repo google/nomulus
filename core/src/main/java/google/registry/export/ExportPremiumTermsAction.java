@@ -17,7 +17,6 @@ package google.registry.export;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static google.registry.model.registry.label.PremiumListUtils.loadPremiumListEntries;
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -32,7 +31,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList;
+import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
@@ -137,10 +136,11 @@ public class ExportPremiumTermsAction implements Runnable {
   }
 
   private String getFormattedPremiumTerms(Registry registry) {
-    Optional<PremiumList> premiumList = PremiumList.getCached(registry.getPremiumList().getName());
-    checkState(premiumList.isPresent(), "Could not load premium list for " + tld);
+    String premiumListName = registry.getPremiumList().getName();
+    checkState(
+        PremiumListDualDao.exists(premiumListName), "Could not load premium list for " + tld);
     SortedSet<String> premiumTerms =
-        Streams.stream(loadPremiumListEntries(premiumList.get()))
+        Streams.stream(PremiumListDualDao.loadAllPremiumListEntries(premiumListName))
             .map(entry -> Joiner.on(",").join(entry.getLabel(), entry.getValue()))
             .collect(ImmutableSortedSet.toImmutableSortedSet(String::compareTo));
 
