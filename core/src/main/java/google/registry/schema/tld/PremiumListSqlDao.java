@@ -196,7 +196,8 @@ public class PremiumListSqlDao {
                 jpaTm()
                     .getEntityManager()
                     .createQuery(
-                        "FROM PremiumEntry pe WHERE pe.revisionId = :revisionId",
+                        "FROM PremiumEntry pe WHERE pe.revisionId = :revisionId "
+                            + "ORDER BY pe.domainLabel ASC",
                         PremiumEntry.class)
                     .setParameter("revisionId", premiumList.getRevisionId())
                     .getResultList());
