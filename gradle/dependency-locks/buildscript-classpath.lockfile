@@ -11,6 +11,8 @@ com.diffplug.spotless:spotless-plugin-gradle:3.25.0
 com.dorongold.task-tree:com.dorongold.task-tree.gradle.plugin:1.5
 com.github.jengelman.gradle.plugins:shadow:5.1.0
 com.github.johnrengelman.shadow:com.github.johnrengelman.shadow.gradle.plugin:5.1.0
+com.github.node-gradle.node:com.github.node-gradle.node.gradle.plugin:3.0.1
+com.github.node-gradle:gradle-node-plugin:3.0.1
 com.google.cloud.tools:appengine-gradle-plugin:2.0.1
 com.google.cloud.tools:appengine-plugins-core:0.7.5
 com.google.code.findbugs:jsr305:3.0.2
@@ -24,8 +26,6 @@ com.googlecode.concurrent-trees:concurrent-trees:2.6.1
 com.googlecode.javaewah:JavaEWAH:1.1.6
 com.jcraft:jsch:0.1.55
 com.jcraft:jzlib:1.1.1
-com.moowork.gradle:gradle-node-plugin:1.2.0
-com.moowork.node:com.moowork.node.gradle.plugin:1.2.0
 com.netflix.nebula:gradle-lint-plugin:16.0.2
 com.netflix.nebula:nebula-gradle-interop:1.0.11
 commons-io:commons-io:2.6

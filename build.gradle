@@ -40,13 +40,19 @@ plugins {
   id 'com.github.johnrengelman.shadow' version '5.1.0'
 
   // NodeJs plugin
-  id "com.moowork.node" version "1.2.0"
+  id "com.github.node-gradle.node" version "3.0.1"
 
   id 'idea'
   id 'com.diffplug.gradle.spotless' version '3.25.0'
 
   id 'jacoco'
   id 'com.dorongold.task-tree' version '1.5'
+}
+
+node {
+  download = true
+  version = "14.15.5"
+  npmVersion = "6.14.11"
 }
 
 wrapper {
