@@ -16,7 +16,6 @@ package google.registry.rdap;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -34,7 +33,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.googlecode.objectify.Key;
 import google.registry.keyring.api.KeyModule;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registry.Registries;
@@ -197,37 +195,37 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   @Override
   public void run() {
     ImmutableSetMultimap<String, String> ianaToBaseUrls = getRdapBaseUrlsPerIanaId();
-
-    for (Key<Registrar> registrarKey : ofy().load().type(Registrar.class).keys()) {
-      tm()
-          .transact(
-              () -> {
-                Registrar registrar = ofy().load().key(registrarKey).now();
-                // Has the registrar been deleted since we loaded the key? (unlikly, especially
-                // given we don't delete registrars...)
-                if (registrar == null) {
-                  return;
-                }
-                // Only update REAL registrars
-                if (registrar.getType() != Registrar.Type.REAL) {
-                  return;
-                }
-                String ianaId = String.valueOf(registrar.getIanaIdentifier());
-                ImmutableSet<String> baseUrls = ianaToBaseUrls.get(ianaId);
-                // If this registrar already has these values, skip it
-                if (registrar.getRdapBaseUrls().equals(baseUrls)) {
-                  logger.atInfo().log(
-                      "No change in RdapBaseUrls for registrar %s (ianaId %s)",
-                      registrar.getClientId(), ianaId);
-                  return;
-                }
-                logger.atInfo().log(
-                    "Updating RdapBaseUrls for registrar %s (ianaId %s) from %s to %s",
-                    registrar.getClientId(), ianaId, registrar.getRdapBaseUrls(), baseUrls);
-                ofy()
-                    .save()
-                    .entity(registrar.asBuilder().setRdapBaseUrls(baseUrls).build());
-              });
-    }
+    Registrar.loadAllKeysCached()
+        .forEach(
+            (key) ->
+                tm().transact(
+                        () -> {
+                          Registrar registrar = tm().loadByKey(key);
+                          // Has the registrar been deleted since we loaded the key? (unlikely,
+                          // especially given we don't delete registrars...)
+                          if (registrar == null) {
+                            return;
+                          }
+                          // Only update REAL registrars
+                          if (registrar.getType() != Registrar.Type.REAL) {
+                            return;
+                          }
+                          String ianaId = String.valueOf(registrar.getIanaIdentifier());
+                          ImmutableSet<String> baseUrls = ianaToBaseUrls.get(ianaId);
+                          // If this registrar already has these values, skip it
+                          if (registrar.getRdapBaseUrls().equals(baseUrls)) {
+                            logger.atInfo().log(
+                                "No change in RdapBaseUrls for registrar %s (ianaId %s)",
+                                registrar.getClientId(), ianaId);
+                            return;
+                          }
+                          logger.atInfo().log(
+                              "Updating RdapBaseUrls for registrar %s (ianaId %s) from %s to %s",
+                              registrar.getClientId(),
+                              ianaId,
+                              registrar.getRdapBaseUrls(),
+                              baseUrls);
+                          tm().put(registrar.asBuilder().setRdapBaseUrls(baseUrls).build());
+                        }));
   }
 }
