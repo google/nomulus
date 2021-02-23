@@ -209,6 +209,12 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
     }
 
     @Override
+    public String toString() {
+      // Don't include the comment so that we can use this when exporting the premium list
+      return String.format("%s,%s", label, price);
+    }
+
+    @Override
     public Builder asBuilder() {
       return new Builder(clone(this));
     }

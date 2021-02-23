@@ -31,6 +31,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.registry.Registry;
+import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
@@ -141,7 +142,7 @@ public class ExportPremiumTermsAction implements Runnable {
         PremiumListDualDao.exists(premiumListName), "Could not load premium list for " + tld);
     SortedSet<String> premiumTerms =
         Streams.stream(PremiumListDualDao.loadAllPremiumListEntries(premiumListName))
-            .map(entry -> Joiner.on(",").join(entry.getLabel(), entry.getValue()))
+            .map(PremiumListEntry::toString)
             .collect(ImmutableSortedSet.toImmutableSortedSet(String::compareTo));
 
     return Joiner.on("\n")
