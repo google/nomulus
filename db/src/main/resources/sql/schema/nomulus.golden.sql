@@ -221,7 +221,8 @@ CREATE TABLE public."Contact" (
     transfer_status text,
     update_timestamp timestamp with time zone,
     transfer_history_entry_id bigint,
-    transfer_repo_id text
+    transfer_repo_id text,
+    transfer_poll_message_3 bigint
 );
 
 
@@ -383,7 +384,8 @@ CREATE TABLE public."Domain" (
     transfer_autorenew_poll_message_history_id bigint,
     transfer_billing_event_history_id bigint,
     transfer_history_entry_id bigint,
-    transfer_repo_id text
+    transfer_repo_id text,
+    transfer_poll_message_3 bigint
 );
 
 
@@ -473,7 +475,8 @@ CREATE TABLE public."DomainHistory" (
     transfer_autorenew_poll_message_history_id bigint,
     transfer_billing_event_history_id bigint,
     transfer_history_entry_id bigint,
-    transfer_repo_id text
+    transfer_repo_id text,
+    transfer_poll_message_3 bigint
 );
 
 
@@ -590,7 +593,8 @@ CREATE TABLE public."Host" (
     last_transfer_time timestamp with time zone,
     superordinate_domain text,
     inet_addresses text[],
-    update_timestamp timestamp with time zone
+    update_timestamp timestamp with time zone,
+    transfer_poll_message_3 bigint
 );
 
 

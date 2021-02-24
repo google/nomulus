@@ -83,3 +83,4 @@ V82__add_columns_to_restore_symmetric_billing_vkey.sql
 V83__add_indexes_on_domainhost.sql
 V84__add_vkey_columns_in_billing_cancellation.sql
 V85__add_required_columns_in_transfer_data.sql
+V86__third_poll_message.sql
