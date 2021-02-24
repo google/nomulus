@@ -140,11 +140,13 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     transaction.stream()
         .sorted(ReplayCommitLogsToSqlAction::compareByWeight)
         .forEach(
-            versionedEntity ->
-                versionedEntity
-                    .getEntity()
-                    .ifPresentOrElse(
-                        this::handleEntityPut, () -> handleEntityDelete(versionedEntity)));
+            versionedEntity -> {
+              if (versionedEntity.getEntity().isPresent()) {
+                handleEntityPut(versionedEntity.getEntity().get());
+              } else {
+                handleEntityDelete(versionedEntity);
+              }
+            });
   }
 
   private void handleEntityPut(Entity entity) {

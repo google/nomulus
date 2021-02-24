@@ -151,7 +151,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
     return domains.stream()
         .filter(d -> d.getDeletionTime().isAfter(now))
         .filter(d -> d.getStatusValues().containsAll(REGISTRY_LOCK_STATUSES))
-        .filter(d -> RegistryLockDao.getMostRecentByRepoId(d.getRepoId()).isEmpty())
+        .filter(d -> !RegistryLockDao.getMostRecentByRepoId(d.getRepoId()).isPresent())
         .collect(toImmutableList());
   }
 }
