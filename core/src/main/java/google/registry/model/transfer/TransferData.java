@@ -15,7 +15,6 @@
 package google.registry.model.transfer;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ImmutableObject.DoNotCompare;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -95,6 +94,9 @@ public abstract class TransferData<
   // the transfer request flow, when the instance is loaded from Datastore, we cannot make this
   // distinction because they are just VKeys. Also, the only way we use serverApproveEntities is to
   // just delete all the entities referenced by the VKeys, so we don't need to make the distinction.
+  //
+  // In addition, there may be a third poll message for the autorenew poll message on domain
+  // transfer if applicable.
   @Ignore
   @Column(name = "transfer_poll_message_id_1")
   Long pollMessageId1;
@@ -102,6 +104,10 @@ public abstract class TransferData<
   @Ignore
   @Column(name = "transfer_poll_message_id_2")
   Long pollMessageId2;
+
+  @Ignore
+  @Column(name = "transfer_poll_message_id_3")
+  Long pollMessageId3;
 
   public abstract boolean isEmpty();
 
@@ -177,6 +183,10 @@ public abstract class TransferData<
       Key<PollMessage> ofyKey = Key.create(historyEntryKey, PollMessage.class, pollMessageId2);
       entityKeysBuilder.add(PollMessage.createVKey(ofyKey));
     }
+    if (pollMessageId3 != null) {
+      Key<PollMessage> ofyKey = Key.create(historyEntryKey, PollMessage.class, pollMessageId3);
+      entityKeysBuilder.add(PollMessage.createVKey(ofyKey));
+    }
     serverApproveEntities = entityKeysBuilder.build();
   }
 
@@ -189,6 +199,7 @@ public abstract class TransferData<
       transferData.repoId = null;
       transferData.pollMessageId1 = null;
       transferData.pollMessageId2 = null;
+      transferData.pollMessageId3 = null;
       return;
     }
     // Each element in serverApproveEntities should have the exact same Key<HistoryEntry> as its
@@ -203,6 +214,9 @@ public abstract class TransferData<
     }
     if (sortedPollMessageIds.size() >= 2) {
       transferData.pollMessageId2 = sortedPollMessageIds.get(1);
+    }
+    if (sortedPollMessageIds.size() >= 3) {
+      transferData.pollMessageId3 = sortedPollMessageIds.get(2);
     }
   }
 
