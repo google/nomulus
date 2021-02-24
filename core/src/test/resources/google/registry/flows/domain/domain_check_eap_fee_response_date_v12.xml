@@ -28,7 +28,7 @@
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">13.00</fee:fee>
-            <fee:fee description="Early Access Period, fee expires: 2010-01-03T10:00:00.000Z">50.00</fee:fee>
+            <fee:fee description="Early Access Period, fee expires: 2010-01-03T10:00:00.002Z">50.00</fee:fee>
             <fee:date>2010-01-02T13:22:21Z</fee:date>
             <fee:notAfter>2010-01-03T10:00:00.000Z</fee:notAfter>
           </fee:command>
@@ -40,7 +40,7 @@
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">13.00</fee:fee>
-            <fee:fee description="Early Access Period, fee expires: 2010-01-03T10:00:00.000Z">50.00</fee:fee>
+            <fee:fee description="Early Access Period, fee expires: 2010-01-03T10:00:00.002Z">50.00</fee:fee>
             <fee:date>2010-01-02T13:22:21Z</fee:date>
             <fee:notAfter>2010-01-03T10:00:00.000Z</fee:notAfter>
           </fee:command>
@@ -52,7 +52,7 @@
           <fee:command name="create">
             <fee:period unit="y">1</fee:period>
             <fee:fee description="create">13.00</fee:fee>
-            <fee:fee description="Early Access Period, fee expires: 2010-01-03T10:00:00.000Z">50.00</fee:fee>
+            <fee:fee description="Early Access Period, fee expires: 2010-01-03T10:00:00.002Z">50.00</fee:fee>
             <fee:date>2010-01-02T13:22:21Z</fee:date>
             <fee:notAfter>2010-01-03T10:00:00.000Z</fee:notAfter>
           </fee:command>

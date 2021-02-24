@@ -36,12 +36,19 @@ import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
+import google.registry.testing.ReplayExtension;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainClaimsCheckFlow}. */
 public class DomainClaimsCheckFlowTest
     extends ResourceFlowTestCase<DomainClaimsCheckFlow, DomainBase> {
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   DomainClaimsCheckFlowTest() {
     setEppInput("domain_check_claims.xml");

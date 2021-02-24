@@ -52,14 +52,21 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ContactTransferRequestFlow}. */
 @DualDatabaseTest
 class ContactTransferRequestFlowTest
     extends ContactTransferFlowTestCase<ContactTransferRequestFlow, ContactResource> {
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   ContactTransferRequestFlowTest() {
     // We need the transfer to happen at exactly this time in order for the response to match up.
