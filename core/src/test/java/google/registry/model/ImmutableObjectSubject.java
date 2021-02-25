@@ -36,7 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collector;
 import javax.annotation.Nullable;
 
@@ -244,7 +243,7 @@ public final class ImmutableObjectSubject extends Subject {
 
       // We just need to check if there were any objects in "actual" that were not in "expected"
       // (where "found" is a proxy for "expected").
-    } else if (actual.stream().anyMatch(Predicate.not(found::contains))) {
+    } else if (!found.containsAll(actual)) {
       return ComparisonResult.createFailure();
     }
 
