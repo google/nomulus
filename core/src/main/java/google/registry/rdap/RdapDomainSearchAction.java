@@ -18,11 +18,15 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
@@ -33,6 +37,7 @@ import com.googlecode.objectify.cmd.Query;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
@@ -53,6 +58,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.inject.Inject;
+import javax.persistence.criteria.CriteriaBuilder;
+import org.hibernate.Hibernate;
 
 /**
  * RDAP (new WHOIS) action for domain search requests.
@@ -75,8 +82,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
 
   static final int RESULT_SET_SIZE_SCALING_FACTOR = 30;
 
-  @NonFinalForTesting
-  static int maxNameserversInFirstStage = 300;
+  @NonFinalForTesting static int maxNameserversInFirstStage = 300;
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -180,9 +186,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     Optional<DomainBase> domainBase =
         loadByForeignKey(DomainBase.class, partialStringQuery.getInitialString(), getRequestTime());
     return makeSearchResults(
-        shouldBeVisible(domainBase)
-            ? ImmutableList.of(domainBase.get())
-            : ImmutableList.of());
+        shouldBeVisible(domainBase) ? ImmutableList.of(domainBase.get()) : ImmutableList.of());
   }
 
   /** Searches for domains by domain name with an initial string, wildcard and possible suffix. */
@@ -198,21 +202,53 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // domains directly, rather than the foreign keys, because then we have an index on TLD if we
     // need it.
     int querySizeLimit = RESULT_SET_SIZE_SCALING_FACTOR * rdapResultSetMaxSize;
-    Query<DomainBase> query =
-        ofy()
-            .load()
-            .type(DomainBase.class)
-            .filter("fullyQualifiedDomainName <", partialStringQuery.getNextInitialString())
-            .filter("fullyQualifiedDomainName >=", partialStringQuery.getInitialString());
-    if (cursorString.isPresent()) {
-      query = query.filter("fullyQualifiedDomainName >", cursorString.get());
+    RdapResultSet<DomainBase> resultSet;
+    if (isDatastore()) {
+      Query<DomainBase> query =
+          ofy()
+              .load()
+              .type(DomainBase.class)
+              .filter("fullyQualifiedDomainName <", partialStringQuery.getNextInitialString())
+              .filter("fullyQualifiedDomainName >=", partialStringQuery.getInitialString());
+      if (cursorString.isPresent()) {
+        query = query.filter("fullyQualifiedDomainName >", cursorString.get());
+      }
+      if (partialStringQuery.getSuffix() != null) {
+        query = query.filter("tld", partialStringQuery.getSuffix());
+      }
+      query = query.limit(querySizeLimit);
+      // Always check for visibility, because we couldn't look at the deletionTime in the query.
+      resultSet = getMatchingResources(query, true, querySizeLimit);
+    } else {
+      resultSet =
+          jpaTm()
+              .transact(
+                  () -> {
+                    CriteriaBuilder criteriaBuilder =
+                        jpaTm().getEntityManager().getCriteriaBuilder();
+                    CriteriaQueryBuilder<DomainBase> queryBuilder =
+                        CriteriaQueryBuilder.create(DomainBase.class)
+                            .where(
+                                "fullyQualifiedDomainName",
+                                criteriaBuilder::like,
+                                String.format("%s%%", partialStringQuery.getInitialString()))
+                            .orderByAsc("fullyQualifiedDomainName");
+                    if (cursorString.isPresent()) {
+                      queryBuilder =
+                          queryBuilder.where(
+                              "fullyQualifiedDomainName",
+                              criteriaBuilder::greaterThan,
+                              cursorString.get());
+                    }
+                    if (partialStringQuery.getSuffix() != null) {
+                      queryBuilder =
+                          queryBuilder.where(
+                              "tld", criteriaBuilder::equal, partialStringQuery.getSuffix());
+                    }
+                    return getMatchingResourcesSql(queryBuilder, true, querySizeLimit);
+                  });
     }
-    if (partialStringQuery.getSuffix() != null) {
-      query = query.filter("tld", partialStringQuery.getSuffix());
-    }
-    query = query.limit(querySizeLimit);
-    // Always check for visibility, because we couldn't look at the deletionTime in the query.
-    return makeSearchResults(getMatchingResources(query, true, querySizeLimit));
+    return makeSearchResults(resultSet);
   }
 
   /** Searches for domains by domain name with a TLD suffix. */
@@ -222,16 +258,32 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // searchByDomainNameWithInitialString, unable to perform an inequality query on deletion time.
     // Don't use queryItems, because it doesn't handle pending deletes.
     int querySizeLimit = RESULT_SET_SIZE_SCALING_FACTOR * rdapResultSetMaxSize;
-    Query<DomainBase> query =
-        ofy()
-            .load()
-            .type(DomainBase.class)
-            .filter("tld", tld);
-    if (cursorString.isPresent()) {
-      query = query.filter("fullyQualifiedDomainName >", cursorString.get());
+    RdapResultSet<DomainBase> resultSet;
+    if (isDatastore()) {
+      Query<DomainBase> query = ofy().load().type(DomainBase.class).filter("tld", tld);
+      if (cursorString.isPresent()) {
+        query = query.filter("fullyQualifiedDomainName >", cursorString.get());
+      }
+      query = query.order("fullyQualifiedDomainName").limit(querySizeLimit);
+      resultSet = getMatchingResources(query, true, querySizeLimit);
+    } else {
+      resultSet =
+          jpaTm()
+              .transact(
+                  () -> {
+                    CriteriaQueryBuilder<DomainBase> builder =
+                        queryItemsSql(
+                                DomainBase.class,
+                                "tld",
+                                tld,
+                                Optional.of("fullyQualifiedDomainName"),
+                                cursorString,
+                                DeletedItemHandling.INCLUDE)
+                            .orderByAsc("fullyQualifiedDomainName");
+                    return getMatchingResourcesSql(builder, true, querySizeLimit);
+                  });
     }
-    query = query.order("fullyQualifiedDomainName").limit(querySizeLimit);
-    return makeSearchResults(getMatchingResources(query, true, querySizeLimit));
+    return makeSearchResults(resultSet);
   }
 
   /**
@@ -245,7 +297,8 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
    */
   private DomainSearchResponse searchByNameserverLdhName(
       final RdapSearchPattern partialStringQuery) {
-    Iterable<VKey<HostResource>> hostKeys = getNameserverRefsByLdhName(partialStringQuery);
+    ImmutableCollection<VKey<HostResource>> hostKeys =
+        getNameserverRefsByLdhName(partialStringQuery);
     if (Iterables.isEmpty(hostKeys)) {
       metricInformationBuilder.setNumHostsRetrieved(0);
       throw new NotFoundException("No matching nameservers found");
@@ -263,7 +316,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
    * initial string is not required (e.g. "*.example.tld" is valid), because we can look up the
    * domain and just list all of its subordinate hosts.
    */
-  private Iterable<VKey<HostResource>> getNameserverRefsByLdhName(
+  private ImmutableCollection<VKey<HostResource>> getNameserverRefsByLdhName(
       final RdapSearchPattern partialStringQuery) {
     // Handle queries without a wildcard.
     if (!partialStringQuery.getHasWildcard()) {
@@ -282,25 +335,50 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // Only return the first maxNameserversInFirstStage nameservers. This could result in an
     // incomplete result set if a search asks for something like "ns*", but we need to enforce a
     // limit in order to avoid arbitrarily long-running queries.
-    Query<HostResource> query =
-        queryItems(
-            HostResource.class,
-            "fullyQualifiedHostName",
-            partialStringQuery,
-            Optional.empty(),
-            DeletedItemHandling.EXCLUDE,
-            maxNameserversInFirstStage);
     Optional<String> desiredRegistrar = getDesiredRegistrar();
-    if (desiredRegistrar.isPresent()) {
-      query = query.filter("currentSponsorClientId", desiredRegistrar.get());
+    if (isDatastore()) {
+      Query<HostResource> query =
+          queryItems(
+              HostResource.class,
+              "fullyQualifiedHostName",
+              partialStringQuery,
+              Optional.empty(),
+              DeletedItemHandling.EXCLUDE,
+              maxNameserversInFirstStage);
+      if (desiredRegistrar.isPresent()) {
+        query = query.filter("currentSponsorClientId", desiredRegistrar.get());
+      }
+      return StreamSupport.stream(query.keys().spliterator(), false)
+          .map(VKey::from)
+          .collect(toImmutableSet());
+    } else {
+      return jpaTm()
+          .transact(
+              () -> {
+                CriteriaQueryBuilder<HostResource> builder =
+                    queryItemsSql(
+                        HostResource.class,
+                        "fullyQualifiedHostName",
+                        partialStringQuery,
+                        Optional.empty(),
+                        DeletedItemHandling.EXCLUDE);
+                if (desiredRegistrar.isPresent()) {
+                  builder =
+                      builder.where(
+                          "currentSponsorClientId",
+                          jpaTm().getEntityManager().getCriteriaBuilder()::equal,
+                          desiredRegistrar.get());
+                }
+                return getMatchingResourcesSql(builder, true, maxNameserversInFirstStage)
+                    .resources().stream()
+                    .map(HostResource::createVKey)
+                    .collect(toImmutableSet());
+              });
     }
-    return StreamSupport.stream(query.keys().spliterator(), false)
-        .map(VKey::from)
-        .collect(toImmutableSet());
   }
 
   /** Assembles a list of {@link HostResource} keys by name when the pattern has no wildcard. */
-  private Iterable<VKey<HostResource>> getNameserverRefsByLdhNameWithoutWildcard(
+  private ImmutableList<VKey<HostResource>> getNameserverRefsByLdhNameWithoutWildcard(
       final RdapSearchPattern partialStringQuery) {
     // If we need to check the sponsoring registrar, we need to load the resource rather than just
     // the key.
@@ -326,7 +404,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   }
 
   /** Assembles a list of {@link HostResource} keys by name using a superordinate domain suffix. */
-  private Iterable<VKey<HostResource>> getNameserverRefsByLdhNameWithSuffix(
+  private ImmutableList<VKey<HostResource>> getNameserverRefsByLdhNameWithSuffix(
       final RdapSearchPattern partialStringQuery) {
     // The suffix must be a domain that we manage. That way, we can look up the domain and search
     // through the subordinate hosts. This is more efficient, and lets us permit wildcard searches
@@ -391,23 +469,66 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
    * domains which used to be connected to an undeleted nameserver.
    */
   private DomainSearchResponse searchByNameserverIp(final InetAddress inetAddress) {
-    Query<HostResource> query =
-        queryItems(
-            HostResource.class,
-            "inetAddresses",
-            inetAddress.getHostAddress(),
-            Optional.empty(),
-            Optional.empty(),
-            DeletedItemHandling.EXCLUDE,
-            maxNameserversInFirstStage);
     Optional<String> desiredRegistrar = getDesiredRegistrar();
-    if (desiredRegistrar.isPresent()) {
-      query = query.filter("currentSponsorClientId", desiredRegistrar.get());
+    ImmutableSet<VKey<HostResource>> hostKeys;
+    if (isDatastore()) {
+      Query<HostResource> query =
+          queryItems(
+              HostResource.class,
+              "inetAddresses",
+              inetAddress.getHostAddress(),
+              Optional.empty(),
+              Optional.empty(),
+              DeletedItemHandling.EXCLUDE,
+              maxNameserversInFirstStage);
+      if (desiredRegistrar.isPresent()) {
+        query = query.filter("currentSponsorClientId", desiredRegistrar.get());
+      }
+      hostKeys =
+          StreamSupport.stream(query.keys().spliterator(), false)
+              .map(VKey::from)
+              .collect(toImmutableSet());
+    } else {
+      hostKeys =
+          jpaTm()
+              .transact(
+                  () -> {
+                    // Hibernate does not allow us to query @Converted array fields directly, either
+                    // in the CriteriaQuery or the raw text format. However, Postgres does -- so we
+                    // use native queries to find hosts where any of the inetAddresses match.
+                    javax.persistence.Query query;
+                    if (desiredRegistrar.isPresent()) {
+                      query =
+                          jpaTm()
+                              .getEntityManager()
+                              .createNativeQuery(
+                                  "SELECT h.repo_id FROM \"Host\" h WHERE :address = "
+                                      + "ANY(h.inet_addresses) AND "
+                                      + "h.current_sponsor_registrar_id = :desiredRegistrar AND "
+                                      + "h.deletion_time = CAST(:endOfTime AS timestamptz)")
+                              .setParameter("desiredRegistrar", desiredRegistrar.get());
+                    } else {
+                      query =
+                          jpaTm()
+                              .getEntityManager()
+                              .createNativeQuery(
+                                  "SELECT h.repo_id FROM \"Host\" h WHERE :address = "
+                                      + "ANY(h.inet_addresses) AND "
+                                      + "h.deletion_time = CAST(:endOfTime AS timestamptz)");
+                    }
+                    @SuppressWarnings("unchecked")
+                    Stream<String> resultStream =
+                        query
+                            .setParameter("address", InetAddresses.toAddrString(inetAddress))
+                            .setParameter("endOfTime", END_OF_TIME.toString())
+                            .setMaxResults(maxNameserversInFirstStage)
+                            .getResultStream();
+                    return resultStream
+                        .map(repoId -> VKey.create(HostResource.class, repoId))
+                        .collect(toImmutableSet());
+                  });
     }
-    return searchByNameserverRefs(
-        StreamSupport.stream(query.keys().spliterator(), false)
-            .map(VKey::from)
-            .collect(toImmutableSet()));
+    return searchByNameserverRefs(hostKeys);
   }
 
   /**
@@ -416,7 +537,8 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
    * <p>This method is called by {@link #searchByNameserverLdhName} and {@link
    * #searchByNameserverIp} after they assemble the relevant host keys.
    */
-  private DomainSearchResponse searchByNameserverRefs(final Iterable<VKey<HostResource>> hostKeys) {
+  private DomainSearchResponse searchByNameserverRefs(
+      final ImmutableCollection<VKey<HostResource>> hostKeys) {
     // We must break the query up into chunks, because the in operator is limited to 30 subqueries.
     // Since it is possible for the same domain to show up more than once in our result list (if
     // we do a wildcard nameserver search that returns multiple nameservers used by the same
@@ -428,24 +550,62 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     int numHostKeysSearched = 0;
     for (List<VKey<HostResource>> chunk : Iterables.partition(hostKeys, 30)) {
       numHostKeysSearched += chunk.size();
-      Query<DomainBase> query =
-          ofy()
-              .load()
-              .type(DomainBase.class)
-              .filter("nsHosts in", chunk.stream().map(VKey::getOfyKey).collect(toImmutableSet()));
-      if (!shouldIncludeDeleted()) {
-        query = query.filter("deletionTime >", getRequestTime());
-      // If we are not performing an inequality query, we can filter on the cursor in the query.
-      // Otherwise, we will need to filter the results afterward.
-      } else if (cursorString.isPresent()) {
-        query = query.filter("fullyQualifiedDomainName >", cursorString.get());
+      if (isDatastore()) {
+        Query<DomainBase> query =
+            ofy()
+                .load()
+                .type(DomainBase.class)
+                .filter(
+                    "nsHosts in", chunk.stream().map(VKey::getOfyKey).collect(toImmutableSet()));
+        if (!shouldIncludeDeleted()) {
+          query = query.filter("deletionTime >", getRequestTime());
+          // If we are not performing an inequality query, we can filter on the cursor in the query.
+          // Otherwise, we will need to filter the results afterward.
+        } else if (cursorString.isPresent()) {
+          query = query.filter("fullyQualifiedDomainName >", cursorString.get());
+        }
+        Stream<DomainBase> stream = Streams.stream(query).filter(this::isAuthorized);
+        if (cursorString.isPresent()) {
+          stream =
+              stream.filter(domain -> (domain.getDomainName().compareTo(cursorString.get()) > 0));
+        }
+        stream.forEach(domainSetBuilder::add);
+      } else {
+        jpaTm()
+            .transact(
+                () -> {
+                  for (VKey<HostResource> hostKey : hostKeys) {
+                    CriteriaQueryBuilder<DomainBase> queryBuilder =
+                        CriteriaQueryBuilder.create(DomainBase.class)
+                            .whereFieldContains("nsHosts", hostKey)
+                            .orderByAsc("fullyQualifiedDomainName");
+                    CriteriaBuilder criteriaBuilder =
+                        jpaTm().getEntityManager().getCriteriaBuilder();
+                    if (!shouldIncludeDeleted()) {
+                      queryBuilder =
+                          queryBuilder.where(
+                              "deletionTime", criteriaBuilder::greaterThan, getRequestTime());
+                    }
+                    if (cursorString.isPresent()) {
+                      queryBuilder =
+                          queryBuilder.where(
+                              "fullyQualifiedDomainName",
+                              criteriaBuilder::greaterThan,
+                              cursorString.get());
+                    }
+                    jpaTm()
+                        .getEntityManager()
+                        .createQuery(queryBuilder.build())
+                        .getResultStream()
+                        .filter(this::isAuthorized)
+                        .forEach(
+                            (domain) -> {
+                              Hibernate.initialize(domain.getDsData());
+                              domainSetBuilder.add(domain);
+                            });
+                  }
+                });
       }
-      Stream<DomainBase> stream = Streams.stream(query).filter(domain -> isAuthorized(domain));
-      if (cursorString.isPresent()) {
-        stream =
-            stream.filter(domain -> (domain.getDomainName().compareTo(cursorString.get()) > 0));
-      }
-      stream.forEach(domainSetBuilder::add);
     }
     List<DomainBase> domains = domainSetBuilder.build().asList();
     metricInformationBuilder.setNumHostsRetrieved(numHostKeysSearched);
@@ -489,8 +649,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     OutputDataType outputDataType =
         (domains.size() > 1) ? OutputDataType.SUMMARY : OutputDataType.FULL;
     DomainSearchResponse.Builder builder =
-        DomainSearchResponse.builder()
-            .setIncompletenessWarningType(incompletenessWarningType);
+        DomainSearchResponse.builder().setIncompletenessWarningType(incompletenessWarningType);
     Optional<String> newCursor = Optional.empty();
     for (DomainBase domain : Iterables.limit(domains, rdapResultSetMaxSize)) {
       newCursor = Optional.of(domain.getDomainName());

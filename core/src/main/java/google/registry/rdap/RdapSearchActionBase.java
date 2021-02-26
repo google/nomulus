@@ -198,8 +198,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
     if (desiredRegistrar.isPresent()) {
       builder =
           builder.where(
-              jpaTm().getEntityManager().getCriteriaBuilder()::equal,
-              "currentSponsorClientId",
+              "currentSponsorClientId", jpaTm().getEntityManager().getCriteriaBuilder()::equal,
               desiredRegistrar.get());
     }
     List<T> queryResult =
@@ -413,18 +412,17 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
     if (partialStringQuery.getHasWildcard()) {
       builder =
           builder.where(
-              criteriaBuilder::like,
-              filterField,
+              filterField, criteriaBuilder::like,
               String.format("%s%%", partialStringQuery.getInitialString()));
     } else {
       // no wildcard means we use a standard equals query
       builder =
-          builder.where(criteriaBuilder::equal, filterField, partialStringQuery.getInitialString());
+          builder.where(filterField, criteriaBuilder::equal, partialStringQuery.getInitialString());
     }
     if (cursorString.isPresent()) {
-      builder = builder.where(criteriaBuilder::greaterThan, filterField, cursorString.get());
+      builder = builder.where(filterField, criteriaBuilder::greaterThan, cursorString.get());
     }
-    builder = builder.orderBy(criteriaBuilder::asc, filterField);
+    builder = builder.orderByAsc(filterField);
     return setDeletedItemHandlingSql(builder, deletedItemHandling);
   }
 
@@ -502,13 +500,13 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
     jpaTm().assertInTransaction();
     CriteriaQueryBuilder<T> builder = CriteriaQueryBuilder.create(clazz);
     CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
-    builder = builder.where(criteriaBuilder::equal, filterField, queryString);
+    builder = builder.where(filterField, criteriaBuilder::equal, queryString);
     if (cursorString.isPresent()) {
       if (cursorField.isPresent()) {
         builder =
-            builder.where(criteriaBuilder::greaterThan, cursorField.get(), cursorString.get());
+            builder.where(cursorField.get(), criteriaBuilder::greaterThan, cursorString.get());
       } else {
-        builder = builder.where(criteriaBuilder::greaterThan, "repoId", cursorString.get());
+        builder = builder.where("repoId", criteriaBuilder::greaterThan, cursorString.get());
       }
     }
     return setDeletedItemHandlingSql(builder, deletedItemHandling);
@@ -559,7 +557,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
     if (!Objects.equals(deletedItemHandling, DeletedItemHandling.INCLUDE)) {
       builder =
           builder.where(
-              jpaTm().getEntityManager().getCriteriaBuilder()::equal, "deletionTime", END_OF_TIME);
+              "deletionTime", jpaTm().getEntityManager().getCriteriaBuilder()::equal, END_OF_TIME);
     }
     return builder;
   }
