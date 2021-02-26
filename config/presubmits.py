@@ -209,6 +209,7 @@ PRESUBMITS = {
          "JpaTransactionManagerImpl.java",
          # CriteriaQueryBuilder is a false positive
          "CriteriaQueryBuilder.java",
+         "RdapDomainSearchAction.java",
          "RdapSearchActionBase.java",
          },
     ):

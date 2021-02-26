@@ -65,6 +65,15 @@ public class CriteriaQueryBuilder<T> {
     return where(root.get(fieldName).in(values));
   }
 
+  /**
+   * Adds a WHERE clause to the query specifying that a collection field must contain a particular
+   * value.
+   */
+  public <V> CriteriaQueryBuilder<T> whereFieldContains(String fieldName, Object value) {
+    return where(
+        jpaTm().getEntityManager().getCriteriaBuilder().isMember(value, root.get(fieldName)));
+  }
+
   /** Orders the result by the given operation applied to the given field. */
   public <U> CriteriaQueryBuilder<T> orderBy(OrderByClause<U> orderByClause, String fieldName) {
     Expression<U> expression = root.get(fieldName);
