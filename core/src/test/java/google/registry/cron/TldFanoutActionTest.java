@@ -120,7 +120,7 @@ class TldFanoutActionTest {
   }
 
   @Test
-  void testSuccess_methodPostIsDefault() {
+  void testSuccess_methodPostIsUsed() {
     run(getParamsMap("runInEmpty", ""));
     assertTasksEnqueued(QUEUE, new TaskMatcher().method("POST"));
   }

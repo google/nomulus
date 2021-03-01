@@ -39,6 +39,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.TaskHandle;
 import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.appengine.api.taskqueue.TaskOptions.Method;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
@@ -173,6 +174,8 @@ public final class TldFanoutAction implements Runnable {
       // TaskOptions.param() does not accept null values.
       options.param(param, nullToEmpty(getFirst(params.get(param), null)));
     }
+    // Explicitly set the method to POST even though it is the default.
+    options.method(Method.POST);
     return options;
   }
 }
