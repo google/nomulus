@@ -207,6 +207,9 @@ PRESUBMITS = {
          "ForeignKeyIndex.java",
          "HistoryEntryDao.java",
          "JpaTransactionManagerImpl.java",
+         # CriteriaQueryBuilder is a false positive
+         "CriteriaQueryBuilder.java",
+         "RdapSearchActionBase.java",
          },
     ):
         "The first String parameter to EntityManager.create(Native)Query "
