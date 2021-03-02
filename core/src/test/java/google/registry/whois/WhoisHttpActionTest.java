@@ -78,7 +78,7 @@ class WhoisHttpActionTest {
     whoisAction.requestPath = WhoisHttpAction.PATH + pathInfo;
     whoisAction.response = response;
     whoisAction.whoisReader =
-        new WhoisReader(new WhoisCommandFactory(), "Please contact registrar");
+        new WhoisReader(WhoisCommandFactory.createCached(), "Please contact registrar");
     whoisAction.whoisMetrics = new WhoisMetrics();
     whoisAction.metricBuilder = WhoisMetric.builderForRequest(clock);
     whoisAction.disclaimer =
