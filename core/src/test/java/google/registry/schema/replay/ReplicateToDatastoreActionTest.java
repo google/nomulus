@@ -73,25 +73,25 @@ public class ReplicateToDatastoreActionTest {
     jpaTm()
         .transact(
             () -> {
-              jpaTm().saveNew(foo);
-              jpaTm().saveNew(bar);
+              jpaTm().insert(foo);
+              jpaTm().insert(bar);
             });
     task.run();
 
-    assertThat(ofyTm().transact(() -> ofyTm().load(foo.key()))).isEqualTo(foo);
-    assertThat(ofyTm().transact(() -> ofyTm().load(bar.key()))).isEqualTo(bar);
-    assertThat(ofyTm().transact(() -> ofyTm().maybeLoad(baz.key())).isPresent()).isFalse();
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(foo.key()))).isEqualTo(foo);
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(bar.key()))).isEqualTo(bar);
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(baz.key())).isPresent()).isFalse();
 
     jpaTm()
         .transact(
             () -> {
               jpaTm().delete(bar.key());
-              jpaTm().saveNew(baz);
+              jpaTm().insert(baz);
             });
     task.run();
 
-    assertThat(ofyTm().transact(() -> ofyTm().maybeLoad(bar.key()).isPresent())).isFalse();
-    assertThat(ofyTm().transact(() -> ofyTm().load(baz.key()))).isEqualTo(baz);
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(bar.key()).isPresent())).isFalse();
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(baz.key()))).isEqualTo(baz);
   }
 
   @Test
@@ -100,20 +100,20 @@ public class ReplicateToDatastoreActionTest {
     TestEntity bar = new TestEntity("bar");
 
     // Write a transaction containing "foo".
-    jpaTm().transact(() -> jpaTm().saveNew(foo));
+    jpaTm().transact(() -> jpaTm().insert(foo));
     task.run();
 
     // Verify that it propagated to datastore, then remove "foo" directly from datastore.
-    assertThat(ofyTm().transact(() -> ofyTm().load(foo.key()))).isEqualTo(foo);
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(foo.key()))).isEqualTo(foo);
     ofyTm().transact(() -> ofyTm().delete(foo.key()));
 
     // Write "bar"
-    jpaTm().transact(() -> jpaTm().saveNew(bar));
+    jpaTm().transact(() -> jpaTm().insert(bar));
     task.run();
 
     // If we replayed only the most recent transaction, we should have "bar" but not "foo".
-    assertThat(ofyTm().transact(() -> ofyTm().load(bar.key()))).isEqualTo(bar);
-    assertThat(ofyTm().transact(() -> ofyTm().maybeLoad(foo.key()).isPresent())).isFalse();
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(bar.key()))).isEqualTo(bar);
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(foo.key()).isPresent())).isFalse();
   }
 
   @Test
@@ -122,12 +122,12 @@ public class ReplicateToDatastoreActionTest {
     TestEntity bar = new TestEntity("bar");
 
     // Write a transaction and run just the batch fetch.
-    jpaTm().transact(() -> jpaTm().saveNew(foo));
+    jpaTm().transact(() -> jpaTm().insert(foo));
     List<TransactionEntity> txns1 = task.getTransactionBatch();
     assertThat(txns1).hasSize(1);
 
     // Write a second transaction and do another batch fetch.
-    jpaTm().transact(() -> jpaTm().saveNew(bar));
+    jpaTm().transact(() -> jpaTm().insert(bar));
     List<TransactionEntity> txns2 = task.getTransactionBatch();
     assertThat(txns2).hasSize(2);
 
@@ -143,8 +143,8 @@ public class ReplicateToDatastoreActionTest {
     }
 
     // Verify that the first transaction didn't get replayed but the second one did.
-    assertThat(ofyTm().transact(() -> ofyTm().maybeLoad(foo.key()).isPresent())).isFalse();
-    assertThat(ofyTm().transact(() -> ofyTm().load(bar.key()))).isEqualTo(bar);
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(foo.key()).isPresent())).isFalse();
+    assertThat(ofyTm().transact(() -> ofyTm().loadByKey(bar.key()))).isEqualTo(bar);
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
@@ -155,10 +155,10 @@ public class ReplicateToDatastoreActionTest {
   public void testMissingTransactions() {
     // Write a transaction (should have a transaction id of 1).
     TestEntity foo = new TestEntity("foo");
-    jpaTm().transact(() -> jpaTm().saveNew(foo));
+    jpaTm().transact(() -> jpaTm().insert(foo));
 
     // Force the last transaction id back to -1 so that we look for transaction 0.
-    ofyTm().transact(() -> ofyTm().saveNew(new LastSqlTransaction(-1)));
+    ofyTm().transact(() -> ofyTm().insert(new LastSqlTransaction(-1)));
 
     List<TransactionEntity> txns = task.getTransactionBatch();
     assertThat(txns).hasSize(1);

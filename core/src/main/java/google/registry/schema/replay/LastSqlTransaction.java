@@ -25,7 +25,7 @@ import google.registry.model.ImmutableObject;
 
 /** Datastore entity to keep track of the last SQL transaction imported into the datastore. */
 @Entity
-public class LastSqlTransaction extends ImmutableObject {
+public class LastSqlTransaction extends ImmutableObject implements DatastoreOnlyEntity {
 
   /** The key for this singleton. */
   public static final Key<LastSqlTransaction> KEY = Key.create(LastSqlTransaction.class, 1);
