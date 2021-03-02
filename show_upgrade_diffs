@@ -1,0 +1,4 @@
+#!/bin/sh
+# Wrapper for show_upgrade_diffs.py.
+python3 $(dirname $0)/config/show_upgrade_diffs.py "$@"
+exit $?
