@@ -344,6 +344,8 @@ dependencies {
   jaxb deps['com.sun.xml.bind:jaxb-osgi']
 
   // Dependency needed for soy to java compilation.
+  soy deps['com.google.inject:guice']
+  soy deps['com.google.protobuf:protobuf-java']
   soy deps['com.google.template:soy']
 
   // Dependencies needed for compiling stylesheets to javascript

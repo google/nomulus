@@ -208,8 +208,8 @@ jline:jline:1.0
 joda-time:joda-time:2.10.5
 junit:junit:4.13.1
 net.arnx:nashorn-promise:0.1.1
-net.bytebuddy:byte-buddy-agent:1.10.5
-net.bytebuddy:byte-buddy:1.10.17
+net.bytebuddy:byte-buddy-agent:1.10.19
+net.bytebuddy:byte-buddy:1.10.19
 net.java.dev.jna:jna:5.5.0
 org.apache.avro:avro:1.8.2
 org.apache.beam:beam-model-fn-execution:2.27.0
@@ -285,11 +285,11 @@ org.junit.platform:junit-platform-runner:1.7.0
 org.junit.platform:junit-platform-suite-api:1.7.0
 org.junit:junit-bom:5.7.0
 org.jvnet.staxex:stax-ex:1.8
-org.mockito:mockito-core:3.3.3
-org.mockito:mockito-junit-jupiter:3.3.3
+org.mockito:mockito-core:3.7.7
+org.mockito:mockito-junit-jupiter:3.7.7
 org.mortbay.jetty:jetty-util:6.1.26
 org.mortbay.jetty:jetty:6.1.26
-org.objenesis:objenesis:2.6
+org.objenesis:objenesis:3.1
 org.opentest4j:opentest4j:1.2.0
 org.ow2.asm:asm-analysis:8.0.1
 org.ow2.asm:asm-commons:7.1
