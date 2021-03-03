@@ -104,8 +104,9 @@ public class DeleteExpiredDomainsAction implements Runnable {
             runLocked();
             response.setStatus(SC_OK);
           } catch (Exception e) {
+            logger.atSevere().withCause(e).log("Errored out during execution.");
             response.setStatus(SC_INTERNAL_SERVER_ERROR);
-            response.setPayload("Encountered error; see GCP logs for full details.");
+            response.setPayload(String.format("Errored out with cause: %s", e));
           }
           return null;
         };
