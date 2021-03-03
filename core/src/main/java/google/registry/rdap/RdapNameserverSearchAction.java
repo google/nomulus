@@ -14,9 +14,12 @@
 
 package google.registry.rdap;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
@@ -25,6 +28,7 @@ import com.google.common.primitives.Booleans;
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
@@ -40,6 +44,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 
 /**
@@ -216,33 +221,90 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
   private NameserverSearchResponse searchByNameUsingPrefix(RdapSearchPattern partialStringQuery) {
     // Add 1 so we can detect truncation.
     int querySizeLimit = getStandardQuerySizeLimit();
-    Query<HostResource> query =
-        queryItems(
-            HostResource.class,
-            "fullyQualifiedHostName",
-            partialStringQuery,
-            cursorString,
-            getDeletedItemHandling(),
-            querySizeLimit);
-    return makeSearchResults(
-        getMatchingResources(query, shouldIncludeDeleted(), querySizeLimit), CursorType.NAME);
+    if (isDatastore()) {
+      Query<HostResource> query =
+          queryItems(
+              HostResource.class,
+              "fullyQualifiedHostName",
+              partialStringQuery,
+              cursorString,
+              getDeletedItemHandling(),
+              querySizeLimit);
+      return makeSearchResults(
+          getMatchingResources(query, shouldIncludeDeleted(), querySizeLimit), CursorType.NAME);
+    } else {
+      return jpaTm()
+          .transact(
+              () -> {
+                CriteriaQueryBuilder<HostResource> queryBuilder =
+                    queryItemsSql(
+                        HostResource.class,
+                        "fullyQualifiedHostName",
+                        partialStringQuery,
+                        cursorString,
+                        getDeletedItemHandling());
+                return makeSearchResults(
+                    getMatchingResourcesSql(queryBuilder, shouldIncludeDeleted(), querySizeLimit),
+                    CursorType.NAME);
+              });
+    }
   }
 
   /** Searches for nameservers by IP address, returning a JSON array of nameserver info maps. */
   private NameserverSearchResponse searchByIp(InetAddress inetAddress) {
     // Add 1 so we can detect truncation.
     int querySizeLimit = getStandardQuerySizeLimit();
-    Query<HostResource> query =
-        queryItems(
-            HostResource.class,
-            "inetAddresses",
-            inetAddress.getHostAddress(),
-            Optional.empty(),
-            cursorString,
-            getDeletedItemHandling(),
-            querySizeLimit);
-    return makeSearchResults(
-        getMatchingResources(query, shouldIncludeDeleted(), querySizeLimit), CursorType.ADDRESS);
+    RdapResultSet<HostResource> rdapResultSet;
+    if (isDatastore()) {
+      Query<HostResource> query =
+          queryItems(
+              HostResource.class,
+              "inetAddresses",
+              inetAddress.getHostAddress(),
+              Optional.empty(),
+              cursorString,
+              getDeletedItemHandling(),
+              querySizeLimit);
+      rdapResultSet = getMatchingResources(query, shouldIncludeDeleted(), querySizeLimit);
+    } else {
+      // Hibernate does not allow us to query @Converted array fields directly, either in the
+      // CriteriaQuery or the raw text format. However, Postgres does -- so we use native queries to
+      // find hosts where any of the inetAddresses match.
+      rdapResultSet =
+          jpaTm()
+              .transact(
+                  () -> {
+                    @SuppressWarnings("unchecked")
+                    Stream<HostResource> resultStream =
+                        jpaTm()
+                            .getEntityManager()
+                            .createNativeQuery(
+                                "SELECT * FROM \"Host\" WHERE :address = ANY(inet_addresses)"
+                                    + " ORDER BY repo_id ASC",
+                                HostResource.class)
+                            .setParameter("address", InetAddresses.toAddrString(inetAddress))
+                            .getResultStream();
+                    if (getDeletedItemHandling().equals(DeletedItemHandling.EXCLUDE)) {
+                      resultStream =
+                          resultStream.filter(h -> h.getDeletionTime().equals(END_OF_TIME));
+                    }
+                    if (cursorString.isPresent()) {
+                      // cursorString here must be the repo ID
+                      resultStream =
+                          resultStream.filter(h -> h.getRepoId().compareTo(cursorString.get()) > 0);
+                    }
+                    if (getDesiredRegistrar().isPresent()) {
+                      resultStream =
+                          resultStream.filter(
+                              h ->
+                                  h.getPersistedCurrentSponsorClientId()
+                                      .equals(getDesiredRegistrar().get()));
+                    }
+                    return filterResourcesByVisibility(
+                        resultStream.collect(toImmutableList()), querySizeLimit);
+                  });
+    }
+    return makeSearchResults(rdapResultSet, CursorType.ADDRESS);
   }
 
   /** Output JSON for a lists of hosts contained in an {@link RdapResultSet}. */

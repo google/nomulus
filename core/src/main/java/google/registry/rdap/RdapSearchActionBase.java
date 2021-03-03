@@ -214,7 +214,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
     }
   }
 
-  private <T extends EppResource> RdapResultSet<T> filterResourcesByVisibility(
+  protected <T extends EppResource> RdapResultSet<T> filterResourcesByVisibility(
       List<T> queryResult, int querySizeLimit) {
     // If we are including deleted resources, we need to check that we're authorized for each one.
     List<T> resources = new ArrayList<>();
