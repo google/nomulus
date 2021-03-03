@@ -280,7 +280,7 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/task/icannReportingUpload]]></url>
+    <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/icannReportingUpload&runInEmpty]]></url>
     <description>
       Checks if the monthly ICANN reports have been successfully uploaded. If they have not, attempts to upload them again.
       Most of the time, this job should not do anything since the uploads are triggered when the reports are staged.
