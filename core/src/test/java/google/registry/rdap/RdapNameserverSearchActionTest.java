@@ -43,13 +43,17 @@ import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
 import google.registry.rdap.RdapMetrics.WildcardType;
 import google.registry.rdap.RdapSearchResults.IncompletenessWarningType;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 import java.net.URLDecoder;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RdapNameserverSearchAction}. */
+@DualDatabaseTest
 class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNameserverSearchAction> {
 
   RdapNameserverSearchActionTest() {
@@ -231,7 +235,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(numHostsRetrieved, IncompletenessWarningType.COMPLETE);
   }
 
-  @Test
+  @TestOfyAndSql
   void testInvalidPath_rejected() {
     action.requestPath = actionPath + "/path";
     action.run();
@@ -239,7 +243,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.empty(), 400);
   }
 
-  @Test
+  @TestOfyAndSql
   void testInvalidRequest_rejected() {
     action.run();
     assertThat(parseJsonObject(response.getPayload()))
@@ -248,7 +252,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.empty(), 400);
   }
 
-  @Test
+  @TestOfyAndSql
   void testInvalidSuffix_rejected() {
     assertThat(generateActualJsonWithName("exam*ple"))
         .isEqualTo(
@@ -261,7 +265,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.empty(), 422);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNonexistentDomainSuffix_unprocessable() {
     assertThat(generateActualJsonWithName("exam*.foo.bar"))
         .isEqualTo(
@@ -272,7 +276,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.empty(), 422);
   }
 
-  @Test
+  @TestOfyAndSql
   void testMultipleWildcards_rejected() {
     assertThat(generateActualJsonWithName("*.*"))
         .isEqualTo(
@@ -285,7 +289,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.empty(), 422);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNoCharactersToMatch_rejected() {
     assertThat(generateActualJsonWithName("*"))
         .isEqualTo(
@@ -294,7 +298,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.empty(), 422);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFewerThanTwoCharactersToMatch_rejected() {
     assertThat(generateActualJsonWithName("a*"))
         .isEqualTo(
@@ -303,7 +307,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.empty(), 422);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns1_cat_lol_found() {
     assertThat(generateActualJsonWithName("ns1.cat.lol"))
         .isEqualTo(
@@ -313,7 +317,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns1_cat_lol_foundWithUpperCase() {
     assertThat(generateActualJsonWithName("Ns1.CaT.lOl"))
         .isEqualTo(
@@ -323,7 +327,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns1_cat_lol_found_sameRegistrarRequested() {
     action.registrarParam = Optional.of("TheRegistrar");
     generateActualJsonWithName("ns1.cat.lol");
@@ -331,7 +335,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns1_cat_lol_notFound_differentRegistrarRequested() {
     action.registrarParam = Optional.of("unicoderegistrar");
     generateActualJsonWithName("ns1.cat.lol");
@@ -339,7 +343,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.of(1L), 404);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns2_cat_lol_found() {
     assertThat(generateActualJsonWithName("ns2.cat.lol"))
         .isEqualTo(
@@ -354,7 +358,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns1_cat2_lol_found() {
     // ns1.cat2.lol has two IP addresses; just test that we are able to find it
     generateActualJsonWithName("ns1.cat2.lol");
@@ -362,7 +366,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns1_cat_external_found() {
     assertThat(generateActualJsonWithName("ns1.cat.external"))
         .isEqualTo(
@@ -372,7 +376,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns1_cat_idn_unicode_found() {
     assertThat(generateActualJsonWithName("ns1.cat.みんな"))
         .isEqualTo(
@@ -389,7 +393,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns1_cat_idn_punycode_found() {
     assertThat(generateActualJsonWithName("ns1.cat.xn--q9jyb4c"))
         .isEqualTo(
@@ -404,7 +408,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns1_cat_1_test_found() {
     assertThat(generateActualJsonWithName("ns1.cat.1.test"))
         .isEqualTo(
@@ -414,14 +418,14 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_nsstar_cat_lol_found() {
     generateActualJsonWithName("ns*.cat.lol");
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(2);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_nsstar_cat_lol_found_sameRegistrarRequested() {
     action.registrarParam = Optional.of("TheRegistrar");
     generateActualJsonWithName("ns*.cat.lol");
@@ -429,7 +433,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(2);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_nsstar_cat_lol_notFound_differentRegistrarRequested() {
     action.registrarParam = Optional.of("unicoderegistrar");
     generateActualJsonWithName("ns*.cat.lol");
@@ -437,21 +441,21 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.of(2L), 404);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_nstar_cat_lol_found() {
     generateActualJsonWithName("n*.cat.lol");
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(2);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_star_cat_lol_found() {
     generateActualJsonWithName("*.cat.lol");
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(2);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_star_cat_lol_found_sameRegistrarRequested() {
     action.registrarParam = Optional.of("TheRegistrar");
     generateActualJsonWithName("*.cat.lol");
@@ -459,7 +463,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(2);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_star_cat_lol_notFound_differentRegistrarRequested() {
     action.registrarParam = Optional.of("unicoderegistrar");
     generateActualJsonWithName("*.cat.lol");
@@ -467,35 +471,35 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.of(2L), 404);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_nsstar_found() {
     generateActualJsonWithName("ns*");
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns1_cat_lstar_found() {
     generateActualJsonWithName("ns1.cat.l*");
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_ns1_castar_found() {
     generateActualJsonWithName("ns1.ca*");
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_dogstar_notFound() {
     generateActualJsonWithName("dog*");
     assertThat(response.getStatus()).isEqualTo(404);
     verifyErrorMetrics();
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_nontruncatedResultSet() {
     createManyHosts(4);
     assertThat(generateActualJsonWithName("nsx*.cat.lol"))
@@ -504,7 +508,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(4);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_truncatedResultSet() {
     createManyHosts(5);
     assertThat(generateActualJsonWithName("nsx*.cat.lol"))
@@ -515,7 +519,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_reallyTruncatedResultSet() {
     createManyHosts(9);
     assertThat(generateActualJsonWithName("nsx*.cat.lol"))
@@ -527,7 +531,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(9, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchDeletedHost_foundTheOtherHost() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     assertThat(generateActualJsonWithName("ns*.cat.lol"))
@@ -543,7 +547,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(2);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchDeletedHost_notFound() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     assertThat(generateActualJsonWithName("ns1.cat.lol"))
@@ -552,7 +556,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics();
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchDeletedHostWithWildcard_notFound() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     assertThat(generateActualJsonWithName("cat.lo*"))
@@ -561,7 +565,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics();
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchDeleted_notFound_includeDeletedNotSpecified() {
     createDeletedHost();
     generateActualJsonWithName("nsdeleted.cat.lol");
@@ -569,7 +573,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics();
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchDeleted_notFound_notLoggedIn() {
     createDeletedHost();
     action.includeDeletedParam = Optional.of(true);
@@ -578,7 +582,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics();
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchDeleted_notFound_loggedInAsDifferentRegistrar() {
     createDeletedHost();
     action.includeDeletedParam = Optional.of(true);
@@ -588,7 +592,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.of(1L), 404);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchDeleted_found_loggedInAsCorrectRegistrar() {
     createDeletedHost();
     action.includeDeletedParam = Optional.of(true);
@@ -598,7 +602,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchDeleted_found_loggedInAsAdmin() {
     createDeletedHost();
     action.includeDeletedParam = Optional.of(true);
@@ -608,7 +612,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchDeleted_found_loggedInAndRequestingSameRegistrar() {
     createDeletedHost();
     action.registrarParam = Optional.of("TheRegistrar");
@@ -619,7 +623,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatchDeleted_notFound_loggedInButRequestingDifferentRegistrar() {
     createDeletedHost();
     action.registrarParam = Optional.of("unicoderegistrar");
@@ -672,7 +676,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     }
   }
 
-  @Test
+  @TestOfyAndSql
   void testNameMatch_cursorNavigationWithSuperordinateDomain() throws Exception {
     createManyHosts(9);
     checkCursorNavigation(
@@ -690,8 +694,8 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
             "nsx9.cat.lol"));
   }
 
-  @Test
-  void testNameMatch_cursorNavigationWithPrefix() throws Exception {
+  @TestOfyOnly
+  void testNameMatch_cursorNavigationWithPrefix_ofy() throws Exception {
     createManyHosts(9);
     checkCursorNavigation(
         true,
@@ -714,14 +718,38 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
             "nsx9.cat.lol"));
   }
 
-  @Test
+  @TestSqlOnly
+  void testNameMatch_cursorNavigationWithPrefix_sql() throws Exception {
+    createManyHosts(9);
+    checkCursorNavigation(
+        true,
+        "ns*",
+        ImmutableList.of(
+            "ns1.cat.1.test",
+            "ns1.cat2.lol",
+            "ns1.cat.external",
+            "ns1.cat.lol",
+            "ns1.cat.xn--q9jyb4c",
+            "ns2.cat.lol",
+            "nsx1.cat.lol",
+            "nsx2.cat.lol",
+            "nsx3.cat.lol",
+            "nsx4.cat.lol",
+            "nsx5.cat.lol",
+            "nsx6.cat.lol",
+            "nsx7.cat.lol",
+            "nsx8.cat.lol",
+            "nsx9.cat.lol"));
+  }
+
+  @TestOfyAndSql
   void testAddressMatch_invalidAddress() {
     generateActualJsonWithIp("It is to laugh");
     assertThat(response.getStatus()).isEqualTo(400);
     verifyErrorMetrics(Optional.empty(), 400);
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchV4Address_found() {
     assertThat(generateActualJsonWithIp("1.2.3.4"))
         .isEqualTo(
@@ -731,7 +759,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchV4Address_found_sameRegistrarRequested() {
     action.registrarParam = Optional.of("TheRegistrar");
     generateActualJsonWithIp("1.2.3.4");
@@ -739,7 +767,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchV4Address_notFound_differentRegistrarRequested() {
     action.registrarParam = Optional.of("unicoderegistrar");
     generateActualJsonWithIp("1.2.3.4");
@@ -747,7 +775,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics();
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchV6Address_foundMultiple() {
     assertThat(generateActualJsonWithIp("bad:f00d:cafe::15:beef"))
         .isEqualTo(loadJsonFile("rdap_multiple_hosts.json"));
@@ -755,14 +783,14 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(2);
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchLocalhost_notFound() {
     generateActualJsonWithIp("127.0.0.1");
     assertThat(response.getStatus()).isEqualTo(404);
     verifyErrorMetrics();
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchDeletedHost_notFound() {
     persistResource(hostNs1CatLol.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
     assertThat(generateActualJsonWithIp("1.2.3.4"))
@@ -771,7 +799,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics();
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatch_nontruncatedResultSet() {
     createManyHosts(4);
     assertThat(generateActualJsonWithIp("5.5.5.1"))
@@ -780,7 +808,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(4);
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatch_truncatedResultSet() {
     createManyHosts(5);
     assertThat(generateActualJsonWithIp("5.5.5.1"))
@@ -791,7 +819,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatch_reallyTruncatedResultSet() {
     createManyHosts(9);
     assertThat(generateActualJsonWithIp("5.5.5.1"))
@@ -804,7 +832,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(5, IncompletenessWarningType.TRUNCATED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchDeleted_notFound_includeDeletedNotSpecified() {
     createDeletedHost();
     generateActualJsonWithIp("4.3.2.1");
@@ -812,7 +840,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics();
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchDeleted_notFound_notLoggedIn() {
     createDeletedHost();
     action.includeDeletedParam = Optional.of(true);
@@ -821,7 +849,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics();
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchDeleted_notFound_loggedInAsDifferentRegistrar() {
     createDeletedHost();
     action.includeDeletedParam = Optional.of(true);
@@ -831,7 +859,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics(Optional.of(1L), 404);
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchDeleted_found_loggedInAsCorrectRegistrar() {
     createDeletedHost();
     action.includeDeletedParam = Optional.of(true);
@@ -841,7 +869,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchDeleted_found_loggedInAsAdmin() {
     createDeletedHost();
     action.includeDeletedParam = Optional.of(true);
@@ -851,7 +879,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchDeleted_found_loggedInAndRequestingSameRegisrar() {
     createDeletedHost();
     action.registrarParam = Optional.of("TheRegistrar");
@@ -862,7 +890,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyMetrics(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatchDeleted_notFound_loggedButRequestingDiffentRegistrar() {
     createDeletedHost();
     action.registrarParam = Optional.of("unicoderegistrar");
@@ -873,7 +901,7 @@ class RdapNameserverSearchActionTest extends RdapSearchActionTestCase<RdapNamese
     verifyErrorMetrics();
   }
 
-  @Test
+  @TestOfyAndSql
   void testAddressMatch_cursorNavigation() throws Exception {
     createManyHosts(9);
     checkCursorNavigation(
