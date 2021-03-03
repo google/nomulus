@@ -19,6 +19,7 @@ import static google.registry.util.X509Utils.getCertificateHash;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import google.registry.util.Clock;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -29,6 +30,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
+import io.netty.handler.ssl.SupportedCipherSuiteFilter;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
@@ -41,6 +43,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLSession;
+import org.joda.time.DateTime;
 
 /**
  * Adds a server side SSL handler to the channel pipeline.
@@ -66,6 +69,29 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
   public static final AttributeKey<Promise<X509Certificate>> CLIENT_CERTIFICATE_PROMISE_KEY =
       AttributeKey.valueOf("CLIENT_CERTIFICATE_PROMISE_KEY");
 
+  /**
+   * The list of cipher suites that are currently acceptable to create a successful handshake.
+   *
+   * <p>This list includes all of the current TLS1.3 ciphers and a collection of TLS1.2 ciphers with
+   * no known security vulnerabilities. Note that OpenSSL uses a separate nomenclature for the
+   * ciphers internally but the IANA names listed here will be transparently translated by the
+   * OpenSSL provider (if used), so there is no need to include the OpenSSL name variants here. More
+   * information about these cipher suites and their OpenSSL names can be found at ciphersuite.info.
+   */
+  private static final ImmutableList ALLOWED_TLS_CIPHERS =
+      ImmutableList.of(
+          "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+          "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+          "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+          "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+          "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+          "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+          "TLS_AES_128_GCM_SHA256",
+          "TLS_AES_256_GCM_SHA384",
+          "TLS_CHACHA20_POLY1305_SHA256",
+          "TLS_AES_128_CCM_SHA256",
+          "TLS_AES_128_CCM_8_SHA256");
+
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final boolean requireClientCert;
   // TODO(jianglai): Always validate client certs (if required).
@@ -76,13 +102,19 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
   private final Supplier<PrivateKey> privateKeySupplier;
   private final Supplier<ImmutableList<X509Certificate>> certificatesSupplier;
   private final ImmutableList<String> supportedSslVersions;
+  // TODO(sarahbot): Remove this variable and its check after enforcement start date has passed.
+  private final ImmutableList<String> oldSupportedSslVersions;
+  private final DateTime enforcementStartTime;
+  private final Clock clock;
 
   public SslServerInitializer(
       boolean requireClientCert,
       boolean validateClientCert,
       SslProvider sslProvider,
       Supplier<PrivateKey> privateKeySupplier,
-      Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
+      Supplier<ImmutableList<X509Certificate>> certificatesSupplier,
+      DateTime enforcementStartTime,
+      Clock clock) {
     logger.atInfo().log("Server SSL Provider: %s", sslProvider);
     checkArgument(
         requireClientCert || !validateClientCert,
@@ -94,10 +126,16 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
     this.certificatesSupplier = certificatesSupplier;
     this.supportedSslVersions =
         sslProvider == SslProvider.OPENSSL
-            ? ImmutableList.of("TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1")
-            // JDK support for TLS 1.3 won't be available until 2020-07-14 at the earliest.
+            ? ImmutableList.of("TLSv1.3", "TLSv1.2")
+            // JDK support for TLS 1.3 won't be available until 2021-04-20 at the earliest.
             // See: https://java.com/en/jre-jdk-cryptoroadmap.html
+            : ImmutableList.of("TLSv1.2");
+    this.oldSupportedSslVersions =
+        sslProvider == SslProvider.OPENSSL
+            ? ImmutableList.of("TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1")
             : ImmutableList.of("TLSv1.2", "TLSv1.1", "TLSv1");
+    this.enforcementStartTime = enforcementStartTime;
+    this.clock = clock;
   }
 
   @Override
@@ -109,8 +147,15 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
             .sslProvider(sslProvider)
             .trustManager(InsecureTrustManagerFactory.INSTANCE)
             .clientAuth(requireClientCert ? ClientAuth.REQUIRE : ClientAuth.NONE)
-            .protocols(supportedSslVersions)
+            .protocols(
+                enforcementStartTime.isBefore(clock.nowUtc())
+                    ? supportedSslVersions
+                    : oldSupportedSslVersions)
+            .ciphers(
+                enforcementStartTime.isBefore(clock.nowUtc()) ? ALLOWED_TLS_CIPHERS : null,
+                SupportedCipherSuiteFilter.INSTANCE)
             .build();
+
     logger.atInfo().log("Available Cipher Suites: %s", sslContext.cipherSuites());
     SslHandler sslHandler = sslContext.newHandler(channel.alloc());
     if (requireClientCert) {

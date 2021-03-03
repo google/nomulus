@@ -1,1 +1,4 @@
 # Add environment-specific proxy configuration here.
+
+# Time to begin enforcement of TLS versions and cipher suites.
+tlsEnforcementStartTime: "1970-01-01T00:00:00Z"

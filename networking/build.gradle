@@ -28,6 +28,7 @@ dependencies {
   compile deps['org.bouncycastle:bcpkix-jdk15on']
   compile deps['org.bouncycastle:bcprov-jdk15on']
   compile project(':util')
+  compile project(':common')
 
   runtime deps['com.google.flogger:flogger-system-backend']
   runtime deps['io.netty:netty-tcnative-boringssl-static']
@@ -38,9 +39,11 @@ dependencies {
   testCompile deps['org.junit.jupiter:junit-jupiter-params']
   testCompile deps['org.bouncycastle:bcpkix-jdk15on']
   testCompile deps['org.bouncycastle:bcprov-jdk15on']
+  testCompile project(path: ':common', configuration: 'testing')
 
   annotationProcessor deps['com.google.dagger:dagger-compiler']
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
+  compile 'joda-time:joda-time:2.9.2'
 }
 
 // Make testing artifacts available to be depended up on by other projects.

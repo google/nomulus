@@ -8,6 +8,9 @@
 # GCP project ID
 projectId: your-gcp-project-id
 
+# Time to begin enforcement of TLS versions and cipher suites.
+tlsEnforcementStartTime: "2021-04-01T16:00:00Z"
+
 # OAuth scope that the GoogleCredential will be constructed with. This list
 # should include all service scopes that the proxy depends on.
 gcpScopes:

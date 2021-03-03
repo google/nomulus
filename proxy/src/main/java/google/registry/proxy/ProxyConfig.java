@@ -48,6 +48,7 @@ public class ProxyConfig {
   public WebWhois webWhois;
   public HttpsRelay httpsRelay;
   public Metrics metrics;
+  public String tlsEnforcementStartTime;
 
   /** Configuration options that apply to GCS. */
   public static class Gcs {
