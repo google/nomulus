@@ -51,8 +51,7 @@ class ReplicateToDatastoreAction implements Runnable {
   @VisibleForTesting
   List<TransactionEntity> getTransactionBatch() {
     // Get the next batch of transactions that we haven't replicated.
-    LastSqlTransaction lastSqlTxnBeforeBatch =
-        ofyTm().doTransactionless(() -> LastSqlTransaction.load());
+    LastSqlTransaction lastSqlTxnBeforeBatch = ofyTm().transact(() -> LastSqlTransaction.load());
     try {
       return jpaTm()
           .transact(
@@ -71,11 +70,12 @@ class ReplicateToDatastoreAction implements Runnable {
   }
 
   /**
-   * Apply a transaction to datastore, returns true if there was a fatel error and the batch should
+   * Apply a transaction to datastore, returns true if there was a fatal error and the batch should
    * be aborted.
    */
   @VisibleForTesting
   boolean applyTransaction(TransactionEntity txnEntity) {
+    logger.atInfo().log("Applying a single transaction Cloud SQL -> Cloud Datastore");
     return ofyTm()
         .transact(
             () -> {
@@ -102,27 +102,35 @@ class ReplicateToDatastoreAction implements Runnable {
                 return false;
               }
 
+              logger.atInfo().log("Applying transaction %s to Cloud Datastore", txnEntity.getId());
+
               // At this point, we know txnEntity is the correct next transaction, so write it
               // to datastore.
               try {
                 Transaction.deserialize(txnEntity.getContents()).writeToDatastore();
               } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Error during transaction deserialization.", e);
               }
 
               // Write the updated last transaction id to datastore as part of this datastore
               // transaction.
-              ofy().save().entity(lastSqlTxn.withNewTransactionId(nextTxnId));
+              ofy().save().entity(lastSqlTxn.cloneWithNewTransactionId(nextTxnId));
+              logger.atInfo().log(
+                  "Finished applying single transaction Cloud SQL -> Cloud Datastore");
               return false;
             });
   }
 
   @Override
   public void run() {
+    // TODO(b/181758163): Deal with objects that don't exist in Cloud SQL, e.g. ForeignKeyIndex,
+    // EppResourceIndex.
+    logger.atInfo().log("Processing transaction replay batch Cloud SQL -> Cloud Datastore");
     for (TransactionEntity txnEntity : getTransactionBatch()) {
       if (applyTransaction(txnEntity)) {
         break;
       }
     }
+    logger.atInfo().log("Done processing transaction replay batch Cloud SQL -> Cloud Datastore");
   }
 }

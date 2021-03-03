@@ -116,7 +116,7 @@ public class Ofy {
     return ofy().getTransaction() != null;
   }
 
-  void assertInTransaction() {
+  public void assertInTransaction() {
     checkState(inTransaction(), "Must be called in a transaction");
   }
 

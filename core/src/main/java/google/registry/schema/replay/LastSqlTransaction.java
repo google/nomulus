@@ -1,4 +1,4 @@
-// Copyright 2020 The Nomulus Authors. All Rights Reserved.
+// Copyright 2021 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class LastSqlTransaction extends ImmutableObject implements DatastoreOnly
     transactionId = newTransactionId;
   }
 
-  LastSqlTransaction withNewTransactionId(long transactionId) {
+  LastSqlTransaction cloneWithNewTransactionId(long transactionId) {
     checkArgument(
         transactionId > this.transactionId,
         "New transaction id (%s) must be greater than the current transaction id (%s)",
@@ -59,11 +59,12 @@ public class LastSqlTransaction extends ImmutableObject implements DatastoreOnly
   /**
    * Loads the instance.
    *
-   * <p>Must be called within a transaction.
+   * <p>Must be called within an Ofy transaction.
    *
-   * <p>Creates a new instance of the singleton if it is not already present in the datastore,
+   * <p>Creates a new instance of the singleton if it is not already present in Cloud Datastore,
    */
   static LastSqlTransaction load() {
+    ofy().assertInTransaction();
     LastSqlTransaction result = ofy().load().key(KEY).now();
     return result == null ? new LastSqlTransaction() : result;
   }
