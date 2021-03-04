@@ -24,6 +24,7 @@ import static com.google.common.collect.Sets.intersection;
 import static google.registry.model.EppResourceUtils.projectResourceOntoBuilderAtTime;
 import static google.registry.model.EppResourceUtils.setAutomaticTransferSuccessProperties;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -81,6 +82,7 @@ import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.PostLoad;
+import javax.persistence.Query;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -376,6 +378,27 @@ public class DomainContent extends EppResource
     if (transferData != null) {
       transferData.restoreOfyKeys(myKey);
     }
+  }
+
+  /**
+   * Callback to delete grace periods and DelegationSignerData records prior to domain delete.
+   *
+   * <p>See {@link google.registry.schema.replay.ReplaySpecializer}.
+   */
+  public static void beforeSqlDelete(VKey<DomainBase> key) {
+    // Delete all grace periods associated with the domain.
+    Query query =
+        jpaTm()
+            .getEntityManager()
+            .createQuery("DELETE FROM GracePeriod WHERE domain_repo_id = :repo_id");
+    query.setParameter("repo_id", key.getSqlKey());
+    query.executeUpdate();
+    query =
+        jpaTm()
+            .getEntityManager()
+            .createQuery("DELETE FROM DelegationSignerData WHERE domain_repo_id = :repo_id");
+    query.setParameter("repo_id", key.getSqlKey());
+    query.executeUpdate();
   }
 
   public static <T> VKey<T> restoreOfyFrom(Key<DomainBase> domainKey, VKey<T> key, Long historyId) {

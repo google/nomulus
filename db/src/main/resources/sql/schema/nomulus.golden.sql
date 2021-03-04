@@ -2198,7 +2198,7 @@ ALTER TABLE ONLY public."Host"
 --
 
 ALTER TABLE ONLY public."Host"
-    ADD CONSTRAINT fk_host_superordinate_domain FOREIGN KEY (superordinate_domain) REFERENCES public."Domain"(repo_id);
+    ADD CONSTRAINT fk_host_superordinate_domain FOREIGN KEY (superordinate_domain) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

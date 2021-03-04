@@ -25,6 +25,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.deleteResource;
+import static google.registry.testing.DatabaseHelper.getBillingEvents;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.getOnlyPollMessage;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
@@ -71,17 +72,24 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.testing.ReplayExtension;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainTransferApproveFlow}. */
 class DomainTransferApproveFlowTest
     extends DomainTransferFlowTestCase<DomainTransferApproveFlow, DomainBase> {
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   @BeforeEach
   void setUp() {
@@ -521,7 +529,24 @@ class DomainTransferApproveFlowTest
 
   @Test
   void testFailure_nonexistentDomain() throws Exception {
-    deleteResource(domain);
+    Iterable<BillingEvent> billingEvents = getBillingEvents();
+    Iterable<HistoryEntry> historyEntries = tm().loadAllOf(HistoryEntry.class);
+    Iterable<PollMessage> pollMessages = tm().loadAllOf(PollMessage.class);
+    tm().transact(
+            () -> {
+              deleteResource(domain);
+              for (BillingEvent event : billingEvents) {
+                deleteResource(event);
+              }
+              for (PollMessage pollMessage : pollMessages) {
+                deleteResource(pollMessage);
+              }
+              deleteResource(subordinateHost);
+              for (HistoryEntry hist : historyEntries) {
+                deleteResource(hist);
+              }
+            });
+
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class,

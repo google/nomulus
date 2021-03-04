@@ -598,6 +598,25 @@ public class DatabaseHelper {
                     GracePeriod.create(
                         GracePeriodStatus.ADD, repoId, now.plusDays(10), "TheRegistrar", null))
                 .build());
+    HistoryEntry historyEntryDomainCreate =
+        persistResource(
+            new DomainBase.Builder()
+                .setRepoId(repoId)
+                .setDomainName(domainName)
+                .setPersistedCurrentSponsorClientId("TheRegistrar")
+                .setCreationClientId("TheRegistrar")
+                .setCreationTimeForTest(creationTime)
+                .setRegistrationExpirationTime(expirationTime)
+                .setRegistrant(contact.createVKey())
+                .setContacts(
+                    ImmutableSet.of(
+                        DesignatedContact.create(Type.ADMIN, contact.createVKey()),
+                        DesignatedContact.create(Type.TECH, contact.createVKey())))
+                .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("fooBAR")))
+                .addGracePeriod(
+                    GracePeriod.create(
+                        GracePeriodStatus.ADD, repoId, now.plusDays(10), "TheRegistrar", null))
+                .build());
     DomainHistory historyEntryDomainCreate =
         persistResource(
             new DomainHistory.Builder()
@@ -764,7 +783,7 @@ public class DatabaseHelper {
     return newRegistrars.build();
   }
 
-  private static Iterable<BillingEvent> getBillingEvents() {
+  public static Iterable<BillingEvent> getBillingEvents() {
     return transactIfJpaTm(
         () ->
             Iterables.concat(
