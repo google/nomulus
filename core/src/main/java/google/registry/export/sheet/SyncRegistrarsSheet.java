@@ -25,8 +25,7 @@ import static google.registry.model.registrar.RegistrarContact.Type.LEGAL;
 import static google.registry.model.registrar.RegistrarContact.Type.MARKETING;
 import static google.registry.model.registrar.RegistrarContact.Type.TECH;
 import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
-import static google.registry.schema.cursor.Cursor.GLOBAL;
-import static google.registry.schema.cursor.CursorDao.loadAndCompare;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.base.Joiner;
@@ -38,7 +37,6 @@ import google.registry.model.common.Cursor;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
-import google.registry.schema.cursor.CursorDao;
 import google.registry.util.Clock;
 import google.registry.util.DateTimeUtils;
 import java.io.IOException;
@@ -64,7 +62,6 @@ class SyncRegistrarsSheet {
    */
   boolean wereRegistrarsModified() {
     Cursor cursor = ofy().load().key(Cursor.createGlobalKey(SYNC_REGISTRAR_SHEET)).now();
-    loadAndCompare(cursor, GLOBAL);
     DateTime lastUpdateTime = (cursor == null) ? START_OF_TIME : cursor.getCursorTime();
     for (Registrar registrar : Registrar.loadAllCached()) {
       if (DateTimeUtils.isAtOrAfter(registrar.getLastUpdateTime(), lastUpdateTime)) {
@@ -155,9 +152,7 @@ class SyncRegistrarsSheet {
                   return builder.build();
                 })
             .collect(toImmutableList()));
-    CursorDao.saveCursor(
-        Cursor.createGlobal(SYNC_REGISTRAR_SHEET, executionTime),
-        google.registry.schema.cursor.Cursor.GLOBAL);
+    tm().transact(() -> tm().put(Cursor.createGlobal(SYNC_REGISTRAR_SHEET, executionTime)));
   }
 
   private static String convertContacts(

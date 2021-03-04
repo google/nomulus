@@ -25,8 +25,6 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
-import static google.registry.schema.cursor.Cursor.GLOBAL;
-import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.earliestOf;
@@ -60,7 +58,6 @@ import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.schema.cursor.CursorDao;
 import google.registry.util.Clock;
 import java.util.Optional;
 import java.util.Set;
@@ -95,7 +92,6 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
   @Override
   public void run() {
     Cursor cursor = ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
-    loadAndCompare(cursor, GLOBAL);
     DateTime executeTime = clock.nowUtc();
     DateTime persistedCursorTime = (cursor == null ? START_OF_TIME : cursor.getCursorTime());
     DateTime cursorTime = cursorTimeParam.orElse(persistedCursorTime);
@@ -332,7 +328,6 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
       tm().transact(
               () -> {
                 Cursor cursor = ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
-                loadAndCompare(cursor, GLOBAL);
                 DateTime currentCursorTime =
                     (cursor == null ? START_OF_TIME : cursor.getCursorTime());
                 if (!currentCursorTime.equals(expectedPersistedCursorTime)) {
@@ -342,8 +337,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                   return;
                 }
                 if (!isDryRun) {
-                  CursorDao.saveCursor(
-                      Cursor.createGlobal(RECURRING_BILLING, executionTime), GLOBAL);
+                  tm().put(Cursor.createGlobal(RECURRING_BILLING, executionTime));
                 }
               });
     }

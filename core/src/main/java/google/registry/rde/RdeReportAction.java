@@ -20,7 +20,6 @@ import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
@@ -79,7 +78,6 @@ public final class RdeReportAction implements Runnable, EscrowTask {
   public void runWithLock(DateTime watermark) throws Exception {
     Cursor cursor =
         ofy().load().key(Cursor.createKey(CursorType.RDE_UPLOAD, Registry.get(tld))).now();
-    loadAndCompare(cursor, tld);
     DateTime cursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(cursorTime, watermark)) {
       throw new NoContentException(

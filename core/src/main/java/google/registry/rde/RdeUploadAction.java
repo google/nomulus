@@ -24,7 +24,6 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
-import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.util.Arrays.asList;
 
@@ -53,7 +52,6 @@ import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.schema.cursor.CursorDao;
 import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
@@ -135,7 +133,6 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     logger.atInfo().log("Verifying readiness to upload the RDE deposit.");
     Cursor cursor =
         ofy().load().key(Cursor.createKey(CursorType.RDE_STAGING, Registry.get(tld))).now();
-    loadAndCompare(cursor, tld);
     DateTime stagingCursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(stagingCursorTime, watermark)) {
       throw new NoContentException(
@@ -146,7 +143,6 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     }
     Cursor sftpCursor =
         ofy().load().key(Cursor.createKey(RDE_UPLOAD_SFTP, Registry.get(tld))).now();
-    loadAndCompare(sftpCursor, tld);
     DateTime sftpCursorTime = getCursorTimeOrStartOfTime(sftpCursor);
     Duration timeSinceLastSftp = new Duration(sftpCursorTime, clock.nowUtc());
     if (timeSinceLastSftp.isShorterThan(sftpCooldown)) {
@@ -176,11 +172,10 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     logger.atInfo().log(
         "Updating RDE cursor '%s' for TLD '%s' following successful upload.", RDE_UPLOAD_SFTP, tld);
     tm().transact(
-            () -> {
-              CursorDao.saveCursor(
-                  Cursor.create(RDE_UPLOAD_SFTP, tm().getTransactionTime(), Registry.get(tld)),
-                  tld);
-            });
+            () ->
+                tm().put(
+                        Cursor.create(
+                            RDE_UPLOAD_SFTP, tm().getTransactionTime(), Registry.get(tld))));
     response.setContentType(PLAIN_TEXT_UTF_8);
     response.setPayload(String.format("OK %s %s\n", tld, watermark));
   }

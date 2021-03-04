@@ -17,7 +17,6 @@ package google.registry.rde;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.collect.ImmutableSetMultimap;
@@ -28,7 +27,6 @@ import google.registry.model.rde.RdeMode;
 import google.registry.model.registry.Registries;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
-import google.registry.schema.cursor.CursorDao;
 import google.registry.util.Clock;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -92,12 +90,12 @@ public final class PendingDepositChecker {
       }
       // Avoid creating a transaction unless absolutely necessary.
       Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
-      loadAndCompare(cursor, registry.getTldStr());
       DateTime cursorValue = (cursor != null ? cursor.getCursorTime() : startingPoint);
       if (isBeforeOrAt(cursorValue, now)) {
-        DateTime watermark = (cursor != null
-            ? cursor.getCursorTime()
-            : transactionallyInitializeCursor(registry, cursorType, startingPoint));
+        DateTime watermark =
+            (cursor != null
+                ? cursor.getCursorTime()
+                : transactionallyInitializeCursor(registry, cursorType, startingPoint));
         if (isBeforeOrAt(watermark, now)) {
           builder.put(tld, PendingDeposit.create(tld, watermark, mode, cursorType, interval));
         }
@@ -107,18 +105,14 @@ public final class PendingDepositChecker {
   }
 
   private DateTime transactionallyInitializeCursor(
-      final Registry registry,
-      final CursorType cursorType,
-      final DateTime initialValue) {
+      final Registry registry, final CursorType cursorType, final DateTime initialValue) {
     return tm().transact(
             () -> {
               Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
-              loadAndCompare(cursor, registry.getTldStr());
               if (cursor != null) {
                 return cursor.getCursorTime();
               }
-              CursorDao.saveCursor(
-                  Cursor.create(cursorType, initialValue, registry), registry.getTldStr());
+              tm().put(Cursor.create(cursorType, initialValue, registry));
               return initialValue;
             });
   }

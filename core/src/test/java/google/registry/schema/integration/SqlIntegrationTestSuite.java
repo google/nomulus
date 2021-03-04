@@ -17,6 +17,7 @@ package google.registry.schema.integration;
 import static com.google.common.truth.Truth.assert_;
 
 import google.registry.model.billing.BillingEventTest;
+import google.registry.model.common.CursorTest;
 import google.registry.model.contact.ContactResourceTest;
 import google.registry.model.domain.DomainBaseSqlTest;
 import google.registry.model.domain.token.AllocationTokenTest;
@@ -36,7 +37,6 @@ import google.registry.model.tmch.ClaimsListDaoTest;
 import google.registry.model.tmch.TmchCrlTest;
 import google.registry.persistence.transaction.JpaEntityCoverageExtension;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
-import google.registry.schema.cursor.CursorDaoTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTest;
 import google.registry.schema.registrar.RegistrarDaoTest;
@@ -85,7 +85,7 @@ import org.junit.runner.RunWith;
   ClaimsListDaoTest.class,
   ContactHistoryTest.class,
   ContactResourceTest.class,
-  CursorDaoTest.class,
+  CursorTest.class,
   DomainBaseSqlTest.class,
   DomainHistoryTest.class,
   HostHistoryTest.class,

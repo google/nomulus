@@ -43,12 +43,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Truth8;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
-import google.registry.model.common.Cursor;
-import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
@@ -367,10 +366,11 @@ public class ReplayCommitLogsToSqlActionTest {
     Key<CommitLogManifest> manifestKey =
         CommitLogManifest.createKey(getBucketKey(1), now.minusMinutes(1));
 
+    createTld("tld");
     // Have a commit log with a couple objects that shouldn't be replayed
     ReservedList reservedList =
         new ReservedList.Builder().setReservedListMap(ImmutableMap.of()).setName("name").build();
-    Cursor cursor = Cursor.createGlobal(CursorType.RECURRING_BILLING, now.minusHours(1));
+    ForeignKeyIndex<DomainBase> fki = ForeignKeyIndex.create(newDomainBase("foo.tld"), now);
     tm().transact(
             () -> {
               try {
@@ -381,8 +381,8 @@ public class ReplayCommitLogsToSqlActionTest {
                         getBucketKey(1), now.minusMinutes(1), ImmutableSet.of()),
                     // Reserved list is dually-written non-replicated
                     CommitLogMutation.create(manifestKey, reservedList),
-                    // Cursors aren't replayed to SQL at all
-                    CommitLogMutation.create(manifestKey, cursor));
+                    // FKIs aren't replayed to SQL at all
+                    CommitLogMutation.create(manifestKey, fki));
               } catch (IOException e) {
                 throw new RuntimeException(e);
               }
