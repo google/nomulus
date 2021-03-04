@@ -19,7 +19,8 @@
 rootProject.ext.projects = ['production': 'your-production-project',
                             'sandbox'   : 'your-sandbox-project',
                             'alpha'     : 'your-alpha-project',
-                            'crash'     : 'your-crash-project']
+                            'crash'     : 'your-crash-project',
+                            'qa'        : 'your-qa-project']
 
 // The project to host your development/deployment infrastructure. It hosts
 // things like release artifacts, CI/CD system, etc.

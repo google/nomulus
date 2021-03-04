@@ -121,7 +121,7 @@ task stage {
 // App-engine environment configuration.  We set up all of the variables in
 // the root project.
 
-def environments = ['production', 'sandbox', 'alpha', 'crash']
+def environments = ['production', 'sandbox', 'alpha', 'crash', 'qa']
 
 def gcpProject = null
 
@@ -155,7 +155,7 @@ def verifyDeploymentParams() {
         System.err.println('-----------------------------------------------------------------')
         throw new GradleException('Aborting. See prominent error above.')
     } else if (gcpProject == null) {
-        def error = 'You must specify -P environment={alpha,crash}'
+        def error = 'You must specify -P environment={alpha,crash,qa}'
         System.err.println("\033[33;1m${error}\033[0m")
         throw GradleException("Aborting:  ${error}")
     }
