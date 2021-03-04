@@ -135,7 +135,7 @@ public class RequestHandler<C> {
       return;
     }
     if (!route.get().isMethodAllowed(method)) {
-      logger.atInfo().log("Method %s not allowed for: %s", method, path);
+      logger.atWarning().log("Method %s not allowed for: %s", method, path);
       rsp.sendError(SC_METHOD_NOT_ALLOWED);
       return;
     }
