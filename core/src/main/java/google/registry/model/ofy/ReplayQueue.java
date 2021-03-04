@@ -24,6 +24,7 @@ import google.registry.config.RegistryEnvironment;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.ReplaySpecializer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -100,7 +101,9 @@ public class ReplayQueue {
                     .forEach(
                         entry -> {
                           if (entry.getValue().equals(TransactionInfo.Delete.SENTINEL)) {
-                            jpaTm().delete(VKey.from(entry.getKey()));
+                            VKey<?> vkey = VKey.from(entry.getKey());
+                            ReplaySpecializer.beforeSqlDelete(vkey);
+                            jpaTm().delete(vkey);
                           } else {
                             ((DatastoreEntity) entry.getValue())
                                 .toSqlEntity()

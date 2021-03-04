@@ -37,6 +37,7 @@ import google.registry.request.auth.Auth;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.schema.replay.NonReplicatedEntity;
+import google.registry.schema.replay.ReplaySpecializer;
 import google.registry.schema.replay.SqlReplayCheckpoint;
 import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
@@ -179,6 +180,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     if (!NonReplicatedEntity.class.isAssignableFrom(entityClass)
         && !DatastoreOnlyEntity.class.isAssignableFrom(entityClass)
         && entityClass.getAnnotation(javax.persistence.Entity.class) != null) {
+      ReplaySpecializer.beforeSqlDelete(entityVKey);
       jpaTm().delete(entityVKey);
     }
   }
