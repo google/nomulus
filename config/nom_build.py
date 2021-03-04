@@ -111,8 +111,8 @@ PROPERTIES = [
 
     # Cloud SQL properties
     Property('dbServer',
-             'A registry environment name (e.g., "alpha") or a host[:port] '
-             'string'),
+             'The host[:port] of a database that accepts direct IP access. '
+             'This is typically used with a testing database.'),
     Property('dbName',
              'Database name to use in connection.',
              'postgres'),
