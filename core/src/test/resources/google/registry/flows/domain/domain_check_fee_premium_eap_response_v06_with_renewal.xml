@@ -19,7 +19,7 @@
           <fee:command>create</fee:command>
           <fee:period unit="y">1</fee:period>
           <fee:fee description="create">100.00</fee:fee>
-          <fee:fee description="Early Access Period, fee expires: 2010-01-02T10:00:00.000Z">100.00
+          <fee:fee description="Early Access Period, fee expires: 2010-01-02T10:00:00.002Z">100.00
           </fee:fee>
           <fee:class>premium</fee:class>
         </fee:cd>

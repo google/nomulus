@@ -70,15 +70,22 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.testing.ReplayExtension;
 import java.util.Map;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainRestoreRequestFlow}. */
 class DomainRestoreRequestFlowTest
     extends ResourceFlowTestCase<DomainRestoreRequestFlow, DomainBase> {
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   private static final ImmutableMap<String, String> FEE_06_MAP =
       ImmutableMap.of("FEE_VERSION", "0.6", "FEE_NS", "fee", "CURRENCY", "USD");
@@ -99,11 +106,12 @@ class DomainRestoreRequestFlowTest
   }
 
   void persistPendingDeleteDomain(DateTime expirationTime) throws Exception {
-    DomainBase domain = newDomainBase(getUniqueIdFromCommand());
+    DomainBase domain = persistResource(newDomainBase(getUniqueIdFromCommand()));
     HistoryEntry historyEntry =
         persistResource(
             new HistoryEntry.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_DELETE)
+                .setModificationTime(clock.nowUtc())
                 .setParent(domain)
                 .build());
     persistResource(
@@ -116,7 +124,7 @@ class DomainRestoreRequestFlowTest
                     GracePeriodStatus.REDEMPTION,
                     domain.getRepoId(),
                     clock.nowUtc().plusDays(1),
-                    "foo",
+                    "TheRegistrar",
                     null))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .setDeletePollMessage(

@@ -38,13 +38,20 @@ import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ContactTransferCancelFlow}. */
 @DualDatabaseTest
 class ContactTransferCancelFlowTest
     extends ContactTransferFlowTestCase<ContactTransferCancelFlow, ContactResource> {
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   @BeforeEach
   void setUp() {

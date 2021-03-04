@@ -26,6 +26,7 @@ import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.TestDataHelper.updateSubstitutions;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -45,7 +46,8 @@ import google.registry.flows.domain.DomainFlowUtils.FeeChecksDontSupportPhasesEx
 import google.registry.flows.domain.DomainFlowUtils.RestoresAreAlwaysForOneYearException;
 import google.registry.flows.domain.DomainFlowUtils.TransfersAreAlwaysForOneYearException;
 import google.registry.model.billing.BillingEvent;
-import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.billing.BillingEvent.Flag;
+import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
@@ -63,12 +65,25 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.ReplayExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainInfoFlow}. */
 class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase> {
+
+  @Order(value = Order.DEFAULT - 3)
+  @RegisterExtension
+  final SetClockExtension setClockExtension = new SetClockExtension();
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   /**
    * The domain_info_fee.xml default substitutions common to most tests.
@@ -93,7 +108,6 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
   void setup() {
     setEppInput("domain_info.xml");
     sessionMetadata.setClientId("NewRegistrar");
-    clock.setTo(DateTime.parse("2005-03-03T22:00:00.000Z"));
     createTld("tld");
     persistResource(AppEngineExtension.makeRegistrar1().asBuilder().setClientId("ClientZ").build());
   }
@@ -149,7 +163,10 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
   }
 
   private void doSuccessfulTest(
-      String expectedXmlFilename, boolean inactive, ImmutableMap<String, String> substitutions)
+      String expectedXmlFilename,
+      boolean inactive,
+      ImmutableMap<String, String> substitutions,
+      boolean expectHistoryAndBilling)
       throws Exception {
     assertTransactionalFlow(false);
     String expected =
@@ -158,12 +175,20 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
       expected = expected.replaceAll("\"ok\"", "\"inactive\"");
     }
     runFlowAssertResponse(expected);
-    assertNoHistory();
-    assertNoBillingEvents();
+    if (!expectHistoryAndBilling) {
+      assertNoHistory();
+      assertNoBillingEvents();
+    }
+  }
+
+  private void doSuccessfulTest(
+      String expectedXmlFilename, boolean inactive, ImmutableMap<String, String> substitutions)
+      throws Exception {
+    doSuccessfulTest(expectedXmlFilename, inactive, substitutions, false);
   }
 
   private void doSuccessfulTest(String expectedXmlFilename, boolean inactive) throws Exception {
-    doSuccessfulTest(expectedXmlFilename, inactive, ImmutableMap.of());
+    doSuccessfulTest(expectedXmlFilename, inactive, ImmutableMap.of(), false);
   }
 
   private void doSuccessfulTest(String expectedXmlFilename) throws Exception {
@@ -309,7 +334,11 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             .asBuilder()
             .addGracePeriod(
                 GracePeriod.create(
-                    gracePeriodStatus, domain.getRepoId(), clock.nowUtc().plusDays(1), "foo", null))
+                    gracePeriodStatus,
+                    domain.getRepoId(),
+                    clock.nowUtc().plusDays(1),
+                    "TheRegistrar",
+                    null))
             .setCreationClientId("NewRegistrar")
             .setCreationTimeForTest(DateTime.parse("2003-11-26T22:00:00.0Z"))
             .setRegistrationExpirationTime(DateTime.parse("2005-11-26T22:00:00.0Z"))
@@ -328,10 +357,25 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
   @Test
   void testSuccess_autoRenewGracePeriod() throws Exception {
     persistTestEntities(false);
-    Key<HistoryEntry> historyEntry =
-        Key.create(domain.createVKey().getOfyKey(), HistoryEntry.class, 67890);
-    VKey<BillingEvent.Recurring> recurringVKey =
-        VKey.from(Key.create(historyEntry, Recurring.class, 12345));
+    HistoryEntry historyEntry =
+        persistResource(
+            new HistoryEntry.Builder()
+                .setParent(domain)
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setModificationTime(clock.nowUtc())
+                .build());
+    BillingEvent.Recurring renewEvent =
+        persistResource(
+            new BillingEvent.Recurring.Builder()
+                .setReason(Reason.RENEW)
+                .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+                .setTargetId(getUniqueIdFromCommand())
+                .setClientId("TheRegistrar")
+                .setEventTime(clock.nowUtc())
+                .setRecurrenceEndTime(END_OF_TIME)
+                .setParent(historyEntry)
+                .build());
+    VKey<BillingEvent.Recurring> recurringVKey = renewEvent.createVKey();
     // Add an AUTO_RENEW grace period to the saved resource.
     persistResource(
         domain
@@ -341,10 +385,10 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                     GracePeriodStatus.AUTO_RENEW,
                     domain.getRepoId(),
                     clock.nowUtc().plusDays(1),
-                    "foo",
+                    "TheRegistrar",
                     recurringVKey))
             .build());
-    doSuccessfulTest("domain_info_response_autorenewperiod.xml", false);
+    doSuccessfulTest("domain_info_response_autorenewperiod.xml", false, ImmutableMap.of(), true);
   }
 
   @Test
@@ -360,7 +404,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                     GracePeriodStatus.REDEMPTION,
                     domain.getRepoId(),
                     clock.nowUtc().plusDays(1),
-                    "foo",
+                    "TheRegistrar",
                     null))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .build());
@@ -379,7 +423,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                     GracePeriodStatus.RENEW,
                     domain.getRepoId(),
                     clock.nowUtc().plusDays(1),
-                    "foo",
+                    "TheRegistrar",
                     null))
             .build());
     doSuccessfulTest("domain_info_response_renewperiod.xml", false);
@@ -397,14 +441,14 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                     GracePeriodStatus.RENEW,
                     domain.getRepoId(),
                     clock.nowUtc().plusDays(1),
-                    "foo",
+                    "TheRegistrar",
                     null))
             .addGracePeriod(
                 GracePeriod.create(
                     GracePeriodStatus.RENEW,
                     domain.getRepoId(),
                     clock.nowUtc().plusDays(2),
-                    "foo",
+                    "TheRegistrar",
                     null))
             .build());
     doSuccessfulTest("domain_info_response_renewperiod.xml", false);
@@ -422,7 +466,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                     GracePeriodStatus.TRANSFER,
                     domain.getRepoId(),
                     clock.nowUtc().plusDays(1),
-                    "foo",
+                    "TheRegistrar",
                     null))
             .build());
     doSuccessfulTest("domain_info_response_transferperiod.xml", false);
@@ -450,14 +494,14 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                     GracePeriodStatus.ADD,
                     domain.getRepoId(),
                     clock.nowUtc().plusDays(1),
-                    "foo",
+                    "TheRegistrar",
                     null))
             .addGracePeriod(
                 GracePeriod.create(
                     GracePeriodStatus.RENEW,
                     domain.getRepoId(),
                     clock.nowUtc().plusDays(2),
-                    "foo",
+                    "TheRegistrar",
                     null))
             .build());
     doSuccessfulTest("domain_info_response_stackedaddrenewperiod.xml", false);
@@ -475,7 +519,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                     GracePeriodStatus.ADD,
                     domain.getRepoId(),
                     clock.nowUtc().plusDays(1),
-                    "foo",
+                    "TheRegistrar",
                     null))
             .setDsData(
                 ImmutableSet.of(
@@ -928,5 +972,13 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-dom-info");
     assertTldsFieldLogged("tld");
+  }
+
+  class SetClockExtension implements BeforeEachCallback {
+    @Override
+    public void beforeEach(ExtensionContext context) {
+      // Kick the clock back to before the earliest date that we set the clock to.
+      clock.setTo(DateTime.parse("2005-03-03T22:00:00.000Z"));
+    }
   }
 }

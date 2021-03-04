@@ -25,7 +25,7 @@
           <fee:command>create</fee:command>
           <fee:period unit="y">1</fee:period>
           <fee:fee description="create">13.00</fee:fee>
-          <fee:fee description="Early Access Period, fee expires: 2010-01-02T10:00:00.000Z">100.00</fee:fee>
+          <fee:fee description="Early Access Period, fee expires: 2010-01-02T10:00:00.002Z">100.00</fee:fee>
         </fee:cd>
         <fee:cd xmlns:fee="urn:ietf:params:xml:ns:fee-0.6">
           <fee:name>example3.tld</fee:name>
@@ -33,7 +33,7 @@
           <fee:command>create</fee:command>
           <fee:period unit="y">2</fee:period>
           <fee:fee description="create">26.00</fee:fee>
-          <fee:fee description="Early Access Period, fee expires: 2010-01-02T10:00:00.000Z">100.00</fee:fee>
+          <fee:fee description="Early Access Period, fee expires: 2010-01-02T10:00:00.002Z">100.00</fee:fee>
         </fee:cd>
       </fee:chkData>
     </extension>
