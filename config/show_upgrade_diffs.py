@@ -33,9 +33,8 @@ def run(*args):
         raise Abort(f'"{" ".join(args)}" failed')
 
 
-PackageName = Tuple[str, str]
-PackageVersion = Tuple[str, str, str]
-VersionSet = Set[PackageVersion]
+PackageName = Tuple[bytes, bytes]
+VersionSet = Set[bytes]
 PackageMap = Dict[PackageName, VersionSet]
 
 
@@ -54,7 +53,7 @@ def parse_lockfile(filename: str) -> PackageMap:
         if line.startswith(b'#'):
             continue
         line = line.rstrip()
-        package = cast(PackageVersion, tuple(line.split(b':')))
+        package = cast(Tuple[bytes, bytes, bytes], tuple(line.split(b':')))
         result.setdefault(package[:-1], set()).add(package[-1])
     return result
 
