@@ -916,3 +916,7 @@ class google.registry.persistence.DomainHistoryVKey {
   java.lang.Long historyRevisionId;
   java.lang.String repoId;
 }
+class google.registry.schema.replay.LastSqlTransaction {
+  @Id long id;
+  long transactionId;
+}

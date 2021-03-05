@@ -34,9 +34,9 @@ public class TransactionEntity implements SqlEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  long id;
+  private long id;
 
-  byte[] contents;
+  private byte[] contents;
 
   TransactionEntity() {}
 
@@ -47,5 +47,13 @@ public class TransactionEntity implements SqlEntity {
   @Override
   public Optional<DatastoreEntity> toDatastoreEntity() {
     return Optional.empty(); // Not persisted in Datastore per se
+  }
+
+  public long getId() {
+    return id;
+  }
+
+  public byte[] getContents() {
+    return contents;
   }
 }

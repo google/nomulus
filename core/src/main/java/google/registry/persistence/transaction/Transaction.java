@@ -86,7 +86,7 @@ public class Transaction extends ImmutableObject implements Buildable {
     }
   }
 
-  static Transaction deserialize(byte[] serializedTransaction) throws IOException {
+  public static Transaction deserialize(byte[] serializedTransaction) throws IOException {
     ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(serializedTransaction));
 
     // Verify that the data is what we expect.
