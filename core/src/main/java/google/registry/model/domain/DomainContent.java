@@ -82,7 +82,6 @@ import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.PostLoad;
-import javax.persistence.Query;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
@@ -387,18 +386,16 @@ public class DomainContent extends EppResource
    */
   public static void beforeSqlDelete(VKey<DomainBase> key) {
     // Delete all grace periods associated with the domain.
-    Query query =
-        jpaTm()
-            .getEntityManager()
-            .createQuery("DELETE FROM GracePeriod WHERE domain_repo_id = :repo_id");
-    query.setParameter("repo_id", key.getSqlKey());
-    query.executeUpdate();
-    query =
-        jpaTm()
-            .getEntityManager()
-            .createQuery("DELETE FROM DelegationSignerData WHERE domain_repo_id = :repo_id");
-    query.setParameter("repo_id", key.getSqlKey());
-    query.executeUpdate();
+    jpaTm()
+        .getEntityManager()
+        .createQuery("DELETE FROM GracePeriod WHERE domain_repo_id = :repo_id")
+        .setParameter("repo_id", key.getSqlKey())
+        .executeUpdate();
+    jpaTm()
+        .getEntityManager()
+        .createQuery("DELETE FROM DelegationSignerData WHERE domain_repo_id = :repo_id")
+        .setParameter("repo_id", key.getSqlKey())
+        .executeUpdate();
   }
 
   public static <T> VKey<T> restoreOfyFrom(Key<DomainBase> domainKey, VKey<T> key, Long historyId) {
