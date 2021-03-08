@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.truth.Correspondence;
 import com.google.common.truth.Correspondence.BinaryPredicate;
@@ -48,6 +49,11 @@ public final class ImmutableObjectSubject extends Subject {
       FailureMetadata failureMetadata, @Nullable ImmutableObject actual) {
     super(failureMetadata, actual);
     this.actual = actual;
+  }
+
+  public void isEqualExceptFields(
+      @Nullable ImmutableObject expected, Iterable<String> ignoredFields) {
+    isEqualExceptFields(expected, Iterables.toArray(ignoredFields, String.class));
   }
 
   public void isEqualExceptFields(@Nullable ImmutableObject expected, String... ignoredFields) {

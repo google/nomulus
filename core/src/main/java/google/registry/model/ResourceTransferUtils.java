@@ -118,9 +118,7 @@ public final class ResourceTransferUtils {
     if (resource.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       TransferData oldTransferData = resource.getTransferData();
       tm().delete(oldTransferData.getServerApproveEntities());
-      ofy()
-          .save()
-          .entity(
+      tm().put(
               new PollMessage.OneTime.Builder()
                   .setClientId(oldTransferData.getGainingClientId())
                   .setEventTime(now)

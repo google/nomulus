@@ -18,12 +18,11 @@ import static com.google.common.collect.Sets.intersection;
 import static google.registry.model.EppResourceUtils.getLinkedDomainKeys;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.InvalidAuthorizationInformationErrorException;
 import google.registry.flows.EppException.ObjectDoesNotExistException;
@@ -185,16 +184,15 @@ public final class ResourceFlowUtils {
       return;
     }
     // The roid should match one of the contacts.
-    Optional<Key<ContactResource>> foundContact =
+    Optional<VKey<ContactResource>> foundContact =
         domain.getReferencedContacts().stream()
-            .map(VKey::getOfyKey)
-            .filter(key -> key.getName().equals(authRepoId))
+            .filter(key -> key.getOfyKey().getName().equals(authRepoId))
             .findFirst();
     if (!foundContact.isPresent()) {
       throw new BadAuthInfoForResourceException();
     }
     // Check the authInfo against the contact.
-    verifyAuthInfo(authInfo, ofy().load().key(foundContact.get()).now());
+    verifyAuthInfo(authInfo, transactIfJpaTm(() -> tm().loadByKey(foundContact.get())));
   }
 
   /** Check that the given {@link AuthInfo} is valid for the given contact. */

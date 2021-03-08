@@ -132,6 +132,11 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
+  public void putAll(Object... entities) {
+    syncIfTransactionless(getOfy().save().entities(entities));
+  }
+
+  @Override
   public void putAll(ImmutableCollection<?> entities) {
     syncIfTransactionless(getOfy().save().entities(entities));
   }

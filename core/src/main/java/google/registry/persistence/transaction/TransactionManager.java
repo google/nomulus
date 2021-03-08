@@ -123,7 +123,10 @@ public interface TransactionManager {
   /** Persists a new entity or update the existing entity in the database. */
   void put(Object entity);
 
-  /** Persists all new entities or update the existing entities in the database. */
+  /** Persists all new entities or updates the existing entities in the database. */
+  void putAll(Object... entities);
+
+  /** Persists all new entities or updates the existing entities in the database. */
   void putAll(ImmutableCollection<?> entities);
 
   /**

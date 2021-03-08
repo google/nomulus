@@ -23,11 +23,11 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REJECT;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
-import static google.registry.testing.DatabaseHelper.deleteResource;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.getOnlyPollMessage;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
+import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -56,12 +56,14 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainTransferRejectFlow}. */
+@DualDatabaseTest
 class DomainTransferRejectFlowTest
     extends DomainTransferFlowTestCase<DomainTransferRejectFlow, DomainBase> {
 
@@ -151,31 +153,31 @@ class DomainTransferRejectFlowTest
     runFlow();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess() throws Exception {
     doSuccessfulTest("domain_transfer_reject.xml", "domain_transfer_reject_response.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testDryRun() throws Exception {
     setEppInput("domain_transfer_reject.xml");
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
     dryRunFlowAssertResponse(loadFile("domain_transfer_reject_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_domainAuthInfo() throws Exception {
     doSuccessfulTest(
         "domain_transfer_reject_domain_authinfo.xml", "domain_transfer_reject_response.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_contactAuthInfo() throws Exception {
     doSuccessfulTest(
         "domain_transfer_reject_contact_authinfo.xml", "domain_transfer_reject_response.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_notAuthorizedForTld() {
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
@@ -188,7 +190,7 @@ class DomainTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserNotAuthorizedForTld() throws Exception {
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
@@ -196,7 +198,7 @@ class DomainTransferRejectFlowTest
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("domain_transfer_reject_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_badContactPassword() {
     // Change the contact's password so it does not match the password in the file.
     contact =
@@ -212,7 +214,7 @@ class DomainTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_badDomainPassword() {
     // Change the domain's password so it does not match the password in the file.
     domain =
@@ -228,7 +230,7 @@ class DomainTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_neverBeenTransferred() {
     changeTransferStatus(null);
     EppException thrown =
@@ -237,7 +239,7 @@ class DomainTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_clientApproved() {
     changeTransferStatus(TransferStatus.CLIENT_APPROVED);
     EppException thrown =
@@ -246,7 +248,7 @@ class DomainTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_clientRejected() {
     changeTransferStatus(TransferStatus.CLIENT_REJECTED);
     EppException thrown =
@@ -255,7 +257,7 @@ class DomainTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_clientCancelled() {
     changeTransferStatus(TransferStatus.CLIENT_CANCELLED);
     EppException thrown =
@@ -264,7 +266,7 @@ class DomainTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_serverApproved() {
     changeTransferStatus(TransferStatus.SERVER_APPROVED);
     EppException thrown =
@@ -273,7 +275,7 @@ class DomainTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_serverCancelled() {
     changeTransferStatus(TransferStatus.SERVER_CANCELLED);
     EppException thrown =
@@ -282,7 +284,7 @@ class DomainTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_gainingClient() {
     setClientIdForFlow("NewRegistrar");
     EppException thrown =
@@ -291,7 +293,7 @@ class DomainTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_unrelatedClient() {
     setClientIdForFlow("ClientZ");
     EppException thrown =
@@ -300,7 +302,7 @@ class DomainTransferRejectFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_deletedDomain() throws Exception {
     domain =
         persistResource(domain.asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
@@ -310,9 +312,9 @@ class DomainTransferRejectFlowTest
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonexistentDomain() throws Exception {
-    deleteResource(domain);
+    persistDomainAsDeleted(domain, clock.nowUtc());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_reject.xml"));
@@ -322,7 +324,7 @@ class DomainTransferRejectFlowTest
   // NB: No need to test pending delete status since pending transfers will get cancelled upon
   // entering pending delete phase. So it's already handled in that test case.
 
-  @Test
+  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-dom-transfer-reject");
@@ -338,7 +340,7 @@ class DomainTransferRejectFlowTest
             .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannTransactionRecord_noRecordsToCancel() throws Exception {
     setUpGracePeriodDurations();
     runFlow();
@@ -348,7 +350,7 @@ class DomainTransferRejectFlowTest
         .containsExactly(DomainTransactionRecord.create("tld", clock.nowUtc(), TRANSFER_NACKED, 1));
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannTransactionRecord_cancelsPreviousRecords() throws Exception {
     setUpGracePeriodDurations();
     DomainTransactionRecord previousSuccessRecord =

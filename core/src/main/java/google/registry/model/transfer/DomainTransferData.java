@@ -14,7 +14,10 @@
 
 package google.registry.model.transfer;
 
+import static google.registry.util.CollectionUtils.forceEmptyToNull;
+
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.AlsoLoad;
 import com.googlecode.objectify.annotation.Embed;
@@ -34,6 +37,7 @@ import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
+import javax.persistence.PostLoad;
 import org.joda.time.DateTime;
 
 /** Transfer data for domain. */
@@ -212,6 +216,28 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   @Nullable
   public Long getServerApproveAutorenewPollMessageHistoryId() {
     return serverApproveAutorenewPollMessageHistoryId;
+  }
+
+  @PostLoad
+  @Override
+  void postLoad() {
+    // The superclass's serverApproveEntities should include the billing events if present
+    super.postLoad();
+    ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>> serverApproveEntitiesBuilder =
+        new ImmutableSet.Builder<>();
+    if (serverApproveEntities != null) {
+      serverApproveEntitiesBuilder.addAll(serverApproveEntities);
+    }
+    if (serverApproveBillingEvent != null) {
+      serverApproveEntitiesBuilder.add(serverApproveBillingEvent);
+    }
+    if (serverApproveAutorenewEvent != null) {
+      serverApproveEntitiesBuilder.add(serverApproveAutorenewEvent);
+    }
+    if (serverApproveAutorenewPollMessage != null) {
+      serverApproveEntitiesBuilder.add(serverApproveAutorenewPollMessage);
+    }
+    serverApproveEntities = forceEmptyToNull(serverApproveEntitiesBuilder.build());
   }
 
   @Override

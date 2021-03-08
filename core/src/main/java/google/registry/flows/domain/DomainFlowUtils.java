@@ -25,6 +25,9 @@ import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
+import static google.registry.model.DatabaseMigrationUtils.getPrimaryDatabase;
+import static google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase.DATASTORE;
+import static google.registry.model.common.DatabaseTransitionSchedule.TransitionId.REPLAYED_ENTITIES;
 import static google.registry.model.domain.DomainBase.MAX_REGISTRATION_YEARS;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registries.findTldForName;
@@ -38,6 +41,7 @@ import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED
 import static google.registry.model.registry.label.ReservationType.NAME_COLLISION;
 import static google.registry.model.registry.label.ReservationType.RESERVED_FOR_ANCHOR_TENANT;
 import static google.registry.model.registry.label.ReservationType.RESERVED_FOR_SPECIFIC_USE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.util.CollectionUtils.nullToEmpty;
@@ -88,6 +92,7 @@ import google.registry.model.domain.DomainCommand.Create;
 import google.registry.model.domain.DomainCommand.CreateOrUpdate;
 import google.registry.model.domain.DomainCommand.InvalidReferencesException;
 import google.registry.model.domain.DomainCommand.Update;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.ForeignKeyedDesignatedContact;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.BaseFee;
@@ -355,22 +360,23 @@ public class DomainFlowUtils {
 
   static void validateNoDuplicateContacts(Set<DesignatedContact> contacts)
       throws ParameterValuePolicyErrorException {
-    ImmutableMultimap<Type, Key<ContactResource>> contactsByType =
+    ImmutableMultimap<Type, VKey<ContactResource>> contactsByType =
         contacts.stream()
             .collect(
                 toImmutableSetMultimap(
-                    DesignatedContact::getType, contact -> contact.getContactKey().getOfyKey()));
+                    DesignatedContact::getType, contact -> contact.getContactKey()));
 
     // If any contact type has multiple contacts:
     if (contactsByType.asMap().values().stream().anyMatch(v -> v.size() > 1)) {
       // Find the duplicates.
-      Map<Type, Collection<Key<ContactResource>>> dupeKeysMap =
+      Map<Type, Collection<VKey<ContactResource>>> dupeKeysMap =
           Maps.filterEntries(contactsByType.asMap(), e -> e.getValue().size() > 1);
-      ImmutableList<Key<ContactResource>> dupeKeys =
+      ImmutableList<VKey<ContactResource>> dupeKeys =
           dupeKeysMap.values().stream().flatMap(Collection::stream).collect(toImmutableList());
       // Load the duplicates in one batch.
-      Map<Key<ContactResource>, ContactResource> dupeContacts = ofy().load().keys(dupeKeys);
-      ImmutableMultimap.Builder<Type, Key<ContactResource>> typesMap =
+      Map<VKey<? extends ContactResource>, ContactResource> dupeContacts =
+          tm().loadByKeys(dupeKeys);
+      ImmutableMultimap.Builder<Type, VKey<ContactResource>> typesMap =
           new ImmutableMultimap.Builder<>();
       dupeKeysMap.forEach(typesMap::putAll);
       // Create an error message showing the type and contact IDs of the duplicates.
@@ -537,13 +543,13 @@ public class DomainFlowUtils {
     // If the resultant autorenew poll message would have no poll messages to deliver, then just
     // delete it. Otherwise save it with the new end time.
     if (isAtOrAfter(updatedAutorenewPollMessage.getEventTime(), newEndTime)) {
-      autorenewPollMessage.ifPresent(autorenew -> ofy().delete().entity(autorenew));
+      autorenewPollMessage.ifPresent(autorenew -> tm().delete(autorenew));
     } else {
-      ofy().save().entity(updatedAutorenewPollMessage);
+      tm().put(updatedAutorenewPollMessage);
     }
 
     Recurring recurring = tm().loadByKey(domain.getAutorenewBillingEvent());
-    ofy().save().entity(recurring.asBuilder().setRecurrenceEndTime(newEndTime).build());
+    tm().put(recurring.asBuilder().setRecurrenceEndTime(newEndTime).build());
   }
 
   /**
@@ -1045,18 +1051,11 @@ public class DomainFlowUtils {
       Duration maxSearchPeriod,
       final ImmutableSet<TransactionReportField> cancelableFields) {
 
-    List<HistoryEntry> recentHistoryEntries =
-        ofy()
-            .load()
-            .type(HistoryEntry.class)
-            .ancestor(domainBase)
-            .filter("modificationTime >=", now.minus(maxSearchPeriod))
-            .order("modificationTime")
-            .list();
-    Optional<HistoryEntry> entryToCancel =
+    List<? extends HistoryEntry> recentHistoryEntries =
+        findRecentHistoryEntries(domainBase, now, maxSearchPeriod);
+    Optional<? extends HistoryEntry> entryToCancel =
         Streams.findLast(
-            recentHistoryEntries
-                .stream()
+            recentHistoryEntries.stream()
                 .filter(
                     historyEntry -> {
                       // Look for add and renew transaction records that have yet to be reported
@@ -1080,6 +1079,28 @@ public class DomainFlowUtils {
       }
     }
     return recordsBuilder.build();
+  }
+
+  private static List<? extends HistoryEntry> findRecentHistoryEntries(
+      DomainBase domainBase, DateTime now, Duration maxSearchPeriod) {
+    if (getPrimaryDatabase(REPLAYED_ENTITIES).equals(DATASTORE)) {
+      return ofy()
+          .load()
+          .type(HistoryEntry.class)
+          .ancestor(domainBase)
+          .filter("modificationTime >=", now.minus(maxSearchPeriod))
+          .order("modificationTime")
+          .list();
+    } else {
+      return jpaTm()
+          .getEntityManager()
+          .createQuery(
+              "FROM DomainHistory WHERE modificationTime >= :beginning "
+                  + "ORDER BY modificationTime ASC",
+              DomainHistory.class)
+          .setParameter("beginning", now.minus(maxSearchPeriod))
+          .getResultList();
+    }
   }
 
   /** Resource linked to this domain does not exist. */

@@ -15,6 +15,7 @@
 package google.registry.model.domain;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.flows.domain.DomainTransferUtils.createPendingTransferData;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -34,11 +35,13 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact.Type;
+import google.registry.model.domain.Period.Unit;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
@@ -54,6 +57,7 @@ import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 /** Verify that we can store/retrieve DomainBase objects from a SQL database. */
 @DualDatabaseTest
@@ -617,15 +621,15 @@ public class DomainBaseSqlTest {
                       .setParent(historyEntry)
                       .build();
               DomainTransferData transferData =
-                  new DomainTransferData.Builder()
-                      .setServerApproveBillingEvent(
-                          createLegacyVKey(BillingEvent.OneTime.class, oneTimeBillingEvent.getId()))
-                      .setServerApproveAutorenewEvent(
-                          createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId()))
-                      .setServerApproveAutorenewPollMessage(
-                          createLegacyVKey(
-                              PollMessage.Autorenew.class, autorenewPollMessage.getId()))
-                      .build();
+                  createPendingTransferData(
+                      new DomainTransferData.Builder()
+                          .setTransferRequestTrid(Trid.create("foo", "bar"))
+                          .setTransferRequestTime(fakeClock.nowUtc())
+                          .setGainingClientId("registrar2")
+                          .setLosingClientId("registrar1")
+                          .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1)),
+                      ImmutableSet.of(oneTimeBillingEvent, billEvent, autorenewPollMessage),
+                      Period.create(0, Unit.YEARS));
               gracePeriods =
                   ImmutableSet.of(
                       GracePeriod.create(
@@ -708,10 +712,17 @@ public class DomainBaseSqlTest {
     // Fix the original creation timestamp (this gets initialized on first write)
     DomainBase org = domain.asBuilder().setCreationTime(thatDomain.getCreationTime()).build();
 
-    String[] moreExcepts = Arrays.copyOf(excepts, excepts.length + 1);
-    moreExcepts[moreExcepts.length - 1] = "updateTimestamp";
-
+    ImmutableList<String> moreExcepts =
+        new ImmutableList.Builder<String>()
+            .addAll(Arrays.asList(excepts))
+            .add("updateTimestamp")
+            .add("transferData")
+            .build();
     // Note that the equality comparison forces a lazy load of all fields.
     assertAboutImmutableObjects().that(thatDomain).isEqualExceptFields(org, moreExcepts);
+    // Transfer data cannot be directly compared due to serverApproveEtities inequalities
+    assertAboutImmutableObjects()
+        .that(domain.getTransferData())
+        .isEqualExceptFields(org.getTransferData(), "serverApproveEntities");
   }
 }
