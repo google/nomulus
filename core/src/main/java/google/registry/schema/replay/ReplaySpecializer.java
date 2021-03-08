@@ -39,9 +39,11 @@ public class ReplaySpecializer {
       logger.atSevere().log(
           "beforeSqlDelete() method is defined for class %s but is not public.",
           key.getKind().getName());
+      throw new RuntimeException("Invoking " + key.getKind().getName() + ".beforeSqlDelete()", e);
     } catch (InvocationTargetException e) {
       logger.atSevere().withCause(e).log(
           "beforeSqlDelete() method for class %s threw an exception.", key.getKind().getName());
+      throw new RuntimeException("Invoking " + key.getKind().getName() + ".beforeSqlDelete()", e);
     }
   }
 }
