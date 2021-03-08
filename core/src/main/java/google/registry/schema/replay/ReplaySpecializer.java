@@ -36,14 +36,15 @@ public class ReplaySpecializer {
     } catch (NoSuchMethodException e) {
       // Ignore, this just means that the class doesn't need this hook.
     } catch (IllegalAccessException e) {
-      logger.atSevere().log(
-          "beforeSqlDelete() method is defined for class %s but is not public.",
-          key.getKind().getName());
-      throw new RuntimeException("Invoking " + key.getKind().getName() + ".beforeSqlDelete()", e);
+      throw new RuntimeException(
+          "beforeSqlDelete() method is defined for class "
+              + key.getKind().getName()
+              + " but is not public.",
+          e);
     } catch (InvocationTargetException e) {
-      logger.atSevere().withCause(e).log(
-          "beforeSqlDelete() method for class %s threw an exception.", key.getKind().getName());
-      throw new RuntimeException("Invoking " + key.getKind().getName() + ".beforeSqlDelete()", e);
+      throw new RuntimeException(
+          "beforeSqlDelete() method for class " + key.getKind().getName() + " threw an exception.",
+          e);
     }
   }
 }
