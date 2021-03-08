@@ -15,16 +15,18 @@
 """Show the set of dependency diffs introduced by a branch.
 
 Usage:
-    show-upgrade-diffs.py <user> <branch> <directory>
+    show-upgrade-diffs.py [-d <directory>] <user> <branch>
 
 Assumes that there is a <user>/nomulus repository on github with the specified
 branch name.
 """
 
+import argparse
 import os
 import six
 import subprocess
 import sys
+import tempfile
 from typing import cast, Dict, Set, Tuple, Union
 
 
@@ -36,6 +38,9 @@ def run(*args):
 PackageName = Tuple[bytes, bytes]
 VersionSet = Set[bytes]
 PackageMap = Dict[PackageName, VersionSet]
+
+RED = b'\033[40;31;1m'
+GREEN = b'\033[40;32;1m'
 
 
 class Abort(Exception):
@@ -74,6 +79,7 @@ def pr(*args: Union[str, bytes]) -> None:
     """Print replacement that prints bytes without weird conversions."""
     for text in args:
         sys.stdout.buffer.write(six.ensure_binary(text))
+    sys.stdout.buffer.flush()
 
 
 def format_versions(a: VersionSet, b: VersionSet, missing_esc: bytes) -> bytes:
@@ -99,18 +105,37 @@ def format_versions(a: VersionSet, b: VersionSet, missing_esc: bytes) -> bytes:
 
 
 def main():
-    # Print usage message on explicity help request or bad arguments.
-    want_help = len(sys.argv) > 1 and sys.argv[1] in ('-h', '--help')
-    if len(sys.argv) < 4 or want_help:
-        print(__doc__)
-        sys.exit(0 if want_help else 1)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--directory', '-d', type=str, default='',
+                        dest='directory',
+                        help=('Directory to use for a local git '
+                              'repository.  By default, this script clones '
+                              'the nomulus repo into a temporary directory '
+                              'which is deleted after the script is run.  '
+                              'This option allows you to specify the '
+                              'directory and causes it to be retained (not '
+                              'deleted) after the script is run, allowing '
+                              'it to be reused for subsequent runs, speeding '
+                              'them up considerably.'))
+    parser.add_argument('user', type=str,
+                        help=('The name of the user on github.  The full '
+                              'github repository name is presumed to be '
+                              '"$user/nomulus".'))
+    parser.add_argument('branch', type=str,
+                        help='The git branch containing the changes.')
 
-    user = sys.argv[1]
-    branch = sys.argv[2]
-    dir = sys.argv[3]
+    args = parser.parse_args()
+
+    user = args.user
+    branch = args.branch
+    if not args.directory:
+        tempdir = tempfile.TemporaryDirectory()
+        dir = tempdir.name
+    else:
+        dir = args.directory
 
     # Either clone or fetch the master branch if it exists.
-    if os.path.exists(dir):
+    if args.directory and os.path.exists(dir):
         pr(f'Reusing directory {dir}\n')
         os.chdir(dir)
         run('git', 'fetch', 'git@github.com:google/nomulus', 'master:master')
@@ -127,31 +152,35 @@ def main():
 
     if new_packages != old_packages:
         pr('\n\nPackage version change report:\n')
-        pr('package-name: {old versions} -> {new versions}\n')
-        pr('==============================================\n\n')
+        pr('change package-name: {old versions} -> {new versions}\n')
+        pr('=====================================================\n\n')
         for package, new_versions in new_packages.items():
             old_versions = old_packages.get(package)
-            if new_versions != old_versions:
+            if not old_versions:
+                pr('added ', b':'.join(package), ': {',
+                   format_versions(new_versions, set(), GREEN),
+                   '}\n')
+            elif new_versions != old_versions:
 
                 # Print out "package-name: {old versions} -> {new versions} with
                 # pretty colors.
                 formatted_old_versions = (
-                    format_versions(old_versions, new_versions,
-                                    b'\033[40;31;1m'))
+                    format_versions(old_versions, new_versions, RED))
                 formatted_new_versions = (
-                    format_versions(new_versions,
-                                    old_versions, b'\033[40;32;1m'))
-                pr(b':'.join(package), ': {', formatted_old_versions, '} -> {',
-                formatted_new_versions, '}\n')
+                    format_versions(new_versions, old_versions, GREEN))
+                pr('updated ', b':'.join(package), ': {',
+                   formatted_old_versions, '} -> {',
+                   formatted_new_versions, '}\n')
 
         # Print the list of packages that were removed.
         for package in old_packages:
             if package not in new_packages:
-                pr(b':'.join(package), ' removed\n')
+                pr('removed ', b':'.join(package))
     else:
         pr('Package versions not updated!\n')
 
-    pr(f'\nRetaining git directory {dir}, to delete: rm -rf {dir}\n')
+    if args.directory:
+        pr(f'\nRetaining git directory {dir}, to delete: rm -rf {dir}\n')
 
 
 if __name__ == '__main__':
