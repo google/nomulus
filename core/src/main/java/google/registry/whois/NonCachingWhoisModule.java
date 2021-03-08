@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2021 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,15 +14,12 @@
 
 package google.registry.whois;
 
-import static google.registry.util.TypeUtils.getClassFromString;
-import static google.registry.util.TypeUtils.instantiate;
-
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
 
 /**
- * Dagger module for the whois package.
+ * Whois module for systems that require that we not cache EPP resources (e.g. the nomulus tool).
  *
  * <h3>Dependencies</h3>
  *
@@ -30,14 +27,13 @@ import google.registry.config.RegistryConfig.Config;
  *   <li>{@link google.registry.request.RequestModule RequestModule}
  * </ul>
  *
- * @see "google.registry.module.frontend.FrontendComponent"
+ * @see "google.registry.tools.RegistryToolComponent"
  */
 @Module
-public final class WhoisModule extends BaseWhoisModule {
+public final class NonCachingWhoisModule extends BaseWhoisModule {
   @Provides
   @Config("whoisCommandFactory")
-  static WhoisCommandFactory provideWhoisCommandFactory(
-      @Config("whoisCommandFactoryClass") String factoryClass) {
-    return instantiate(getClassFromString(factoryClass, WhoisCommandFactory.class));
+  static WhoisCommandFactory provideWhoisCommandFactory() {
+    return WhoisCommandFactory.createNonCached();
   }
 }

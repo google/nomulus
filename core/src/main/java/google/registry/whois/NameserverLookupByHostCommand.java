@@ -14,6 +14,7 @@
 
 package google.registry.whois;
 
+import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 
 import com.google.common.net.InternetDomainName;
@@ -24,13 +25,19 @@ import org.joda.time.DateTime;
 /** Represents a WHOIS lookup on a nameserver based on its hostname. */
 public class NameserverLookupByHostCommand extends DomainOrHostLookupCommand {
 
-  NameserverLookupByHostCommand(InternetDomainName hostName) {
+  boolean cached;
+
+  NameserverLookupByHostCommand(InternetDomainName hostName, boolean cached) {
     super(hostName, "Nameserver");
+    this.cached = cached;
   }
 
   @Override
   protected Optional<WhoisResponse> getResponse(InternetDomainName hostName, DateTime now) {
-    return loadByForeignKeyCached(HostResource.class, hostName.toString(), now)
-        .map(host -> new NameserverWhoisResponse(host, now));
+    Optional<HostResource> hostResource =
+        cached
+            ? loadByForeignKeyCached(HostResource.class, hostName.toString(), now)
+            : loadByForeignKey(HostResource.class, hostName.toString(), now);
+    return hostResource.map(host -> new NameserverWhoisResponse(host, now));
   }
 }

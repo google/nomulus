@@ -43,7 +43,7 @@ import google.registry.request.Modules.UrlFetchTransportModule;
 import google.registry.request.Modules.UserServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
 import google.registry.util.UtilsModule;
-import google.registry.whois.WhoisModule;
+import google.registry.whois.NonCachingWhoisModule;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
@@ -81,7 +81,7 @@ import javax.inject.Singleton;
       UserServiceModule.class,
       UtilsModule.class,
       VoidDnsWriterModule.class,
-      WhoisModule.class
+      NonCachingWhoisModule.class
     })
 interface RegistryToolComponent {
   void inject(AckPollMessagesCommand command);

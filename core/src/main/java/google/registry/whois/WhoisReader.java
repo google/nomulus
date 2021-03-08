@@ -194,7 +194,7 @@ class WhoisReader {
         if (!tld.isPresent()) {
           // This target is not under any configured TLD, so just try it as a registrar name.
           logger.atInfo().log("Attempting registrar lookup using %s as a registrar", arg1);
-          return new RegistrarLookupCommand(arg1);
+          return commandFactory.registrarLookup(arg1);
         }
 
         // If the target is exactly one level above the TLD, then this is a second level domain

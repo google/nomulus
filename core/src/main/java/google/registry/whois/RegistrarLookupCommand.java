@@ -39,61 +39,66 @@ final class RegistrarLookupCommand implements WhoisCommand {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  /** True if the command should return cached responses. */
+  private boolean cached;
+
   /**
    * Cache of a map from a stripped-down (letters and digits only) name to the registrar. This map
    * includes only active, publicly visible registrars, because the others should be invisible to
    * WHOIS.
    */
   private static final Supplier<Map<String, Registrar>> REGISTRAR_BY_NORMALIZED_NAME_CACHE =
-      memoizeWithShortExpiration(
-          () -> {
-            Map<String, Registrar> map = new HashMap<>();
-            // Use the normalized registrar name as a key, and ignore inactive and hidden
-            // registrars.
-            for (Registrar registrar : Registrar.loadAllCached()) {
-              if (!registrar.isLiveAndPubliclyVisible() || registrar.getRegistrarName() == null) {
-                continue;
-              }
-              String normalized = normalizeRegistrarName(registrar.getRegistrarName());
-              if (map.put(normalized, registrar) != null) {
-                logger.atWarning().log(
-                    "%s appeared as a normalized registrar name for more than one registrar.",
-                    normalized);
-              }
-            }
-            // Use the normalized registrar name without its last word as a key, assuming there are
-            // multiple words in the name. This allows searches without LLC or INC, etc. Only insert
-            // if there isn't already a mapping for this string, so that if there's a registrar with
-            // a
-            // two word name (Go Daddy) and no business-type suffix and another registrar with just
-            // that first word as its name (Go), the latter will win.
-            for (Registrar registrar : ImmutableList.copyOf(map.values())) {
-              if (registrar.getRegistrarName() == null) {
-                continue;
-              }
-              List<String> words =
-                  Splitter.on(CharMatcher.whitespace()).splitToList(registrar.getRegistrarName());
-              if (words.size() > 1) {
-                String normalized =
-                    normalizeRegistrarName(Joiner.on("").join(words.subList(0, words.size() - 1)));
-                map.putIfAbsent(normalized, registrar);
-              }
-            }
-            return ImmutableMap.copyOf(map);
-          });
+      memoizeWithShortExpiration(RegistrarLookupCommand::loadRegistrarMap);
 
   @VisibleForTesting
   final String registrarName;
 
-  RegistrarLookupCommand(String registrarName) {
+  RegistrarLookupCommand(String registrarName, boolean cached) {
     checkArgument(!isNullOrEmpty(registrarName), "registrarName");
     this.registrarName = registrarName;
+    this.cached = cached;
+  }
+
+  static Map<String, Registrar> loadRegistrarMap() {
+    Map<String, Registrar> map = new HashMap<>();
+    // Use the normalized registrar name as a key, and ignore inactive and hidden
+    // registrars.
+    for (Registrar registrar : Registrar.loadAll()) {
+      if (!registrar.isLiveAndPubliclyVisible() || registrar.getRegistrarName() == null) {
+        continue;
+      }
+      String normalized = normalizeRegistrarName(registrar.getRegistrarName());
+      if (map.put(normalized, registrar) != null) {
+        logger.atWarning().log(
+            "%s appeared as a normalized registrar name for more than one registrar.", normalized);
+      }
+    }
+    // Use the normalized registrar name without its last word as a key, assuming there are
+    // multiple words in the name. This allows searches without LLC or INC, etc. Only insert
+    // if there isn't already a mapping for this string, so that if there's a registrar with
+    // a
+    // two word name (Go Daddy) and no business-type suffix and another registrar with just
+    // that first word as its name (Go), the latter will win.
+    for (Registrar registrar : ImmutableList.copyOf(map.values())) {
+      if (registrar.getRegistrarName() == null) {
+        continue;
+      }
+      List<String> words =
+          Splitter.on(CharMatcher.whitespace()).splitToList(registrar.getRegistrarName());
+      if (words.size() > 1) {
+        String normalized =
+            normalizeRegistrarName(Joiner.on("").join(words.subList(0, words.size() - 1)));
+        map.putIfAbsent(normalized, registrar);
+      }
+    }
+    return ImmutableMap.copyOf(map);
   }
 
   @Override
   public WhoisResponse executeQuery(DateTime now) throws WhoisException {
-    Registrar registrar =
-        REGISTRAR_BY_NORMALIZED_NAME_CACHE.get().get(normalizeRegistrarName(registrarName));
+    Map<String, Registrar> registrars =
+        cached ? REGISTRAR_BY_NORMALIZED_NAME_CACHE.get() : loadRegistrarMap();
+    Registrar registrar = registrars.get(normalizeRegistrarName(registrarName));
     // If a registrar is in the cache, we know it must be active and publicly visible.
     if (registrar == null) {
       throw new WhoisException(now, SC_NOT_FOUND, "No registrar found.");

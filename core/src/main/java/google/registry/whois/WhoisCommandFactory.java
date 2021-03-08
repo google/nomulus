@@ -26,10 +26,30 @@ import java.net.InetAddress;
  */
 public class WhoisCommandFactory {
 
+  /** True if the commands should return cached responses. */
+  private boolean cached = true;
+
+  /** Public default constructor, needed so we can construct this from the class name. */
+  public WhoisCommandFactory() {}
+
+  private WhoisCommandFactory(boolean cached) {
+    this.cached = cached;
+  }
+
+  /** Create a command factory that does not rely on entity caches. */
+  static WhoisCommandFactory createNonCached() {
+    return new WhoisCommandFactory(false);
+  }
+
+  /** Create a command factory that may rely on entity caches. */
+  static WhoisCommandFactory createCached() {
+    return new WhoisCommandFactory(true);
+  }
+
   /** Returns a new {@link WhoisCommand} to perform a domain lookup on the specified domain name. */
   public WhoisCommand domainLookup(
       InternetDomainName domainName, boolean fullOutput, String whoisRedactedEmailText) {
-    return new DomainLookupCommand(domainName, fullOutput, whoisRedactedEmailText);
+    return new DomainLookupCommand(domainName, fullOutput, cached, whoisRedactedEmailText);
   }
 
   /**
@@ -43,7 +63,7 @@ public class WhoisCommandFactory {
    * Returns a new {@link WhoisCommand} to perform a nameserver lookup on the specified host name.
    */
   public WhoisCommand nameserverLookupByHost(InternetDomainName hostName) {
-    return new NameserverLookupByHostCommand(hostName);
+    return new NameserverLookupByHostCommand(hostName, cached);
   }
 
   /**
@@ -51,6 +71,6 @@ public class WhoisCommandFactory {
    * name.
    */
   public WhoisCommand registrarLookup(String registrar) {
-    return new RegistrarLookupCommand(registrar);
+    return new RegistrarLookupCommand(registrar, cached);
   }
 }

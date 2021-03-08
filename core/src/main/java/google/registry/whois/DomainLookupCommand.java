@@ -14,6 +14,7 @@
 
 package google.registry.whois;
 
+import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
 
 import com.google.common.net.InternetDomainName;
@@ -25,20 +26,27 @@ import org.joda.time.DateTime;
 public class DomainLookupCommand extends DomainOrHostLookupCommand {
 
   private final boolean fullOutput;
+  private final boolean cached;
   private final String whoisRedactedEmailText;
 
   public DomainLookupCommand(
       InternetDomainName domainName,
       boolean fullOutput,
+      boolean cached,
       String whoisRedactedEmailText) {
     super(domainName, "Domain");
     this.fullOutput = fullOutput;
+    this.cached = cached;
     this.whoisRedactedEmailText = whoisRedactedEmailText;
   }
 
   @Override
   protected Optional<WhoisResponse> getResponse(InternetDomainName domainName, DateTime now) {
-    return loadByForeignKeyCached(DomainBase.class, domainName.toString(), now)
-        .map(domain -> new DomainWhoisResponse(domain, fullOutput, whoisRedactedEmailText, now));
+    Optional<DomainBase> domainResource =
+        cached
+            ? loadByForeignKeyCached(DomainBase.class, domainName.toString(), now)
+            : loadByForeignKey(DomainBase.class, domainName.toString(), now);
+    return domainResource.map(
+        domain -> new DomainWhoisResponse(domain, fullOutput, whoisRedactedEmailText, now));
   }
 }
