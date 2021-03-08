@@ -55,8 +55,8 @@ ext {
   }
 
   getJdbcAccessInfo = {
-    if (rootProject.projects.keySet().contains(environment)) {
-      return getSocketFactoryAccessInfo(environment)
+    if (rootProject.projects.keySet().contains(dbServer)) {
+      return getSocketFactoryAccessInfo(dbServer)
     } else if (!dbServer.isEmpty()) {
       return getAccessInfoByHostPort(dbServer)
     } else {
@@ -72,10 +72,8 @@ ext {
   // production. The role parameter may be superuser. (More roles will be added
   // later).
   getCloudSqlCredential = { env, role ->
-    def devProject = project.hasProperty('devProject')
-        ? project.getProperty('devProject') : rootProject.devProject
-    def gcpProject = project.hasProperty('gcpProject')
-        ? project.getProperty('gcpProject') : rootProject.gcpProject
+    def devProject = rootProject.devProject
+    def gcpProject = rootProject.projects[env]
     def keyProject = env in restrictedDbEnv? devProject : gcpProject
     def command =
         """gsutil cp \
@@ -135,12 +133,13 @@ publishing {
   }
 }
 
-// Adds flyway tasks such as: flywayInfo, flywayValidate, flywayMigrate (deploying the schema in
-// local repository), and flywayClean (dropping all data in the database). The latter two commands
-// are disallowed in environments listed in ext.restrictedDbEnv.
+// Adds flyway tasks such as: flywayInfo, flywayValidate, flywayMigrate (
+// deploying the schema in local repository), and flywayClean (dropping all data
+// in the database). The latter two commands are disallowed in environments
+// listed in ext.restrictedDbEnv.
 //
 // Examples:
-// Get info in alpha: nom_build :db:flywayInfo --environment=alpha
+// Get info in alpha: nom_build :db:flywayInfo --dbServer=alpha
 // Deploy schema to a local test instance and override the database name:
 // nom_build :db:flywayMigrate --dbServer=localhost:5432 --dbName=not-default \
 //    --dbUser=... --dbPassword=...

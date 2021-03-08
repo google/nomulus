@@ -111,8 +111,9 @@ PROPERTIES = [
 
     # Cloud SQL properties
     Property('dbServer',
-             'The host[:port] of a database that accepts direct IP access. '
-             'This is typically used with a testing database.'),
+             'Sets the target database of a Flyway task. This may be a '
+             'registry environment name (e.g., alpha) or the host[:port] '
+             'of a database that accepts direct IP access.'),
     Property('dbName',
              'Database name to use in connection.',
              'postgres'),
