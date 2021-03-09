@@ -317,8 +317,6 @@ class InitSqlPipelineTest {
   void runPipeline() {
     InitSqlPipelineOptions options =
         PipelineOptionsFactory.fromArgs(
-                "--sqlCredentialUrlOverride="
-                    + beamJpaExtension.getCredentialFile().getAbsolutePath(),
                 "--commitLogStartTimestamp=" + START_TIME,
                 "--commitLogEndTimestamp=" + fakeClock.nowUtc().plusMillis(1),
                 "--datastoreExportDir=" + exportDir.getAbsolutePath(),

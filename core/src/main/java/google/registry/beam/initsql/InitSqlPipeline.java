@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.backup.AppEngineEnvironment;
 import google.registry.backup.VersionedEntity;
-import google.registry.beam.initsql.BeamJpaModule.JpaTransactionManagerComponent;
+import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.initsql.Transforms.RemoveDomainBaseForeignKeys;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.contact.ContactResource;
@@ -35,7 +35,6 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
-import google.registry.persistence.transaction.JpaTransactionManager;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Optional;
@@ -43,7 +42,6 @@ import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.ParDo;
-import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.transforms.Wait;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionTuple;
@@ -124,20 +122,15 @@ public class InitSqlPipeline implements Serializable {
 
   private final Pipeline pipeline;
 
-  private final SerializableFunction<JpaTransactionManagerComponent, JpaTransactionManager>
-      jpaGetter;
-
   InitSqlPipeline(InitSqlPipelineOptions options) {
     this.options = options;
     pipeline = Pipeline.create(options);
-    jpaGetter = JpaTransactionManagerComponent::cloudSqlJpaTransactionManager;
   }
 
   @VisibleForTesting
   InitSqlPipeline(InitSqlPipelineOptions options, Pipeline pipeline) {
     this.options = options;
     this.pipeline = pipeline;
-    jpaGetter = JpaTransactionManagerComponent::localDbJpaTransactionManager;
   }
 
   public PipelineResult run() {
@@ -147,6 +140,7 @@ public class InitSqlPipeline implements Serializable {
 
   @VisibleForTesting
   void setupPipeline() {
+    options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED);
     PCollectionTuple datastoreSnapshot =
         pipeline.apply(
             "Load Datastore snapshot",
@@ -223,22 +217,13 @@ public class InitSqlPipeline implements Serializable {
   }
 
   private PCollection<Void> writeToSql(String transformId, PCollection<VersionedEntity> data) {
-    String credentialFileUrl =
-        options.getSqlCredentialUrlOverride() != null
-            ? options.getSqlCredentialUrlOverride()
-            : BackupPaths.getCloudSQLCredentialFilePatterns(options.getEnvironment()).get(0);
-
     return data.apply(
-        "Write to sql: " + transformId,
-        Transforms.writeToSql(
-            transformId,
-            options.getMaxConcurrentSqlWriters(),
-            options.getSqlWriteBatchSize(),
-            new JpaSupplierFactory(
-                credentialFileUrl,
-                options.getCloudKmsProjectId(),
-                jpaGetter,
-                TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED)));
+        "Write to Sql: " + transformId,
+        RegistryJpaIO.<VersionedEntity>write()
+            .withName(transformId)
+            .withBatchSize(options.getSqlWriteBatchSize())
+            .withShards(options.getSqlWriteShards())
+            .withJpaConverter(Transforms::convertVersionedEntityToSqlEntity));
   }
 
   private static ImmutableList<String> toKindStrings(Collection<Class<?>> entityClasses) {

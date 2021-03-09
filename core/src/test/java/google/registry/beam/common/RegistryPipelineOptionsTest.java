@@ -19,6 +19,7 @@ import static google.registry.beam.common.RegistryPipelineOptions.validateRegist
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.config.RegistryEnvironment;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.testing.SystemPropertyExtension;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,29 +44,42 @@ class RegistryPipelineOptionsTest {
 
   @Test
   void environment_fromArgs() {
-    assertThat(
-            PipelineOptionsFactory.fromArgs("--registryEnvironment=ALPHA")
-                .as(RegistryPipelineOptions.class)
-                .getRegistryEnvironment())
-        .isSameInstanceAs(RegistryEnvironment.ALPHA);
+    RegistryPipelineOptions options =
+        PipelineOptionsFactory.fromArgs(
+                "--registryEnvironment=ALPHA", "--isolationOverride=TRANSACTION_SERIALIZABLE")
+            .withValidation()
+            .as(RegistryPipelineOptions.class);
+    assertThat(options.getRegistryEnvironment()).isSameInstanceAs(RegistryEnvironment.ALPHA);
+    assertThat(options.getIsolationOverride())
+        .isSameInstanceAs(TransactionIsolationLevel.TRANSACTION_SERIALIZABLE);
   }
 
   @Test
-  void environment_invalid() {
+  void environment_invalidEnvironment() {
     assertThrows(
         IllegalArgumentException.class,
         () ->
             PipelineOptionsFactory.fromArgs("--registryEnvironment=alpha")
+                .withValidation()
+                .as(RegistryPipelineOptions.class));
+  }
+
+  @Test
+  void environment_invalidIsolation() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            PipelineOptionsFactory.fromArgs("--isolationOverride=something_wrong")
+                .withValidation()
                 .as(RegistryPipelineOptions.class));
   }
 
   @Test
   void environment_undefined() {
-    assertThat(
-            PipelineOptionsFactory.create()
-                .as(RegistryPipelineOptions.class)
-                .getRegistryEnvironment())
-        .isNull();
+    RegistryPipelineOptions options =
+        PipelineOptionsFactory.fromArgs().withValidation().as(RegistryPipelineOptions.class);
+    assertThat(options.getRegistryEnvironment()).isNull();
+    assertThat(options.getIsolationOverride()).isNull();
   }
 
   @Test

@@ -14,6 +14,7 @@
 
 package google.registry.beam.common;
 
+import dagger.BindsInstance;
 import dagger.Component;
 import dagger.Lazy;
 import google.registry.config.CredentialModule;
@@ -21,9 +22,11 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.persistence.PersistenceModule;
 import google.registry.persistence.PersistenceModule.BeamJpaTm;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.privileges.secretmanager.SecretManagerModule;
 import google.registry.util.UtilsModule;
+import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
 /** Component that provides everything needed on a Pipeline worker. */
@@ -44,4 +47,18 @@ public interface RegistryPipelineComponent {
 
   @BeamJpaTm
   Lazy<JpaTransactionManager> getJpaTransactionManager();
+
+  @Component.Builder
+  interface Builder {
+
+    /**
+     * Optionally overrides the default transaction isolation level. This applies to ALL
+     * transactions executed in the pipeline.
+     */
+    @BindsInstance
+    Builder isolationOverride(
+        @Nullable @Config("beamIsolationOverride") TransactionIsolationLevel isolationOverride);
+
+    RegistryPipelineComponent build();
+  }
 }

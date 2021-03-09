@@ -368,7 +368,7 @@ public final class Transforms {
    *     to make Optional work with BEAM)
    */
   @Nullable
-  private static Object convertVersionedEntityToSqlEntity(VersionedEntity dsEntity) {
+  public static Object convertVersionedEntityToSqlEntity(VersionedEntity dsEntity) {
     return dsEntity
         .getEntity()
         .filter(Transforms::isMigratable)

@@ -14,6 +14,8 @@
 
 package google.registry.beam.common;
 
+import static google.registry.beam.common.RegistryPipelineOptions.toRegistryPipelineComponent;
+
 import com.google.auto.service.AutoService;
 import com.google.common.flogger.FluentLogger;
 import dagger.Lazy;
@@ -24,7 +26,8 @@ import org.apache.beam.sdk.harness.JvmInitializer;
 import org.apache.beam.sdk.options.PipelineOptions;
 
 /**
- * Sets up Nomulus environment and initializes JPA on each pipeline worker.
+ * Sets up Nomulus environment and initializes JPA on each pipeline worker. It is assumed that the
+ * pipeline only works with one SQL database.
  *
  * <p>This class only takes effect in portable beam pipeline runners (including the Cloud Dataflow
  * runner). It is not invoked in test pipelines.
@@ -35,15 +38,15 @@ public class RegistryPipelineWorkerInitializer implements JvmInitializer {
 
   @Override
   public void beforeProcessing(PipelineOptions options) {
-    RegistryEnvironment environment =
-        options.as(RegistryPipelineOptions.class).getRegistryEnvironment();
+    RegistryPipelineOptions registryOptions = options.as(RegistryPipelineOptions.class);
+    RegistryEnvironment environment = registryOptions.getRegistryEnvironment();
     if (environment == null || environment.equals(RegistryEnvironment.UNITTEST)) {
       return;
     }
     logger.atInfo().log("Setting up RegistryEnvironment: %s", environment);
     environment.setup();
     Lazy<JpaTransactionManager> transactionManagerLazy =
-        DaggerRegistryPipelineComponent.create().getJpaTransactionManager();
+        toRegistryPipelineComponent(registryOptions).getJpaTransactionManager();
     TransactionManagerFactory.setJpaTmOnBeamWorker(transactionManagerLazy::get);
   }
 }

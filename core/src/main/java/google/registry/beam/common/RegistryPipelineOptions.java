@@ -14,13 +14,23 @@
 
 package google.registry.beam.common;
 
+import google.registry.beam.common.RegistryJpaIO.Write;
 import google.registry.config.RegistryEnvironment;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import org.apache.beam.sdk.extensions.gcp.options.GcpOptions;
+import org.apache.beam.sdk.options.Default;
 import org.apache.beam.sdk.options.Description;
 
-/** Defines Nomulus-specific pipeline options. */
+/**
+ * Defines Nomulus-specific pipeline options, e.g. JPA configurations.
+ *
+ * <p>When using the Cloud Dataflow runner, users are recommended to set an upper bound on active
+ * database connections by setting the pipeline worker options including {@code --maxNumWorkers},
+ * {@code workerMachineType}, and {@code numberOfWorkerHarnessThreads}. Please refer to {@link
+ * Write#shards()} for more information.
+ */
 public interface RegistryPipelineOptions extends GcpOptions {
 
   @Description("The Registry environment.")
@@ -28,6 +38,32 @@ public interface RegistryPipelineOptions extends GcpOptions {
   RegistryEnvironment getRegistryEnvironment();
 
   void setRegistryEnvironment(RegistryEnvironment environment);
+
+  @Description("The desired SQL transaction isolation level.")
+  @Nullable
+  TransactionIsolationLevel getIsolationOverride();
+
+  void setIsolationOverride(TransactionIsolationLevel isolationOverride);
+
+  @Description("The number of entities to write to the SQL database in one operation.")
+  @Default.Integer(20)
+  int getSqlWriteBatchSize();
+
+  void setSqlWriteBatchSize(int sqlWriteBatchSize);
+
+  @Description(
+      "Number of shards to create out of the data before writing to the SQL database. Please refer "
+          + "to the Javadoc of RegistryJpaIO.Write.shards() for how to choose this value.")
+  @Default.Integer(100)
+  int getSqlWriteShards();
+
+  void setSqlWriteShards(int maxConcurrentSqlWriters);
+
+  static RegistryPipelineComponent toRegistryPipelineComponent(RegistryPipelineOptions options) {
+    return DaggerRegistryPipelineComponent.builder()
+        .isolationOverride(options.getIsolationOverride())
+        .build();
+  }
 
   /**
    * Validates the GCP project and Registry environment settings in {@code option}. If project is
@@ -38,18 +74,18 @@ public interface RegistryPipelineOptions extends GcpOptions {
    * in {@link RegistryEnvironment}). Tests calling this method must restore the original
    * environment on completion.
    */
-  static void validateRegistryPipelineOptions(RegistryPipelineOptions option) {
-    RegistryEnvironment environment = option.getRegistryEnvironment();
+  static void validateRegistryPipelineOptions(RegistryPipelineOptions options) {
+    RegistryEnvironment environment = options.getRegistryEnvironment();
     if (environment == null) {
       return;
     }
     environment.setup();
-    String projectByEnv = DaggerRegistryPipelineComponent.create().getProjectId();
-    if (Objects.equals(option.getProject(), projectByEnv)) {
+    String projectByEnv = toRegistryPipelineComponent(options).getProjectId();
+    if (Objects.equals(options.getProject(), projectByEnv)) {
       return;
     }
-    if (option.getProject() == null) {
-      option.setProject(projectByEnv);
+    if (options.getProject() == null) {
+      options.setProject(projectByEnv);
       return;
     }
     throw new IllegalArgumentException(
