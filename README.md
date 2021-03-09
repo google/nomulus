@@ -58,7 +58,7 @@ Nomulus has the following capabilities:
     Cloud DNS as well as an RFC 2136 compliant implementation that works with
     BIND.
 *   **[WHOIS](https://en.wikipedia.org/wiki/WHOIS)**: A text-based protocol that
-    returns ownership and contact information on registered domain names.
+    returns ownership and contact information on registered domain names
 *   **[Registration Data Access Protocol
     (RDAP)](https://en.wikipedia.org/wiki/Registration_Data_Access_Protocol)**:
     A JSON API that returns structured, machine-readable information about
