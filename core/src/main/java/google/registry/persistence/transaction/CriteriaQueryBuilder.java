@@ -39,11 +39,6 @@ public class CriteriaQueryBuilder<T> {
     Predicate predicate(Expression<U> expression, U object);
   }
 
-  /** Functional interface that defines the order-by operator, e.g. {@link CriteriaBuilder#asc}. */
-  public interface OrderByClause<U> {
-    Order order(Expression<U> expression);
-  }
-
   private final CriteriaQuery<T> query;
   private final Root<T> root;
   private final ImmutableList.Builder<Predicate> predicates = new ImmutableList.Builder<>();
@@ -55,7 +50,7 @@ public class CriteriaQueryBuilder<T> {
   }
 
   /** Adds a WHERE clause to the query, given the specified operation, field, and value. */
-  public <V> CriteriaQueryBuilder<T> where(WhereClause<V> whereClause, String fieldName, V value) {
+  public <V> CriteriaQueryBuilder<T> where(String fieldName, WhereClause<V> whereClause, V value) {
     Expression<V> expression = root.get(fieldName);
     return where(whereClause.predicate(expression, value));
   }
@@ -65,10 +60,25 @@ public class CriteriaQueryBuilder<T> {
     return where(root.get(fieldName).in(values));
   }
 
-  /** Orders the result by the given operation applied to the given field. */
-  public <U> CriteriaQueryBuilder<T> orderBy(OrderByClause<U> orderByClause, String fieldName) {
-    Expression<U> expression = root.get(fieldName);
-    return orderBy(orderByClause.order(expression));
+  /**
+   * Adds a WHERE clause to the query specifying that a collection field must contain a particular
+   * value.
+   */
+  public <V> CriteriaQueryBuilder<T> whereFieldContains(String fieldName, Object value) {
+    return where(
+        jpaTm().getEntityManager().getCriteriaBuilder().isMember(value, root.get(fieldName)));
+  }
+
+  /** Orders the result by the given field ascending. */
+  public CriteriaQueryBuilder<T> orderByAsc(String fieldName) {
+    orders.add(jpaTm().getEntityManager().getCriteriaBuilder().asc(root.get(fieldName)));
+    return this;
+  }
+
+  /** Orders the result by the given field descending. */
+  public CriteriaQueryBuilder<T> orderByDesc(String fieldName) {
+    orders.add(jpaTm().getEntityManager().getCriteriaBuilder().desc(root.get(fieldName)));
+    return this;
   }
 
   /** Builds and returns the query, applying all WHERE and ORDER BY clauses at once. */
@@ -79,11 +89,6 @@ public class CriteriaQueryBuilder<T> {
 
   private CriteriaQueryBuilder<T> where(Predicate predicate) {
     predicates.add(predicate);
-    return this;
-  }
-
-  private CriteriaQueryBuilder<T> orderBy(Order order) {
-    orders.add(order);
     return this;
   }
 

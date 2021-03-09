@@ -77,8 +77,7 @@ class CriteriaQueryBuilderTest {
                   CriteriaQuery<CriteriaQueryBuilderTestEntity> query =
                       CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
                           .where(
-                              jpaTm().getEntityManager().getCriteriaBuilder()::equal,
-                              "data",
+                              "data", jpaTm().getEntityManager().getCriteriaBuilder()::equal,
                               "zztz")
                           .build();
                   return jpaTm().getEntityManager().createQuery(query).getResultList();
@@ -95,7 +94,7 @@ class CriteriaQueryBuilderTest {
                   CriteriaQuery<CriteriaQueryBuilderTestEntity> query =
                       CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
                           .where(
-                              jpaTm().getEntityManager().getCriteriaBuilder()::like, "data", "a%")
+                              "data", jpaTm().getEntityManager().getCriteriaBuilder()::like, "a%")
                           .build();
                   return jpaTm().getEntityManager().createQuery(query).getResultList();
                 });
@@ -111,7 +110,7 @@ class CriteriaQueryBuilderTest {
                   CriteriaQuery<CriteriaQueryBuilderTestEntity> query =
                       CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
                           .where(
-                              jpaTm().getEntityManager().getCriteriaBuilder()::like, "data", "%a%")
+                              "data", jpaTm().getEntityManager().getCriteriaBuilder()::like, "%a%")
                           .build();
                   return jpaTm().getEntityManager().createQuery(query).getResultList();
                 });
@@ -128,10 +127,10 @@ class CriteriaQueryBuilderTest {
                       CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
                           // first "where" matches 1 and 3
                           .where(
-                              jpaTm().getEntityManager().getCriteriaBuilder()::like, "data", "%a%")
+                              "data", jpaTm().getEntityManager().getCriteriaBuilder()::like, "%a%")
                           // second "where" matches 1 and 2
                           .where(
-                              jpaTm().getEntityManager().getCriteriaBuilder()::like, "data", "%t%")
+                              "data", jpaTm().getEntityManager().getCriteriaBuilder()::like, "%t%")
                           .build();
                   return jpaTm().getEntityManager().createQuery(query).getResultList();
                 });
@@ -169,20 +168,35 @@ class CriteriaQueryBuilderTest {
   }
 
   @Test
-  void testSuccess_orderBy() {
+  void testSuccess_orderByAsc() {
     List<CriteriaQueryBuilderTestEntity> result =
         jpaTm()
             .transact(
                 () -> {
                   CriteriaQuery<CriteriaQueryBuilderTestEntity> query =
                       CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
-                          .orderBy(jpaTm().getEntityManager().getCriteriaBuilder()::asc, "data")
+                          .orderByAsc("data")
                           .where(
-                              jpaTm().getEntityManager().getCriteriaBuilder()::like, "data", "%a%")
+                              "data", jpaTm().getEntityManager().getCriteriaBuilder()::like, "%a%")
                           .build();
                   return jpaTm().getEntityManager().createQuery(query).getResultList();
                 });
     assertThat(result).containsExactly(entity3, entity1).inOrder();
+  }
+
+  @Test
+  void testSuccess_orderByDesc() {
+    List<CriteriaQueryBuilderTestEntity> result =
+        jpaTm()
+            .transact(
+                () -> {
+                  CriteriaQuery<CriteriaQueryBuilderTestEntity> query =
+                      CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
+                          .orderByDesc("data")
+                          .build();
+                  return jpaTm().getEntityManager().createQuery(query).getResultList();
+                });
+    assertThat(result).containsExactly(entity2, entity1, entity3).inOrder();
   }
 
   @Entity(name = "CriteriaQueryBuilderTestEntity")
