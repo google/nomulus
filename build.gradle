@@ -401,6 +401,8 @@ def createGetBuildSrcDirectDepsTask(outputFileName) {
 
 rootProject.ext {
   invokeJavaDiffFormatScript = { action ->
+    println("JAVA_HOME=${System.env.JAVA_HOME}")
+    println("PATH=${System.env.PATH}")
     def scriptDir = rootDir.path.endsWith('buildSrc')
             ? "${rootDir}/../java-format"
             : "${rootDir}/java-format"
