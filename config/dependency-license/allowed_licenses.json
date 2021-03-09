@@ -136,6 +136,12 @@
       "moduleLicense": "Eclipse Distribution License v. 1.0"
     },
     {
+      "moduleLicense": "Eclipse Distribution License - v 1.0"
+    },
+    {
+      "moduleLicense": "EDL 1.0"
+    },
+    {
       "moduleLicense": "Eclipse Public License - Version 1.0"
     },
     {
@@ -154,19 +160,22 @@
       "moduleLicense": "Eclipse Public License 2.0"
     },
     {
+      "moduleLicense": "Eclipse Public License v. 2.0"
+    },
+    {
       "moduleLicense": "Eclipse Public License v2.0"
     },
     {
       "moduleLicense": "https://www.eclipse.org/legal/epl-2.0/, http://www.gnu.org/copyleft/gpl.html, http://www.gnu.org/licenses/lgpl.html"
     },
     {
-      "moduleLicense": "Google App Engine Terms of Service"
-    },
-    {
       "moduleLicense": "GNU General Public License Version 2"
     },
     {
       "moduleLicense": "GNU General Public License, version 2, with the Classpath Exception"
+    },
+    {
+      "moduleLicense": "GNU General Public License, version 2 with the GNU Classpath Exception"
     },
     {
       "moduleLicense": "GNU GENERAL PUBLIC LICENSE, Version 2 + Classpath Exception"
@@ -186,8 +195,15 @@
     {
       "moduleLicense": "GNU Library General Public License v2.1 or later"
     },
+    // This is just 3-clause BSD.
+    {
+      "moduleLicense": "Go License"
+    },
     {
       "moduleLicense": "The Go license"
+    },
+    {
+      "moduleLicense": "Google App Engine Terms of Service"
     },
     {
       "moduleLicense": "GWT Terms"
@@ -227,6 +243,9 @@
     },
     {
       "moduleLicense": "Mozilla Public License Version 2.0"
+    },
+    {
+      "moduleLicense": "Unicode/ICU License"
     },
     {
       "moduleLicense": "Public Domain",

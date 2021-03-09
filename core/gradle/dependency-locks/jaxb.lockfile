@@ -1,8 +1,11 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
+com.sun.activation:jakarta.activation:2.0.0
 com.sun.activation:javax.activation:1.2.0
-com.sun.xml.bind:jaxb-impl:2.2.11
-com.sun.xml.bind:jaxb-osgi:2.2.11
-com.sun.xml.bind:jaxb-xjc:2.2.11
+com.sun.xml.bind:jaxb-core:3.0.0
+com.sun.xml.bind:jaxb-impl:3.0.0
+com.sun.xml.bind:jaxb-osgi:3.0.0
+com.sun.xml.bind:jaxb-xjc:3.0.0
+jakarta.xml.bind:jakarta.xml.bind-api:3.0.0
 javax.xml.bind:jaxb-api:2.3.0
