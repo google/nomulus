@@ -263,8 +263,8 @@ public abstract class RdapActionBase implements Runnable {
 
   static boolean isDatastore() {
     return tm().transact(
-        () ->
-            DatabaseMigrationUtils.getPrimaryDatabase(TransitionId.REPLAYED_ENTITIES)
-                .equals(PrimaryDatabase.DATASTORE));
+            () ->
+                DatabaseMigrationUtils.getPrimaryDatabase(TransitionId.REPLAYED_ENTITIES)
+                    .equals(PrimaryDatabase.DATASTORE));
   }
 }

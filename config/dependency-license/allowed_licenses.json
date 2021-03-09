@@ -237,10 +237,10 @@
       "moduleName": "org.tukaani:xz"
     },
     {
-      // "Apache License, Version 2.0". The plugin is able to parse
-      // 2.11.3 correctly but not this version.
+      // "Apache License, Version 2.0". The plugin is able to parse up to
+      // 2.11.3 correctly but then something changed with 2.12.* and it no
+      // longer parses correctly, even though it's still Apache 2.0.
       "moduleLicense": null,
-      "moduleVersion": "2.12.1",
       "moduleName": "com.fasterxml.jackson:jackson-bom"
     },
     {
