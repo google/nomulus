@@ -47,7 +47,7 @@ import org.joda.time.format.DateTimeFormatter;
  * every transaction is invoked on this store, ensuring strictly increasing timestamps on causally
  * dependent transactions. In production, the same ordering is ensured by sleep and retry.
  */
-class BackupTestStore implements AutoCloseable {
+public final class BackupTestStore implements AutoCloseable {
 
   private static final DateTimeFormatter EXPORT_TIMESTAMP_FORMAT =
       DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss_SSS");
@@ -59,7 +59,7 @@ class BackupTestStore implements AutoCloseable {
 
   private CommitLogCheckpoint prevCommitLogCheckpoint;
 
-  BackupTestStore(FakeClock fakeClock) throws Exception {
+  public BackupTestStore(FakeClock fakeClock) throws Exception {
     this.fakeClock = fakeClock;
     this.appEngine =
         new AppEngineExtension.Builder()
@@ -88,7 +88,7 @@ class BackupTestStore implements AutoCloseable {
    * transaction.
    */
   @SafeVarargs
-  final long insertOrUpdate(Object... entities) {
+  public final long insertOrUpdate(Object... entities) {
     long timestamp = fakeClock.nowUtc().getMillis();
     tm().transact(() -> ofy().save().entities(entities).now());
     fakeClock.advanceOneMilli();
@@ -97,7 +97,7 @@ class BackupTestStore implements AutoCloseable {
 
   /** Deletes {@code entities} from the Datastore and returns the timestamp of this transaction. */
   @SafeVarargs
-  final long delete(Object... entities) {
+  public final long delete(Object... entities) {
     long timestamp = fakeClock.nowUtc().getMillis();
     tm().transact(() -> ofy().delete().entities(entities).now());
     fakeClock.advanceOneMilli();
@@ -111,7 +111,7 @@ class BackupTestStore implements AutoCloseable {
    * Objectify entity and want to find out the values of certain assign-on-persist properties. See
    * {@link VersionedEntity} for more information.
    */
-  Entity loadAsDatastoreEntity(Object ofyEntity) {
+  public Entity loadAsDatastoreEntity(Object ofyEntity) {
     try {
       return datastoreService.get(Key.create(ofyEntity).getRaw());
     } catch (EntityNotFoundException e) {
@@ -124,7 +124,7 @@ class BackupTestStore implements AutoCloseable {
    *
    * <p>See {@link #loadAsDatastoreEntity} and {@link VersionedEntity} for more information.
    */
-  Object loadAsOfyEntity(Object ofyEntity) {
+  public Object loadAsOfyEntity(Object ofyEntity) {
     try {
       return ofy().load().fromEntity(datastoreService.get(Key.create(ofyEntity).getRaw()));
     } catch (EntityNotFoundException e) {

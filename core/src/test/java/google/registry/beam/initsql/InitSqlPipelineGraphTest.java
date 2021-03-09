@@ -38,7 +38,7 @@ class InitSqlPipelineGraphTest {
         "--commitLogEndTimestamp=2000-01-02TZ",
         "--datastoreExportDir=/somedir",
         "--commitLogDir=/someotherdir",
-        "--environment=alpha"
+        "--registryEnvironment=ALPHA"
       };
 
   private static final transient InitSqlPipelineOptions options =
