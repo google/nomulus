@@ -18,6 +18,13 @@ apply plugin: 'net.ltgt.errorprone'
 apply plugin: 'checkstyle'
 apply plugin: 'jacoco'
 
+// Use Java 11 to compile.
+java {
+  toolchain {
+    languageVersion.set(JavaLanguageVersion.of(11))
+  }
+}
+
 // Checkstyle should run as part of the testing task
 tasks.test.dependsOn tasks.checkstyleMain
 tasks.test.dependsOn tasks.checkstyleTest
