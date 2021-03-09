@@ -21,7 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.github.difflib.DiffUtils;
 import com.github.difflib.UnifiedDiffUtils;
-import com.github.difflib.algorithm.DiffException;
 import com.github.difflib.patch.Patch;
 import com.github.difflib.text.DiffRow;
 import com.github.difflib.text.DiffRowGenerator;
@@ -132,12 +131,7 @@ public class TextDiffSubject extends Subject {
 
   static String generateUnifiedDiff(
       ImmutableList<String> expectedContent, ImmutableList<String> actualContent) {
-    Patch<String> diff;
-    try {
-      diff = DiffUtils.diff(expectedContent, actualContent);
-    } catch (DiffException e) {
-      throw new RuntimeException(e);
-    }
+    Patch<String> diff = DiffUtils.diff(expectedContent, actualContent);
     List<String> unifiedDiff =
         UnifiedDiffUtils.generateUnifiedDiff("expected", "actual", expectedContent, diff, 0);
 
@@ -153,12 +147,7 @@ public class TextDiffSubject extends Subject {
             .oldTag(f -> "~")
             .newTag(f -> "**")
             .build();
-    List<DiffRow> rows;
-    try {
-      rows = generator.generateDiffRows(expectedContent, actualContent);
-    } catch (DiffException e) {
-      throw new RuntimeException(e);
-    }
+    List<DiffRow> rows = generator.generateDiffRows(expectedContent, actualContent);
 
     int maxExpectedLineLength =
         findMaxLineLength(rows.stream().map(DiffRow::getOldLine).collect(Collectors.toList()));

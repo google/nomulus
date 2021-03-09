@@ -1,4 +1,15 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-com.google.javascript:closure-compiler:v20210302
+args4j:args4j:2.0.26
+com.google.code.findbugs:jsr305:3.0.2
+com.google.code.gson:gson:2.7
+com.google.errorprone:error_prone_annotations:2.3.1
+com.google.guava:guava:25.1-jre
+com.google.j2objc:j2objc-annotations:1.1
+com.google.javascript:closure-compiler-externs:v20190301
+com.google.javascript:closure-compiler:v20190301
+com.google.jsinterop:jsinterop-annotations:1.0.0
+com.google.protobuf:protobuf-java:3.0.2
+org.checkerframework:checker-qual:2.0.0
+org.codehaus.mojo:animal-sniffer-annotations:1.14
