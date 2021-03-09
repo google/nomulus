@@ -56,6 +56,8 @@ def main():
   parser.add_argument('-b', '--binary', help='path to google-java-format binary')
   parser.add_argument('--google-java-format-jar', metavar='ABSOLUTE_PATH', default=None,
                       help='use a custom google-java-format jar')
+  parser.add_argument('-j', '--java-binary', default='java',
+                      help='path to the java binary')
 
   args = parser.parse_args()
 
@@ -92,9 +94,7 @@ def main():
   if args.binary:
     base_command = [args.binary]
   elif args.google_java_format_jar:
-    print >>sys.stderr, 'JAVA_HOME = %r' % os.environ['JAVA_HOME']
-    print >>sys.stderr, 'PATH = %r' % os.environ['PATH']
-    base_command = ['java', '-jar', args.google_java_format_jar]
+    base_command = [args.java_binary, '-jar', args.google_java_format_jar]
   else:
     binary = find_executable('google-java-format') or '/usr/bin/google-java-format'
     base_command = [binary]
