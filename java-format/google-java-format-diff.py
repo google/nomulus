@@ -27,6 +27,7 @@ import re
 import string
 import subprocess
 import io
+import os
 import sys
 from distutils.spawn import find_executable
 
@@ -91,6 +92,8 @@ def main():
   if args.binary:
     base_command = [args.binary]
   elif args.google_java_format_jar:
+    print >>sys.stderr, 'JAVA_HOME = %r' % os.environ['JAVA_HOME']
+    print >>sys.stderr, 'PATH = %r' % os.environ['PATH']
     base_command = ['java', '-jar', args.google_java_format_jar]
   else:
     binary = find_executable('google-java-format') or '/usr/bin/google-java-format'
