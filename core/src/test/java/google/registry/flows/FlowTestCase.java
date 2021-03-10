@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.stripBillingEventId;
 import static google.registry.xml.XmlTestUtils.assertXmlEquals;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -203,9 +204,12 @@ public abstract class FlowTestCase<F extends Flow> {
     assertWithMessage("Billing event is present for grace period: " + gracePeriod)
         .that(gracePeriod.hasBillingEvent())
         .isTrue();
-    return tm().loadByKey(
-            firstNonNull(
-                gracePeriod.getOneTimeBillingEvent(), gracePeriod.getRecurringBillingEvent()));
+    return transactIfJpaTm(
+        () ->
+            tm().loadByKey(
+                    firstNonNull(
+                        gracePeriod.getOneTimeBillingEvent(),
+                        gracePeriod.getRecurringBillingEvent())));
   }
 
   /**

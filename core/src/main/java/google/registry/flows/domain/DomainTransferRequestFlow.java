@@ -31,7 +31,6 @@ import static google.registry.flows.domain.DomainTransferUtils.createPendingTran
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferServerApproveEntities;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
@@ -227,12 +226,11 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             .setLastEppUpdateClientId(gainingClientId)
             .build();
     asyncTaskEnqueuer.enqueueAsyncResave(newDomain, now, automaticTransferTime);
-    ofy().save()
-        .entities(new ImmutableSet.Builder<>()
-            .add(newDomain, historyEntry, requestPollMessage)
-            .addAll(serverApproveEntities)
-            .build())
-        .now();
+    tm().putAll(
+            new ImmutableSet.Builder<>()
+                .add(newDomain, historyEntry, requestPollMessage)
+                .addAll(serverApproveEntities)
+                .build());
     return responseBuilder
         .setResultFromCode(SUCCESS_WITH_ACTION_PENDING)
         .setResData(createResponse(period, existingDomain, newDomain, now))
