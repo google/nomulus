@@ -46,7 +46,6 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -425,7 +424,7 @@ public class DnsUpdateWriterTest {
   }
 
   private void assertThatTotalUpdateSetsIs(Update update, int count) {
-    assertThat(update.getSectionRRsets(Section.UPDATE)).hasLength(count);
+    assertThat(update.getSectionRRsets(Section.UPDATE)).hasSize(count);
   }
 
   private void assertThatUpdateDeletes(Update update, String resourceName, int recordType) {
@@ -451,7 +450,7 @@ public class DnsUpdateWriterTest {
       Update update, String resourceName, int recordType) {
     for (RRset set : update.getSectionRRsets(Section.UPDATE)) {
       if (set.getName().toString().equals(resourceName) && set.getType() == recordType) {
-        return fixIterator(Record.class, set.rrs());
+        return ImmutableList.copyOf(set.rrs());
       }
     }
     assertWithMessage(
@@ -459,11 +458,6 @@ public class DnsUpdateWriterTest {
             resourceName, Type.string(recordType))
         .fail();
     throw new AssertionError();
-  }
-
-  @SuppressWarnings({"unchecked", "unused"})
-  private static <T> ImmutableList<T> fixIterator(Class<T> clazz, final Iterator<?> iterator) {
-    return ImmutableList.copyOf((Iterator<T>) iterator);
   }
 
   private Message messageWithResponseCode(int responseCode) {
