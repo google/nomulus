@@ -403,8 +403,8 @@ rootProject.ext {
   invokeJavaDiffFormatScript = { action ->
     println("JAVA_HOME=${System.env.JAVA_HOME}")
     println("PATH=${System.env.PATH}")
-    ext.execInBash("which", "java")
-    ext.execInBash("java", "-version")
+    println(ext.execInBash("type java", "${rootDir}"))
+    println(ext.execInBash("java -version", "${rootDir}"))
     def scriptDir = rootDir.path.endsWith('buildSrc')
             ? "${rootDir}/../java-format"
             : "${rootDir}/java-format"
