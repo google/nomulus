@@ -766,7 +766,7 @@ public class DatabaseHelper {
     return newRegistrars.build();
   }
 
-  private static Iterable<BillingEvent> getBillingEvents() {
+  public static Iterable<BillingEvent> getBillingEvents() {
     return transactIfJpaTm(
         () ->
             Iterables.concat(
