@@ -155,7 +155,7 @@ com.squareup.okio:okio:1.14.0
 com.sun.istack:istack-commons-runtime:3.0.7
 com.sun.xml.fastinfoset:FastInfoset:1.2.15
 com.thoughtworks.paranamer:paranamer:2.7
-com.thoughtworks.qdox:qdox:2.0.0
+com.thoughtworks.qdox:qdox:1.12.1
 com.zaxxer:HikariCP:3.4.5
 commons-codec:commons-codec:1.15
 commons-logging:commons-logging:1.2

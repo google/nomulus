@@ -96,7 +96,7 @@ ext {
       'com.sun.xml.bind:jaxb-impl:2.3.3',
       'com.sun.xml.bind:jaxb-osgi:2.3.3',
       'com.sun.xml.bind:jaxb-xjc:2.3.3',
-      'com.thoughtworks.qdox:qdox:2.0.0',
+      'com.thoughtworks.qdox:qdox:1.12.1',
       'com.zaxxer:HikariCP:3.4.5',
       'dnsjava:dnsjava:3.3.1',
       'guru.nidi:graphviz-java-all-j2v8:0.17.0',
