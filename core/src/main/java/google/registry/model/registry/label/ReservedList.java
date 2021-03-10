@@ -247,9 +247,7 @@ public final class ReservedList
               new CacheLoader<String, ReservedList>() {
                 @Override
                 public ReservedList load(String listName) {
-                  return tm().isOfy()
-                      ? ReservedListDualDatabaseDao.getLatestRevision(listName).orElse(null)
-                      : ReservedListSqlDao.getLatestRevision(listName).orElse(null);
+                  return ReservedListDualDatabaseDao.getLatestRevision(listName).orElse(null);
                 }
               });
 

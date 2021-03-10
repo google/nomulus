@@ -69,8 +69,10 @@ public class ReservedListDualDatabaseDao {
         primaryDatabase.equals(PrimaryDatabase.DATASTORE)
             ? ReservedListDatastoreDao.getLatestRevision(reservedListName)
             : ReservedListSqlDao.getLatestRevision(reservedListName);
-    DatabaseMigrationUtils.suppressExceptionUnlessInTest( () ->
-      maybePrimaryList.ifPresent(primaryList -> loadAndCompare(primaryList, primaryDatabase)), "Error comparing reserved lists.");
+    DatabaseMigrationUtils.suppressExceptionUnlessInTest(
+        () ->
+            maybePrimaryList.ifPresent(primaryList -> loadAndCompare(primaryList, primaryDatabase)),
+        "Error comparing reserved lists.");
     return maybePrimaryList;
   }
 
@@ -122,18 +124,30 @@ public class ReservedListDualDatabaseDao {
                                 : "Cloud SQL",
                             valueDiff.rightValue()));
                   });
-          diff.entriesOnlyOnLeft().entrySet().stream().forEach(
-              entry -> {
-                String label = entry.getKey();
-                diffMessage.append(String.format("Domain label %s has entry in %s, but not in the secondary database.\n", label, primaryDatabase.equals(PrimaryDatabase.DATASTORE) ? "Datastore" : "Cloud SQL"));
-              }
-          );
-          diff.entriesOnlyOnRight().entrySet().stream().forEach(
-              entry -> {
-                String label = entry.getKey();
-                diffMessage.append(String.format("Domain label %s has entry in %s, but not in the primary database.\n", label, primaryDatabase.equals(PrimaryDatabase.DATASTORE) ? "Cloud SQL" : "Datastore"));
-              }
-          );
+          diff.entriesOnlyOnLeft().entrySet().stream()
+              .forEach(
+                  entry -> {
+                    String label = entry.getKey();
+                    diffMessage.append(
+                        String.format(
+                            "Domain label %s has entry in %s, but not in the secondary database.\n",
+                            label,
+                            primaryDatabase.equals(PrimaryDatabase.DATASTORE)
+                                ? "Datastore"
+                                : "Cloud SQL"));
+                  });
+          diff.entriesOnlyOnRight().entrySet().stream()
+              .forEach(
+                  entry -> {
+                    String label = entry.getKey();
+                    diffMessage.append(
+                        String.format(
+                            "Domain label %s has entry in %s, but not in the primary database.\n",
+                            label,
+                            primaryDatabase.equals(PrimaryDatabase.DATASTORE)
+                                ? "Cloud SQL"
+                                : "Datastore"));
+                  });
           throw new IllegalStateException(diffMessage.toString());
         }
       }
