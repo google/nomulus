@@ -91,7 +91,7 @@ public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
   }
 
   @TestOfyAndSql
-  void testSaveCloudSqlPrimary_success() {
+  void testSave_CloudSqlPrimary_success() {
     fakeClock.advanceBy(Duration.standardDays(5));
     ReservedListDualDatabaseDao.save(testReservedList);
     Optional<ReservedList> savedList =
