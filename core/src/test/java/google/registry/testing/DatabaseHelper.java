@@ -105,6 +105,7 @@ import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumList.PremiumListRevision;
 import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.model.registry.label.ReservedListDualDatabaseDao;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.DomainTransferData;
@@ -345,6 +346,13 @@ public class DatabaseHelper {
     return persistReservedList(listName, true, lines);
   }
 
+  public static ReservedList persistReservedList(ReservedList reservedList) {
+    ReservedListDualDatabaseDao.save(reservedList);
+    maybeAdvanceClock();
+    tm().clearSessionCache();
+    return reservedList;
+  }
+
   public static ReservedList persistReservedList(
       String listName, boolean shouldPublish, String... lines) {
     ReservedList reservedList =
@@ -354,13 +362,7 @@ public class DatabaseHelper {
             .setShouldPublish(shouldPublish)
             .setLastUpdateTime(DateTime.now(DateTimeZone.UTC))
             .build();
-    return tm().isOfy()
-        ? persistResource(reservedList)
-        : tm().transact(
-                () -> {
-                  tm().insert(reservedList);
-                  return reservedList;
-                });
+    return persistReservedList(reservedList);
   }
 
   /**

@@ -33,6 +33,7 @@ import static org.joda.money.CurrencyUnit.EUR;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
@@ -135,9 +136,23 @@ public class RegistryTest extends EntityTestCase {
   @TestOfyAndSql
   void testSetReservedList_doesntMutateExistingRegistry() {
     ReservedList rl15 =
-        persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED");
+        persistReservedList(
+            new ReservedList.Builder()
+                .setName("tld-reserved15")
+                .setReservedListMapFromLines(
+                    ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
+                .setShouldPublish(true)
+                .setLastUpdateTime(fakeClock.nowUtc())
+                .build());
     ReservedList rl16 =
-        persistReservedList("tld-reserved16", "port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED");
+        persistReservedList(
+            new ReservedList.Builder()
+                .setName("tld-reserved16")
+                .setReservedListMapFromLines(
+                    ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
+                .setShouldPublish(true)
+                .setLastUpdateTime(fakeClock.nowUtc())
+                .build());
     Registry registry1 =
         newRegistry("propter", "PROPTER")
             .asBuilder()
@@ -173,9 +188,23 @@ public class RegistryTest extends EntityTestCase {
   @TestOfyAndSql
   void testSetReservedLists() {
     ReservedList rl5 =
-        persistReservedList("tld-reserved5", "lol,FULLY_BLOCKED", "cat,FULLY_BLOCKED");
+        persistReservedList(
+            new ReservedList.Builder()
+                .setName("tld-reserved5")
+                .setReservedListMapFromLines(
+                    ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
+                .setShouldPublish(true)
+                .setLastUpdateTime(fakeClock.nowUtc())
+                .build());
     ReservedList rl6 =
-        persistReservedList("tld-reserved6", "hammock,FULLY_BLOCKED", "mouse,FULLY_BLOCKED");
+        persistReservedList(
+            new ReservedList.Builder()
+                .setName("tld-reserved6")
+                .setReservedListMapFromLines(
+                    ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
+                .setShouldPublish(true)
+                .setLastUpdateTime(fakeClock.nowUtc())
+                .build());
     Registry r =
         Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
     assertThat(r.getReservedLists().stream().map(Key::getName))
@@ -186,15 +215,29 @@ public class RegistryTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testSetReservedListsByName() {
-    persistReservedList("tld-reserved24", "lol,FULLY_BLOCKED", "cat,FULLY_BLOCKED");
-    persistReservedList("tld-reserved25", "mit,FULLY_BLOCKED", "tim,FULLY_BLOCKED");
+    persistReservedList(
+        new ReservedList.Builder()
+            .setName("tld-reserved15")
+            .setReservedListMapFromLines(
+                ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
+            .setShouldPublish(true)
+            .setLastUpdateTime(fakeClock.nowUtc())
+            .build());
+    persistReservedList(
+        new ReservedList.Builder()
+            .setName("tld-reserved16")
+            .setReservedListMapFromLines(
+                ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
+            .setShouldPublish(true)
+            .setLastUpdateTime(fakeClock.nowUtc())
+            .build());
     Registry r =
         Registry.get("tld")
             .asBuilder()
-            .setReservedListsByName(ImmutableSet.of("tld-reserved24", "tld-reserved25"))
+            .setReservedListsByName(ImmutableSet.of("tld-reserved15", "tld-reserved16"))
             .build();
     assertThat(r.getReservedLists().stream().map(Key::getName))
-        .containsExactly("tld-reserved24", "tld-reserved25");
+        .containsExactly("tld-reserved15", "tld-reserved16");
     r = Registry.get("tld").asBuilder().setReservedListsByName(ImmutableSet.of()).build();
     assertThat(r.getReservedLists()).isEmpty();
   }

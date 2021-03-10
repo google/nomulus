@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
-import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -35,11 +35,11 @@ class UpdateReservedListCommandTest
 
   @BeforeEach
   void beforeEach() {
-    populateInitialReservedListInDatastore(true);
+    populateInitialReservedListInDatabase(true);
   }
 
-  private void populateInitialReservedListInDatastore(boolean shouldPublish) {
-    persistResource(
+  private void populateInitialReservedListInDatabase(boolean shouldPublish) {
+    persistReservedList(
         new ReservedList.Builder()
             .setName("xn--q9jyb4c_common-reserved")
             .setReservedListMapFromLines(ImmutableList.of("helicopter,FULLY_BLOCKED"))
@@ -89,7 +89,7 @@ class UpdateReservedListCommandTest
 
   @Test
   void testSuccess_shouldPublish_doesntOverrideFalseIfNotSpecified() throws Exception {
-    populateInitialReservedListInDatastore(false);
+    populateInitialReservedListInDatabase(false);
     runCommandForced("--input=" + reservedTermsPath);
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
     ReservedList reservedList = ReservedList.get("xn--q9jyb4c_common-reserved").get();

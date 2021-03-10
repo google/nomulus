@@ -248,7 +248,7 @@ public final class ReservedList
                 @Override
                 public ReservedList load(String listName) {
                   return tm().isOfy()
-                      ? ReservedListDualWriteDao.getLatestRevision(listName).orElse(null)
+                      ? ReservedListDualDatabaseDao.getLatestRevision(listName).orElse(null)
                       : ReservedListSqlDao.getLatestRevision(listName).orElse(null);
                 }
               });

@@ -23,6 +23,7 @@ import com.google.common.collect.MapDifference.ValueDifference;
 import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
+import google.registry.model.DatabaseMigrationUtils;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import google.registry.persistence.VKey;
 import java.util.Map;
@@ -35,24 +36,22 @@ import java.util.Optional;
  * <p>TODO(b/160993806): Delete this DAO and switch to use the SQL only DAO after migrating to Cloud
  * SQL.
  */
-public class ReservedListDualWriteDao {
+public class ReservedListDualDatabaseDao {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private ReservedListDualWriteDao() {}
+  private ReservedListDualDatabaseDao() {}
 
   /** Persist a new reserved list to Cloud SQL. */
   public static void save(ReservedList reservedList) {
     ofyTm().transact(() -> ofyTm().put(reservedList));
-    try {
       logger.atInfo().log("Saving reserved list %s to Cloud SQL", reservedList.getName());
-      ReservedListSqlDao.save(reservedList);
+    DatabaseMigrationUtils.suppressExceptionUnlessInTest(
+        () -> ReservedListSqlDao.save(reservedList),
+        "Error saving the reserved list to Cloud SQL.");
       logger.atInfo().log(
           "Saved reserved list %s with %d entries to Cloud SQL",
           reservedList.getName(), reservedList.getReservedListEntries().size());
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("Error saving the reserved list to Cloud SQL.");
-    }
   }
 
   /**
@@ -66,12 +65,10 @@ public class ReservedListDualWriteDao {
                 VKey.createOfy(
                     ReservedList.class,
                     Key.create(getCrossTldKey(), ReservedList.class, reservedListName)));
-    try {
-      // Also load the list from Cloud SQL, compare the two lists, and log if different.
-      maybeDatastoreList.ifPresent(ReservedListDualWriteDao::loadAndCompareCloudSqlList);
-    } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("Error comparing reserved lists.");
-    }
+    // Also load the list from Cloud SQL, compare the two lists, and log if different.
+    DatabaseMigrationUtils.suppressExceptionUnlessInTest(
+        () -> maybeDatastoreList.ifPresent(ReservedListDualDatabaseDao::loadAndCompareCloudSqlList),
+        "Error comparing reserved lists.");
     return maybeDatastoreList;
   }
 
@@ -95,7 +92,7 @@ public class ReservedListDualWriteDao {
           Maps.difference(datastoreLabelsToReservations, cloudSqlList.reservedListMap);
       if (!diff.areEqual()) {
         if (diff.entriesDiffering().size() > 10) {
-          logger.atWarning().log(
+          throw new IllegalStateException(
               String.format(
                   "Unequal reserved lists detected, Cloud SQL list with revision"
                       + " id %d has %d different records than the current"
@@ -114,11 +111,11 @@ public class ReservedListDualWriteDao {
                                 + " %s in Cloud SQL.\n",
                             label, valueDiff.leftValue(), valueDiff.rightValue()));
                   });
-          logger.atWarning().log(diffMessage.toString());
+          throw new IllegalStateException(diffMessage.toString());
         }
       }
     } else {
-      logger.atWarning().log("Reserved list in Cloud SQL is empty.");
+      throw new IllegalStateException("Reserved list in Cloud SQL is empty.");
     }
   }
 }
