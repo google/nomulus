@@ -225,6 +225,10 @@ hibernate:
 
 cloudSql:
   # jdbc url for the Cloud SQL database.
+  # TODO(b/181693544): change the database name when upgrading postgres version
+  # Using the default 'postgres' is bad practice. See bug for more information.
+  # If jdbcUrl in this file is moved elsewhere, be sure to move this notice
+  # with it until the change is applied.
   jdbcUrl: jdbc:postgresql://localhost
   # Username for the database user.
   username: username
