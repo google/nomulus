@@ -73,12 +73,27 @@ steps:
 # Build and package the deployment files for production.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['release/build_nomulus_for_env.sh', 'production', 'output']
+# Build and stage init_sql_pipeline
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  entrypoint: /bin/bash
+  # Set home for Gradle caches. Must be consistent with previous steps above
+  # and ./build_nomulus_for_env.sh
+  env: [ 'GRADLE_USER_HOME=./cloudbuild-caches' ]
+  args:
+  - -c
+  - |
+    ./release/stage_beam_pipeline.sh \
+      init_sql_pipeline \
+      google.registry.beam.initsql.InitSqlPipeline \
+      google/registry/beam/init_sql_pipeline_metadata.json \
+      ${TAG_NAME} \
+      ${PROJECT_ID}
 # Tentatively build and publish Cloud SQL schema jar here, before schema release
 # process is finalized. Also publish nomulus:core jars that are needed for
 # server/schema compatibility tests.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   entrypoint: /bin/bash
-  # Set home for Gradle caches. Must be consistent with second step above
+  # Set home for Gradle caches. Must be consistent with previous steps above
   # and ./build_nomulus_for_env.sh
   env: [ 'GRADLE_USER_HOME=./cloudbuild-caches' ]
   args:

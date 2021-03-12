@@ -1,0 +1,68 @@
+{
+  "name": "Init SQL From Datastore Backup",
+  "description": "An Apache Beam batch pipeline that reads a Datastore export and Nomulus CommitLog files, transforms data into JPA entities, and writes the results to a SQL database.",
+  "parameters": [
+    {
+      "name": "registryEnvironment",
+      "label": "The Registry environment.",
+      "helpText": "The Registry environment, required if environment-specific initialization is needed on worker VMs.",
+      "is_optional": true,
+      "regexes": [
+        "^[0-9A-Z_]+$"
+      ]
+    },
+    {
+      "name": "isolationOverride",
+      "label": "The desired SQL transaction isolation level.",
+      "helpText": "The desired SQL transaction isolation level.",
+      "is_optional": true,
+      "regexes": [
+        "^[0-9A-Z_]+$"
+      ]
+    },
+    {
+      "name": "sqlWriteBatchSize",
+      "label": "SQL write batch size.",
+      "helpText": "The number of entities to write to the SQL database in one operation.",
+      "is_optional": true,
+      "regexes": [
+        "^[1-9][0-9]*$"
+      ]
+    },
+    {
+      "name": "sqlWriteShards",
+      "label": "Number of output shards to create when writing to SQL.",
+      "helpText": "Number of shards to create out of the data before writing to the SQL database. Please refer to the Javadoc of RegistryJpaIO.Write.shards() for how to choose this value.",
+      "is_optional": true,
+      "regexes": [
+        "^[1-9][0-9]*$"
+      ]
+    },
+    {
+      "name": "datastoreExportDir",
+      "label": "Datastore export dir",
+      "helpText": "The root directory of the export to load.",
+      "regexes": [
+        "^gs:\\/\\/[^\\n\\r]+$"
+      ]
+    },
+    {
+      "name": "commitLogDir",
+      "label": "Nomulus CommitLog dir",
+      "helpText": "The directory with all Nomulus CommitLogs.",
+      "regexes": [
+        "^gs:\\/\\/[^\\n\\r]+$"
+      ]
+    },
+    {
+      "name": "commitLogStartTimestamp",
+      "label": "Nomulus CommitLog start time",
+      "helpText": "The earliest CommitLogs to load, in ISO8601 format."
+    },
+    {
+      "name": "commitLogEndTimestamp",
+      "label": "Nomulus CommitLog end time",
+      "helpText": "The latest CommitLogs to load, in ISO8601 format."
+    }
+  ]
+}

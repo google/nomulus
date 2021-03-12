@@ -782,6 +782,11 @@ generateGoldenImages.finalizedBy(findGoldenImages)
 
 createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 
+createUberJar(
+    'init_sql_pipeline',
+    'init_sql_pipeline',
+    'google.registry.beam.initsql.InitSqlPipeline')
+
 // A jar with classes and resources from main sourceSet, excluding internal
 // data. See comments on configurations.nomulus_test above for details.
 // TODO(weiminyu): release process should build this using the public repo to eliminate the need
