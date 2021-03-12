@@ -55,7 +55,7 @@ function showNoncompliantFiles() {
 
 function callGoogleJavaFormatDiff() {
   local forkPoint
-  forkPoint=$(git merge-base --fork-point origin/master)
+  forkPoint=$(git merge-base origin/master HEAD)
 
   local callResult
   case "$1" in
