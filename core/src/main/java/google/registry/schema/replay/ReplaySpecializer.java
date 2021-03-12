@@ -14,7 +14,6 @@
 
 package google.registry.schema.replay;
 
-import com.google.common.flogger.FluentLogger;
 import google.registry.persistence.VKey;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -27,8 +26,6 @@ import java.lang.reflect.Method;
  * to invoke special class methods if they are present.
  */
 public class ReplaySpecializer {
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-
   public static void beforeSqlDelete(VKey<?> key) {
     try {
       Method method = key.getKind().getMethod("beforeSqlDelete", VKey.class);
