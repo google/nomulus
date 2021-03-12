@@ -26,12 +26,12 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.SINGL
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
 import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.pricing.PricingEngineProxy.isDomainPremium;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertPollMessagesForResource;
@@ -162,8 +162,11 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.persistence.VKey;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.testing.TestOfyAndSql;
 import java.math.BigDecimal;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -172,10 +175,10 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainCreateFlow}. */
+@DualDatabaseTest
 class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, DomainBase> {
 
   private static final String CLAIMS_KEY = "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001";
@@ -266,7 +269,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutDomains()
         .that(domain)
         .hasRegistrationExpirationTime(
-            tm().loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
+            transactIfJpaTm(() -> tm().loadByKey(domain.getAutorenewBillingEvent()).getEventTime()))
         .and()
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.DOMAIN_CREATE)
@@ -409,20 +412,20 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest("tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testDryRun() throws Exception {
     persistContactsAndHosts();
     dryRunFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_neverExisted() throws Exception {
     persistContactsAndHosts();
     doSuccessfulTest();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_cachingDisabled() throws Exception {
     boolean origIsCachingEnabled = RegistryConfig.isEppResourceCachingEnabled();
     try {
@@ -434,7 +437,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     }
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_clTridNotSpecified() throws Exception {
     setEppInput("domain_create_no_cltrid.xml");
     persistContactsAndHosts();
@@ -442,7 +445,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_no_cltrid.xml", ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_invalidAllocationToken() {
     setEppInput(
         "domain_create_allocationtoken.xml",
@@ -452,7 +455,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_reservedDomainCreate_allocationTokenIsForADifferentDomain() {
     // Try to register a reserved domain name with an allocation token valid for a different domain
     // name.
@@ -472,7 +475,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAllocationTokenWasNotRedeemed("abc123");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonreservedDomainCreate_allocationTokenIsForADifferentDomain() {
     // Try to register a non-reserved domain name with an allocation token valid for a different
     // domain name.
@@ -493,7 +496,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAllocationTokenWasNotRedeemed("abc123");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_alreadyRedemeedAllocationToken() {
     setEppInput(
         "domain_create_allocationtoken.xml",
@@ -513,7 +516,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_validAllocationToken_isRedeemed() throws Exception {
     setEppInput(
         "domain_create_allocationtoken.xml",
@@ -526,11 +529,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runFlow();
     assertSuccessfulCreate("tld", ImmutableSet.of(), token);
     HistoryEntry historyEntry = getHistoryEntries(reloadResourceByForeignKey()).get(0);
-    assertThat(ofy().load().entity(token).now().getRedemptionHistoryEntry())
+    assertThat(transactIfJpaTm(() -> tm().loadByEntity(token)).getRedemptionHistoryEntry())
         .hasValue(HistoryEntry.createVKey(Key.create(historyEntry)));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_validAllocationToken_multiUse() throws Exception {
     setEppInput(
         "domain_create_allocationtoken.xml",
@@ -559,7 +562,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "otherexample.tld")));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_multipartTld() throws Exception {
     createTld("foo.tld");
     setEppInput("domain_create_with_tld.xml", ImmutableMap.of("TLD", "foo.tld"));
@@ -572,7 +575,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertNoLordn();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_domainNameExistsAsTld_lowercase() {
     createTlds("foo.tld", "tld");
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "foo.tld"));
@@ -581,7 +584,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_domainNameExistsAsTld_uppercase() {
     createTlds("foo.tld", "tld");
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "FOO.TLD"));
@@ -590,7 +593,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_generalAvailability_withEncodedSignedMark() {
     createTld("tld", GENERAL_AVAILABILITY);
     clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
@@ -602,7 +605,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_generalAvailability_superuserMismatchedEncodedSignedMark() {
     createTld("tld", GENERAL_AVAILABILITY);
     clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
@@ -615,7 +618,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_fee_v06() throws Exception {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "USD"));
     persistContactsAndHosts();
@@ -623,7 +626,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_fee_v11() throws Exception {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
     persistContactsAndHosts();
@@ -631,7 +634,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_fee_v12() throws Exception {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
     persistContactsAndHosts();
@@ -639,7 +642,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_fee_withDefaultAttributes_v06() throws Exception {
     setEppInput("domain_create_fee_defaults.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
     persistContactsAndHosts();
@@ -647,7 +650,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_fee_withDefaultAttributes_v11() throws Exception {
     setEppInput("domain_create_fee_defaults.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
     persistContactsAndHosts();
@@ -655,7 +658,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_fee_withDefaultAttributes_v12() throws Exception {
     setEppInput("domain_create_fee_defaults.xml", ImmutableMap.of("FEE_VERSION", "0.12"));
     persistContactsAndHosts();
@@ -663,7 +666,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_refundableFee_v06() {
     setEppInput("domain_create_fee_refundable.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
     persistContactsAndHosts();
@@ -671,7 +674,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_refundableFee_v11() {
     setEppInput("domain_create_fee_refundable.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
     persistContactsAndHosts();
@@ -679,7 +682,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_refundableFee_v12() {
     setEppInput("domain_create_fee_refundable.xml", ImmutableMap.of("FEE_VERSION", "0.12"));
     persistContactsAndHosts();
@@ -687,7 +690,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_gracePeriodFee_v06() {
     setEppInput("domain_create_fee_grace_period.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
     persistContactsAndHosts();
@@ -695,7 +698,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_gracePeriodFee_v11() {
     setEppInput("domain_create_fee_grace_period.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
     persistContactsAndHosts();
@@ -703,7 +706,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_gracePeriodFee_v12() {
     setEppInput("domain_create_fee_grace_period.xml", ImmutableMap.of("FEE_VERSION", "0.12"));
     persistContactsAndHosts();
@@ -711,7 +714,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_appliedFee_v06() {
     setEppInput("domain_create_fee_applied.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
     persistContactsAndHosts();
@@ -719,7 +722,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_appliedFee_v11() {
     setEppInput("domain_create_fee_applied.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
     persistContactsAndHosts();
@@ -727,7 +730,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_appliedFee_v12() {
     setEppInput("domain_create_fee_applied.xml", ImmutableMap.of("FEE_VERSION", "0.12"));
     persistContactsAndHosts();
@@ -735,7 +738,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_metadata() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput("domain_create_metadata.xml");
@@ -751,7 +754,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .hasMetadataRequestedByRegistrar(false);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_metadataNotFromTool() {
     setEppInput("domain_create_metadata.xml");
     persistContactsAndHosts();
@@ -759,7 +762,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_premiumAndEap() throws Exception {
     createTld("example");
     setEppInput("domain_create_premium_eap.xml");
@@ -787,7 +790,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
    * the punycode string. In rare cases (3 and 4 letter labels) this would cause us to think there
    * was a trailing dash in the domain name and fail to create it.
    */
-  @Test
+  @TestOfyAndSql
   void testSuccess_unicodeLengthBug() throws Exception {
     createTld("xn--q9jyb4c");
     persistContactsAndHosts("net");
@@ -795,7 +798,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runFlow();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_nonDefaultAddGracePeriod() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -806,7 +809,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_existedButWasDeleted() throws Exception {
     persistContactsAndHosts();
     persistDeletedDomain(getUniqueIdFromCommand(), clock.nowUtc().minusDays(1));
@@ -814,14 +817,14 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_maxNumberOfNameservers() throws Exception {
     setEppInput("domain_create_13_nameservers.xml");
     persistContactsAndHosts();
     doSuccessfulTest();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_secDns() throws Exception {
     setEppInput("domain_create_dsdata_no_maxsiglife.xml");
     persistContactsAndHosts("tld"); // For some reason this sample uses "tld".
@@ -834,7 +837,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .cloneWithDomainRepoId(domain.getRepoId()));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_secDnsMaxRecords() throws Exception {
     setEppInput("domain_create_dsdata_8_records.xml");
     persistContactsAndHosts("tld"); // For some reason this sample uses "tld".
@@ -842,7 +845,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutDomains().that(reloadResourceByForeignKey()).hasNumDsData(8);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_idn() throws Exception {
     createTld("xn--q9jyb4c");
     setEppInput("domain_create_idn_minna.xml");
@@ -852,7 +855,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertDnsTasksEnqueued("xn--abc-873b2e7eb1k8a4lpjvv.xn--q9jyb4c");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_noNameserversOrDsData() throws Exception {
     setEppInput("domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     persistContactsAndHosts();
@@ -861,7 +864,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertNoDnsTasksEnqueued();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_periodNotSpecified() throws Exception {
     setEppInput("domain_create_missing_period.xml");
     persistContactsAndHosts();
@@ -874,7 +877,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertDnsTasksEnqueued("example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_periodInMonths() {
     setEppInput("domain_create_months.xml");
     persistContactsAndHosts();
@@ -882,7 +885,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_claimsNotice() throws Exception {
     clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
     setEppInput("domain_create_claim_notice.xml");
@@ -893,7 +896,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertClaimsLordn();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_claimsNoticeInQuietPeriod() throws Exception {
     allocationToken =
         persistResource(
@@ -923,7 +926,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_noClaimsNotice_forClaimsListName_afterClaimsPeriodEnd() throws Exception {
     persistClaimsList(ImmutableMap.of("example", CLAIMS_KEY));
     persistContactsAndHosts();
@@ -934,7 +937,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertDnsTasksEnqueued("example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingClaimsNotice() {
     persistClaimsList(ImmutableMap.of("example", CLAIMS_KEY));
     persistContactsAndHosts();
@@ -943,7 +946,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertNoTasksEnqueued(QUEUE_CLAIMS, QUEUE_SUNRISE);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_claimsNoticeProvided_nameNotOnClaimsList() {
     setEppInput("domain_create_claim_notice.xml");
     persistClaimsList(ImmutableMap.of());
@@ -952,7 +955,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_claimsNoticeProvided_claimsPeriodEnded() {
     setEppInput("domain_create_claim_notice.xml");
     persistClaimsList(ImmutableMap.of("example-one", CLAIMS_KEY));
@@ -962,7 +965,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_tooManyNameservers() {
     setEppInput("domain_create_14_nameservers.xml");
     persistContactsAndHosts();
@@ -970,7 +973,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_secDnsMaxSigLife() {
     setEppInput("domain_create_dsdata.xml");
     persistContactsAndHosts();
@@ -978,7 +981,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_secDnsTooManyDsRecords() {
     setEppInput("domain_create_dsdata_9_records.xml");
     persistContactsAndHosts();
@@ -986,7 +989,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_wrongExtension() {
     setEppInput("domain_create_wrong_extension.xml");
     persistContactsAndHosts();
@@ -994,7 +997,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_wrongFeeAmount_v06() {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "USD"));
     persistResource(
@@ -1004,7 +1007,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_wrongFeeAmount_v11() {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "USD"));
     persistResource(
@@ -1014,7 +1017,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_wrongFeeAmount_v12() {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "USD"));
     persistResource(
@@ -1024,7 +1027,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_wrongCurrency_v06() {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6", "CURRENCY", "EUR"));
     persistContactsAndHosts();
@@ -1032,7 +1035,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_wrongCurrency_v11() {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11", "CURRENCY", "EUR"));
     persistContactsAndHosts();
@@ -1040,7 +1043,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_wrongCurrency_v12() {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "EUR"));
     persistContactsAndHosts();
@@ -1048,7 +1051,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_unknownCurrency() {
     setEppInput("domain_create_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12", "CURRENCY", "BAD"));
     persistContactsAndHosts();
@@ -1056,7 +1059,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_alreadyExists() throws Exception {
     persistContactsAndHosts();
     persistActiveDomain(getUniqueIdFromCommand());
@@ -1070,7 +1073,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             String.format("Object with given ID (%s) already exists", getUniqueIdFromCommand()));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_resourceContention() throws Exception {
     persistContactsAndHosts();
     String targetId = getUniqueIdFromCommand();
@@ -1087,7 +1090,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_reserved() {
     setEppInput("domain_create_reserved.xml");
     persistContactsAndHosts();
@@ -1095,7 +1098,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_anchorTenant() throws Exception {
     setEppInput("domain_create_anchor_allocationtoken.xml");
     persistContactsAndHosts();
@@ -1105,7 +1108,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_anchorTenant_notTwoYearPeriod() {
     setEppInput("domain_create_anchor_tenant_invalid_years.xml");
     persistContactsAndHosts();
@@ -1113,7 +1116,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_anchorTenant_bypassesEapFees() throws Exception {
     setEapForTld("tld");
     // This XML file does not contain EAP fees.
@@ -1125,7 +1128,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_anchorTenant_withClaims() throws Exception {
     persistResource(
         new AllocationToken.Builder()
@@ -1149,7 +1152,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_anchorTenant_withMetadataExtension() throws Exception {
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput("domain_create_anchor_tenant_metadata_extension.xml");
@@ -1160,7 +1163,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertNoLordn();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_anchorTenantInSunrise_withMetadataExtension() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     setEppInput("domain_create_anchor_tenant_sunrise_metadata_extension.xml");
@@ -1172,7 +1175,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertNoLordn();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_anchorTenantInSunrise_withSignedMark() throws Exception {
     allocationToken =
         persistResource(
@@ -1201,7 +1204,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_anchorTenant_duringQuietPeriodBeforeSunrise() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -1223,7 +1226,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAllocationTokenWasRedeemed("abcDEF23456");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_reservedDomain_viaAllocationTokenExtension() throws Exception {
     allocationToken =
         persistResource(
@@ -1244,7 +1247,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAllocationTokenWasRedeemed("abc123");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_reservedDomain_viaAllocationTokenExtension_inQuietPeriod() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -1270,7 +1273,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   private void assertAllocationTokenWasRedeemed(String token) throws Exception {
     AllocationToken reloadedToken =
-        ofy().load().key(Key.create(AllocationToken.class, token)).now();
+        transactIfJpaTm(() -> tm().loadByKey(VKey.create(AllocationToken.class, token)));
     assertThat(reloadedToken.isRedeemed()).isTrue();
     assertThat(reloadedToken.getRedemptionHistoryEntry())
         .hasValue(
@@ -1280,11 +1283,11 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
 
   private void assertAllocationTokenWasNotRedeemed(String token) {
     AllocationToken reloadedToken =
-        ofy().load().key(Key.create(AllocationToken.class, token)).now();
+        transactIfJpaTm(() -> tm().loadByKey(VKey.create(AllocationToken.class, token)));
     assertThat(reloadedToken.isRedeemed()).isFalse();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_allocationTokenPromotion() throws Exception {
     // A discount of 0.5 means that the first-year cost (13) is cut in half, so a discount of 6.5
     // Note: we're asking to register it for two years so the total cost should be 13 + (13/2)
@@ -1308,18 +1311,18 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     runFlowAssertResponse(
         loadFile("domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld")));
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(ofy().load().type(BillingEvent.OneTime.class));
+        Iterables.getOnlyElement(transactIfJpaTm(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, BigDecimal.valueOf(19.5)));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_allocationToken_multiYearDiscount_maxesAtTokenDiscountYears() throws Exception {
     // 2yrs @ $13 + 3yrs @ $13 * (1 - 0.73) = $36.53
     runTest_allocationToken_multiYearDiscount(false, 0.73, 3, Money.of(USD, 36.53));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_allocationToken_multiYearDiscount_maxesAtNumRegistrationYears()
       throws Exception {
     // 5yrs @ $13 * (1 - 0.276) = $47.06
@@ -1358,12 +1361,12 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 .put("EXDATE", "2004-04-03T22:00:00.0Z")
                 .build()));
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(ofy().load().type(BillingEvent.OneTime.class));
+        Iterables.getOnlyElement(transactIfJpaTm(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
     assertThat(billingEvent.getTargetId()).isEqualTo("example.tld");
     assertThat(billingEvent.getCost()).isEqualTo(expectedPrice);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_allocationToken_multiYearDiscount_worksForPremiums() throws Exception {
     createTld("example");
     persistContactsAndHosts();
@@ -1391,13 +1394,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             "domain_create_response_premium.xml",
             ImmutableMap.of("EXDATE", "2002-04-03T22:00:00.0Z", "FEE", "104.00")));
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(ofy().load().type(BillingEvent.OneTime.class));
+        Iterables.getOnlyElement(transactIfJpaTm(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
     assertThat(billingEvent.getTargetId()).isEqualTo("rich.example");
     // 1yr @ $100 + 2yrs @ $100 * (1 - 0.98) = $104
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 104.00));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_allocationToken_singleYearDiscount_worksForPremiums() throws Exception {
     createTld("example");
     persistContactsAndHosts();
@@ -1424,13 +1427,13 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             "domain_create_response_premium.xml",
             ImmutableMap.of("EXDATE", "2002-04-03T22:00:00.0Z", "FEE", "204.44")));
     BillingEvent.OneTime billingEvent =
-        Iterables.getOnlyElement(ofy().load().type(BillingEvent.OneTime.class));
+        Iterables.getOnlyElement(transactIfJpaTm(() -> tm().loadAllOf(BillingEvent.OneTime.class)));
     assertThat(billingEvent.getTargetId()).isEqualTo("rich.example");
     // 2yrs @ $100 + 1yr @ $100 * (1 - 0.95555) = $204.44
     assertThat(billingEvent.getCost()).isEqualTo(Money.of(USD, 204.44));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_promotionDoesNotApplyToPremiumPrice() {
     // Discounts only apply to premium domains if the token is explicitly configured to allow it.
     createTld("example");
@@ -1456,7 +1459,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_promotionNotActive() {
     persistContactsAndHosts();
     persistResource(
@@ -1479,7 +1482,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_promoTokenNotValidForTld() {
     persistContactsAndHosts();
     persistResource(
@@ -1503,7 +1506,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_promoTokenNotValidForRegistrar() {
     persistContactsAndHosts();
     persistResource(
@@ -1527,7 +1530,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         .marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserReserved() throws Exception {
     setEppInput("domain_create_reserved.xml");
     persistContactsAndHosts();
@@ -1536,7 +1539,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertSuccessfulCreate("tld", ImmutableSet.of(RESERVED));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_reservedNameCollisionDomain_inSunrise_setsServerHoldAndPollMessage()
       throws Exception {
     persistResource(
@@ -1563,7 +1566,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertPollMessagesWithCollisionOneTime(domain);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_reservedNameCollisionDomain_withSuperuser_setsServerHoldAndPollMessage()
       throws Exception {
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "badcrash.tld"));
@@ -1604,7 +1607,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingHost() {
     persistActiveHost("ns1.example.net");
     persistActiveContact("jd1234");
@@ -1614,7 +1617,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertThat(thrown).hasMessageThat().contains("(ns2.example.net)");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_pendingDeleteHost() {
     persistActiveHost("ns1.example.net");
     persistActiveContact("jd1234");
@@ -1627,7 +1630,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertThat(thrown).hasMessageThat().contains("ns2.example.net");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingContact() {
     persistActiveHost("ns1.example.net");
     persistActiveHost("ns2.example.net");
@@ -1637,7 +1640,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertThat(thrown).hasMessageThat().contains("(sh8013)");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_pendingDeleteContact() {
     persistActiveHost("ns1.example.net");
     persistActiveHost("ns2.example.net");
@@ -1650,7 +1653,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertThat(thrown).hasMessageThat().contains("jd1234");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_wrongTld() {
     persistContactsAndHosts("net");
     deleteTld("tld");
@@ -1658,7 +1661,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_predelegation() {
     createTld("tld", PREDELEGATION);
     persistContactsAndHosts();
@@ -1667,7 +1670,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_startDateSunrise_missingLaunchExtension() {
     createTld("tld", START_DATE_SUNRISE);
     persistContactsAndHosts();
@@ -1676,7 +1679,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_quietPeriod() {
     createTld("tld", QUIET_PERIOD);
     persistContactsAndHosts();
@@ -1685,7 +1688,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserPredelegation() throws Exception {
     createTld("tld", PREDELEGATION);
     persistContactsAndHosts();
@@ -1693,7 +1696,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response.xml", SUPERUSER, ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserStartDateSunrise_isSuperuser() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     persistContactsAndHosts();
@@ -1701,7 +1704,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response.xml", SUPERUSER, ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserQuietPeriod() throws Exception {
     createTld("tld", QUIET_PERIOD);
     persistContactsAndHosts();
@@ -1709,7 +1712,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response.xml", SUPERUSER, ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserOverridesPremiumNameBlock() throws Exception {
     createTld("example");
     setEppInput("domain_create_premium.xml");
@@ -1725,7 +1728,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertSuccessfulCreate("example", ImmutableSet.of());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_customLogicIsCalled_andSavesExtraEntity() throws Exception {
     // @see TestDomainCreateFlowCustomLogic for what the label "custom-logic-test" triggers.
     ImmutableMap<String, String> substitutions = ImmutableMap.of("DOMAIN", "custom-logic-test.tld");
@@ -1755,7 +1758,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_duplicateContact() {
     setEppInput("domain_create_duplicate_contact.xml");
     persistContactsAndHosts();
@@ -1763,7 +1766,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingContactType() {
     // We need to test for missing type, but not for invalid - the schema enforces that for us.
     setEppInput("domain_create_missing_contact_type.xml");
@@ -1772,7 +1775,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingRegistrant() {
     setEppInput("domain_create_missing_registrant.xml");
     persistContactsAndHosts();
@@ -1780,7 +1783,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingAdmin() {
     setEppInput("domain_create_missing_admin.xml");
     persistContactsAndHosts();
@@ -1788,7 +1791,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingTech() {
     setEppInput("domain_create_missing_tech.xml");
     persistContactsAndHosts();
@@ -1796,7 +1799,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingNonRegistrantContacts() {
     setEppInput("domain_create_missing_non_registrant_contacts.xml");
     persistContactsAndHosts();
@@ -1804,7 +1807,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_badIdn() {
     createTld("xn--q9jyb4c");
     setEppInput("domain_create_bad_idn_minna.xml");
@@ -1813,7 +1816,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_badValidatorId() {
     setEppInput("domain_create_bad_validator_id.xml");
     persistClaimsList(ImmutableMap.of("exampleone", CLAIMS_KEY));
@@ -1822,7 +1825,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_codeMark() {
     setEppInput("domain_create_code_with_mark.xml");
     persistContactsAndHosts();
@@ -1830,7 +1833,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_expiredClaim() {
     clock.setTo(DateTime.parse("2010-08-17T09:00:00.0Z"));
     setEppInput("domain_create_claim_notice.xml");
@@ -1839,7 +1842,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_expiredAcceptance() {
     clock.setTo(DateTime.parse("2009-09-16T09:00:00.0Z"));
     setEppInput("domain_create_claim_notice.xml");
@@ -1848,7 +1851,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_malformedTcnIdWrongLength() {
     clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
     setEppInput("domain_create_malformed_claim_notice1.xml");
@@ -1857,7 +1860,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_malformedTcnIdBadChar() {
     clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
     setEppInput("domain_create_malformed_claim_notice2.xml");
@@ -1866,7 +1869,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_badTcnIdChecksum() {
     clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
     setEppInput("domain_create_bad_checksum_claim_notice.xml");
@@ -1875,7 +1878,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_premiumBlocked() {
     createTld("example");
     setEppInput("domain_create_premium.xml");
@@ -1886,7 +1889,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_premiumNotAcked() {
     createTld("example");
     setEppInput("domain_create.xml", ImmutableMap.of("DOMAIN", "rich.example"));
@@ -1895,7 +1898,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_omitFeeExtensionOnLogin_v06() {
     for (String uri : FEE_EXTENSION_URIS) {
       removeServiceExtensionUri(uri);
@@ -1907,7 +1910,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_omitFeeExtensionOnLogin_v11() {
     for (String uri : FEE_EXTENSION_URIS) {
       removeServiceExtensionUri(uri);
@@ -1919,7 +1922,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_omitFeeExtensionOnLogin_v12() {
     for (String uri : FEE_EXTENSION_URIS) {
       removeServiceExtensionUri(uri);
@@ -1931,7 +1934,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_feeGivenInWrongScale_v06() {
     setEppInput("domain_create_fee_bad_scale.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
     persistContactsAndHosts();
@@ -1939,7 +1942,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_feeGivenInWrongScale_v11() {
     setEppInput("domain_create_fee_bad_scale.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
     persistContactsAndHosts();
@@ -1947,7 +1950,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_feeGivenInWrongScale_v12() {
     setEppInput("domain_create_fee_bad_scale.xml", ImmutableMap.of("FEE_VERSION", "0.12"));
     persistContactsAndHosts();
@@ -1955,17 +1958,17 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_suspendedRegistrarCantCreateDomain() {
     doFailingTest_invalidRegistrarState(State.SUSPENDED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_pendingRegistrarCantCreateDomain() {
     doFailingTest_invalidRegistrarState(State.PENDING);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_disabledRegistrarCantCreateDomain() {
     doFailingTest_invalidRegistrarState(State.DISABLED);
   }
@@ -1991,74 +1994,74 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_uppercase() {
     doFailingDomainNameTest("Example.tld", BadDomainNameCharacterException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_badCharacter() {
     doFailingDomainNameTest("test_example.tld", BadDomainNameCharacterException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_leadingDash() {
     doFailingDomainNameTest("-example.tld", LeadingDashException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_trailingDash() {
     doFailingDomainNameTest("example-.tld", TrailingDashException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_tooLong() {
     doFailingDomainNameTest(Strings.repeat("a", 64) + ".tld", DomainLabelTooLongException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_leadingDot() {
     doFailingDomainNameTest(".example.tld", EmptyDomainNamePartException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_leadingDotTld() {
     doFailingDomainNameTest("foo..tld", EmptyDomainNamePartException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_tooManyParts() {
     doFailingDomainNameTest("foo.example.tld", BadDomainNamePartsCountException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_tooFewParts() {
     doFailingDomainNameTest("tld", BadDomainNamePartsCountException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_invalidPunycode() {
     // You don't want to know what this string (might?) mean.
     doFailingDomainNameTest("xn--uxa129t5ap4f1h1bc3p.tld", InvalidPunycodeException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_dashesInThirdAndFourthPosition() {
     doFailingDomainNameTest("ab--cdefg.tld", DashesInThirdAndFourthException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_tldDoesNotExist() {
     doFailingDomainNameTest("foo.nosuchtld", TldDoesNotExistException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_invalidIdnCodePoints() {
     // ❤☀☆☂☻♞☯.tld
     doFailingDomainNameTest("xn--k3hel9n7bxlu1e.tld", InvalidIdnDomainLabelException.class);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_startDateSunriseRegistration_missingSignedMark() {
     createTld("tld", START_DATE_SUNRISE);
     setEppInput("domain_create_registration_sunrise.xml");
@@ -2068,7 +2071,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserStartDateSunriseRegistration_isSuperuser() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     setEppInput("domain_create_registration_sunrise.xml");
@@ -2077,7 +2080,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response.xml", SUPERUSER, ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_startDateSunriseRegistration_withEncodedSignedMark() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
@@ -2094,7 +2097,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   }
 
   /** Test that missing type= argument on launch create works in start-date sunrise. */
-  @Test
+  @TestOfyAndSql
   void testSuccess_startDateSunriseRegistration_withEncodedSignedMark_noType() throws Exception {
     createTld("tld", START_DATE_SUNRISE);
     clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
@@ -2108,7 +2111,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertSunriseLordn("test-validate.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFail_startDateSunriseRegistration_wrongEncodedSignedMark() {
     createTld("tld", START_DATE_SUNRISE);
     clock.setTo(DateTime.parse("2014-09-09T09:09:09Z"));
@@ -2120,7 +2123,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFail_startDateSunriseRegistration_markNotYetValid() {
     createTld("tld", START_DATE_SUNRISE);
     // If we move now back in time a bit, the mark will not have gone into effect yet.
@@ -2133,7 +2136,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFail_startDateSunriseRegistration_markExpired() {
     createTld("tld", START_DATE_SUNRISE);
     // Move time forward to the mark expiration time.
@@ -2146,7 +2149,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_startDateSunriseRegistration_withClaimsNotice() {
     createTld("tld", START_DATE_SUNRISE);
     clock.setTo(DateTime.parse("2009-08-16T09:00:00.0Z"));
@@ -2157,7 +2160,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_notAuthorizedForTld() {
     createTld("irrelevant", "IRR");
     persistResource(
@@ -2170,7 +2173,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_registrantNotAllowListed() {
     persistActiveContact("someone");
     persistContactsAndHosts();
@@ -2184,7 +2187,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertThat(thrown).hasMessageThat().contains("jd1234");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nameserverNotAllowListed() {
     persistContactsAndHosts();
     persistResource(
@@ -2197,7 +2200,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertThat(thrown).hasMessageThat().contains("ns1.example.net");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_emptyNameserverFailsAllowList() {
     setEppInput("domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     persistResource(
@@ -2212,7 +2215,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_nameserverAndRegistrantAllowListed() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -2225,7 +2228,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_eapFee_combined() {
     setEppInput("domain_create_eap_combined_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
     persistContactsAndHosts();
@@ -2235,7 +2238,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_eapFee_description_swapped() {
     setEppInput(
         "domain_create_eap_fee.xml",
@@ -2253,7 +2256,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_eapFee_totalAmountNotMatched() {
     setEppInput(
         "domain_create_extra_fees.xml",
@@ -2273,7 +2276,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_eapFee_multipleEAPfees_doNotAddToExpectedValue() {
     setEppInput(
         "domain_create_extra_fees.xml",
@@ -2293,7 +2296,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_eapFee_multipleEAPfees_addToExpectedValue() throws Exception {
     setEppInput(
         "domain_create_extra_fees.xml",
@@ -2312,7 +2315,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_eap_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_eapFee_fullDescription_includingArbitraryExpiryTime() throws Exception {
     setEppInput(
         "domain_create_eap_fee.xml",
@@ -2329,7 +2332,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_eap_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_eapFee_description_multipleMatch() {
     setEppInput(
         "domain_create_eap_fee.xml",
@@ -2342,7 +2345,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_eapFeeApplied_v06() throws Exception {
     setEppInput(
         "domain_create_eap_fee.xml",
@@ -2359,7 +2362,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_eap_fee.xml", ImmutableMap.of("FEE_VERSION", "0.6"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_eapFeeApplied_v11() throws Exception {
     setEppInput(
         "domain_create_eap_fee.xml",
@@ -2376,7 +2379,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_eap_fee.xml", ImmutableMap.of("FEE_VERSION", "0.11"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_eapFeeApplied_v12() throws Exception {
     setEppInput(
         "domain_create_eap_fee.xml",
@@ -2393,7 +2396,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         "tld", "domain_create_response_eap_fee.xml", ImmutableMap.of("FEE_VERSION", "0.12"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_domainInEap_failsWithoutFeeExtension() {
     persistContactsAndHosts();
     setEapForTld("tld");
@@ -2420,7 +2423,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_eapFee_beforeEntireSchedule() throws Exception {
     persistContactsAndHosts();
     persistResource(
@@ -2438,7 +2441,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest("tld", "domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_eapFee_afterEntireSchedule() throws Exception {
     persistContactsAndHosts();
     persistResource(
@@ -2456,7 +2459,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     doSuccessfulTest("tld", "domain_create_response.xml", ImmutableMap.of("DOMAIN", "example.tld"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_max10Years() {
     setEppInput("domain_create_11_years.xml");
     persistContactsAndHosts();
@@ -2464,7 +2467,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     persistContactsAndHosts();
     runFlow();
@@ -2474,7 +2477,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertClientIdFieldLogged("TheRegistrar");
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannTransactionRecord_getsStored() throws Exception {
     persistContactsAndHosts();
     persistResource(
@@ -2494,7 +2497,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
                 1));
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannTransactionRecord_testTld_notStored() throws Exception {
     persistContactsAndHosts();
     persistResource(Registry.get("tld").asBuilder().setTldType(TldType.TEST).build());
@@ -2505,7 +2508,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     assertThat(historyEntry.getDomainTransactionRecords()).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testEppMetric_isSuccessfullyCreated() throws Exception {
     persistContactsAndHosts();
     runFlow();

@@ -15,7 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.xml.ValidationMode.LENIENT;
 import static google.registry.xml.ValidationMode.STRICT;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -51,8 +51,8 @@ public final class FlowUtils {
 
   /** Persists the saves and deletes in an {@link EntityChanges} to Datastore. */
   public static void persistEntityChanges(EntityChanges entityChanges) {
-    ofy().save().entities(entityChanges.getSaves());
-    ofy().delete().keys(entityChanges.getDeletes());
+    tm().putAll(entityChanges.getSaves());
+    tm().delete(entityChanges.getDeletes());
   }
 
   /**

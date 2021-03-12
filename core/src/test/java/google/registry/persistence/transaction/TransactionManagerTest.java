@@ -137,7 +137,7 @@ public class TransactionManagerTest {
     assertThat(persisted).isEqualTo(theEntity);
   }
 
-  @TestOfyAndSql
+  @TestOfyOnly // read-only not implemented in SQL yet
   void transactNewReadOnly_throwsWhenWritingEntity() {
     assertEntityNotExist(theEntity);
     assertThrows(

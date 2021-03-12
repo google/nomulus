@@ -16,8 +16,8 @@ package google.registry.flows.custom;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.VKey;
 
 /** A wrapper class that encapsulates Datastore entities to both save and delete. */
 @AutoValue
@@ -25,7 +25,7 @@ public abstract class EntityChanges {
 
   public abstract ImmutableSet<ImmutableObject> getSaves();
 
-  public abstract ImmutableSet<Key<ImmutableObject>> getDeletes();
+  public abstract ImmutableSet<VKey<ImmutableObject>> getDeletes();
 
   public static Builder newBuilder() {
     // Default both entities to save and entities to delete to empty sets, so that the build()
@@ -48,11 +48,11 @@ public abstract class EntityChanges {
       return this;
     }
 
-    public abstract Builder setDeletes(ImmutableSet<Key<ImmutableObject>> entitiesToDelete);
+    public abstract Builder setDeletes(ImmutableSet<VKey<ImmutableObject>> entitiesToDelete);
 
-    public abstract ImmutableSet.Builder<Key<ImmutableObject>> deletesBuilder();
+    public abstract ImmutableSet.Builder<VKey<ImmutableObject>> deletesBuilder();
 
-    public Builder addDelete(Key<ImmutableObject> entityToDelete) {
+    public Builder addDelete(VKey<ImmutableObject> entityToDelete) {
       deletesBuilder().add(entityToDelete);
       return this;
     }
