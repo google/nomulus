@@ -25,6 +25,7 @@ import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.smd.SignedMarkRevocationList.SHARD_SIZE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -127,7 +128,8 @@ public class SignedMarkRevocationListDao {
 
   /** Loads the shards from Datastore and combines them into one list. */
   private static Optional<SignedMarkRevocationList> loadFromDatastore() {
-    return tm().transactNewReadOnly(
+    return ofyTm()
+        .transactNewReadOnly(
             () -> {
               Iterable<SignedMarkRevocationList> shards =
                   ofy().load().type(SignedMarkRevocationList.class).ancestor(getCrossTldKey());
