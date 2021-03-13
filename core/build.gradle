@@ -751,7 +751,8 @@ project.tasks.create('initSqlPipeline', JavaExec) {
 // nom_build :core:bulkDeleteDatastore --args="--project=domain-registry-crash \
 //     --region=us-central1 --runner=DataflowRunner --kindsToDelete=*"
 createToolTask(
-    'bulkDeleteDatastore', 'google.registry.beam.datastore.BulkDeletePipeline')
+    'bulkDeleteDatastore',
+    'google.registry.beam.datastore.BulkDeleteDatastorePipeline')
 
 project.tasks.create('generateSqlSchema', JavaExec) {
   classpath = sourceSets.nonprod.runtimeClasspath
@@ -782,10 +783,13 @@ generateGoldenImages.finalizedBy(findGoldenImages)
 
 createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 
+// Build the Uber jar shared by all flex-template based BEAM pipelines.
+// This packages more code and dependency than necessary. However, without
+// restructuring the source tree it is difficult to generate leaner jars.
 createUberJar(
-    'init_sql_pipeline',
-    'init_sql_pipeline',
-    'google.registry.beam.initsql.InitSqlPipeline')
+    'beam_pipeline_common',
+    'beam_pipeline_common',
+    '')
 
 // A jar with classes and resources from main sourceSet, excluding internal
 // data. See comments on configurations.nomulus_test above for details.

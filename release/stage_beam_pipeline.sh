@@ -13,53 +13,65 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script builds and stages a flex-template based BEAM pipeline. The
-# following parameters are required:
-# - pipeline_name: this is also the name of a createUberJar task in :core and
-#   the name of the jar file created by that task.
-# - main_class: the pipeline's main class name.
-# - metadata_pathname: the pipeline's metadata file, which is in the resources
-#   folder of :core. This parameter should be the relative path from resources.
+# This script builds and stages one or more flex-template based BEAM pipelines
+# that can share one Uber jar. The following positional parameters are required:
+# - uberjar_name: this is the name of a createUberJar task in :core and also the
+#   name of the Uber jar created by that task. It is expected to be in the
+#   ./core/build/libs folder.
 # - release_tag
 # - dev_project
+# - main_class: the fully qualified main class name of a pipeline.
+# - metadata_pathname: the metadata file of the pipeline named by the previous
+#   parameter. It is expected to be in the resources folder of :core, and its
+#   value should be the relative path from resources.
 #
-# If successful, this script will generate and upload two artifacts:
+# If successful, this script will generate and upload two artifacts for each
+# pipeline:
 # - A template file to
 #   gs://${dev_project}-deploy/${release_tag}/beam/$(basename metadata_pathname)
-# - A docker image to gcs.io/${dev_project}/beam/${pipeline_name}:{release_tag}
+# - A docker image to gcs.io/${dev_project}/beam/${pipeline_name}:{release_tag},
+#   where ${pipeline_name} is the ${main_class}'s simple name converted to
+#   lower_underscore form.
 #
-# Please refer to gcloud documentation for how to start the pipeline.
+# The staged pipelines may be invoked by gcloud or the flex-template launcher's
+# REST API.
 
 set -e
 
-if [ $# -ne 5 ];
+if (( "$#" < 5 ||  $(("$#" % 2)) == 0 ));
 then
-  echo "Usage: $0 pipeline_name main_class metadata_pathname release_tag" \
-       "dev_project"
+  echo "Usage: $0 uberjar_name  release_tag dev_project " \
+       "main_class metadata_pathname [ main_class metadata_pathname ] ..."
   exit 1
 fi
 
-pipeline_name="$1"
-main_class="$2"
-metadata_pathname="$3"
-release_tag="$4"
-dev_project="$5"
+uberjar_name="$1"
+release_tag="$2"
+dev_project="$3"
+shift 3
 
-image_name="gcr.io/${dev_project}/beam/${pipeline_name}"
-metadata_basename=$(basename ${metadata_pathname})
+maven_gcs_prefix="gcs://domain-registry-maven-repository"
+./gradlew clean :core:"${uberjar_name}" \
+    -PmavenUrl="${maven_gcs_prefix}"/maven \
+    -PpluginsUrl="${maven_gcs_prefix}"/plugins
 
-gcs_prefix="gcs://domain-registry-maven-repository"
+while (( "$#" > 0 )); do
+  main_class="$1"; shift
+  metadata_pathname="$1"; shift
+  # Get main_class' simple name in lower_underscore form
+  pipeline_name=$(
+      echo "${main_class}" | rev | cut -d. -f1 | rev | \
+      sed -r 's/([A-Z])/_\L\1/g' | sed 's/^_//')
+  image_name="gcr.io/${dev_project}/beam/${pipeline_name}"
+  metadata_basename=$(basename "${metadata_pathname}")
 
-./gradlew clean :core:"${pipeline_name}" \
-    -PmavenUrl="${gcs_prefix}"/maven \
-    -PpluginsUrl="${gcs_prefix}"/plugins
-
-gcloud dataflow flex-template build \
+  gcloud dataflow flex-template build \
     "gs://${dev_project}-deploy/${release_tag}/beam/${metadata_basename}" \
     --image-gcr-path "${image_name}:${release_tag}" \
     --sdk-language "JAVA" \
     --flex-template-base-image JAVA11 \
     --metadata-file "./core/src/main/resources/${metadata_pathname}" \
-    --jar "./core/build/libs/${pipeline_name}.jar" \
+    --jar "./core/build/libs/${uberjar_name}.jar" \
     --env FLEX_TEMPLATE_JAVA_MAIN_CLASS="${main_class}" \
-    --project ${dev_project}
+    --project "${dev_project}"
+done

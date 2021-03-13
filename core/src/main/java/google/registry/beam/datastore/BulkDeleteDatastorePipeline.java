@@ -78,7 +78,7 @@ import org.apache.beam.sdk.values.TupleTagList;
  * types in the Datastore using the {@code --numOfKindsHint} argument. If the default value for this
  * parameter is too low, performance will suffer.
  */
-public class BulkDeletePipeline {
+public class BulkDeleteDatastorePipeline {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // This tool is not for use in our critical projects.
@@ -89,7 +89,7 @@ public class BulkDeletePipeline {
 
   private final Pipeline pipeline;
 
-  BulkDeletePipeline(BulkDeletePipelineOptions options) {
+  BulkDeleteDatastorePipeline(BulkDeletePipelineOptions options) {
     this.options = options;
     pipeline = Pipeline.create(options);
   }
@@ -303,7 +303,7 @@ public class BulkDeletePipeline {
   public static void main(String[] args) {
     BulkDeletePipelineOptions options =
         PipelineOptionsFactory.fromArgs(args).withValidation().as(BulkDeletePipelineOptions.class);
-    BulkDeletePipeline pipeline = new BulkDeletePipeline(options);
+    BulkDeleteDatastorePipeline pipeline = new BulkDeleteDatastorePipeline(options);
     pipeline.run();
     System.exit(0);
   }
