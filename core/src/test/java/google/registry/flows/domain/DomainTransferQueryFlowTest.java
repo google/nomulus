@@ -16,7 +16,6 @@ package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
-import static google.registry.testing.DatabaseHelper.deleteResource;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
@@ -34,12 +33,19 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.ReplayExtension;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainTransferQueryFlow}. */
 class DomainTransferQueryFlowTest
     extends DomainTransferFlowTestCase<DomainTransferQueryFlow, DomainBase> {
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   @BeforeEach
   void beforeEach() {
@@ -225,7 +231,7 @@ class DomainTransferQueryFlowTest
 
   @Test
   void testFailure_nonexistentDomain() throws Exception {
-    deleteResource(domain);
+    deleteTestDomain(domain);
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_query.xml"));

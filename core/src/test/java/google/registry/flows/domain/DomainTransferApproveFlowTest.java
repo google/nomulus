@@ -24,8 +24,6 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.deleteResource;
-import static google.registry.testing.DatabaseHelper.getBillingEvents;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.getOnlyPollMessage;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
@@ -529,24 +527,7 @@ class DomainTransferApproveFlowTest
 
   @Test
   void testFailure_nonexistentDomain() throws Exception {
-    Iterable<BillingEvent> billingEvents = getBillingEvents();
-    Iterable<HistoryEntry> historyEntries = tm().loadAllOf(HistoryEntry.class);
-    Iterable<PollMessage> pollMessages = tm().loadAllOf(PollMessage.class);
-    tm().transact(
-            () -> {
-              deleteResource(domain);
-              for (BillingEvent event : billingEvents) {
-                deleteResource(event);
-              }
-              for (PollMessage pollMessage : pollMessages) {
-                deleteResource(pollMessage);
-              }
-              deleteResource(subordinateHost);
-              for (HistoryEntry hist : historyEntries) {
-                deleteResource(hist);
-              }
-            });
-
+    deleteTestDomain(domain);
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class,

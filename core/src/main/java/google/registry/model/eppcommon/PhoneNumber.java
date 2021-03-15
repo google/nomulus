@@ -71,6 +71,11 @@ public class PhoneNumber extends ImmutableObject {
     return phoneNumber + (extension != null ? " x" + extension : "");
   }
 
+  /** Returns true if both fields of the phone number are null. */
+  public boolean hasNullFields() {
+    return phoneNumber == null && extension == null;
+  }
+
   /** A builder for constructing {@link PhoneNumber}. */
   public static class Builder<T extends PhoneNumber> extends Buildable.Builder<T> {
     @Override
