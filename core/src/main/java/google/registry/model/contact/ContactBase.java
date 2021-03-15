@@ -191,7 +191,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   }
 
   @OnLoad
-  void postLoad() {
+  void onLoad() {
     if (voice != null && voice.hasNullFields()) {
       voice = null;
     }
