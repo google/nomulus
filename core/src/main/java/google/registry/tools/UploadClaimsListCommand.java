@@ -21,6 +21,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
+import google.registry.model.tmch.ClaimsListDualDatabaseDao;
 import google.registry.model.tmch.ClaimsListShard;
 import google.registry.tmch.ClaimsListParser;
 import java.io.File;
@@ -56,7 +57,7 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
 
   @Override
   public String execute() {
-    claimsList.save();
+    ClaimsListDualDatabaseDao.save(claimsList);
     return String.format("Successfully uploaded claims list %s", claimsListFilename);
   }
 }

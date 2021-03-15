@@ -18,7 +18,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.model.tmch.ClaimsListShardTest.createTestClaimsListShard;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -39,8 +38,8 @@ import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
-import google.registry.model.tmch.ClaimsListShard.ClaimsListRevision;
-import google.registry.model.tmch.ClaimsListShard.ClaimsListSingleton;
+import google.registry.model.tmch.ClaimsListDualDatabaseDao;
+import google.registry.model.tmch.ClaimsListShard;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.logging.Level;
@@ -103,22 +102,12 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
   }
 
   private Class<R> getResourceClass() {
-    return new TypeInstantiator<R>(getClass()){}.getExactType();
+    return new TypeInstantiator<R>(getClass()) {}.getExactType();
   }
 
-  /**
-   * Persists a testing claims list to Datastore that contains a single shard.
-   */
+  /** Persists a testing claims list to Datastore that contains a single shard. */
   protected void persistClaimsList(ImmutableMap<String, String> labelsToKeys) {
-    ClaimsListSingleton singleton = new ClaimsListSingleton();
-    Key<ClaimsListRevision> revision = ClaimsListRevision.createKey(singleton);
-    singleton.setActiveRevision(revision);
-    ofy().saveWithoutBackup().entity(singleton).now();
-    if (!labelsToKeys.isEmpty()) {
-      ofy().saveWithoutBackup()
-          .entity(createTestClaimsListShard(clock.nowUtc(), labelsToKeys, revision))
-          .now();
-    }
+    ClaimsListDualDatabaseDao.save(ClaimsListShard.create(clock.nowUtc(), labelsToKeys));
   }
 
   @Test
