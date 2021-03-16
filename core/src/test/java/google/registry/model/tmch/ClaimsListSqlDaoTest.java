@@ -15,18 +15,21 @@
 package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.truth.Truth8;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
+import javax.persistence.PersistenceException;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link ClaimsListDao}. */
-public class ClaimsListDaoTest {
+/** Unit tests for {@link ClaimsListSqlDao}. */
+public class ClaimsListSqlDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
@@ -39,40 +42,40 @@ public class ClaimsListDaoTest {
   final DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   @Test
-  void trySave_insertsClaimsListSuccessfully() {
+  void save_insertsClaimsListSuccessfully() {
     ClaimsListShard claimsList =
         ClaimsListShard.create(
             fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
-    ClaimsListDao.trySave(claimsList);
-    ClaimsListShard insertedClaimsList = ClaimsListDao.getLatestRevision().get();
+    ClaimsListSqlDao.save(claimsList);
+    ClaimsListShard insertedClaimsList = ClaimsListSqlDao.get().get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     assertThat(insertedClaimsList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
   }
 
   @Test
-  void trySave_noExceptionThrownWhenSaveFail() {
+  void save_fail_duplicateId() {
     ClaimsListShard claimsList =
         ClaimsListShard.create(
             fakeClock.nowUtc(), ImmutableMap.of("label1", "key1", "label2", "key2"));
-    ClaimsListDao.trySave(claimsList);
-    ClaimsListShard insertedClaimsList = ClaimsListDao.getLatestRevision().get();
+    ClaimsListSqlDao.save(claimsList);
+    ClaimsListShard insertedClaimsList = ClaimsListSqlDao.get().get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     // Save ClaimsList with existing revisionId should fail because revisionId is the primary key.
-    ClaimsListDao.trySave(insertedClaimsList);
+    assertThrows(PersistenceException.class, () -> ClaimsListSqlDao.save(insertedClaimsList));
   }
 
   @Test
-  void trySave_claimsListWithNoEntries() {
+  void save_claimsListWithNoEntries() {
     ClaimsListShard claimsList = ClaimsListShard.create(fakeClock.nowUtc(), ImmutableMap.of());
-    ClaimsListDao.trySave(claimsList);
-    ClaimsListShard insertedClaimsList = ClaimsListDao.getLatestRevision().get();
+    ClaimsListSqlDao.save(claimsList);
+    ClaimsListShard insertedClaimsList = ClaimsListSqlDao.get().get();
     assertClaimsListEquals(claimsList, insertedClaimsList);
     assertThat(insertedClaimsList.getLabelsToKeys()).isEmpty();
   }
 
   @Test
   void getCurrent_returnsEmptyListIfTableIsEmpty() {
-    assertThat(ClaimsListDao.getLatestRevision().isPresent()).isFalse();
+    Truth8.assertThat(ClaimsListSqlDao.get()).isEmpty();
   }
 
   @Test
@@ -83,9 +86,9 @@ public class ClaimsListDaoTest {
     ClaimsListShard newClaimsList =
         ClaimsListShard.create(
             fakeClock.nowUtc(), ImmutableMap.of("label3", "key3", "label4", "key4"));
-    ClaimsListDao.trySave(oldClaimsList);
-    ClaimsListDao.trySave(newClaimsList);
-    assertClaimsListEquals(newClaimsList, ClaimsListDao.getLatestRevision().get());
+    ClaimsListSqlDao.save(oldClaimsList);
+    ClaimsListSqlDao.save(newClaimsList);
+    assertClaimsListEquals(newClaimsList, ClaimsListSqlDao.get().get());
   }
 
   private void assertClaimsListEquals(ClaimsListShard left, ClaimsListShard right) {
