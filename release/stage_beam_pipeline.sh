@@ -51,9 +51,10 @@ dev_project="$3"
 shift 3
 
 maven_gcs_prefix="gcs://domain-registry-maven-repository"
-./gradlew clean :core:"${uberjar_name}" \
-    -PmavenUrl="${maven_gcs_prefix}"/maven \
-    -PpluginsUrl="${maven_gcs_prefix}"/plugins
+nom_build_dir="$(dirname $0)/.."
+${nom_build_dir}/nom_build clean :core:"${uberjar_name}" \
+    --mavenUrl="${maven_gcs_prefix}"/maven \
+    --pluginsUrl="${maven_gcs_prefix}"/plugins
 
 while (( "$#" > 0 )); do
   main_class="$1"; shift
