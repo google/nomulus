@@ -44,6 +44,7 @@ import google.registry.request.lock.LockHandler;
 import google.registry.util.Clock;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -141,12 +142,23 @@ public class DeleteExpiredDomainsAction implements Runnable {
         String.join(
             ", ",
             domainsToDelete.stream().map(DomainBase::getDomainName).collect(toImmutableList())));
-    domainsToDelete.forEach(this::runDomainDeleteFlow);
-    logger.atInfo().log("Finished deleting domains.");
-    response.setPayload("Finished deleting domains.");
+    int successes = 0;
+    for (DomainBase domain : domainsToDelete) {
+      if (runDomainDeleteFlow(domain)) {
+        successes++;
+      }
+    }
+    int failures = domainsToDelete.size() - successes;
+    String msg =
+        String.format(
+            "Finished; %d domains were successfully deleted and %d errored out.",
+            successes, failures);
+    logger.at(failures == 0 ? Level.INFO : Level.SEVERE).log(msg);
+    response.setPayload(msg);
   }
 
-  private void runDomainDeleteFlow(DomainBase domain) {
+  /** Runs the actual domain delete flow and returns whether the deletion was successful. */
+  private boolean runDomainDeleteFlow(DomainBase domain) {
     logger.atInfo().log("Attempting to delete domain %s", domain.getDomainName());
     // Create a new transaction that the flow's execution will be enlisted in that loads the domain
     // transactionally. This way we can ensure that nothing else has modified the domain in question
@@ -185,10 +197,11 @@ public class DeleteExpiredDomainsAction implements Runnable {
       if (eppOutput.get().isSuccess()) {
         logger.atInfo().log("Successfully deleted domain %s", domain.getDomainName());
       } else {
-        logger.atWarning().log(
+        logger.atSevere().log(
             "Failed to delete domain %s; EPP response:\n\n%s",
             domain.getDomainName(), new String(marshalWithLenientRetry(eppOutput.get()), UTF_8));
       }
     }
+    return eppOutput.map(EppOutput::isSuccess).orElse(false);
   }
 }
