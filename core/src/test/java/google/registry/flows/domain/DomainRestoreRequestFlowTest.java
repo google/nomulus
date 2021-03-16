@@ -15,6 +15,7 @@
 package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertPollMessages;
@@ -72,6 +73,7 @@ import google.registry.model.reporting.DomainTransactionRecord.TransactionReport
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.ReplayExtension;
 import java.util.Map;
+import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -289,6 +291,20 @@ class DomainRestoreRequestFlowTest
             .setBillingTime(clock.nowUtc())
             .setParent(historyEntryDomainRestore)
             .build());
+  }
+
+  @Test
+  void testSuccess_autorenewEndTimeIsCleared() throws Exception {
+    setEppInput("domain_update_restore_request_fee.xml", FEE_06_MAP);
+    persistPendingDeleteDomain();
+    persistResource(
+        reloadResourceByForeignKey()
+            .asBuilder()
+            .setAutorenewEndTime(Optional.of(clock.nowUtc().plusYears(2)))
+            .build());
+    assertThat(reloadResourceByForeignKey().getAutorenewEndTime()).isPresent();
+    runFlowAssertResponse(loadFile("domain_update_restore_request_response_fee.xml", FEE_06_MAP));
+    assertThat(reloadResourceByForeignKey().getAutorenewEndTime()).isEmpty();
   }
 
   @Test

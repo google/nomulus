@@ -302,12 +302,6 @@ public class DomainContent extends EppResource
 
   @OnLoad
   void load() {
-    // Back fill with correct END_OF_TIME sentinel value.
-    // TODO(mcilwain): Remove this once back-filling is complete.
-    if (autorenewEndTime == null) {
-      autorenewEndTime = END_OF_TIME;
-    }
-
     // Reconstitute all of the contacts so that they have VKeys.
     allContacts =
         allContacts.stream().map(DesignatedContact::reconstitute).collect(toImmutableSet());
@@ -443,12 +437,7 @@ public class DomainContent extends EppResource
    * purposes of more legible business logic.
    */
   public Optional<DateTime> getAutorenewEndTime() {
-    // TODO(mcilwain): Remove null handling for autorenewEndTime once data migration away from null
-    //                 is complete.
-    return Optional.ofNullable(
-        (autorenewEndTime == null || autorenewEndTime.equals(END_OF_TIME))
-            ? null
-            : autorenewEndTime);
+    return Optional.ofNullable(autorenewEndTime.equals(END_OF_TIME) ? null : autorenewEndTime);
   }
 
   @Override
