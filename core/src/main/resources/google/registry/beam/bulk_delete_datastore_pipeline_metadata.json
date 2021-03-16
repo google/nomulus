@@ -1,0 +1,20 @@
+{
+  "name": "Bulk Delete Cloud Datastore",
+  "description": "An Apache Beam batch pipeline that deletes Cloud Datastore in bulk. This is easier to use than the GCP-provided template.",
+  "parameters": [
+    {
+      "name": "kindsToDelete",
+      "label": "The data KINDs to delete.",
+      "helpText": "The Datastore KINDs to be deleted. The format may be: the list of kinds to be deleted as a comma-separated string; or '*', which causes all kinds to be deleted."
+    },
+    {
+      "name": "getNumOfKindsHint",
+      "label": "An estimate of the number of KINDs to be deleted.",
+      "helpText": "An estimate of the number of KINDs to be deleted. This is recommended if --kindsToDelete is '*' and the default value is too low.",
+      "is_optional": true,
+      "regexes": [
+        "^[1-9][0-9]*$"
+      ]
+    }
+  ]
+}
