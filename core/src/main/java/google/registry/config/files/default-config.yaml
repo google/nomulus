@@ -207,18 +207,13 @@ hibernate:
 
   # Connection pool configurations.
   hikariConnectionTimeout: 20000
-  # We occasionally received "Connection is not available, request timed out"
-  # exception when setting minimumIdle to 0 and it turned out it is a bug (See
-  # https://github.com/brettwooldridge/HikariCP/issues/1212) in HikariCP.
-  #
-  # We tried to use a fixed size pool but ran into an issue(See b/155383029),
-  # so we need further investigation to figure out the proper size of the pool.
-  #
-  # HikariCP also recommends not setting minimumIdle for maximum performance
-  # and responsiveness to spike demands (See
-  # https://github.com/brettwooldridge/HikariCP).
-  #
-  # TODO(b/154720215): Investigate the long term fix.
+  # Cloud SQL connections are a relatively scarce resource (maximum is 1000 as
+  # of March 2021). The minimumIdle should be a small value so that machines may
+  # release connections after a demand spike. The maximumPoolSize is set to 10
+  # because that is the maximum number of concurrent requests a Nomulus server
+  # instance can handle (as limited by AppEngine for basic/manual scaling). Note
+  # that BEAM pipelines are not subject to the maximumPoolSize value defined
+  # here. See PersistenceModule.java for more information.
   hikariMinimumIdle: 1
   hikariMaximumPoolSize: 10
   hikariIdleTimeout: 300000
