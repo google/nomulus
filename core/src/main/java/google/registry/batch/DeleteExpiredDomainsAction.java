@@ -37,7 +37,6 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.request.Action;
-import google.registry.request.Action.Method;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.request.lock.LockHandler;
@@ -60,12 +59,17 @@ import org.joda.time.Duration;
  * <p>Note that this action works by running a superuser EPP domain delete command, and as a side
  * effect of when domains are deleted (just past their expiration date), they are invariably in the
  * autorenew grace period when this happens.
+ *
+ * <p>Note also that the delete flow may fail in the uncommon case that a non-autorenewing domain
+ * has a subordinate host. It is not trivial to handle this case automatically (as said host may be
+ * in use by other domains), nor is it possible to take the correct action without exercising some
+ * human judgment. Accordingly, such deletes will fail with SEVERE-level log messages every day when
+ * this action runs, thus alerting us that human action is needed to correctly process the delete.
  */
 @Action(
     service = Action.Service.BACKEND,
     path = DeleteExpiredDomainsAction.PATH,
-    auth = Auth.AUTH_INTERNAL_OR_ADMIN,
-    method = Method.POST)
+    auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class DeleteExpiredDomainsAction implements Runnable {
 
   public static final String PATH = "/_dr/task/deleteExpiredDomains";

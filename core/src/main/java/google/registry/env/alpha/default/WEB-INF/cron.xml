@@ -143,6 +143,16 @@
   </cron>
 
   <cron>
+    <url><![CDATA[/_dr/task/deleteExpiredDomains]]></url>
+    <description>
+      This job runs an action that deletes domains that are past their
+      autorenew end date.
+    </description>
+    <schedule>every day 03:07</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=export-snapshot&endpoint=/_dr/task/backupDatastore&runInEmpty]]></url>
     <description>
       This job fires off a Datastore managed-export job that generates snapshot files in GCS.
