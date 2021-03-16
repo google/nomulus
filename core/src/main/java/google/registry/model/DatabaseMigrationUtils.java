@@ -14,6 +14,8 @@
 
 package google.registry.model;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.common.DatabaseTransitionSchedule;
@@ -42,6 +44,11 @@ public class DatabaseMigrationUtils {
     return DatabaseTransitionSchedule.getCached(transitionId)
         .map(DatabaseTransitionSchedule::getPrimaryDatabase)
         .orElse(PrimaryDatabase.DATASTORE);
+  }
+
+  public static boolean isDatastore(TransitionId transitionId) {
+    return tm().transactNew(() -> DatabaseMigrationUtils.getPrimaryDatabase(transitionId))
+        .equals(PrimaryDatabase.DATASTORE);
   }
 
   private DatabaseMigrationUtils() {}
