@@ -15,6 +15,7 @@
 package google.registry.model.transfer;
 
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
+import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
@@ -23,6 +24,7 @@ import com.googlecode.objectify.annotation.AlsoLoad;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.IgnoreSave;
+import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Unindex;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.billing.BillingEvent;
@@ -31,6 +33,7 @@ import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.VKey;
+import java.util.Set;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
@@ -80,7 +83,7 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
 
   @Ignore
   @Column(name = "transfer_billing_cancellation_id")
-  Long billingCancellationId;
+  VKey<BillingEvent.Cancellation> billingCancellationId;
 
   /**
    * The regular one-time billing event that will be charged for a server-approved transfer.
@@ -218,11 +221,20 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     return serverApproveAutorenewPollMessageHistoryId;
   }
 
+  @OnLoad
+  @Override
+  void onLoad(
+      @AlsoLoad("serverApproveEntities")
+          Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities) {
+    super.onLoad(serverApproveEntities);
+    mapBillingCancellationEntityToField(serverApproveEntities, this);
+  }
+
   @PostLoad
   @Override
   void postLoad() {
-    // The superclass's serverApproveEntities should include the billing events if present
     super.postLoad();
+    // The superclass's serverApproveEntities should include the billing events if present
     ImmutableSet.Builder<VKey<? extends TransferServerApproveEntity>> serverApproveEntitiesBuilder =
         new ImmutableSet.Builder<>();
     if (serverApproveEntities != null) {
@@ -234,8 +246,8 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     if (serverApproveAutorenewEvent != null) {
       serverApproveEntitiesBuilder.add(serverApproveAutorenewEvent);
     }
-    if (serverApproveAutorenewPollMessage != null) {
-      serverApproveEntitiesBuilder.add(serverApproveAutorenewPollMessage);
+    if (billingCancellationId != null) {
+      serverApproveEntitiesBuilder.add(billingCancellationId);
     }
     serverApproveEntities = forceEmptyToNull(serverApproveEntitiesBuilder.build());
   }
@@ -250,6 +262,23 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     return new Builder(clone(this));
   }
 
+  /** Maps serverApproveEntities set to the individual fields. */
+  @SuppressWarnings("unchecked")
+  static void mapBillingCancellationEntityToField(
+      Set<VKey<? extends TransferServerApproveEntity>> serverApproveEntities,
+      DomainTransferData domainTransferData) {
+    if (isNullOrEmpty(serverApproveEntities)) {
+      domainTransferData.billingCancellationId = null;
+    } else {
+      domainTransferData.billingCancellationId =
+          (VKey<BillingEvent.Cancellation>)
+              serverApproveEntities.stream()
+                  .filter(k -> k.getKind().equals(BillingEvent.Cancellation.class))
+                  .findFirst()
+                  .orElse(null);
+    }
+  }
+
   public static class Builder extends TransferData.Builder<DomainTransferData, Builder> {
     /** Create a {@link DomainTransferData.Builder} wrapping a new instance. */
     public Builder() {}
@@ -257,6 +286,12 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     /** Create a {@link Builder} wrapping the given instance. */
     private Builder(DomainTransferData instance) {
       super(instance);
+    }
+
+    @Override
+    public DomainTransferData build() {
+      mapBillingCancellationEntityToField(getInstance().serverApproveEntities, getInstance());
+      return super.build();
     }
 
     public Builder setTransferPeriod(Period transferPeriod) {
