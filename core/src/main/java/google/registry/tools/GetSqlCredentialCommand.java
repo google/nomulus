@@ -17,6 +17,7 @@ package google.registry.tools;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Ascii;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.privileges.secretmanager.SecretManagerClient.SecretManagerException;
 import google.registry.privileges.secretmanager.SqlCredential;
 import google.registry.privileges.secretmanager.SqlCredentialStore;
@@ -31,12 +32,18 @@ import javax.inject.Inject;
 /**
  * Command to get a Cloud SQL credential in the Secret Manager.
  *
- * <p>This command is a short-term tool that will be deprecated by the planned privilege server.
+ * <p>The schema deployment process will use this command's output. Coordinate with <a
+ * href="https://github.com/google/nomulus/release/cloudbuild-schema-deploy.yaml">the schema
+ * deployment script</a> before making changes to the output.
  */
 @Parameters(separators = " =", commandDescription = "Get the Cloud SQL Credential for a given user")
 public class GetSqlCredentialCommand implements Command {
 
   @Inject SqlCredentialStore store;
+
+  @Inject
+  @Config("cloudSqlInstanceConnectionName")
+  String cloudSqlInstanceConnectionName;
 
   @Parameter(names = "--user", description = "The Cloud SQL user.", required = true)
   private String user;
@@ -62,12 +69,17 @@ public class GetSqlCredentialCommand implements Command {
       return;
     }
 
+    // Output format is important. Check class level javadoc before making changes.
+    String outputText =
+        String.format(
+            "%s %s %s", cloudSqlInstanceConnectionName, credential.login(), credential.password());
+
     if (outputPath == null) {
-      System.out.printf("[%s]\n", credential.toFormattedString());
+      System.out.printf(outputText);
       return;
     }
     try (FileOutputStream out = new FileOutputStream(outputPath.toFile())) {
-      out.write(credential.toFormattedString().getBytes(StandardCharsets.UTF_8));
+      out.write(outputText.getBytes(StandardCharsets.UTF_8));
     }
   }
 }
