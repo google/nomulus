@@ -321,9 +321,6 @@ public class DomainContent extends EppResource
         nullToEmptyImmutableCopy(gracePeriods).stream()
             .map(gracePeriod -> gracePeriod.cloneAfterOfyLoad(getRepoId()))
             .collect(toImmutableSet());
-    // TODO(b/169873747): Remove this method after explicitly re-saving all domain entities.
-    // See also: GradePeriod.onLoad.
-    gracePeriods.forEach(GracePeriod::onLoad);
 
     // Restore history record ids.
     autorenewPollMessageHistoryId = getHistoryId(autorenewPollMessage);
