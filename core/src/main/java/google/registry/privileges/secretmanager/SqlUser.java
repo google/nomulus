@@ -49,6 +49,7 @@ public abstract class SqlUser {
   /** Enumerates the {@link RobotUser RobotUsers} in the system. */
   public enum RobotId {
     NOMULUS,
+    SCHEMA_DEPLOYER,
     /**
      * Credential for RegistryTool. This is temporary, and will be removed when tool users are
      * assigned their personal credentials.
