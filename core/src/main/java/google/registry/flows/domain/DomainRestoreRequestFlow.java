@@ -233,6 +233,9 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
         .setDeletePollMessage(null)
         .setAutorenewBillingEvent(autorenewEvent.createVKey())
         .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+        // Clear the autorenew end time so if it had expired but is now explicitly being restored,
+        // it won't immediately be deleted again.
+        .setAutorenewEndTime(Optional.empty())
         .setLastEppUpdateTime(now)
         .setLastEppUpdateClientId(clientId)
         .build();
