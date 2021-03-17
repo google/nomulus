@@ -42,6 +42,28 @@ where:
 SCRIPT_DIR="$(realpath $(dirname $0))"
 JAR_NAME="google-java-format-1.8-all-deps.jar"
 
+# Locate the java binary.
+if [ -n "$JAVA_HOME" ]; then
+  JAVA_BIN="$JAVA_HOME/bin/java"
+  if [ ! -x "$JAVA_BIN" ]; then
+    echo "No java binary found in JAVA_HOME (JAVA_HOME is $JAVA_HOME)"
+    exit 1
+  fi
+else
+  # Use java from the path.
+  JAVA_BIN="$(which java)" || JAVA_BIN=""
+  if [ -z "$JAVA_BIN" ]; then
+    echo "JAVA_HOME is not defined and java was not found on the path"
+    exit 1
+  fi
+fi
+
+if ! "$JAVA_BIN" -version 2>&1 | grep 'version "11\.' >/dev/null; then
+  echo "Bad java version.  Requires java 11, got:"
+  "$JAVA_BIN" -version
+  exit 1
+fi
+
 function showNoncompliantFiles() {
   local forkPoint="$1"
   local message="$2"
@@ -63,7 +85,7 @@ function callGoogleJavaFormatDiff() {
       showNoncompliantFiles "$forkPoint" "\033[1mNeeds formatting: "
       callResult=$(git diff -U0 ${forkPoint} | \
           ${SCRIPT_DIR}/google-java-format-diff.py \
-          --java-binary "$JAVA_HOME/bin/java" \
+          --java-binary "$JAVA_BIN" \
           --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
           -p1 | wc -l)
       ;;
@@ -71,14 +93,14 @@ function callGoogleJavaFormatDiff() {
       showNoncompliantFiles "$forkPoint" "\033[1mReformatting: "
       callResult=$(git diff -U0 ${forkPoint} | \
           ${SCRIPT_DIR}/google-java-format-diff.py \
-          --java-binary "$JAVA_HOME/bin/java" \
+          --java-binary "$JAVA_BIN" \
           --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
           -p1 -i)
       ;;
     "show")
       callResult=$(git diff -U0 ${forkPoint} | \
           ${SCRIPT_DIR}/google-java-format-diff.py \
-          --java-binary "$JAVA_HOME/bin/java" \
+          --java-binary "$JAVA_BIN" \
           --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
           -p1)
       ;;
