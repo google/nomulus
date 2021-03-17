@@ -83,7 +83,11 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
 
   @Ignore
   @Column(name = "transfer_billing_cancellation_id")
-  VKey<BillingEvent.Cancellation> billingCancellationId;
+  public VKey<BillingEvent.Cancellation> billingCancellationId;
+
+  @Ignore
+  @Column(name = "transfer_billing_cancellation_history_id")
+  Long billingCancellationHistoryId;
 
   /**
    * The regular one-time billing event that will be charged for a server-approved transfer.
@@ -149,6 +153,17 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
     serverApproveAutorenewPollMessage =
         DomainBase.restoreOfyFrom(
             rootKey, serverApproveAutorenewPollMessage, serverApproveAutorenewPollMessageHistoryId);
+    billingCancellationId =
+        DomainBase.restoreOfyFrom(rootKey, billingCancellationId, billingCancellationHistoryId);
+
+    // Reconstruct server approve entities.  We currently have to call postLoad() a _second_ time
+    // if the billing cancellation id has been reconstituted, as it is part of that set.
+    // TODO(b/183010623): Normalize the approaches to VKey reconstitution for the TransferData
+    // hierarchy (the logic currently lives either in PostLoad or here, depending on the key).
+    if (billingCancellationId != null) {
+      serverApproveEntities = null;
+      postLoad();
+    }
   }
 
   /**
@@ -177,6 +192,12 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
   private void loadServerApproveAutorenewPollMessageHistoryId(
       @AlsoLoad("serverApproveAutorenewPollMessage") VKey<PollMessage.Autorenew> val) {
     serverApproveAutorenewPollMessageHistoryId = DomainBase.getHistoryId(val);
+  }
+
+  @SuppressWarnings("unused") // For Hibernate.
+  private void billingCancellationHistoryId(
+      @AlsoLoad("billingCancellationHistoryId") VKey<BillingEvent.Cancellation> val) {
+    billingCancellationHistoryId = DomainBase.getHistoryId(val);
   }
 
   public Period getTransferPeriod() {
@@ -269,6 +290,7 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
       DomainTransferData domainTransferData) {
     if (isNullOrEmpty(serverApproveEntities)) {
       domainTransferData.billingCancellationId = null;
+      domainTransferData.billingCancellationHistoryId = null;
     } else {
       domainTransferData.billingCancellationId =
           (VKey<BillingEvent.Cancellation>)
@@ -276,6 +298,10 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
                   .filter(k -> k.getKind().equals(BillingEvent.Cancellation.class))
                   .findFirst()
                   .orElse(null);
+      domainTransferData.billingCancellationHistoryId =
+          domainTransferData.billingCancellationId != null
+              ? DomainBase.getHistoryId(domainTransferData.billingCancellationId)
+              : null;
     }
   }
 

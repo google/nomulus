@@ -492,6 +492,7 @@ class DomainTransferRequestFlowTest
     runFlowAssertResponse(loadFile(expectedXmlFilename, substitutions));
     // Transfer should have been requested.
     domain = reloadResourceByForeignKey();
+    DomainTransferData td = domain.getTransferData();
     // Verify that HistoryEntry was created.
     assertAboutDomains()
         .that(domain)
