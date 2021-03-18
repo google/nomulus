@@ -1868,14 +1868,6 @@ ALTER TABLE ONLY public."Domain"
 
 
 --
--- Name: HostHistory fk3d09knnmxrt6iniwnp8j2ykga; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT fk3d09knnmxrt6iniwnp8j2ykga FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(registrar_id);
-
-
---
 -- Name: SignedMarkRevocationEntry fk5ivlhvs3121yx2li5tqh54u4; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2172,6 +2164,14 @@ ALTER TABLE ONLY public."GracePeriod"
 
 
 --
+-- Name: HostHistory fk_history_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."HostHistory"
+    ADD CONSTRAINT fk_history_registrar_id FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
 -- Name: Host fk_host_creation_registrar_id; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2208,7 +2208,7 @@ ALTER TABLE ONLY public."Host"
 --
 
 ALTER TABLE ONLY public."HostHistory"
-    ADD CONSTRAINT fk_hosthistory_host FOREIGN KEY (host_repo_id) REFERENCES public."Host"(repo_id);
+    ADD CONSTRAINT fk_hosthistory_host FOREIGN KEY (host_repo_id) REFERENCES public."Host"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

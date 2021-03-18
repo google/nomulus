@@ -32,12 +32,19 @@ import google.registry.flows.poll.PollAckFlow.NotAuthorizedToAckMessageException
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.poll.PollMessage;
+import google.registry.testing.ReplayExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PollAckFlow}. */
 class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   /** This is the message id being sent in the ACK request. */
   private static final long MESSAGE_ID = 3;

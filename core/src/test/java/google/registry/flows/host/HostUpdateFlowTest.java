@@ -79,14 +79,21 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.ReplayExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestOfyAndSql;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostUpdateFlow}. */
 @DualDatabaseTest
 class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResource> {
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   private void setEppHostUpdateInput(
       String oldHostName, String newHostName, String ipOrStatusToAdd, String ipOrStatusToRem) {
@@ -712,6 +719,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
             .build());
     clock.advanceOneMilli();
     HostResource renamedHost = doSuccessfulTest();
+    clock.advanceOneMilli();
     persistResource(domain.asBuilder().setLastTransferTime(clock.nowUtc().minusDays(1)).build());
     // The last transfer time should be what was on the superordinate domain at the time of the host
     // update, not what it is later changed to.
@@ -721,7 +729,9 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .and()
         .hasLastTransferTime(lastTransferTime)
         .and()
-        .hasLastSuperordinateChange(clock.nowUtc());
+        // Need to add two milliseconds to account for the increment of "persist resource" and the
+        // artificial increment introduced after the flow itself.
+        .hasLastSuperordinateChange(clock.nowUtc().minusMillis(2));
   }
 
   @TestOfyAndSql

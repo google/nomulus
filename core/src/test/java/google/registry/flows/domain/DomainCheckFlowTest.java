@@ -72,6 +72,7 @@ import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.ReplayExtension;
+import google.registry.testing.SetClockExtension;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -79,8 +80,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainCheckFlow}. */
@@ -88,7 +87,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
 
   @Order(value = Order.DEFAULT - 3)
   @RegisterExtension
-  final SetClockExtension setClockExtension = new SetClockExtension();
+  final SetClockExtension setClockExtension = new SetClockExtension(clock, "2009-01-01T10:00:00Z");
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
@@ -1350,13 +1349,5 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
             .setRegistrationExpirationTime(clock.nowUtc().minusDays(1))
             .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
             .build());
-  }
-
-  class SetClockExtension implements BeforeEachCallback {
-    @Override
-    public void beforeEach(ExtensionContext context) {
-      // Kick the clock back to before the earliest date that we set the clock to.
-      clock.setTo(DateTime.parse("2009-01-01T10:00:00Z"));
-    }
   }
 }

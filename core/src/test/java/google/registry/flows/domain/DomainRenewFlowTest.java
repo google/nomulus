@@ -71,6 +71,7 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.ReplayExtension;
+import google.registry.testing.SetClockExtension;
 import java.util.Map;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -78,8 +79,6 @@ import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainRenewFlow}. */
@@ -104,7 +103,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
 
   @Order(value = Order.DEFAULT - 3)
   @RegisterExtension
-  final SetClockExtension setClockExtension = new SetClockExtension();
+  final SetClockExtension setClockExtension =
+      new SetClockExtension(clock, expirationTime.minusMillis(20));
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
@@ -811,22 +811,5 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
                 historyEntry.getModificationTime().plusMinutes(9),
                 TransactionReportField.netRenewsFieldFromYears(5),
                 1));
-  }
-
-  /**
-   * Local extension so we can set the clock correctly prior to using it to define basic entities in
-   * AppEngineExtension.
-   *
-   * <p>This has to happen first, we'll get timestamp inversions if we try to set the clock after
-   * these objects are created.
-   */
-  class SetClockExtension implements BeforeEachCallback {
-    @Override
-    public void beforeEach(ExtensionContext context) {
-      // we have to go far enough back before the expiration time so that the clock advances we do
-      // after each persist don't move us into a grace period.  The current value is likely beyond
-      // what is necessary, but this doesn't hurt.
-      clock.setTo(expirationTime.minusMillis(20));
-    }
   }
 }

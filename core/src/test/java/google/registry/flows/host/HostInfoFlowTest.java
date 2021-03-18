@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,13 +35,20 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.testing.ReplayExtension;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostInfoFlow}. */
 class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> {
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   HostInfoFlowTest() {
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld"));
@@ -105,6 +113,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
 
   private void runTest_superordinateDomain(
       DateTime domainTransferTime, @Nullable DateTime lastSuperordinateChange) throws Exception {
+    persistNewRegistrar("superclientid");
     DomainBase domain =
         persistResource(
             newDomainBase("parent.foobar")
