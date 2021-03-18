@@ -75,7 +75,7 @@ public class GetSqlCredentialCommand implements Command {
             "%s %s %s", cloudSqlInstanceConnectionName, credential.login(), credential.password());
 
     if (outputPath == null) {
-      System.out.printf(outputText);
+      System.out.print(outputText);
       return;
     }
     try (FileOutputStream out = new FileOutputStream(outputPath.toFile())) {
