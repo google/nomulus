@@ -386,7 +386,8 @@ CREATE TABLE public."Domain" (
     transfer_billing_event_history_id bigint,
     transfer_history_entry_id bigint,
     transfer_repo_id text,
-    transfer_poll_message_id_3 bigint
+    transfer_poll_message_id_3 bigint,
+    transfer_billing_cancellation_history_id bigint
 );
 
 
@@ -477,7 +478,8 @@ CREATE TABLE public."DomainHistory" (
     transfer_billing_event_history_id bigint,
     transfer_history_entry_id bigint,
     transfer_repo_id text,
-    transfer_poll_message_id_3 bigint
+    transfer_poll_message_id_3 bigint,
+    transfer_billing_cancellation_history_id bigint
 );
 
 

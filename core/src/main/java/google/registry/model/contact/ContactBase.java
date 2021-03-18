@@ -21,6 +21,7 @@ import static google.registry.model.EppResourceUtils.projectResourceOntoBuilderA
 import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.annotation.Index;
+import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ResourceWithTransferData;
@@ -189,6 +190,17 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
             + " use ContactResource instead");
   }
 
+  @OnLoad
+  void onLoad() {
+    if (voice != null && voice.hasNullFields()) {
+      voice = null;
+    }
+
+    if (fax != null && fax.hasNullFields()) {
+      fax = null;
+    }
+  }
+
   public String getContactId() {
     return contactId;
   }
@@ -325,11 +337,17 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
     }
 
     public B setVoiceNumber(ContactPhoneNumber voiceNumber) {
+      if (voiceNumber != null && voiceNumber.hasNullFields()) {
+        voiceNumber = null;
+      }
       getInstance().voice = voiceNumber;
       return thisCastToDerived();
     }
 
     public B setFaxNumber(ContactPhoneNumber faxNumber) {
+      if (faxNumber != null && faxNumber.hasNullFields()) {
+        faxNumber = null;
+      }
       getInstance().fax = faxNumber;
       return thisCastToDerived();
     }
