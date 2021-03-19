@@ -127,7 +127,7 @@ class DeleteExpiredDomainsActionTest {
     DomainBase domain3 = persistNonAutorenewingDomain("tarm3.tld");
 
     // action.run() executes a non-transactional query by design but makes this test flaky.
-    // Executing a transaction here seems to force the test Datastore tp become up to date.
+    // Executing a transaction here seems to force the test Datastore to become up to date.
     assertThat(tm().loadByEntity(domain3).getStatusValues()).doesNotContain(PENDING_DELETE);
     action.run();
 
