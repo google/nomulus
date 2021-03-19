@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import google.registry.model.tmch.ClaimsListDualDatabaseDao;
 import google.registry.model.tmch.ClaimsListShard;
 import java.io.FileNotFoundException;
 import org.joda.time.DateTime;
@@ -36,7 +37,7 @@ class UploadClaimsListCommandTest extends CommandTestCase<UploadClaimsListComman
       "anotherexample,2013041500/A/C/7/rHdC4wnrWRvPY6nneCVtQhFj0000000003,2011-08-16T12:00:00.0Z");
     runCommand("--force", filename);
 
-    ClaimsListShard claimsList = ClaimsListShard.get();
+    ClaimsListShard claimsList = ClaimsListDualDatabaseDao.get();
     assertThat(claimsList.getTmdbGenerationTime())
         .isEqualTo(DateTime.parse("2012-08-16T00:00:00.0Z"));
     assertThat(claimsList.getClaimKey("example"))

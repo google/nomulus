@@ -21,6 +21,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
+import google.registry.model.tmch.ClaimsListDualDatabaseDao;
 import google.registry.model.tmch.ClaimsListShard;
 import google.registry.tools.params.PathParameter;
 import java.nio.file.Path;
@@ -43,7 +44,7 @@ final class GetClaimsListCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() throws Exception {
-    ClaimsListShard cl = checkNotNull(ClaimsListShard.get(), "Couldn't load ClaimsList");
+    ClaimsListShard cl = checkNotNull(ClaimsListDualDatabaseDao.get(), "Couldn't load ClaimsList");
     String csv = Joiner.on('\n').withKeyValueSeparator(",").join(cl.getLabelsToKeys()) + "\n";
     Files.asCharSink(output.toFile(), UTF_8).write(csv);
   }

@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -48,8 +47,7 @@ public class ClaimsListShardTest {
     assertThrows(
         UnshardedSaveException.class,
         () ->
-            tm()
-                .transact(
+            tm().transact(
                     () -> {
                       ClaimsListShard claimsList =
                           ClaimsListShard.create(
@@ -62,8 +60,7 @@ public class ClaimsListShardTest {
 
   @Test
   void testGet_safelyLoadsEmptyClaimsList_whenNoShardsExist() {
-    assertThat(ClaimsListShard.get().labelsToKeys).isEmpty();
-    assertThat(ClaimsListShard.get().creationTime).isEqualTo(START_OF_TIME);
+    assertThat(ClaimsListShard.getFromDatastore()).isEmpty();
   }
 
   @Test
@@ -77,11 +74,12 @@ public class ClaimsListShardTest {
     // Save it with sharding, and make sure that reloading it works.
     ClaimsListShard unsharded = ClaimsListShard.create(now, ImmutableMap.copyOf(labelsToKeys));
     unsharded.saveToDatastore(shardSize);
-    assertThat(ClaimsListShard.get().labelsToKeys).isEqualTo(unsharded.labelsToKeys);
+    assertThat(ClaimsListShard.getFromDatastore().get().labelsToKeys)
+        .isEqualTo(unsharded.labelsToKeys);
     List<ClaimsListShard> shards1 = ofy().load().type(ClaimsListShard.class).list();
     assertThat(shards1).hasSize(4);
-    assertThat(ClaimsListShard.get().getClaimKey("1")).hasValue("1");
-    assertThat(ClaimsListShard.get().getClaimKey("a")).isEmpty();
+    assertThat(ClaimsListShard.getFromDatastore().get().getClaimKey("1")).hasValue("1");
+    assertThat(ClaimsListShard.getFromDatastore().get().getClaimKey("a")).isEmpty();
     assertThat(ClaimsListShard.getCurrentRevision()).isEqualTo(shards1.get(0).parent);
 
     // Create a smaller ClaimsList that will need only 2 shards to save.
@@ -92,8 +90,10 @@ public class ClaimsListShardTest {
     unsharded = ClaimsListShard.create(now.plusDays(1), ImmutableMap.copyOf(labelsToKeys));
     unsharded.saveToDatastore(shardSize);
     ofy().clearSessionCache();
-    assertThat(ClaimsListShard.get().labelsToKeys).hasSize(unsharded.labelsToKeys.size());
-    assertThat(ClaimsListShard.get().labelsToKeys).isEqualTo(unsharded.labelsToKeys);
+    assertThat(ClaimsListShard.getFromDatastore().get().labelsToKeys)
+        .hasSize(unsharded.labelsToKeys.size());
+    assertThat(ClaimsListShard.getFromDatastore().get().labelsToKeys)
+        .isEqualTo(unsharded.labelsToKeys);
     List<ClaimsListShard> shards2 = ofy().load().type(ClaimsListShard.class).list();
     assertThat(shards2).hasSize(2);
 
