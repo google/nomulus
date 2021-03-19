@@ -73,6 +73,21 @@ public class ReservedListDatastoreDaoTest {
   }
 
   @Test
+  void delete_worksSuccessfully() {
+    ReservedListDatastoreDao.save(reservedList);
+    assertThat(ReservedListDatastoreDao.getLatestRevision("testlist").isPresent()).isTrue();
+    ReservedListDatastoreDao.delete(reservedList);
+    assertThat(ReservedListDatastoreDao.getLatestRevision("testlist").isPresent()).isFalse();
+  }
+
+  @Test
+  void delete_listNotInDatastore() {
+    assertThat(ReservedListDatastoreDao.getLatestRevision("testlist").isPresent()).isFalse();
+    ReservedListDatastoreDao.delete(reservedList);
+    assertThat(ReservedListDatastoreDao.getLatestRevision("testlist").isPresent()).isFalse();
+  }
+
+  @Test
   void getLatestRevision_worksSuccessfully() {
     assertThat(ReservedListDatastoreDao.getLatestRevision("testlist").isPresent()).isFalse();
     ReservedListDatastoreDao.save(reservedList);

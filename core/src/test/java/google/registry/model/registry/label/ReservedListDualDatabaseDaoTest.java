@@ -90,12 +90,33 @@ public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
   }
 
   @TestOfyAndSql
-  void testSave_CloudSqlPrimary_success() {
+  void testSave_cloudSqlPrimary_success() {
     fakeClock.advanceBy(Duration.standardDays(5));
     ReservedListDualDatabaseDao.save(reservedList);
     Optional<ReservedList> savedList =
         ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName());
     assertThat(savedList.get()).isEqualTo(reservedList);
+  }
+
+  @TestOfyAndSql
+  void testDelete_datastorePrimary_success() {
+    ReservedListDualDatabaseDao.save(reservedList);
+    assertThat(ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName()).isPresent())
+        .isTrue();
+    ReservedListDualDatabaseDao.delete(reservedList);
+    assertThat(ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName()).isPresent())
+        .isFalse();
+  }
+
+  @TestOfyAndSql
+  void testDelete_cloudSqlPrimary_success() {
+    fakeClock.advanceBy(Duration.standardDays(5));
+    ReservedListDualDatabaseDao.save(reservedList);
+    assertThat(ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName()).isPresent())
+        .isTrue();
+    ReservedListDualDatabaseDao.delete(reservedList);
+    assertThat(ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName()).isPresent())
+        .isFalse();
   }
 
   @TestOfyAndSql

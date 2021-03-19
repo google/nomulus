@@ -51,6 +51,21 @@ public class ReservedListDualDatabaseDao {
     }
   }
 
+  /** Delete a reserved list from both databases. */
+  public static void delete(ReservedList reservedList) {
+    if (isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
+      ReservedListDatastoreDao.delete(reservedList);
+      DatabaseMigrationUtils.suppressExceptionUnlessInTest(
+          () -> ReservedListSqlDao.delete(reservedList),
+          "Error deleting the reserved list from Cloud SQL.");
+    } else {
+      ReservedListSqlDao.delete(reservedList);
+      DatabaseMigrationUtils.suppressExceptionUnlessInTest(
+          () -> ReservedListDatastoreDao.delete(reservedList),
+          "Error deleting the reserved list from Datastore.");
+    }
+  }
+
   /**
    * Returns the most recent revision of the {@link ReservedList} with the specified name, if it
    * exists.

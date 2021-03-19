@@ -81,6 +81,21 @@ public class ReservedListSqlDaoTest {
   }
 
   @Test
+  void delete_worksSuccessfully() {
+    ReservedListSqlDao.save(testReservedList);
+    assertThat(ReservedListSqlDao.checkExists("testlist")).isTrue();
+    ReservedListSqlDao.delete(testReservedList);
+    assertThat(ReservedListSqlDao.checkExists("testlist")).isFalse();
+  }
+
+  @Test
+  void delete_listNotInDatabase() {
+    assertThat(ReservedListSqlDao.checkExists("testlist")).isFalse();
+    ReservedListSqlDao.delete(testReservedList);
+    assertThat(ReservedListSqlDao.checkExists("testlist")).isFalse();
+  }
+
+  @Test
   void checkExists_worksSuccessfully() {
     assertThat(ReservedListSqlDao.checkExists("testlist")).isFalse();
     ReservedListSqlDao.save(testReservedList);

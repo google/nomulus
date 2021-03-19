@@ -31,6 +31,11 @@ public class ReservedListDatastoreDao {
     ofyTm().transact(() -> ofyTm().put(reservedList));
   }
 
+  /** Delete a reserved list from Datastore. */
+  public static void delete(ReservedList reservedList) {
+    ofyTm().transact(() -> ofyTm().delete(reservedList));
+  }
+
   /**
    * Returns the most recent revision of the {@link ReservedList} with the specified name, if it
    * exists.

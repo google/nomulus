@@ -41,6 +41,11 @@ public class ReservedListSqlDao {
         reservedList.getName(), reservedList.getReservedListEntries().size());
   }
 
+  /** Deletes a reserved list from Cloud SQL. */
+  public static void delete(ReservedList reservedList) {
+    jpaTm().transact(() -> jpaTm().delete(reservedList));
+  }
+
   /**
    * Returns the most recent revision of the {@link ReservedList} with the specified name, if it
    * exists.
