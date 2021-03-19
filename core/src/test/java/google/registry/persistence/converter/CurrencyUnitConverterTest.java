@@ -39,7 +39,7 @@ public class CurrencyUnitConverterTest {
   @Test
   void roundTripConversion() {
     TestEntity entity = new TestEntity(CurrencyUnit.EUR);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    jpaTm().transact(() -> jpaTm().insert(entity));
     assertThat(
             jpaTm()
                 .transact(

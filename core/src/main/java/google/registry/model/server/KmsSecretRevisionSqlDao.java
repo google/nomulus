@@ -42,8 +42,7 @@ public class KmsSecretRevisionSqlDao {
     checkArgument(!isNullOrEmpty(secretName), "secretName cannot be null or empty");
     jpaTm().assertInTransaction();
     return jpaTm()
-        .getEntityManager()
-        .createQuery(
+        .query(
             "FROM KmsSecret ks WHERE ks.revisionKey IN (SELECT MAX(revisionKey) FROM "
                 + "KmsSecret subKs WHERE subKs.secretName = :secretName)",
             KmsSecretRevision.class)

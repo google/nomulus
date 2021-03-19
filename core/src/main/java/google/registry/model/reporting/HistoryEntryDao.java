@@ -31,7 +31,6 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import java.util.Comparator;
-import javax.persistence.EntityManager;
 import org.joda.time.DateTime;
 
 /**
@@ -90,15 +89,14 @@ public class HistoryEntryDao {
       VKey<? extends EppResource> parentKey, DateTime afterTime, DateTime beforeTime) {
     Class<? extends HistoryEntry> historyClass = getHistoryClassFromParent(parentKey.getKind());
     String repoIdFieldName = getRepoIdFieldNameFromHistoryClass(historyClass);
-    EntityManager entityManager = jpaTm().getEntityManager();
-    String tableName = entityManager.getMetamodel().entity(historyClass).getName();
+    String tableName = jpaTm().getEntityManager().getMetamodel().entity(historyClass).getName();
     String queryString =
         String.format(
             "SELECT entry FROM %s entry WHERE entry.modificationTime >= :afterTime AND "
                 + "entry.modificationTime <= :beforeTime AND entry.%s = :parentKey",
             tableName, repoIdFieldName);
-    return entityManager
-        .createQuery(queryString, historyClass)
+    return jpaTm()
+        .query(queryString, historyClass)
         .setParameter("afterTime", afterTime)
         .setParameter("beforeTime", beforeTime)
         .setParameter("parentKey", parentKey.getSqlKey().toString())
@@ -129,13 +127,12 @@ public class HistoryEntryDao {
 
   private static Iterable<? extends HistoryEntry> loadAllHistoryObjectsFromSql(
       Class<? extends HistoryEntry> historyClass, DateTime afterTime, DateTime beforeTime) {
-    EntityManager entityManager = jpaTm().getEntityManager();
-    return entityManager
-        .createQuery(
+    return jpaTm()
+        .query(
             String.format(
                 "SELECT entry FROM %s entry WHERE entry.modificationTime >= :afterTime AND "
                     + "entry.modificationTime <= :beforeTime",
-                entityManager.getMetamodel().entity(historyClass).getName()),
+                jpaTm().getEntityManager().getMetamodel().entity(historyClass).getName()),
             historyClass)
         .setParameter("afterTime", afterTime)
         .setParameter("beforeTime", beforeTime)

@@ -69,7 +69,7 @@ public class DateTimeConverterTest {
   void converter_generatesTimestampWithNormalizedZone() {
     DateTime dt = parseDateTime("2019-09-01T01:01:01Z");
     TestEntity entity = new TestEntity("normalized_utc_time", dt);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    jpaTm().transact(() -> jpaTm().insert(entity));
     TestEntity retrievedEntity =
         jpaTm()
             .transact(
@@ -82,7 +82,7 @@ public class DateTimeConverterTest {
     DateTime dt = parseDateTime("2019-09-01T01:01:01-05:00");
     TestEntity entity = new TestEntity("new_york_time", dt);
 
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    jpaTm().transact(() -> jpaTm().insert(entity));
     TestEntity retrievedEntity =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "new_york_time"));
     assertThat(retrievedEntity.dt.toString()).isEqualTo("2019-09-01T06:01:01.000Z");

@@ -47,7 +47,7 @@ class ReservedListKeySetConverterTest {
 
     Set<Key<ReservedList>> reservedLists = ImmutableSet.of(key1, key2, key3);
     ReservedListSetEntity testEntity = new ReservedListSetEntity(reservedLists);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     ReservedListSetEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(ReservedListSetEntity.class, "id"));
     assertThat(persisted.reservedList).containsExactly(key1, key2, key3);
@@ -56,7 +56,7 @@ class ReservedListKeySetConverterTest {
   @Test
   void testNullValue_writesAndReadsNullSuccessfully() {
     ReservedListSetEntity testEntity = new ReservedListSetEntity(null);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     ReservedListSetEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(ReservedListSetEntity.class, "id"));
     assertThat(persisted.reservedList).isNull();
@@ -65,7 +65,7 @@ class ReservedListKeySetConverterTest {
   @Test
   void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
     ReservedListSetEntity testEntity = new ReservedListSetEntity(ImmutableSet.of());
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     ReservedListSetEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(ReservedListSetEntity.class, "id"));
     assertThat(persisted.reservedList).isEmpty();

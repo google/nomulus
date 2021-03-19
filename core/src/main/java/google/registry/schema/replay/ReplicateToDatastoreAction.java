@@ -57,8 +57,7 @@ class ReplicateToDatastoreAction implements Runnable {
           .transact(
               () ->
                   jpaTm()
-                      .getEntityManager()
-                      .createQuery(
+                      .query(
                           "SELECT txn FROM TransactionEntity txn WHERE id >"
                               + " :lastId ORDER BY id")
                       .setParameter("lastId", lastSqlTxnBeforeBatch.getTransactionId())

@@ -57,10 +57,7 @@ public class TmchCrlTest extends EntityTestCase {
         .transact(
             () ->
                 assertThat(
-                        jpaTm()
-                            .getEntityManager()
-                            .createQuery("SELECT COUNT(*) FROM TmchCrl", Long.class)
-                            .getSingleResult())
+                        jpaTm().query("SELECT COUNT(*) FROM TmchCrl", Long.class).getSingleResult())
                     .isEqualTo(1L));
   }
 
@@ -69,8 +66,7 @@ public class TmchCrlTest extends EntityTestCase {
         .transact(
             () ->
                 jpaTm()
-                    .getEntityManager()
-                    .createQuery("FROM TmchCrl", TmchCrl.class)
+                    .query("FROM TmchCrl", TmchCrl.class)
                     .setMaxResults(1)
                     .getResultStream()
                     .findFirst()

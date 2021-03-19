@@ -1093,8 +1093,7 @@ public class DomainFlowUtils {
           .list();
     } else {
       return jpaTm()
-          .getEntityManager()
-          .createQuery(
+          .query(
               "FROM DomainHistory WHERE modificationTime >= :beginning "
                   + "ORDER BY modificationTime ASC",
               DomainHistory.class)

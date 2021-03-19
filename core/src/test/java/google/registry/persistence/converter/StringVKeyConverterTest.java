@@ -47,7 +47,7 @@ public class StringVKeyConverterTest {
             "TheRealSpartacus",
             VKey.createSql(TestStringEntity.class, "ImSpartacus!"),
             VKey.createSql(CompositeKeyTestStringEntity.class, "NoImSpartacus!"));
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(original));
+    jpaTm().transact(() -> jpaTm().insert(original));
 
     TestStringEntity retrieved =
         jpaTm()

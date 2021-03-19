@@ -74,7 +74,7 @@ class EntityCallbacksListenerTest {
             .transact(
                 () -> {
                   TestEntity removed = jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id"));
-                  jpaTm().getEntityManager().remove(removed);
+                  jpaTm().delete(removed);
                   return removed;
                 });
     checkAll(testRemove, 0, 0, 1, 1);

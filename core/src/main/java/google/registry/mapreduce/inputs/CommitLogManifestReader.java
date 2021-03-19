@@ -58,16 +58,16 @@ class CommitLogManifestReader
 
   @Override
   public QueryResultIterator<Key<CommitLogManifest>> getQueryIterator(@Nullable Cursor cursor) {
-    return startQueryAt(query(), cursor).keys().iterator();
+    return startQueryAt(createBucketQuery(), cursor).keys().iterator();
   }
 
   @Override
   public int getTotal() {
-    return query().count();
+    return createBucketQuery().count();
   }
 
   /** Query for children of this bucket. */
-  Query<CommitLogManifest> query() {
+  Query<CommitLogManifest> createBucketQuery() {
     Query<CommitLogManifest> query = ofy().load().type(CommitLogManifest.class).ancestor(bucketKey);
     if (olderThan != null) {
       query = query.filterKey(

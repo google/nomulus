@@ -43,7 +43,7 @@ public class UpdateAutoTimestampConverterTest {
   void testTypeConversion() {
     TestEntity ent = new TestEntity("myinst", null);
 
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
+    jpaTm().transact(() -> jpaTm().insert(ent));
 
     TestEntity result =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst"));
@@ -56,7 +56,7 @@ public class UpdateAutoTimestampConverterTest {
   void testTimeChangesOnSubsequentTransactions() {
     TestEntity ent1 = new TestEntity("myinst1", null);
 
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent1));
+    jpaTm().transact(() -> jpaTm().insert(ent1));
 
     TestEntity result1 =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst1"));
@@ -65,7 +65,7 @@ public class UpdateAutoTimestampConverterTest {
 
     TestEntity ent2 = new TestEntity("myinst2", result1.uat);
 
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent2));
+    jpaTm().transact(() -> jpaTm().insert(ent2));
 
     TestEntity result2 =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst2"));

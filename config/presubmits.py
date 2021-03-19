@@ -196,7 +196,7 @@ PRESUBMITS = {
         #    - concatenation of literals: (\s*\+\s*"([^"]|\\")*")*
         # Line 3: , or the closing parenthesis, marking the end of the first
         #    parameter
-        r'.*\.create(Native)?Query\('
+        r'.*\.(query|createQuery|createNativeQuery)\('
         r'(?!(\s*([A-Z_]+|"([^"]|\\")*"(\s*\+\s*"([^"]|\\")*")*)'
         r'(,|\s*\))))',
         "java",
@@ -206,6 +206,7 @@ PRESUBMITS = {
          # using Criteria
          "ForeignKeyIndex.java",
          "HistoryEntryDao.java",
+         "JpaTransactionManager.java",
          "JpaTransactionManagerImpl.java",
          # CriteriaQueryBuilder is a false positive
          "CriteriaQueryBuilder.java",

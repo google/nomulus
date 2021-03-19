@@ -105,6 +105,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public <T> TypedQuery<T> query(String sqlString, Class<T> resultClass) {
+    return getEntityManager().createQuery(sqlString, resultClass);
+  }
+
+  @Override
+  public Query query(String sqlString) {
+    return getEntityManager().createQuery(sqlString);
+  }
+
+  @Override
   public boolean inTransaction() {
     return transactionInfo.get().inTransaction;
   }
@@ -365,8 +375,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private boolean exists(String entityName, ImmutableSet<EntityId> entityIds) {
     assertInTransaction();
     TypedQuery<Integer> query =
-        getEntityManager()
-            .createQuery(
+        query(
                 String.format("SELECT 1 FROM %s WHERE %s", entityName, getAndClause(entityIds)),
                 Integer.class)
             .setMaxResults(1);
@@ -470,7 +479,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     // TODO(b/179158393): use Criteria for query to leave not doubt about sql injection risk.
     String sql =
         String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
-    Query query = getEntityManager().createQuery(sql);
+    Query query = query(sql);
     entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
     transactionInfo.get().addDelete(key);
     return query.executeUpdate();

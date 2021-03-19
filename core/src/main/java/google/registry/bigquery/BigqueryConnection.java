@@ -300,10 +300,9 @@ public class BigqueryConnection implements AutoCloseable {
    * Initializes the BigqueryConnection object by setting up the API client and creating the default
    * dataset if it doesn't exist.
    */
-  private BigqueryConnection initialize() throws Exception {
+  private void initialize() throws Exception {
     createDatasetIfNeeded(datasetId);
     createDatasetIfNeeded(TEMP_DATASET_NAME);
-    return this;
   }
 
   /**
@@ -378,13 +377,11 @@ public class BigqueryConnection implements AutoCloseable {
 
   /**
    * Starts an asynchronous load job to populate the specified destination table with the given
-   * source URIs and source format.  Returns a ListenableFuture that holds the same destination
-   * table object on success.
+   * source URIs and source format. Returns a ListenableFuture that holds the same destination table
+   * object on success.
    */
-  public ListenableFuture<DestinationTable> load(
-      DestinationTable dest,
-      SourceFormat sourceFormat,
-      Iterable<String> sourceUris) {
+  public ListenableFuture<DestinationTable> startLoad(
+      DestinationTable dest, SourceFormat sourceFormat, Iterable<String> sourceUris) {
     Job job = new Job()
         .setConfiguration(new JobConfiguration()
             .setLoad(new JobConfigurationLoad()
@@ -400,9 +397,7 @@ public class BigqueryConnection implements AutoCloseable {
    * of the specified query, or if the table is a view, to update the view to reflect that query.
    * Returns a ListenableFuture that holds the same destination table object on success.
    */
-  public ListenableFuture<DestinationTable> query(
-      String querySql,
-      DestinationTable dest) {
+  public ListenableFuture<DestinationTable> startQuery(String querySql, DestinationTable dest) {
     if (dest.type == TableType.VIEW) {
       // Use Futures.transform() rather than calling apply() directly so that any exceptions thrown
       // by calling updateTable will be propagated on the get() call, not from here.
@@ -562,20 +557,18 @@ public class BigqueryConnection implements AutoCloseable {
     // Tracking bug for query-to-GCS support is b/13777340.
     DestinationTable tempTable = buildTemporaryTable().build();
     return transformAsync(
-        query(querySql, tempTable),
+        startQuery(querySql, tempTable),
         tempTable1 -> extractTable(tempTable1, destinationUri, destinationFormat, printHeader),
         directExecutor());
   }
 
   /** @see #runJob(Job, AbstractInputStreamContent) */
-  public Job runJob(Job job) {
+  private Job runJob(Job job) {
     return runJob(job, null);
   }
 
-  /**
-   * Launch a job, wait for it to complete, but <i>do not</i> check for errors.
-   */
-  public Job runJob(Job job, @Nullable AbstractInputStreamContent data) {
+  /** Launch a job, wait for it to complete, but <i>do not</i> check for errors. */
+  private Job runJob(Job job, @Nullable AbstractInputStreamContent data) {
     return checkJob(waitForJob(launchJob(job, data)));
   }
 

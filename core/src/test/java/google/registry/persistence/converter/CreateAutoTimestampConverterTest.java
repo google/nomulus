@@ -45,7 +45,7 @@ public class CreateAutoTimestampConverterTest {
     CreateAutoTimestamp ts = CreateAutoTimestamp.create(DateTime.parse("2019-09-9T11:39:00Z"));
     TestEntity ent = new TestEntity("myinst", ts);
 
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
+    jpaTm().transact(() -> jpaTm().insert(ent));
     TestEntity result =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst"));
     assertThat(result).isEqualTo(new TestEntity("myinst", ts));
@@ -56,7 +56,7 @@ public class CreateAutoTimestampConverterTest {
     CreateAutoTimestamp ts = CreateAutoTimestamp.create(null);
     TestEntity ent = new TestEntity("autoinit", ts);
 
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(ent));
+    jpaTm().transact(() -> jpaTm().insert(ent));
 
     TestEntity result =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "autoinit"));

@@ -60,7 +60,7 @@ class TimedTransitionPropertyConverterBaseTest {
   @Test
   void roundTripConversion_returnsSameTimedTransitionProperty() {
     TestEntity testEntity = new TestEntity(TIMED_TRANSITION_PROPERTY);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).containsExactlyEntriesIn(TIMED_TRANSITION_PROPERTY);
@@ -69,7 +69,7 @@ class TimedTransitionPropertyConverterBaseTest {
   @Test
   void testUpdateColumn_succeeds() {
     TestEntity testEntity = new TestEntity(TIMED_TRANSITION_PROPERTY);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).containsExactlyEntriesIn(TIMED_TRANSITION_PROPERTY);
@@ -84,7 +84,7 @@ class TimedTransitionPropertyConverterBaseTest {
   @Test
   void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).isNull();

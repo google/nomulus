@@ -17,12 +17,30 @@ package google.registry.persistence.transaction;
 import google.registry.persistence.VKey;
 import java.util.function.Supplier;
 import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 /** Sub-interface of {@link TransactionManager} which defines JPA related methods. */
 public interface JpaTransactionManager extends TransactionManager {
 
   /** Returns the {@link EntityManager} for the current request. */
   EntityManager getEntityManager();
+
+  /**
+   * Creates a JPA SQL query for the given query string and result class.
+   *
+   * <p>This is a convenience method for the longer <code>
+   * jpaTm().getEntityManager().createQuery(...)</code>.
+   */
+  <T> TypedQuery<T> query(String sqlString, Class<T> resultClass);
+
+  /**
+   * Creates a JPA SQL query for the given query string (which does not return results).
+   *
+   * <p>This is a convenience method for the longer <code>
+   * jpaTm().getEntityManager().createQuery(...)</code>.
+   */
+  Query query(String sqlString);
 
   /** Executes the work in a transaction with no retries and returns the result. */
   <T> T transactNoRetry(Supplier<T> work);

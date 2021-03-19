@@ -651,8 +651,7 @@ public class Registrar extends ImmutableObject
       return tm().transact(
               () ->
                   jpaTm()
-                      .getEntityManager()
-                      .createQuery(
+                      .query(
                           "FROM RegistrarPoc WHERE registrarId = :registrarId",
                           RegistrarContact.class)
                       .setParameter("registrarId", clientIdentifier)

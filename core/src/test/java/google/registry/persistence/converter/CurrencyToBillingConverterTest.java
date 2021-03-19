@@ -48,7 +48,7 @@ public class CurrencyToBillingConverterTest {
             CurrencyUnit.of("CNY"),
             new BillingAccountEntry(CurrencyUnit.of("CNY"), "accountId2"));
     TestEntity testEntity = new TestEntity(currencyToBilling);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.currencyToBilling).containsExactlyEntriesIn(currencyToBilling);

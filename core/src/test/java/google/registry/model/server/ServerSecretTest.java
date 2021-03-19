@@ -74,8 +74,7 @@ public class ServerSecretTest extends EntityTestCase {
         .transact(
             () ->
                 jpaTm()
-                    .getEntityManager()
-                    .createQuery("FROM ServerSecret", ServerSecret.class)
+                    .query("FROM ServerSecret", ServerSecret.class)
                     .setMaxResults(1)
                     .getResultStream()
                     .findFirst()
