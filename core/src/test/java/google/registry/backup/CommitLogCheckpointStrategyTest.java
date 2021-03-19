@@ -30,7 +30,6 @@ import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.persistence.transaction.TransactionManager;
-import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
@@ -280,18 +279,18 @@ public class CommitLogCheckpointStrategyTest {
 
     // Bucket checkpoint times should be clamped as expected.
     assertThat(strategy.computeCheckpoint())
-        .isEqualTo(CommitLogCheckpoint.create(
-            checkpointTime,
-            ImmutableMap.of(1, now, 2, threshold, 3, threshold)));
+        .isEqualTo(
+            CommitLogCheckpoint.create(
+                checkpointTime, ImmutableMap.of(1, now, 2, threshold, 3, threshold)));
   }
 
   private void writeCommitLogToBucket(final int bucketId) {
     fakeBucketIdSupplier.value = bucketId;
     tm.transact(
         () ->
-            CursorDao.saveCursor(
-                Cursor.create(RDE_REPORT, tm.getTransactionTime(), Registry.get("tld" + bucketId)),
-                "tld" + bucketId));
+            tm.put(
+                Cursor.create(
+                    RDE_REPORT, tm.getTransactionTime(), Registry.get("tld" + bucketId))));
     fakeBucketIdSupplier.value = null;
   }
 

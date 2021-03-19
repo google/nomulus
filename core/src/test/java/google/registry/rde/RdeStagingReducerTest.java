@@ -39,7 +39,6 @@ import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registry.Registry;
 import google.registry.request.RequestParameters;
-import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
@@ -105,10 +104,10 @@ class RdeStagingReducerTest {
   @BeforeEach
   void beforeEach() {
     createTld("soy");
-    CursorDao.saveCursor(Cursor.create(CursorType.BRDA, now, Registry.get("soy")), "soy");
-    CursorDao.saveCursor(Cursor.create(CursorType.RDE_STAGING, now, Registry.get("soy")), "soy");
     tm().transact(
             () -> {
+              tm().put(Cursor.create(CursorType.BRDA, now, Registry.get("soy")));
+              tm().put(Cursor.create(CursorType.RDE_STAGING, now, Registry.get("soy")));
               RdeRevision.saveRevision("soy", now, THIN, 0);
               RdeRevision.saveRevision("soy", now, FULL, 0);
             });

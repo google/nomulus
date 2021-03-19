@@ -15,7 +15,7 @@
 package google.registry.rde;
 
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.schema.cursor.CursorDao.loadAndCompare;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor;
@@ -24,7 +24,6 @@ import google.registry.model.registry.Registry;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;
-import google.registry.schema.cursor.CursorDao;
 import google.registry.util.Clock;
 import java.util.concurrent.Callable;
 import javax.inject.Inject;
@@ -92,7 +91,6 @@ class EscrowTaskRunner {
           logger.atInfo().log("TLD: %s", registry.getTld());
           DateTime startOfToday = clock.nowUtc().withTimeAtStartOfDay();
           Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
-          loadAndCompare(cursor, registry.getTldStr());
           final DateTime nextRequiredRun = (cursor == null ? startOfToday : cursor.getCursorTime());
           if (nextRequiredRun.isAfter(startOfToday)) {
             throw new NoContentException("Already completed");
@@ -101,7 +99,7 @@ class EscrowTaskRunner {
           task.runWithLock(nextRequiredRun);
           DateTime nextRun = nextRequiredRun.plus(interval);
           logger.atInfo().log("Rolling cursor forward to %s.", nextRun);
-          CursorDao.saveCursor(Cursor.create(cursorType, nextRun, registry), registry.getTldStr());
+          tm().transact(() -> tm().put(Cursor.create(cursorType, nextRun, registry)));
           return null;
         };
     String lockName = String.format("EscrowTaskRunner %s", task.getClass().getSimpleName());

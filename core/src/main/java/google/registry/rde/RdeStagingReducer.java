@@ -22,7 +22,6 @@ import static com.google.common.base.Verify.verify;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
@@ -41,7 +40,6 @@ import google.registry.model.rde.RdeRevision;
 import google.registry.model.registry.Registry;
 import google.registry.request.RequestParameters;
 import google.registry.request.lock.LockHandler;
-import google.registry.schema.cursor.CursorDao;
 import google.registry.tldconfig.idn.IdnTableEnum;
 import google.registry.util.TaskQueueUtils;
 import google.registry.xjc.rdeheader.XjcRdeHeader;
@@ -213,7 +211,6 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
             () -> {
               Registry registry = Registry.get(tld);
               Cursor cursor = ofy().load().key(Cursor.createKey(key.cursor(), registry)).now();
-              loadAndCompare(cursor, tld);
               DateTime position = getCursorTimeOrStartOfTime(cursor);
               checkState(key.interval() != null, "Interval must be present");
               DateTime newPosition = key.watermark().plus(key.interval());
@@ -226,8 +223,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
                   "Partial ordering of RDE deposits broken: %s %s",
                   position,
                   key);
-              CursorDao.saveCursor(
-                  Cursor.create(key.cursor(), newPosition, registry), registry.getTldStr());
+              tm().put(Cursor.create(key.cursor(), newPosition, registry));
               logger.atInfo().log(
                   "Rolled forward %s on %s cursor to %s", key.cursor(), tld, newPosition);
               RdeRevision.saveRevision(tld, watermark, mode, revision);

@@ -41,6 +41,7 @@
     <class>google.registry.model.billing.BillingEvent$Cancellation</class>
     <class>google.registry.model.billing.BillingEvent$OneTime</class>
     <class>google.registry.model.billing.BillingEvent$Recurring</class>
+    <class>google.registry.model.common.Cursor</class>
     <class>google.registry.model.contact.ContactHistory</class>
     <class>google.registry.model.contact.ContactResource</class>
     <class>google.registry.model.domain.DomainBase</class>
@@ -69,7 +70,6 @@
     <class>google.registry.model.tmch.ClaimsListShard</class>
     <class>google.registry.model.tmch.TmchCrl</class>
     <class>google.registry.persistence.transaction.TransactionEntity</class>
-    <class>google.registry.schema.cursor.Cursor</class>
     <class>google.registry.schema.domain.RegistryLock</class>
     <class>google.registry.schema.replay.SqlReplayCheckpoint</class>
     <class>google.registry.schema.server.Lock</class>

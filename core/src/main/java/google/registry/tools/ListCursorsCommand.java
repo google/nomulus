@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.schema.cursor.CursorDao.loadAndCompare;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -75,9 +74,6 @@ final class ListCursorsCommand implements CommandWithRemoteApi {
   }
 
   private static String renderLine(String tld, Optional<Cursor> cursor) {
-    if (cursor.isPresent()) {
-      loadAndCompare(cursor.get(), tld);
-    }
     return String.format(
         OUTPUT_FMT,
         tld,

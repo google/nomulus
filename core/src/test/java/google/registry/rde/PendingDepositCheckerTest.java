@@ -20,6 +20,7 @@ import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeMode.THIN;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.time.DateTimeConstants.TUESDAY;
@@ -30,7 +31,6 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
-import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
@@ -149,17 +149,24 @@ public class PendingDepositCheckerTest {
     clock.advanceOneMilli();
     createTldWithEscrowEnabled("fun");
     clock.advanceOneMilli();
-    assertThat(checker.getTldsAndWatermarksPendingDepositForRdeAndBrda()).isEqualTo(
-        ImmutableSetMultimap.of(
-            "pal", PendingDeposit.create(
-                "pal", DateTime.parse("2000-01-01TZ"), FULL, RDE_STAGING, standardDays(1)),
-            "fun", PendingDeposit.create(
-                "fun", DateTime.parse("2000-01-01TZ"), FULL, RDE_STAGING, standardDays(1))));
+    assertThat(checker.getTldsAndWatermarksPendingDepositForRdeAndBrda())
+        .isEqualTo(
+            ImmutableSetMultimap.of(
+                "pal",
+                    PendingDeposit.create(
+                        "pal", DateTime.parse("2000-01-01TZ"), FULL, RDE_STAGING, standardDays(1)),
+                "fun",
+                    PendingDeposit.create(
+                        "fun",
+                        DateTime.parse("2000-01-01TZ"),
+                        FULL,
+                        RDE_STAGING,
+                        standardDays(1))));
   }
 
   private static void setCursor(
       final Registry registry, final CursorType cursorType, final DateTime value) {
-    CursorDao.saveCursor(Cursor.create(cursorType, value, registry), registry.getTldStr());
+    tm().transact(() -> tm().put(Cursor.create(cursorType, value, registry)));
   }
 
   private static void createTldWithEscrowEnabled(final String tld) {

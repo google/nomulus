@@ -24,12 +24,23 @@ import com.google.common.base.Splitter;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
+import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.common.Cursor.CursorId;
 import google.registry.model.registry.Registry;
-import google.registry.schema.replay.DatastoreOnlyEntity;
+import google.registry.persistence.VKey;
+import google.registry.schema.replay.DatastoreAndSqlEntity;
+import java.io.Serializable;
 import java.util.List;
+import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.IdClass;
+import javax.persistence.PostLoad;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -38,7 +49,12 @@ import org.joda.time.DateTime;
  * scoped on {@link EntityGroupRoot}.
  */
 @Entity
-public class Cursor extends ImmutableObject implements DatastoreOnlyEntity {
+@javax.persistence.Entity
+@IdClass(CursorId.class)
+public class Cursor extends ImmutableObject implements DatastoreAndSqlEntity {
+
+  /** The scope of a global cursor. A global cursor is a cursor that is not specific to one tld. */
+  public static final String GLOBAL = "GLOBAL";
 
   /** The types of cursors, used as the string id field for each cursor in Datastore. */
   public enum CursorType {
@@ -104,9 +120,9 @@ public class Cursor extends ImmutableObject implements DatastoreOnlyEntity {
 
     /**
      * If there are multiple cursors for a given cursor type, a cursor must also have a scope
-     * defined (distinct from a parent, which is always the EntityGroupRoot key). For instance,
-     * for a cursor that is defined at the registry level, the scope type will be Registry.class.
-     * For a cursor (theoretically) defined for each EPP resource, the scope type will be
+     * defined (distinct from a parent, which is always the EntityGroupRoot key). For instance, for
+     * a cursor that is defined at the registry level, the scope type will be Registry.class. For a
+     * cursor (theoretically) defined for each EPP resource, the scope type will be
      * EppResource.class. For a global cursor, i.e. one that applies per environment, this will be
      * {@link EntityGroupRoot}.
      */
@@ -115,24 +131,73 @@ public class Cursor extends ImmutableObject implements DatastoreOnlyEntity {
     }
   }
 
-  @Parent
-  Key<EntityGroupRoot> parent = getCrossTldKey();
+  @Transient @Parent Key<EntityGroupRoot> parent = getCrossTldKey();
 
-  @Id
-  String id;
+  @Transient @Id String id;
 
+  @Ignore
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  @javax.persistence.Id
+  CursorType type;
+
+  @Ignore
+  @Column(nullable = false)
+  @javax.persistence.Id
+  String scope;
+
+  @Column(nullable = false)
   DateTime cursorTime = START_OF_TIME;
 
   /** An automatically managed timestamp of when this object was last written to Datastore. */
+  @Column(nullable = false)
   UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
+
+  @OnLoad
+  void onLoad() {
+    scope = getScopeFromId(id);
+    type = getTypeFromId(id);
+  }
+
+  @PostLoad
+  void postLoad() {
+    // "Generate" the ID based on the scope and type
+    Key<? extends ImmutableObject> scopeKey =
+        scope.equals(GLOBAL)
+            ? getCrossTldKey()
+            : Key.create(getCrossTldKey(), Registry.class, scope);
+    id = generateId(type, scopeKey);
+  }
+
+  public static VKey<Cursor> createVKey(Key<Cursor> key) {
+    String id = key.getName();
+    return VKey.create(Cursor.class, new CursorId(getTypeFromId(id), getScopeFromId(id)), key);
+  }
+
+  public VKey<Cursor> createVKey() {
+    return createVKey(type, scope);
+  }
+
+  public static VKey<Cursor> createGlobalVKey(CursorType type) {
+    return createVKey(type, GLOBAL);
+  }
+
+  public static VKey<Cursor> createVKey(CursorType type, String scope) {
+    Key<Cursor> key =
+        scope.equals(GLOBAL) ? createGlobalKey(type) : createKey(type, Registry.get(scope));
+    return VKey.create(Cursor.class, new CursorId(type, scope), key);
+  }
 
   public DateTime getLastUpdateTime() {
     return lastUpdateTime.getTimestamp();
   }
 
+  public String getScope() {
+    return scope;
+  }
+
   public CursorType getType() {
-    List<String> id = Splitter.on('_').splitToList(this.id);
-    return CursorType.valueOf(String.join("_", id.subList(1, id.size())));
+    return type;
   }
 
   /**
@@ -142,16 +207,32 @@ public class Cursor extends ImmutableObject implements DatastoreOnlyEntity {
   private static void checkValidCursorTypeForScope(
       CursorType cursorType, Key<? extends ImmutableObject> scope) {
     checkArgument(
-        cursorType.getScopeClass().equals(
-            scope.equals(EntityGroupRoot.getCrossTldKey())
-                ? EntityGroupRoot.class
-                : ofy().factory().getMetadata(scope).getEntityClass()),
+        cursorType
+            .getScopeClass()
+            .equals(
+                scope.equals(getCrossTldKey())
+                    ? EntityGroupRoot.class
+                    : ofy().factory().getMetadata(scope).getEntityClass()),
         "Class required for cursor does not match scope class");
   }
 
   /** Generates a unique ID for a given scope key and cursor type. */
   private static String generateId(CursorType cursorType, Key<? extends ImmutableObject> scope) {
     return String.format("%s_%s", scope.getString(), cursorType.name());
+  }
+
+  private static String getScopeFromId(String id) {
+    List<String> idSplit = Splitter.on('_').splitToList(id);
+    // The "parent" is always the crossTldKey; in order to find the scope (either Registry or
+    // cross-tld-key) we have to parse the part of the ID
+    Key<?> scopeKey = Key.valueOf(idSplit.get(0));
+    return scopeKey.equals(getCrossTldKey()) ? GLOBAL : scopeKey.getName();
+  }
+
+  private static CursorType getTypeFromId(String id) {
+    List<String> idSplit = Splitter.on('_').splitToList(id);
+    // The cursor type is the second part of the ID string
+    return CursorType.valueOf(String.join("_", idSplit.subList(1, idSplit.size())));
   }
 
   /** Creates a unique key for a given scope and cursor type. */
@@ -166,13 +247,12 @@ public class Cursor extends ImmutableObject implements DatastoreOnlyEntity {
     checkArgument(
         cursorType.getScopeClass().equals(EntityGroupRoot.class),
         "Cursor type is not a global cursor.");
-    return Key.create(
-        getCrossTldKey(), Cursor.class, generateId(cursorType, EntityGroupRoot.getCrossTldKey()));
+    return Key.create(getCrossTldKey(), Cursor.class, generateId(cursorType, getCrossTldKey()));
   }
 
   /** Creates a new global cursor instance. */
   public static Cursor createGlobal(CursorType cursorType, DateTime cursorTime) {
-    return create(cursorType, cursorTime, EntityGroupRoot.getCrossTldKey());
+    return create(cursorType, cursorTime, getCrossTldKey());
   }
 
   /** Creates a new cursor instance with a given {@link Key} scope. */
@@ -184,8 +264,10 @@ public class Cursor extends ImmutableObject implements DatastoreOnlyEntity {
     checkNotNull(cursorType, "Cursor type cannot be null");
     checkValidCursorTypeForScope(cursorType, scope);
     instance.id = generateId(cursorType, scope);
+    instance.type = cursorType;
+    instance.scope = scope.equals(getCrossTldKey()) ? GLOBAL : scope.getName();
     return instance;
-   }
+  }
 
   /** Creates a new cursor instance with a given {@link ImmutableObject} scope. */
   public static Cursor create(CursorType cursorType, DateTime cursorTime, ImmutableObject scope) {
@@ -202,5 +284,18 @@ public class Cursor extends ImmutableObject implements DatastoreOnlyEntity {
 
   public DateTime getCursorTime() {
     return cursorTime;
+  }
+
+  static class CursorId extends ImmutableObject implements Serializable {
+
+    public CursorType type;
+    public String scope;
+
+    private CursorId() {}
+
+    public CursorId(CursorType type, String scope) {
+      this.type = type;
+      this.scope = scope;
+    }
   }
 }

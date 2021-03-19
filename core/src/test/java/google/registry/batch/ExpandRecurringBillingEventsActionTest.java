@@ -19,6 +19,7 @@ import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.domain.Period.Unit.YEARS;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -49,7 +50,6 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.schema.cursor.CursorDao;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
@@ -101,9 +101,7 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   private void saveCursor(final DateTime cursorTime) {
-    CursorDao.saveCursor(
-        Cursor.createGlobal(RECURRING_BILLING, cursorTime),
-        google.registry.schema.cursor.Cursor.GLOBAL);
+    tm().transact(() -> tm().put(Cursor.createGlobal(RECURRING_BILLING, cursorTime)));
   }
 
   private void runMapreduce() throws Exception {

@@ -14,15 +14,15 @@
 
 package google.registry.tools;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
-import google.registry.schema.cursor.CursorDao;
 import google.registry.tools.params.DateTimeParameter;
 import java.util.List;
 import org.joda.time.DateTime;
@@ -34,10 +34,7 @@ final class UpdateCursorsCommand extends ConfirmingCommand implements CommandWit
   @Parameter(description = "TLDs on which to operate. Omit for global cursors.")
   private List<String> tlds;
 
-  @Parameter(
-      names = "--type",
-      description = "Which cursor to update.",
-      required = true)
+  @Parameter(names = "--type", description = "Which cursor to update.", required = true)
   private CursorType cursorType;
 
   @Parameter(
@@ -47,28 +44,25 @@ final class UpdateCursorsCommand extends ConfirmingCommand implements CommandWit
       required = true)
   private DateTime newTimestamp;
 
-  ImmutableMap<Cursor, String> cursorsToUpdate;
+  ImmutableList<Cursor> cursorsToUpdate;
 
   @Override
   protected void init() {
-    ImmutableMap.Builder<Cursor, String> cursorsToUpdateBuilder = new ImmutableMap.Builder<>();
+    ImmutableList.Builder<Cursor> result = new ImmutableList.Builder<>();
     if (isNullOrEmpty(tlds)) {
-      cursorsToUpdateBuilder.put(
-          Cursor.createGlobal(cursorType, newTimestamp),
-          google.registry.schema.cursor.Cursor.GLOBAL);
+      result.add(Cursor.createGlobal(cursorType, newTimestamp));
     } else {
       for (String tld : tlds) {
         Registry registry = Registry.get(tld);
-        cursorsToUpdateBuilder.put(
-            Cursor.create(cursorType, newTimestamp, registry), registry.getTldStr());
+        result.add(Cursor.create(cursorType, newTimestamp, registry));
       }
     }
-    cursorsToUpdate = cursorsToUpdateBuilder.build();
+    cursorsToUpdate = result.build();
   }
 
   @Override
-  protected String execute() throws Exception {
-    CursorDao.saveCursors(cursorsToUpdate);
+  protected String execute() {
+    tm().transact(() -> tm().putAll(cursorsToUpdate));
     return String.format("Updated %d cursors.\n", cursorsToUpdate.size());
   }
 
@@ -79,14 +73,13 @@ final class UpdateCursorsCommand extends ConfirmingCommand implements CommandWit
     if (cursorsToUpdate.isEmpty()) {
       return "No cursor changes to apply.";
     }
-    cursorsToUpdate.entrySet().stream()
-        .forEach(entry -> changes.append(getChangeString(entry.getKey(), entry.getValue())));
+    cursorsToUpdate.forEach(cursor -> changes.append(getChangeString(cursor)));
     return changes.toString();
   }
 
-  private String getChangeString(Cursor cursor, String scope) {
+  private String getChangeString(Cursor cursor) {
     return String.format(
         "Change cursorTime of %s for Scope:%s to %s\n",
-        cursor.getType(), scope, cursor.getCursorTime());
+        cursor.getType(), cursor.getScope(), cursor.getCursorTime());
   }
 }
