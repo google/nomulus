@@ -23,6 +23,10 @@ apt-get upgrade -y
 apt-get install openjdk-11-jdk-headless -y
 # Install Python
 apt-get install python -y
+# As of March 2021 python3 is at v3.6. Get pip then install dataclasses
+# (introduced in 3.7) for nom_build
+apt-get install python3-pip -y
+python3 -m pip install dataclasses
 # Install Node
 curl -sL https://deb.nodesource.com/setup_current.x | bash -
 apt-get install -y nodejs
