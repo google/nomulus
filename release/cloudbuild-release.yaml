@@ -168,8 +168,8 @@ steps:
   - |
     set -e
     config_file="./core/src/main/java/google/registry/config/files/default-config.yaml"
-    sed -i -e "s/\(\s*releaseTag:\s*\)live/\1ABC/" \
-      -e "s/\(\s*beamStagingProjectId:\s*\)null/\1blah/" \
+    sed -i -e "s/\(\s*releaseTag:\s*\)live/\1${TAG_NAME}/" \
+      -e "s/\(\s*beamStagingProjectId:\s*\)null/\1${PROJECT_ID}/" \
       ${config_file}
 # Check out the release repo.
 - name: 'gcr.io/cloud-builders/gcloud'
