@@ -106,8 +106,7 @@ public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEach
               .transact(
                   () ->
                       jpaTm()
-                          .getEntityManager()
-                          .createQuery(
+                          .query(
                               String.format("SELECT e FROM %s e", getJpaEntityName(entityType)),
                               entityType)
                           .setMaxResults(1)

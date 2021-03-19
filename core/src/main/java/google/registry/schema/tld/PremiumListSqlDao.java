@@ -159,7 +159,7 @@ public class PremiumListSqlDao {
   }
 
   public static PremiumList save(PremiumList premiumList) {
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(premiumList));
+    jpaTm().transact(() -> jpaTm().insert(premiumList));
     premiumListCache.invalidate(premiumList.getName());
     return premiumList;
   }
@@ -174,8 +174,7 @@ public class PremiumListSqlDao {
         .transact(
             () ->
                 jpaTm()
-                    .getEntityManager()
-                    .createQuery(
+                    .query(
                         "FROM PremiumList WHERE name = :name ORDER BY revisionId DESC",
                         PremiumList.class)
                     .setParameter("name", premiumListName)
@@ -194,8 +193,7 @@ public class PremiumListSqlDao {
         .transact(
             () ->
                 jpaTm()
-                    .getEntityManager()
-                    .createQuery(
+                    .query(
                         "FROM PremiumEntry pe WHERE pe.revisionId = :revisionId",
                         PremiumEntry.class)
                     .setParameter("revisionId", premiumList.getRevisionId())
@@ -211,8 +209,7 @@ public class PremiumListSqlDao {
         .transact(
             () ->
                 jpaTm()
-                    .getEntityManager()
-                    .createQuery(
+                    .query(
                         "SELECT pe.price FROM PremiumEntry pe WHERE pe.revisionId = :revisionId"
                             + " AND pe.domainLabel = :label",
                         BigDecimal.class)

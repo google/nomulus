@@ -46,7 +46,7 @@ public class LongVKeyConverterTest {
         new TestLongEntity(
             VKey.createSql(TestLongEntity.class, 10L),
             VKey.createSql(CompositeKeyTestLongEntity.class, 20L));
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(original));
+    jpaTm().transact(() -> jpaTm().insert(original));
 
     TestLongEntity retrieved =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestLongEntity.class, "id"));

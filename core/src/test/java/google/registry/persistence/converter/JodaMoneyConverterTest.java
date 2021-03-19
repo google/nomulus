@@ -71,7 +71,7 @@ public class JodaMoneyConverterTest {
   void roundTripConversion() {
     Money money = Money.of(CurrencyUnit.USD, 100);
     TestEntity entity = new TestEntity(money);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    jpaTm().transact(() -> jpaTm().insert(entity));
     List<?> result =
         jpaTm()
             .transact(
@@ -101,7 +101,7 @@ public class JodaMoneyConverterTest {
             "dos", Money.ofMajor(CurrencyUnit.JPY, 2000),
             "tres", Money.of(CurrencyUnit.GBP, 20));
     ComplexTestEntity entity = new ComplexTestEntity(moneyMap, myMoney, yourMoney);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    jpaTm().transact(() -> jpaTm().insert(entity));
     List<?> result =
         jpaTm()
             .transact(

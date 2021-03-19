@@ -71,8 +71,7 @@ public class ReservedListSqlDaoTest {
             () -> {
               ReservedList persistedList =
                   jpaTm()
-                      .getEntityManager()
-                      .createQuery("FROM ReservedList WHERE name = :name", ReservedList.class)
+                      .query("FROM ReservedList WHERE name = :name", ReservedList.class)
                       .setParameter("name", "testlist")
                       .getSingleResult();
               assertThat(persistedList.getReservedListEntries())

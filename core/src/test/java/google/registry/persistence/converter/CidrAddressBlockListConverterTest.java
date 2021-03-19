@@ -45,7 +45,7 @@ public class CidrAddressBlockListConverterTest {
             CidrAddressBlock.create("8000::/1"),
             CidrAddressBlock.create("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"));
     TestEntity testEntity = new TestEntity(addresses);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.addresses).isEqualTo(addresses);

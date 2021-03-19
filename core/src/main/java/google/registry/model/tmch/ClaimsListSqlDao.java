@@ -17,14 +17,13 @@ package google.registry.model.tmch;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import java.util.Optional;
-import javax.persistence.EntityManager;
 
 /** Data access object for {@link ClaimsListShard}. */
 public class ClaimsListSqlDao {
 
   /** Saves the given {@link ClaimsListShard} to Cloud SQL. */
   static void save(ClaimsListShard claimsList) {
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(claimsList));
+    jpaTm().transact(() -> jpaTm().insert(claimsList));
   }
 
   /**
@@ -35,11 +34,12 @@ public class ClaimsListSqlDao {
     return jpaTm()
         .transact(
             () -> {
-              EntityManager em = jpaTm().getEntityManager();
               Long revisionId =
-                  em.createQuery("SELECT MAX(revisionId) FROM ClaimsList", Long.class)
+                  jpaTm()
+                      .query("SELECT MAX(revisionId) FROM ClaimsList", Long.class)
                       .getSingleResult();
-              return em.createQuery(
+              return jpaTm()
+                  .query(
                       "FROM ClaimsList cl LEFT JOIN FETCH cl.labelsToKeys WHERE cl.revisionId ="
                           + " :revisionId",
                       ClaimsListShard.class)

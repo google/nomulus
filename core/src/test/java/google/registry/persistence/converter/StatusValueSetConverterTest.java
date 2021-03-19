@@ -39,7 +39,7 @@ public class StatusValueSetConverterTest {
     Set<StatusValue> enums = ImmutableSet.of(StatusValue.INACTIVE, StatusValue.PENDING_DELETE);
     TestEntity obj = new TestEntity("foo", enums);
 
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(obj));
+    jpaTm().transact(() -> jpaTm().insert(obj));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "foo"));
     assertThat(persisted.data).isEqualTo(enums);

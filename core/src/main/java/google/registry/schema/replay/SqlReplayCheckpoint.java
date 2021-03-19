@@ -39,8 +39,7 @@ public class SqlReplayCheckpoint implements SqlEntity {
   public static DateTime get() {
     jpaTm().assertInTransaction();
     return jpaTm()
-        .getEntityManager()
-        .createQuery("FROM SqlReplayCheckpoint", SqlReplayCheckpoint.class)
+        .query("FROM SqlReplayCheckpoint", SqlReplayCheckpoint.class)
         .setMaxResults(1)
         .getResultStream()
         .findFirst()

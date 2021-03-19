@@ -41,7 +41,7 @@ class BloomFilterConverterTest {
     BloomFilter<String> bloomFilter = BloomFilter.create(stringFunnel(US_ASCII), 3);
     ImmutableSet.of("foo", "bar", "baz").forEach(bloomFilter::put);
     TestEntity entity = new TestEntity(bloomFilter);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(entity));
+    jpaTm().transact(() -> jpaTm().insert(entity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.bloomFilter).isEqualTo(bloomFilter);

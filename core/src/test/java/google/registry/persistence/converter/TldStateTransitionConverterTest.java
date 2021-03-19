@@ -57,7 +57,7 @@ class TldStateTransitionConverterTest {
     TimedTransitionProperty<TldState, TldStateTransition> timedTransitionProperty =
         TimedTransitionProperty.fromValueMap(values, TldStateTransition.class);
     TestEntity testEntity = new TestEntity(timedTransitionProperty);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.timedTransitionProperty).containsExactlyEntriesIn(timedTransitionProperty);

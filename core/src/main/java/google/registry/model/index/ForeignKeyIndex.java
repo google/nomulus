@@ -204,8 +204,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
                     String entityName =
                         jpaTm().getEntityManager().getMetamodel().entity(clazz).getName();
                     return jpaTm()
-                        .getEntityManager()
-                        .createQuery(
+                        .query(
                             String.format(
                                 "FROM %s WHERE %s IN :propertyValue and deletionTime > :now ",
                                 entityName, property),

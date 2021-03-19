@@ -149,10 +149,7 @@ public class SignedMarkRevocationListTest {
     }
     jpaTm()
         .transact(
-            () ->
-                jpaTm()
-                    .getEntityManager()
-                    .persist(SignedMarkRevocationList.create(clock.nowUtc(), revokes.build())));
+            () -> jpaTm().insert(SignedMarkRevocationList.create(clock.nowUtc(), revokes.build())));
     RuntimeException thrown =
         assertThrows(RuntimeException.class, () -> SignedMarkRevocationList.get());
     assertThat(thrown).hasMessageThat().contains("Unequal SignedMarkRevocationList detected:");

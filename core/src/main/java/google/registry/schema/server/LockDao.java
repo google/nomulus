@@ -33,7 +33,7 @@ public class LockDao {
     jpaTm()
         .transact(
             () -> {
-              jpaTm().getEntityManager().merge(lock);
+              jpaTm().put(lock);
             });
   }
 
@@ -68,7 +68,7 @@ public class LockDao {
             () -> {
               Optional<Lock> loadedLock = load(resourceName, tld);
               if (loadedLock.isPresent()) {
-                jpaTm().getEntityManager().remove(loadedLock.get());
+                jpaTm().delete(loadedLock.get());
               }
             });
   }

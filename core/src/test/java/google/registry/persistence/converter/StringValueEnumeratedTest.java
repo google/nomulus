@@ -38,7 +38,7 @@ public class StringValueEnumeratedTest {
   @Test
   void roundTripConversion_returnsSameEnum() {
     TestEntity testEntity = new TestEntity(State.ACTIVE);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.state).isEqualTo(State.ACTIVE);
@@ -47,7 +47,7 @@ public class StringValueEnumeratedTest {
   @Test
   void testNativeQuery_succeeds() {
     TestEntity testEntity = new TestEntity(State.DISABLED);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
 
     assertThat(
             jpaTm()

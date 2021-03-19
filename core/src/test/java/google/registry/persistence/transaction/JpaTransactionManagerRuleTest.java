@@ -66,7 +66,7 @@ public class JpaTransactionManagerRuleTest {
     // This test verifies that 1) withEntityClass() has registered TestEntity and 2) The table
     // has been created, implying withProperty(HBM2DDL_AUTO, "update") worked.
     TestEntity original = new TestEntity("key", "value");
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(original));
+    jpaTm().transact(() -> jpaTm().insert(original));
     TestEntity retrieved =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "key"));
     assertThat(retrieved).isEqualTo(original);
