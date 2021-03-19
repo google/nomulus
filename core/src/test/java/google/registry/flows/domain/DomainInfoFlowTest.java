@@ -66,12 +66,11 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.ReplayExtension;
+import google.registry.testing.SetClockExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainInfoFlow}. */
@@ -79,7 +78,8 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
 
   @Order(value = Order.DEFAULT - 3)
   @RegisterExtension
-  final SetClockExtension setClockExtension = new SetClockExtension();
+  final SetClockExtension setClockExtension =
+      new SetClockExtension(clock, "2005-03-03T22:00:00.000Z");
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
@@ -972,13 +972,5 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-dom-info");
     assertTldsFieldLogged("tld");
-  }
-
-  class SetClockExtension implements BeforeEachCallback {
-    @Override
-    public void beforeEach(ExtensionContext context) {
-      // Kick the clock back to before the earliest date that we set the clock to.
-      clock.setTo(DateTime.parse("2005-03-03T22:00:00.000Z"));
-    }
   }
 }

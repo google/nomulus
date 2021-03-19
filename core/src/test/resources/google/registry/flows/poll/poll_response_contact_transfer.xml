@@ -3,8 +3,8 @@
     <result code="1301">
       <msg>Command completed successfully; ack to dequeue</msg>
     </result>
-    <msgQ count="1" id="2-2-ROID-5-3-2000">
-      <qDate>2000-06-08T22:00:00Z</qDate>
+    <msgQ count="1" id="2-2-ROID-5-3-2010">
+      <qDate>2010-12-28T01:01:01Z</qDate>
       <msg>Transfer requested.</msg>
     </msgQ>
     <resData>
@@ -12,9 +12,9 @@
         <contact:id>sh8013</contact:id>
         <contact:trStatus>pending</contact:trStatus>
         <contact:reID>TheRegistrar</contact:reID>
-        <contact:reDate>2000-06-08T22:00:00.0Z</contact:reDate>
+        <contact:reDate>2010-12-28T01:01:01Z</contact:reDate>
         <contact:acID>NewRegistrar</contact:acID>
-        <contact:acDate>2000-06-13T22:00:00.0Z</contact:acDate>
+        <contact:acDate>2011-01-02T01:01:01Z</contact:acDate>
       </contact:trnData>
     </resData>
     <trID>

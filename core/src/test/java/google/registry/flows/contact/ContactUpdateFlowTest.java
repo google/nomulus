@@ -42,11 +42,18 @@ import google.registry.model.contact.PostalInfo;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ContactUpdateFlow}. */
 @DualDatabaseTest
 class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, ContactResource> {
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   ContactUpdateFlowTest() {
     setEppInput("contact_update.xml");

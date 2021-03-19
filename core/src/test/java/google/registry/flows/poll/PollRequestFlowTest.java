@@ -19,6 +19,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,12 +38,23 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
-import org.joda.time.DateTime;
+import google.registry.testing.ReplayExtension;
+import google.registry.testing.SetClockExtension;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PollRequestFlow}. */
 class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
+
+  @Order(value = Order.DEFAULT - 3)
+  @RegisterExtension
+  final SetClockExtension setClockExtension = new SetClockExtension(clock, "2011-01-02T01:01:01Z");
+
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   private DomainBase domain;
   private ContactResource contact;
@@ -52,8 +64,8 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   void setUp() {
     setEppInput("poll.xml");
     setClientIdForFlow("NewRegistrar");
-    clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
     createTld("example");
+    persistNewRegistrar("BadRegistrar");
     contact = persistActiveContact("jd1234");
     domain = persistResource(newDomainBase("test.example", contact));
     host = persistActiveHost("ns1.test.example");
@@ -97,7 +109,6 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
 
   @Test
   void testSuccess_contactTransferPending() throws Exception {
-    clock.setTo(DateTime.parse("2000-06-13T22:00:00.0Z"));
     setClientIdForFlow("TheRegistrar");
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -157,7 +168,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   void testSuccess_wrongRegistrar() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
-            .setClientId("different client id")
+            .setClientId("BadRegistrar")
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Poll message")
             .setParent(createHistoryEntryForEppResource(domain))
@@ -229,6 +240,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
             .setParent(historyEntry)
             .setEventTime(clock.nowUtc().minusDays(1))
             .build());
+    clock.advanceOneMilli();
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_host_delete.xml"));
   }

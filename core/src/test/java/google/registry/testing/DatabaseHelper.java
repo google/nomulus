@@ -1168,7 +1168,12 @@ public class DatabaseHelper {
 
   public static <T extends EppResource> HistoryEntry createHistoryEntryForEppResource(
       T parentResource) {
-    return persistResource(new HistoryEntry.Builder().setParent(parentResource).build());
+    return persistResource(
+        new HistoryEntry.Builder()
+            .setType(getHistoryEntryType(parentResource))
+            .setModificationTime(DateTime.now(DateTimeZone.UTC))
+            .setParent(parentResource)
+            .build());
   }
 
   /** Persists a single Objectify resource, without adjusting foreign resources or keys. */
