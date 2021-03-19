@@ -15,17 +15,44 @@
 package google.registry.config;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.config.RegistryConfig.CONFIG_SETTINGS;
-import static google.registry.config.RegistryConfig.ConfigModule.provideReservedTermsExportDisclaimer;
+import static google.registry.config.RegistryConfig.ConfigModule;
 
+import dagger.Component;
+import google.registry.config.RegistryConfig.Config;
+import javax.inject.Singleton;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link RegistryConfig}. */
 class RegistryConfigTest {
 
+  private static RegistryConfigTestComponent registryConfig;
+
+  @BeforeAll
+  static void beforeAll() {
+    registryConfig = DaggerRegistryConfigTest_RegistryConfigTestComponent.create();
+  }
+
   @Test
-  void test_reservedTermsExportDisclaimer_isPrependedWithOctothorpes() {
-    assertThat(provideReservedTermsExportDisclaimer(CONFIG_SETTINGS.get()))
+  void reservedTermsExportDisclaimer_isPrependedWithOctothorpes() {
+    assertThat(registryConfig.reservedTermsExportDisclaimer())
         .isEqualTo("# Disclaimer line 1.\n" + "# Line 2 is this 1.");
+  }
+
+  @Test
+  void beamStagedTemplateBucketUrl_default() {
+    assertThat(registryConfig.beamStagedTemplateBucketUrl())
+        .isEqualTo("gs://registry-project-id-deploy/live/beam");
+  }
+
+  @Component(modules = {ConfigModule.class})
+  @Singleton
+  interface RegistryConfigTestComponent {
+
+    @Config("beamStagedTemplateBucketUrl")
+    String beamStagedTemplateBucketUrl();
+
+    @Config("reservedTermsExportDisclaimer")
+    String reservedTermsExportDisclaimer();
   }
 }

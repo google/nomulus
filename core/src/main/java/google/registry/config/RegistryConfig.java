@@ -652,13 +652,14 @@ public final class RegistryConfig {
       return config.beam.defaultJobZone;
     }
 
-    /** Returns the URL string to the GCS bucket that contains all staged BEAM flex templates. */
+    /** Returns the GCS bucket URL with all staged BEAM flex templates. */
     @Provides
     @Config("beamStagedTemplateBucketUrl")
-    public static String provideBeamStagingProjectId(
+    public static String provideBeamStagedTemplateBucketUrl(
         RegistryConfigSettings config, @Config("projectId") String projectId) {
-      String stagingProject = Optional.ofNullable(config.beam.stagingProjectId).orElse(projectId);
-      return String.format("gs://%s-deploy/%s/beam/", stagingProject, config.beam.releaseTag);
+      String stagingProject =
+          Optional.ofNullable(config.release.beamStagingProjectId).orElse(projectId);
+      return String.format("gs://%s-deploy/%s/beam", stagingProject, config.release.releaseTag);
     }
 
     /**

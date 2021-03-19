@@ -425,12 +425,6 @@ beam:
   # The default zone to run Apache Beam (Cloud Dataflow) jobs in.
   # TODO(weiminyu): consider dropping zone config. No obvious needs for this.
   defaultJobZone: us-east1-c
-  # The release tag of the matching BEAM pipelines. In production and sandbox,
-  # this tag will be updated by the release process.
-  releaseTag: live
-  # Flex-template only: the project where BEAM templates are staged.
-  # If null, the current AppEngine project is used.
-  stagingProjectId: null
 
 keyring:
   # The name of the active keyring, either "KMS" or "Dummy".
@@ -471,3 +465,11 @@ sslCertificateValidation:
   allowedEcdsaCurves:
     - secp256r1
     - secp384r1
+
+# Release information. The release process will update this section.
+release:
+  # The tag assigned by the release process.
+  releaseTag: live
+  # ID of the GCP project that has staged BEAM templates. If null, the projectId
+  # declared in the appEngine: section will be used.
+  beamStagingProjectId: null
