@@ -106,14 +106,17 @@ public class IcannReportingStager {
       throws ExecutionException, InterruptedException {
     // Later views depend on the results of earlier ones, so query everything synchronously
     logger.atInfo().log("Generating intermediary view %s", queryName);
-    bigquery.query(
-        query,
-        bigquery.buildDestinationTable(queryName)
-            .description(String.format(
-                "An intermediary view to generate %s reports for this month.", reportType))
-            .type(TableType.VIEW)
-            .build()
-    ).get();
+    bigquery
+        .startQuery(
+            query,
+            bigquery
+                .buildDestinationTable(queryName)
+                .description(
+                    String.format(
+                        "An intermediary view to generate %s reports for this month.", reportType))
+                .type(TableType.VIEW)
+                .build())
+        .get();
   }
 
   private Iterable<String> getHeaders(ImmutableSet<TableFieldSchema> fields) {

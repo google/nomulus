@@ -59,7 +59,7 @@ public class AllocationTokenStatusTransitionConverterTest {
         TimedTransitionProperty.fromValueMap(values, TokenStatusTransition.class);
     AllocationTokenStatusTransitionConverterTestEntity testEntity =
         new AllocationTokenStatusTransitionConverterTestEntity(timedTransitionProperty);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     AllocationTokenStatusTransitionConverterTestEntity persisted =
         jpaTm()
             .transact(

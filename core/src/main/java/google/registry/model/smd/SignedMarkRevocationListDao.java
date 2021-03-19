@@ -40,7 +40,6 @@ import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.util.CollectionUtils;
 import java.util.Map;
 import java.util.Optional;
-import javax.persistence.EntityManager;
 import org.joda.time.DateTime;
 
 public class SignedMarkRevocationListDao {
@@ -153,11 +152,12 @@ public class SignedMarkRevocationListDao {
     return jpaTm()
         .transact(
             () -> {
-              EntityManager em = jpaTm().getEntityManager();
               Long revisionId =
-                  em.createQuery("SELECT MAX(revisionId) FROM SignedMarkRevocationList", Long.class)
+                  jpaTm()
+                      .query("SELECT MAX(revisionId) FROM SignedMarkRevocationList", Long.class)
                       .getSingleResult();
-              return em.createQuery(
+              return jpaTm()
+                  .query(
                       "FROM SignedMarkRevocationList smrl LEFT JOIN FETCH smrl.revokes "
                           + "WHERE smrl.revisionId = :revisionId",
                       SignedMarkRevocationList.class)
@@ -196,7 +196,7 @@ public class SignedMarkRevocationListDao {
   }
 
   private static void saveToCloudSql(SignedMarkRevocationList signedMarkRevocationList) {
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(signedMarkRevocationList));
+    jpaTm().transact(() -> jpaTm().insert(signedMarkRevocationList));
     logger.atInfo().log(
         "Inserted %,d signed mark revocations into Cloud SQL.",
         signedMarkRevocationList.revokes.size());

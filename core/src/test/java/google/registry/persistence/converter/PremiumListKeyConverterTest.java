@@ -67,7 +67,7 @@ class PremiumListKeyConverterTest {
   void testRoundTrip() {
     Key<PremiumList> key = Key.create(getCrossTldKey(), PremiumList.class, "test");
     PremiumListEntity testEntity = new PremiumListEntity(key);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     PremiumListEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(PremiumListEntity.class, "test"));
     assertThat(persisted.premiumList).isEqualTo(key);

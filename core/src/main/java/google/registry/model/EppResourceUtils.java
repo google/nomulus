@@ -418,8 +418,7 @@ public final class EppResourceUtils {
                 if (isContactKey) {
                   query =
                       jpaTm()
-                          .getEntityManager()
-                          .createQuery(CONTACT_LINKED_DOMAIN_QUERY, String.class)
+                          .query(CONTACT_LINKED_DOMAIN_QUERY, String.class)
                           .setParameter("fkRepoId", key)
                           .setParameter("now", now);
                 } else {

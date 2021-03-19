@@ -50,7 +50,7 @@ public class StringMapConverterBaseTest {
   @Test
   void roundTripConversion_returnsSameMap() {
     TestEntity testEntity = new TestEntity(MAP);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).containsExactlyEntriesIn(MAP);
@@ -59,7 +59,7 @@ public class StringMapConverterBaseTest {
   @Test
   void testUpdateColumn_succeeds() {
     TestEntity testEntity = new TestEntity(MAP);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).containsExactlyEntriesIn(MAP);
@@ -73,7 +73,7 @@ public class StringMapConverterBaseTest {
   @Test
   void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).isNull();
@@ -82,7 +82,7 @@ public class StringMapConverterBaseTest {
   @Test
   void testEmptyMap_writesAndReadsEmptyCollectionSuccessfully() {
     TestEntity testEntity = new TestEntity(ImmutableMap.of());
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.map).isEmpty();

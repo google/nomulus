@@ -30,7 +30,6 @@ import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import google.registry.model.registry.label.ReservedListSqlDao;
 import java.io.File;
 import java.io.IOException;
-import javax.persistence.EntityManager;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -118,14 +117,15 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
     return jpaTm()
         .transact(
             () -> {
-              EntityManager em = jpaTm().getEntityManager();
               long revisionId =
-                  em.createQuery(
+                  jpaTm()
+                      .query(
                           "SELECT MAX(rl.revisionId) FROM ReservedList rl WHERE name = :name",
                           Long.class)
                       .setParameter("name", name)
                       .getSingleResult();
-              return em.createQuery(
+              return jpaTm()
+                  .query(
                       "FROM ReservedList rl LEFT JOIN FETCH rl.reservedListMap WHERE"
                           + " rl.revisionId = :revisionId",
                       ReservedList.class)

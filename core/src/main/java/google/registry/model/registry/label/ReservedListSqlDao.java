@@ -50,8 +50,7 @@ public class ReservedListSqlDao {
         .transact(
             () ->
                 jpaTm()
-                    .getEntityManager()
-                    .createQuery(
+                    .query(
                         "FROM ReservedList rl LEFT JOIN FETCH rl.reservedListMap WHERE"
                             + " rl.revisionId IN (SELECT MAX(revisionId) FROM ReservedList subrl"
                             + " WHERE subrl.name = :name)",
@@ -71,8 +70,7 @@ public class ReservedListSqlDao {
         .transact(
             () ->
                 jpaTm()
-                        .getEntityManager()
-                        .createQuery("SELECT 1 FROM ReservedList WHERE name = :name", Integer.class)
+                        .query("SELECT 1 FROM ReservedList WHERE name = :name", Integer.class)
                         .setParameter("name", reservedListName)
                         .setMaxResults(1)
                         .getResultList()

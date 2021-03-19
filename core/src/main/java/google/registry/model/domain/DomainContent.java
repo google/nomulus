@@ -378,13 +378,11 @@ public class DomainContent extends EppResource
   public static void beforeSqlDelete(VKey<DomainBase> key) {
     // Delete all grace periods associated with the domain.
     jpaTm()
-        .getEntityManager()
-        .createQuery("DELETE FROM GracePeriod WHERE domain_repo_id = :repo_id")
+        .query("DELETE FROM GracePeriod WHERE domain_repo_id = :repo_id")
         .setParameter("repo_id", key.getSqlKey())
         .executeUpdate();
     jpaTm()
-        .getEntityManager()
-        .createQuery("DELETE FROM DelegationSignerData WHERE domain_repo_id = :repo_id")
+        .query("DELETE FROM DelegationSignerData WHERE domain_repo_id = :repo_id")
         .setParameter("repo_id", key.getSqlKey())
         .executeUpdate();
   }

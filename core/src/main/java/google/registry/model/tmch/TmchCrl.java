@@ -79,10 +79,7 @@ public final class TmchCrl extends CrossTldSingleton implements NonReplicatedEnt
                   .transactNew(
                       () -> {
                         // Delete the old one and insert the new one
-                        jpaTm()
-                            .getEntityManager()
-                            .createQuery("DELETE FROM TmchCrl")
-                            .executeUpdate();
+                        jpaTm().query("DELETE FROM TmchCrl").executeUpdate();
                         jpaTm().putWithoutBackup(tmchCrl);
                       });
             });

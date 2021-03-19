@@ -32,8 +32,7 @@ public class Spec11ThreatMatchDao {
   public static void deleteEntriesByDate(JpaTransactionManager jpaTm, LocalDate date) {
     jpaTm.assertInTransaction();
     jpaTm
-        .getEntityManager()
-        .createQuery("DELETE FROM Spec11ThreatMatch WHERE check_date = :date")
+        .query("DELETE FROM Spec11ThreatMatch WHERE check_date = :date")
         .setParameter("date", DateTimeUtils.toSqlDate(date), TemporalType.DATE)
         .executeUpdate();
   }
@@ -44,8 +43,7 @@ public class Spec11ThreatMatchDao {
     jpaTm.assertInTransaction();
     return ImmutableList.copyOf(
         jpaTm
-            .getEntityManager()
-            .createQuery(
+            .query(
                 "SELECT match FROM Spec11ThreatMatch match WHERE match.checkDate = :date",
                 Spec11ThreatMatch.class)
             .setParameter("date", date)

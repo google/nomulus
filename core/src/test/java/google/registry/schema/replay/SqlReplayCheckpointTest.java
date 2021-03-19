@@ -53,8 +53,7 @@ public class SqlReplayCheckpointTest extends EntityTestCase {
             () ->
                 assertThat(
                         jpaTm()
-                            .getEntityManager()
-                            .createQuery("SELECT COUNT(*) FROM SqlReplayCheckpoint", Long.class)
+                            .query("SELECT COUNT(*) FROM SqlReplayCheckpoint", Long.class)
                             .getSingleResult())
                     .isEqualTo(1L));
   }

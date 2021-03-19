@@ -40,7 +40,7 @@ public class StringListConverterTest {
   void roundTripConversion_returnsSameStringList() {
     List<String> tlds = ImmutableList.of("app", "dev", "how");
     TestEntity testEntity = new TestEntity(tlds);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).containsExactly("app", "dev", "how");
@@ -50,7 +50,7 @@ public class StringListConverterTest {
   void testMerge_succeeds() {
     List<String> tlds = ImmutableList.of("app", "dev", "how");
     TestEntity testEntity = new TestEntity(tlds);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     persisted.tlds = ImmutableList.of("com", "gov");
@@ -63,7 +63,7 @@ public class StringListConverterTest {
   @Test
   void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).isNull();
@@ -72,7 +72,7 @@ public class StringListConverterTest {
   @Test
   void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
     TestEntity testEntity = new TestEntity(ImmutableList.of());
-    jpaTm().transact(() -> jpaTm().getEntityManager().persist(testEntity));
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).isEmpty();

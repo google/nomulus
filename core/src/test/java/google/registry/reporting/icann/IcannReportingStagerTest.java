@@ -70,7 +70,8 @@ class IcannReportingStagerTest {
   }
 
   private void setUpBigquery() {
-    when(bigquery.query(any(String.class), any(DestinationTable.class))).thenReturn(fakeFuture());
+    when(bigquery.startQuery(any(String.class), any(DestinationTable.class)))
+        .thenReturn(fakeFuture());
     DestinationTable.Builder tableBuilder =
         new DestinationTable.Builder()
             .datasetId("testdataset")

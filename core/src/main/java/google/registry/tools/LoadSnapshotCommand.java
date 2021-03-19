@@ -79,12 +79,14 @@ final class LoadSnapshotCommand extends BigqueryCommand {
 
   /** Starts a load job for the specified kind name, sourcing data from the given GCS file. */
   private ListenableFuture<?> loadSnapshotFile(String filename, String kindName) {
-    return bigquery().load(
-        bigquery().buildDestinationTable(kindName)
-            .description("Datastore snapshot import for " + kindName + ".")
-            .build(),
-        SourceFormat.DATASTORE_BACKUP,
-        ImmutableList.of(filename));
+    return bigquery()
+        .startLoad(
+            bigquery()
+                .buildDestinationTable(kindName)
+                .description("Datastore snapshot import for " + kindName + ".")
+                .build(),
+            SourceFormat.DATASTORE_BACKUP,
+            ImmutableList.of(filename));
   }
 
   /**

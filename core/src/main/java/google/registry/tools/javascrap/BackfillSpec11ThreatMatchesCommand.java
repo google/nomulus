@@ -207,8 +207,7 @@ public class BackfillSpec11ThreatMatchesCommand extends ConfirmingCommand
         .transact(
             () ->
                 jpaTm()
-                    .getEntityManager()
-                    .createQuery(
+                    .query(
                         "SELECT DISTINCT stm.checkDate FROM Spec11ThreatMatch stm", LocalDate.class)
                     .getResultStream()
                     .collect(toImmutableSet()));
