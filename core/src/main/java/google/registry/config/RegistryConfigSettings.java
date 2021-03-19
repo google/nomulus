@@ -133,6 +133,8 @@ public class RegistryConfigSettings {
   public static class Beam {
     public String defaultJobRegion;
     public String defaultJobZone;
+    public String releaseTag;
+    public String stagingProjectId;
   }
 
   /** Configuration for Cloud DNS. */
