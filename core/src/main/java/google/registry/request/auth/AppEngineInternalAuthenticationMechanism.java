@@ -25,16 +25,14 @@ import javax.servlet.http.HttpServletRequest;
  * Authentication mechanism which uses the X-AppEngine-QueueName header set by App Engine for
  * internal requests.
  *
- * <p>
- * Task queue push task requests set this header value to the actual queue name. Cron requests set
- * this header value to __cron, since that's actually the name of the hidden queue used for cron
+ * <p>Task queue push task requests set this header value to the actual queue name. Cron requests
+ * set this header value to __cron, since that's actually the name of the hidden queue used for cron
  * requests. Cron also sets the header X-AppEngine-Cron, which we could check, but it's simpler just
  * to check the one.
  *
- * <p>
- * App Engine allows app admins to set these headers for testing purposes. Because of this, we also
- * need to verify that the current user is null, indicating that there is no user, to prevent
- * access by someone with "admin" privileges.  If the user is an admin, UserService presumably must
+ * <p>App Engine allows app admins to set these headers for testing purposes. Because of this, we
+ * also need to verify that the current user is null, indicating that there is no user, to prevent
+ * access by someone with "admin" privileges. If the user is an admin, UserService presumably must
  * return a User object.
  *
  * <p>See <a href=
