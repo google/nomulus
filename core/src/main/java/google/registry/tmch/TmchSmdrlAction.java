@@ -45,7 +45,7 @@ public final class TmchSmdrlAction implements Runnable {
   @Inject @Key("marksdbSmdrlLoginAndPassword") Optional<String> marksdbSmdrlLoginAndPassword;
   @Inject TmchSmdrlAction() {}
 
-  /** Synchronously fetches latest signed mark revocation list and saves it to Datastore. */
+  /** Synchronously fetches latest signed mark revocation list and saves it to the database. */
   @Override
   public void run() {
     List<String> lines;
@@ -57,7 +57,7 @@ public final class TmchSmdrlAction implements Runnable {
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(lines);
     smdrl.save();
     logger.atInfo().log(
-        "Inserted %,d smd revocations into Datastore, created at %s",
+        "Inserted %,d smd revocations into the database, created at %s",
         smdrl.size(), smdrl.getCreationTime());
   }
 }
