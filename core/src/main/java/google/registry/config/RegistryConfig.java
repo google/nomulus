@@ -654,12 +654,9 @@ public final class RegistryConfig {
 
     /** Returns the GCS bucket URL with all staged BEAM flex templates. */
     @Provides
-    @Config("beamStagedTemplateBucketUrl")
-    public static String provideBeamStagedTemplateBucketUrl(
-        RegistryConfigSettings config, @Config("projectId") String projectId) {
-      String stagingProject =
-          Optional.ofNullable(config.release.beamStagingProjectId).orElse(projectId);
-      return String.format("gs://%s-deploy/%s/beam", stagingProject, config.release.releaseTag);
+    @Config("beamStagingBucketUrl")
+    public static String provideBeamStagingBucketUrl(RegistryConfigSettings config) {
+      return config.beam.stagingBucketUrl;
     }
 
     /**

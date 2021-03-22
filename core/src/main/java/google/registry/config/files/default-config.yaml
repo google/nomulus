@@ -425,6 +425,7 @@ beam:
   # The default zone to run Apache Beam (Cloud Dataflow) jobs in.
   # TODO(weiminyu): consider dropping zone config. No obvious needs for this.
   defaultJobZone: us-east1-c
+  stagingBucketUrl: gcs-bucket-with-staged-templates
 
 keyring:
   # The name of the active keyring, either "KMS" or "Dummy".
@@ -465,11 +466,3 @@ sslCertificateValidation:
   allowedEcdsaCurves:
     - secp256r1
     - secp384r1
-
-# Release information. The release process will update this section.
-release:
-  # The tag assigned by the release process.
-  releaseTag: live
-  # ID of the GCP project that has staged BEAM templates. If null, the projectId
-  # declared in the appEngine: section will be used.
-  beamStagingProjectId: null

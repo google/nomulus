@@ -40,7 +40,6 @@ public class RegistryConfigSettings {
   public Beam beam;
   public Keyring keyring;
   public RegistryTool registryTool;
-  public Release release;
   public SslCertificateValidation sslCertificateValidation;
 
   /** Configuration options that apply to the entire App Engine project. */
@@ -134,6 +133,7 @@ public class RegistryConfigSettings {
   public static class Beam {
     public String defaultJobRegion;
     public String defaultJobZone;
+    public String stagingBucketUrl;
   }
 
   /** Configuration for Cloud DNS. */
@@ -222,12 +222,6 @@ public class RegistryConfigSettings {
     public String clientId;
     public String clientSecret;
     public String username;
-  }
-
-  /* Information about a release. */
-  public static class Release {
-    public String releaseTag;
-    public String beamStagingProjectId;
   }
 
   /** Configuration for the certificate checker. */
