@@ -26,6 +26,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
@@ -489,40 +490,33 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
               .map(VKey::from)
               .collect(toImmutableSet());
     } else {
+      // Hibernate does not allow us to query @Converted array fields directly, either
+      // in the CriteriaQuery or the raw text format. However, Postgres does -- so we
+      // use native queries to find hosts where any of the inetAddresses match.
+      StringBuilder queryBuilder =
+          new StringBuilder(
+              "SELECT h.repo_id FROM \"Host\" h WHERE :address = ANY(h.inet_addresses) AND "
+                  + "h.deletion_time = CAST(:endOfTime AS timestamptz)");
+      ImmutableMap.Builder<String, String> parameters =
+          new ImmutableMap.Builder<String, String>()
+              .put("address", InetAddresses.toAddrString(inetAddress))
+              .put("endOfTime", END_OF_TIME.toString());
+      if (desiredRegistrar.isPresent()) {
+        queryBuilder.append(" AND h.current_sponsor_registrar_id = :desiredRegistrar");
+        parameters.put("desiredRegistrar", desiredRegistrar.get());
+      }
       hostKeys =
           jpaTm()
               .transact(
                   () -> {
-                    // Hibernate does not allow us to query @Converted array fields directly, either
-                    // in the CriteriaQuery or the raw text format. However, Postgres does -- so we
-                    // use native queries to find hosts where any of the inetAddresses match.
-                    javax.persistence.Query query;
-                    if (desiredRegistrar.isPresent()) {
-                      query =
-                          jpaTm()
-                              .getEntityManager()
-                              .createNativeQuery(
-                                  "SELECT h.repo_id FROM \"Host\" h WHERE :address = "
-                                      + "ANY(h.inet_addresses) AND "
-                                      + "h.current_sponsor_registrar_id = :desiredRegistrar AND "
-                                      + "h.deletion_time = CAST(:endOfTime AS timestamptz)")
-                              .setParameter("desiredRegistrar", desiredRegistrar.get());
-                    } else {
-                      query =
-                          jpaTm()
-                              .getEntityManager()
-                              .createNativeQuery(
-                                  "SELECT h.repo_id FROM \"Host\" h WHERE :address = "
-                                      + "ANY(h.inet_addresses) AND "
-                                      + "h.deletion_time = CAST(:endOfTime AS timestamptz)");
-                    }
+                    javax.persistence.Query query =
+                        jpaTm()
+                            .getEntityManager()
+                            .createNativeQuery(queryBuilder.toString())
+                            .setMaxResults(maxNameserversInFirstStage);
+                    parameters.build().forEach(query::setParameter);
                     @SuppressWarnings("unchecked")
-                    Stream<String> resultStream =
-                        query
-                            .setParameter("address", InetAddresses.toAddrString(inetAddress))
-                            .setParameter("endOfTime", END_OF_TIME.toString())
-                            .setMaxResults(maxNameserversInFirstStage)
-                            .getResultStream();
+                    Stream<String> resultStream = query.getResultStream();
                     return resultStream
                         .map(repoId -> VKey.create(HostResource.class, repoId))
                         .collect(toImmutableSet());

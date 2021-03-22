@@ -15,9 +15,12 @@
 package google.registry.rdap;
 
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.collect.Iterables;
 import com.google.common.net.InetAddresses;
@@ -25,6 +28,7 @@ import com.google.common.primitives.Booleans;
 import com.googlecode.objectify.cmd.Query;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.rdap.RdapJsonFormatter.OutputDataType;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapMetrics.SearchType;
@@ -216,33 +220,90 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
   private NameserverSearchResponse searchByNameUsingPrefix(RdapSearchPattern partialStringQuery) {
     // Add 1 so we can detect truncation.
     int querySizeLimit = getStandardQuerySizeLimit();
-    Query<HostResource> query =
-        queryItems(
-            HostResource.class,
-            "fullyQualifiedHostName",
-            partialStringQuery,
-            cursorString,
-            getDeletedItemHandling(),
-            querySizeLimit);
-    return makeSearchResults(
-        getMatchingResources(query, shouldIncludeDeleted(), querySizeLimit), CursorType.NAME);
+    if (isDatastore()) {
+      Query<HostResource> query =
+          queryItems(
+              HostResource.class,
+              "fullyQualifiedHostName",
+              partialStringQuery,
+              cursorString,
+              getDeletedItemHandling(),
+              querySizeLimit);
+      return makeSearchResults(
+          getMatchingResources(query, shouldIncludeDeleted(), querySizeLimit), CursorType.NAME);
+    } else {
+      return jpaTm()
+          .transact(
+              () -> {
+                CriteriaQueryBuilder<HostResource> queryBuilder =
+                    queryItemsSql(
+                        HostResource.class,
+                        "fullyQualifiedHostName",
+                        partialStringQuery,
+                        cursorString,
+                        getDeletedItemHandling());
+                return makeSearchResults(
+                    getMatchingResourcesSql(queryBuilder, shouldIncludeDeleted(), querySizeLimit),
+                    CursorType.NAME);
+              });
+    }
   }
 
   /** Searches for nameservers by IP address, returning a JSON array of nameserver info maps. */
   private NameserverSearchResponse searchByIp(InetAddress inetAddress) {
     // Add 1 so we can detect truncation.
     int querySizeLimit = getStandardQuerySizeLimit();
-    Query<HostResource> query =
-        queryItems(
-            HostResource.class,
-            "inetAddresses",
-            inetAddress.getHostAddress(),
-            Optional.empty(),
-            cursorString,
-            getDeletedItemHandling(),
-            querySizeLimit);
-    return makeSearchResults(
-        getMatchingResources(query, shouldIncludeDeleted(), querySizeLimit), CursorType.ADDRESS);
+    RdapResultSet<HostResource> rdapResultSet;
+    if (isDatastore()) {
+      Query<HostResource> query =
+          queryItems(
+              HostResource.class,
+              "inetAddresses",
+              inetAddress.getHostAddress(),
+              Optional.empty(),
+              cursorString,
+              getDeletedItemHandling(),
+              querySizeLimit);
+      rdapResultSet = getMatchingResources(query, shouldIncludeDeleted(), querySizeLimit);
+    } else {
+      // Hibernate does not allow us to query @Converted array fields directly, either in the
+      // CriteriaQuery or the raw text format. However, Postgres does -- so we use native queries to
+      // find hosts where any of the inetAddresses match.
+      StringBuilder queryBuilder =
+          new StringBuilder("SELECT * FROM \"Host\" WHERE :address = ANY(inet_addresses)");
+      ImmutableMap.Builder<String, String> parameters =
+          new ImmutableMap.Builder<String, String>()
+              .put("address", InetAddresses.toAddrString(inetAddress));
+      if (getDeletedItemHandling().equals(DeletedItemHandling.EXCLUDE)) {
+        queryBuilder.append(" AND deletion_time = CAST(:endOfTime AS timestamptz)");
+        parameters.put("endOfTime", END_OF_TIME.toString());
+      }
+      if (cursorString.isPresent()) {
+        // cursorString here must be the repo ID
+        queryBuilder.append(" AND repo_id > :repoId");
+        parameters.put("repoId", cursorString.get());
+      }
+      if (getDesiredRegistrar().isPresent()) {
+        queryBuilder.append(" AND current_sponsor_registrar_id = :desiredRegistrar");
+        parameters.put("desiredRegistrar", getDesiredRegistrar().get());
+      }
+      queryBuilder.append(" ORDER BY repo_id ASC");
+      rdapResultSet =
+          jpaTm()
+              .transact(
+                  () -> {
+                    javax.persistence.Query query =
+                        jpaTm()
+                            .getEntityManager()
+                            .createNativeQuery(queryBuilder.toString(), HostResource.class)
+                            .setMaxResults(querySizeLimit);
+                    parameters.build().forEach(query::setParameter);
+                    @SuppressWarnings("unchecked")
+                    List<HostResource> resultList = query.getResultList();
+                    return filterResourcesByVisibility(resultList, querySizeLimit);
+                  });
+    }
+    return makeSearchResults(rdapResultSet, CursorType.ADDRESS);
   }
 
   /** Output JSON for a lists of hosts contained in an {@link RdapResultSet}. */

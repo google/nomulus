@@ -211,6 +211,7 @@ PRESUBMITS = {
          # CriteriaQueryBuilder is a false positive
          "CriteriaQueryBuilder.java",
          "RdapDomainSearchAction.java",
+         "RdapNameserverSearchAction.java",
          "RdapSearchActionBase.java",
          },
     ):
