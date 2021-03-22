@@ -17,6 +17,7 @@ package google.registry.request.auth;
 import static google.registry.request.auth.AuthLevel.APP;
 import static google.registry.request.auth.AuthLevel.NONE;
 
+import com.google.appengine.api.users.UserService;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 
@@ -31,22 +32,10 @@ import javax.servlet.http.HttpServletRequest;
  * to check the one.
  *
  * <p>
- * App Engine allows app admins to set these headers for testing purposes. This means that this auth
- * method is somewhat unreliable - any app admin can access any internal endpoint and pretend to be
- * the app itself by setting these headers, which would circumvent any finer-grained authorization
- * if we added it in the future (assuming we did not apply it to the app itself). And App Engine's
- * concept of an "admin" includes all project owners, editors and viewers. So anyone with access to
- * the project will be able to access anything the app itself can access.
- *
- * <p>
- * For now, it's probably okay to allow this behavior, especially since it could indeed be
- * convenient for testing. If we wanted to revisit this decision in the future, we have a couple
- * options for locking this down:
- *
- * <ul>
- * <li>1. Always include the result of UserService.getCurrentUser() as the active user</li>
- * <li>2. Validate that the requests came from special AppEngine internal IPs</li>
- * </ul>
+ * App Engine allows app admins to set these headers for testing purposes. Because of this, we also
+ * need to verify that the current user is null, indicating that there is no user, to prevent
+ * access by someone with "admin" privileges.  If the user is an admin, UserService presumably must
+ * return a User object.
  *
  * <p>See <a href=
  * "https://cloud.google.com/appengine/docs/java/taskqueue/push/creating-handlers#reading_request_headers">task
@@ -57,12 +46,16 @@ public class AppEngineInternalAuthenticationMechanism implements AuthenticationM
   // As defined in the App Engine request header documentation.
   private static final String QUEUE_NAME_HEADER = "X-AppEngine-QueueName";
 
+  private UserService userService;
+
   @Inject
-  public AppEngineInternalAuthenticationMechanism() {}
+  public AppEngineInternalAuthenticationMechanism(UserService userService) {
+    this.userService = userService;
+  }
 
   @Override
   public AuthResult authenticate(HttpServletRequest request) {
-    if (request.getHeader(QUEUE_NAME_HEADER) == null) {
+    if (request.getHeader(QUEUE_NAME_HEADER) == null || userService.getCurrentUser() != null) {
       return AuthResult.create(NONE);
     } else {
       return AuthResult.create(APP);

@@ -117,7 +117,7 @@ class RequestAuthenticatorTest {
 
   private RequestAuthenticator createRequestAuthenticator(UserService userService) {
     return new RequestAuthenticator(
-        new AppEngineInternalAuthenticationMechanism(),
+        new AppEngineInternalAuthenticationMechanism(fakeUserService),
         ImmutableList.of(
             new OAuthAuthenticationMechanism(
                 fakeOAuthService,
@@ -171,6 +171,16 @@ class RequestAuthenticatorTest {
     assertThat(authResult).isPresent();
     assertThat(authResult.get().authLevel()).isEqualTo(AuthLevel.APP);
     assertThat(authResult.get().userAuthInfo()).isEmpty();
+  }
+
+  @Test
+  void testInternalAuth_failForAdminUser() {
+    when(req.getHeader("X-AppEngine-QueueName")).thenReturn("__cron");
+    fakeUserService.setUser(testUser, true /* isAdmin */);
+
+    Optional<AuthResult> authResult = runTest(fakeUserService, AUTH_INTERNAL_OR_ADMIN);
+
+    assertThat(authResult).isEmpty();
   }
 
   @Test
