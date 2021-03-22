@@ -64,15 +64,29 @@ if ! "$JAVA_BIN" -version 2>&1 | grep 'version "11\.' >/dev/null; then
   exit 1
 fi
 
+function runGoogleJavaFormatAgainstDiffs() {
+  local forkPoint="$1"
+  shift
+
+  git diff -U0 "$forkPoint" | \
+      ${SCRIPT_DIR}/google-java-format-diff.py \
+      --java-binary "$JAVA_BIN" \
+      --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
+      -p1 "$@" | tee gjf.out
+}
+
+# Show the file names in a diff preceeded by a message.
+function showFileNames() {
+  local message="$1"
+
+  awk -v "message=$message" '/\+\+\+ ([^ ]*)/ { print message $2 }' 1>&2
+}
+
 function showNoncompliantFiles() {
   local forkPoint="$1"
   local message="$2"
 
-  git diff -U0 ${forkPoint} | \
-      ${SCRIPT_DIR}/google-java-format-diff.py \
-      --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
-      -p1 | awk -v "message=$message" \
-          '/\+\+\+ ([^ ]*)/ { print message $2 }' 1>&2
+  runGoogleJavaFormatAgainstDiffs "$forkPoint" | showFileNames "$2"
 }
 
 function callGoogleJavaFormatDiff() {
@@ -82,27 +96,18 @@ function callGoogleJavaFormatDiff() {
   local callResult
   case "$1" in
     "check")
-      showNoncompliantFiles "$forkPoint" "\033[1mNeeds formatting: "
-      callResult=$(git diff -U0 ${forkPoint} | \
-          ${SCRIPT_DIR}/google-java-format-diff.py \
-          --java-binary "$JAVA_BIN" \
-          --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
-          -p1 | wc -l)
+      local output=$(runGoogleJavaFormatAgainstDiffs "$forkPoint")
+      echo "$output" | showFileNames "\033[1mNeeds formatting: "
+      callResult=$(echo -n "$output" | wc -l)
       ;;
     "format")
+      # Unfortunately we have to do this twice if we want to see the names of
+      # the files that got reformatted
       showNoncompliantFiles "$forkPoint" "\033[1mReformatting: "
-      callResult=$(git diff -U0 ${forkPoint} | \
-          ${SCRIPT_DIR}/google-java-format-diff.py \
-          --java-binary "$JAVA_BIN" \
-          --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
-          -p1 -i)
+      callResult=$(runGoogleJavaFormatAgainstDiffs "$forkPoint" -i)
       ;;
     "show")
-      callResult=$(git diff -U0 ${forkPoint} | \
-          ${SCRIPT_DIR}/google-java-format-diff.py \
-          --java-binary "$JAVA_BIN" \
-          --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
-          -p1)
+      callResult=$(runGoogleJavaFormatAgainstDiffs "$forkPoint")
       ;;
   esac
   echo -e "\033[0m" 1>&2
