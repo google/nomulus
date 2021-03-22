@@ -15,17 +15,19 @@
 package google.registry.tools;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Strings;
-import com.googlecode.objectify.Key;
+import com.google.common.collect.ImmutableMap;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registries;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
+import google.registry.persistence.VKey;
 import java.util.Map;
 import java.util.Optional;
 
@@ -50,20 +52,18 @@ final class ListCursorsCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
-    Map<Registry, Key<Cursor>> registries =
-        Registries.getTlds()
-            .stream()
+    Map<Registry, VKey<Cursor>> registries =
+        Registries.getTlds().stream()
             .map(Registry::get)
             .filter(r -> r.getTldType() == filterTldType)
             .filter(r -> !filterEscrowEnabled || r.getEscrowEnabled())
-            .collect(toImmutableMap(r -> r, r -> Cursor.createKey(cursorType, r)));
-    Map<Key<Cursor>, Cursor> cursors = ofy().load().keys(registries.values());
+            .collect(toImmutableMap(r -> r, r -> Cursor.createVKey(cursorType, r.getTldStr())));
+    ImmutableMap<VKey<? extends Cursor>, Cursor> cursors =
+        transactIfJpaTm(() -> tm().loadByKeysIfPresent(registries.values()));
     if (!registries.isEmpty()) {
       String header = String.format(OUTPUT_FMT, "TLD", "Cursor Time", "Last Update Time");
       System.out.printf("%s\n%s\n", header, Strings.repeat("-", header.length()));
-      registries
-          .entrySet()
-          .stream()
+      registries.entrySet().stream()
           .map(
               e ->
                   renderLine(

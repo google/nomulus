@@ -14,16 +14,21 @@
 
 package google.registry.tools.server;
 
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registry.label.PremiumList;
+import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
+import java.util.Comparator;
+import java.util.Optional;
 import javax.inject.Inject;
+import org.hibernate.Hibernate;
 
 /**
  * An action that lists premium lists, for use by the {@code nomulus list_premium_lists} command.
@@ -46,7 +51,14 @@ public final class ListPremiumListsAction extends ListObjectsAction<PremiumList>
 
   @Override
   public ImmutableSet<PremiumList> loadObjects() {
-    return ImmutableSet.copyOf(
-        ofy().load().type(PremiumList.class).ancestor(getCrossTldKey()).list());
+    return transactIfJpaTm(
+        () ->
+            tm().loadAllOf(PremiumList.class).stream()
+                .map(PremiumList::getName)
+                .map(PremiumListDualDao::getLatestRevision)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .peek(list -> Hibernate.initialize(list.getLabelsToPrices()))
+                .collect(toImmutableSortedSet(Comparator.comparing(PremiumList::getName))));
   }
 }
