@@ -17,7 +17,6 @@ package google.registry.persistence.transaction;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.VKey;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -130,7 +129,7 @@ public interface TransactionManager {
   void putAll(ImmutableCollection<?> entities);
 
   /**
-   * Persists a new entity or update the existing entity in the database without writing any backup
+   * Persists a new entity or update the existing entity in the database without writing commit logs
    * if the underlying database is Datastore.
    *
    * <p>This method is for the sake of keeping a single code path when replacing ofy() with tm() in
@@ -142,8 +141,8 @@ public interface TransactionManager {
   void putWithoutBackup(Object entity);
 
   /**
-   * Persists all new entities or update the existing entities in the database without writing any
-   * backup if the underlying database is Datastore.
+   * Persists all new entities or update the existing entities in the database without writing
+   * commit logs if the underlying database is Datastore.
    *
    * <p>This method is for the sake of keeping a single code path when replacing ofy() with tm() in
    * the application code. When the method is invoked with Datastore, it won't write the commit log
@@ -160,7 +159,7 @@ public interface TransactionManager {
   void updateAll(ImmutableCollection<?> entities);
 
   /**
-   * Updates an entity in the database without writing any backup if the underlying database is
+   * Updates an entity in the database without writing commit logs if the underlying database is
    * Datastore.
    *
    * <p>This method is for the sake of keeping a single code path when replacing ofy() with tm() in
@@ -254,19 +253,19 @@ public interface TransactionManager {
   void delete(Object entity);
 
   /**
-   * Deletes the entity by its id without writing any backup if the underlying database is
+   * Deletes the entity by its id without writing commit logs if the underlying database is
    * Datastore.
    */
   void deleteWithoutBackup(VKey<?> key);
 
   /**
-   * Deletes the set of entities by their key id without writing any backup if the underlying
+   * Deletes the set of entities by their key id without writing commit logs if the underlying
    * database is Datastore.
    */
   void deleteWithoutBackup(Iterable<? extends VKey<?>> keys);
 
   /**
-   * Deletes the given entity from the database without writing any backup if the underlying
+   * Deletes the given entity from the database without writing commit logs if the underlying
    * database is Datastore.
    */
   void deleteWithoutBackup(Object entity);
@@ -274,8 +273,6 @@ public interface TransactionManager {
   /** Clears the session cache if the underlying database is Datastore, otherwise it is a no-op. */
   void clearSessionCache();
 
-  /** Returns true if the transaction manager is DatastoreTransactionManager. */
-  default boolean isOfy() {
-    return this instanceof DatastoreTransactionManager;
-  }
+  /** Returns true if the transaction manager is DatastoreTransactionManager, false otherwise. */
+  boolean isOfy();
 }

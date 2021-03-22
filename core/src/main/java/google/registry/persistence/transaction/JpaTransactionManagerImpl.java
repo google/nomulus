@@ -532,6 +532,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public boolean isOfy() {
+    return false;
+  }
+
+  @Override
   public <T> void assertDelete(VKey<T> key) {
     if (internalDelete(key) != 1) {
       throw new IllegalArgumentException(
