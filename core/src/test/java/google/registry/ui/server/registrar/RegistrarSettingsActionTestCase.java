@@ -75,9 +75,15 @@ public abstract class RegistrarSettingsActionTestCase {
 
   static final String CLIENT_ID = "TheRegistrar";
 
+  final FakeClock clock = new FakeClock(DateTime.parse("2014-01-01T00:00:00Z"));
+
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .withClock(clock)
+          .withTaskQueue()
+          .build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
@@ -88,7 +94,6 @@ public abstract class RegistrarSettingsActionTestCase {
 
   final RegistrarSettingsAction action = new RegistrarSettingsAction();
   private final StringWriter writer = new StringWriter();
-  final FakeClock clock = new FakeClock(DateTime.parse("2014-01-01T00:00:00Z"));
 
   RegistrarContact techContact;
 

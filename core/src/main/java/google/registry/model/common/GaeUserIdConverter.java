@@ -16,8 +16,7 @@ package google.registry.model.common;
 
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
-import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 
 import com.google.appengine.api.users.User;
 import com.google.common.base.Splitter;
@@ -56,13 +55,22 @@ public class GaeUserIdConverter extends ImmutableObject {
     try {
       // Perform these operations in a transactionless context to avoid enlisting in some outer
       // transaction (if any).
-      tm().doTransactionless(() -> ofy().saveWithoutBackup().entity(gaeUserIdConverter).now());
+      ofyTm()
+          .doTransactionless(
+              () -> {
+                ofyTm().putWithoutBackup(gaeUserIdConverter);
+                return null;
+              });
 
       // The read must be done in its own transaction to avoid reading from the session cache.
-      return tm()
-          .transactNew(() -> ofy().load().entity(gaeUserIdConverter).safe().user.getUserId());
+      return ofyTm().transactNew(() -> ofyTm().loadByEntity(gaeUserIdConverter).user.getUserId());
     } finally {
-      tm().doTransactionless(() -> ofy().deleteWithoutBackup().entity(gaeUserIdConverter).now());
+      ofyTm()
+          .doTransactionless(
+              () -> {
+                ofyTm().deleteWithoutBackup(gaeUserIdConverter);
+                return null;
+              });
     }
   }
 }

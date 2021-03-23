@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.common.GaeUserIdConverter.convertEmailAddressToGaeUserId;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.ui.server.SoyTemplateUtils.CSS_RENAMING_MAP_SUPPLIER;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
@@ -234,14 +233,13 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
               .setEmailAddress(consoleUserEmail.get())
               .setGaeUserId(gaeUserId)
               .build();
-      tm()
-          .transact(
+      tm().transact(
               () -> {
                 checkState(
                     !Registrar.loadByClientId(registrar.getClientId()).isPresent(),
                     "Registrar with client ID %s already exists",
                     registrar.getClientId());
-                ofy().save().entities(registrar, contact);
+                tm().putAll(registrar, contact);
               });
       data.put("password", password);
       data.put("passcode", phonePasscode);

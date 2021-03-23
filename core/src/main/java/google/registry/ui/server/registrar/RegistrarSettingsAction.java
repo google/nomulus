@@ -20,7 +20,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static google.registry.export.sheet.SyncRegistrarsSheetAction.enqueueRegistrarSheetSync;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.security.JsonResponseHelper.Status.ERROR;
 import static google.registry.security.JsonResponseHelper.Status.SUCCESS;
@@ -170,24 +170,28 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
   }
 
   private RegistrarResult read(String clientId) {
+    return RegistrarResult.create("Success", loadRegistrarUnchecked(clientId));
+  }
+
+  private Registrar loadRegistrarUnchecked(String registrarId) {
     try {
-      return RegistrarResult.create("Success", registrarAccessor.getRegistrar(clientId));
+      return registrarAccessor.getRegistrar(registrarId);
     } catch (RegistrarAccessDeniedException e) {
       throw new ForbiddenException(e.getMessage(), e);
     }
   }
 
   private RegistrarResult update(final Map<String, ?> args, String clientId) {
-    return tm().transact(
+    tm().transact(
             () -> {
               // We load the registrar here rather than outside of the transaction - to make
               // sure we have the latest version. This one is loaded inside the transaction, so it's
               // guaranteed to not change before we update it.
-              Registrar registrar;
-              try {
-                registrar = registrarAccessor.getRegistrar(clientId);
-              } catch (RegistrarAccessDeniedException e) {
-                throw new ForbiddenException(e.getMessage(), e);
+              Registrar registrar = loadRegistrarUnchecked(clientId);
+              // Detach the registrar to avoid Hibernate object-updates, since we wish to email
+              // out the diffs between the existing and updated registrar objects
+              if (!tm().isOfy()) {
+                jpaTm().getEntityManager().detach(registrar);
               }
               // Verify that the registrar hasn't been changed.
               // To do that - we find the latest update time (or null if the registrar has been
@@ -233,14 +237,15 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
 
               // Save the updated registrar
               if (!updatedRegistrar.equals(registrar)) {
-                ofy().save().entity(updatedRegistrar);
+                tm().put(updatedRegistrar);
               }
 
-              // Email and return update.
+              // Email the updates
               sendExternalUpdatesIfNecessary(
                   registrar, contacts, updatedRegistrar, updatedContacts);
-              return RegistrarResult.create("Saved " + clientId, updatedRegistrar);
             });
+    // Reload the result outside of the transaction to get the most recent version
+    return RegistrarResult.create("Saved " + clientId, loadRegistrarUnchecked(clientId));
   }
 
   private Map<String, Object> expandRegistrarWithContacts(
