@@ -58,7 +58,8 @@ public class UpdateAutoTimestamp extends ImmutableObject {
   @PreUpdate
   void setTimestamp() {
     if (autoUpdateEnabled() || lastUpdateTime == null) {
-      lastUpdateTime = DateTimeUtils.toZonedDateTime(jpaTm().getTransactionTime());
+      timestamp = jpaTm().getTransactionTime();
+      lastUpdateTime = DateTimeUtils.toZonedDateTime(timestamp);
     }
   }
 
