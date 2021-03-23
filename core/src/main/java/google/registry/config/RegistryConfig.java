@@ -652,6 +652,13 @@ public final class RegistryConfig {
       return config.beam.defaultJobZone;
     }
 
+    /** Returns the GCS bucket URL with all staged BEAM flex templates. */
+    @Provides
+    @Config("beamStagingBucketUrl")
+    public static String provideBeamStagingBucketUrl(RegistryConfigSettings config) {
+      return config.beam.stagingBucketUrl;
+    }
+
     /**
      * Returns the URL of the GCS location we store jar dependencies for beam pipelines.
      *
