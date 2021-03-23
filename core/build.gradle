@@ -830,6 +830,7 @@ if (environment in ['alpha', 'crash']) {
             --project ${gcpProject}".toString()
         rootProject.ext.execInBash(command, '/tmp')
       }
+    }
   }.dependsOn(tasks.beam_pipeline_common)
 }
 
