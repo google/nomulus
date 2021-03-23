@@ -51,10 +51,8 @@ public final class RegistryLockDao {
     return ImmutableList.copyOf(
         jpaTm()
             .query(
-                "SELECT lock FROM RegistryLock lock"
-                    + " WHERE lock.registrarId = :registrarId"
-                    + " AND lock.unlockCompletionTimestamp IS NULL"
-                    + " ORDER BY lock.domainName ASC",
+                "SELECT lock FROM RegistryLock lock WHERE lock.registrarId = :registrarId"
+                    + " AND lock.unlockCompletionTime IS NULL ORDER BY lock.domainName ASC",
                 RegistryLock.class)
             .setParameter("registrarId", registrarId)
             .getResultList());
@@ -89,9 +87,8 @@ public final class RegistryLockDao {
     return jpaTm()
         .query(
             "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
-                + " lock.lockCompletionTimestamp IS NOT NULL AND"
-                + " lock.unlockCompletionTimestamp IS NULL ORDER BY lock.revisionId"
-                + " DESC",
+                + " lock.lockCompletionTime IS NOT NULL AND lock.unlockCompletionTime IS NULL"
+                + " ORDER BY lock.revisionId DESC",
             RegistryLock.class)
         .setParameter("repoId", repoId)
         .setMaxResults(1)
@@ -110,8 +107,7 @@ public final class RegistryLockDao {
     return jpaTm()
         .query(
             "SELECT lock FROM RegistryLock lock WHERE lock.repoId = :repoId AND"
-                + " lock.unlockCompletionTimestamp IS NOT NULL ORDER BY lock.revisionId"
-                + " DESC",
+                + " lock.unlockCompletionTime IS NOT NULL ORDER BY lock.revisionId DESC",
             RegistryLock.class)
         .setParameter("repoId", repoId)
         .setMaxResults(1)

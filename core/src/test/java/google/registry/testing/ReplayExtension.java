@@ -110,17 +110,22 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
         // have to compare the current value in SQL (which we just mutated) against the value that
         // we originally would have persisted (that being the object in the entry).
         VKey<?> vkey = VKey.from(entry.getKey());
-        Optional<?> jpaValue = jpaTm().transact(() -> jpaTm().loadByKeyIfPresent(vkey));
-        if (entry.getValue().equals(TransactionInfo.Delete.SENTINEL)) {
-          assertThat(jpaValue.isPresent()).isFalse();
-        } else {
-          ImmutableObject immutJpaObject = (ImmutableObject) jpaValue.get();
-          assertAboutImmutableObjects().that(immutJpaObject).hasCorrectHashValue();
-          assertAboutImmutableObjects()
-              .that(immutJpaObject)
-              .isEqualAcrossDatabases(
-                  (ImmutableObject) ((DatastoreEntity) entry.getValue()).toSqlEntity().get());
-        }
+        jpaTm()
+            .transact(
+                () -> {
+                  Optional<?> jpaValue = jpaTm().loadByKeyIfPresent(vkey);
+                  if (entry.getValue().equals(TransactionInfo.Delete.SENTINEL)) {
+                    assertThat(jpaValue.isPresent()).isFalse();
+                  } else {
+                    ImmutableObject immutJpaObject = (ImmutableObject) jpaValue.get();
+                    assertAboutImmutableObjects().that(immutJpaObject).hasCorrectHashValue();
+                    assertAboutImmutableObjects()
+                        .that(immutJpaObject)
+                        .isEqualAcrossDatabases(
+                            (ImmutableObject)
+                                ((DatastoreEntity) entry.getValue()).toSqlEntity().get());
+                  }
+                });
       }
     }
   }

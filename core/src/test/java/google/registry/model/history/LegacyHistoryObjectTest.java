@@ -129,22 +129,26 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
 
     // Next, save that from-Datastore object in SQL and verify we can load it back in
     jpaTm().transact(() -> jpaTm().insert(legacyDomainHistory));
-    DomainHistory legacyHistoryFromSql =
-        jpaTm().transact(() -> jpaTm().loadByKey(legacyDomainHistory.createVKey()));
-    // Don't compare nsHosts directly because one is null and the other is empty
-    assertAboutImmutableObjects()
-        .that(legacyDomainHistory)
-        .isEqualExceptFields(
-            // NB: period, transaction records, and other client ID are added in #794
-            legacyHistoryFromSql,
-            "period",
-            "domainTransactionRecords",
-            "otherClientId",
-            "nsHosts",
-            "dsDataHistories",
-            "gracePeriodHistories");
-    assertThat(nullToEmpty(legacyDomainHistory.getNsHosts()))
-        .isEqualTo(nullToEmpty(legacyHistoryFromSql.getNsHosts()));
+    jpaTm()
+        .transact(
+            () -> {
+              DomainHistory legacyHistoryFromSql =
+                  jpaTm().loadByKey(legacyDomainHistory.createVKey());
+              // Don't compare nsHosts directly because one is null and the other is empty
+              assertAboutImmutableObjects()
+                  .that(legacyDomainHistory)
+                  .isEqualExceptFields(
+                      // NB: period, transaction records, and other client ID are added in #794
+                      legacyHistoryFromSql,
+                      "period",
+                      "domainTransactionRecords",
+                      "otherClientId",
+                      "nsHosts",
+                      "dsDataHistories",
+                      "gracePeriodHistories");
+              assertThat(nullToEmpty(legacyDomainHistory.getNsHosts()))
+                  .isEqualTo(nullToEmpty(legacyHistoryFromSql.getNsHosts()));
+            });
   }
 
   @TestSqlOnly

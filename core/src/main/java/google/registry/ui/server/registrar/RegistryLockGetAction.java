@@ -191,14 +191,13 @@ public final class RegistryLockGetAction implements JsonGetAction {
     DateTime now = jpaTm().getTransactionTime();
     return new ImmutableMap.Builder<String, Object>()
         .put(DOMAIN_NAME_PARAM, lock.getDomainName())
-        .put(
-            LOCKED_TIME_PARAM, lock.getLockCompletionTimestamp().map(DateTime::toString).orElse(""))
+        .put(LOCKED_TIME_PARAM, lock.getLockCompletionTime().map(DateTime::toString).orElse(""))
         .put(LOCKED_BY_PARAM, lock.isSuperuser() ? "admin" : lock.getRegistrarPocId())
-        .put(IS_LOCK_PENDING_PARAM, !lock.getLockCompletionTimestamp().isPresent())
+        .put(IS_LOCK_PENDING_PARAM, !lock.getLockCompletionTime().isPresent())
         .put(
             IS_UNLOCK_PENDING_PARAM,
-            lock.getUnlockRequestTimestamp().isPresent()
-                && !lock.getUnlockCompletionTimestamp().isPresent()
+            lock.getUnlockRequestTime().isPresent()
+                && !lock.getUnlockCompletionTime().isPresent()
                 && !lock.isUnlockRequestExpired(now))
         .put(USER_CAN_UNLOCK_PARAM, isAdmin || !lock.isSuperuser())
         .build();

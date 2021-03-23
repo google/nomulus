@@ -142,6 +142,7 @@ class EntityCallbacksListenerTest {
     assertThat(testEntity.entityEmbedded.entityEmbeddedParentPostLoad).isEqualTo(expectedLoad);
 
     assertThat(testEntity.parentPostLoad).isEqualTo(expectedLoad);
+    assertThat(testEntity.parentPrePersist).isEqualTo(expectedPersist);
     assertThat(testEntity.parentEmbedded.parentEmbeddedPostLoad).isEqualTo(expectedLoad);
     assertThat(testEntity.parentEmbedded.parentEmbeddedNested.parentEmbeddedNestedPostLoad)
         .isEqualTo(expectedLoad);
@@ -241,12 +242,18 @@ class EntityCallbacksListenerTest {
   private static class ParentEntity {
     @Embedded ParentEmbedded parentEmbedded = new ParentEmbedded();
     @Transient int parentPostLoad = 0;
+    @Transient int parentPrePersist = 0;
 
     String parentEntity = "placeholder";
 
     @PostLoad
     void parentPostLoad() {
       parentPostLoad++;
+    }
+
+    @PrePersist
+    void parentPrePersist() {
+      parentPrePersist++;
     }
   }
 

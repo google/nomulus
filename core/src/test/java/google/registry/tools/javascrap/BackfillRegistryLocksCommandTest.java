@@ -68,7 +68,7 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
 
     Optional<RegistryLock> lockOptional = getMostRecentRegistryLockByRepoId(domain.getRepoId());
     Truth8.assertThat(lockOptional).isPresent();
-    Truth8.assertThat(lockOptional.get().getLockCompletionTimestamp()).isPresent();
+    Truth8.assertThat(lockOptional.get().getLockCompletionTime()).isPresent();
   }
 
   @TestOfyAndSql
@@ -111,18 +111,15 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
                 .setRegistrarId("adminreg")
                 .setRepoId(domain.getRepoId())
                 .setDomainName(domain.getDomainName())
-                .setLockCompletionTimestamp(fakeClock.nowUtc())
+                .setLockCompletionTime(fakeClock.nowUtc())
                 .setVerificationCode(command.stringGenerator.createString(32))
                 .build());
 
     fakeClock.advanceBy(Duration.standardDays(1));
     runCommandForced("--domain_roids", domain.getRepoId());
 
-    assertThat(
-            getMostRecentRegistryLockByRepoId(domain.getRepoId())
-                .get()
-                .getLockCompletionTimestamp())
-        .isEqualTo(previousLock.getLockCompletionTimestamp());
+    assertThat(getMostRecentRegistryLockByRepoId(domain.getRepoId()).get().getLockCompletionTime())
+        .isEqualTo(previousLock.getLockCompletionTime());
   }
 
   @TestOfyAndSql
@@ -147,10 +144,10 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
         "--domain_roids", String.format("%s,%s", ursDomain.getRepoId(), nonUrsDomain.getRepoId()));
 
     RegistryLock ursLock = getMostRecentVerifiedRegistryLockByRepoId(ursDomain.getRepoId()).get();
-    assertThat(ursLock.getLockCompletionTimestamp()).hasValue(ursTime);
+    assertThat(ursLock.getLockCompletionTime()).hasValue(ursTime);
     RegistryLock nonUrsLock =
         getMostRecentVerifiedRegistryLockByRepoId(nonUrsDomain.getRepoId()).get();
-    assertThat(nonUrsLock.getLockCompletionTimestamp()).hasValue(fakeClock.nowUtc());
+    assertThat(nonUrsLock.getLockCompletionTime()).hasValue(fakeClock.nowUtc());
   }
 
   @TestOfyAndSql

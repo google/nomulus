@@ -123,7 +123,7 @@ final class RegistryLockPostActionTest {
 
   @Test
   void testSuccess_unlock() throws Exception {
-    saveRegistryLock(createLock().asBuilder().setLockCompletionTimestamp(clock.nowUtc()).build());
+    saveRegistryLock(createLock().asBuilder().setLockCompletionTime(clock.nowUtc()).build());
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertSuccess(response, "unlock", "Marla.Singer.RegistryLock@crr.com");
@@ -131,7 +131,7 @@ final class RegistryLockPostActionTest {
 
   @Test
   void testSuccess_unlock_relockDurationSet() throws Exception {
-    saveRegistryLock(createLock().asBuilder().setLockCompletionTimestamp(clock.nowUtc()).build());
+    saveRegistryLock(createLock().asBuilder().setLockCompletionTime(clock.nowUtc()).build());
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     ImmutableMap<String, Object> request =
         new ImmutableMap.Builder<String, Object>()
@@ -148,11 +148,7 @@ final class RegistryLockPostActionTest {
   @Test
   void testSuccess_unlock_adminUnlockingAdmin() throws Exception {
     saveRegistryLock(
-        createLock()
-            .asBuilder()
-            .isSuperuser(true)
-            .setLockCompletionTimestamp(clock.nowUtc())
-            .build());
+        createLock().asBuilder().isSuperuser(true).setLockCompletionTime(clock.nowUtc()).build());
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     action =
         createAction(
@@ -187,8 +183,8 @@ final class RegistryLockPostActionTest {
     saveRegistryLock(
         createLock()
             .asBuilder()
-            .setLockCompletionTimestamp(clock.nowUtc())
-            .setUnlockRequestTimestamp(clock.nowUtc())
+            .setLockCompletionTime(clock.nowUtc())
+            .setUnlockRequestTime(clock.nowUtc())
             .build());
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertFailureWithMessage(response, "A pending unlock action already exists for example.tld");
@@ -197,11 +193,7 @@ final class RegistryLockPostActionTest {
   @Test
   void testFailure_unlock_nonAdminUnlockingAdmin() {
     saveRegistryLock(
-        createLock()
-            .asBuilder()
-            .isSuperuser(true)
-            .setLockCompletionTimestamp(clock.nowUtc())
-            .build());
+        createLock().asBuilder().isSuperuser(true).setLockCompletionTime(clock.nowUtc()).build());
     persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
     Map<String, ?> response = action.handleJsonRequest(unlockRequest());
     assertFailureWithMessage(
@@ -366,9 +358,9 @@ final class RegistryLockPostActionTest {
     saveRegistryLock(
         createLock()
             .asBuilder()
-            .setLockCompletionTimestamp(clock.nowUtc().minusMinutes(1))
-            .setUnlockRequestTimestamp(clock.nowUtc().minusMinutes(1))
-            .setUnlockCompletionTimestamp(clock.nowUtc().minusMinutes(1))
+            .setLockCompletionTime(clock.nowUtc().minusMinutes(1))
+            .setUnlockRequestTime(clock.nowUtc().minusMinutes(1))
+            .setUnlockCompletionTime(clock.nowUtc().minusMinutes(1))
             .build());
 
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
@@ -380,7 +372,7 @@ final class RegistryLockPostActionTest {
     RegistryLock previousLock = saveRegistryLock(createLock());
     String verificationCode = previousLock.getVerificationCode();
     previousLock = getRegistryLockByVerificationCode(verificationCode).get();
-    clock.setTo(previousLock.getLockRequestTimestamp().plusHours(2));
+    clock.setTo(previousLock.getLockRequestTime().plusHours(2));
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertSuccess(response, "lock", "Marla.Singer.RegistryLock@crr.com");
   }

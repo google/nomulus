@@ -14,11 +14,22 @@
 
 package google.registry.model;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import com.googlecode.objectify.annotation.Ignore;
+import com.googlecode.objectify.annotation.OnLoad;
 import google.registry.model.translators.UpdateAutoTimestampTranslatorFactory;
+import google.registry.util.DateTimeUtils;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.PostLoad;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -26,14 +37,44 @@ import org.joda.time.DateTime;
  *
  * @see UpdateAutoTimestampTranslatorFactory
  */
+@Embeddable
 public class UpdateAutoTimestamp extends ImmutableObject {
 
-  // When set to true, database converters/translators should do tha auto update.  When set to
+  // When set to true, database converters/translators should do the auto update.  When set to
   // false, auto update should be suspended (this exists to allow us to preserve the original value
   // during a replay).
   private static ThreadLocal<Boolean> autoUpdateEnabled = ThreadLocal.withInitial(() -> true);
 
-  DateTime timestamp;
+  @Transient DateTime timestamp;
+
+  @Ignore
+  @Column(nullable = false)
+  ZonedDateTime lastUpdateTime;
+
+  // Unfortunately, we cannot use the @UpdateTimestamp annotation on "lastUpdateTime" in this class
+  // because Hibernate does not allow it to be used on @Embeddable classes, see
+  // https://hibernate.atlassian.net/browse/HHH-13235. This is a workaround.
+  @PrePersist
+  @PreUpdate
+  void setTimestamp() {
+    if (autoUpdateEnabled() || lastUpdateTime == null) {
+      lastUpdateTime = DateTimeUtils.toZonedDateTime(jpaTm().getTransactionTime());
+    }
+  }
+
+  @OnLoad
+  void onLoad() {
+    if (timestamp != null) {
+      lastUpdateTime = DateTimeUtils.toZonedDateTime(timestamp);
+    }
+  }
+
+  @PostLoad
+  void postLoad() {
+    if (lastUpdateTime != null) {
+      timestamp = DateTimeUtils.toJodaDateTime(lastUpdateTime);
+    }
+  }
 
   /** Returns the timestamp, or {@code START_OF_TIME} if it's null. */
   public DateTime getTimestamp() {
@@ -43,6 +84,7 @@ public class UpdateAutoTimestamp extends ImmutableObject {
   public static UpdateAutoTimestamp create(@Nullable DateTime timestamp) {
     UpdateAutoTimestamp instance = new UpdateAutoTimestamp();
     instance.timestamp = timestamp;
+    instance.lastUpdateTime = timestamp == null ? null : DateTimeUtils.toZonedDateTime(timestamp);
     return instance;
   }
 

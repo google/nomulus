@@ -465,8 +465,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
           saveRegistryLock(
               createRegistryLock(expiredUnlockRequestDomain)
                   .asBuilder()
-                  .setLockCompletionTimestamp(START_OF_TIME.minusDays(1))
-                  .setUnlockRequestTimestamp(START_OF_TIME.minusDays(1))
+                  .setLockCompletionTime(START_OF_TIME.minusDays(1))
+                  .setUnlockRequestTime(START_OF_TIME.minusDays(1))
                   .build());
           DomainBase domain = persistActiveDomain("example.tld");
           saveRegistryLock(createRegistryLock(domain).asBuilder().isSuperuser(true).build());
@@ -498,8 +498,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
                   .setRegistrarPocId("Marla.Singer@crr.com")
                   .setDomainName(pendingUnlockDomain.getDomainName())
                   .setRepoId(pendingUnlockDomain.getRepoId())
-                  .setLockCompletionTimestamp(START_OF_TIME)
-                  .setUnlockRequestTimestamp(START_OF_TIME)
+                  .setLockCompletionTime(START_OF_TIME)
+                  .setUnlockRequestTime(START_OF_TIME)
                   .build());
           return null;
         });
@@ -568,7 +568,7 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
         .isSuperuser(false)
         .setRegistrarId("TheRegistrar")
         .setRegistrarPocId("Marla.Singer@crr.com")
-        .setLockCompletionTimestamp(START_OF_TIME)
+        .setLockCompletionTime(START_OF_TIME)
         .setDomainName(domainBase.getDomainName())
         .setRepoId(domainBase.getRepoId())
         .build();

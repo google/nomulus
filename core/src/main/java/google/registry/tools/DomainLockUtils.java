@@ -103,7 +103,7 @@ public final class DomainLockUtils {
               RegistryLock lock = getByVerificationCode(verificationCode);
 
               checkArgument(
-                  !lock.getLockCompletionTimestamp().isPresent(),
+                  !lock.getLockCompletionTime().isPresent(),
                   "Domain %s is already locked",
                   lock.getDomainName());
 
@@ -115,7 +115,7 @@ public final class DomainLockUtils {
                   !lock.isSuperuser() || isAdmin, "Non-admin user cannot complete admin lock");
 
               RegistryLock newLock =
-                  RegistryLockDao.save(lock.asBuilder().setLockCompletionTimestamp(now).build());
+                  RegistryLockDao.save(lock.asBuilder().setLockCompletionTime(now).build());
               setAsRelock(newLock);
               tm().transact(() -> applyLockStatuses(newLock, now, isAdmin));
               return newLock;
@@ -131,7 +131,7 @@ public final class DomainLockUtils {
                   DateTime now = jpaTm().getTransactionTime();
                   RegistryLock previousLock = getByVerificationCode(verificationCode);
                   checkArgument(
-                      !previousLock.getUnlockCompletionTimestamp().isPresent(),
+                      !previousLock.getUnlockCompletionTime().isPresent(),
                       "Domain %s is already unlocked",
                       previousLock.getDomainName());
 
@@ -145,7 +145,7 @@ public final class DomainLockUtils {
 
                   RegistryLock newLock =
                       RegistryLockDao.save(
-                          previousLock.asBuilder().setUnlockCompletionTimestamp(now).build());
+                          previousLock.asBuilder().setUnlockCompletionTime(now).build());
                   tm().transact(() -> removeLockStatuses(newLock, isAdmin, now));
                   return newLock;
                 });
@@ -169,7 +169,7 @@ public final class DomainLockUtils {
               RegistryLock newLock =
                   RegistryLockDao.save(
                       createLockBuilder(domainName, registrarId, registrarPocId, isAdmin)
-                          .setLockCompletionTimestamp(now)
+                          .setLockCompletionTime(now)
                           .build());
               tm().transact(() -> applyLockStatuses(newLock, now, isAdmin));
               setAsRelock(newLock);
@@ -192,7 +192,7 @@ public final class DomainLockUtils {
                   RegistryLock result =
                       RegistryLockDao.save(
                           createUnlockBuilder(domainName, registrarId, isAdmin, relockDuration)
-                              .setUnlockCompletionTimestamp(now)
+                              .setUnlockCompletionTime(now)
                               .build());
                   tm().transact(() -> removeLockStatuses(result, isAdmin, now));
                   return result;
@@ -230,7 +230,7 @@ public final class DomainLockUtils {
             previousLock ->
                 checkArgument(
                     previousLock.isLockRequestExpired(now)
-                        || previousLock.getUnlockCompletionTimestamp().isPresent()
+                        || previousLock.getUnlockCompletionTime().isPresent()
                         || isAdmin,
                     "A pending or completed lock action already exists for %s",
                     previousLock.getDomainName()));
@@ -264,7 +264,7 @@ public final class DomainLockUtils {
                   new RegistryLock.Builder()
                       .setRepoId(domainBase.getRepoId())
                       .setDomainName(domainName)
-                      .setLockCompletionTimestamp(now)
+                      .setLockCompletionTime(now)
                       .setRegistrarId(registrarId));
     } else {
       RegistryLock lock =
@@ -275,7 +275,7 @@ public final class DomainLockUtils {
       checkArgument(
           lock.isLocked(), "Lock object for domain %s is not currently locked", domainName);
       checkArgument(
-          !lock.getUnlockRequestTimestamp().isPresent() || lock.isUnlockRequestExpired(now),
+          !lock.getUnlockRequestTime().isPresent() || lock.isUnlockRequestExpired(now),
           "A pending unlock action already exists for %s",
           domainName);
       checkArgument(
@@ -290,7 +290,7 @@ public final class DomainLockUtils {
     return newLockBuilder
         .setVerificationCode(stringGenerator.createString(VERIFICATION_CODE_LENGTH))
         .isSuperuser(isAdmin)
-        .setUnlockRequestTimestamp(now)
+        .setUnlockRequestTime(now)
         .setRegistrarId(registrarId);
   }
 
