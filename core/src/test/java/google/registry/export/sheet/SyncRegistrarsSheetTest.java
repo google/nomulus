@@ -18,7 +18,7 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServer;
 import static google.registry.model.common.Cursor.CursorType.SYNC_REGISTRAR_SHEET;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -40,11 +40,12 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
@@ -54,6 +55,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link SyncRegistrarsSheet}. */
 @ExtendWith(MockitoExtension.class)
+@DualDatabaseTest
 public class SyncRegistrarsSheetTest {
 
   @RegisterExtension
@@ -78,16 +80,20 @@ public class SyncRegistrarsSheetTest {
   void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     createTld("example");
-    // Remove Registrar entities created by AppEngineRule.
+    // Remove Registrar entities created by AppEngineRule (and RegistrarContact's, for jpa)
+    if (!tm().isOfy()) {
+      tm().transact(() -> tm().loadAllOf(RegistrarContact.class))
+          .forEach(DatabaseHelper::deleteResource);
+    }
     Registrar.loadAll().forEach(DatabaseHelper::deleteResource);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_wereRegistrarsModified_noRegistrars_returnsFalse() {
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isFalse();
   }
 
-  @Test
+  @TestOfyAndSql
   void test_wereRegistrarsModified_atDifferentCursorTimes() {
     persistNewRegistrar("SomeRegistrar", "Some Registrar Inc.", Registrar.Type.REAL, 8L);
     persistResource(Cursor.createGlobal(SYNC_REGISTRAR_SHEET, clock.nowUtc().minusHours(1)));
@@ -96,9 +102,8 @@ public class SyncRegistrarsSheetTest {
     assertThat(newSyncRegistrarsSheet().wereRegistrarsModified()).isFalse();
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun() throws Exception {
-    DateTime beforeExecution = clock.nowUtc();
     persistResource(new Registrar.Builder()
         .setClientId("anotherregistrar")
         .setRegistrarName("Another Registrar LLC")
@@ -180,8 +185,8 @@ public class SyncRegistrarsSheetTest {
             .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
         .build());
     // Use registrar key for contacts' parent.
+    DateTime registrarCreationTime = persistResource(registrar).getCreationTime();
     persistSimpleResources(contacts);
-    persistResource(registrar);
 
     clock.advanceBy(standardMinutes(1));
     newSyncRegistrarsSheet().run("foobar");
@@ -275,8 +280,8 @@ public class SyncRegistrarsSheetTest {
     assertThat(row).containsEntry("address.countryCode", "US");
     assertThat(row).containsEntry("phoneNumber", "+1.2223334444");
     assertThat(row).containsEntry("faxNumber", "");
-    assertThat(row.get("creationTime")).isEqualTo(beforeExecution.toString());
-    assertThat(row.get("lastUpdateTime")).isEqualTo(beforeExecution.toString());
+    assertThat(row.get("creationTime")).isEqualTo(registrarCreationTime.toString());
+    assertThat(row.get("lastUpdateTime")).isEqualTo(registrarCreationTime.toString());
     assertThat(row).containsEntry("allowedTlds", "example");
     assertThat(row).containsEntry("blockPremiumNames", "false");
     assertThat(row).containsEntry("ipAddressAllowList", "");
@@ -309,8 +314,8 @@ public class SyncRegistrarsSheetTest {
     assertThat(row).containsEntry("address.countryCode", "US");
     assertThat(row).containsEntry("phoneNumber", "+1.2125551212");
     assertThat(row).containsEntry("faxNumber", "+1.2125551213");
-    assertThat(row.get("creationTime")).isEqualTo(beforeExecution.toString());
-    assertThat(row.get("lastUpdateTime")).isEqualTo(beforeExecution.toString());
+    assertThat(row.get("creationTime")).isEqualTo(registrarCreationTime.toString());
+    assertThat(row.get("lastUpdateTime")).isEqualTo(registrarCreationTime.toString());
     assertThat(row).containsEntry("allowedTlds", "");
     assertThat(row).containsEntry("whoisServer", "whois.example.com");
     assertThat(row).containsEntry("blockPremiumNames", "false");
@@ -320,12 +325,13 @@ public class SyncRegistrarsSheetTest {
     assertThat(row).containsEntry("icannReferralEmail", "jim@example.net");
     assertThat(row).containsEntry("billingAccountMap", "{}");
 
-    Cursor cursor = ofy().load().key(Cursor.createGlobalKey(SYNC_REGISTRAR_SHEET)).now();
+    Cursor cursor =
+        tm().transact(() -> tm().loadByKey(Cursor.createGlobalVKey(SYNC_REGISTRAR_SHEET)));
     assertThat(cursor).isNotNull();
-    assertThat(cursor.getCursorTime()).isGreaterThan(beforeExecution);
+    assertThat(cursor.getCursorTime()).isGreaterThan(registrarCreationTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun_missingValues_stillWorks() throws Exception {
     persistNewRegistrar("SomeRegistrar", "Some Registrar", Registrar.Type.REAL, 8L);
 

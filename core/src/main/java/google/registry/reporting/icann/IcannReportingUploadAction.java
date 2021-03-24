@@ -17,7 +17,6 @@ package google.registry.reporting.icann;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -28,7 +27,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.common.Cursor;
@@ -36,6 +34,7 @@ import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registries;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
+import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.Response;
@@ -204,16 +203,17 @@ public final class IcannReportingUploadAction implements Runnable {
 
     ImmutableSet<Registry> registries = Registries.getTldEntitiesOfType(TldType.REAL);
 
-    ImmutableMap<Key<Cursor>, Registry> activityKeyMap =
+    ImmutableMap<VKey<? extends Cursor>, Registry> activityKeyMap =
         loadKeyMap(registries, CursorType.ICANN_UPLOAD_ACTIVITY);
-    ImmutableMap<Key<Cursor>, Registry> transactionKeyMap =
+    ImmutableMap<VKey<? extends Cursor>, Registry> transactionKeyMap =
         loadKeyMap(registries, CursorType.ICANN_UPLOAD_TX);
 
-    ImmutableSet.Builder<Key<Cursor>> keys = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<VKey<? extends Cursor>> keys = new ImmutableSet.Builder<>();
     keys.addAll(activityKeyMap.keySet());
     keys.addAll(transactionKeyMap.keySet());
 
-    Map<Key<Cursor>, Cursor> cursorMap = ofy().load().keys(keys.build());
+    Map<VKey<? extends Cursor>, Cursor> cursorMap =
+        tm().transact(() -> tm().loadByKeysIfPresent(keys.build()));
     ImmutableMap.Builder<Cursor, String> cursors = new ImmutableMap.Builder<>();
     cursors.putAll(
         defaultNullCursorsToNextMonthAndAddToMap(
@@ -224,9 +224,9 @@ public final class IcannReportingUploadAction implements Runnable {
     return cursors.build();
   }
 
-  private ImmutableMap<Key<Cursor>, Registry> loadKeyMap(
+  private ImmutableMap<VKey<? extends Cursor>, Registry> loadKeyMap(
       ImmutableSet<Registry> registries, CursorType type) {
-    return Maps.uniqueIndex(registries, r -> Cursor.createKey(type, r));
+    return Maps.uniqueIndex(registries, r -> Cursor.createVKey(type, r.getTldStr()));
   }
 
   /**
@@ -235,7 +235,9 @@ public final class IcannReportingUploadAction implements Runnable {
    * next month.
    */
   private ImmutableMap<Cursor, String> defaultNullCursorsToNextMonthAndAddToMap(
-      Map<Key<Cursor>, Registry> keyMap, CursorType type, Map<Key<Cursor>, Cursor> cursorMap) {
+      Map<VKey<? extends Cursor>, Registry> keyMap,
+      CursorType type,
+      Map<VKey<? extends Cursor>, Cursor> cursorMap) {
     ImmutableMap.Builder<Cursor, String> cursors = new ImmutableMap.Builder<>();
     keyMap.forEach(
         (key, registry) -> {
@@ -249,7 +251,7 @@ public final class IcannReportingUploadAction implements Runnable {
                       clock.nowUtc().withDayOfMonth(1).withTimeAtStartOfDay().plusMonths(1),
                       registry));
           if (!cursorMap.containsValue(cursor)) {
-            tm().transact(() -> ofy().save().entity(cursor));
+            tm().transact(() -> tm().put(cursor));
           }
           cursors.put(cursor, registry.getTldStr());
         });
@@ -279,6 +281,7 @@ public final class IcannReportingUploadAction implements Runnable {
         String.format(
             "Report Filename - Upload status:\n%s",
             reportSummary.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
                 .map(
                     (e) ->
                         String.format("%s - %s", e.getKey(), e.getValue() ? "SUCCESS" : "FAILURE"))
