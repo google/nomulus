@@ -298,6 +298,11 @@ public class DatastoreTransactionManager implements TransactionManager {
     getOfy().clearSessionCache();
   }
 
+  @Override
+  public boolean isOfy() {
+    return true;
+  }
+
   /**
    * Executes the given {@link Result} instance synchronously if not in a transaction.
    *
