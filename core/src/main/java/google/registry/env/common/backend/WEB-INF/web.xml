@@ -379,6 +379,12 @@
     <url-pattern>/_dr/task/relockDomain</url-pattern>
   </servlet-mapping>
 
+  <!-- Action to wipeout Cloud SQL data -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/wipeOutCloudSql</url-pattern>
+  </servlet-mapping>
+
   <!-- Security config -->
   <security-constraint>
     <web-resource-collection>

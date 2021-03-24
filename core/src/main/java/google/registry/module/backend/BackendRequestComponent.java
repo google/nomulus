@@ -30,6 +30,7 @@ import google.registry.batch.RefreshDnsOnHostRenameAction;
 import google.registry.batch.RelockDomainAction;
 import google.registry.batch.ResaveAllEppResourcesAction;
 import google.registry.batch.ResaveEntityAction;
+import google.registry.batch.WipeOutCloudSqlAction;
 import google.registry.cron.CommitLogFanoutAction;
 import google.registry.cron.CronModule;
 import google.registry.cron.TldFanoutAction;
@@ -204,6 +205,8 @@ interface BackendRequestComponent {
   UpdateSnapshotViewAction updateSnapshotViewAction();
 
   PublishInvoicesAction uploadInvoicesAction();
+
+  WipeOutCloudSqlAction wipeOutCloudSqlAction();
 
   @Subcomponent.Builder
   abstract class Builder implements RequestComponentBuilder<BackendRequestComponent> {
