@@ -133,3 +133,16 @@ for more information.
 
 [app-engine-sdk]: https://cloud.google.com/appengine/docs/java/download
 [java-jdk11]: https://www.oracle.com/java/technologies/javase-downloads.html 
+
+## Deploy the BEAM Pipelines
+
+Nomulus is in the middle of migrating all pipelines to use flex-template. For
+pipelines already based on flex-template, deployment in the testing environments
+(alpha and crash) can be done using the following command:
+
+```shell
+./nom_build :core:stage_beam_pipelines --environment=alpha
+```
+
+Pipeline deployment in other environments are through CloudBuild. Please refer
+to the [release folder](http://github.com/google/nomulus/release) for details.

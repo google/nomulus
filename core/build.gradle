@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import java.lang.reflect.Constructor
+import com.google.common.base.CaseFormat
 import java.util.Optional
 
 plugins {
@@ -790,6 +790,49 @@ createUberJar(
     'beam_pipeline_common',
     'beam_pipeline_common',
     '')
+
+// Create beam staging task if environment is alpha or crash.
+// All other environments use formally released pipelines through CloudBuild.
+//
+// User should install gcloud and login to GCP before invoking this tasks.
+if (environment in ['alpha', 'crash']) {
+  def pipelines = [
+      [
+          mainClass: 'google.registry.beam.initsql.InitSqlPipeline',
+          metaData: 'google/registry/beam/init_sql_pipeline_metadata.json'
+      ],
+      [
+          mainClass: 'google.registry.beam.datastore.BulkDeleteDatastorePipeline',
+          metaData: 'google/registry/beam/bulk_delete_datastore_pipeline_metadata.json'
+      ],
+  ]
+  project.tasks.create("stage_beam_pipelines") {
+    doLast {
+      pipelines.each {
+        def mainClass = it['mainClass']
+        def metaData = it['metaData']
+        def pipelineName = CaseFormat.UPPER_CAMEL.to(
+                CaseFormat.LOWER_UNDERSCORE,
+                mainClass.substring(mainClass.lastIndexOf('.') + 1))
+        def imageName = "gcr.io/${gcpProject}/beam/${pipelineName}"
+        def metaDataBaseName = metaData.substring(metaData.lastIndexOf('/') + 1)
+        def uberJarName = tasks.beam_pipeline_common.outputs.files.asPath
+
+        def command = "\
+            gcloud dataflow flex-template build \
+            gs://${gcpProject}-deploy/live/beam/${metaDataBaseName} \
+            --image-gcr-path ${imageName}:live \
+            --sdk-language JAVA \
+            --flex-template-base-image JAVA11 \
+            --metadata-file ${projectDir}/src/main/resources/${metaData} \
+            --jar ${uberJarName} \
+            --env FLEX_TEMPLATE_JAVA_MAIN_CLASS=${mainClass} \
+            --project ${gcpProject}".toString()
+        rootProject.ext.execInBash(command, '/tmp')
+      }
+    }
+  }.dependsOn(tasks.beam_pipeline_common)
+}
 
 // A jar with classes and resources from main sourceSet, excluding internal
 // data. See comments on configurations.nomulus_test above for details.
