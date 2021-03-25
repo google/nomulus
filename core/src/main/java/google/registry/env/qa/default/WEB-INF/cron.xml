@@ -82,4 +82,13 @@
     <target>backend</target>
   </cron>
 
+  <cron>
+    <url><![CDATA[/_dr/task/wipeOutCloudSql]]></url>
+    <description>
+      This job runs an action that deletes all data in Cloud SQL.
+    </description>
+    <schedule>every saturday 03:07</schedule>
+    <target>backend</target>
+  </cron>
+
 </cronentries>

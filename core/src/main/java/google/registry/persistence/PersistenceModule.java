@@ -44,10 +44,14 @@ import google.registry.tools.AuthModule.CloudSqlClientCredential;
 import google.registry.util.Clock;
 import java.lang.annotation.Documented;
 import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
@@ -161,6 +165,37 @@ public abstract class PersistenceModule {
         .map(Provider::get)
         .ifPresent(override -> overrides.put(Environment.ISOLATION, override.name()));
     return ImmutableMap.copyOf(overrides);
+  }
+
+  /**
+   * Provides a {@link Supplier} of single-use JDBC {@link Connection connections} that can manage
+   * the database DDL schema.
+   */
+  @Provides
+  @Singleton
+  @SchemaManagerConnection
+  static Supplier<Connection> provideSchemaManagerConnectionSupplier(
+      SqlCredentialStore credentialStore,
+      @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs) {
+    SqlCredential credential =
+        credentialStore.getCredential(new RobotUser(RobotId.SCHEMA_DEPLOYER));
+    String user = credential.login();
+    String password = credential.password();
+    return () -> createJdbcConnection(user, password, cloudSqlConfigs);
+  }
+
+  private static Connection createJdbcConnection(
+      String user, String password, ImmutableMap<String, String> cloudSqlConfigs) {
+    Properties properties = new Properties();
+    properties.put("user", user);
+    properties.put("password", password);
+    properties.put("cloudSqlInstance", cloudSqlConfigs.get(HIKARI_DS_CLOUD_SQL_INSTANCE));
+    properties.put("socketFactory", cloudSqlConfigs.get(HIKARI_DS_SOCKET_FACTORY));
+    try {
+      return DriverManager.getConnection(cloudSqlConfigs.get(Environment.URL), properties);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Provides
@@ -377,6 +412,11 @@ public abstract class PersistenceModule {
       return value;
     }
   }
+
+  /** Dagger qualifier for JDBC {@link Connection} with schema management privilege. */
+  @Qualifier
+  @Documented
+  public @interface SchemaManagerConnection {}
 
   /** Dagger qualifier for {@link JpaTransactionManager} used for App Engine application. */
   @Qualifier
