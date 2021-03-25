@@ -20,13 +20,12 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.config.RegistryConfig.getContactAutomaticTransferLength;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertPollMessagesEqual;
 import static google.registry.testing.DatabaseHelper.deleteResource;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
+import static google.registry.testing.DatabaseHelper.loadByKeys;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -136,10 +135,7 @@ class ContactTransferRequestFlowTest
     // poll messages, the approval notice ones for gaining and losing registrars.
     assertPollMessagesEqual(
         Iterables.filter(
-            transactIfJpaTm(
-                    () -> tm().loadByKeys(contact.getTransferData().getServerApproveEntities()))
-                .values(),
-            PollMessage.class),
+            loadByKeys(contact.getTransferData().getServerApproveEntities()), PollMessage.class),
         ImmutableList.of(gainingApproveMessage, losingApproveMessage));
   }
 

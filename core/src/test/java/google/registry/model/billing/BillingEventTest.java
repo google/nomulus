@@ -19,8 +19,9 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIM
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.ofyTmOrDoNothing;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -184,14 +185,11 @@ public class BillingEventTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testPersistence() {
-    assertThat(transactIfJpaTm(() -> tm().loadByEntity(oneTime))).isEqualTo(oneTime);
-    assertThat(transactIfJpaTm(() -> tm().loadByEntity(oneTimeSynthetic)))
-        .isEqualTo(oneTimeSynthetic);
-    assertThat(transactIfJpaTm(() -> tm().loadByEntity(recurring))).isEqualTo(recurring);
-    assertThat(transactIfJpaTm(() -> tm().loadByEntity(cancellationOneTime)))
-        .isEqualTo(cancellationOneTime);
-    assertThat(transactIfJpaTm(() -> tm().loadByEntity(cancellationRecurring)))
-        .isEqualTo(cancellationRecurring);
+    assertThat(loadByEntity(oneTime)).isEqualTo(oneTime);
+    assertThat(loadByEntity(oneTimeSynthetic)).isEqualTo(oneTimeSynthetic);
+    assertThat(loadByEntity(recurring)).isEqualTo(recurring);
+    assertThat(loadByEntity(cancellationOneTime)).isEqualTo(cancellationOneTime);
+    assertThat(loadByEntity(cancellationRecurring)).isEqualTo(cancellationRecurring);
 
     ofyTmOrDoNothing(() -> assertThat(tm().loadByEntity(modification)).isEqualTo(modification));
   }
@@ -220,10 +218,8 @@ public class BillingEventTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testCancellationMatching() {
-    VKey<?> recurringKey =
-        transactIfJpaTm(
-            () -> tm().loadByEntity(oneTimeSynthetic).getCancellationMatchingBillingEvent());
-    assertThat(transactIfJpaTm(() -> tm().loadByKey(recurringKey))).isEqualTo(recurring);
+    VKey<?> recurringKey = loadByEntity(oneTimeSynthetic).getCancellationMatchingBillingEvent();
+    assertThat(loadByKey(recurringKey)).isEqualTo(recurring);
   }
 
   @TestOfyOnly

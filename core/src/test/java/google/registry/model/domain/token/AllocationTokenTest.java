@@ -22,9 +22,8 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -78,8 +77,7 @@ public class AllocationTokenTest extends EntityTestCase {
                         .put(DateTime.now(UTC).plusWeeks(8), TokenStatus.ENDED)
                         .build())
                 .build());
-    assertThat(transactIfJpaTm(() -> tm().loadByEntity(unlimitedUseToken)))
-        .isEqualTo(unlimitedUseToken);
+    assertThat(loadByEntity(unlimitedUseToken)).isEqualTo(unlimitedUseToken);
 
     DomainBase domain = persistActiveDomain("example.foo");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
@@ -92,7 +90,7 @@ public class AllocationTokenTest extends EntityTestCase {
                 .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
                 .setTokenType(SINGLE_USE)
                 .build());
-    assertThat(transactIfJpaTm(() -> tm().loadByEntity(singleUseToken))).isEqualTo(singleUseToken);
+    assertThat(loadByEntity(singleUseToken)).isEqualTo(singleUseToken);
   }
 
   @TestOfyOnly
