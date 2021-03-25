@@ -19,6 +19,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenType.SINGL
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -134,10 +135,9 @@ class DeleteAllocationTokensCommandTest extends CommandTestCase<DeleteAllocation
     for (int i = 0; i < 50; i++) {
       persistToken(String.format("batch%2d", i), null, i % 2 == 0);
     }
-    assertThat(transactIfJpaTm(() -> tm().loadAllOf(AllocationToken.class).size())).isEqualTo(56);
+    assertThat(loadAllOf(AllocationToken.class).size()).isEqualTo(56);
     runCommandForced("--prefix", "batch");
-    assertThat(transactIfJpaTm(() -> tm().loadAllOf(AllocationToken.class).size()))
-        .isEqualTo(56 - 25);
+    assertThat(loadAllOf(AllocationToken.class).size()).isEqualTo(56 - 25);
   }
 
   @TestOfyAndSql

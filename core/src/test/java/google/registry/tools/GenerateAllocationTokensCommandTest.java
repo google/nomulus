@@ -17,10 +17,9 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.assertAllocationTokens;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -134,7 +133,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     runCommand("--prefix", "ooo", "--number", "100", "--length", "16");
     // The deterministic string generator makes it too much hassle to assert about each token, so
     // just assert total number.
-    assertThat(transactIfJpaTm(() -> tm().loadAllOf(AllocationToken.class).size())).isEqualTo(100);
+    assertThat(loadAllOf(AllocationToken.class).size()).isEqualTo(100);
   }
 
   @TestOfyAndSql
@@ -199,7 +198,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
     Collection<String> sampleTokens = command.stringGenerator.createStrings(13, 100);
     runCommand("--tokens", Joiner.on(",").join(sampleTokens));
     assertInStdout(Iterables.toArray(sampleTokens, String.class));
-    assertThat(transactIfJpaTm(() -> tm().loadAllOf(AllocationToken.class).size())).isEqualTo(100);
+    assertThat(loadAllOf(AllocationToken.class).size()).isEqualTo(100);
   }
 
   @TestOfyAndSql

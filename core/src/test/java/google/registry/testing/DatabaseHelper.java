@@ -54,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -1242,6 +1243,46 @@ public class DatabaseHelper {
         Registrar.loadByClientId(clientId),
         "Error in tests: Registrar %s does not exist",
         clientId);
+  }
+
+  /**
+   * Loads (i.e. reloads) the specified entity from the DB.
+   *
+   * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
+   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   */
+  public static <T> T loadByEntity(T entity) {
+    return transactIfJpaTm(() -> tm().loadByEntity(entity));
+  }
+
+  /**
+   * Loads the specified entity by its key from the DB.
+   *
+   * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
+   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   */
+  public static <T> T loadByKey(VKey<T> key) {
+    return transactIfJpaTm(() -> tm().loadByKey(key));
+  }
+
+  /**
+   * Loads the specified entities by their keys from the DB.
+   *
+   * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
+   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   */
+  public static <T> ImmutableCollection<T> loadByKeys(Iterable<? extends VKey<? extends T>> keys) {
+    return transactIfJpaTm(() -> tm().loadByKeys(keys).values());
+  }
+
+  /**
+   * Loads all of the entities of the specified type from the DB.
+   *
+   * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
+   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   */
+  public static <T> ImmutableList<T> loadAllOf(Class<T> clazz) {
+    return transactIfJpaTm(() -> tm().loadAllOf(clazz));
   }
 
   private DatabaseHelper() {}

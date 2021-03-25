@@ -19,10 +19,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -302,8 +302,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasPersistedCurrentSponsorClientId("TheRegistrar")
         .and()
         .hasLastTransferTime(oneDayAgo);
-    DomainBase reloadedDomain =
-        transactIfJpaTm(() -> tm().loadByEntity(domain)).cloneProjectedAtTime(now);
+    DomainBase reloadedDomain = loadByEntity(domain).cloneProjectedAtTime(now);
     assertThat(reloadedDomain.getSubordinateHosts()).containsExactly("ns2.example.tld");
     assertDnsTasksEnqueued("ns1.example.tld", "ns2.example.tld");
   }
@@ -337,15 +336,8 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasPersistedCurrentSponsorClientId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
-    assertThat(
-            transactIfJpaTm(() -> tm().loadByEntity(foo))
-                .cloneProjectedAtTime(now)
-                .getSubordinateHosts())
-        .isEmpty();
-    assertThat(
-            transactIfJpaTm(() -> tm().loadByEntity(example))
-                .cloneProjectedAtTime(now)
-                .getSubordinateHosts())
+    assertThat(loadByEntity(foo).cloneProjectedAtTime(now).getSubordinateHosts()).isEmpty();
+    assertThat(loadByEntity(example).cloneProjectedAtTime(now).getSubordinateHosts())
         .containsExactly("ns2.example.tld");
     assertDnsTasksEnqueued("ns2.foo.tld", "ns2.example.tld");
   }
@@ -380,11 +372,9 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasPersistedCurrentSponsorClientId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
-    DomainBase reloadedFooDomain =
-        transactIfJpaTm(() -> tm().loadByEntity(fooDomain)).cloneProjectedAtTime(now);
+    DomainBase reloadedFooDomain = loadByEntity(fooDomain).cloneProjectedAtTime(now);
     assertThat(reloadedFooDomain.getSubordinateHosts()).isEmpty();
-    DomainBase reloadedTldDomain =
-        transactIfJpaTm(() -> tm().loadByEntity(tldDomain)).cloneProjectedAtTime(now);
+    DomainBase reloadedTldDomain = loadByEntity(tldDomain).cloneProjectedAtTime(now);
     assertThat(reloadedTldDomain.getSubordinateHosts()).containsExactly("ns2.example.tld");
     assertDnsTasksEnqueued("ns1.example.foo", "ns2.example.tld");
   }
@@ -427,8 +417,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .and()
         .hasLastSuperordinateChange(clock.nowUtc());
     assertThat(renamedHost.getLastTransferTime()).isEqualTo(oneDayAgo);
-    DomainBase reloadedDomain =
-        transactIfJpaTm(() -> tm().loadByEntity(domain)).cloneProjectedAtTime(clock.nowUtc());
+    DomainBase reloadedDomain = loadByEntity(domain).cloneProjectedAtTime(clock.nowUtc());
     assertThat(reloadedDomain.getSubordinateHosts()).isEmpty();
     assertDnsTasksEnqueued("ns1.example.foo");
   }
@@ -464,10 +453,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasPersistedCurrentSponsorClientId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
-    assertThat(
-            transactIfJpaTm(() -> tm().loadByEntity(domain))
-                .cloneProjectedAtTime(now)
-                .getSubordinateHosts())
+    assertThat(loadByEntity(domain).cloneProjectedAtTime(now).getSubordinateHosts())
         .containsExactly("ns2.example.tld");
     assertDnsTasksEnqueued("ns2.example.tld");
   }

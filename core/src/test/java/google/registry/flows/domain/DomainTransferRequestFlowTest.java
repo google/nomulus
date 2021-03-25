@@ -35,6 +35,8 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.getOnlyPollMessage;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
+import static google.registry.testing.DatabaseHelper.loadByKey;
+import static google.registry.testing.DatabaseHelper.loadByKeys;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -300,15 +302,13 @@ class DomainTransferRequestFlowTest
     // Assert that the domain's TransferData server-approve billing events match the above.
     if (expectTransferBillingEvent) {
       assertBillingEventsEqual(
-          transactIfJpaTm(
-              () -> tm().loadByKey(domain.getTransferData().getServerApproveBillingEvent())),
+          loadByKey(domain.getTransferData().getServerApproveBillingEvent()),
           optionalTransferBillingEvent.get());
     } else {
       assertThat(domain.getTransferData().getServerApproveBillingEvent()).isNull();
     }
     assertBillingEventsEqual(
-        transactIfJpaTm(
-            () -> tm().loadByKey(domain.getTransferData().getServerApproveAutorenewEvent())),
+        loadByKey(domain.getTransferData().getServerApproveAutorenewEvent()),
         gainingClientAutorenew);
     // Assert that the full set of server-approve billing events is exactly the extra ones plus
     // the transfer billing event (if present) and the gaining client autorenew.
@@ -318,14 +318,10 @@ class DomainTransferRequestFlowTest
             .collect(toImmutableSet());
     assertBillingEventsEqual(
         Iterables.filter(
-            transactIfJpaTm(
-                () ->
-                    tm().loadByKeys(domain.getTransferData().getServerApproveEntities()).values()),
-            BillingEvent.class),
+            loadByKeys(domain.getTransferData().getServerApproveEntities()), BillingEvent.class),
         Sets.union(expectedServeApproveBillingEvents, extraBillingEvents));
     // The domain's autorenew billing event should still point to the losing client's event.
-    BillingEvent.Recurring domainAutorenewEvent =
-        transactIfJpaTm(() -> tm().loadByKey(domain.getAutorenewBillingEvent()));
+    BillingEvent.Recurring domainAutorenewEvent = loadByKey(domain.getAutorenewBillingEvent());
     assertThat(domainAutorenewEvent.getClientId()).isEqualTo("TheRegistrar");
     assertThat(domainAutorenewEvent.getRecurrenceEndTime()).isEqualTo(implicitTransferTime);
     // The original grace periods should remain untouched.
@@ -421,17 +417,13 @@ class DomainTransferRequestFlowTest
 
     // Assert that the poll messages show up in the TransferData server approve entities.
     assertPollMessagesEqual(
-        transactIfJpaTm(
-            () -> tm().loadByKey(domain.getTransferData().getServerApproveAutorenewPollMessage())),
+        loadByKey(domain.getTransferData().getServerApproveAutorenewPollMessage()),
         autorenewPollMessage);
     // Assert that the full set of server-approve poll messages is exactly the server approve
     // OneTime messages to gaining and losing registrars plus the gaining client autorenew.
     assertPollMessagesEqual(
         Iterables.filter(
-            transactIfJpaTm(
-                () ->
-                    tm().loadByKeys(domain.getTransferData().getServerApproveEntities()).values()),
-            PollMessage.class),
+            loadByKeys(domain.getTransferData().getServerApproveEntities()), PollMessage.class),
         ImmutableList.of(
             transferApprovedPollMessage, losingTransferApprovedPollMessage, autorenewPollMessage));
   }
@@ -449,11 +441,7 @@ class DomainTransferRequestFlowTest
         .hasLastEppUpdateTime(implicitTransferTime)
         .and()
         .hasLastEppUpdateClientId("NewRegistrar");
-    assertThat(
-            transactIfJpaTm(
-                () ->
-                    tm().loadByKey(domainAfterAutomaticTransfer.getAutorenewBillingEvent())
-                        .getEventTime()))
+    assertThat(loadByKey(domainAfterAutomaticTransfer.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(expectedExpirationTime);
     // And after the expected grace time, the grace period should be gone.
     DomainBase afterGracePeriod =
