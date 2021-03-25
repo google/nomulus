@@ -19,6 +19,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.appengine.api.users.User;
 import com.google.common.annotations.VisibleForTesting;
@@ -316,30 +319,46 @@ public class AuthenticatedRegistrarAccessor {
     logger.atInfo().log("Checking registrar contacts for user ID %s", user.getUserId());
 
     // Find all registrars that have a registrar contact with this user's ID.
-    ImmutableList<Key<Registrar>> accessibleClientIds =
-        stream(ofy().load().type(RegistrarContact.class).filter("gaeUserId", user.getUserId()))
-            .map(RegistrarContact::getParent)
-            .collect(toImmutableList());
-    // Filter out disabled registrars (note that pending registrars still allow console login).
-    ofy().load().keys(accessibleClientIds).values().stream()
-        .filter(registrar -> registrar.getState() != State.DISABLED)
-        .forEach(registrar -> builder.put(registrar.getClientId(), Role.OWNER));
+    if (tm().isOfy()) {
+      ImmutableList<Key<Registrar>> accessibleClientIds =
+          stream(ofy().load().type(RegistrarContact.class).filter("gaeUserId", user.getUserId()))
+              .map(RegistrarContact::getParent)
+              .collect(toImmutableList());
+      // Filter out disabled registrars (note that pending registrars still allow console login).
+      ofy().load().keys(accessibleClientIds).values().stream()
+          .filter(registrar -> registrar.getState() != State.DISABLED)
+          .forEach(registrar -> builder.put(registrar.getClientId(), Role.OWNER));
+    } else {
+      jpaTm()
+          .transact(
+              () ->
+                  jpaTm()
+                      .query(
+                          "SELECT r FROM Registrar r INNER JOIN RegistrarPoc rp ON "
+                              + "r.clientIdentifier = rp.registrarId WHERE rp.gaeUserId = "
+                              + ":gaeUserId AND r.state != :state",
+                          Registrar.class)
+                      .setParameter("gaeUserId", user.getUserId())
+                      .setParameter("state", State.DISABLED)
+                      .getResultStream()
+                      .forEach(registrar -> builder.put(registrar.getClientId(), Role.OWNER)));
+    }
 
     // Admins have ADMIN access to all registrars, and also OWNER access to the registry registrar
     // and all non-REAL or non-live registrars.
     if (isAdmin) {
-      ofy()
-          .load()
-          .type(Registrar.class)
-          .forEach(
-              registrar -> {
-                if (registrar.getType() != Registrar.Type.REAL
-                    || !registrar.isLive()
-                    || registrar.getClientId().equals(registryAdminClientId)) {
-                  builder.put(registrar.getClientId(), Role.OWNER);
-                }
-                builder.put(registrar.getClientId(), Role.ADMIN);
-              });
+      transactIfJpaTm(
+          () ->
+              tm().loadAllOf(Registrar.class)
+                  .forEach(
+                      registrar -> {
+                        if (registrar.getType() != Registrar.Type.REAL
+                            || !registrar.isLive()
+                            || registrar.getClientId().equals(registryAdminClientId)) {
+                          builder.put(registrar.getClientId(), Role.OWNER);
+                        }
+                        builder.put(registrar.getClientId(), Role.ADMIN);
+                      }));
     }
 
     return builder.build();
