@@ -123,7 +123,11 @@ public final class IcannReportingUploadAction implements Runnable {
           response.setContentType(PLAIN_TEXT_UTF_8);
         };
 
-    Callable<Void> lockRunner = () -> { tm().transact(transactional); return null; };
+    Callable<Void> lockRunner =
+        () -> {
+          tm().transact(transactional);
+          return null;
+        };
 
     String lockname = "IcannReportingUploadAction";
     if (!lockHandler.executeWithLocks(lockRunner, null, Duration.standardHours(2), lockname)) {
