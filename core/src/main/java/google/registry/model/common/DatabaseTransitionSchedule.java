@@ -32,6 +32,7 @@ import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.registry.label.PremiumList;
@@ -46,6 +47,7 @@ import org.joda.time.DateTime;
 
 @Entity
 @Immutable
+@InCrossTld
 public class DatabaseTransitionSchedule extends ImmutableObject implements DatastoreOnlyEntity {
 
   /**

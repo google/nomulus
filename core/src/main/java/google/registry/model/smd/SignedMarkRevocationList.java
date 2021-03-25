@@ -30,6 +30,7 @@ import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.EntityGroupRoot;
@@ -67,6 +68,7 @@ import org.joda.time.DateTime;
 @Entity
 @javax.persistence.Entity
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
+@InCrossTld
 public class SignedMarkRevocationList extends ImmutableObject implements NonReplicatedEntity {
 
   @VisibleForTesting static final int SHARD_SIZE = 10000;

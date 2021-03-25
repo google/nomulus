@@ -52,6 +52,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.common.TimedTransitionProperty;
@@ -86,6 +87,7 @@ import org.joda.time.Duration;
 @ReportedOn
 @Entity
 @javax.persistence.Entity(name = "Tld")
+@InCrossTld
 public class Registry extends ImmutableObject implements Buildable, DatastoreAndSqlEntity {
 
   @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();

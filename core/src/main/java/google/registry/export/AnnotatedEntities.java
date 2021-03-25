@@ -21,12 +21,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityClasses;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.annotations.VirtualEntity;
 
 /** Constants related to export code. */
-public final class ExportConstants {
+public final class AnnotatedEntities {
 
   /** Returns the names of kinds to include in Datastore backups. */
   public static ImmutableSet<String> getBackupKinds() {
@@ -45,6 +46,15 @@ public final class ExportConstants {
     return EntityClasses.ALL_CLASSES
         .stream()
         .filter(hasAnnotation(ReportedOn.class))
+        .filter(hasAnnotation(VirtualEntity.class).negate())
+        .map(Key::getKind)
+        .collect(toImmutableSortedSet(Ordering.natural()));
+  }
+
+  /** Returns the names of kinds that are in the cross-TLD entity group. */
+  public static ImmutableSet<String> getCrossTldKinds() {
+    return EntityClasses.ALL_CLASSES.stream()
+        .filter(hasAnnotation(InCrossTld.class))
         .filter(hasAnnotation(VirtualEntity.class).negate())
         .map(Key::getKind)
         .collect(toImmutableSortedSet(Ordering.natural()));

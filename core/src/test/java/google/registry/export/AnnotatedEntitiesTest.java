@@ -19,8 +19,9 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.Resources.getResource;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.export.ExportConstants.getBackupKinds;
-import static google.registry.export.ExportConstants.getReportingKinds;
+import static google.registry.export.AnnotatedEntities.getBackupKinds;
+import static google.registry.export.AnnotatedEntities.getCrossTldKinds;
+import static google.registry.export.AnnotatedEntities.getReportingKinds;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 
 import com.google.common.base.Joiner;
@@ -31,12 +32,14 @@ import com.google.common.collect.Streams;
 import com.google.re2j.Pattern;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link ExportConstants}. */
-class ExportConstantsTest {
+/** Unit tests for {@link AnnotatedEntities}. */
+class AnnotatedEntitiesTest {
 
   private static final String GOLDEN_BACKUP_KINDS_FILENAME = "backup_kinds.txt";
 
   private static final String GOLDEN_REPORTING_KINDS_FILENAME = "reporting_kinds.txt";
+
+  private static final String GOLDEN_CROSSTLD_KINDS_FILENAME = "crosstld_kinds.txt";
 
   private static final String UPDATE_INSTRUCTIONS_TEMPLATE = Joiner.on('\n').join(
       "",
@@ -50,13 +53,18 @@ class ExportConstantsTest {
       "");
 
   @Test
-  void testBackupKinds_matchGoldenBackupKindsFile() {
+  void testBackupKinds_matchGoldenFile() {
     checkKindsMatchGoldenFile("backed-up", GOLDEN_BACKUP_KINDS_FILENAME, getBackupKinds());
   }
 
   @Test
-  void testReportingKinds_matchGoldenReportingKindsFile() {
+  void testReportingKinds_matchGoldenFile() {
     checkKindsMatchGoldenFile("reporting", GOLDEN_REPORTING_KINDS_FILENAME, getReportingKinds());
+  }
+
+  @Test
+  void testCrossTldKinds_matchGoldenFile() {
+    checkKindsMatchGoldenFile("crosstld", GOLDEN_CROSSTLD_KINDS_FILENAME, getCrossTldKinds());
   }
 
   @Test
@@ -70,7 +78,7 @@ class ExportConstantsTest {
         String.format(
             UPDATE_INSTRUCTIONS_TEMPLATE,
             kindsName,
-            getResource(ExportConstantsTest.class, goldenFilename).toString(),
+            getResource(AnnotatedEntitiesTest.class, goldenFilename).toString(),
             Joiner.on('\n').join(actualKinds));
     assertWithMessage(updateInstructions)
         .that(actualKinds)
@@ -85,7 +93,7 @@ class ExportConstantsTest {
    * @return ImmutableList<String>
    */
   private static ImmutableList<String> extractListFromFile(String filename) {
-    String fileContents = readResourceUtf8(ExportConstantsTest.class, filename);
+    String fileContents = readResourceUtf8(AnnotatedEntitiesTest.class, filename);
     final Pattern stripComments = Pattern.compile("\\s*#.*$");
     return Streams.stream(Splitter.on('\n').split(fileContents.trim()))
         .map(line -> stripComments.matcher(line).replaceFirst(""))

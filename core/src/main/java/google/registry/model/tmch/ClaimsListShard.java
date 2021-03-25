@@ -35,6 +35,7 @@ import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.annotations.VirtualEntity;
@@ -89,6 +90,7 @@ import org.joda.time.DateTime;
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 @javax.persistence.Entity(name = "ClaimsList")
 @Table
+@InCrossTld
 public class ClaimsListShard extends ImmutableObject implements NonReplicatedEntity {
 
   /** The number of claims list entries to store per shard. */

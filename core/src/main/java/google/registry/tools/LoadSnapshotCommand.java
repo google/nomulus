@@ -25,7 +25,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import google.registry.bigquery.BigqueryUtils.SourceFormat;
-import google.registry.export.ExportConstants;
+import google.registry.export.AnnotatedEntities;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +48,7 @@ final class LoadSnapshotCommand extends BigqueryCommand {
   @Parameter(
       names = "--kinds",
       description = "List of Datastore kinds for which to import snapshot data.")
-  private List<String> kindNames = new ArrayList<>(ExportConstants.getReportingKinds());
+  private List<String> kindNames = new ArrayList<>(AnnotatedEntities.getReportingKinds());
 
   /** Runs the main snapshot import logic. */
   @Override

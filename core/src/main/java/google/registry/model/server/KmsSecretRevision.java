@@ -26,6 +26,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.schema.replay.NonReplicatedEntity;
 import javax.persistence.Column;
@@ -58,6 +59,7 @@ import javax.persistence.Transient;
 @ReportedOn
 @javax.persistence.Entity(name = "KmsSecret")
 @Table(indexes = {@Index(columnList = "secretName")})
+@InCrossTld
 public class KmsSecretRevision extends ImmutableObject implements NonReplicatedEntity {
 
   /**

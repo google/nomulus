@@ -72,6 +72,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.registrar.Registrar.BillingAccountEntry.CurrencyMapper;
@@ -112,6 +113,7 @@ import org.joda.time.DateTime;
           columnList = "ianaIdentifier",
           name = "registrar_iana_identifier_idx"),
     })
+@InCrossTld
 public class Registrar extends ImmutableObject
     implements Buildable, DatastoreAndSqlEntity, Jsonifiable {
 
@@ -985,9 +987,7 @@ public class Registrar extends ImmutableObject
 
   /** Loads all registrar entities directly from Datastore. */
   public static Iterable<Registrar> loadAll() {
-    return tm().isOfy()
-        ? ImmutableList.copyOf(ofy().load().type(Registrar.class).ancestor(getCrossTldKey()))
-        : tm().transact(() -> tm().loadAllOf(Registrar.class));
+    return transactIfJpaTm(() -> tm().loadAllOf(Registrar.class));
   }
 
   /** Loads all registrar entities using an in-memory cache. */

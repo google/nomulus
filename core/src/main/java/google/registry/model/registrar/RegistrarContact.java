@@ -44,6 +44,7 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registrar.RegistrarContact.RegistrarPocId;
 import google.registry.persistence.VKey;
@@ -77,6 +78,7 @@ import javax.persistence.Transient;
       @javax.persistence.Index(columnList = "gaeUserId", name = "registrarpoc_gae_user_id_idx")
     })
 @IdClass(RegistrarPocId.class)
+@InCrossTld
 public class RegistrarContact extends ImmutableObject
     implements DatastoreAndSqlEntity, Jsonifiable {
 

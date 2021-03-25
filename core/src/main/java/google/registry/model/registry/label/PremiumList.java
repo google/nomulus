@@ -31,6 +31,7 @@ import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registry.Registry;
 import google.registry.schema.replay.DatastoreOnlyEntity;
@@ -96,6 +97,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   /** Virtual parent entity for premium list entry entities associated with a single revision. */
   @ReportedOn
   @Entity
+  @InCrossTld
   public static class PremiumListRevision extends ImmutableObject implements DatastoreOnlyEntity {
 
     @Parent Key<PremiumList> parent;
@@ -195,6 +197,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
    */
   @ReportedOn
   @Entity
+  @InCrossTld
   public static class PremiumListEntry extends DomainLabelEntry<Money, PremiumListEntry>
       implements Buildable, DatastoreOnlyEntity {
 

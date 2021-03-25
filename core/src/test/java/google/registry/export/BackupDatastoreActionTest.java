@@ -54,7 +54,7 @@ public class BackupDatastoreActionTest {
     action.response = response;
 
     when(datastoreAdmin.export(
-            "gs://registry-project-id-datastore-backups", ExportConstants.getBackupKinds()))
+            "gs://registry-project-id-datastore-backups", AnnotatedEntities.getBackupKinds()))
         .thenReturn(exportRequest);
     when(exportRequest.execute()).thenReturn(backupOperation);
     when(backupOperation.getName())
@@ -73,7 +73,7 @@ public class BackupDatastoreActionTest {
             .param(CHECK_BACKUP_NAME_PARAM, "projects/registry-project-id/operations/ASA1ODYwNjc")
             .param(
                 CHECK_BACKUP_KINDS_TO_LOAD_PARAM,
-                Joiner.on(",").join(ExportConstants.getReportingKinds()))
+                Joiner.on(",").join(AnnotatedEntities.getReportingKinds()))
             .method("POST"));
     assertThat(response.getPayload())
         .isEqualTo(
