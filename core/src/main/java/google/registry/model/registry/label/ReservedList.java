@@ -35,6 +35,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
+import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.DomainLabelMetrics.MetricsReservedListMatch;
 import google.registry.schema.replay.NonReplicatedEntity;
@@ -62,6 +63,7 @@ import org.joda.time.DateTime;
  * revisionId. This is fine though, because we only use the list with the highest revisionId.
  */
 @Entity
+@ReportedOn
 @javax.persistence.Entity
 @Table(indexes = {@Index(columnList = "name", name = "reservedlist_name_idx")})
 public final class ReservedList
