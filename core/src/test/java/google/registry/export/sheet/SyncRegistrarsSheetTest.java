@@ -20,6 +20,7 @@ import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServ
 import static google.registry.model.common.Cursor.CursorType.SYNC_REGISTRAR_SHEET;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
@@ -80,7 +81,9 @@ public class SyncRegistrarsSheetTest {
   void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     createTld("example");
-    // Remove Registrar entities created by AppEngineRule (and RegistrarContact's, for jpa)
+    // Remove Registrar entities created by AppEngineRule (and RegistrarContact's, for jpa).
+    // We don't do this for ofy because ofy's loadAllOf() can't be called in a transaction but
+    // _must_ be called in a transaction in JPA.
     if (!tm().isOfy()) {
       tm().transact(() -> tm().loadAllOf(RegistrarContact.class))
           .forEach(DatabaseHelper::deleteResource);
@@ -325,8 +328,7 @@ public class SyncRegistrarsSheetTest {
     assertThat(row).containsEntry("icannReferralEmail", "jim@example.net");
     assertThat(row).containsEntry("billingAccountMap", "{}");
 
-    Cursor cursor =
-        tm().transact(() -> tm().loadByKey(Cursor.createGlobalVKey(SYNC_REGISTRAR_SHEET)));
+    Cursor cursor = loadByKey(Cursor.createGlobalVKey(SYNC_REGISTRAR_SHEET));
     assertThat(cursor).isNotNull();
     assertThat(cursor.getCursorTime()).isGreaterThan(registrarCreationTime);
   }

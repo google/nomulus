@@ -17,6 +17,7 @@ package google.registry.reporting.icann;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.GcsTestingUtils.writeGcsFile;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
@@ -198,9 +199,7 @@ class IcannReportingUploadActionTest {
     IcannReportingUploadAction action = createAction();
     action.run();
     tm().clearSessionCache();
-    Cursor cursor =
-        tm().transact(
-                () -> tm().loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "tld")));
+    Cursor cursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "tld"));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
   }
 
@@ -264,9 +263,7 @@ class IcannReportingUploadActionTest {
     runTest_nonRetryableException(
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
     tm().clearSessionCache();
-    Cursor cursor =
-        tm().transact(
-                () -> tm().loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "tld")));
+    Cursor cursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "tld"));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
   }
 
@@ -276,9 +273,7 @@ class IcannReportingUploadActionTest {
     IcannReportingUploadAction action = createAction();
     action.run();
     tm().clearSessionCache();
-    Cursor cursor =
-        tm().transact(
-                () -> tm().loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "foo")));
+    Cursor cursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "foo"));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
     verifyNoMoreInteractions(mockReporter);
   }
@@ -378,12 +373,9 @@ class IcannReportingUploadActionTest {
                 new InternetAddress("sender@example.com")));
 
     Cursor newActivityCursor =
-        tm().transact(
-                () -> tm().loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "new")));
+        loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "new"));
     assertThat(newActivityCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
-    Cursor newTransactionCursor =
-        tm().transact(() -> tm().loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_TX, "new")));
+    Cursor newTransactionCursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_TX, "new"));
     assertThat(newTransactionCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
   }
 }
-

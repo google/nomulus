@@ -25,6 +25,7 @@ import static google.registry.model.registrar.RegistrarContact.Type.MARKETING;
 import static google.registry.model.registrar.RegistrarContact.Type.TECH;
 import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.base.Joiner;
@@ -62,7 +63,8 @@ class SyncRegistrarsSheet {
    */
   boolean wereRegistrarsModified() {
     Optional<Cursor> cursor =
-        tm().transact(() -> tm().loadByKeyIfPresent(Cursor.createGlobalVKey(SYNC_REGISTRAR_SHEET)));
+        transactIfJpaTm(
+            () -> tm().loadByKeyIfPresent(Cursor.createGlobalVKey(SYNC_REGISTRAR_SHEET)));
     DateTime lastUpdateTime = !cursor.isPresent() ? START_OF_TIME : cursor.get().getCursorTime();
     for (Registrar registrar : Registrar.loadAllCached()) {
       if (DateTimeUtils.isAtOrAfter(registrar.getLastUpdateTime(), lastUpdateTime)) {

@@ -99,7 +99,7 @@ public final class IcannReportingUploadAction implements Runnable {
 
   @Override
   public void run() {
-    Callable<Void> lockRunner =
+    Runnable transactional =
         () -> {
           ImmutableMap.Builder<String, Boolean> reportSummaryBuilder = new ImmutableMap.Builder<>();
 
@@ -121,8 +121,9 @@ public final class IcannReportingUploadAction implements Runnable {
           emailUploadResults(reportSummaryBuilder.build());
           response.setStatus(SC_OK);
           response.setContentType(PLAIN_TEXT_UTF_8);
-          return null;
         };
+
+    Callable<Void> lockRunner = () -> { tm().transact(transactional); return null; };
 
     String lockname = "IcannReportingUploadAction";
     if (!lockHandler.executeWithLocks(lockRunner, null, Duration.standardHours(2), lockname)) {
@@ -184,7 +185,7 @@ public final class IcannReportingUploadAction implements Runnable {
               cursorType,
               cursorTime.withTimeAtStartOfDay().withDayOfMonth(1).plusMonths(1),
               Registry.get(tldStr));
-      tm().transact(() -> tm().put(newCursor));
+      tm().put(newCursor);
     }
   }
 
@@ -212,8 +213,7 @@ public final class IcannReportingUploadAction implements Runnable {
     keys.addAll(activityKeyMap.keySet());
     keys.addAll(transactionKeyMap.keySet());
 
-    Map<VKey<? extends Cursor>, Cursor> cursorMap =
-        tm().transact(() -> tm().loadByKeysIfPresent(keys.build()));
+    Map<VKey<? extends Cursor>, Cursor> cursorMap = tm().loadByKeysIfPresent(keys.build());
     ImmutableMap.Builder<Cursor, String> cursors = new ImmutableMap.Builder<>();
     cursors.putAll(
         defaultNullCursorsToNextMonthAndAddToMap(
@@ -251,7 +251,7 @@ public final class IcannReportingUploadAction implements Runnable {
                       clock.nowUtc().withDayOfMonth(1).withTimeAtStartOfDay().plusMonths(1),
                       registry));
           if (!cursorMap.containsValue(cursor)) {
-            tm().transact(() -> tm().put(cursor));
+            tm().put(cursor);
           }
           cursors.put(cursor, registry.getTldStr());
         });
