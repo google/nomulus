@@ -29,6 +29,7 @@ import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.common.Cursor.CursorId;
 import google.registry.model.registry.Registry;
 import google.registry.persistence.VKey;
@@ -51,6 +52,7 @@ import org.joda.time.DateTime;
 @Entity
 @javax.persistence.Entity
 @IdClass(CursorId.class)
+@InCrossTld
 public class Cursor extends ImmutableObject implements DatastoreAndSqlEntity {
 
   /** The scope of a global cursor. A global cursor is a cursor that is not specific to one tld. */

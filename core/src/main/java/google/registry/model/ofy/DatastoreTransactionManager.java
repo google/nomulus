@@ -17,6 +17,7 @@ package google.registry.model.ofy;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -29,6 +30,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Result;
+import com.googlecode.objectify.cmd.Query;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostHistory;
@@ -251,7 +254,13 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> ImmutableList<T> loadAllOf(Class<T> clazz) {
-    return ImmutableList.copyOf(getOfy().load().type(clazz));
+    Query<T> query = getOfy().load().type(clazz);
+    // If the entity is in the cross-TLD entity group, then we can take advantage of an ancestor
+    // query to give us strong transactional consistency.
+    if (clazz.isAnnotationPresent(InCrossTld.class)) {
+      query = query.ancestor(getCrossTldKey());
+    }
+    return ImmutableList.copyOf(query);
   }
 
   @Override

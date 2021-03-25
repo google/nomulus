@@ -35,6 +35,7 @@ import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
@@ -59,6 +60,7 @@ import org.joda.time.DateTime;
  *     must subclass {@link DomainLabelEntry}.
  */
 @MappedSuperclass
+@InCrossTld
 public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends DomainLabelEntry<T, ?>>
     extends ImmutableObject implements Buildable {
 

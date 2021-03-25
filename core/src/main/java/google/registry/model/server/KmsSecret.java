@@ -21,6 +21,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
+import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.schema.replay.DatastoreOnlyEntity;
@@ -28,6 +29,7 @@ import google.registry.schema.replay.DatastoreOnlyEntity;
 /** Pointer to the latest {@link KmsSecretRevision}. */
 @Entity
 @ReportedOn
+@InCrossTld
 public class KmsSecret extends ImmutableObject implements DatastoreOnlyEntity {
 
   /** The unique name of this {@link KmsSecret}. */
