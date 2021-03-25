@@ -66,12 +66,13 @@ public class BackupDatastoreAction implements Runnable {
     try {
       Operation backup =
           datastoreAdmin
-              .export(RegistryConfig.getDatastoreBackupsBucket(), ExportConstants.getBackupKinds())
+              .export(
+                  RegistryConfig.getDatastoreBackupsBucket(), AnnotatedEntities.getBackupKinds())
               .execute();
 
       String backupName = backup.getName();
       // Enqueue a poll task to monitor the backup and load REPORTING-related kinds into bigquery.
-      enqueuePollTask(backupName, ExportConstants.getReportingKinds());
+      enqueuePollTask(backupName, AnnotatedEntities.getReportingKinds());
       String message =
           String.format(
               "Datastore backup started with name: %s\nSaving to %s",

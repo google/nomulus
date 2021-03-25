@@ -1,0 +1,16 @@
+ClaimsListShard
+ClaimsListSingleton
+Cursor
+DatabaseTransitionSchedule
+KmsSecret
+KmsSecretRevision
+PremiumList
+PremiumListEntry
+PremiumListRevision
+Registrar
+RegistrarContact
+Registry
+ReservedList
+ServerSecret
+SignedMarkRevocationList
+TmchCrl
