@@ -20,3 +20,4 @@ Recurring
 Registrar
 RegistrarContact
 Registry
+ReservedList
