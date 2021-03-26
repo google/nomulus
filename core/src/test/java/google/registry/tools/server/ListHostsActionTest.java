@@ -17,13 +17,15 @@ package google.registry.tools.server;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TestOfyAndSql;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ListHostsAction}. */
+@DualDatabaseTest
 class ListHostsActionTest extends ListActionTestCase {
 
   private ListHostsAction action;
@@ -35,7 +37,7 @@ class ListHostsActionTest extends ListActionTestCase {
     action.clock = new FakeClock(DateTime.parse("2000-01-01TZ"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun_noParameters() {
     testRunSuccess(
         action,
@@ -44,7 +46,7 @@ class ListHostsActionTest extends ListActionTestCase {
         null);
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun_twoLinesWithRepoId() {
     persistActiveHost("example2.foo");
     persistActiveHost("example1.foo");
@@ -59,7 +61,7 @@ class ListHostsActionTest extends ListActionTestCase {
         "^example2.foo\\s+2-ROID\\s*$");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun_twoLinesWithWildcard() {
     persistActiveHost("example2.foo");
     persistActiveHost("example1.foo");
@@ -74,7 +76,7 @@ class ListHostsActionTest extends ListActionTestCase {
         "^example2.foo\\s+.*1");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun_twoLinesWithWildcardAndAnotherField() {
     persistActiveHost("example2.foo");
     persistActiveHost("example1.foo");
@@ -89,7 +91,7 @@ class ListHostsActionTest extends ListActionTestCase {
         "^example2.foo\\s+.*1");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun_withBadField_returnsError() {
     persistActiveHost("example2.foo");
     persistActiveHost("example1.foo");

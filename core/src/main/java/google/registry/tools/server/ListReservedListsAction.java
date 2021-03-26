@@ -14,15 +14,19 @@
 
 package google.registry.tools.server;
 
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.model.registry.label.ReservedListDualDatabaseDao;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
+import java.util.Comparator;
+import java.util.Optional;
 import javax.inject.Inject;
 
 /** A that lists reserved lists, for use by the {@code nomulus list_reserved_lists} command. */
@@ -44,7 +48,13 @@ public final class ListReservedListsAction extends ListObjectsAction<ReservedLis
 
   @Override
   public ImmutableSet<ReservedList> loadObjects() {
-    return ImmutableSet.copyOf(
-        ofy().load().type(ReservedList.class).ancestor(getCrossTldKey()).list());
+    return transactIfJpaTm(
+        () ->
+            tm().loadAllOf(ReservedList.class).stream()
+                .map(ReservedList::getName)
+                .map(ReservedListDualDatabaseDao::getLatestRevision)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(toImmutableSortedSet(Comparator.comparing(ReservedList::getName))));
   }
 }

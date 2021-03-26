@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
@@ -61,13 +62,7 @@ final class DeleteTldCommand extends ConfirmingCommand implements CommandWithRem
           "Cannot delete TLD because registrar %s lists it as an allowed TLD",
           registrar.getClientId());
     }
-
-    int count = ofy().load()
-        .type(DomainBase.class)
-        .filter("tld", tld)
-        .limit(1)
-        .count();
-    checkState(count == 0, "Cannot delete TLD because a domain is defined on it");
+    checkState(!tldContainsDomains(tld), "Cannot delete TLD because a domain is defined on it");
   }
 
   @Override
@@ -77,8 +72,25 @@ final class DeleteTldCommand extends ConfirmingCommand implements CommandWithRem
 
   @Override
   protected String execute() {
-    tm().transactNew(() -> ofy().delete().entity(registry).now());
+    tm().transactNew(() -> tm().delete(registry));
     registry.invalidateInCache();
     return String.format("Deleted TLD '%s'.\n", tld);
+  }
+
+  private boolean tldContainsDomains(String tld) {
+    if (tm().isOfy()) {
+      return ofy().load().type(DomainBase.class).filter("tld", tld).limit(1).count() > 0;
+    } else {
+      return jpaTm()
+          .transact(
+              () ->
+                  jpaTm()
+                      .query("FROM Domain WHERE tld = :tld", DomainBase.class)
+                      .setParameter("tld", tld)
+                      .setMaxResults(1)
+                      .getResultStream()
+                      .findFirst()
+                      .isPresent());
+    }
   }
 }

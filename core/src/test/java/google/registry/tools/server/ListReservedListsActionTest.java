@@ -20,11 +20,13 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ListReservedListsAction}. */
+@DualDatabaseTest
 class ListReservedListsActionTest extends ListActionTestCase {
 
   private ListReservedListsAction action;
@@ -38,7 +40,7 @@ class ListReservedListsActionTest extends ListActionTestCase {
     action = new ListReservedListsAction();
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun_noParameters() {
     testRunSuccess(
         action,
@@ -49,7 +51,7 @@ class ListReservedListsActionTest extends ListActionTestCase {
         "^xn--q9jyb4c-published\\s*$");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun_withParameters() {
     testRunSuccess(
         action,
@@ -62,7 +64,7 @@ class ListReservedListsActionTest extends ListActionTestCase {
         "^xn--q9jyb4c-published\\s+true\\s*$");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun_withWildcard() {
     testRunSuccess(
         action,
@@ -75,7 +77,7 @@ class ListReservedListsActionTest extends ListActionTestCase {
         "^xn--q9jyb4c-published\\s+.*true");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun_withBadField_returnsError() {
     testRunError(
         action,
