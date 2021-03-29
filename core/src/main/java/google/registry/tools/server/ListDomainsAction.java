@@ -18,6 +18,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registries.assertTldsExist;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
@@ -74,34 +76,50 @@ public final class ListDomainsAction extends ListObjectsAction<DomainBase> {
   public ImmutableSet<DomainBase> loadObjects() {
     checkArgument(!tlds.isEmpty(), "Must specify TLDs to query");
     assertTldsExist(tlds);
+    ImmutableList<DomainBase> domains = tm().isOfy() ? loadDomainsOfy() : loadDomainsSql();
+    return ImmutableSet.copyOf(domains.reverse());
+  }
+
+  private ImmutableList<DomainBase> loadDomainsOfy() {
     DateTime now = clock.nowUtc();
     ImmutableList.Builder<DomainBase> domainsBuilder = new ImmutableList.Builder<>();
-    for (List<String> tldsBatch : Lists.partition(tlds.asList(), maxNumSubqueries)) {
-      domainsBuilder.addAll(
-          ofy()
-              .load()
-              .type(DomainBase.class)
-              .filter("tld in", tldsBatch)
-              // Get the N most recently created domains (requires ordering in descending order).
-              .order("-creationTime")
-              .limit(limit)
-              .list()
-              .stream()
-              .map(EppResourceUtils.transformAtTime(now))
-              // Deleted entities must be filtered out post-query because queries don't allow
-              // ordering with two filters.
-              .filter(d -> d.getDeletionTime().isAfter(now))
-              .collect(toImmutableList()));
-    }
     // Combine the batches together by sorting all domains together with newest first, applying the
     // limit, and then reversing for display order.
-    return ImmutableSet.copyOf(
-        domainsBuilder
-            .build()
-            .stream()
-            .sorted(comparing(EppResource::getCreationTime).reversed())
-            .limit(limit)
-            .collect(toImmutableList())
-            .reverse());
+    for (List<String> tldsBatch : Lists.partition(tlds.asList(), maxNumSubqueries)) {
+      ofy()
+          .load()
+          .type(DomainBase.class)
+          .filter("tld in", tldsBatch)
+          // Get the N most recently created domains (requires ordering in descending order).
+          .order("-creationTime")
+          .limit(limit)
+          .list()
+          .stream()
+          .map(EppResourceUtils.transformAtTime(now))
+          // Deleted entities must be filtered out post-query because queries don't allow
+          // ordering with two filters.
+          .filter(d -> d.getDeletionTime().isAfter(now))
+          .forEach(domainsBuilder::add);
+    }
+    return domainsBuilder.build().stream()
+        .sorted(comparing(EppResource::getCreationTime).reversed())
+        .limit(limit)
+        .collect(toImmutableList());
+  }
+
+  private ImmutableList<DomainBase> loadDomainsSql() {
+    return jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .query(
+                        "FROM Domain WHERE tld IN (:tlds) AND deletionTime > "
+                            + "current_timestamp() ORDER BY creationTime DESC",
+                        DomainBase.class)
+                    .setParameter("tlds", tlds)
+                    .setMaxResults(limit)
+                    .getResultStream()
+                    .map(EppResourceUtils.transformAtTime(jpaTm().getTransactionTime()))
+                    .collect(toImmutableList()));
   }
 }
