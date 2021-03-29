@@ -121,6 +121,10 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
    * Confirms that an EppResourceIndex entity exists in Datastore for a given resource.
    */
   protected static <T extends EppResource> void assertEppResourceIndexEntityFor(final T resource) {
+    if (!tm().isOfy()) {
+      // Indices aren't explicitly stored as objects in SQL
+      return;
+    }
     ImmutableList<EppResourceIndex> indices =
         Streams.stream(
                 ofy()

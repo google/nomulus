@@ -219,16 +219,15 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     transact(work);
   }
 
+  // For now, read-only transactions and "transactNew" methods only create (or use existing)
+  // standard transactions. Attempting to use a read-only transaction can break larger transactions
+  // (if we were already in one) so we don't set read-only mode.
+  //
+  // TODO(gbrodman): If necessary, implement transactNew and readOnly transactions using Postgres
+  // savepoints, see https://www.postgresql.org/docs/8.1/sql-savepoint.html
   @Override
   public <T> T transactNewReadOnly(Supplier<T> work) {
-    return retrier.callWithRetry(
-        () ->
-            transact(
-                () -> {
-                  getEntityManager().createNativeQuery("SET TRANSACTION READ ONLY").executeUpdate();
-                  return work.get();
-                }),
-        JpaRetries::isFailedQueryRetriable);
+    return retrier.callWithRetry(() -> transact(work), JpaRetries::isFailedQueryRetriable);
   }
 
   @Override

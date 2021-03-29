@@ -20,7 +20,7 @@ import static com.google.common.base.Throwables.throwIfUnchecked;
 import static com.google.common.base.Verify.verify;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -157,7 +157,8 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
           Concurrent.transform(
               shardKeys,
               key ->
-                  tm().transactNewReadOnly(
+                  ofyTm()
+                      .transactNewReadOnly(
                           () -> {
                             ClaimsListShard claimsListShard = ofy().load().key(key).now();
                             checkState(
@@ -244,7 +245,8 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
     Concurrent.transform(
         CollectionUtils.partitionMap(labelsToKeys, shardSize),
         (final ImmutableMap<String, String> labelsToKeysShard) ->
-            tm().transact(
+            ofyTm()
+                .transact(
                     () -> {
                       ClaimsListShard shard = create(creationTime, labelsToKeysShard);
                       shard.isShard = true;
@@ -254,7 +256,8 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
                     }));
 
     // Persist the new revision, thus causing the newly created shards to go live.
-    tm().transact(
+    ofyTm()
+        .transact(
             () -> {
               verify(
                   (getCurrentRevision() == null && oldRevision == null)

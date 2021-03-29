@@ -398,6 +398,7 @@ public abstract class PollMessage extends ImmutableObject
       }
       if (!isNullOrEmpty(domainPendingActionNotificationResponses)) {
         pendingActionNotificationResponse = domainPendingActionNotificationResponses.get(0);
+        fullyQualifiedDomainName = pendingActionNotificationResponse.nameOrId.value;
       }
       if (!isNullOrEmpty(domainTransferResponses)) {
         fullyQualifiedDomainName = domainTransferResponses.get(0).getFullyQualifiedDomainName();
@@ -414,21 +415,23 @@ public abstract class PollMessage extends ImmutableObject
       // Take the SQL-specific fields and map them to the Objectify-specific fields, if applicable
       if (pendingActionNotificationResponse != null) {
         if (contactId != null) {
-          contactPendingActionNotificationResponses =
-              ImmutableList.of(
-                  ContactPendingActionNotificationResponse.create(
-                      pendingActionNotificationResponse.nameOrId.value,
-                      pendingActionNotificationResponse.getActionResult(),
-                      pendingActionNotificationResponse.getTrid(),
-                      pendingActionNotificationResponse.processedDate));
+          ContactPendingActionNotificationResponse contactPendingResponse =
+              ContactPendingActionNotificationResponse.create(
+                  pendingActionNotificationResponse.nameOrId.value,
+                  pendingActionNotificationResponse.getActionResult(),
+                  pendingActionNotificationResponse.getTrid(),
+                  pendingActionNotificationResponse.processedDate);
+          pendingActionNotificationResponse = contactPendingResponse;
+          contactPendingActionNotificationResponses = ImmutableList.of(contactPendingResponse);
         } else if (fullyQualifiedDomainName != null) {
-          domainPendingActionNotificationResponses =
-              ImmutableList.of(
-                  DomainPendingActionNotificationResponse.create(
-                      pendingActionNotificationResponse.nameOrId.value,
-                      pendingActionNotificationResponse.getActionResult(),
-                      pendingActionNotificationResponse.getTrid(),
-                      pendingActionNotificationResponse.processedDate));
+          DomainPendingActionNotificationResponse domainPendingResponse =
+              DomainPendingActionNotificationResponse.create(
+                  pendingActionNotificationResponse.nameOrId.value,
+                  pendingActionNotificationResponse.getActionResult(),
+                  pendingActionNotificationResponse.getTrid(),
+                  pendingActionNotificationResponse.processedDate);
+          pendingActionNotificationResponse = domainPendingResponse;
+          domainPendingActionNotificationResponses = ImmutableList.of(domainPendingResponse);
         }
       }
       if (transferResponse != null) {
@@ -474,38 +477,35 @@ public abstract class PollMessage extends ImmutableObject
       }
 
       public Builder setResponseData(ImmutableList<? extends ResponseData> responseData) {
-        getInstance().contactPendingActionNotificationResponses =
+        OneTime instance = getInstance();
+        instance.contactPendingActionNotificationResponses =
             forceEmptyToNull(
-                responseData
-                    .stream()
+                responseData.stream()
                     .filter(ContactPendingActionNotificationResponse.class::isInstance)
                     .map(ContactPendingActionNotificationResponse.class::cast)
                     .collect(toImmutableList()));
 
-        getInstance().contactTransferResponses =
+        instance.contactTransferResponses =
             forceEmptyToNull(
-                responseData
-                    .stream()
+                responseData.stream()
                     .filter(ContactTransferResponse.class::isInstance)
                     .map(ContactTransferResponse.class::cast)
                     .collect(toImmutableList()));
 
-        getInstance().domainPendingActionNotificationResponses =
+        instance.domainPendingActionNotificationResponses =
             forceEmptyToNull(
-                responseData
-                    .stream()
+                responseData.stream()
                     .filter(DomainPendingActionNotificationResponse.class::isInstance)
                     .map(DomainPendingActionNotificationResponse.class::cast)
                     .collect(toImmutableList()));
-        getInstance().domainTransferResponses =
+        instance.domainTransferResponses =
             forceEmptyToNull(
-                responseData
-                    .stream()
+                responseData.stream()
                     .filter(DomainTransferResponse.class::isInstance)
                     .map(DomainTransferResponse.class::cast)
                     .collect(toImmutableList()));
 
-        getInstance().hostPendingActionNotificationResponses =
+        instance.hostPendingActionNotificationResponses =
             forceEmptyToNull(
                 responseData.stream()
                     .filter(HostPendingActionNotificationResponse.class::isInstance)
@@ -513,26 +513,30 @@ public abstract class PollMessage extends ImmutableObject
                     .collect(toImmutableList()));
 
         // Set the generic pending-action field as appropriate
-        if (getInstance().contactPendingActionNotificationResponses != null) {
-          getInstance().pendingActionNotificationResponse =
-              getInstance().contactPendingActionNotificationResponses.get(0);
-        } else if (getInstance().domainPendingActionNotificationResponses != null) {
-          getInstance().pendingActionNotificationResponse =
-              getInstance().domainPendingActionNotificationResponses.get(0);
-        } else if (getInstance().hostPendingActionNotificationResponses != null) {
-          getInstance().pendingActionNotificationResponse =
-              getInstance().hostPendingActionNotificationResponses.get(0);
+        if (instance.contactPendingActionNotificationResponses != null) {
+          instance.pendingActionNotificationResponse =
+              instance.contactPendingActionNotificationResponses.get(0);
+          instance.contactId =
+              instance.contactPendingActionNotificationResponses.get(0).nameOrId.value;
+        } else if (instance.domainPendingActionNotificationResponses != null) {
+          instance.pendingActionNotificationResponse =
+              instance.domainPendingActionNotificationResponses.get(0);
+          instance.fullyQualifiedDomainName =
+              instance.domainPendingActionNotificationResponses.get(0).nameOrId.value;
+        } else if (instance.hostPendingActionNotificationResponses != null) {
+          instance.pendingActionNotificationResponse =
+              instance.hostPendingActionNotificationResponses.get(0);
         }
         // Set the generic transfer response field as appropriate
-        if (getInstance().contactTransferResponses != null) {
-          getInstance().contactId = getInstance().contactTransferResponses.get(0).getContactId();
-          getInstance().transferResponse = getInstance().contactTransferResponses.get(0);
-        } else if (getInstance().domainTransferResponses != null) {
-          getInstance().fullyQualifiedDomainName =
-              getInstance().domainTransferResponses.get(0).getFullyQualifiedDomainName();
-          getInstance().transferResponse = getInstance().domainTransferResponses.get(0);
-          getInstance().extendedRegistrationExpirationTime =
-              getInstance().domainTransferResponses.get(0).getExtendedRegistrationExpirationTime();
+        if (instance.contactTransferResponses != null) {
+          instance.contactId = getInstance().contactTransferResponses.get(0).getContactId();
+          instance.transferResponse = getInstance().contactTransferResponses.get(0);
+        } else if (instance.domainTransferResponses != null) {
+          instance.fullyQualifiedDomainName =
+              instance.domainTransferResponses.get(0).getFullyQualifiedDomainName();
+          instance.transferResponse = getInstance().domainTransferResponses.get(0);
+          instance.extendedRegistrationExpirationTime =
+              instance.domainTransferResponses.get(0).getExtendedRegistrationExpirationTime();
         }
         return this;
       }
