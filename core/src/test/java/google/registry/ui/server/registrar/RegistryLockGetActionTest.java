@@ -101,8 +101,8 @@ final class RegistryLockGetActionTest {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistrarPocId("johndoe@theregistrar.com")
-            .setLockCompletionTimestamp(fakeClock.nowUtc())
-            .setUnlockRequestTimestamp(fakeClock.nowUtc())
+            .setLockCompletionTime(fakeClock.nowUtc())
+            .setUnlockRequestTime(fakeClock.nowUtc())
             .build();
     saveRegistryLock(expiredUnlock);
     fakeClock.advanceBy(Duration.standardDays(1));
@@ -114,7 +114,7 @@ final class RegistryLockGetActionTest {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistrarPocId("johndoe@theregistrar.com")
-            .setLockCompletionTimestamp(fakeClock.nowUtc())
+            .setLockCompletionTime(fakeClock.nowUtc())
             .build();
     fakeClock.advanceOneMilli();
     RegistryLock adminLock =
@@ -124,7 +124,7 @@ final class RegistryLockGetActionTest {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("122222222ABCDEFGHJKLMNPQRSTUVWXY")
             .isSuperuser(true)
-            .setLockCompletionTimestamp(fakeClock.nowUtc())
+            .setLockCompletionTime(fakeClock.nowUtc())
             .build();
     RegistryLock incompleteLock =
         new RegistryLock.Builder()
@@ -142,8 +142,8 @@ final class RegistryLockGetActionTest {
             .setRegistrarId("TheRegistrar")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUVWXY")
             .setRegistrarPocId("johndoe@theregistrar.com")
-            .setLockCompletionTimestamp(fakeClock.nowUtc())
-            .setUnlockRequestTimestamp(fakeClock.nowUtc())
+            .setLockCompletionTime(fakeClock.nowUtc())
+            .setUnlockRequestTime(fakeClock.nowUtc())
             .build();
 
     RegistryLock unlockedLock =
@@ -153,9 +153,9 @@ final class RegistryLockGetActionTest {
             .setRegistrarId("TheRegistrar")
             .setRegistrarPocId("johndoe@theregistrar.com")
             .setVerificationCode("123456789ABCDEFGHJKLMNPQRSTUUUUU")
-            .setLockCompletionTimestamp(fakeClock.nowUtc())
-            .setUnlockRequestTimestamp(fakeClock.nowUtc())
-            .setUnlockCompletionTimestamp(fakeClock.nowUtc())
+            .setLockCompletionTime(fakeClock.nowUtc())
+            .setUnlockRequestTime(fakeClock.nowUtc())
+            .setUnlockCompletionTime(fakeClock.nowUtc())
             .build();
 
     saveRegistryLock(regularLock);

@@ -780,7 +780,7 @@ CREATE TABLE public."Registrar" (
     i18n_address_zip text,
     ip_address_allow_list text[],
     last_certificate_update_time timestamp with time zone,
-    last_update_time timestamp with time zone,
+    last_update_time timestamp with time zone NOT NULL,
     localized_address_city text,
     localized_address_country_code text,
     localized_address_state text,
@@ -831,17 +831,17 @@ CREATE TABLE public."RegistrarPoc" (
 
 CREATE TABLE public."RegistryLock" (
     revision_id bigint NOT NULL,
-    lock_completion_timestamp timestamp with time zone,
-    lock_request_timestamp timestamp with time zone NOT NULL,
+    lock_completion_time timestamp with time zone,
+    lock_request_time timestamp with time zone NOT NULL,
     domain_name text NOT NULL,
     is_superuser boolean NOT NULL,
     registrar_id text NOT NULL,
     registrar_poc_id text,
     repo_id text NOT NULL,
     verification_code text NOT NULL,
-    unlock_request_timestamp timestamp with time zone,
-    unlock_completion_timestamp timestamp with time zone,
-    last_update_timestamp timestamp with time zone,
+    unlock_request_time timestamp with time zone,
+    unlock_completion_time timestamp with time zone,
+    last_update_time timestamp with time zone NOT NULL,
     relock_revision_id bigint,
     relock_duration interval
 );

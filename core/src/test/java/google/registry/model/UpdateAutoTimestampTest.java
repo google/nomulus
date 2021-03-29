@@ -22,13 +22,16 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.common.CrossTldSingleton;
+import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateAutoTimestamp}. */
@@ -45,6 +48,13 @@ public class UpdateAutoTimestampTest {
           .withOfyTestEntities(UpdateAutoTimestampTestObject.class)
           .withClock(clock)
           .build();
+
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+
+  @BeforeEach
+  void beforeEach() {
+    inject.setStaticField(Ofy.class, "clock", clock);
+  }
 
   /** Timestamped class. */
   @Entity(name = "UatTestEntity")
@@ -70,6 +80,7 @@ public class UpdateAutoTimestampTest {
     DateTime transactionTime =
         tm().transact(
                 () -> {
+                  clock.advanceOneMilli();
                   UpdateAutoTimestampTestObject object = new UpdateAutoTimestampTestObject();
                   assertThat(object.updateTime.timestamp).isNull();
                   tm().insert(object);
@@ -84,6 +95,7 @@ public class UpdateAutoTimestampTest {
     DateTime initialTime =
         tm().transact(
                 () -> {
+                  clock.advanceOneMilli();
                   tm().insert(new UpdateAutoTimestampTestObject());
                   return tm().getTransactionTime();
                 });
@@ -109,6 +121,7 @@ public class UpdateAutoTimestampTest {
     DateTime transactionTime =
         tm().transact(
                 () -> {
+                  clock.advanceOneMilli();
                   UpdateAutoTimestampTestObject object = new UpdateAutoTimestampTestObject();
                   object.updateTime = UpdateAutoTimestamp.create(DateTime.now(UTC).minusDays(1));
                   tm().insert(object);
@@ -116,5 +129,18 @@ public class UpdateAutoTimestampTest {
                 });
     tm().clearSessionCache();
     assertThat(reload().updateTime.timestamp).isEqualTo(transactionTime);
+  }
+
+  @TestOfyAndSql
+  void testReadingTwiceDoesNotModify() {
+    DateTime originalTime = DateTime.parse("1999-01-01T00:00:00Z");
+    clock.setTo(originalTime);
+    tm().transact(() -> tm().insert(new UpdateAutoTimestampTestObject()));
+    clock.advanceOneMilli();
+    UpdateAutoTimestampTestObject firstRead = reload();
+    assertThat(firstRead.updateTime.getTimestamp()).isEqualTo(originalTime);
+    clock.advanceOneMilli();
+    UpdateAutoTimestampTestObject secondRead = reload();
+    assertThat(secondRead.updateTime.getTimestamp()).isEqualTo(originalTime);
   }
 }

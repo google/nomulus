@@ -114,8 +114,7 @@ final class RegistryLockVerifyActionTest {
   void testSuccess_unlockDomain() {
     action = createAction(lockId, false);
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    saveRegistryLock(
-        createLock().asBuilder().setUnlockRequestTimestamp(fakeClock.nowUtc()).build());
+    saveRegistryLock(createLock().asBuilder().setUnlockRequestTime(fakeClock.nowUtc()).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).contains("Success: unlock has been applied to example.tld");
@@ -151,8 +150,7 @@ final class RegistryLockVerifyActionTest {
 
   @Test
   void testFailure_alreadyVerified() {
-    saveRegistryLock(
-        createLock().asBuilder().setLockCompletionTimestamp(fakeClock.nowUtc()).build());
+    saveRegistryLock(createLock().asBuilder().setLockCompletionTime(fakeClock.nowUtc()).build());
     action.run();
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
     assertNoDomainChanges();
@@ -182,9 +180,9 @@ final class RegistryLockVerifyActionTest {
     saveRegistryLock(
         createLock()
             .asBuilder()
-            .setLockCompletionTimestamp(fakeClock.nowUtc())
-            .setUnlockRequestTimestamp(fakeClock.nowUtc())
-            .setUnlockCompletionTimestamp(fakeClock.nowUtc())
+            .setLockCompletionTime(fakeClock.nowUtc())
+            .setUnlockRequestTime(fakeClock.nowUtc())
+            .setUnlockCompletionTime(fakeClock.nowUtc())
             .build());
     action.run();
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already unlocked");
@@ -234,8 +232,8 @@ final class RegistryLockVerifyActionTest {
     saveRegistryLock(
         createLock()
             .asBuilder()
-            .setLockCompletionTimestamp(fakeClock.nowUtc())
-            .setUnlockRequestTimestamp(fakeClock.nowUtc())
+            .setLockCompletionTime(fakeClock.nowUtc())
+            .setUnlockRequestTime(fakeClock.nowUtc())
             .build());
     action.run();
     assertThat(response.getPayload()).contains("Failed: Domain example.tld is already locked");
@@ -258,7 +256,7 @@ final class RegistryLockVerifyActionTest {
     saveRegistryLock(
         lock.asBuilder()
             .setVerificationCode(unlockVerificationCode)
-            .setUnlockRequestTimestamp(fakeClock.nowUtc())
+            .setUnlockRequestTime(fakeClock.nowUtc())
             .build());
     action = createAction(unlockVerificationCode, false);
     action.run();
@@ -282,8 +280,7 @@ final class RegistryLockVerifyActionTest {
   void testFailure_unlock_unlockAgain() {
     action = createAction(lockId, false);
     domain = persistResource(domain.asBuilder().setStatusValues(REGISTRY_LOCK_STATUSES).build());
-    saveRegistryLock(
-        createLock().asBuilder().setUnlockRequestTimestamp(fakeClock.nowUtc()).build());
+    saveRegistryLock(createLock().asBuilder().setUnlockRequestTime(fakeClock.nowUtc()).build());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).contains("Success: unlock has been applied to example.tld");

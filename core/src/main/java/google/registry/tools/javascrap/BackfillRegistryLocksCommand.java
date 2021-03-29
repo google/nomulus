@@ -107,7 +107,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
                           .setRegistrarId(registryAdminClientId)
                           .setRepoId(domainBase.getRepoId())
                           .setDomainName(domainBase.getDomainName())
-                          .setLockCompletionTimestamp(
+                          .setLockCompletionTime(
                               getLockCompletionTimestamp(domainBase, jpaTm().getTransactionTime()))
                           .setVerificationCode(
                               stringGenerator.createString(VERIFICATION_CODE_LENGTH))

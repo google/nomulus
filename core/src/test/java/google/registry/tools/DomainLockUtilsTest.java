@@ -104,7 +104,7 @@ public final class DomainLockUtilsTest {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryLockRequest(DOMAIN_NAME, "TheRegistrar", POC_ID, false);
     assertNoDomainChanges();
-    assertThat(lock.getLockCompletionTimestamp().isPresent()).isFalse();
+    assertThat(lock.getLockCompletionTime().isPresent()).isFalse();
   }
 
   @Test
@@ -113,7 +113,7 @@ public final class DomainLockUtilsTest {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryUnlockRequest(
             DOMAIN_NAME, "TheRegistrar", false, Optional.empty());
-    assertThat(lock.getUnlockCompletionTimestamp().isPresent()).isFalse();
+    assertThat(lock.getUnlockCompletionTime().isPresent()).isFalse();
   }
 
   @Test
@@ -122,7 +122,7 @@ public final class DomainLockUtilsTest {
     RegistryLock lock =
         domainLockUtils.saveNewRegistryUnlockRequest(
             DOMAIN_NAME, "TheRegistrar", true, Optional.empty());
-    assertThat(lock.getUnlockCompletionTimestamp().isPresent()).isFalse();
+    assertThat(lock.getUnlockCompletionTime().isPresent()).isFalse();
   }
 
   @Test
@@ -285,7 +285,7 @@ public final class DomainLockUtilsTest {
     RegistryLock resultLock =
         domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
     verifyProperlyLockedDomain(true);
-    assertThat(resultLock.getLockCompletionTimestamp()).isEqualTo(Optional.of(clock.nowUtc()));
+    assertThat(resultLock.getLockCompletionTime()).isEqualTo(Optional.of(clock.nowUtc()));
   }
 
   @Test
@@ -294,7 +294,7 @@ public final class DomainLockUtilsTest {
     // what the RegistryLock table says
     SqlHelper.saveRegistryLock(
         new RegistryLock.Builder()
-            .setLockCompletionTimestamp(clock.nowUtc())
+            .setLockCompletionTime(clock.nowUtc())
             .setDomainName(DOMAIN_NAME)
             .setVerificationCode("hi")
             .setRegistrarId("TheRegistrar")
@@ -306,7 +306,7 @@ public final class DomainLockUtilsTest {
     RegistryLock resultLock =
         domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, "TheRegistrar", POC_ID, true);
     verifyProperlyLockedDomain(true);
-    assertThat(resultLock.getLockCompletionTimestamp()).isEqualTo(Optional.of(clock.nowUtc()));
+    assertThat(resultLock.getLockCompletionTime()).isEqualTo(Optional.of(clock.nowUtc()));
   }
 
   @Test

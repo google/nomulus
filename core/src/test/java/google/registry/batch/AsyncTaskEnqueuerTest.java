@@ -148,9 +148,9 @@ public class AsyncTaskEnqueuerTest {
     RegistryLock lock =
         saveRegistryLock(
             new RegistryLock.Builder()
-                .setLockCompletionTimestamp(clock.nowUtc())
-                .setUnlockRequestTimestamp(clock.nowUtc())
-                .setUnlockCompletionTimestamp(clock.nowUtc())
+                .setLockCompletionTime(clock.nowUtc())
+                .setUnlockRequestTime(clock.nowUtc())
+                .setUnlockCompletionTime(clock.nowUtc())
                 .isSuperuser(false)
                 .setDomainName("example.tld")
                 .setRepoId("repoId")

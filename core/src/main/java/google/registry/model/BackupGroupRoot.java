@@ -16,6 +16,8 @@ package google.registry.model;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.AttributeOverride;
+import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -40,6 +42,7 @@ public abstract class BackupGroupRoot extends ImmutableObject {
   // Prevents subclasses from unexpectedly accessing as property (e.g., HostResource), which would
   // require an unnecessary non-private setter method.
   @Access(AccessType.FIELD)
+  @AttributeOverride(name = "lastUpdateTime", column = @Column(name = "updateTimestamp"))
   UpdateAutoTimestamp updateTimestamp = UpdateAutoTimestamp.create(null);
 
   /** Get the {@link UpdateAutoTimestamp} for this entity. */

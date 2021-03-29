@@ -102,22 +102,22 @@ public final class RegistryLock extends ImmutableObject implements Buildable, Sq
 
   /** When the lock is first requested. */
   @Column(nullable = false)
-  private CreateAutoTimestamp lockRequestTimestamp = CreateAutoTimestamp.create(null);
+  private CreateAutoTimestamp lockRequestTime = CreateAutoTimestamp.create(null);
 
   /** When the unlock is first requested. */
-  private ZonedDateTime unlockRequestTimestamp;
+  private ZonedDateTime unlockRequestTime;
 
   /**
    * When the user has verified the lock. If this field is null, it means the lock has not been
    * verified yet (and thus not been put into effect).
    */
-  private ZonedDateTime lockCompletionTimestamp;
+  private ZonedDateTime lockCompletionTime;
 
   /**
    * When the user has verified the unlock of this lock. If this field is null, it means the unlock
    * action has not been verified yet (and has not been put into effect).
    */
-  private ZonedDateTime unlockCompletionTimestamp;
+  private ZonedDateTime unlockCompletionTime;
 
   /** The user must provide the random verification code in order to complete the action. */
   @Column(nullable = false)
@@ -140,7 +140,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable, Sq
   private Duration relockDuration;
 
   /** Time that this entity was last updated. */
-  private UpdateAutoTimestamp lastUpdateTimestamp;
+  private UpdateAutoTimestamp lastUpdateTime = UpdateAutoTimestamp.create(null);
 
   public String getRepoId() {
     return repoId;
@@ -158,25 +158,25 @@ public final class RegistryLock extends ImmutableObject implements Buildable, Sq
     return registrarPocId;
   }
 
-  public DateTime getLockRequestTimestamp() {
-    return lockRequestTimestamp.getTimestamp();
+  public DateTime getLockRequestTime() {
+    return lockRequestTime.getTimestamp();
   }
 
   /** Returns the unlock request timestamp or null if an unlock has not been requested yet. */
-  public Optional<DateTime> getUnlockRequestTimestamp() {
-    return Optional.ofNullable(unlockRequestTimestamp).map(DateTimeUtils::toJodaDateTime);
+  public Optional<DateTime> getUnlockRequestTime() {
+    return Optional.ofNullable(unlockRequestTime).map(DateTimeUtils::toJodaDateTime);
   }
 
   /** Returns the completion timestamp, or empty if this lock has not been completed yet. */
-  public Optional<DateTime> getLockCompletionTimestamp() {
-    return Optional.ofNullable(lockCompletionTimestamp).map(DateTimeUtils::toJodaDateTime);
+  public Optional<DateTime> getLockCompletionTime() {
+    return Optional.ofNullable(lockCompletionTime).map(DateTimeUtils::toJodaDateTime);
   }
 
   /**
    * Returns the unlock completion timestamp, or empty if this unlock has not been completed yet.
    */
-  public Optional<DateTime> getUnlockCompletionTimestamp() {
-    return Optional.ofNullable(unlockCompletionTimestamp).map(DateTimeUtils::toJodaDateTime);
+  public Optional<DateTime> getUnlockCompletionTime() {
+    return Optional.ofNullable(unlockCompletionTime).map(DateTimeUtils::toJodaDateTime);
   }
 
   public String getVerificationCode() {
@@ -187,8 +187,8 @@ public final class RegistryLock extends ImmutableObject implements Buildable, Sq
     return isSuperuser;
   }
 
-  public DateTime getLastUpdateTimestamp() {
-    return lastUpdateTimestamp.getTimestamp();
+  public DateTime getLastUpdateTime() {
+    return lastUpdateTime.getTimestamp();
   }
 
   public Long getRevisionId() {
@@ -211,20 +211,20 @@ public final class RegistryLock extends ImmutableObject implements Buildable, Sq
   }
 
   public boolean isLocked() {
-    return lockCompletionTimestamp != null && unlockCompletionTimestamp == null;
+    return lockCompletionTime != null && unlockCompletionTime == null;
   }
 
   /** Returns true iff the lock was requested &gt;= 1 hour ago and has not been verified. */
   public boolean isLockRequestExpired(DateTime now) {
-    return !getLockCompletionTimestamp().isPresent()
-        && isBeforeOrAt(getLockRequestTimestamp(), now.minusHours(1));
+    return !getLockCompletionTime().isPresent()
+        && isBeforeOrAt(getLockRequestTime(), now.minusHours(1));
   }
 
   /** Returns true iff the unlock was requested &gt;= 1 hour ago and has not been verified. */
   public boolean isUnlockRequestExpired(DateTime now) {
-    Optional<DateTime> unlockRequestTimestamp = getUnlockRequestTimestamp();
+    Optional<DateTime> unlockRequestTimestamp = getUnlockRequestTime();
     return unlockRequestTimestamp.isPresent()
-        && !getUnlockCompletionTimestamp().isPresent()
+        && !getUnlockCompletionTime().isPresent()
         && isBeforeOrAt(unlockRequestTimestamp.get(), now.minusHours(1));
   }
 
@@ -278,18 +278,18 @@ public final class RegistryLock extends ImmutableObject implements Buildable, Sq
       return this;
     }
 
-    public Builder setUnlockRequestTimestamp(DateTime unlockRequestTimestamp) {
-      getInstance().unlockRequestTimestamp = toZonedDateTime(unlockRequestTimestamp);
+    public Builder setUnlockRequestTime(DateTime unlockRequestTime) {
+      getInstance().unlockRequestTime = toZonedDateTime(unlockRequestTime);
       return this;
     }
 
-    public Builder setLockCompletionTimestamp(DateTime lockCompletionTimestamp) {
-      getInstance().lockCompletionTimestamp = toZonedDateTime(lockCompletionTimestamp);
+    public Builder setLockCompletionTime(DateTime lockCompletionTime) {
+      getInstance().lockCompletionTime = toZonedDateTime(lockCompletionTime);
       return this;
     }
 
-    public Builder setUnlockCompletionTimestamp(DateTime unlockCompletionTimestamp) {
-      getInstance().unlockCompletionTimestamp = toZonedDateTime(unlockCompletionTimestamp);
+    public Builder setUnlockCompletionTime(DateTime unlockCompletionTime) {
+      getInstance().unlockCompletionTime = toZonedDateTime(unlockCompletionTime);
       return this;
     }
 
