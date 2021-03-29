@@ -117,6 +117,7 @@ import google.registry.tmch.LordnTaskUtils;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -1263,6 +1264,16 @@ public class DatabaseHelper {
    */
   public static <T> T loadByKey(VKey<T> key) {
     return transactIfJpaTm(() -> tm().loadByKey(key));
+  }
+
+  /**
+   * Loads the specified entity by its key from the DB or empty if it doesn't exist.
+   *
+   * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
+   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   */
+  public static <T> Optional<T> loadByKeyIfPresent(VKey<T> key) {
+    return transactIfJpaTm(() -> tm().loadByKeyIfPresent(key));
   }
 
   /**

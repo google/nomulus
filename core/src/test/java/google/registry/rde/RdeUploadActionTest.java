@@ -65,6 +65,7 @@ import google.registry.request.HttpException.NoContentException;
 import google.registry.request.RequestParameters;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeResponse;
@@ -72,6 +73,7 @@ import google.registry.testing.FakeSleeper;
 import google.registry.testing.GpgSystemCommandExtension;
 import google.registry.testing.Lazies;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.sftp.SftpServerExtension;
 import google.registry.util.Retrier;
 import google.registry.util.TaskQueueUtils;
@@ -84,12 +86,12 @@ import java.net.URI;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.stubbing.OngoingStubbing;
 
 /** Unit tests for {@link RdeUploadAction}. */
+@DualDatabaseTest
 public class RdeUploadActionTest {
 
   private static final int BUFFER_SIZE = 64 * 1024;
@@ -198,7 +200,7 @@ public class RdeUploadActionTest {
             });
   }
 
-  @Test
+  @TestOfyAndSql
   void testSocketConnection() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     try (Socket socket = new Socket("localhost", port)) {
@@ -206,7 +208,7 @@ public class RdeUploadActionTest {
     }
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun() {
     createTld("lol");
     RdeUploadAction action = createAction(null);
@@ -220,7 +222,7 @@ public class RdeUploadActionTest {
     verifyNoMoreInteractions(runner);
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock_succeedsOnThirdTry() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
@@ -239,7 +241,7 @@ public class RdeUploadActionTest {
         .containsExactly("tld_2010-10-17_full_S1_R0.ryde", "tld_2010-10-17_full_S1_R0.sig");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock_failsAfterThreeAttempts() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
@@ -253,7 +255,7 @@ public class RdeUploadActionTest {
     assertThat(thrown).hasMessageThat().contains("The crow flies in square circles.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock_copiesOnGcs() throws Exception {
     int port = sftpd.serve("user", "password", folder);
     URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
@@ -275,7 +277,7 @@ public class RdeUploadActionTest {
         .isEqualTo(Files.toByteArray(new File(folder, sigFilename)));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock_resend() throws Exception {
     tm().transact(() -> RdeRevision.saveRevision("tld", DateTime.parse("2010-10-17TZ"), FULL, 1));
     int port = sftpd.serve("user", "password", folder);
@@ -293,7 +295,7 @@ public class RdeUploadActionTest {
         .containsExactly("tld_2010-10-17_full_S1_R1.ryde", "tld_2010-10-17_full_S1_R1.sig");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock_producesValidSignature() throws Exception {
     assumeTrue(hasCommand("gpg --version"));
     int port = sftpd.serve("user", "password", folder);
@@ -316,7 +318,7 @@ public class RdeUploadActionTest {
     assertThat(stderr).contains("rde-unittest@registry.test");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock_stagingNotFinished_throws204() {
     URI url = URI.create("sftp://user:password@localhost:32323/");
     DateTime stagingCursor = DateTime.parse("2010-10-17TZ");
@@ -331,7 +333,7 @@ public class RdeUploadActionTest {
                 + "last RDE staging completion was at 2010-10-17T00:00:00.000Z");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock_sftpCooldownNotPassed_throws204() {
     RdeUploadAction action = createAction(URI.create("sftp://user:password@localhost:32323/"));
     action.sftpCooldown = standardHours(2);

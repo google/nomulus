@@ -14,8 +14,8 @@
 
 package google.registry.rde;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor;
@@ -90,8 +90,13 @@ class EscrowTaskRunner {
         () -> {
           logger.atInfo().log("TLD: %s", registry.getTld());
           DateTime startOfToday = clock.nowUtc().withTimeAtStartOfDay();
-          Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
-          final DateTime nextRequiredRun = (cursor == null ? startOfToday : cursor.getCursorTime());
+          DateTime nextRequiredRun =
+              transactIfJpaTm(
+                      () ->
+                          tm().loadByKeyIfPresent(
+                                  Cursor.createVKey(cursorType, registry.getTldStr())))
+                  .map(Cursor::getCursorTime)
+                  .orElse(startOfToday);
           if (nextRequiredRun.isAfter(startOfToday)) {
             throw new NoContentException("Already completed");
           }

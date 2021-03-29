@@ -15,8 +15,8 @@
 package google.registry.rde;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.collect.ImmutableSetMultimap;
@@ -28,6 +28,7 @@ import google.registry.model.registry.Registries;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.util.Clock;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -89,13 +90,15 @@ public final class PendingDepositChecker {
         continue;
       }
       // Avoid creating a transaction unless absolutely necessary.
-      Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
-      DateTime cursorValue = (cursor != null ? cursor.getCursorTime() : startingPoint);
+      Optional<Cursor> maybeCursor =
+          transactIfJpaTm(
+              () -> tm().loadByKeyIfPresent(Cursor.createVKey(cursorType, registry.getTldStr())));
+      DateTime cursorValue = maybeCursor.map(Cursor::getCursorTime).orElse(startingPoint);
       if (isBeforeOrAt(cursorValue, now)) {
         DateTime watermark =
-            (cursor != null
-                ? cursor.getCursorTime()
-                : transactionallyInitializeCursor(registry, cursorType, startingPoint));
+            maybeCursor
+                .map(Cursor::getCursorTime)
+                .orElse(transactionallyInitializeCursor(registry, cursorType, startingPoint));
         if (isBeforeOrAt(watermark, now)) {
           builder.put(tld, PendingDeposit.create(tld, watermark, mode, cursorType, interval));
         }
@@ -108,9 +111,10 @@ public final class PendingDepositChecker {
       final Registry registry, final CursorType cursorType, final DateTime initialValue) {
     return tm().transact(
             () -> {
-              Cursor cursor = ofy().load().key(Cursor.createKey(cursorType, registry)).now();
-              if (cursor != null) {
-                return cursor.getCursorTime();
+              Optional<Cursor> maybeCursor =
+                  tm().loadByKeyIfPresent(Cursor.createVKey(cursorType, registry.getTldStr()));
+              if (maybeCursor.isPresent()) {
+                return maybeCursor.get().getCursorTime();
               }
               tm().put(Cursor.create(cursorType, initialValue, registry));
               return initialValue;

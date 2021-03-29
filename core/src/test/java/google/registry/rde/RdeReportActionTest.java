@@ -19,8 +19,8 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.RDE_REPORT;
 import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.GcsTestingUtils.writeGcsFile;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
@@ -51,10 +51,12 @@ import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.util.Retrier;
 import google.registry.xjc.XjcXmlTransformer;
 import google.registry.xjc.rdereport.XjcRdeReportReport;
@@ -65,11 +67,11 @@ import java.util.Map;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link RdeReportAction}. */
+@DualDatabaseTest
 public class RdeReportActionTest {
 
   private static final ByteSource REPORT_XML = RdeTestData.loadBytes("report.xml");
@@ -123,7 +125,7 @@ public class RdeReportActionTest {
     writeGcsFile(gcsService, reportFile, Ghostryde.encode(REPORT_XML.read(), encryptKey));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun() {
     createTld("lol");
     RdeReportAction action = createAction();
@@ -134,7 +136,7 @@ public class RdeReportActionTest {
     verifyNoMoreInteractions(runner);
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock() throws Exception {
     when(httpResponse.getResponseCode()).thenReturn(SC_OK);
     when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
@@ -160,7 +162,7 @@ public class RdeReportActionTest {
     assertThat(report.getWatermark()).isEqualTo(DateTime.parse("2010-10-17T00:00:00Z"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock_uploadNotFinished_throws204() {
     persistResource(
         Cursor.create(RDE_UPLOAD, DateTime.parse("2006-06-06TZ"), Registry.get("test")));
@@ -174,7 +176,7 @@ public class RdeReportActionTest {
                 + "last upload completion was at 2006-06-06T00:00:00.000Z");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock_badRequest_throws500WithErrorInfo() throws Exception {
     when(httpResponse.getResponseCode()).thenReturn(SC_BAD_REQUEST);
     when(httpResponse.getContent()).thenReturn(IIRDEA_BAD_XML.read());
@@ -186,7 +188,7 @@ public class RdeReportActionTest {
     assertThat(thrown).hasMessageThat().contains("The structure of the report is invalid.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock_fetchFailed_throwsRuntimeException() throws Exception {
     class ExpectedThrownException extends RuntimeException {}
     when(urlFetchService.fetch(any(HTTPRequest.class))).thenThrow(new ExpectedThrownException());
@@ -194,7 +196,7 @@ public class RdeReportActionTest {
         ExpectedThrownException.class, () -> createAction().runWithLock(loadRdeReportCursor()));
   }
 
-  @Test
+  @TestOfyAndSql
   void testRunWithLock_socketTimeout_doesRetry() throws Exception {
     when(httpResponse.getResponseCode()).thenReturn(SC_OK);
     when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
@@ -208,11 +210,7 @@ public class RdeReportActionTest {
   }
 
   private DateTime loadRdeReportCursor() {
-    return ofy()
-        .load()
-        .key(Cursor.createKey(RDE_REPORT, Registry.get("test")))
-        .now()
-        .getCursorTime();
+    return loadByKey(Cursor.createVKey(RDE_REPORT, "test")).getCursorTime();
   }
 
   private static ImmutableMap<String, String> mapifyHeaders(Iterable<HTTPHeader> headers) {
