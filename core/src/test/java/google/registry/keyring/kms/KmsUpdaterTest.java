@@ -17,21 +17,25 @@ package google.registry.keyring.kms;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.googlecode.objectify.Key;
 import google.registry.keyring.api.KeySerializer;
 import google.registry.model.server.KmsSecret;
 import google.registry.model.server.KmsSecretRevision;
+import google.registry.model.server.KmsSecretRevisionSqlDao;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import java.io.IOException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link KmsUpdater} */
+@DualDatabaseTest
 public class KmsUpdaterTest {
 
   @RegisterExtension
@@ -48,7 +52,7 @@ public class KmsUpdaterTest {
     updater = new KmsUpdater(new FakeKmsConnection());
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setMultipleSecrets() {
     updater
         .setMarksdbDnlLoginAndPassword("value1")
@@ -68,7 +72,7 @@ public class KmsUpdaterTest {
         "json-credential-string", "json-credential-string/foo", getCiphertext("value3"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setBrdaReceiverKey() throws Exception {
     updater.setBrdaReceiverPublicKey(KmsTestHelper.getPublicKey()).update();
 
@@ -78,7 +82,7 @@ public class KmsUpdaterTest {
         getCiphertext(KmsTestHelper.getPublicKey()));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setBrdaSigningKey() throws Exception {
     updater.setBrdaSigningKey(KmsTestHelper.getKeyPair()).update();
 
@@ -92,7 +96,7 @@ public class KmsUpdaterTest {
         getCiphertext(KmsTestHelper.getPublicKey()));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setCloudSqlPassword() {
     updater.setCloudSqlPassword("value1").update();
 
@@ -100,7 +104,7 @@ public class KmsUpdaterTest {
         "cloud-sql-password-string", "cloud-sql-password-string/foo", getCiphertext("value1"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setToolsCloudSqlPassword() {
     updater.setToolsCloudSqlPassword("value1").update();
 
@@ -110,7 +114,7 @@ public class KmsUpdaterTest {
         getCiphertext("value1"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setIcannReportingPassword() {
     updater.setIcannReportingPassword("value1").update();
 
@@ -120,7 +124,7 @@ public class KmsUpdaterTest {
         getCiphertext("value1"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setJsonCredential() {
     updater.setJsonCredential("value1").update();
 
@@ -128,7 +132,7 @@ public class KmsUpdaterTest {
         "json-credential-string", "json-credential-string/foo", getCiphertext("value1"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setMarksdbDnlLoginAndPassword() {
     updater.setMarksdbDnlLoginAndPassword("value1").update();
 
@@ -136,7 +140,7 @@ public class KmsUpdaterTest {
         "marksdb-dnl-login-string", "marksdb-dnl-login-string/foo", getCiphertext("value1"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setMarksdbLordnPassword() {
     updater.setMarksdbLordnPassword("value1").update();
 
@@ -146,7 +150,7 @@ public class KmsUpdaterTest {
         getCiphertext("value1"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setMarksdbSmdrlLoginAndPassword() {
     updater.setMarksdbSmdrlLoginAndPassword("value1").update();
 
@@ -154,7 +158,7 @@ public class KmsUpdaterTest {
         "marksdb-smdrl-login-string", "marksdb-smdrl-login-string/foo", getCiphertext("value1"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setRdeReceiverKey() throws Exception {
     updater.setRdeReceiverPublicKey(KmsTestHelper.getPublicKey()).update();
 
@@ -165,7 +169,7 @@ public class KmsUpdaterTest {
             KeySerializer.serializePublicKey(KmsTestHelper.getPublicKey())));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setRdeSigningKey() throws Exception {
     updater.setRdeSigningKey(KmsTestHelper.getKeyPair()).update();
 
@@ -179,7 +183,7 @@ public class KmsUpdaterTest {
         getCiphertext(KmsTestHelper.getPublicKey()));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setRdeSshClientPrivateKey() {
     updater.setRdeSshClientPrivateKey("value1").update();
 
@@ -189,7 +193,7 @@ public class KmsUpdaterTest {
         getCiphertext("value1"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setRdeSshClientPublicKey() {
     updater.setRdeSshClientPublicKey("value1").update();
 
@@ -199,7 +203,7 @@ public class KmsUpdaterTest {
         getCiphertext("value1"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_setRdeStagingKey() throws Exception {
     updater.setRdeStagingKey(KmsTestHelper.getKeyPair()).update();
 
@@ -213,13 +217,18 @@ public class KmsUpdaterTest {
         getCiphertext(KmsTestHelper.getPublicKey()));
   }
 
-
   private static void verifySecretAndSecretRevisionWritten(
       String secretName, String expectedCryptoKeyVersionName, String expectedEncryptedValue) {
-    KmsSecret secret =
-        ofy().load().key(Key.create(getCrossTldKey(), KmsSecret.class, secretName)).now();
-    assertThat(secret).isNotNull();
-    KmsSecretRevision secretRevision = ofy().load().key(secret.getLatestRevision()).now();
+    KmsSecretRevision secretRevision;
+    if (tm().isOfy()) {
+      KmsSecret secret =
+          ofy().load().key(Key.create(getCrossTldKey(), KmsSecret.class, secretName)).now();
+      assertThat(secret).isNotNull();
+      secretRevision = ofy().load().key(secret.getLatestRevision()).now();
+    } else {
+      secretRevision =
+          tm().transact(() -> KmsSecretRevisionSqlDao.getLatestRevision(secretName).get());
+    }
     assertThat(secretRevision.getKmsCryptoKeyVersionName()).isEqualTo(expectedCryptoKeyVersionName);
     assertThat(secretRevision.getEncryptedValue()).isEqualTo(expectedEncryptedValue);
   }

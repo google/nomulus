@@ -19,6 +19,7 @@ import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
@@ -26,7 +27,10 @@ import google.registry.keyring.api.KeySerializer;
 import google.registry.keyring.api.Keyring;
 import google.registry.keyring.api.KeyringException;
 import google.registry.model.server.KmsSecret;
+import google.registry.model.server.KmsSecretRevision;
+import google.registry.model.server.KmsSecretRevisionSqlDao;
 import java.io.IOException;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -201,13 +205,21 @@ public class KmsKeyring implements Keyring {
   }
 
   private byte[] getDecryptedData(String keyName) {
-    KmsSecret secret =
-        ofy().load().key(Key.create(getCrossTldKey(), KmsSecret.class, keyName)).now();
-    checkState(secret != null, "Requested secret '%s' does not exist.", keyName);
-    String encryptedData = ofy().load().key(secret.getLatestRevision()).now().getEncryptedValue();
+    String encryptedData;
+    if (tm().isOfy()) {
+      KmsSecret secret =
+          ofy().load().key(Key.create(getCrossTldKey(), KmsSecret.class, keyName)).now();
+      checkState(secret != null, "Requested secret '%s' does not exist.", keyName);
+      encryptedData = ofy().load().key(secret.getLatestRevision()).now().getEncryptedValue();
+    } else {
+      Optional<KmsSecretRevision> revision =
+          tm().transact(() -> KmsSecretRevisionSqlDao.getLatestRevision(keyName));
+      checkState(revision.isPresent(), "Requested secret '%s' does not exist.", keyName);
+      encryptedData = revision.get().getEncryptedValue();
+    }
 
     try {
-      return kmsConnection.decrypt(secret.getName(), encryptedData);
+      return kmsConnection.decrypt(keyName, encryptedData);
     } catch (Exception e) {
       throw new KeyringException(
           String.format("CloudKMS decrypt operation failed for secret %s", keyName), e);

@@ -34,7 +34,6 @@ import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.RDE_SSH_CLIE
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.RDE_SSH_CLIENT_PUBLIC_STRING;
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.SAFE_BROWSING_API_KEY;
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.TOOLS_CLOUD_SQL_PASSWORD_STRING;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -194,8 +193,7 @@ public final class KmsUpdater {
    */
   private static void persistEncryptedValues(
       final ImmutableMap<String, EncryptResponse> encryptedValues) {
-    tm()
-        .transact(
+    tm().transact(
             () -> {
               for (Map.Entry<String, EncryptResponse> entry : encryptedValues.entrySet()) {
                 String secretName = entry.getKey();
@@ -207,7 +205,7 @@ public final class KmsUpdater {
                         .setKmsCryptoKeyVersionName(revisionData.cryptoKeyVersionName())
                         .setParent(secretName)
                         .build();
-                ofy().save().entities(secretRevision, KmsSecret.create(secretName, secretRevision));
+                tm().putAll(secretRevision, KmsSecret.create(secretName, secretRevision));
               }
             });
   }
