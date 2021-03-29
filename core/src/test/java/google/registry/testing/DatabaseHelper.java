@@ -1237,10 +1237,6 @@ public class DatabaseHelper {
         .collect(toImmutableMap(PremiumListEntry::getLabel, Function.identity()));
   }
 
-  public static <T> T loadByKey(VKey<T> key) {
-    return transactIfJpaTm(() -> tm().loadByKey(key));
-  }
-
   /** Loads and returns the registrar with the given client ID, or throws IAE if not present. */
   public static Registrar loadRegistrar(String clientId) {
     return checkArgumentPresent(
