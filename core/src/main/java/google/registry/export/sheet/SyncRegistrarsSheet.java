@@ -17,7 +17,6 @@ package google.registry.export.sheet;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.common.Cursor.CursorType.SYNC_REGISTRAR_SHEET;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registrar.RegistrarContact.Type.ABUSE;
 import static google.registry.model.registrar.RegistrarContact.Type.ADMIN;
 import static google.registry.model.registrar.RegistrarContact.Type.BILLING;
@@ -26,6 +25,7 @@ import static google.registry.model.registrar.RegistrarContact.Type.MARKETING;
 import static google.registry.model.registrar.RegistrarContact.Type.TECH;
 import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.base.Joiner;
@@ -40,6 +40,7 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.util.Clock;
 import google.registry.util.DateTimeUtils;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -61,8 +62,10 @@ class SyncRegistrarsSheet {
    * successfully completed, as measured by a cursor.
    */
   boolean wereRegistrarsModified() {
-    Cursor cursor = ofy().load().key(Cursor.createGlobalKey(SYNC_REGISTRAR_SHEET)).now();
-    DateTime lastUpdateTime = (cursor == null) ? START_OF_TIME : cursor.getCursorTime();
+    Optional<Cursor> cursor =
+        transactIfJpaTm(
+            () -> tm().loadByKeyIfPresent(Cursor.createGlobalVKey(SYNC_REGISTRAR_SHEET)));
+    DateTime lastUpdateTime = !cursor.isPresent() ? START_OF_TIME : cursor.get().getCursorTime();
     for (Registrar registrar : Registrar.loadAllCached()) {
       if (DateTimeUtils.isAtOrAfter(registrar.getLastUpdateTime(), lastUpdateTime)) {
         return true;

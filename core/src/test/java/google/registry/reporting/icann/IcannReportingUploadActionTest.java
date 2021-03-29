@@ -15,8 +15,9 @@
 package google.registry.reporting.icann;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTlds;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.GcsTestingUtils.writeGcsFile;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
@@ -38,10 +39,12 @@ import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.util.EmailMessage;
 import google.registry.util.Retrier;
 import google.registry.util.SendEmailService;
@@ -51,10 +54,10 @@ import java.util.logging.Logger;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.icann.IcannReportingUploadAction} */
+@DualDatabaseTest
 class IcannReportingUploadActionTest {
 
   @RegisterExtension
@@ -126,7 +129,7 @@ class IcannReportingUploadActionTest {
     loggerToIntercept.addHandler(logHandler);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess() throws Exception {
     IcannReportingUploadAction action = createAction();
     action.run();
@@ -142,14 +145,14 @@ class IcannReportingUploadActionTest {
                 "ICANN Monthly report upload summary: 3/4 succeeded",
                 "Report Filename - Upload status:\n"
                     + "foo-activity-200606.csv - SUCCESS\n"
-                    + "tld-activity-200606.csv - FAILURE\n"
                     + "foo-transactions-200606.csv - SUCCESS\n"
+                    + "tld-activity-200606.csv - FAILURE\n"
                     + "tld-transactions-200606.csv - SUCCESS",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_january() throws Exception {
     clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
     persistResource(
@@ -186,7 +189,7 @@ class IcannReportingUploadActionTest {
                 new InternetAddress("sender@example.com")));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_advancesCursor() throws Exception {
     writeGcsFile(
         gcsService,
@@ -195,21 +198,17 @@ class IcannReportingUploadActionTest {
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-activity-200606.csv")).thenReturn(true);
     IcannReportingUploadAction action = createAction();
     action.run();
-    ofy().clearSessionCache();
-    Cursor cursor =
-        ofy()
-            .load()
-            .key(Cursor.createKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")))
-            .now();
+    tm().clearSessionCache();
+    Cursor cursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "tld"));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_noUploadsNeeded() throws Exception {
     clock.setTo(DateTime.parse("2006-5-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.run();
-    ofy().clearSessionCache();
+    tm().clearSessionCache();
     verifyNoMoreInteractions(mockReporter);
     verify(emailService)
         .sendEmail(
@@ -220,7 +219,7 @@ class IcannReportingUploadActionTest {
                 new InternetAddress("sender@example.com")));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_withRetry() throws Exception {
     IcannReportingUploadAction action = createAction();
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv"))
@@ -238,14 +237,14 @@ class IcannReportingUploadActionTest {
                 "ICANN Monthly report upload summary: 3/4 succeeded",
                 "Report Filename - Upload status:\n"
                     + "foo-activity-200606.csv - SUCCESS\n"
-                    + "tld-activity-200606.csv - FAILURE\n"
                     + "foo-transactions-200606.csv - SUCCESS\n"
+                    + "tld-activity-200606.csv - FAILURE\n"
                     + "tld-transactions-200606.csv - SUCCESS",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_quicklySkipsOverNonRetryableUploadException() throws Exception {
     runTest_nonRetryableException(
         new IOException(
@@ -253,36 +252,28 @@ class IcannReportingUploadActionTest {
                 + " passed.</msg>"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_quicklySkipsOverIpAllowListException() throws Exception {
     runTest_nonRetryableException(
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_cursorIsNotAdvancedForward() throws Exception {
     runTest_nonRetryableException(
         new IOException("Your IP address 25.147.130.158 is not allowed to connect"));
-    ofy().clearSessionCache();
-    Cursor cursor =
-        ofy()
-            .load()
-            .key(Cursor.createKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("tld")))
-            .now();
+    tm().clearSessionCache();
+    Cursor cursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "tld"));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testNotRunIfCursorDateIsAfterToday() throws Exception {
     clock.setTo(DateTime.parse("2006-05-01T00:30:00Z"));
     IcannReportingUploadAction action = createAction();
     action.run();
-    ofy().clearSessionCache();
-    Cursor cursor =
-        ofy()
-            .load()
-            .key(Cursor.createKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("foo")))
-            .now();
+    tm().clearSessionCache();
+    Cursor cursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "foo"));
     assertThat(cursor.getCursorTime()).isEqualTo(DateTime.parse("2006-07-01TZ"));
     verifyNoMoreInteractions(mockReporter);
   }
@@ -306,14 +297,14 @@ class IcannReportingUploadActionTest {
                 "ICANN Monthly report upload summary: 3/4 succeeded",
                 "Report Filename - Upload status:\n"
                     + "foo-activity-200606.csv - SUCCESS\n"
-                    + "tld-activity-200606.csv - FAILURE\n"
                     + "foo-transactions-200606.csv - SUCCESS\n"
+                    + "tld-activity-200606.csv - FAILURE\n"
                     + "tld-transactions-200606.csv - SUCCESS",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFail_fileNotFound() throws Exception {
     clock.setTo(DateTime.parse("2006-01-22T00:30:00Z"));
     persistResource(
@@ -329,7 +320,7 @@ class IcannReportingUploadActionTest {
                 + " tld-activity-200512.csv did not exist");
   }
 
-  @Test
+  @TestOfyAndSql
   void testWarning_fileNotStagedYet() throws Exception {
     persistResource(
         Cursor.create(
@@ -346,7 +337,7 @@ class IcannReportingUploadActionTest {
                 + " yet.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_lockIsntAvailable() throws Exception {
     IcannReportingUploadAction action = createAction();
     action.lockHandler = new FakeLockHandler(false);
@@ -357,7 +348,7 @@ class IcannReportingUploadActionTest {
         .contains("Lock for IcannReportingUploadAction already in use");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_nullCursorsInitiatedToFirstOfNextMonth() throws Exception {
     createTlds("new");
 
@@ -375,21 +366,16 @@ class IcannReportingUploadActionTest {
                 "ICANN Monthly report upload summary: 3/4 succeeded",
                 "Report Filename - Upload status:\n"
                     + "foo-activity-200606.csv - SUCCESS\n"
-                    + "tld-activity-200606.csv - FAILURE\n"
                     + "foo-transactions-200606.csv - SUCCESS\n"
+                    + "tld-activity-200606.csv - FAILURE\n"
                     + "tld-transactions-200606.csv - SUCCESS",
                 new InternetAddress("recipient@example.com"),
                 new InternetAddress("sender@example.com")));
 
     Cursor newActivityCursor =
-        ofy()
-            .load()
-            .key(Cursor.createKey(CursorType.ICANN_UPLOAD_ACTIVITY, Registry.get("new")))
-            .now();
+        loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_ACTIVITY, "new"));
     assertThat(newActivityCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
-    Cursor newTransactionCursor =
-        ofy().load().key(Cursor.createKey(CursorType.ICANN_UPLOAD_TX, Registry.get("new"))).now();
+    Cursor newTransactionCursor = loadByKey(Cursor.createVKey(CursorType.ICANN_UPLOAD_TX, "new"));
     assertThat(newTransactionCursor.getCursorTime()).isEqualTo(DateTime.parse("2006-08-01TZ"));
   }
 }
-

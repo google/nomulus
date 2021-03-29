@@ -16,7 +16,6 @@ package google.registry.export;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.CollectionUtils.nullToEmpty;
@@ -164,7 +163,7 @@ public final class SyncGroupMembersAction implements Runnable {
         registrarsToSave.add(result.getKey().asBuilder().setContactsRequireSyncing(false).build());
       }
     }
-    tm().transactNew(() -> ofy().save().entities(registrarsToSave.build()));
+    tm().transactNew(() -> tm().updateAll(registrarsToSave.build()));
     return errors;
   }
 
