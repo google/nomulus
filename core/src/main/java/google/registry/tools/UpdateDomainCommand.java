@@ -21,6 +21,7 @@ import static google.registry.model.domain.rgp.GracePeriodStatus.AUTO_RENEW;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static java.util.function.Predicate.isEqual;
 
@@ -68,10 +69,10 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
       validateWith = NameserversParameter.class)
   private Set<String> addNameservers = new HashSet<>();
 
+  // TODO(b/184067241): enforce only one of each type of contact
   @Parameter(
-    names = "--add_admins",
-    description = "Admins to add. Cannot be set if --admins is set."
-  )
+      names = "--add_admins",
+      description = "Admins to add. Cannot be set if --admins is set.")
   private List<String> addAdmins = new ArrayList<>();
 
   @Parameter(names = "--add_techs", description = "Techs to add. Cannot be set if --techs is set.")
@@ -339,9 +340,11 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
 
   ImmutableSet<String> getContactsOfType(
       DomainBase domainBase, final DesignatedContact.Type contactType) {
-    return domainBase.getContacts().stream()
-        .filter(contact -> contact.getType().equals(contactType))
-        .map(contact -> tm().loadByKey(contact.getContactKey()).getContactId())
-        .collect(toImmutableSet());
+    return transactIfJpaTm(
+        () ->
+            domainBase.getContacts().stream()
+                .filter(contact -> contact.getType().equals(contactType))
+                .map(contact -> tm().loadByKey(contact.getContactKey()).getContactId())
+                .collect(toImmutableSet()));
   }
 }

@@ -36,7 +36,9 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TestOfyAndSql;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
@@ -46,9 +48,9 @@ import org.joda.time.DateTime;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link GenerateDnsReportCommand}. */
+@DualDatabaseTest
 class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportCommand> {
 
   private final DateTime now = DateTime.now(UTC);
@@ -158,7 +160,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
     persistActiveDomain("should-be-ignored.example");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess() throws Exception {
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
     Iterable<?> output = (Iterable<?>) getOutputAsJson();
@@ -166,7 +168,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
     assertThat(output).containsAtLeast(DOMAIN2_OUTPUT, NAMESERVER1_OUTPUT, NAMESERVER2_OUTPUT);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_skipDeletedDomain() throws Exception {
     persistResource(domain1.asBuilder().setDeletionTime(now).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
@@ -174,7 +176,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
         .containsExactly(DOMAIN2_OUTPUT, NAMESERVER1_OUTPUT, NAMESERVER2_OUTPUT);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_skipDeletedNameserver() throws Exception {
     persistResource(nameserver1.asBuilder().setDeletionTime(now).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
@@ -183,7 +185,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
     assertThat(output).containsAtLeast(DOMAIN2_OUTPUT, NAMESERVER2_OUTPUT);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_skipClientHoldDomain() throws Exception {
     persistResource(domain1.asBuilder().addStatusValue(StatusValue.CLIENT_HOLD).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
@@ -191,7 +193,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
         .containsExactly(DOMAIN2_OUTPUT, NAMESERVER1_OUTPUT, NAMESERVER2_OUTPUT);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_skipServerHoldDomain() throws Exception {
     persistResource(domain1.asBuilder().addStatusValue(StatusValue.SERVER_HOLD).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
@@ -199,7 +201,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
         .containsExactly(DOMAIN2_OUTPUT, NAMESERVER1_OUTPUT, NAMESERVER2_OUTPUT);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_skipPendingDeleteDomain() throws Exception {
     persistResource(
         domain1
@@ -212,7 +214,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
         .containsExactly(DOMAIN2_OUTPUT, NAMESERVER1_OUTPUT, NAMESERVER2_OUTPUT);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_skipDomainsWithoutNameservers() throws Exception {
     persistResource(domain1.asBuilder().setNameservers(ImmutableSet.of()).build());
     runCommand("--output=" + output, "--tld=xn--q9jyb4c");
@@ -220,12 +222,12 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
         .containsExactly(DOMAIN2_OUTPUT, NAMESERVER1_OUTPUT, NAMESERVER2_OUTPUT);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_tldDoesNotExist() {
     assertThrows(IllegalArgumentException.class, () -> runCommand("--tld=foobar"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingTldParameter() {
     assertThrows(ParameterException.class, () -> runCommand(""));
   }

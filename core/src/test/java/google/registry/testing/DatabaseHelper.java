@@ -1079,6 +1079,7 @@ public class DatabaseHelper {
               tm().put(
                       new HistoryEntry.Builder()
                           .setParent(resource)
+                          .setClientId(resource.getPersistedCurrentSponsorClientId())
                           .setType(getHistoryEntryType(resource))
                           .setModificationTime(tm().getTransactionTime())
                           .build()

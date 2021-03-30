@@ -37,18 +37,21 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateDomainCommand}. */
+@DualDatabaseTest
 class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand> {
 
   private DomainBase domain;
@@ -62,7 +65,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     domain = persistActiveDomain("example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_complete() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
@@ -82,7 +85,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     eppVerifier.verifySent("domain_update_complete.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_completeWithSquareBrackets() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
@@ -102,7 +105,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     eppVerifier.verifySent("domain_update_complete.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_multipleDomains() throws Exception {
     createTld("abc");
     persistActiveDomain("example.abc");
@@ -127,12 +130,12 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         .verifySent("domain_update_complete_abc.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_multipleDomains_setNameservers() throws Exception {
     runTest_multipleDomains_setNameservers("-n ns1.foo.fake,ns2.foo.fake");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_multipleDomains_setNameserversWithSquareBrackets() throws Exception {
     runTest_multipleDomains_setNameservers("-n ns[1-2].foo.fake");
   }
@@ -162,7 +165,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             ImmutableMap.of("DOMAIN", "example.tld", "REMOVEHOST", "baz.bar.tld"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_add() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
@@ -175,7 +178,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     eppVerifier.verifySent("domain_update_add.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_remove() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
@@ -188,14 +191,14 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     eppVerifier.verifySent("domain_update_remove.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_change() throws Exception {
     runCommandForced(
         "--client=NewRegistrar", "--registrant=crr-admin", "--password=2fooBAR", "example.tld");
     eppVerifier.verifySent("domain_update_change.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_setNameservers() throws Exception {
     HostResource host1 = persistActiveHost("ns1.zdns.google");
     HostResource host2 = persistActiveHost("ns2.zdns.google");
@@ -208,37 +211,28 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     eppVerifier.verifySent("domain_update_set_nameservers.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_setContacts() throws Exception {
-    ContactResource adminContact1 = persistResource(newContactResource("crr-admin1"));
-    ContactResource adminContact2 = persistResource(newContactResource("crr-admin2"));
-    ContactResource techContact1 = persistResource(newContactResource("crr-tech1"));
-    ContactResource techContact2 = persistResource(newContactResource("crr-tech2"));
-    VKey<ContactResource> adminResourceKey1 = adminContact1.createVKey();
-    VKey<ContactResource> adminResourceKey2 = adminContact2.createVKey();
-    VKey<ContactResource> techResourceKey1 = techContact1.createVKey();
-    VKey<ContactResource> techResourceKey2 = techContact2.createVKey();
+    ContactResource adminContact = persistResource(newContactResource("crr-admin1"));
+    ContactResource techContact = persistResource(newContactResource("crr-tech1"));
+    VKey<ContactResource> adminContactKey = adminContact.createVKey();
+    VKey<ContactResource> techContactKey = techContact.createVKey();
 
     persistResource(
         newDomainBase("example.tld")
             .asBuilder()
             .setContacts(
                 ImmutableSet.of(
-                    DesignatedContact.create(DesignatedContact.Type.ADMIN, adminResourceKey1),
-                    DesignatedContact.create(DesignatedContact.Type.ADMIN, adminResourceKey2),
-                    DesignatedContact.create(DesignatedContact.Type.TECH, techResourceKey1),
-                    DesignatedContact.create(DesignatedContact.Type.TECH, techResourceKey2)))
+                    DesignatedContact.create(DesignatedContact.Type.ADMIN, adminContactKey),
+                    DesignatedContact.create(DesignatedContact.Type.TECH, techContactKey)))
             .build());
 
     runCommandForced(
-        "--client=NewRegistrar",
-        "--admins=crr-admin2,crr-admin3",
-        "--techs=crr-tech2,crr-tech3",
-        "example.tld");
+        "--client=NewRegistrar", "--admins=crr-admin3", "--techs=crr-tech3", "example.tld");
     eppVerifier.verifySent("domain_update_set_contacts.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_setStatuses() throws Exception {
     HostResource host = persistActiveHost("ns1.zdns.google");
     ImmutableSet<VKey<HostResource>> nameservers = ImmutableSet.of(host.createVKey());
@@ -256,14 +250,14 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     eppVerifier.verifySent("domain_update_set_statuses.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_setDsRecords() throws Exception {
     runCommandForced(
         "--client=NewRegistrar", "--ds_records=1 2 3 abcd,4 5 6 EF01", "example.tld");
     eppVerifier.verifySent("domain_update_set_ds_records.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_setDsRecords_withUnneededClear() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
@@ -273,7 +267,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     eppVerifier.verifySent("domain_update_set_ds_records.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_clearDsRecords() throws Exception {
     runCommandForced(
         "--client=NewRegistrar",
@@ -282,14 +276,14 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     eppVerifier.verifySent("domain_update_clear_ds_records.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_enableAutorenew() throws Exception {
     runCommandForced("--client=NewRegistrar", "--autorenews=true", "example.tld");
     eppVerifier.verifySent(
         "domain_update_set_autorenew.xml", ImmutableMap.of("AUTORENEWS", "true"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_disableAutorenew() throws Exception {
     runCommandForced("--client=NewRegistrar", "--autorenews=false", "example.tld");
     eppVerifier.verifySent(
@@ -297,11 +291,15 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     assertThat(getStderrAsString()).doesNotContain("autorenew grace period");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_disableAutorenew_inAutorenewGracePeriod() throws Exception {
     HistoryEntry createHistoryEntry =
         persistResource(
-            new HistoryEntry.Builder().setType(DOMAIN_CREATE).setParent(domain).build());
+            new DomainHistory.Builder()
+                .setModificationTime(fakeClock.nowUtc())
+                .setType(DOMAIN_CREATE)
+                .setParent(domain)
+                .build());
     BillingEvent.Recurring autorenewBillingEvent =
         persistResource(
             new BillingEvent.Recurring.Builder()
@@ -335,40 +333,34 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     assertThat(stdErr).contains("example.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_canUpdatePendingDeleteDomain_whenSuperuserPassesOverrideFlag() throws Exception {
-    ContactResource adminContact1 = persistResource(newContactResource("crr-admin1"));
-    ContactResource adminContact2 = persistResource(newContactResource("crr-admin2"));
-    ContactResource techContact1 = persistResource(newContactResource("crr-tech1"));
-    ContactResource techContact2 = persistResource(newContactResource("crr-tech2"));
-    VKey<ContactResource> adminResourceKey1 = adminContact1.createVKey();
-    VKey<ContactResource> adminResourceKey2 = adminContact2.createVKey();
-    VKey<ContactResource> techResourceKey1 = techContact1.createVKey();
-    VKey<ContactResource> techResourceKey2 = techContact2.createVKey();
+    ContactResource adminContact = persistResource(newContactResource("crr-admin1"));
+    ContactResource techContact = persistResource(newContactResource("crr-tech1"));
+    VKey<ContactResource> adminContactKey = adminContact.createVKey();
+    VKey<ContactResource> techContactKey = techContact.createVKey();
 
     persistResource(
         newDomainBase("example.tld")
             .asBuilder()
             .setContacts(
                 ImmutableSet.of(
-                    DesignatedContact.create(DesignatedContact.Type.ADMIN, adminResourceKey1),
-                    DesignatedContact.create(DesignatedContact.Type.ADMIN, adminResourceKey2),
-                    DesignatedContact.create(DesignatedContact.Type.TECH, techResourceKey1),
-                    DesignatedContact.create(DesignatedContact.Type.TECH, techResourceKey2)))
+                    DesignatedContact.create(DesignatedContact.Type.ADMIN, adminContactKey),
+                    DesignatedContact.create(DesignatedContact.Type.TECH, techContactKey)))
             .setStatusValues(ImmutableSet.of(PENDING_DELETE))
             .build());
 
     runCommandForced(
         "--client=NewRegistrar",
-        "--admins=crr-admin2,crr-admin3",
-        "--techs=crr-tech2,crr-tech3",
+        "--admins=crr-admin3",
+        "--techs=crr-tech3",
         "--superuser",
         "--force_in_pending_delete",
         "example.tld");
     eppVerifier.expectSuperuser().verifySent("domain_update_set_contacts.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_cantUpdateRegistryLockedDomainEvenAsSuperuser() {
     HostResource host = persistActiveHost("ns1.zdns.google");
     ImmutableSet<VKey<HostResource>> nameservers = ImmutableSet.of(host.createVKey());
@@ -393,7 +385,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
         .contains("The domain 'example.tld' has status SERVER_UPDATE_PROHIBITED.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_cantUpdatePendingDeleteDomainEvenAsSuperuser_withoutPassingOverrideFlag() {
     HostResource host = persistActiveHost("ns1.zdns.google");
     ImmutableSet<VKey<HostResource>> nameservers = ImmutableSet.of(host.createVKey());
@@ -416,7 +408,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     assertThat(e).hasMessageThat().contains("The domain 'example.tld' has status PENDING_DELETE.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_duplicateDomains() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -431,7 +423,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     assertThat(thrown).hasMessageThat().contains("Duplicate arguments found");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingDomain() {
     ParameterException thrown =
         assertThrows(
@@ -442,7 +434,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     assertThat(thrown).hasMessageThat().contains("Main parameters are required");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingClientId() {
     ParameterException thrown =
         assertThrows(
@@ -451,7 +443,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     assertThat(thrown).hasMessageThat().contains("--client");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_addTooManyNameServers() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -470,7 +462,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     assertThat(thrown).hasMessageThat().contains("You can add at most 13 nameservers");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_providedNameserversAndAddNameservers() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -488,7 +480,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 + "you cannot use the add_nameservers and remove_nameservers flags.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_providedNameserversAndRemoveNameservers() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -506,7 +498,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 + "you cannot use the add_nameservers and remove_nameservers flags.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_providedAdminsAndAddAdmins() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -524,7 +516,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 + "you cannot use the add_admins and remove_admins flags.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_providedAdminsAndRemoveAdmins() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -542,7 +534,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 + "you cannot use the add_admins and remove_admins flags.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_providedTechsAndAddTechs() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -559,7 +551,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             "If you provide the techs flag, you cannot use the add_techs and remove_techs flags.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_providedTechsAndRemoveTechs() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -576,7 +568,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
             "If you provide the techs flag, you cannot use the add_techs and remove_techs flags.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_providedStatusesAndAddStatuses() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -594,7 +586,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 + "you cannot use the add_statuses and remove_statuses flags.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_providedStatusesAndRemoveStatuses() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -612,7 +604,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 + "you cannot use the add_statuses and remove_statuses flags.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_provideDsRecordsAndAddDsRecords() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -630,7 +622,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 + "you cannot use the add_ds_records and remove_ds_records flags.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_provideDsRecordsAndRemoveDsRecords() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -648,7 +640,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 + "you cannot use the add_ds_records and remove_ds_records flags.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_clearDsRecordsAndAddDsRecords() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -666,7 +658,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 + "you cannot use the add_ds_records and remove_ds_records flags.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_clearDsRecordsAndRemoveDsRecords() {
     IllegalArgumentException thrown =
         assertThrows(
