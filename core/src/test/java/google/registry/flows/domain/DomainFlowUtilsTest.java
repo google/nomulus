@@ -33,9 +33,11 @@ import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.TrailingDashException;
 import google.registry.model.domain.DomainBase;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
+@DualDatabaseTest
 class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase> {
 
   @BeforeEach
@@ -45,12 +47,12 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     persistResource(AppEngineExtension.makeRegistrar1().asBuilder().build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testValidateDomainNameAcceptsValidName() throws EppException {
     assertThat(DomainFlowUtils.validateDomainName("example.tld")).isNotNull();
   }
 
-  @Test
+  @TestOfyAndSql
   void testValidateDomainName_IllegalCharacters() {
     BadDomainNameCharacterException thrown =
         assertThrows(
@@ -62,7 +64,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testValidateDomainName_DomainNameWithEmptyParts() {
     EmptyDomainNamePartException thrown =
         assertThrows(
@@ -72,7 +74,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testValidateDomainName_DomainNameWithLessThanTwoParts() {
     BadDomainNamePartsCountException thrown =
         assertThrows(
@@ -84,7 +86,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testValidateDomainName_invalidTLD() {
     TldDoesNotExistException thrown =
         assertThrows(
@@ -96,7 +98,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testValidateDomainName_DomainNameIsTooLong() {
     DomainLabelTooLongException thrown =
         assertThrows(
@@ -110,7 +112,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testValidateDomainName_leadingDash() {
     LeadingDashException thrown =
         assertThrows(
@@ -119,7 +121,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testValidateDomainName_trailingDash() {
     TrailingDashException thrown =
         assertThrows(
@@ -128,7 +130,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testValidateDomainName_invalidIDN() {
     InvalidPunycodeException thrown =
         assertThrows(
@@ -140,7 +142,7 @@ class DomainFlowUtilsTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBas
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testValidateDomainName_containsInvalidDashes() {
     DashesInThirdAndFourthException thrown =
         assertThrows(

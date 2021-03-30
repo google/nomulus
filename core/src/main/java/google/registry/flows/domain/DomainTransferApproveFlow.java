@@ -27,13 +27,13 @@ import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurr
 import static google.registry.flows.domain.DomainTransferUtils.createGainingTransferPollMessage;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
 import static google.registry.model.ResourceTransferUtils.approvePendingTransfer;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
@@ -132,6 +132,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .setBillingTime(now.plus(Registry.get(tld).getTransferGracePeriodLength()))
                     .setParent(historyEntry)
                     .build());
+    ImmutableList.Builder<ImmutableObject> entitiesToSave = new ImmutableList.Builder<>();
+    entitiesToSave.add(historyEntry);
     // If we are within an autorenew grace period, cancel the autorenew billing event and don't
     // increase the registration time, since the transfer subsumes the autorenew's extra year.
     GracePeriod autorenewGrace =
@@ -143,7 +145,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
       // then the gaining registrar is not charged for the one year renewal and the losing registrar
       // still needs to be charged for the auto-renew.
       if (billingEvent.isPresent()) {
-        ofy().save().entity(
+        entitiesToSave.add(
             BillingEvent.Cancellation.forGracePeriod(autorenewGrace, historyEntry, targetId));
       }
     }
@@ -190,31 +192,26 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setAutorenewPollMessage(gainingClientAutorenewPollMessage.createVKey())
             // Remove all the old grace periods and add a new one for the transfer.
             .setGracePeriods(
-                billingEvent.isPresent()
-                    ? ImmutableSet.of(
-                        GracePeriod.forBillingEvent(
-                            GracePeriodStatus.TRANSFER,
-                            existingDomain.getRepoId(),
-                            billingEvent.get()))
-                    : ImmutableSet.of())
+                billingEvent
+                    .map(
+                        oneTime ->
+                            ImmutableSet.of(
+                                GracePeriod.forBillingEvent(
+                                    GracePeriodStatus.TRANSFER,
+                                    existingDomain.getRepoId(),
+                                    oneTime)))
+                    .orElseGet(ImmutableSet::of))
             .setLastEppUpdateTime(now)
             .setLastEppUpdateClientId(clientId)
             .build();
     // Create a poll message for the gaining client.
-    PollMessage gainingClientPollMessage = createGainingTransferPollMessage(
-        targetId,
-        newDomain.getTransferData(),
-        newExpirationTime,
-        historyEntry);
-    ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
-    entitiesToSave.add(
-        newDomain,
-        historyEntry,
-        autorenewEvent,
-        gainingClientPollMessage,
-        gainingClientAutorenewPollMessage);
+    PollMessage gainingClientPollMessage =
+        createGainingTransferPollMessage(
+            targetId, newDomain.getTransferData(), newExpirationTime, historyEntry);
     billingEvent.ifPresent(entitiesToSave::add);
-    ofy().save().entities(entitiesToSave.build());
+    entitiesToSave.add(
+        autorenewEvent, gainingClientPollMessage, gainingClientAutorenewPollMessage, newDomain);
+    tm().putAll(entitiesToSave.build());
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
     tm().delete(existingDomain.getTransferData().getServerApproveEntities());
