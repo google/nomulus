@@ -23,6 +23,7 @@ import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registrar.Registrar.checkValidEmail;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
 import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
@@ -200,17 +201,34 @@ public class RegistrarContact extends ImmutableObject
    * relevant Registrar entity with the {@link Registrar#contactsRequireSyncing} field set to true.
    */
   public static void updateContacts(
-      final Registrar registrar, final Set<RegistrarContact> contacts) {
+      final Registrar registrar, final ImmutableSet<RegistrarContact> contacts) {
     tm().transact(
             () -> {
-              ofy()
-                  .delete()
-                  .keys(
-                      difference(
-                          ImmutableSet.copyOf(
-                              ofy().load().type(RegistrarContact.class).ancestor(registrar).keys()),
-                          contacts.stream().map(Key::create).collect(toImmutableSet())));
-              ofy().save().entities(contacts);
+              if (tm().isOfy()) {
+                ImmutableSet<Key<RegistrarContact>> existingKeys =
+                    ImmutableSet.copyOf(
+                        ofy().load().type(RegistrarContact.class).ancestor(registrar).keys());
+                tm().delete(
+                        difference(
+                                existingKeys,
+                                contacts.stream().map(Key::create).collect(toImmutableSet()))
+                            .stream()
+                            .map(key -> VKey.createOfy(RegistrarContact.class, key))
+                            .collect(toImmutableSet()));
+              } else {
+                ImmutableSet<String> emailAddressesToKeep =
+                    contacts.stream()
+                        .map(RegistrarContact::getEmailAddress)
+                        .collect(toImmutableSet());
+                jpaTm()
+                    .query(
+                        "DELETE FROM RegistrarPoc WHERE registrarId = :registrarId AND "
+                            + "emailAddress NOT IN :emailAddressesToKeep")
+                    .setParameter("registrarId", registrar.getClientId())
+                    .setParameter("emailAddressesToKeep", emailAddressesToKeep)
+                    .executeUpdate();
+              }
+              tm().putAll(contacts);
             });
   }
 
