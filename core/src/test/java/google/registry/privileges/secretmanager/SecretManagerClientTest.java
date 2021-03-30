@@ -78,7 +78,7 @@ public class SecretManagerClientTest {
   }
 
   @AfterEach
-  void afterEach() throws IOException {
+  void afterEach() {
     if (isUnitTest) {
       return;
     }

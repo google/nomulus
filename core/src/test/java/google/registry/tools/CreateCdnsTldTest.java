@@ -76,7 +76,7 @@ class CreateCdnsTldTest extends CommandTestCase<CreateCdnsTld> {
 
   @Test
   @MockitoSettings(strictness = Strictness.LENIENT)
-  void testSandboxTldRestrictions() throws Exception {
+  void testSandboxTldRestrictions() {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

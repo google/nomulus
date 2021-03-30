@@ -20,6 +20,7 @@ import static google.registry.model.ImmutableObjectSubject.immutableObjectCorres
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.AppEngineExtension.makeRegistrar2;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
@@ -42,7 +43,6 @@ import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
-import google.registry.model.registrar.Registrar;
 import google.registry.model.registry.Registries;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -144,13 +144,9 @@ public class DomainHistoryTest extends EntityTestCase {
         .transact(
             () -> {
               jpaTm().insert(registry);
-              Registrar registrar =
-                  appEngine
-                      .makeRegistrar2()
-                      .asBuilder()
-                      .setAllowedTlds(ImmutableSet.of("tld"))
-                      .build();
-              jpaTm().insert(registrar);
+              jpaTm()
+                  .insert(
+                      makeRegistrar2().asBuilder().setAllowedTlds(ImmutableSet.of("tld")).build());
             });
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");

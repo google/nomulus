@@ -32,7 +32,7 @@ public interface DnsCountQueryCoordinator {
   /**
    * Class to carry parameters for a new coordinator.
    *
-   * If your report query requires any additional parameters, add them here.
+   * <p>If your report query requires any additional parameters, add them here.
    */
   class Params {
     public BigqueryConnection bigquery;
@@ -49,6 +49,12 @@ public interface DnsCountQueryCoordinator {
   /** Creates the string used to query bigtable for DNS count information. */
   String createQuery(YearMonth yearMonth);
 
-  /** Do any necessry preparation for the DNS query. */
-  void prepareForQuery(YearMonth yearMonth) throws Exception;
+  /**
+   * Do any necessary preparation for the DNS query.
+   *
+   * <p>This potentially throws {@link InterruptedException} because some implementations use
+   * interruptible futures to prepare the query (and the correct thing to do with such exceptions is
+   * to handle them correctly or propagate them as-is, no {@link RuntimeException} wrapping).
+   */
+  void prepareForQuery(YearMonth yearMonth) throws InterruptedException;
 }

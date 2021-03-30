@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import javax.annotation.Nullable;
-import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
@@ -118,11 +117,8 @@ public final class Ghostryde {
   static final String INNER_FILENAME = "file.xml";
   static final DateTime INNER_MODIFICATION_TIME = DateTime.parse("2000-01-01TZ");
 
-  /**
-   * Creates a ghostryde file from an in-memory byte array.
-   */
-  public static byte[] encode(byte[] data, PGPPublicKey key)
-      throws IOException, PGPException {
+  /** Creates a ghostryde file from an in-memory byte array. */
+  public static byte[] encode(byte[] data, PGPPublicKey key) throws IOException {
     checkNotNull(data, "data");
     checkArgument(key.isEncryptionKey(), "not an encryption key");
     ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -132,11 +128,8 @@ public final class Ghostryde {
     return output.toByteArray();
   }
 
-  /**
-   * Deciphers a ghostryde file from an in-memory byte array.
-   */
-  public static byte[] decode(byte[] data, PGPPrivateKey key)
-      throws IOException, PGPException {
+  /** Deciphers a ghostryde file from an in-memory byte array. */
+  public static byte[] decode(byte[] data, PGPPrivateKey key) throws IOException {
     checkNotNull(data, "data");
     ByteArrayInputStream dataStream = new ByteArrayInputStream(data);
     ByteArrayOutputStream output = new ByteArrayOutputStream();

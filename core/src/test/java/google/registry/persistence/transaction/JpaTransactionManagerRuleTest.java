@@ -52,7 +52,7 @@ public class JpaTransactionManagerRuleTest {
     jpaTm()
         .transact(
             () -> {
-              List results =
+              List<?> results =
                   jpaTm()
                       .getEntityManager()
                       .createNativeQuery("SELECT * FROM \"TestEntity\"")

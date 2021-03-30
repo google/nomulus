@@ -74,9 +74,8 @@ public final class RydeEncoder extends FilterOutputStream {
     OutputStream kompressor = closer.register(openCompressor(encryptLayer));
     OutputStream fileLayer =
         closer.register(openPgpFileWriter(kompressor, filenamePrefix + ".tar", modified));
-    OutputStream tarLayer =
+    this.out =
         closer.register(openTarWriter(fileLayer, dataLength, filenamePrefix + ".xml", modified));
-    this.out = tarLayer;
   }
 
   /**

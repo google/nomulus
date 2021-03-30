@@ -54,7 +54,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link Registry}. */
 @DualDatabaseTest
-public class RegistryTest extends EntityTestCase {
+public final class RegistryTest extends EntityTestCase {
 
   RegistryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
@@ -66,7 +66,7 @@ public class RegistryTest extends EntityTestCase {
   }
 
   @TestOfyAndSql
-  public void testPersistence_updateReservedAndPremiumListSuccessfully() {
+  void testPersistence_updateReservedAndPremiumListSuccessfully() {
     ReservedList rl15 = persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED");
     PremiumList pl = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
     Registry registry =

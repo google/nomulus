@@ -33,7 +33,7 @@ public class HealthCheckHandler extends ChannelInboundHandlerAdapter {
   }
 
   @Override
-  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+  public void channelRead(ChannelHandlerContext ctx, Object msg) {
     ByteBuf buf = (ByteBuf) msg;
     if (buf.equals(checkRequest)) {
       ChannelFuture unusedFuture = ctx.writeAndFlush(checkResponse);

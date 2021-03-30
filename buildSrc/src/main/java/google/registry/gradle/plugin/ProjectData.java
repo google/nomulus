@@ -91,7 +91,7 @@ abstract class ProjectData {
       /** The task was actually run and has finished successfully. */
       SUCCESS,
       /** The task was up-to-date and successful, and hence didn't need to run again. */
-      UP_TO_DATE;
+      UP_TO_DATE
     }
 
     abstract String uniqueName();

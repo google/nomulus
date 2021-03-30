@@ -44,8 +44,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.beam.sdk.values.KV;
 import org.joda.time.DateTime;
@@ -113,7 +111,7 @@ public class BackupTestStoreTest {
     assertWithMessage("Directory %s should not exist.", exportFolder.getAbsoluteFile())
         .that(exportFolder.exists())
         .isFalse();
-    File actualExportFolder = export(exportRootPath, Collections.EMPTY_SET);
+    File actualExportFolder = export(exportRootPath, ImmutableSet.of());
     assertThat(actualExportFolder).isEquivalentAccordingToCompareTo(exportFolder);
     try (Stream<String> files =
         Files.walk(exportFolder.toPath())
@@ -136,14 +134,14 @@ public class BackupTestStoreTest {
     assertWithMessage("Directory %s should not exist.", exportFolder.getAbsoluteFile())
         .that(exportFolder.exists())
         .isFalse();
-    assertThat(export(exportRootPath, Collections.EMPTY_SET))
+    assertThat(export(exportRootPath, ImmutableSet.of()))
         .isEquivalentAccordingToCompareTo(exportFolder);
   }
 
   @Test
   void export_dataReadBack() throws IOException {
     String exportRootPath = tempDir.getAbsolutePath();
-    File exportFolder = export(exportRootPath, Collections.EMPTY_SET);
+    File exportFolder = export(exportRootPath, ImmutableSet.of());
     ImmutableList<Object> loadedRegistries =
         loadExportedEntities(new File(exportFolder, "/all_namespaces/kind_Registry/output-0"));
     assertThat(loadedRegistries).containsExactly(registry);
@@ -228,7 +226,7 @@ public class BackupTestStoreTest {
     assertThat(CommitLogImports.loadEntities(commitLogFile)).isEmpty();
   }
 
-  private File export(String exportRootPath, Set<Key<?>> excludes) throws IOException {
+  private File export(String exportRootPath, ImmutableSet<Key<?>> excludes) throws IOException {
     return store.export(
         exportRootPath,
         ImmutableList.of(ContactResource.class, DomainBase.class, Registry.class),

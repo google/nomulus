@@ -58,7 +58,7 @@ class GenerateSqlErDiagramCommandTest extends CommandTestCase<GenerateSqlErDiagr
   }
 
   @Test
-  void validateErDiagramIsUpToDate() throws Exception {
+  void validateErDiagramIsUpToDate() {
     String goldenFullDiagram =
         ResourceUtils.readResourceUtf8(
             Resources.getResource(

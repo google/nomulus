@@ -40,7 +40,7 @@ import org.junit.jupiter.api.Disabled;
 
 /** Unit tests for {@link Spec11ThreatMatch}. */
 @DualDatabaseTest
-public class Spec11ThreatMatchTest extends EntityTestCase {
+public final class Spec11ThreatMatchTest extends EntityTestCase {
 
   private static final String REGISTRAR_ID = "registrar";
   private static final LocalDate DATE = LocalDate.parse("2020-06-10", ISODateTimeFormat.date());

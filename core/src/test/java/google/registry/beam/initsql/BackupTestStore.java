@@ -141,8 +141,7 @@ public final class BackupTestStore implements AutoCloseable {
    *     to simulate an inconsistent export
    * @return directory where data is exported
    */
-  File export(
-      String exportRootPath, Iterable<Class<?>> pojoTypes, Set<Key<? extends Object>> excludes)
+  File export(String exportRootPath, Iterable<Class<?>> pojoTypes, Set<Key<?>> excludes)
       throws IOException {
     File exportDirectory = getExportDirectory(exportRootPath);
     for (Class<?> pojoType : pojoTypes) {

@@ -42,7 +42,6 @@ import google.registry.request.auth.Auth;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.inject.Inject;
-import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -96,7 +95,7 @@ public final class RdeReportAction implements Runnable, EscrowTask {
   }
 
   /** Reads and decrypts the XML file from cloud storage. */
-  private byte[] readReportFromGcs(GcsFilename reportFilename) throws IOException, PGPException {
+  private byte[] readReportFromGcs(GcsFilename reportFilename) throws IOException {
     try (InputStream gcsInput = gcsUtils.openInputStream(reportFilename);
         InputStream ghostrydeDecoder = Ghostryde.decoder(gcsInput, stagingDecryptionKey)) {
       return ByteStreams.toByteArray(ghostrydeDecoder);

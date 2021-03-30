@@ -66,11 +66,9 @@ abstract class ReadEntityFromKeyPathCommand<T> extends MutatingCommand {
       Key<?> untypedKey = parseKeyPath(keyPath);
       Object entity = ofy().load().key(untypedKey).now();
       if (entity == null) {
-        System.err.println(
-            String.format(
-                "Entity %s read from %s doesn't exist in Datastore! Skipping.",
-                untypedKey,
-                keyPathsFile == null ? "STDIN" : "File " + keyPathsFile.getAbsolutePath()));
+        System.err.printf(
+            "Entity %s read from %s doesn't exist in Datastore! Skipping.%n",
+            untypedKey, keyPathsFile == null ? "STDIN" : "File " + keyPathsFile.getAbsolutePath());
         continue;
       }
       Class<T> clazz = new TypeInstantiator<T>(getClass()) {}.getExactType();

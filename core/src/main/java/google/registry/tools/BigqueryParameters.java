@@ -52,7 +52,7 @@ final class BigqueryParameters {
   private int bigqueryNumThreads = DEFAULT_NUM_THREADS;
 
   /** Returns a new BigqueryConnection constructed according to the delegate's flag settings. */
-  BigqueryConnection newConnection(BigqueryConnection.Builder connectionBuilder) throws Exception {
+  BigqueryConnection newConnection(BigqueryConnection.Builder connectionBuilder) {
     return connectionBuilder
         .setExecutorService(Executors.newFixedThreadPool(bigqueryNumThreads))
         .setDatasetId(bigqueryDataset)

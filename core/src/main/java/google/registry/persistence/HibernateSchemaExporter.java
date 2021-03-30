@@ -51,7 +51,7 @@ public class HibernateSchemaExporter {
   }
 
   /** Exports DDL script to the {@code outputFile} for the given {@code entityClasses}. */
-  public void export(ImmutableList<Class> entityClasses, File outputFile) {
+  public void export(ImmutableList<Class<?>> entityClasses, File outputFile) {
     // Configure Hibernate settings.
     Map<String, String> settings = Maps.newHashMap();
     settings.put(Environment.DIALECT, NomulusPostgreSQLDialect.class.getName());
@@ -85,7 +85,7 @@ public class HibernateSchemaExporter {
     }
   }
 
-  private ImmutableList<Class> findAllConverters() {
+  private ImmutableList<Class<?>> findAllConverters() {
     return PersistenceXmlUtility.getManagedClasses().stream()
         .filter(AttributeConverter.class::isAssignableFrom)
         .collect(toImmutableList());

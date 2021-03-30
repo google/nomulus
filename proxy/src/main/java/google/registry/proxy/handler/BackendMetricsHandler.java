@@ -102,8 +102,7 @@ public class BackendMetricsHandler extends ChannelDuplexHandler {
   }
 
   @Override
-  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
-      throws Exception {
+  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
     checkArgument(msg instanceof FullHttpRequest, "Outgoing request must be FullHttpRequest.");
     // For WHOIS, client certificate hash is always set to "none".
     // For EPP, the client hash attribute is set upon handshake completion, before the first HELLO

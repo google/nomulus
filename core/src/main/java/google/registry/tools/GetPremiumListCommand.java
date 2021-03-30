@@ -31,7 +31,7 @@ public class GetPremiumListCommand implements CommandWithRemoteApi {
   private List<String> mainParameters;
 
   @Override
-  public void run() throws Exception {
+  public void run() {
     for (String premiumListName : mainParameters) {
       if (PremiumListDualDao.exists(premiumListName)) {
         System.out.printf(
@@ -42,7 +42,7 @@ public class GetPremiumListCommand implements CommandWithRemoteApi {
                 .map(PremiumListEntry::toString)
                 .collect(Collectors.joining("\n")));
       } else {
-        System.out.println(String.format("No list found with name %s.", premiumListName));
+        System.out.printf("No list found with name %s.%n", premiumListName);
       }
     }
   }

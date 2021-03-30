@@ -41,7 +41,7 @@ public class PersistenceXmlUtility {
   }
 
   /** Returns all managed classes defined in persistence.xml. */
-  public static ImmutableList<Class> getManagedClasses() {
+  public static ImmutableList<Class<?>> getManagedClasses() {
     return getParsedPersistenceXmlDescriptor().getManagedClassNames().stream()
         .map(
             className -> {

@@ -87,8 +87,8 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
 
   private final Clock clock;
   private final Optional<String> initScriptPath;
-  private final ImmutableList<Class> extraEntityClasses;
-  private final ImmutableMap userProperties;
+  private final ImmutableList<Class<?>> extraEntityClasses;
+  private final ImmutableMap<String, String> userProperties;
 
   private static final JdbcDatabaseContainer database = create();
   private static final HibernateSchemaExporter exporter =
@@ -102,7 +102,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
 
   private JpaTransactionManager cachedTm;
   // Hash of the ORM entity names requested by this rule instance.
-  private int entityHash;
+  private final int entityHash;
 
   // Whether to create nomulus tables in the test db. Right now, only the JpaTestRules set this to
   // false.
@@ -112,7 +112,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
       Clock clock,
       Optional<String> initScriptPath,
       boolean includeNomulusSchema,
-      ImmutableList<Class> extraEntityClasses,
+      ImmutableList<Class<?>> extraEntityClasses,
       ImmutableMap<String, String> userProperties) {
     this.clock = clock;
     this.initScriptPath = initScriptPath;
@@ -125,7 +125,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   JpaTransactionManagerExtension(
       Clock clock,
       Optional<String> initScriptPath,
-      ImmutableList<Class> extraEntityClasses,
+      ImmutableList<Class<?>> extraEntityClasses,
       ImmutableMap<String, String> userProperties) {
     this.clock = clock;
     this.initScriptPath = initScriptPath;
@@ -143,7 +143,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   }
 
   private static int getOrmEntityHash(
-      Optional<String> initScriptPath, ImmutableList<Class> extraEntityClasses) {
+      Optional<String> initScriptPath, ImmutableList<Class<?>> extraEntityClasses) {
     return Streams.concat(
             Stream.of(initScriptPath.orElse("")),
             extraEntityClasses.stream().map(Class::getCanonicalName))
@@ -172,7 +172,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
       executeSql(new String(Files.readAllBytes(tempSqlFile.toPath()), StandardCharsets.UTF_8));
     }
 
-    ImmutableMap properties = PersistenceModule.provideDefaultDatabaseConfigs();
+    ImmutableMap<String, String> properties = PersistenceModule.provideDefaultDatabaseConfigs();
     if (!userProperties.isEmpty()) {
       // If there are user properties, create a new properties object with these added.
       Map<String, String> mergedProperties = Maps.newHashMap();
@@ -338,7 +338,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
     return Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();
   }
 
-  private ImmutableList<Class> getTestEntities() {
+  private ImmutableList<Class<?>> getTestEntities() {
     // We have to add the TransactionEntity to extra entities, as this is required by the
     // transaction replication mechanism.
     return Stream.concat(extraEntityClasses.stream(), Stream.of(TransactionEntity.class))

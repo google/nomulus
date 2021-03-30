@@ -46,7 +46,7 @@ public class ClaimsListParser {
     checkArgument(firstLine.size() == 2, String.format(
         "Line 1: Expected 2 elements, found %d", firstLine.size()));
 
-    Integer version = Integer.valueOf(firstLine.get(0));
+    int version = Integer.parseInt(firstLine.get(0));
     DateTime creationTime = DateTime.parse(firstLine.get(1));
     checkArgument(version == 1, String.format(
         "Line 1: Expected version 1, found %d", version));

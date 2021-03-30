@@ -270,7 +270,7 @@ public abstract class ProbingAction implements Callable<ChannelFuture> {
             .handler(
                 new ChannelInitializer<Channel>() {
                   @Override
-                  protected void initChannel(Channel outboundChannel) throws Exception {
+                  protected void initChannel(Channel outboundChannel) {
                     // Uses Handlers from Protocol to fill pipeline in order of provided handlers.
                     for (Provider<? extends ChannelHandler> handlerProvider :
                         protocol().handlerProviders()) {

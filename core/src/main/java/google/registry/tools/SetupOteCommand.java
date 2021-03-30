@@ -123,7 +123,7 @@ final class SetupOteCommand extends ConfirmingCommand implements CommandWithRemo
   }
 
   @Override
-  public String execute() throws Exception {
+  public String execute() {
     ImmutableMap<String, String> clientIdToTld = oteAccountBuilder.buildAndPersist();
 
     StringBuilder output = new StringBuilder();

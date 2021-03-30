@@ -34,7 +34,7 @@ class SetSqlReplayCheckpointCommandTest extends CommandTestCase<SetSqlReplayChec
   }
 
   @Test
-  void testFailure_multipleParams() throws Exception {
+  void testFailure_multipleParams() {
     DateTime one = DateTime.parse("2000-06-06T22:00:00.0Z");
     DateTime two = DateTime.parse("2001-06-06T22:00:00.0Z");
     assertThrows(IllegalArgumentException.class, () -> runCommand(one.toString(), two.toString()));

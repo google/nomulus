@@ -35,7 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link Spec11ThreatMatchDao}. */
 @DualDatabaseTest
-public class Spec11ThreatMatchDaoTest extends EntityTestCase {
+class Spec11ThreatMatchDaoTest extends EntityTestCase {
 
   private static final LocalDate TODAY = new LocalDate(2020, 8, 4);
   private static final LocalDate YESTERDAY = new LocalDate(2020, 8, 3);

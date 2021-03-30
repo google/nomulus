@@ -47,7 +47,7 @@ public abstract class ConfirmingCommand implements Command {
   }
 
   /** Run any pre-execute command checks and return true if they all pass. */
-  protected boolean checkExecutionState() throws Exception {
+  protected boolean checkExecutionState() {
     return true;
   }
 

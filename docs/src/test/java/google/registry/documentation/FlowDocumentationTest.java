@@ -16,7 +16,6 @@ package google.registry.documentation;
 
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.util.BuildPathUtils.getProjectRoot;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
 import java.nio.file.Files;
@@ -41,9 +40,7 @@ class FlowDocumentationTest {
   @Test
   void testGeneratedMatchesGolden() throws Exception {
     // Read the markdown file.
-    Path goldenMarkdownPath = GOLDEN_MARKDOWN_FILEPATH;
-
-    String goldenMarkdown = new String(Files.readAllBytes(goldenMarkdownPath), UTF_8);
+    String goldenMarkdown = Files.readString(GOLDEN_MARKDOWN_FILEPATH);
 
     // Don't use Truth's isEqualTo() because the output is huge and unreadable for large files.
     DocumentationGenerator generator = new DocumentationGenerator();

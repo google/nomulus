@@ -50,13 +50,13 @@ public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEach
           // TransactionEntity is trivial, its persistence is tested in TransactionTest.
           "TransactionEntity");
 
-  private static final ImmutableSet<Class> ALL_JPA_ENTITIES =
+  private static final ImmutableSet<Class<?>> ALL_JPA_ENTITIES =
       PersistenceXmlUtility.getManagedClasses().stream()
           .filter(e -> !IGNORE_ENTITIES.contains(e.getSimpleName()))
           .filter(e -> e.isAnnotationPresent(Entity.class))
           .filter(e -> !e.isAnnotationPresent(DiscriminatorValue.class))
           .collect(ImmutableSet.toImmutableSet());
-  private static final Set<Class> allCoveredJpaEntities = Sets.newHashSet();
+  private static final Set<Class<?>> allCoveredJpaEntities = Sets.newHashSet();
   // Map of test class name to boolean flag indicating if it tests any JPA entities.
   private static final Map<String, Boolean> testsJpaEntities = Maps.newHashMap();
 
@@ -81,7 +81,7 @@ public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEach
     testsJpaEntities.clear();
   }
 
-  public static Set<Class> getUncoveredEntities() {
+  public static Set<Class<?>> getUncoveredEntities() {
     return Sets.difference(ALL_JPA_ENTITIES, allCoveredJpaEntities);
   }
 
@@ -99,9 +99,9 @@ public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEach
    *
    * @return true if an instance of {@code entityType} is found in the database and can be read
    */
-  private static boolean isPersisted(Class entityType) {
+  private static boolean isPersisted(Class<?> entityType) {
     try {
-      List result =
+      List<?> result =
           jpaTm()
               .transact(
                   () ->

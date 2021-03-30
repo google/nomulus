@@ -88,8 +88,7 @@ public class FrontendMetricsHandler extends ChannelDuplexHandler {
   }
 
   @Override
-  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
-      throws Exception {
+  public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
     // Only instrument request metrics when the response is actually sent to client.
     // It is OK to check the queue size preemptively here, not when the front element of the queue
     // is acutally removed after the write to the client is successful,  because responses are

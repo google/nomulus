@@ -49,7 +49,7 @@ public class JpaTestRules {
   public static class JpaIntegrationTestExtension extends JpaTransactionManagerExtension {
     private JpaIntegrationTestExtension(
         Clock clock,
-        ImmutableList<Class> extraEntityClasses,
+        ImmutableList<Class<?>> extraEntityClasses,
         ImmutableMap<String, String> userProperties) {
       super(clock, Optional.of(GOLDEN_SCHEMA_SQL_PATH), extraEntityClasses, userProperties);
     }
@@ -63,7 +63,7 @@ public class JpaTestRules {
     private JpaUnitTestExtension(
         Clock clock,
         Optional<String> initScriptPath,
-        ImmutableList<Class> extraEntityClasses,
+        ImmutableList<Class<?>> extraEntityClasses,
         ImmutableMap<String, String> userProperties) {
       super(clock, initScriptPath, false, extraEntityClasses, userProperties);
     }
@@ -105,8 +105,8 @@ public class JpaTestRules {
 
     private String initScript;
     private Clock clock;
-    private List<Class> extraEntityClasses = new ArrayList<Class>();
-    private Map<String, String> userProperties = new HashMap<String, String>();
+    private List<Class<?>> extraEntityClasses = new ArrayList<>();
+    private Map<String, String> userProperties = new HashMap<>();
 
     /**
      * Sets the SQL script to be used to initialize the database. If not set,
@@ -125,7 +125,7 @@ public class JpaTestRules {
     }
 
     /** Adds annotated class(es) to the known entities for the database. */
-    public Builder withEntityClass(Class... classes) {
+    public Builder withEntityClass(Class<?>... classes) {
       this.extraEntityClasses.addAll(ImmutableSet.copyOf(classes));
       return this;
     }

@@ -61,7 +61,7 @@ class FrontendMetricsHandlerTest {
         new EmbeddedChannel(
             new ChannelInitializer<EmbeddedChannel>() {
               @Override
-              protected void initChannel(EmbeddedChannel ch) throws Exception {
+              protected void initChannel(EmbeddedChannel ch) {
                 ch.attr(PROTOCOL_KEY).set(frontendProtocol);
                 ch.attr(CLIENT_CERTIFICATE_HASH_KEY).set(CLIENT_CERT_HASH);
                 ch.pipeline().addLast(handler);

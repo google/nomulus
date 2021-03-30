@@ -115,7 +115,7 @@ class GenerateDnsReportCommandTest extends CommandTestCase<GenerateDnsReportComm
           "2607:f8b0:400d:c00:0:0:0:c1"));
 
   @BeforeEach
-  void beforeEach() throws Exception {
+  void beforeEach() {
     output = tmpDir.resolve("out.dat");
     command.clock = clock;
     clock.setTo(now);

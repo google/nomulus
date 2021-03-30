@@ -146,7 +146,7 @@ class SecuritySettingsTest extends RegistrarSettingsActionTestCase {
   }
 
   @Test
-  void testEmptyOrNullCertificate_doesNotClearOutCurrentOne() throws Exception {
+  void testEmptyOrNullCertificate_doesNotClearOutCurrentOne() {
     Registrar initialRegistrar =
         persistResource(
             loadRegistrar(CLIENT_ID)

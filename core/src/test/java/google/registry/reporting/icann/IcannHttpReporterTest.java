@@ -130,7 +130,7 @@ class IcannHttpReporterTest {
   }
 
   @Test
-  void testFail_transportException() throws Exception {
+  void testFail_transportException() {
     IcannHttpReporter reporter = createReporter();
     reporter.httpTransport =
         createMockTransport(HttpStatusCodes.STATUS_CODE_FORBIDDEN, ByteSource.empty());

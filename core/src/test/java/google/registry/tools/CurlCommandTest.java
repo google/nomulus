@@ -101,7 +101,7 @@ class CurlCommandTest extends CommandTestCase<CurlCommand> {
 
   @Test
   @MockitoSettings(strictness = Strictness.LENIENT)
-  void testPostInvocation_badContentType() throws Exception {
+  void testPostInvocation_badContentType() {
     assertThrows(
         IllegalArgumentException.class,
         () ->

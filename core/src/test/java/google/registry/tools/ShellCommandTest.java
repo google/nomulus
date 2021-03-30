@@ -266,8 +266,7 @@ class ShellCommandTest {
   @Test
   void testEncapsulatedOutputStream_emptyStream() {
     ByteArrayOutputStream backing = new ByteArrayOutputStream();
-    try (PrintStream out =
-        new PrintStream(new ShellCommand.EncapsulatingOutputStream(backing, "out: "))) {}
+    new PrintStream(new ShellCommand.EncapsulatingOutputStream(backing, "out: ")).close();
     assertThat(backing.toString()).isEqualTo("");
   }
 

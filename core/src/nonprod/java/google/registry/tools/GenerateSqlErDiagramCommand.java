@@ -130,15 +130,14 @@ public class GenerateSqlErDiagramCommand implements Command {
       doc.select("body > table > tbody")
           .first()
           .append(
-              String.format(
-                  "<tr>"
-                      + "<td class=\"property_name\">last flyway file</td>"
-                      + "<td id=\""
-                      + FLYWAY_FILE_ELEMENT_ID
-                      + "\" class=\"property_value\">"
-                      + getLastFlywayFileName()
-                      + "</td>"
-                      + "</tr>"));
+              "<tr>"
+                  + "<td class=\"property_name\">last flyway file</td>"
+                  + "<td id=\""
+                  + FLYWAY_FILE_ELEMENT_ID
+                  + "\" class=\"property_value\">"
+                  + getLastFlywayFileName()
+                  + "</td>"
+                  + "</tr>");
 
       // Add pan and zoom support for the embedded SVG in the HTML.
       StringBuilder svgPanZoomLib =

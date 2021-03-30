@@ -101,7 +101,7 @@ public final class NettyExtension implements AfterEachCallback {
     ChannelInitializer<LocalChannel> clientInitializer =
         new ChannelInitializer<LocalChannel>() {
           @Override
-          protected void initChannel(LocalChannel ch) throws Exception {
+          protected void initChannel(LocalChannel ch) {
             // Add the given handler
             ch.pipeline().addLast(handler);
             // Add the "dumpHandler" last to log the incoming message
@@ -178,7 +178,7 @@ public final class NettyExtension implements AfterEachCallback {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
       // In the test we only send messages of type ByteBuf.
       assertThat(msg).isInstanceOf(ByteBuf.class);
       String request = ((ByteBuf) msg).toString(UTF_8);
@@ -189,7 +189,7 @@ public final class NettyExtension implements AfterEachCallback {
 
     /** Saves any inbound error as the cause of the promise failure. */
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
       ChannelFuture unusedFuture =
           ctx.channel().closeFuture().addListener(f -> requestFuture.completeExceptionally(cause));
     }
@@ -205,7 +205,7 @@ public final class NettyExtension implements AfterEachCallback {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
       // In the test we only send messages of type ByteBuf.
       assertThat(msg).isInstanceOf(ByteBuf.class);
       String response = ((ByteBuf) msg).toString(UTF_8);
@@ -218,7 +218,7 @@ public final class NettyExtension implements AfterEachCallback {
 
     /** Saves any inbound error into the failure cause of the promise. */
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
       ctx.channel().closeFuture().addListener(f -> responseFuture.completeExceptionally(cause));
     }
   }

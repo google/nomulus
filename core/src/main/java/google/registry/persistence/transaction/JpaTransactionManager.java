@@ -49,7 +49,7 @@ public interface JpaTransactionManager extends TransactionManager {
   void transactNoRetry(Runnable work);
 
   /** Deletes the entity by its id, throws exception if the entity is not deleted. */
-  public abstract <T> void assertDelete(VKey<T> key);
+  <T> void assertDelete(VKey<T> key);
 
   /**
    * Releases all resources and shuts down.
