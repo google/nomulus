@@ -18,12 +18,14 @@ import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.jcraft.jsch.ChannelSftp.OVERWRITE;
+import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
 import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD_SFTP;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.util.Arrays.asList;
 
@@ -131,8 +133,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   @Override
   public void runWithLock(final DateTime watermark) throws Exception {
     logger.atInfo().log("Verifying readiness to upload the RDE deposit.");
-    Cursor cursor =
-        ofy().load().key(Cursor.createKey(CursorType.RDE_STAGING, Registry.get(tld))).now();
+    Cursor cursor = transactIfJpaTm(() -> tm().loadByKey(Cursor.createVKey(RDE_STAGING, tld)));
     DateTime stagingCursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(stagingCursorTime, watermark)) {
       throw new NoContentException(
@@ -141,9 +142,10 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
                   + "last RDE staging completion was at %s",
               tld, watermark, stagingCursorTime));
     }
-    Cursor sftpCursor =
-        ofy().load().key(Cursor.createKey(RDE_UPLOAD_SFTP, Registry.get(tld))).now();
-    DateTime sftpCursorTime = getCursorTimeOrStartOfTime(sftpCursor);
+    DateTime sftpCursorTime =
+        transactIfJpaTm(() -> tm().loadByKeyIfPresent(Cursor.createVKey(RDE_UPLOAD_SFTP, tld)))
+            .map(Cursor::getCursorTime)
+            .orElse(START_OF_TIME);
     Duration timeSinceLastSftp = new Duration(sftpCursorTime, clock.nowUtc());
     if (timeSinceLastSftp.isShorterThan(sftpCooldown)) {
       throw new NoContentException(
