@@ -23,12 +23,14 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.deleteResource;
 import static google.registry.testing.DatabaseHelper.getBillingEvents;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
+import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSet;
@@ -45,6 +47,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineExtension;
@@ -168,8 +171,9 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
    */
   void deleteTestDomain(DomainBase domain) {
     Iterable<BillingEvent> billingEvents = getBillingEvents();
-    Iterable<HistoryEntry> historyEntries = tm().loadAllOf(HistoryEntry.class);
-    Iterable<PollMessage> pollMessages = tm().loadAllOf(PollMessage.class);
+    Iterable<? extends HistoryEntry> historyEntries =
+        HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, END_OF_TIME);
+    Iterable<PollMessage> pollMessages = loadAllOf(PollMessage.class);
     tm().transact(
             () -> {
               deleteResource(domain);
