@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
-import static google.registry.batch.AsyncTaskEnqueuer.PATH_RESAVE_ENTITY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.flows.domain.DomainTransferFlowTestCase.persistWithPendingTransfer;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
@@ -64,6 +63,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
+import google.registry.batch.ResaveEntityAction;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
@@ -299,7 +299,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
-            .url(PATH_RESAVE_ENTITY)
+            .url(ResaveEntityAction.PATH)
             .method("POST")
             .header("Host", "backend.hostname.fake")
             .header("content-type", "application/x-www-form-urlencoded")

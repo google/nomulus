@@ -23,6 +23,7 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertPollMessages;
 import static google.registry.testing.DatabaseHelper.createPollMessageForImplicitTransfer;
+import static google.registry.testing.DatabaseHelper.deleteTestDomain;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -338,7 +339,7 @@ class DomainTransferCancelFlowTest
 
   @Test
   void testFailure_nonexistentDomain() throws Exception {
-    deleteTestDomain(domain);
+    deleteTestDomain(domain, clock.nowUtc());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_cancel.xml"));

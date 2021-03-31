@@ -17,10 +17,9 @@ package google.registry.batch;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
-import static google.registry.batch.AsyncTaskEnqueuer.PATH_RESAVE_ENTITY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
@@ -43,14 +42,15 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.ofy.Ofy;
 import google.registry.request.Response;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.util.AppEngineServiceUtils;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
@@ -60,6 +60,7 @@ import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link ResaveEntityAction}. */
 @ExtendWith(MockitoExtension.class)
+@DualDatabaseTest
 public class ResaveEntityActionTest {
 
   @RegisterExtension
@@ -93,7 +94,7 @@ public class ResaveEntityActionTest {
   }
 
   @MockitoSettings(strictness = Strictness.LENIENT)
-  @Test
+  @TestOfyAndSql
   void test_domainPendingTransfer_isResavedAndTransferCompleted() {
     DomainBase domain =
         persistDomainWithPendingTransfer(
@@ -110,12 +111,12 @@ public class ResaveEntityActionTest {
     clock.advanceOneMilli();
     assertThat(domain.getCurrentSponsorClientId()).isEqualTo("TheRegistrar");
     runAction(Key.create(domain), DateTime.parse("2016-02-06T10:00:01Z"), ImmutableSortedSet.of());
-    DomainBase resavedDomain = ofy().load().entity(domain).now();
+    DomainBase resavedDomain = loadByEntity(domain);
     assertThat(resavedDomain.getCurrentSponsorClientId()).isEqualTo("NewRegistrar");
     verify(response).setPayload("Entity re-saved.");
   }
 
-  @Test
+  @TestOfyAndSql
   void test_domainPendingDeletion_isResavedAndReenqueued() {
     DomainBase newDomain = newDomainBase("domain.tld");
     DomainBase domain =
@@ -137,13 +138,13 @@ public class ResaveEntityActionTest {
 
     assertThat(domain.getGracePeriods()).isNotEmpty();
     runAction(Key.create(domain), requestedTime, ImmutableSortedSet.of(requestedTime.plusDays(5)));
-    DomainBase resavedDomain = ofy().load().entity(domain).now();
+    DomainBase resavedDomain = loadByEntity(domain);
     assertThat(resavedDomain.getGracePeriods()).isEmpty();
 
     assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
-            .url(PATH_RESAVE_ENTITY)
+            .url(ResaveEntityAction.PATH)
             .method("POST")
             .header("Host", "backend.hostname.fake")
             .header("content-type", "application/x-www-form-urlencoded")

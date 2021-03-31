@@ -18,9 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.PENDING_TRANSFER;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.deleteResource;
+import static google.registry.testing.DatabaseHelper.deleteTestDomain;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
@@ -45,9 +45,11 @@ import google.registry.model.host.HostResource;
 import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DeterministicStringGenerator;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.UserInfo;
 import google.registry.tools.DomainLockUtils;
 import google.registry.util.AppEngineServiceUtils;
@@ -60,7 +62,6 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
@@ -68,6 +69,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link RelockDomainAction}. */
 @ExtendWith(MockitoExtension.class)
+@DualDatabaseTest
 public class RelockDomainActionTest {
 
   private static final String DOMAIN_NAME = "example.tld";
@@ -104,12 +106,12 @@ public class RelockDomainActionTest {
     domain = persistResource(newDomainBase(DOMAIN_NAME, host));
 
     oldLock = domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, CLIENT_ID, POC_ID, false);
-    assertThat(reloadDomain(domain).getStatusValues())
+    assertThat(loadByEntity(domain).getStatusValues())
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
     oldLock =
         domainLockUtils.administrativelyApplyUnlock(
             DOMAIN_NAME, CLIENT_ID, false, Optional.empty());
-    assertThat(reloadDomain(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
+    assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
 
     AppEngineServiceUtils appEngineServiceUtils = mock(AppEngineServiceUtils.class);
     lenient()
@@ -126,10 +128,10 @@ public class RelockDomainActionTest {
     verifyNoMoreInteractions(sendEmailService);
   }
 
-  @Test
+  @TestOfyAndSql
   void testLock() {
     action.run();
-    assertThat(reloadDomain(domain).getStatusValues())
+    assertThat(loadByEntity(domain).getStatusValues())
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
 
     // the old lock should have a reference to the relock
@@ -138,7 +140,7 @@ public class RelockDomainActionTest {
         .isEqualTo(newLock);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_unknownCode() throws Exception {
     action = createAction(12128675309L);
     action.run();
@@ -147,7 +149,7 @@ public class RelockDomainActionTest {
     assertTaskEnqueued(1, 12128675309L, Duration.standardMinutes(10)); // should retry, transient
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_pendingDelete() throws Exception {
     persistResource(domain.asBuilder().setStatusValues(ImmutableSet.of(PENDING_DELETE)).build());
     action.run();
@@ -159,7 +161,7 @@ public class RelockDomainActionTest {
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_pendingTransfer() throws Exception {
     persistResource(domain.asBuilder().setStatusValues(ImmutableSet.of(PENDING_TRANSFER)).build());
     action.run();
@@ -171,7 +173,7 @@ public class RelockDomainActionTest {
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_domainAlreadyLocked() {
     domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, CLIENT_ID, null, true);
     action.run();
@@ -181,7 +183,7 @@ public class RelockDomainActionTest {
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_domainDeleted() throws Exception {
     persistDomainAsDeleted(domain, clock.nowUtc());
     action.run();
@@ -193,7 +195,7 @@ public class RelockDomainActionTest {
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_domainTransferred() throws Exception {
     persistResource(domain.asBuilder().setPersistedCurrentSponsorClientId("NewRegistrar").build());
     action.run();
@@ -207,29 +209,31 @@ public class RelockDomainActionTest {
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 
-  @Test
+  @TestOfyAndSql
   public void testFailure_transientFailure_enqueuesTask() {
     // Hard-delete the domain to simulate a DB failure
-    deleteResource(domain);
+    deleteTestDomain(domain, clock.nowUtc());
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.getPayload()).isEqualTo("Re-lock failed: null");
+    // Cannot assert the entire payload status since the Java object ID will vary
+    assertThat(response.getPayload()).startsWith("Re-lock failed: VKey");
     assertTaskEnqueued(1);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_sufficientTransientFailures_sendsEmail() throws Exception {
     // Hard-delete the domain to simulate a DB failure
-    deleteResource(domain);
+    deleteTestDomain(domain, clock.nowUtc());
     action = createAction(oldLock.getRevisionId(), RelockDomainAction.FAILURES_BEFORE_EMAIL);
     action.run();
     assertTaskEnqueued(RelockDomainAction.FAILURES_BEFORE_EMAIL + 1);
     assertTransientFailureEmail();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.getPayload()).isEqualTo("Re-lock failed: null");
+    // Cannot assert the entire payload status since the Java object ID will vary
+    assertThat(response.getPayload()).startsWith("Re-lock failed: VKey");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_afterSufficientFailures_sendsEmail() throws Exception {
     action = createAction(oldLock.getRevisionId(), RelockDomainAction.FAILURES_BEFORE_EMAIL + 1);
     action.run();
@@ -237,7 +241,7 @@ public class RelockDomainActionTest {
     assertSuccessEmailSent();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_relockAlreadySet() {
     RegistryLock newLock =
         domainLockUtils.administrativelyApplyLock(DOMAIN_NAME, CLIENT_ID, null, true);
@@ -251,9 +255,9 @@ public class RelockDomainActionTest {
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_slowsDown() throws Exception {
-    deleteResource(domain);
+    deleteTestDomain(domain, clock.nowUtc());
     action = createAction(oldLock.getRevisionId(), RelockDomainAction.ATTEMPTS_BEFORE_SLOWDOWN);
     action.run();
     assertTaskEnqueued(
@@ -326,10 +330,6 @@ public class RelockDomainActionTest {
                 String.valueOf(oldUnlockRevisionId))
             .param(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM, String.valueOf(numAttempts))
             .etaDelta(duration.minus(standardSeconds(30)), duration.plus(standardSeconds(30))));
-  }
-
-  private DomainBase reloadDomain(DomainBase domain) {
-    return ofy().load().entity(domain).now();
   }
 
   private RelockDomainAction createAction(Long oldUnlockRevisionId) throws Exception {

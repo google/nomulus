@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
@@ -29,6 +28,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.RegistryLockDao;
 import google.registry.model.reporting.HistoryEntry;
@@ -363,8 +363,8 @@ public final class DomainLockUtils {
     String reason =
         String.format(
             "%s of a domain through a RegistryLock operation", isLock ? "Lock" : "Unlock");
-    HistoryEntry historyEntry =
-        new HistoryEntry.Builder()
+    DomainHistory domainHistory =
+        new DomainHistory.Builder()
             .setClientId(domain.getCurrentSponsorClientId())
             .setBySuperuser(lock.isSuperuser())
             .setRequestedByRegistrar(!lock.isSuperuser())
@@ -373,7 +373,8 @@ public final class DomainLockUtils {
             .setParent(Key.create(domain))
             .setReason(reason)
             .build();
-    ofy().save().entities(domain, historyEntry);
+    tm().update(domain);
+    tm().insert(domainHistory);
     if (!lock.isSuperuser()) { // admin actions shouldn't affect billing
       BillingEvent.OneTime oneTime =
           new BillingEvent.OneTime.Builder()
@@ -383,9 +384,9 @@ public final class DomainLockUtils {
               .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
               .setEventTime(now)
               .setBillingTime(now)
-              .setParent(historyEntry)
+              .setParent(domainHistory)
               .build();
-      ofy().save().entity(oneTime);
+      tm().insert(oneTime);
     }
   }
 }

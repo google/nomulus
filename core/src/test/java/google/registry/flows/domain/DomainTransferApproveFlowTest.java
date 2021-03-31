@@ -23,6 +23,7 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.deleteTestDomain;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.getOnlyPollMessage;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
@@ -529,7 +530,7 @@ class DomainTransferApproveFlowTest
 
   @TestOfyAndSql
   void testFailure_nonexistentDomain() throws Exception {
-    deleteTestDomain(domain);
+    deleteTestDomain(domain, clock.nowUtc());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class,
