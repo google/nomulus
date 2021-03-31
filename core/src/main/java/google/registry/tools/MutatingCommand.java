@@ -21,7 +21,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DatastoreServiceUtils.getNameOrId;
 import static google.registry.util.DiffUtils.prettyPrintEntityDeepDiff;
@@ -33,6 +32,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.VKey;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -75,7 +75,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
     final ImmutableObject newEntity;
 
     /** The key that points to the entity being changed. */
-    final Key<ImmutableObject> key;
+    final VKey<ImmutableObject> key;
 
     public EntityChange(ImmutableObject oldEntity, ImmutableObject newEntity) {
       type = ChangeType.get(oldEntity != null, newEntity != null);
@@ -84,16 +84,16 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
           "Both entity versions in an update must have the same Key.");
       this.oldEntity = oldEntity;
       this.newEntity = newEntity;
-      key = Key.create(MoreObjects.firstNonNull(oldEntity, newEntity));
+      key = VKey.from(Key.create(MoreObjects.firstNonNull(oldEntity, newEntity)));
     }
 
     /** Returns a human-readable ID string for the entity being changed. */
     public String getEntityId() {
       return String.format(
           "%s@%s",
-          key.getKind(),
+          key.getOfyKey().getKind(),
           // NB: try name before id, since name defaults to null, whereas id defaults to 0.
-          getNameOrId(key.getRaw()));
+          getNameOrId(key.getOfyKey().getRaw()));
     }
 
     /** Returns a string representation of this entity change. */
@@ -114,14 +114,14 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
   }
 
   /** Map from entity keys to EntityChange objects representing changes to those entities. */
-  private final LinkedHashMap<Key<ImmutableObject>, EntityChange> changedEntitiesMap =
+  private final LinkedHashMap<VKey<ImmutableObject>, EntityChange> changedEntitiesMap =
       new LinkedHashMap<>();
 
   /** A set of resource keys for which new transactions should be created after. */
-  private final Set<Key<ImmutableObject>> transactionBoundaries = new HashSet<>();
+  private final Set<VKey<ImmutableObject>> transactionBoundaries = new HashSet<>();
 
   @Nullable
-  private Key<ImmutableObject> lastAddedKey;
+  private VKey<ImmutableObject> lastAddedKey;
 
   /**
    * Initializes the command.
@@ -154,20 +154,23 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
   private void executeChange(EntityChange change) {
     // Load the key of the entity to mutate and double-check that it hasn't been
     // modified from the version that existed when the change was prepared.
-    ImmutableObject existingEntity = ofy().load().key(change.key).now();
+    Optional<ImmutableObject> existingEntity = tm().loadByKeyIfPresent(change.key);
     checkState(
-        Objects.equals(change.oldEntity, existingEntity),
+        Objects.equals(change.oldEntity, existingEntity.orElse(null)),
         "Entity changed since init() was called.\n%s",
         prettyPrintEntityDeepDiff(
             (change.oldEntity == null) ? ImmutableMap.of() : change.oldEntity.toDiffableFieldMap(),
-            (existingEntity == null) ? ImmutableMap.of() : existingEntity.toDiffableFieldMap()));
+            existingEntity.isPresent() ? existingEntity.get().toDiffableFieldMap()
+                : ImmutableMap.of()));
     switch (change.type) {
-      case CREATE: // Fall through.
+      case CREATE:
+        tm().insert(change.newEntity);
+        return;
       case UPDATE:
-        ofy().save().entity(change.newEntity).now();
+        tm().update(change.newEntity);
         return;
       case DELETE:
-        ofy().delete().key(change.key).now();
+        tm().delete(change.key);
         return;
     }
     throw new UnsupportedOperationException("Unknown entity change type: " + change.type);

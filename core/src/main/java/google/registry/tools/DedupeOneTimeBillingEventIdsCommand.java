@@ -15,13 +15,13 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameters;
-import com.googlecode.objectify.Key;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.domain.DomainBase;
+import google.registry.persistence.VKey;
 
 /**
  * Command to dedupe {@link BillingEvent.OneTime} entities having duplicate IDs.
@@ -49,9 +49,9 @@ public class DedupeOneTimeBillingEventIdsCommand extends ReadEntityFromKeyPathCo
 
   @Override
   void process(OneTime entity) {
-    Key<BillingEvent> key = Key.create(entity);
-    Key<DomainBase> domainKey = getGrandParentAsDomain(key);
-    DomainBase domain = ofy().load().key(domainKey).now();
+    VKey<OneTime> key = entity.createVKey();
+    VKey<DomainBase> domainKey = getGrandParentAsDomain(key);
+    DomainBase domain = tm().transact(() -> tm().loadByKey(domainKey));
 
     // The BillingEvent.OneTime entity to be resaved should be the billing event created a few
     // years ago, so they should not be referenced from TransferData and GracePeriod in the domain.
@@ -61,7 +61,7 @@ public class DedupeOneTimeBillingEventIdsCommand extends ReadEntityFromKeyPathCo
         .forEach(
             gracePeriod ->
                 checkState(
-                    !gracePeriod.getOneTimeBillingEvent().getOfyKey().equals(key),
+                    !gracePeriod.getOneTimeBillingEvent().equals(key),
                     "Entity %s is referenced by a grace period in domain %s",
                     key,
                     domainKey));
@@ -71,7 +71,7 @@ public class DedupeOneTimeBillingEventIdsCommand extends ReadEntityFromKeyPathCo
     stageEntityKeyChange(entity, uniqIdBillingEvent);
   }
 
-  private static void assertNotInDomainTransferData(DomainBase domainBase, Key<?> key) {
+  private static void assertNotInDomainTransferData(DomainBase domainBase, VKey<?> key) {
     if (!domainBase.getTransferData().isEmpty()) {
       domainBase
           .getTransferData()
@@ -79,10 +79,10 @@ public class DedupeOneTimeBillingEventIdsCommand extends ReadEntityFromKeyPathCo
           .forEach(
               entityKey ->
                   checkState(
-                      !entityKey.getOfyKey().equals(key),
+                      !entityKey.equals(key),
                       "Entity %s is referenced by the transfer data in domain %s",
                       key,
-                      domainBase.createVKey().getOfyKey()));
+                      domainBase.createVKey()));
     }
   }
 }
