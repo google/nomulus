@@ -16,6 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
+import static google.registry.testing.DatabaseHelper.deleteTestDomain;
 import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
@@ -231,7 +232,7 @@ class DomainTransferQueryFlowTest
 
   @Test
   void testFailure_nonexistentDomain() throws Exception {
-    deleteTestDomain(domain);
+    deleteTestDomain(domain, clock.nowUtc());
     ResourceDoesNotExistException thrown =
         assertThrows(
             ResourceDoesNotExistException.class, () -> doFailingTest("domain_transfer_query.xml"));

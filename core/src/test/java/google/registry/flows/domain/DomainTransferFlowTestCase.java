@@ -17,20 +17,15 @@ package google.registry.flows.domain;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createBillingEventForTransfer;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.deleteResource;
-import static google.registry.testing.DatabaseHelper.getBillingEvents;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
-import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
 import static google.registry.testing.DatabaseHelper.persistDomainWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DomainBaseSubject.assertAboutDomains;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSet;
@@ -44,10 +39,8 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
-import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineExtension;
@@ -164,30 +157,6 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .setRecurrenceEndTime(END_OF_TIME)
         .setParent(getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST))
         .build();
-  }
-
-  /**
-   * Delete "domain" and all history records, billing events, poll messages and subordinate hosts.
-   */
-  void deleteTestDomain(DomainBase domain) {
-    Iterable<BillingEvent> billingEvents = getBillingEvents();
-    Iterable<? extends HistoryEntry> historyEntries =
-        HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, END_OF_TIME);
-    Iterable<PollMessage> pollMessages = loadAllOf(PollMessage.class);
-    tm().transact(
-            () -> {
-              deleteResource(domain);
-              for (BillingEvent event : billingEvents) {
-                deleteResource(event);
-              }
-              for (PollMessage pollMessage : pollMessages) {
-                deleteResource(pollMessage);
-              }
-              deleteResource(subordinateHost);
-              for (HistoryEntry hist : historyEntries) {
-                deleteResource(hist);
-              }
-            });
   }
 
   void assertTransferFailed(

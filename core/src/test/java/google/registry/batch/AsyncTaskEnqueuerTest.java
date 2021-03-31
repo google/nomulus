@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
-import static google.registry.batch.AsyncTaskEnqueuer.PATH_RESAVE_ENTITY;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_ACTIONS;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
@@ -100,7 +99,7 @@ public class AsyncTaskEnqueuerTest {
     assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
-            .url(PATH_RESAVE_ENTITY)
+            .url(ResaveEntityAction.PATH)
             .method("POST")
             .header("Host", "backend.hostname.fake")
             .header("content-type", "application/x-www-form-urlencoded")
@@ -122,7 +121,7 @@ public class AsyncTaskEnqueuerTest {
     assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
-            .url(PATH_RESAVE_ENTITY)
+            .url(ResaveEntityAction.PATH)
             .method("POST")
             .header("Host", "backend.hostname.fake")
             .header("content-type", "application/x-www-form-urlencoded")

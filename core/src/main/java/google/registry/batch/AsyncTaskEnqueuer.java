@@ -57,8 +57,6 @@ public final class AsyncTaskEnqueuer {
   public static final String QUEUE_ASYNC_DELETE = "async-delete-pull";
   public static final String QUEUE_ASYNC_HOST_RENAME = "async-host-rename-pull";
 
-  public static final String PATH_RESAVE_ENTITY = "/_dr/task/resaveEntity";
-
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Duration MAX_ASYNC_ETA = Duration.standardDays(30);
 
@@ -112,7 +110,7 @@ public final class AsyncTaskEnqueuer {
     logger.atInfo().log("Enqueuing async re-save of %s to run at %s.", entityKey, whenToResave);
     String backendHostname = appEngineServiceUtils.getServiceHostname("backend");
     TaskOptions task =
-        TaskOptions.Builder.withUrl(PATH_RESAVE_ENTITY)
+        TaskOptions.Builder.withUrl(ResaveEntityAction.PATH)
             .method(Method.POST)
             .header("Host", backendHostname)
             .countdownMillis(etaDuration.getMillis())

@@ -17,7 +17,6 @@ package google.registry.batch;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESAVE_TIMES;
 import static google.registry.batch.AsyncTaskEnqueuer.PARAM_RESOURCE_KEY;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -26,6 +25,7 @@ import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;
@@ -74,16 +74,17 @@ public class ResaveEntityAction implements Runnable {
   public void run() {
     logger.atInfo().log(
         "Re-saving entity %s which was enqueued at %s.", resourceKey, requestedTime);
-    tm().transact(() -> {
-      ImmutableObject entity = ofy().load().key(resourceKey).now();
-      ofy().save().entity(
-          (entity instanceof EppResource)
-              ? ((EppResource) entity).cloneProjectedAtTime(tm().getTransactionTime()) : entity
-      );
-      if (!resaveTimes.isEmpty()) {
-        asyncTaskEnqueuer.enqueueAsyncResave(entity, requestedTime, resaveTimes);
-      }
-    });
+    tm().transact(
+            () -> {
+              ImmutableObject entity = tm().loadByKey(VKey.from(resourceKey));
+              tm().put(
+                      (entity instanceof EppResource)
+                          ? ((EppResource) entity).cloneProjectedAtTime(tm().getTransactionTime())
+                          : entity);
+              if (!resaveTimes.isEmpty()) {
+                asyncTaskEnqueuer.enqueueAsyncResave(entity, requestedTime, resaveTimes);
+              }
+            });
     response.setPayload("Entity re-saved.");
   }
 }
