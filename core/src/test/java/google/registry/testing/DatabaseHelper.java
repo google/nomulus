@@ -68,6 +68,7 @@ import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
+import google.registry.model.EppResourceUtils;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -108,6 +109,7 @@ import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedListDualDatabaseDao;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
@@ -460,6 +462,36 @@ public class DatabaseHelper {
     deleteResource(Registry.get(tld));
     disallowRegistrarAccess("TheRegistrar", tld);
     disallowRegistrarAccess("NewRegistrar", tld);
+  }
+
+  /**
+   * Deletes "domain" and all history records, billing events, poll messages and subordinate hosts.
+   */
+  public static void deleteTestDomain(DomainBase domain, DateTime now) {
+    Iterable<BillingEvent> billingEvents = getBillingEvents();
+    Iterable<? extends HistoryEntry> historyEntries =
+        HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey());
+    Iterable<PollMessage> pollMessages = loadAllOf(PollMessage.class);
+    tm().transact(
+            () -> {
+              deleteResource(domain);
+              for (BillingEvent event : billingEvents) {
+                deleteResource(event);
+              }
+              for (PollMessage pollMessage : pollMessages) {
+                deleteResource(pollMessage);
+              }
+              domain
+                  .getSubordinateHosts()
+                  .forEach(
+                      hostname ->
+                          deleteResource(
+                              EppResourceUtils.loadByForeignKey(HostResource.class, hostname, now)
+                                  .get()));
+              for (HistoryEntry hist : historyEntries) {
+                deleteResource(hist);
+              }
+            });
   }
 
   public static void allowRegistrarAccess(String clientId, String tld) {
