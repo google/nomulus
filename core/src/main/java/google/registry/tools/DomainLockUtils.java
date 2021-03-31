@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.model.EppResourceUtils.loadByForeignKeyCached;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.tools.LockOrUnlockDomainCommand.REGISTRY_LOCK_STATUSES;
@@ -373,7 +372,7 @@ public final class DomainLockUtils {
             .setParent(Key.create(domain))
             .setReason(reason)
             .build();
-    ofy().save().entities(domain, historyEntry);
+    tm().putAll(domain, historyEntry);
     if (!lock.isSuperuser()) { // admin actions shouldn't affect billing
       BillingEvent.OneTime oneTime =
           new BillingEvent.OneTime.Builder()
@@ -385,7 +384,7 @@ public final class DomainLockUtils {
               .setBillingTime(now)
               .setParent(historyEntry)
               .build();
-      ofy().save().entity(oneTime);
+      tm().put(oneTime);
     }
   }
 }

@@ -475,6 +475,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private int internalDelete(VKey<?> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
+    if (IGNORED_ENTITY_CLASSES.contains(key.getKind())) {
+      return 0;
+    }
     EntityType<?> entityType = getEntityType(key.getKind());
     ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getSqlKey());
     // TODO(b/179158393): use Criteria for query to leave not doubt about sql injection risk.

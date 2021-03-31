@@ -16,7 +16,6 @@ package google.registry.batch;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
@@ -33,6 +32,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registry.RegistryLockDao;
+import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
@@ -125,6 +125,7 @@ public class RelockDomainAction implements Runnable {
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
 
     // nb: DomainLockUtils relies on the JPA transaction being the outermost transaction
+    // if we have Datastore as the primary DB (if SQL is the primary DB, it's irrelevant)
     jpaTm().transact(() -> tm().transact(this::relockDomain));
   }
 
@@ -139,12 +140,8 @@ public class RelockDomainAction implements Runnable {
                       new IllegalArgumentException(
                           String.format("Unknown revision ID %d", oldUnlockRevisionId)));
       domain =
-          ofy()
-              .load()
-              .type(DomainBase.class)
-              .id(oldLock.getRepoId())
-              .now()
-              .cloneProjectedAtTime(jpaTm().getTransactionTime());
+          tm().loadByKey(VKey.create(DomainBase.class, oldLock.getRepoId()))
+              .cloneProjectedAtTime(tm().getTransactionTime());
     } catch (Throwable t) {
       handleTransientFailure(Optional.ofNullable(oldLock), t);
       return;
