@@ -64,7 +64,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   }
 
   /** Creates a {@link VKey} which only contains the ofy primary key. */
-  public static <T> VKey<T> createOfy(Class<T> kind, Key<T> ofyKey) {
+  public static <T> VKey<T> createOfy(Class<? extends T> kind, Key<T> ofyKey) {
     checkArgumentNotNull(kind, "kind must not be null");
     checkArgumentNotNull(ofyKey, "ofyKey must not be null");
     return new VKey<T>(kind, ofyKey, null);

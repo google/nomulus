@@ -116,9 +116,10 @@ public class MutatingCommandTest {
 
   @Test
   void testSuccess_create() throws Exception {
-    ImmutableList<VKey<?>> keys = Arrays.asList(host1, host2, registrar1, registrar2).stream()
-        .map(entity -> VKey.from(Key.create(entity)))
-        .collect(toImmutableList());
+    ImmutableList<VKey<?>> keys =
+        Arrays.asList(host1, host2, registrar1, registrar2).stream()
+            .map(entity -> VKey.from(Key.create(entity)))
+            .collect(toImmutableList());
     tm().transact(() -> tm().deleteWithoutBackup(keys));
     MutatingCommand command = new MutatingCommand() {
       @Override

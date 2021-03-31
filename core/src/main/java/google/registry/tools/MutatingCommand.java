@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
+import google.registry.schema.replay.SqlEntity;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -75,7 +76,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
     final ImmutableObject newEntity;
 
     /** The key that points to the entity being changed. */
-    final VKey<ImmutableObject> key;
+    final VKey<?> key;
 
     public EntityChange(ImmutableObject oldEntity, ImmutableObject newEntity) {
       type = ChangeType.get(oldEntity != null, newEntity != null);
@@ -84,7 +85,15 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
           "Both entity versions in an update must have the same Key.");
       this.oldEntity = oldEntity;
       this.newEntity = newEntity;
-      key = VKey.from(Key.create(MoreObjects.firstNonNull(oldEntity, newEntity)));
+      ImmutableObject entity = MoreObjects.firstNonNull(oldEntity, newEntity);
+
+      // This is one of the few cases where it is acceptable to create an asymmetric VKey (using
+      // createOfy()).  We can use this code on DatastoreOnlyEntity's where we can't construct an
+      // SQL key.
+      key =
+          entity instanceof SqlEntity
+              ? VKey.from(Key.create(entity))
+              : VKey.createOfy(entity.getClass(), Key.create(entity));
     }
 
     /** Returns a human-readable ID string for the entity being changed. */
@@ -114,14 +123,12 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
   }
 
   /** Map from entity keys to EntityChange objects representing changes to those entities. */
-  private final LinkedHashMap<VKey<ImmutableObject>, EntityChange> changedEntitiesMap =
-      new LinkedHashMap<>();
+  private final LinkedHashMap<VKey<?>, EntityChange> changedEntitiesMap = new LinkedHashMap<>();
 
   /** A set of resource keys for which new transactions should be created after. */
-  private final Set<VKey<ImmutableObject>> transactionBoundaries = new HashSet<>();
+  private final Set<VKey<?>> transactionBoundaries = new HashSet<>();
 
-  @Nullable
-  private VKey<ImmutableObject> lastAddedKey;
+  @Nullable private VKey<?> lastAddedKey;
 
   /**
    * Initializes the command.
@@ -154,13 +161,14 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
   private void executeChange(EntityChange change) {
     // Load the key of the entity to mutate and double-check that it hasn't been
     // modified from the version that existed when the change was prepared.
-    Optional<ImmutableObject> existingEntity = tm().loadByKeyIfPresent(change.key);
+    Optional<?> existingEntity = tm().loadByKeyIfPresent(change.key);
     checkState(
         Objects.equals(change.oldEntity, existingEntity.orElse(null)),
         "Entity changed since init() was called.\n%s",
         prettyPrintEntityDeepDiff(
             (change.oldEntity == null) ? ImmutableMap.of() : change.oldEntity.toDiffableFieldMap(),
-            existingEntity.isPresent() ? existingEntity.get().toDiffableFieldMap()
+            existingEntity.isPresent()
+                ? ((ImmutableObject) existingEntity.get()).toDiffableFieldMap()
                 : ImmutableMap.of()));
     switch (change.type) {
       case CREATE:

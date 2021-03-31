@@ -38,11 +38,12 @@ import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link DedupeOneTimeBillingEventIdsCommand}.
+/**
+ * Unit tests for {@link DedupeOneTimeBillingEventIdsCommand}.
  *
- * <p>Note that these are _not_ dual database tests even though the action has been converted.  The
- * dedupe was strictly a one-time event that needed to be done prior to moving to SQL.  It should
- * no longer be necessary and we may want to simply remove the command.
+ * <p>Note that these are _not_ dual database tests even though the action has been converted. The
+ * dedupe was strictly a one-time event that needed to be done prior to moving to SQL. It should no
+ * longer be necessary and we may want to simply remove the command.
  */
 class DedupeOneTimeBillingEventIdsCommandTest
     extends CommandTestCase<DedupeOneTimeBillingEventIdsCommand> {
