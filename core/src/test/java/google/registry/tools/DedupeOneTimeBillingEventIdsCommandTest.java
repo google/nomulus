@@ -15,8 +15,8 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -38,7 +38,13 @@ import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link DedupeOneTimeBillingEventIdsCommand}. */
+/**
+ * Unit tests for {@link DedupeOneTimeBillingEventIdsCommand}.
+ *
+ * <p>Note that these are _not_ dual database tests even though the action has been converted. The
+ * dedupe was strictly a one-time event that needed to be done prior to moving to SQL. It should no
+ * longer be necessary and we may want to simply remove the command.
+ */
 class DedupeOneTimeBillingEventIdsCommandTest
     extends CommandTestCase<DedupeOneTimeBillingEventIdsCommand> {
 
@@ -64,8 +70,7 @@ class DedupeOneTimeBillingEventIdsCommandTest
         writeToNamedTmpFile("keypath.txt", getKeyPathLiteral(billingEventToResave)));
 
     int count = 0;
-    for (BillingEvent.OneTime billingEvent :
-        ofy().load().type(BillingEvent.OneTime.class).ancestor(historyEntry)) {
+    for (BillingEvent.OneTime billingEvent : loadAllOf(BillingEvent.OneTime.class)) {
       count++;
       assertThat(billingEvent.getId()).isNotEqualTo(billingEventToResave.getId());
       assertThat(billingEvent.asBuilder().setId(billingEventToResave.getId()).build())

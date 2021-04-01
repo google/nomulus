@@ -26,6 +26,7 @@ import com.google.common.io.Files;
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainBase;
+import google.registry.persistence.VKey;
 import google.registry.util.NonFinalForTesting;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.io.File;
@@ -147,5 +148,19 @@ abstract class ReadEntityFromKeyPathCommand<T> extends MutatingCommand {
           String.format("Expected a Key<DomainBase> but got %s", grandParent));
     }
     return (Key<DomainBase>) grandParent;
+  }
+
+  static VKey<DomainBase> getGrandParentAsDomain(VKey<?> key) {
+    Key<DomainBase> grandParent;
+    try {
+      grandParent = key.getOfyKey().getParent().getParent();
+    } catch (Throwable e) {
+      throw new IllegalArgumentException("Error retrieving grand parent key", e);
+    }
+    if (!isKind(grandParent, DomainBase.class)) {
+      throw new IllegalArgumentException(
+          String.format("Expected a Key<DomainBase> but got %s", grandParent));
+    }
+    return VKey.create(DomainBase.class, grandParent.getName(), grandParent);
   }
 }

@@ -14,18 +14,23 @@
 
 package google.registry.tools;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.deleteResource;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableList;
+import com.googlecode.objectify.Key;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
+import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
 import java.util.Arrays;
 import org.joda.time.DateTime;
@@ -103,15 +108,19 @@ public class MutatingCommandTest {
             + "blockPremiumNames: false -> true\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 4 entities.\n");
-    assertThat(ofy().load().entity(host1).now()).isEqualTo(newHost1);
-    assertThat(ofy().load().entity(host2).now()).isEqualTo(newHost2);
-    assertThat(ofy().load().entity(registrar1).now()).isEqualTo(newRegistrar1);
-    assertThat(ofy().load().entity(registrar2).now()).isEqualTo(newRegistrar2);
+    assertThat(loadByEntity(host1)).isEqualTo(newHost1);
+    assertThat(loadByEntity(host2)).isEqualTo(newHost2);
+    assertThat(loadByEntity(registrar1)).isEqualTo(newRegistrar1);
+    assertThat(loadByEntity(registrar2)).isEqualTo(newRegistrar2);
   }
 
   @Test
   void testSuccess_create() throws Exception {
-    ofy().deleteWithoutBackup().entities(Arrays.asList(host1, host2, registrar1, registrar2)).now();
+    ImmutableList<VKey<?>> keys =
+        Arrays.asList(host1, host2, registrar1, registrar2).stream()
+            .map(entity -> VKey.from(Key.create(entity)))
+            .collect(toImmutableList());
+    tm().transact(() -> tm().deleteWithoutBackup(keys));
     MutatingCommand command = new MutatingCommand() {
       @Override
       protected void init() {
@@ -137,10 +146,10 @@ public class MutatingCommandTest {
             + newRegistrar2 + "\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 4 entities.\n");
-    assertThat(ofy().load().entity(newHost1).now()).isEqualTo(newHost1);
-    assertThat(ofy().load().entity(newHost2).now()).isEqualTo(newHost2);
-    assertThat(ofy().load().entity(newRegistrar1).now()).isEqualTo(newRegistrar1);
-    assertThat(ofy().load().entity(newRegistrar2).now()).isEqualTo(newRegistrar2);
+    assertThat(loadByEntity(newHost1)).isEqualTo(newHost1);
+    assertThat(loadByEntity(newHost2)).isEqualTo(newHost2);
+    assertThat(loadByEntity(newRegistrar1)).isEqualTo(newRegistrar1);
+    assertThat(loadByEntity(newRegistrar2)).isEqualTo(newRegistrar2);
   }
 
   @Test
@@ -170,10 +179,10 @@ public class MutatingCommandTest {
             + registrar2 + "\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 4 entities.\n");
-    assertThat(ofy().load().entity(host1).now()).isNull();
-    assertThat(ofy().load().entity(host2).now()).isNull();
-    assertThat(ofy().load().entity(registrar1).now()).isNull();
-    assertThat(ofy().load().entity(registrar2).now()).isNull();
+    assertThat(loadByEntity(host1)).isNull();
+    assertThat(loadByEntity(host2)).isNull();
+    assertThat(loadByEntity(registrar1)).isNull();
+    assertThat(loadByEntity(registrar2)).isNull();
   }
 
   @Test
@@ -196,8 +205,8 @@ public class MutatingCommandTest {
             + "[no changes]\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 2 entities.\n");
-    assertThat(ofy().load().entity(host1).now()).isEqualTo(host1);
-    assertThat(ofy().load().entity(registrar1).now()).isEqualTo(registrar1);
+    assertThat(loadByEntity(host1)).isEqualTo(host1);
+    assertThat(loadByEntity(registrar1)).isEqualTo(registrar1);
   }
 
   @Test
@@ -230,10 +239,10 @@ public class MutatingCommandTest {
             + "blockPremiumNames: false -> true\n");
     String results = command.execute();
     assertThat(results).isEqualTo("Updated 4 entities.\n");
-    assertThat(ofy().load().entity(host1).now()).isNull();
-    assertThat(ofy().load().entity(host2).now()).isEqualTo(newHost2);
-    assertThat(ofy().load().entity(registrar1).now()).isNull();
-    assertThat(ofy().load().entity(registrar2).now()).isEqualTo(newRegistrar2);
+    assertThat(loadByEntity(host1)).isNull();
+    assertThat(loadByEntity(host2)).isEqualTo(newHost2);
+    assertThat(loadByEntity(registrar1)).isNull();
+    assertThat(loadByEntity(registrar2)).isEqualTo(newRegistrar2);
   }
 
   @Test
@@ -271,11 +280,11 @@ public class MutatingCommandTest {
 
     IllegalStateException thrown = assertThrows(IllegalStateException.class, command::execute);
     assertThat(thrown).hasMessageThat().contains("Entity changed since init() was called.");
-    assertThat(ofy().load().entity(host1).now()).isNull();
-    assertThat(ofy().load().entity(host2).now()).isEqualTo(newHost2);
+    assertThat(loadByEntity(host1)).isNull();
+    assertThat(loadByEntity(host2)).isEqualTo(newHost2);
     // These two shouldn't've changed.
-    assertThat(ofy().load().entity(registrar1).now()).isEqualTo(registrar1);
-    assertThat(ofy().load().entity(registrar2).now()).isEqualTo(registrar2);
+    assertThat(loadByEntity(registrar1)).isEqualTo(registrar1);
+    assertThat(loadByEntity(registrar2)).isEqualTo(registrar2);
   }
 
   @Test
