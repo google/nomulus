@@ -365,7 +365,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   }
 
   @Test
-  void testFail_clientCertFileFlagWithViolation() throws Exception {
+  void testFail_clientCertFileFlagWithViolation() {
     fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
     InsecureCertificateException thrown =
         assertThrows(
@@ -395,7 +395,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   }
 
   @Test
-  void testFail_clientCertFileFlagWithMultipleViolations() throws Exception {
+  void testFail_clientCertFileFlagWithMultipleViolations() {
     fakeClock.setTo(DateTime.parse("2055-10-01T00:00:00Z"));
     InsecureCertificateException thrown =
         assertThrows(
@@ -452,7 +452,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   }
 
   @Test
-  void testFail_failoverClientCertFileFlagWithViolations() throws Exception {
+  void testFail_failoverClientCertFileFlagWithViolations() {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     InsecureCertificateException thrown =
         assertThrows(
@@ -482,7 +482,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   }
 
   @Test
-  void testFail_failoverClientCertFileFlagWithMultipleViolations() throws Exception {
+  void testFail_failoverClientCertFileFlagWithMultipleViolations() {
     fakeClock.setTo(DateTime.parse("2055-11-01T00:00:00Z"));
     InsecureCertificateException thrown =
         assertThrows(

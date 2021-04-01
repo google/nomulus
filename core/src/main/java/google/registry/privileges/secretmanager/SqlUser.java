@@ -54,7 +54,7 @@ public abstract class SqlUser {
      * Credential for RegistryTool. This is temporary, and will be removed when tool users are
      * assigned their personal credentials.
      */
-    TOOL;
+    TOOL
   }
 
   /** Information of a RobotUser for privilege management purposes. */

@@ -81,7 +81,7 @@ class BackendMetricsHandlerTest {
         new EmbeddedChannel(
             new ChannelInitializer<EmbeddedChannel>() {
               @Override
-              protected void initChannel(EmbeddedChannel ch) throws Exception {
+              protected void initChannel(EmbeddedChannel ch) {
                 ch.attr(PROTOCOL_KEY).set(backendProtocol);
                 ch.attr(RELAY_CHANNEL_KEY).set(frontendChannel);
                 ch.pipeline().addLast(handler);

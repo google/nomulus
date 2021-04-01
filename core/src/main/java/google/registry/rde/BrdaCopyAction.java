@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import javax.inject.Inject;
-import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -79,12 +78,12 @@ public final class BrdaCopyAction implements Runnable {
   public void run() {
     try {
       copyAsRyde();
-    } catch (IOException | PGPException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private void copyAsRyde() throws IOException, PGPException {
+  private void copyAsRyde() throws IOException {
     String prefix = RdeNamingUtils.makeRydeFilename(tld, watermark, THIN, 1, 0);
     GcsFilename xmlFilename = new GcsFilename(stagingBucket, prefix + ".xml.ghostryde");
     GcsFilename xmlLengthFilename = new GcsFilename(stagingBucket, prefix + ".xml.length");

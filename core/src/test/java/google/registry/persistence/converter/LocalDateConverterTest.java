@@ -55,11 +55,9 @@ public class LocalDateConverterTest {
   private LocalDateConverterTestEntity persistAndLoadTestEntity(LocalDate date) {
     LocalDateConverterTestEntity entity = new LocalDateConverterTestEntity(date);
     jpaTm().transact(() -> jpaTm().insert(entity));
-    LocalDateConverterTestEntity retrievedEntity =
-        jpaTm()
-            .transact(
-                () -> jpaTm().loadByKey(VKey.createSql(LocalDateConverterTestEntity.class, "id")));
-    return retrievedEntity;
+    return jpaTm()
+        .transact(
+            () -> jpaTm().loadByKey(VKey.createSql(LocalDateConverterTestEntity.class, "id")));
   }
 
   /** Override entity name to avoid the nested class reference. */

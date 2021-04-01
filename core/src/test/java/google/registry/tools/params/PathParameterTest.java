@@ -54,7 +54,7 @@ class PathParameterTest {
   }
 
   @Test
-  void testConvert_relativePath_returnsOriginalFile() throws Exception {
+  void testConvert_relativePath_returnsOriginalFile() {
     Path currentDirectory = Paths.get("").toAbsolutePath();
     Path file = Paths.get(tmpDir.resolve("tmp.file").toString());
     Path relative = file.relativize(currentDirectory);
@@ -65,7 +65,7 @@ class PathParameterTest {
   }
 
   @Test
-  void testConvert_extraSlash_returnsWithoutSlash() throws Exception {
+  void testConvert_extraSlash_returnsWithoutSlash() {
     Path file = Paths.get(tmpDir.resolve("file.new").toString());
     assertThat((Object) vanilla.convert(file + "/")).isEqualTo(file);
   }
@@ -115,7 +115,7 @@ class PathParameterTest {
   private final PathParameter outputFile = new PathParameter.OutputFile();
 
   @Test
-  void testOutputFileValidate_normalFile_works() throws Exception {
+  void testOutputFileValidate_normalFile_works() {
     outputFile.validate("input", tmpDir.resolve("testfile").toString());
   }
 

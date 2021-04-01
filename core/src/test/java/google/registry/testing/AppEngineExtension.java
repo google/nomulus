@@ -381,9 +381,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
         jpaIntegrationWithCoverageExtension.beforeEach(context);
       } else if (withJpaUnitTest) {
         jpaUnitTestRule =
-            builder
-                .withEntityClass(jpaTestEntities.toArray(new Class[jpaTestEntities.size()]))
-                .buildUnitTestRule();
+            builder.withEntityClass(jpaTestEntities.toArray(new Class[0])).buildUnitTestRule();
         jpaUnitTestRule.beforeEach(context);
       } else {
         jpaIntegrationTestRule = builder.buildIntegrationTestRule();

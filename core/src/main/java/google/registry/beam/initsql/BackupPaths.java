@@ -93,7 +93,7 @@ public final class BackupPaths {
     checkArgument(!isNullOrEmpty(exportDir), "Null or empty exportDir.");
     checkArgument(!isNullOrEmpty(kind), "Null or empty kind.");
     checkArgument(shard >= 0, "Negative shard %s not allowed.", shard);
-    return String.format(EXPORT_PATTERN_TEMPLATE, exportDir, kind, Integer.toString(shard));
+    return String.format(EXPORT_PATTERN_TEMPLATE, exportDir, kind, shard);
   }
 
   /** Returns an {@link ImmutableList} of regex patterns that match all CommitLog files. */

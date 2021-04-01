@@ -40,9 +40,7 @@ public abstract class ParameterConverterValidator<T>
     try {
       convert(value);
     } catch (IllegalArgumentException e) {
-      ParameterException pe =
-          new ParameterException(String.format("%s=%s %s", name, value, messageForInvalid), e);
-      throw pe;
+      throw new ParameterException(String.format("%s=%s %s", name, value, messageForInvalid), e);
     }
   }
 }

@@ -154,8 +154,7 @@ public class LockDaoTest {
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
-            Level.WARNING,
-            String.format("Cloud SQL lock for testResource with tld GLOBAL should be null"));
+            Level.WARNING, "Cloud SQL lock for testResource with tld GLOBAL should be null");
   }
 
   @Test
@@ -171,22 +170,19 @@ public class LockDaoTest {
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.WARNING,
-            String.format(
-                "Datastore lock requestLogId of wrong does not equal Cloud SQL lock requestLogId"
-                    + " of testLogId"));
+            "Datastore lock requestLogId of wrong does not equal Cloud SQL lock requestLogId"
+                + " of testLogId");
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.WARNING,
-            String.format(
-                "Datastore lock acquiredTime of 1969-12-31T00:00:00.000Z does not equal Cloud SQL"
-                    + " lock acquiredTime of 1970-01-01T00:00:00.000Z"));
+            "Datastore lock acquiredTime of 1969-12-31T00:00:00.000Z does not equal Cloud SQL"
+                + " lock acquiredTime of 1970-01-01T00:00:00.000Z");
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.WARNING,
-            String.format(
-                "Datastore lock expirationTime of 1969-12-31T00:00:00.003Z does not equal Cloud"
-                    + " SQL lock expirationTime of 1970-01-01T00:00:00.002Z"));
+            "Datastore lock expirationTime of 1969-12-31T00:00:00.003Z does not equal Cloud"
+                + " SQL lock expirationTime of 1970-01-01T00:00:00.002Z");
   }
 }

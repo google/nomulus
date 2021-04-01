@@ -414,7 +414,7 @@ public class EppMessage {
       }
     }
 
-    void addNamespace(String prefix, String namespaceURI) throws Exception {
+    void addNamespace(String prefix, String namespaceURI) {
       checkArgument(!isNullOrEmpty(prefix), "prefix");
       checkArgument(!isNullOrEmpty(namespaceURI), "namespaceURI");
       if (nsPrefixMap.containsKey(prefix)) {

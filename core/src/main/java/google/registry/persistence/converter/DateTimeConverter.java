@@ -35,7 +35,6 @@ public class DateTimeConverter implements AttributeConverter<DateTime, Timestamp
   @Override
   @Nullable
   public DateTime convertToEntityAttribute(@Nullable Timestamp dbData) {
-    DateTime result = dbData == null ? null : new DateTime(dbData.getTime(), UTC);
-    return result;
+    return (dbData == null) ? null : new DateTime(dbData.getTime(), UTC);
   }
 }

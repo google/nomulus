@@ -154,7 +154,7 @@ public abstract class ProtocolModuleTest {
         new EmbeddedChannel(
             new ChannelInitializer<Channel>() {
               @Override
-              protected void initChannel(Channel ch) throws Exception {
+              protected void initChannel(Channel ch) {
                 initializer.accept(ch);
               }
             });

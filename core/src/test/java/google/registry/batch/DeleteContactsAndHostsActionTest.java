@@ -476,7 +476,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  void testSuccess_targetResourcesDontExist_areDelayedForADay() throws Exception {
+  void testSuccess_targetResourcesDontExist_areDelayedForADay() {
     ContactResource contactNotSaved = newContactResource("somecontact");
     HostResource hostNotSaved = newHostResource("a11.blah.foo");
     DateTime timeBeforeRun = clock.nowUtc();
@@ -515,7 +515,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  void testSuccess_unparseableTasks_areDelayedForADay() throws Exception {
+  void testSuccess_unparseableTasks_areDelayedForADay() {
     TaskOptions task =
         TaskOptions.Builder.withMethod(Method.PULL).param("gobbledygook", "kljhadfgsd9f7gsdfh");
     getQueue(QUEUE_ASYNC_DELETE).add(task);
@@ -531,7 +531,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  void testSuccess_resourcesNotInPendingDelete_areSkipped() throws Exception {
+  void testSuccess_resourcesNotInPendingDelete_areSkipped() {
     ContactResource contact = persistActiveContact("blah2222");
     HostResource host = persistActiveHost("rustles.your.jimmies");
     DateTime timeEnqueued = clock.nowUtc();
@@ -563,7 +563,7 @@ public class DeleteContactsAndHostsActionTest
   }
 
   @Test
-  void testSuccess_alreadyDeletedResources_areSkipped() throws Exception {
+  void testSuccess_alreadyDeletedResources_areSkipped() {
     ContactResource contactDeleted = persistDeletedContact("blah1236", clock.nowUtc().minusDays(2));
     HostResource hostDeleted = persistDeletedHost("a.lim.lop", clock.nowUtc().minusDays(3));
     enqueuer.enqueueAsyncDelete(

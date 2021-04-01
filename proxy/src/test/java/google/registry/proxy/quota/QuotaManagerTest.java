@@ -67,7 +67,7 @@ class QuotaManagerTest {
   }
 
   @Test
-  void testSuccess_rebate() throws Exception {
+  void testSuccess_rebate() {
     DateTime grantedTokenRefillTime = clock.nowUtc();
     response = QuotaResponse.create(true, USER_ID, grantedTokenRefillTime);
     QuotaRebate rebate = QuotaRebate.create(response);

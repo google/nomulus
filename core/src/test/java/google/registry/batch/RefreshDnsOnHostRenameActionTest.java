@@ -191,7 +191,7 @@ public class RefreshDnsOnHostRenameActionTest
   }
 
   @Test
-  void testRun_hostDoesntExist_delaysTask() throws Exception {
+  void testRun_hostDoesntExist_delaysTask() {
     HostResource host = newHostResource("ns1.example.tld");
     enqueuer.enqueueAsyncDnsRefresh(host, clock.nowUtc());
     enqueueMapreduceOnly();
@@ -222,7 +222,7 @@ public class RefreshDnsOnHostRenameActionTest
   }
 
   @Test
-  void test_noTasksToLease_releasesLockImmediately() throws Exception {
+  void test_noTasksToLease_releasesLockImmediately() {
     enqueueMapreduceOnly();
     assertNoDnsTasksEnqueued();
     assertNoTasksEnqueued(QUEUE_ASYNC_HOST_RENAME);

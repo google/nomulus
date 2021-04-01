@@ -128,7 +128,7 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
     return queriesBuilder.build();
   }
 
-  public void prepareForQuery(YearMonth yearMonth) throws Exception {
+  public void prepareForQuery(YearMonth yearMonth) throws InterruptedException {
     dnsCountQueryCoordinator.prepareForQuery(yearMonth);
   }
 }

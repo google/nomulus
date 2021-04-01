@@ -200,7 +200,7 @@ class CertificateCheckerTest {
   }
 
   @Test
-  void test_checkCertificate_validCertificateString() throws Exception {
+  void test_checkCertificate_validCertificateString() {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     assertThat(certificateChecker.checkCertificate(SAMPLE_CERT3)).isEmpty();
     assertThat(certificateChecker.checkCertificate(SAMPLE_CERT))
@@ -208,7 +208,7 @@ class CertificateCheckerTest {
   }
 
   @Test
-  void test_checkCertificate_invalidCertificateString() throws Exception {
+  void test_checkCertificate_invalidCertificateString() {
     fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     IllegalArgumentException thrown =
         assertThrows(

@@ -151,7 +151,7 @@ public final class Marksdb {
    *
    * <p>Note that the DNL is long, hence truncating it instead of logging the whole thing.
    */
-  private static void logFetchedBytes(String sourceUrl, byte[] bytes) throws IOException {
+  private static void logFetchedBytes(String sourceUrl, byte[] bytes) {
     logger.atInfo().log(
         "Fetched contents of %s -- Size: %d bytes; first %d chars:\n\n%s%s",
         sourceUrl,

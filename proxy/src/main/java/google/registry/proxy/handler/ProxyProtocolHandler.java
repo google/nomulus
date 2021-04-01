@@ -133,7 +133,7 @@ public class ProxyProtocolHandler extends ByteToMessageDecoder {
    *     then removed from the pipeline.
    */
   @Override
-  protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+  protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
     // Wait until there are more bytes available than the header's length before processing.
     if (in.readableBytes() >= HEADER_PREFIX.length) {
       if (containsHeader(in)) {

@@ -62,7 +62,7 @@ public class RelayHandler<I> extends SimpleChannelInboundHandler<I> {
 
   /** Read message of type {@code I}, write it as-is into the relay channel. */
   @Override
-  protected void channelRead0(ChannelHandlerContext ctx, I msg) throws Exception {
+  protected void channelRead0(ChannelHandlerContext ctx, I msg) {
     Channel channel = ctx.channel();
     Channel relayChannel = channel.attr(RELAY_CHANNEL_KEY).get();
     if (relayChannel == null) {

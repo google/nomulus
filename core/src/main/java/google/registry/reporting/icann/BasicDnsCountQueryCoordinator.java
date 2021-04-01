@@ -35,5 +35,5 @@ public class BasicDnsCountQueryCoordinator implements DnsCountQueryCoordinator {
   }
 
   @Override
-  public void prepareForQuery(YearMonth yearMonth) throws Exception {}
+  public void prepareForQuery(YearMonth yearMonth) {}
 }

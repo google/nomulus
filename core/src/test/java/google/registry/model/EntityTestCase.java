@@ -55,7 +55,7 @@ public abstract class EntityTestCase {
      */
     ENABLED,
     /** The test is not relevant for JPA coverage checks. */
-    DISABLED;
+    DISABLED
   }
 
   protected FakeClock fakeClock = new FakeClock(DateTime.now(UTC));

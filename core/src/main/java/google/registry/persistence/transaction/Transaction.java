@@ -165,7 +165,7 @@ public class Transaction extends ImmutableObject implements Buildable {
     enum Type {
       UPDATE,
       DELETE
-    };
+    }
 
     /** Write the changes in the mutation to the datastore. */
     public abstract void writeToDatastore();

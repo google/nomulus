@@ -30,19 +30,19 @@ class PersistenceXmlTest {
 
   @Test
   void verifyClassTags_containOnlyRequiredClasses() {
-    ImmutableList<Class> managedClassed = PersistenceXmlUtility.getManagedClasses();
+    ImmutableList<Class<?>> managedClasses = PersistenceXmlUtility.getManagedClasses();
 
-    ImmutableList<Class> unnecessaryClasses =
-        managedClassed.stream()
+    ImmutableList<Class<?>> unnecessaryClasses =
+        managedClasses.stream()
             .filter(
                 clazz ->
                     !clazz.isAnnotationPresent(Entity.class)
                         && !AttributeConverter.class.isAssignableFrom(clazz))
             .collect(toImmutableList());
 
-    ImmutableSet<Class> duplicateClasses =
-        managedClassed.stream()
-            .filter(clazz -> Collections.frequency(managedClassed, clazz) > 1)
+    ImmutableSet<Class<?>> duplicateClasses =
+        managedClasses.stream()
+            .filter(clazz -> Collections.frequency(managedClasses, clazz) > 1)
             .collect(toImmutableSet());
 
     assertWithMessage("Found duplicate <class> tags defined in persistence.xml.")

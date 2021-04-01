@@ -82,8 +82,8 @@ class EppServiceHandlerTest {
 
   private EmbeddedChannel channel;
 
-  private void setHandshakeSuccess(EmbeddedChannel channel, X509Certificate certificate)
-      throws Exception {
+  private void setHandshakeSuccess(EmbeddedChannel channel, X509Certificate certificate) {
+    @SuppressWarnings("unused")
     Promise<X509Certificate> unusedPromise =
         channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().setSuccess(certificate);
   }
@@ -92,7 +92,7 @@ class EppServiceHandlerTest {
     setHandshakeSuccess(channel, clientCertificate);
   }
 
-  private void setHandshakeFailure(EmbeddedChannel channel) throws Exception {
+  private void setHandshakeFailure(EmbeddedChannel channel) {
     Promise<X509Certificate> unusedPromise =
         channel
             .attr(CLIENT_CERTIFICATE_PROMISE_KEY)
@@ -135,12 +135,12 @@ class EppServiceHandlerTest {
     channel = setUpNewChannel(eppServiceHandler);
   }
 
-  private EmbeddedChannel setUpNewChannel(EppServiceHandler handler) throws Exception {
+  private EmbeddedChannel setUpNewChannel(EppServiceHandler handler) {
     return new EmbeddedChannel(
         DefaultChannelId.newInstance(),
         new ChannelInitializer<EmbeddedChannel>() {
           @Override
-          protected void initChannel(EmbeddedChannel ch) throws Exception {
+          protected void initChannel(EmbeddedChannel ch) {
             ch.attr(REMOTE_ADDRESS_KEY).set(CLIENT_ADDRESS);
             ch.attr(CLIENT_CERTIFICATE_PROMISE_KEY).set(ch.eventLoop().newPromise());
             ch.pipeline().addLast(handler);

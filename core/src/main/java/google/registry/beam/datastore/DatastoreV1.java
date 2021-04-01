@@ -505,7 +505,7 @@ public class DatastoreV1 {
       }
 
       @StartBundle
-      public void startBundle(StartBundleContext c) throws Exception {
+      public void startBundle(StartBundleContext c) {
         datastore =
             datastoreFactory.getDatastore(
                 c.getPipelineOptions(), v1Options.getProjectId(), v1Options.getLocalhost());
@@ -548,7 +548,7 @@ public class DatastoreV1 {
       }
 
       @StartBundle
-      public void startBundle(StartBundleContext c) throws Exception {
+      public void startBundle(StartBundleContext c) {
         datastore =
             datastoreFactory.getDatastore(
                 c.getPipelineOptions(), options.getProjectId(), options.getLocalhost());
@@ -556,7 +556,7 @@ public class DatastoreV1 {
       }
 
       @ProcessElement
-      public void processElement(ProcessContext c) throws Exception {
+      public void processElement(ProcessContext c) {
         Query query = c.element();
 
         // If query has a user set limit, then do not split.
@@ -626,7 +626,7 @@ public class DatastoreV1 {
       }
 
       @StartBundle
-      public void startBundle(StartBundleContext c) throws Exception {
+      public void startBundle(StartBundleContext c) {
         datastore =
             datastoreFactory.getDatastore(
                 c.getPipelineOptions(), options.getProjectId(), options.getLocalhost());

@@ -31,7 +31,7 @@ public class ContextCapturingMetaExtension implements BeforeEachCallback {
   private ExtensionContext context;
 
   @Override
-  public void beforeEach(ExtensionContext context) throws Exception {
+  public void beforeEach(ExtensionContext context) {
     this.context = context;
   }
 

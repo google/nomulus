@@ -220,7 +220,7 @@ public class EppTestCase {
     return actualOutput;
   }
 
-  private FakeResponse executeXmlCommand(String inputXml) throws Exception {
+  private FakeResponse executeXmlCommand(String inputXml) {
     EppRequestHandler handler = new EppRequestHandler();
     FakeResponse response = new FakeResponse();
     handler.response = response;

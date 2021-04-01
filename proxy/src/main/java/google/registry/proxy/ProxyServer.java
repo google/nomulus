@@ -84,7 +84,7 @@ public class ProxyServer implements Runnable {
    */
   private static class ServerChannelInitializer extends ChannelInitializer<NioSocketChannel> {
     @Override
-    protected void initChannel(NioSocketChannel inboundChannel) throws Exception {
+    protected void initChannel(NioSocketChannel inboundChannel) {
       // Add inbound channel handlers.
       FrontendProtocol inboundProtocol =
           (FrontendProtocol) inboundChannel.parent().attr(PROTOCOL_KEY).get();
@@ -110,8 +110,7 @@ public class ProxyServer implements Runnable {
                 .handler(
                     new ChannelInitializer<NioSocketChannel>() {
                       @Override
-                      protected void initChannel(NioSocketChannel outboundChannel)
-                          throws Exception {
+                      protected void initChannel(NioSocketChannel outboundChannel) {
                         addHandlers(
                             outboundChannel.pipeline(), outboundProtocol.handlerProviders());
                       }
@@ -301,7 +300,7 @@ public class ProxyServer implements Runnable {
     }
   }
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args) {
     // Use JDK logger for Netty's LoggingHandler,
     // which is what Flogger uses under the hood.
     InternalLoggerFactory.setDefaultFactory(JdkLoggerFactory.INSTANCE);

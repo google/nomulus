@@ -180,7 +180,7 @@ class JpaTransactionManagerImplTest {
   @Test
   void transact_retriesNestedOptimisticLockExceptions() {
     JpaTransactionManager spyJpaTm = spy(jpaTm());
-    doThrow(new RuntimeException().initCause(new OptimisticLockException()))
+    doThrow(new RuntimeException(new OptimisticLockException()))
         .when(spyJpaTm)
         .delete(any(VKey.class));
     spyJpaTm.transact(() -> spyJpaTm.insert(theEntity));
@@ -220,8 +220,8 @@ class JpaTransactionManagerImplTest {
   void transactNewReadOnly_retriesNestedJdbcConnectionExceptions() {
     JpaTransactionManager spyJpaTm = spy(jpaTm());
     doThrow(
-            new RuntimeException()
-                .initCause(new JDBCConnectionException("connection exception", new SQLException())))
+            new RuntimeException(
+                new JDBCConnectionException("connection exception", new SQLException())))
         .when(spyJpaTm)
         .loadByKey(any(VKey.class));
     spyJpaTm.transact(() -> spyJpaTm.insert(theEntity));

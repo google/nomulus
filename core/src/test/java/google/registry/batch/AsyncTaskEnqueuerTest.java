@@ -135,7 +135,7 @@ public class AsyncTaskEnqueuerTest {
 
   @MockitoSettings(strictness = Strictness.LENIENT)
   @Test
-  void test_enqueueAsyncResave_ignoresTasksTooFarIntoFuture() throws Exception {
+  void test_enqueueAsyncResave_ignoresTasksTooFarIntoFuture() {
     ContactResource contact = persistActiveContact("jd23456");
     asyncTaskEnqueuer.enqueueAsyncResave(contact, clock.nowUtc(), clock.nowUtc().plusDays(31));
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);

@@ -125,8 +125,7 @@ public abstract class HttpsRelayServiceHandler extends ByteToMessageCodec<FullHt
   }
 
   @Override
-  protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> out)
-      throws Exception {
+  protected void decode(ChannelHandlerContext ctx, ByteBuf byteBuf, List<Object> out) {
     FullHttpRequest request = decodeFullHttpRequest(byteBuf);
     loadCookies(request);
     out.add(request);
@@ -169,7 +168,7 @@ public abstract class HttpsRelayServiceHandler extends ByteToMessageCodec<FullHt
 
   /** Terminates connection upon inbound exception. */
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     if (NON_FATAL_INBOUND_EXCEPTIONS.contains(Throwables.getRootCause(cause).getClass())) {
       logger.atWarning().withCause(cause).log(
           "Inbound exception caught for channel %s", ctx.channel());

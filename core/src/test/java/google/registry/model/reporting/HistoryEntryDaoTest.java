@@ -38,7 +38,7 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 
 @DualDatabaseTest
-public class HistoryEntryDaoTest extends EntityTestCase {
+class HistoryEntryDaoTest extends EntityTestCase {
 
   private DomainBase domain;
   private HistoryEntry historyEntry;

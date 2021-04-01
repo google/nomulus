@@ -82,7 +82,7 @@ class EntityCallbacksListenerTest {
 
   @Test
   void verifyAllManagedEntities_haveNoMethodWithEmbedded() {
-    ImmutableSet<Class> violations =
+    ImmutableSet<Class<?>> violations =
         PersistenceXmlUtility.getManagedClasses().stream()
             .filter(clazz -> clazz.isAnnotationPresent(Entity.class))
             .filter(EntityCallbacksListenerTest::hasMethodAnnotatedWithEmbedded)
