@@ -510,14 +510,14 @@ class google.registry.model.poll.PendingActionNotificationResponse$NameOrId {
 }
 class google.registry.model.poll.PollMessage {
   @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> parent;
+  @Parent com.googlecode.objectify.Key<? extends google.registry.model.reporting.HistoryEntry> parent;
   java.lang.String clientId;
   java.lang.String msg;
   org.joda.time.DateTime eventTime;
 }
 class google.registry.model.poll.PollMessage$Autorenew {
   @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> parent;
+  @Parent com.googlecode.objectify.Key<? extends google.registry.model.reporting.HistoryEntry> parent;
   java.lang.String clientId;
   java.lang.String msg;
   java.lang.String targetId;
@@ -526,7 +526,7 @@ class google.registry.model.poll.PollMessage$Autorenew {
 }
 class google.registry.model.poll.PollMessage$OneTime {
   @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.reporting.HistoryEntry> parent;
+  @Parent com.googlecode.objectify.Key<? extends google.registry.model.reporting.HistoryEntry> parent;
   java.lang.String clientId;
   java.lang.String msg;
   java.util.List<google.registry.model.poll.PendingActionNotificationResponse$ContactPendingActionNotificationResponse> contactPendingActionNotificationResponses;

@@ -16,15 +16,13 @@ package google.registry.flows.poll;
 
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.poll.PollFlowUtils.ackPollMessage;
-import static google.registry.flows.poll.PollFlowUtils.getPollMessagesQuery;
+import static google.registry.flows.poll.PollFlowUtils.getPollMessageCount;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_NO_MESSAGES;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.parsePollMessageExternalId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AuthorizationErrorException;
 import google.registry.flows.EppException.ObjectDoesNotExistException;
@@ -39,6 +37,8 @@ import google.registry.model.poll.MessageQueueInfo;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessageExternalKeyConverter;
 import google.registry.model.poll.PollMessageExternalKeyConverter.PollMessageExternalKeyParseException;
+import google.registry.persistence.VKey;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -71,7 +71,7 @@ public class PollAckFlow implements TransactionalFlow {
       throw new MissingMessageIdException();
     }
 
-    Key<PollMessage> pollMessageKey;
+    VKey<PollMessage> pollMessageKey;
     // Try parsing the messageId, and throw an exception if it's invalid.
     try {
       pollMessageKey = parsePollMessageExternalId(messageId);
@@ -84,12 +84,13 @@ public class PollAckFlow implements TransactionalFlow {
     // Load the message to be acked. If a message is queued to be delivered in the future, we treat
     // it as if it doesn't exist yet. Same for if the message ID year isn't the same as the actual
     // poll message's event time (that means they're passing in an old already-acked ID).
-    PollMessage pollMessage = ofy().load().key(pollMessageKey).now();
-    if (pollMessage == null
-        || !isBeforeOrAt(pollMessage.getEventTime(), now)
-        || !makePollMessageExternalId(pollMessage).equals(messageId)) {
+    Optional<PollMessage> maybePollMessage = tm().loadByKeyIfPresent(pollMessageKey);
+    if (!maybePollMessage.isPresent()
+        || !isBeforeOrAt(maybePollMessage.get().getEventTime(), now)
+        || !makePollMessageExternalId(maybePollMessage.get()).equals(messageId)) {
       throw new MessageDoesNotExistException(messageId);
     }
+    PollMessage pollMessage = maybePollMessage.get();
 
     // Make sure this client is authorized to ack this message. It could be that the message is
     // supposed to go to a different registrar.
@@ -106,8 +107,11 @@ public class PollAckFlow implements TransactionalFlow {
     // acked, then we return a special status code indicating that. Note that the query will
     // include the message being acked.
 
-    int messageCount = tm().doTransactionless(() -> getPollMessagesQuery(clientId, now).count());
-    if (!includeAckedMessageInCount) {
+    int messageCount = tm().doTransactionless(() -> getPollMessageCount(clientId, now));
+    // Within the same transaction, Datastore will not reflect the updated count (potentially
+    // reduced by one thanks to the acked poll message). SQL will, however, so we shouldn't reduce
+    // the count in the SQL case.
+    if (!includeAckedMessageInCount && tm().isOfy()) {
       messageCount--;
     }
     if (messageCount <= 0) {

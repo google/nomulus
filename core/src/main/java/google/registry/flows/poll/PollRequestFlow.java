@@ -15,7 +15,8 @@
 package google.registry.flows.poll;
 
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
-import static google.registry.flows.poll.PollFlowUtils.getPollMessagesQuery;
+import static google.registry.flows.poll.PollFlowUtils.getFirstPollMessage;
+import static google.registry.flows.poll.PollFlowUtils.getPollMessageCount;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACK_MESSAGE;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_NO_MESSAGES;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
@@ -31,6 +32,7 @@ import google.registry.model.poll.MessageQueueInfo;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessageExternalKeyConverter;
 import google.registry.util.Clock;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -63,18 +65,20 @@ public class PollRequestFlow implements Flow {
     }
     // Return the oldest message from the queue.
     DateTime now = clock.nowUtc();
-    PollMessage pollMessage = getPollMessagesQuery(clientId, now).first().now();
-    if (pollMessage == null) {
+    Optional<PollMessage> maybePollMessage = getFirstPollMessage(clientId, now);
+    if (!maybePollMessage.isPresent()) {
       return responseBuilder.setResultFromCode(SUCCESS_WITH_NO_MESSAGES).build();
     }
+    PollMessage pollMessage = maybePollMessage.get();
     return responseBuilder
         .setResultFromCode(SUCCESS_WITH_ACK_MESSAGE)
-        .setMessageQueueInfo(new MessageQueueInfo.Builder()
-            .setQueueDate(pollMessage.getEventTime())
-            .setMsg(pollMessage.getMsg())
-            .setQueueLength(getPollMessagesQuery(clientId, now).count())
-            .setMessageId(makePollMessageExternalId(pollMessage))
-            .build())
+        .setMessageQueueInfo(
+            new MessageQueueInfo.Builder()
+                .setQueueDate(pollMessage.getEventTime())
+                .setMsg(pollMessage.getMsg())
+                .setQueueLength(getPollMessageCount(clientId, now))
+                .setMessageId(makePollMessageExternalId(pollMessage))
+                .build())
         .setMultipleResData(pollMessage.getResponseData())
         .build();
   }

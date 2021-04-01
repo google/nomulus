@@ -106,7 +106,7 @@ public abstract class PollMessage extends ImmutableObject
   @Column(name = "poll_message_id")
   Long id;
 
-  @Parent @DoNotHydrate @Transient Key<HistoryEntry> parent;
+  @Parent @DoNotHydrate @Transient Key<? extends HistoryEntry> parent;
 
   /** The registrar that this poll message will be delivered to. */
   @Index
@@ -134,7 +134,7 @@ public abstract class PollMessage extends ImmutableObject
 
   @Ignore Long hostHistoryRevisionId;
 
-  public Key<HistoryEntry> getParentKey() {
+  public Key<? extends HistoryEntry> getParentKey() {
     return parent;
   }
 
@@ -239,7 +239,7 @@ public abstract class PollMessage extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setParentKey(Key<HistoryEntry> parentKey) {
+    public B setParentKey(Key<? extends HistoryEntry> parentKey) {
       getInstance().parent = parentKey;
       return thisCastToDerived();
     }

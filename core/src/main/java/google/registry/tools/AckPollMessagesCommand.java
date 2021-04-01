@@ -15,16 +15,16 @@
 package google.registry.tools;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.flows.poll.PollFlowUtils.getPollMessagesQuery;
+import static google.registry.flows.poll.PollFlowUtils.SQL_POLL_MESSAGE_QUERY;
+import static google.registry.flows.poll.PollFlowUtils.datastorePollMessageQuery;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.cmd.QueryKeys;
@@ -35,6 +35,7 @@ import google.registry.model.poll.PollMessage.OneTime;
 import google.registry.util.Clock;
 import java.util.List;
 import javax.inject.Inject;
+import javax.persistence.TypedQuery;
 
 /**
  * Command to acknowledge one-time poll messages for a registrar.
@@ -60,11 +61,14 @@ import javax.inject.Inject;
 @Parameters(separators = " =", commandDescription = "Acknowledge one-time poll messages.")
 final class AckPollMessagesCommand implements CommandWithRemoteApi {
 
+  private static final String SQL_POLL_MESSAGE_QUERY_BY_MESSAGE =
+      "FROM PollMessage WHERE clientId = :registrarId AND eventTime <= :now AND msg LIKE :msg"
+          + " ORDER BY eventTime ASC";
+
   @Parameter(
       names = {"-c", "--client"},
       description = "Client identifier of the registrar whose poll messages should be ACKed",
-      required = true
-  )
+      required = true)
   private String clientId;
 
   @Parameter(
@@ -84,28 +88,72 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
-    QueryKeys<PollMessage> query = getPollMessagesQuery(clientId, clock.nowUtc()).keys();
-    // TODO(b/160325686): Remove the batch logic after db migration.
+    if (tm().isOfy()) {
+      ackPollMessagesDatastore();
+    } else {
+      ackPollMessagesSql();
+    }
+  }
+
+  /**
+   * Loads and acks the matching poll messages from Datastore.
+   *
+   * <p>We have to first load the poll message keys then batch-load the objects themselves due to
+   * the Datastore size limits.
+   */
+  private void ackPollMessagesDatastore() {
+    QueryKeys<PollMessage> query = datastorePollMessageQuery(clientId, clock.nowUtc()).keys();
     for (List<Key<PollMessage>> keys : Iterables.partition(query, BATCH_SIZE)) {
       tm().transact(
-              () -> {
-                // Load poll messages and filter to just those of interest.
-                ImmutableList<PollMessage> pollMessages =
-                    ofy().load().keys(keys).values().stream()
-                        .filter(pm -> isNullOrEmpty(message) || pm.getMsg().contains(message))
-                        .collect(toImmutableList());
-                if (!dryRun) {
-                  pollMessages.forEach(PollFlowUtils::ackPollMessage);
-                }
-                pollMessages.forEach(
-                    pm ->
-                        System.out.println(
-                            Joiner.on(',')
-                                .join(
-                                    makePollMessageExternalId(pm),
-                                    pm.getEventTime(),
-                                    pm.getMsg())));
-              });
+              () ->
+                  // Load poll messages and filter to just those of interest.
+                  ofy().load().keys(keys).values().stream()
+                      .filter(pm -> isNullOrEmpty(message) || pm.getMsg().contains(message))
+                      .forEach(this::actOnPollMessage));
     }
+  }
+
+  /** Loads and acks all matching poll messages from SQL in one transaction. */
+  private void ackPollMessagesSql() {
+    jpaTm()
+        .transact(
+            () -> {
+              TypedQuery<PollMessage> typedQuery;
+              if (isNullOrEmpty(message)) {
+                typedQuery = jpaTm().query(SQL_POLL_MESSAGE_QUERY, PollMessage.class);
+              } else {
+                typedQuery =
+                    jpaTm()
+                        .query(SQL_POLL_MESSAGE_QUERY_BY_MESSAGE, PollMessage.class)
+                        .setParameter("msg", "%" + message + "%");
+              }
+              typedQuery
+                  .setParameter("registrarId", clientId)
+                  .setParameter("now", clock.nowUtc())
+                  .getResultStream()
+                  // Detach it so that we can print out the old, non-acked version
+                  // (for autorenews, acking changes the next event time)
+                  .peek(jpaTm().getEntityManager()::detach)
+                  .forEach(this::actOnPollMessage);
+            });
+  }
+
+  /**
+   * Acks the poll message if not running in dry-run mode, prints regardless.
+   *
+   * <p>This is a separate function because the processing of poll messages is transactionally
+   * different between the Datastore and SQL implementations. Datastore must process the messages in
+   * batches, whereas we can load all messages from SQL in one transaction.
+   */
+  private void actOnPollMessage(PollMessage pollMessage) {
+    if (!dryRun) {
+      PollFlowUtils.ackPollMessage(pollMessage);
+    }
+    System.out.println(
+        Joiner.on(',')
+            .join(
+                makePollMessageExternalId(pollMessage),
+                pollMessage.getEventTime(),
+                pollMessage.getMsg()));
   }
 }

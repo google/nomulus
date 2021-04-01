@@ -25,21 +25,25 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.googlecode.objectify.Key;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessageExternalKeyConverter.PollMessageExternalKeyParseException;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PollMessageExternalKeyConverter}. */
+@DualDatabaseTest
 public class PollMessageExternalKeyConverterTest {
 
   @RegisterExtension
@@ -55,21 +59,23 @@ public class PollMessageExternalKeyConverterTest {
   void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     createTld("foobar");
-    historyEntry = persistResource(new HistoryEntry.Builder()
-      .setParent(persistActiveDomain("foo.foobar"))
-      .setType(HistoryEntry.Type.DOMAIN_CREATE)
-      .setPeriod(Period.create(1, Period.Unit.YEARS))
-      .setXmlBytes("<xml></xml>".getBytes(UTF_8))
-      .setModificationTime(clock.nowUtc())
-      .setClientId("foo")
-      .setTrid(Trid.create("ABC-123", "server-trid"))
-      .setBySuperuser(false)
-      .setReason("reason")
-      .setRequestedByRegistrar(false)
-      .build());
+    historyEntry =
+        persistResource(
+            new DomainHistory.Builder()
+                .setParent(persistActiveDomain("foo.foobar"))
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setPeriod(Period.create(1, Period.Unit.YEARS))
+                .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+                .setModificationTime(clock.nowUtc())
+                .setClientId("TheRegistrar")
+                .setTrid(Trid.create("ABC-123", "server-trid"))
+                .setBySuperuser(false)
+                .setReason("reason")
+                .setRequestedByRegistrar(false)
+                .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_domain() {
     PollMessage.OneTime pollMessage =
         persistResource(
@@ -80,14 +86,14 @@ public class PollMessageExternalKeyConverterTest {
                 .setParent(historyEntry)
                 .build());
     assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("1-2-FOOBAR-4-5-2007");
-    assertThat(parsePollMessageExternalId("1-2-FOOBAR-4-5-2007"))
-        .isEqualTo(Key.create(pollMessage));
+    assertVKeysEqual(parsePollMessageExternalId("1-2-FOOBAR-4-5-2007"), pollMessage.createVKey());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_contact() {
     historyEntry =
-        persistResource(historyEntry.asBuilder().setParent(persistActiveContact("tim")).build());
+        persistResource(
+            DatabaseHelper.createHistoryEntryForEppResource(persistActiveContact("tim")));
     PollMessage.OneTime pollMessage =
         persistResource(
             new PollMessage.OneTime.Builder()
@@ -96,14 +102,15 @@ public class PollMessageExternalKeyConverterTest {
                 .setMsg("Test poll message")
                 .setParent(historyEntry)
                 .build());
-    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("2-5-ROID-4-6-2007");
-    assertThat(parsePollMessageExternalId("2-5-ROID-4-6-2007")).isEqualTo(Key.create(pollMessage));
+    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("2-5-ROID-6-7-2007");
+    assertVKeysEqual(parsePollMessageExternalId("2-5-ROID-6-7-2007"), pollMessage.createVKey());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_host() {
     historyEntry =
-        persistResource(historyEntry.asBuilder().setParent(persistActiveHost("time.zyx")).build());
+        persistResource(
+            DatabaseHelper.createHistoryEntryForEppResource(persistActiveHost("time.xyz")));
     PollMessage.OneTime pollMessage =
         persistResource(
             new PollMessage.OneTime.Builder()
@@ -112,18 +119,18 @@ public class PollMessageExternalKeyConverterTest {
                 .setMsg("Test poll message")
                 .setParent(historyEntry)
                 .build());
-    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("3-5-ROID-4-6-2007");
-    assertThat(parsePollMessageExternalId("3-5-ROID-4-6-2007")).isEqualTo(Key.create(pollMessage));
+    assertThat(makePollMessageExternalId(pollMessage)).isEqualTo("3-5-ROID-6-7-2007");
+    assertVKeysEqual(parsePollMessageExternalId("3-5-ROID-6-7-2007"), pollMessage.createVKey());
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_missingYearField() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
         () -> parsePollMessageExternalId("1-2-FOOBAR-4-5"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_invalidEppResourceTypeId() {
     // Populate the testdata correctly as for 1-2-FOOBAR-4-5 so we know that the only thing that
     // is wrong here is the EppResourceTypeId.
@@ -133,24 +140,36 @@ public class PollMessageExternalKeyConverterTest {
         () -> parsePollMessageExternalId("4-2-FOOBAR-4-5-2007"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_tooFewComponentParts() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
         () -> parsePollMessageExternalId("1-3-EXAMPLE"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_tooManyComponentParts() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
         () -> parsePollMessageExternalId("1-3-EXAMPLE-4-5-2007-2009"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonNumericIds() {
     assertThrows(
         PollMessageExternalKeyParseException.class,
         () -> parsePollMessageExternalId("A-B-FOOBAR-D-E-F"));
+  }
+
+  // We may have VKeys of slightly varying types, e.g. VKey<PollMessage> (superclass) and
+  // VKey<PollMessage.OneTime> (subclass). We should treat these as equal since the DB does.
+  private static void assertVKeysEqual(
+      VKey<? extends PollMessage> one, VKey<? extends PollMessage> two) {
+    assertThat(
+            one.getKind().isAssignableFrom(two.getKind())
+                || two.getKind().isAssignableFrom(one.getKind()))
+        .isTrue();
+    assertThat(one.getSqlKey()).isEqualTo(two.getSqlKey());
+    assertThat(one.getOfyKey()).isEqualTo(two.getOfyKey());
   }
 }
