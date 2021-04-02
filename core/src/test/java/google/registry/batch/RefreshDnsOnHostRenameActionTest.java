@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.batch.AsyncTaskMetrics.OperationType.DNS_REFRESH;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResource;
@@ -47,11 +47,14 @@ import google.registry.batch.AsyncTaskMetrics.OperationResult;
 import google.registry.batch.RefreshDnsOnHostRenameAction.RefreshDnsOnHostRenameReducer;
 import google.registry.model.host.HostResource;
 import google.registry.model.server.Lock;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.RequestStatusChecker;
@@ -62,11 +65,11 @@ import java.util.Optional;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
 
 /** Unit tests for {@link RefreshDnsOnHostRenameAction}. */
+@DualDatabaseTest
 public class RefreshDnsOnHostRenameActionTest
     extends MapreduceTestCase<RefreshDnsOnHostRenameAction> {
 
@@ -109,7 +112,7 @@ public class RefreshDnsOnHostRenameActionTest
     executeTasksUntilEmpty("mapreduce", clock);
     sleeper.sleep(millis(50));
     clock.advanceBy(standardSeconds(5));
-    ofy().clearSessionCache();
+    tm().clearSessionCache();
   }
 
   /** Kicks off, but does not run, the mapreduce tasks. Useful for testing validation/setup. */
@@ -117,10 +120,13 @@ public class RefreshDnsOnHostRenameActionTest
     clock.advanceOneMilli();
     action.run();
     clock.advanceBy(standardSeconds(5));
-    ofy().clearSessionCache();
+    tm().clearSessionCache();
   }
 
-  @Test
+  // TODO(b/181662306) None of the map reduce tests work with SQL since our map-reduce setup is
+  // inherently Datastore oriented, but this is a bigger task.
+
+  @TestOfyOnly
   void testSuccess_dnsUpdateEnqueued() throws Exception {
     HostResource host = persistActiveHost("ns1.example.tld");
     persistResource(newDomainBase("example.tld", host));
@@ -137,7 +143,7 @@ public class RefreshDnsOnHostRenameActionTest
     verifyNoMoreInteractions(action.asyncTaskMetrics);
   }
 
-  @Test
+  @TestOfyOnly
   void testSuccess_multipleHostsProcessedInBatch() throws Exception {
     HostResource host1 = persistActiveHost("ns1.example.tld");
     HostResource host2 = persistActiveHost("ns2.example.tld");
@@ -161,7 +167,7 @@ public class RefreshDnsOnHostRenameActionTest
     verifyNoMoreInteractions(action.asyncTaskMetrics);
   }
 
-  @Test
+  @TestOfyOnly
   void testSuccess_deletedHost_doesntTriggerDnsRefresh() throws Exception {
     HostResource host = persistDeletedHost("ns11.fakesss.tld", clock.nowUtc().minusDays(4));
     persistResource(newDomainBase("example1.tld", host));
@@ -176,7 +182,7 @@ public class RefreshDnsOnHostRenameActionTest
     verifyNoMoreInteractions(action.asyncTaskMetrics);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_noDnsTasksForDeletedDomain() throws Exception {
     HostResource renamedHost = persistActiveHost("ns1.example.tld");
     persistResource(
@@ -190,7 +196,7 @@ public class RefreshDnsOnHostRenameActionTest
     assertNoTasksEnqueued(QUEUE_ASYNC_HOST_RENAME);
   }
 
-  @Test
+  @TestOfyAndSql
   void testRun_hostDoesntExist_delaysTask() {
     HostResource host = newHostResource("ns1.example.tld");
     enqueuer.enqueueAsyncDnsRefresh(host, clock.nowUtc());
@@ -204,7 +210,7 @@ public class RefreshDnsOnHostRenameActionTest
     assertThat(acquireLock()).isPresent();
   }
 
-  @Test
+  @TestOfyAndSql
   void test_cannotAcquireLock() {
     // Make lock acquisition fail.
     acquireLock();
@@ -213,7 +219,7 @@ public class RefreshDnsOnHostRenameActionTest
     assertNoDnsTasksEnqueued();
   }
 
-  @Test
+  @TestOfyAndSql
   void test_mapreduceHasWorkToDo_lockIsAcquired() {
     HostResource host = persistActiveHost("ns1.example.tld");
     enqueuer.enqueueAsyncDnsRefresh(host, clock.nowUtc());
@@ -221,7 +227,7 @@ public class RefreshDnsOnHostRenameActionTest
     assertThat(acquireLock()).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void test_noTasksToLease_releasesLockImmediately() {
     enqueueMapreduceOnly();
     assertNoDnsTasksEnqueued();

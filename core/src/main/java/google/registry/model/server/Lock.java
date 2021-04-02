@@ -15,19 +15,20 @@
 package google.registry.model.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.flogger.FluentLogger;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
+import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.util.RequestStatusChecker;
 import google.registry.util.RequestStatusCheckerImpl;
@@ -190,12 +191,17 @@ public class Lock extends ImmutableObject implements DatastoreOnlyEntity, Serial
     // access to resources like GCS that can't be transactionally rolled back. Therefore, the lock
     // must be definitively acquired before it is used, even when called inside another transaction.
     AcquireResult acquireResult =
-        tm().transactNew(
+        ofyTm()
+            .transactNew(
                 () -> {
-                  DateTime now = tm().getTransactionTime();
+                  DateTime now = ofyTm().getTransactionTime();
 
                   // Checking if an unexpired lock still exists - if so, the lock can't be acquired.
-                  Lock lock = ofy().load().type(Lock.class).id(lockId).now();
+                  Lock lock =
+                      ofyTm()
+                          .loadByKeyIfPresent(
+                              VKey.createOfy(Lock.class, Key.create(Lock.class, lockId)))
+                          .orElse(null);
                   if (lock != null) {
                     logger.atInfo().log(
                         "Loaded existing lock: %s for request: %s", lock.lockId, lock.requestLogId);
@@ -218,7 +224,7 @@ public class Lock extends ImmutableObject implements DatastoreOnlyEntity, Serial
                   // Locks are not parented under an EntityGroupRoot (so as to avoid write
                   // contention) and
                   // don't need to be backed up.
-                  ofy().saveWithoutBackup().entity(newLock);
+                  ofyTm().putWithoutBackup(newLock);
 
                   return AcquireResult.create(now, lock, newLock, lockState);
                 });
@@ -231,21 +237,26 @@ public class Lock extends ImmutableObject implements DatastoreOnlyEntity, Serial
   /** Release the lock. */
   public void release() {
     // Just use the default clock because we aren't actually doing anything that will use the clock.
-    tm().transact(
+    ofyTm()
+        .transact(
             () -> {
               // To release a lock, check that no one else has already obtained it and if not
               // delete it. If the lock in Datastore was different then this lock is gone already;
               // this can happen if release() is called around the expiration time and the lock
               // expires underneath us.
-              Lock loadedLock = ofy().load().type(Lock.class).id(lockId).now();
+              Lock loadedLock =
+                  ofyTm()
+                      .loadByKeyIfPresent(
+                          VKey.createOfy(Lock.class, Key.create(Lock.class, lockId)))
+                      .orElse(null);
               if (Lock.this.equals(loadedLock)) {
                 // Use noBackupOfy() so that we don't create a commit log entry for deleting the
                 // lock.
                 logger.atInfo().log("Deleting lock: %s", lockId);
-                ofy().deleteWithoutBackup().entity(Lock.this);
+                ofyTm().deleteWithoutBackup(Lock.this);
 
                 lockMetrics.recordRelease(
-                    resourceName, tld, new Duration(acquiredTime, tm().getTransactionTime()));
+                    resourceName, tld, new Duration(acquiredTime, ofyTm().getTransactionTime()));
               } else {
                 logger.atSevere().log(
                     "The lock we acquired was transferred to someone else before we"

@@ -25,7 +25,7 @@ import static google.registry.batch.AsyncTaskMetrics.OperationType.DNS_REFRESH;
 import static google.registry.mapreduce.inputs.EppResourceInputs.createEntityInput;
 import static google.registry.model.EppResourceUtils.isActive;
 import static google.registry.model.EppResourceUtils.isDeleted;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.latestOf;
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -44,7 +44,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskMetrics.OperationResult;
 import google.registry.dns.DnsQueue;
 import google.registry.mapreduce.MapreduceRunner;
@@ -123,7 +122,7 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
     }
 
     ImmutableList.Builder<DnsRefreshRequest> requestsBuilder = new ImmutableList.Builder<>();
-    ImmutableList.Builder<Key<HostResource>> hostKeys = new ImmutableList.Builder<>();
+    ImmutableList.Builder<VKey<HostResource>> hostKeys = new ImmutableList.Builder<>();
     final List<DnsRefreshRequest> requestsToDelete = new ArrayList<>();
 
     for (TaskHandle task : tasks) {
@@ -204,10 +203,10 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
         emit(true, true);
         return;
       }
-      Key<HostResource> referencingHostKey = null;
+      VKey<HostResource> referencingHostKey = null;
       for (DnsRefreshRequest request : refreshRequests) {
         if (isActive(domain, request.lastUpdateTime())
-            && domain.getNameservers().contains(VKey.from(request.hostKey()))) {
+            && domain.getNameservers().contains(request.hostKey())) {
           referencingHostKey = request.hostKey();
           break;
         }
@@ -293,7 +292,8 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
 
     private static final long serialVersionUID = 1772812852271288622L;
 
-    abstract Key<HostResource> hostKey();
+    abstract VKey<HostResource> hostKey();
+
     abstract DateTime lastUpdateTime();
     abstract DateTime requestedTime();
     abstract boolean isRefreshNeeded();
@@ -301,7 +301,8 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
 
     @AutoValue.Builder
     abstract static class Builder {
-      abstract Builder setHostKey(Key<HostResource> hostKey);
+      abstract Builder setHostKey(VKey<HostResource> hostKey);
+
       abstract Builder setLastUpdateTime(DateTime lastUpdateTime);
       abstract Builder setRequestedTime(DateTime requestedTime);
       abstract Builder setIsRefreshNeeded(boolean isRefreshNeeded);
@@ -314,10 +315,11 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
      */
     static DnsRefreshRequest createFromTask(TaskHandle task, DateTime now) throws Exception {
       ImmutableMap<String, String> params = ImmutableMap.copyOf(task.extractParams());
-      Key<HostResource> hostKey =
-          Key.create(checkNotNull(params.get(PARAM_HOST_KEY), "Host to refresh not specified"));
+      VKey<HostResource> hostKey =
+          VKey.from(checkNotNull(params.get(PARAM_HOST_KEY), "Host to refresh not specified"));
       HostResource host =
-          checkNotNull(ofy().load().key(hostKey).now(), "Host to refresh doesn't exist");
+          tm().transact(() -> tm().loadByKeyIfPresent(hostKey))
+              .orElseThrow(() -> new NullPointerException("Host to refresh doesn't exist"));
       boolean isHostDeleted =
           isDeleted(host, latestOf(now, host.getUpdateTimestamp().getTimestamp()));
       if (isHostDeleted) {
