@@ -16,6 +16,7 @@ package google.registry.model.registry.label;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
@@ -120,6 +121,12 @@ public final class ReservedList
     @Override
     public ReservedListEntry.Builder asBuilder() {
       return new ReservedListEntry.Builder(clone(this));
+    }
+
+    @Override
+    public String toString() {
+      return String.format(
+          "%s,%s%s", label, reservationType, isNullOrEmpty(comment) ? "" : " # " + comment);
     }
 
     /** A builder for constructing {@link ReservedListEntry} objects, since they are immutable. */

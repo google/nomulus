@@ -78,6 +78,7 @@ public final class RegistryTool {
           .put("get_operation_status", GetOperationStatusCommand.class)
           .put("get_premium_list", GetPremiumListCommand.class)
           .put("get_registrar", GetRegistrarCommand.class)
+          .put("get_reserved_list", GetReservedListCommand.class)
           .put("get_resource_by_key", GetResourceByKeyCommand.class)
           .put("get_routing_map", GetRoutingMapCommand.class)
           .put("get_schema", GetSchemaCommand.class)
