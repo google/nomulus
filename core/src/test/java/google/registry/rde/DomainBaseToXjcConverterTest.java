@@ -41,6 +41,7 @@ import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.secdns.DelegationSignerData;
@@ -55,7 +56,9 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.util.Idn;
 import google.registry.xjc.domain.XjcDomainStatusType;
 import google.registry.xjc.domain.XjcDomainStatusValueType;
@@ -71,7 +74,6 @@ import java.io.ByteArrayOutputStream;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /**
@@ -80,6 +82,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  * <p>This tests the mapping between {@link DomainBase} and {@link XjcRdeDomain} as well as some
  * exceptional conditions.
  */
+@DualDatabaseTest
 public class DomainBaseToXjcConverterTest {
 
   @RegisterExtension
@@ -94,11 +97,11 @@ public class DomainBaseToXjcConverterTest {
     createTld("xn--q9jyb4c");
   }
 
-  @Test
+  @TestOfyAndSql
   void testConvertThick() {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
 
-    assertThat(bean.getClID()).isEqualTo("GetTheeBack");
+    assertThat(bean.getClID()).isEqualTo("TheRegistrar");
 
     assertThat(
             bean.getContacts().stream()
@@ -111,7 +114,7 @@ public class DomainBaseToXjcConverterTest {
     //    that created the domain name object.  An OPTIONAL client attribute
     //    is used to specify the client that performed the operation.
     //    This will always be null for us since we track each registrar as a separate client.
-    assertThat(bean.getCrRr().getValue()).isEqualTo("LawyerCat");
+    assertThat(bean.getCrRr().getValue()).isEqualTo("TheRegistrar");
     assertThat(bean.getCrRr().getClient()).isNull();
     assertThat(bean.getExDate()).isEqualTo(DateTime.parse("1930-01-01T00:00:00Z"));
 
@@ -163,19 +166,19 @@ public class DomainBaseToXjcConverterTest {
     assertThat(bean.getTrDate()).isEqualTo(DateTime.parse("1910-01-01T00:00:00Z"));
 
     assertThat(bean.getTrnData().getTrStatus().toString()).isEqualTo("PENDING");
-    assertThat(bean.getTrnData().getReRr().getValue()).isEqualTo("gaining");
-    assertThat(bean.getTrnData().getAcRr().getValue()).isEqualTo("losing");
+    assertThat(bean.getTrnData().getReRr().getValue()).isEqualTo("NewRegistrar");
+    assertThat(bean.getTrnData().getAcRr().getValue()).isEqualTo("TheRegistrar");
     assertThat(bean.getTrnData().getAcDate()).isEqualTo(DateTime.parse("1925-04-20T00:00:00Z"));
     assertThat(bean.getTrnData().getReDate()).isEqualTo(DateTime.parse("1919-01-01T00:00:00Z"));
     assertThat(bean.getTrnData().getExDate()).isEqualTo(DateTime.parse("1931-01-01T00:00:00Z"));
 
     assertThat(bean.getUpDate()).isEqualTo(DateTime.parse("1920-01-01T00:00:00Z"));
 
-    assertThat(bean.getUpRr().getValue()).isEqualTo("IntoTheTempest");
+    assertThat(bean.getUpRr().getValue()).isEqualTo("TheRegistrar");
     assertThat(bean.getUpRr().getClient()).isNull();
   }
 
-  @Test
+  @TestOfyAndSql
   void testConvertThin() {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
     assertThat(bean.getRegistrant()).isNull();
@@ -183,13 +186,13 @@ public class DomainBaseToXjcConverterTest {
     assertThat(bean.getSecDNS()).isNull();
   }
 
-  @Test
+  @TestOfyAndSql
   void testMarshalThick() throws Exception {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.FULL);
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
   }
 
-  @Test
+  @TestOfyAndSql
   void testMarshalThin() throws Exception {
     XjcRdeDomain bean = DomainBaseToXjcConverter.convertDomain(makeDomainBase(clock), RdeMode.THIN);
     wrapDeposit(bean).marshal(new ByteArrayOutputStream(), UTF_8);
@@ -214,9 +217,15 @@ public class DomainBaseToXjcConverterTest {
 
   static DomainBase makeDomainBase(FakeClock clock) {
     DomainBase domain =
-        newDomainBase("example.xn--q9jyb4c").asBuilder().setRepoId("2-Q9JYB4C").build();
-    HistoryEntry historyEntry =
-        persistResource(new HistoryEntry.Builder().setParent(domain).build());
+        persistResource(
+            newDomainBase("example.xn--q9jyb4c").asBuilder().setRepoId("2-Q9JYB4C").build());
+    DomainHistory domainHistory =
+        persistResource(
+            new DomainHistory.Builder()
+                .setModificationTime(clock.nowUtc())
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setParent(domain)
+                .build());
     BillingEvent.OneTime billingEvent =
         persistResource(
             new BillingEvent.OneTime.Builder()
@@ -227,7 +236,7 @@ public class DomainBaseToXjcConverterTest {
                 .setPeriodYears(2)
                 .setEventTime(DateTime.parse("1910-01-01T00:00:00Z"))
                 .setBillingTime(DateTime.parse("1910-01-01T00:00:00Z"))
-                .setParent(historyEntry)
+                .setParent(domainHistory)
                 .build());
     domain =
         domain
@@ -253,15 +262,15 @@ public class DomainBaseToXjcConverterTest {
                                 "bird or fiend!? i shrieked upstarting",
                                 "bog@cat.みんな")
                             .createVKey())))
-            .setCreationClientId("LawyerCat")
+            .setCreationClientId("TheRegistrar")
             .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-            .setPersistedCurrentSponsorClientId("GetTheeBack")
+            .setPersistedCurrentSponsorClientId("TheRegistrar")
             .setDsData(
                 ImmutableSet.of(
                     DelegationSignerData.create(123, 200, 230, base16().decode("1234567890"))))
             .setDomainName(Idn.toASCII("love.みんな"))
             .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-            .setLastEppUpdateClientId("IntoTheTempest")
+            .setLastEppUpdateClientId("TheRegistrar")
             .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
             .setNameservers(
                 ImmutableSet.of(
@@ -288,13 +297,13 @@ public class DomainBaseToXjcConverterTest {
                                 .setPeriodYears(2)
                                 .setEventTime(DateTime.parse("1920-01-01T00:00:00Z"))
                                 .setBillingTime(DateTime.parse("1920-01-01T00:00:00Z"))
-                                .setParent(historyEntry)
+                                .setParent(domainHistory)
                                 .build())),
                     GracePeriod.create(
                         GracePeriodStatus.TRANSFER,
                         domain.getRepoId(),
                         DateTime.parse("1920-01-01T00:00:00Z"),
-                        "foo",
+                        "TheRegistrar",
                         null)))
             .setSubordinateHosts(ImmutableSet.of("home.by.horror.haunted"))
             .setStatusValues(
@@ -312,7 +321,7 @@ public class DomainBaseToXjcConverterTest {
                             .setClientId("TheRegistrar")
                             .setEventTime(END_OF_TIME)
                             .setRecurrenceEndTime(END_OF_TIME)
-                            .setParent(historyEntry)
+                            .setParent(domainHistory)
                             .build())
                     .createVKey())
             .setAutorenewPollMessage(
@@ -323,13 +332,13 @@ public class DomainBaseToXjcConverterTest {
                             .setEventTime(END_OF_TIME)
                             .setAutorenewEndTime(END_OF_TIME)
                             .setMsg("Domain was auto-renewed.")
-                            .setParent(historyEntry)
+                            .setParent(domainHistory)
                             .build())
                     .createVKey())
             .setTransferData(
                 new DomainTransferData.Builder()
-                    .setGainingClientId("gaining")
-                    .setLosingClientId("losing")
+                    .setGainingClientId("NewRegistrar")
+                    .setLosingClientId("TheRegistrar")
                     .setPendingTransferExpirationTime(DateTime.parse("1925-04-20T00:00:00Z"))
                     .setServerApproveBillingEvent(billingEvent.createVKey())
                     .setServerApproveAutorenewEvent(
@@ -341,7 +350,7 @@ public class DomainBaseToXjcConverterTest {
                                     .setClientId("TheRegistrar")
                                     .setEventTime(END_OF_TIME)
                                     .setRecurrenceEndTime(END_OF_TIME)
-                                    .setParent(historyEntry)
+                                    .setParent(domainHistory)
                                     .build())
                             .createVKey())
                     .setServerApproveAutorenewPollMessage(
@@ -352,7 +361,7 @@ public class DomainBaseToXjcConverterTest {
                                     .setEventTime(END_OF_TIME)
                                     .setAutorenewEndTime(END_OF_TIME)
                                     .setMsg("Domain was auto-renewed.")
-                                    .setParent(historyEntry)
+                                    .setParent(domainHistory)
                                     .build())
                             .createVKey())
                     .setServerApproveEntities(ImmutableSet.of(billingEvent.createVKey()))
@@ -374,8 +383,8 @@ public class DomainBaseToXjcConverterTest {
         new ContactResource.Builder()
             .setContactId(id)
             .setEmailAddress(email)
-            .setPersistedCurrentSponsorClientId("GetTheeBack")
-            .setCreationClientId("GetTheeBack")
+            .setPersistedCurrentSponsorClientId("TheRegistrar")
+            .setCreationClientId("TheRegistrar")
             .setCreationTimeForTest(END_OF_TIME)
             .setInternationalizedPostalInfo(
                 new PostalInfo.Builder()
@@ -403,13 +412,13 @@ public class DomainBaseToXjcConverterTest {
     clock.advanceOneMilli();
     return persistEppResource(
         new HostResource.Builder()
-            .setCreationClientId("LawyerCat")
+            .setCreationClientId("TheRegistrar")
             .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-            .setPersistedCurrentSponsorClientId("BusinessCat")
+            .setPersistedCurrentSponsorClientId("TheRegistrar")
             .setHostName(Idn.toASCII(fqhn))
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString(ip)))
             .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-            .setLastEppUpdateClientId("CeilingCat")
+            .setLastEppUpdateClientId("TheRegistrar")
             .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
             .setRepoId(repoId)
             .setStatusValues(ImmutableSet.of(StatusValue.OK))

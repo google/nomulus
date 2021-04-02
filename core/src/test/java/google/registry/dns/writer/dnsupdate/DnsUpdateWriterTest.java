@@ -42,14 +42,15 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
@@ -70,6 +71,7 @@ import org.xbill.DNS.Update;
 
 /** Unit tests for {@link DnsUpdateWriter}. */
 @ExtendWith(MockitoExtension.class)
+@DualDatabaseTest
 public class DnsUpdateWriterTest {
 
   @RegisterExtension
@@ -96,7 +98,7 @@ public class DnsUpdateWriterTest {
         "tld", Duration.ZERO, Duration.ZERO, Duration.ZERO, mockResolver, clock);
   }
 
-  @Test
+  @TestOfyAndSql
   void testPublishDomainCreate_publishesNameServers() throws Exception {
     HostResource host1 = persistActiveHost("ns1.example.tld");
     HostResource host2 = persistActiveHost("ns2.example.tld");
@@ -119,7 +121,7 @@ public class DnsUpdateWriterTest {
   }
 
   @MockitoSettings(strictness = Strictness.LENIENT)
-  @Test
+  @TestOfyAndSql
   void testPublishAtomic_noCommit() {
     HostResource host1 = persistActiveHost("ns.example1.tld");
     DomainBase domain1 =
@@ -143,7 +145,7 @@ public class DnsUpdateWriterTest {
     verifyNoInteractions(mockResolver);
   }
 
-  @Test
+  @TestOfyAndSql
   void testPublishAtomic_oneUpdate() throws Exception {
     HostResource host1 = persistActiveHost("ns.example1.tld");
     DomainBase domain1 =
@@ -175,7 +177,7 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 4); // The delete and NS sets for each TLD
   }
 
-  @Test
+  @TestOfyAndSql
   void testPublishDomainCreate_publishesDelegationSigner() throws Exception {
     DomainBase domain =
         persistActiveDomain("example.tld")
@@ -199,7 +201,7 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 3); // The delete, the NS, and DS sets
   }
 
-  @Test
+  @TestOfyAndSql
   void testPublishDomainWhenNotActive_removesDnsRecords() throws Exception {
     DomainBase domain =
         persistActiveDomain("example.tld")
@@ -219,7 +221,7 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 1); // Just the delete set
   }
 
-  @Test
+  @TestOfyAndSql
   void testPublishDomainDelete_removesDnsRecords() throws Exception {
     persistDeletedDomain("example.tld", clock.nowUtc().minusDays(1));
 
@@ -233,7 +235,7 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 1); // Just the delete set
   }
 
-  @Test
+  @TestOfyAndSql
   void testPublishHostCreate_publishesAddressRecords() throws Exception {
     HostResource host =
         persistResource(
@@ -266,7 +268,7 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 5);
   }
 
-  @Test
+  @TestOfyAndSql
   void testPublishHostDelete_removesDnsRecords() throws Exception {
     persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
     persistActiveDomain("example.tld");
@@ -282,7 +284,7 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 2); // Just the delete set
   }
 
-  @Test
+  @TestOfyAndSql
   void testPublishHostDelete_removesGlueRecords() throws Exception {
     persistDeletedHost("ns1.example.tld", clock.nowUtc().minusDays(1));
     persistResource(
@@ -303,7 +305,7 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 3);
   }
 
-  @Test
+  @TestOfyAndSql
   void testPublishDomainExternalAndInBailiwickNameServer() throws Exception {
     HostResource externalNameserver = persistResource(newHostResource("ns1.example.com"));
     HostResource inBailiwickNameserver =
@@ -340,7 +342,7 @@ public class DnsUpdateWriterTest {
     assertThatTotalUpdateSetsIs(update, 5);
   }
 
-  @Test
+  @TestOfyAndSql
   void testPublishDomainDeleteOrphanGlues() throws Exception {
     HostResource inBailiwickNameserver =
         persistResource(
@@ -378,7 +380,7 @@ public class DnsUpdateWriterTest {
 
   @MockitoSettings(strictness = Strictness.LENIENT)
   @SuppressWarnings("AssertThrowsMultipleStatements")
-  @Test
+  @TestOfyAndSql
   void testPublishDomainFails_whenDnsUpdateReturnsError() throws Exception {
     DomainBase domain =
         persistActiveDomain("example.tld")
@@ -399,7 +401,7 @@ public class DnsUpdateWriterTest {
 
   @MockitoSettings(strictness = Strictness.LENIENT)
   @SuppressWarnings("AssertThrowsMultipleStatements")
-  @Test
+  @TestOfyAndSql
   void testPublishHostFails_whenDnsUpdateReturnsError() throws Exception {
     HostResource host =
         persistActiveSubordinateHost("ns1.example.tld", persistActiveDomain("example.tld"))

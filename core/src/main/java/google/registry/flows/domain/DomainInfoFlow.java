@@ -22,6 +22,7 @@ import static google.registry.flows.domain.DomainFlowUtils.handleFeeRequest;
 import static google.registry.flows.domain.DomainFlowUtils.loadForeignKeyedDesignatedContacts;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -100,9 +101,11 @@ public final class DomainInfoFlow implements Flow {
     verifyOptionalAuthInfo(authInfo, domain);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setDomain(domain).build());
-    // Prefetch all referenced resources. Calling values() blocks until loading is done.
-    tm().loadByKeys(domain.getNameservers());
-    tm().loadByKeys(domain.getReferencedContacts());
+    // In ofy, refetch all referenced resources.
+    if (tm().isOfy()) {
+      tm().loadByKeys(domain.getNameservers());
+      tm().loadByKeys(domain.getReferencedContacts());
+    }
     // Registrars can only see a few fields on unauthorized domains.
     // This is a policy decision that is left up to us by the rfcs.
     DomainInfoData.Builder infoBuilder =
@@ -110,14 +113,16 @@ public final class DomainInfoFlow implements Flow {
             .setFullyQualifiedDomainName(domain.getDomainName())
             .setRepoId(domain.getRepoId())
             .setCurrentSponsorClientId(domain.getCurrentSponsorClientId())
-            .setRegistrant(tm().loadByKey(domain.getRegistrant()).getContactId());
+            .setRegistrant(
+                transactIfJpaTm(() -> tm().loadByKey(domain.getRegistrant())).getContactId());
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.
     if (clientId.equals(domain.getCurrentSponsorClientId()) || authInfo.isPresent()) {
       HostsRequest hostsRequest = ((Info) resourceCommand).getHostsRequest();
       infoBuilder
           .setStatusValues(domain.getStatusValues())
-          .setContacts(loadForeignKeyedDesignatedContacts(domain.getContacts()))
+          .setContacts(
+              transactIfJpaTm(() -> loadForeignKeyedDesignatedContacts(domain.getContacts())))
           .setNameservers(hostsRequest.requestDelegated() ? domain.loadNameserverHostNames() : null)
           .setSubordinateHosts(
               hostsRequest.requestSubordinate() ? domain.getSubordinateHosts() : null)

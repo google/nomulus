@@ -18,6 +18,9 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.BaseEncoding.base16;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registries.assertTldExists;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -71,7 +74,15 @@ final class GenerateDnsReportCommand implements CommandWithRemoteApi {
     String generate() {
       result.append("[\n");
 
-      Iterable<DomainBase> domains = ofy().load().type(DomainBase.class).filter("tld", tld);
+      Iterable<DomainBase> domains =
+          tm().isOfy()
+              ? ofy().load().type(DomainBase.class).filter("tld", tld)
+              : tm().transact(
+                      () ->
+                          jpaTm()
+                              .query("FROM Domain WHERE tld = :tld", DomainBase.class)
+                              .setParameter("tld", tld)
+                              .getResultList());
       for (DomainBase domain : domains) {
         // Skip deleted domains and domains that don't get published to DNS.
         if (isBeforeOrAt(domain.getDeletionTime(), now) || !domain.shouldPublishToDns()) {
@@ -80,7 +91,8 @@ final class GenerateDnsReportCommand implements CommandWithRemoteApi {
         write(domain);
       }
 
-      Iterable<HostResource> nameservers = ofy().load().type(HostResource.class);
+      Iterable<HostResource> nameservers =
+          transactIfJpaTm(() -> tm().loadAllOf(HostResource.class));
       for (HostResource nameserver : nameservers) {
         // Skip deleted hosts and external hosts.
         if (isBeforeOrAt(nameserver.getDeletionTime(), now)

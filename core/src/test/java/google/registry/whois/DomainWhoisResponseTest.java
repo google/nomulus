@@ -38,14 +38,16 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.whois.WhoisResponse.WhoisResponseResults;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainWhoisResponse}. */
+@DualDatabaseTest
 class DomainWhoisResponseTest {
 
   @RegisterExtension
@@ -97,130 +99,146 @@ class DomainWhoisResponseTest {
                 .setRepoId("2-ROID")
                 .build());
 
-    registrant = persistResource(new ContactResource.Builder()
-        .setContactId("5372808-ERL")
-        .setRepoId("4-ROID")
-        .setLocalizedPostalInfo(
-            new PostalInfo.Builder()
-            .setType(PostalInfo.Type.LOCALIZED)
-            .setName("SHOULD NOT BE USED")
-            .setOrg("SHOULD NOT BE USED")
-            .setAddress(new ContactAddress.Builder()
-                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
-                .setCity("ANYTOWN")
-                .setState("AP")
-                .setZip("A1A1A1")
-                .setCountryCode("EX")
-                .build())
-           .build())
-        .setInternationalizedPostalInfo(
-            new PostalInfo.Builder()
-            .setType(PostalInfo.Type.INTERNATIONALIZED)
-            .setName("EXAMPLE REGISTRANT")
-            .setOrg("Tom & Jerry Corp.")
-            .setAddress(new ContactAddress.Builder()
-                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
-                .setCity("ANYTOWN")
-                .setState("AP")
-                .setZip("A1A1A1")
-                .setCountryCode("EX")
-                .build())
-            .build())
-        .setVoiceNumber(
-            new ContactPhoneNumber.Builder()
-            .setPhoneNumber("+1.5555551212")
-            .setExtension("1234")
-            .build())
-        .setFaxNumber(
-            new ContactPhoneNumber.Builder()
-            .setPhoneNumber("+1.5555551213")
-            .setExtension("4321")
-            .build())
-        .setEmailAddress("EMAIL@EXAMPLE.tld")
-        .build());
+    registrant =
+        persistResource(
+            new ContactResource.Builder()
+                .setContactId("5372808-ERL")
+                .setRepoId("4-ROID")
+                .setCreationClientId("NewRegistrar")
+                .setPersistedCurrentSponsorClientId("NewRegistrar")
+                .setLocalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(PostalInfo.Type.LOCALIZED)
+                        .setName("SHOULD NOT BE USED")
+                        .setOrg("SHOULD NOT BE USED")
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
+                                .setCity("ANYTOWN")
+                                .setState("AP")
+                                .setZip("A1A1A1")
+                                .setCountryCode("EX")
+                                .build())
+                        .build())
+                .setInternationalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(PostalInfo.Type.INTERNATIONALIZED)
+                        .setName("EXAMPLE REGISTRANT")
+                        .setOrg("Tom & Jerry Corp.")
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
+                                .setCity("ANYTOWN")
+                                .setState("AP")
+                                .setZip("A1A1A1")
+                                .setCountryCode("EX")
+                                .build())
+                        .build())
+                .setVoiceNumber(
+                    new ContactPhoneNumber.Builder()
+                        .setPhoneNumber("+1.5555551212")
+                        .setExtension("1234")
+                        .build())
+                .setFaxNumber(
+                    new ContactPhoneNumber.Builder()
+                        .setPhoneNumber("+1.5555551213")
+                        .setExtension("4321")
+                        .build())
+                .setEmailAddress("EMAIL@EXAMPLE.tld")
+                .build());
 
-    adminContact = persistResource(new ContactResource.Builder()
-        .setContactId("5372809-ERL")
-        .setRepoId("5-ROID")
-        .setLocalizedPostalInfo(
-            new PostalInfo.Builder()
-            .setType(PostalInfo.Type.LOCALIZED)
-            .setName("SHOULD NOT BE USED")
-            .setOrg("SHOULD NOT BE USED")
-            .setAddress(new ContactAddress.Builder()
-                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
-                .setCity("ANYTOWN")
-                .setState("AP")
-                .setZip("A1A1A1")
-                .setCountryCode("EX")
-                .build())
-            .build())
-        .setInternationalizedPostalInfo(
-            new PostalInfo.Builder()
-            .setType(PostalInfo.Type.INTERNATIONALIZED)
-            .setName("EXAMPLE REGISTRANT ADMINISTRATIVE")
-            .setOrg("EXAMPLE REGISTRANT ORGANIZATION")
-            .setAddress(new ContactAddress.Builder()
-                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
-                .setCity("ANYTOWN")
-                .setState("AP")
-                .setZip("A1A1A1")
-                .setCountryCode("EX")
-                .build())
-            .build())
-        .setVoiceNumber(
-            new ContactPhoneNumber.Builder()
-            .setPhoneNumber("+1.5555551212")
-            .setExtension("1234")
-            .build())
-        .setFaxNumber(
-            new ContactPhoneNumber.Builder()
-            .setPhoneNumber("+1.5555551213")
-            .build())
-        .setEmailAddress("EMAIL@EXAMPLE.tld")
-        .build());
+    adminContact =
+        persistResource(
+            new ContactResource.Builder()
+                .setContactId("5372809-ERL")
+                .setRepoId("5-ROID")
+                .setCreationClientId("NewRegistrar")
+                .setPersistedCurrentSponsorClientId("NewRegistrar")
+                .setLocalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(PostalInfo.Type.LOCALIZED)
+                        .setName("SHOULD NOT BE USED")
+                        .setOrg("SHOULD NOT BE USED")
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
+                                .setCity("ANYTOWN")
+                                .setState("AP")
+                                .setZip("A1A1A1")
+                                .setCountryCode("EX")
+                                .build())
+                        .build())
+                .setInternationalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(PostalInfo.Type.INTERNATIONALIZED)
+                        .setName("EXAMPLE REGISTRANT ADMINISTRATIVE")
+                        .setOrg("EXAMPLE REGISTRANT ORGANIZATION")
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
+                                .setCity("ANYTOWN")
+                                .setState("AP")
+                                .setZip("A1A1A1")
+                                .setCountryCode("EX")
+                                .build())
+                        .build())
+                .setVoiceNumber(
+                    new ContactPhoneNumber.Builder()
+                        .setPhoneNumber("+1.5555551212")
+                        .setExtension("1234")
+                        .build())
+                .setFaxNumber(
+                    new ContactPhoneNumber.Builder().setPhoneNumber("+1.5555551213").build())
+                .setEmailAddress("EMAIL@EXAMPLE.tld")
+                .build());
 
-    techContact = persistResource(new ContactResource.Builder()
-        .setContactId("5372811-ERL")
-        .setRepoId("6-ROID")
-        .setLocalizedPostalInfo(
-            new PostalInfo.Builder()
-            .setType(PostalInfo.Type.LOCALIZED)
-            .setName("SHOULD NOT BE USED")
-            .setOrg("SHOULD NOT BE USED")
-            .setAddress(new ContactAddress.Builder()
-                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
-                .setCity("ANYTOWN")
-                .setState("AP")
-                .setZip("A1A1A1")
-                .setCountryCode("EX")
-                .build())
-            .build())
-        .setInternationalizedPostalInfo(
-            new PostalInfo.Builder()
-            .setType(PostalInfo.Type.INTERNATIONALIZED)
-            .setName("EXAMPLE REGISTRAR TECHNICAL")
-            .setOrg("EXAMPLE REGISTRAR LLC")
-            .setAddress(new ContactAddress.Builder()
-                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
-                .setCity("ANYTOWN")
-                .setState("AP")
-                .setZip("A1A1A1")
-                .setCountryCode("EX")
-                .build())
-           .build())
-        .setVoiceNumber(
-            new ContactPhoneNumber.Builder()
-            .setPhoneNumber("+1.1235551234")
-            .setExtension("1234")
-            .build())
-        .setFaxNumber(
-            new ContactPhoneNumber.Builder()
-            .setPhoneNumber("+1.5555551213")
-            .setExtension("93")
-            .build())
-        .setEmailAddress("EMAIL@EXAMPLE.tld")
-        .build());
+    techContact =
+        persistResource(
+            new ContactResource.Builder()
+                .setContactId("5372811-ERL")
+                .setRepoId("6-ROID")
+                .setCreationClientId("NewRegistrar")
+                .setPersistedCurrentSponsorClientId("NewRegistrar")
+                .setLocalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(PostalInfo.Type.LOCALIZED)
+                        .setName("SHOULD NOT BE USED")
+                        .setOrg("SHOULD NOT BE USED")
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
+                                .setCity("ANYTOWN")
+                                .setState("AP")
+                                .setZip("A1A1A1")
+                                .setCountryCode("EX")
+                                .build())
+                        .build())
+                .setInternationalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(PostalInfo.Type.INTERNATIONALIZED)
+                        .setName("EXAMPLE REGISTRAR TECHNICAL")
+                        .setOrg("EXAMPLE REGISTRAR LLC")
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("123 EXAMPLE STREET"))
+                                .setCity("ANYTOWN")
+                                .setState("AP")
+                                .setZip("A1A1A1")
+                                .setCountryCode("EX")
+                                .build())
+                        .build())
+                .setVoiceNumber(
+                    new ContactPhoneNumber.Builder()
+                        .setPhoneNumber("+1.1235551234")
+                        .setExtension("1234")
+                        .build())
+                .setFaxNumber(
+                    new ContactPhoneNumber.Builder()
+                        .setPhoneNumber("+1.5555551213")
+                        .setExtension("93")
+                        .build())
+                .setEmailAddress("EMAIL@EXAMPLE.tld")
+                .build());
 
     VKey<HostResource> hostResource1Key = hostResource1.createVKey();
     VKey<HostResource> hostResource2Key = hostResource2.createVKey();
@@ -234,10 +252,11 @@ class DomainWhoisResponseTest {
             new DomainBase.Builder()
                 .setDomainName("example.tld")
                 .setRepoId(repoId)
+                .setCreationClientId("NewRegistrar")
+                .setPersistedCurrentSponsorClientId("NewRegistrar")
                 .setLastEppUpdateTime(DateTime.parse("2009-05-29T20:13:00Z"))
                 .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
                 .setRegistrationExpirationTime(DateTime.parse("2010-10-08T00:44:59Z"))
-                .setPersistedCurrentSponsorClientId("NewRegistrar")
                 .setStatusValues(
                     ImmutableSet.of(
                         StatusValue.CLIENT_DELETE_PROHIBITED,
@@ -253,13 +272,14 @@ class DomainWhoisResponseTest {
                 .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, "deadface")))
                 .setGracePeriods(
                     ImmutableSet.of(
-                        GracePeriod.create(GracePeriodStatus.ADD, repoId, END_OF_TIME, "", null),
                         GracePeriod.create(
-                            GracePeriodStatus.TRANSFER, repoId, END_OF_TIME, "", null)))
+                            GracePeriodStatus.ADD, repoId, END_OF_TIME, "NewRegistrar", null),
+                        GracePeriod.create(
+                            GracePeriodStatus.TRANSFER, repoId, END_OF_TIME, "NewRegistrar", null)))
                 .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void getPlainTextOutputTest() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(domainBase, false, "Please contact registrar", clock.nowUtc());
@@ -270,7 +290,7 @@ class DomainWhoisResponseTest {
         .isEqualTo(WhoisResponseResults.create(loadFile("whois_domain.txt"), 1));
   }
 
-  @Test
+  @TestOfyAndSql
   void getPlainTextOutputTest_registrarAbuseInfoMissing() {
     persistResource(abuseContact.asBuilder().setVisibleInDomainWhoisAsAbuse(false).build());
     DomainWhoisResponse domainWhoisResponse =
@@ -282,7 +302,7 @@ class DomainWhoisResponseTest {
                 loadFile("whois_domain_registrar_abuse_info_missing.txt"), 1));
   }
 
-  @Test
+  @TestOfyAndSql
   void getPlainTextOutputTest_fullOutput() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(domainBase, true, "Please contact registrar", clock.nowUtc());
@@ -293,7 +313,7 @@ class DomainWhoisResponseTest {
         .isEqualTo(WhoisResponseResults.create(loadFile("whois_domain_full_output.txt"), 1));
   }
 
-  @Test
+  @TestOfyAndSql
   void addImplicitOkStatusTest() {
     DomainWhoisResponse domainWhoisResponse =
         new DomainWhoisResponse(
