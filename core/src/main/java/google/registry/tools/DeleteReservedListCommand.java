@@ -28,7 +28,7 @@ import google.registry.model.registry.label.ReservedListDualDatabaseDao;
  * reserved list is currently in use on a tld.
  */
 @Parameters(separators = " =", commandDescription = "Deletes a ReservedList from the database.")
-final class DeleteReservedListCommand extends ConfirmingCommand {
+final class DeleteReservedListCommand extends ConfirmingCommand implements CommandWithRemoteApi {
 
   @Parameter(
       names = {"-n", "--name"},
