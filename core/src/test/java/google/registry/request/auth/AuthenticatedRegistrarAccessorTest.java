@@ -38,14 +38,15 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.request.auth.AuthenticatedRegistrarAccessor.RegistrarAccessDeniedException;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
 import java.util.Optional;
 import java.util.logging.Level;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.Mock;
@@ -56,6 +57,7 @@ import org.mockito.quality.Strictness;
 /** Unit tests for {@link AuthenticatedRegistrarAccessor}. */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
+@DualDatabaseTest
 class AuthenticatedRegistrarAccessorTest {
 
   @RegisterExtension
@@ -132,7 +134,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Users are owners for registrars if and only if they are in the contacts for that registrar. */
-  @Test
+  @TestOfyAndSql
   void getAllClientIdWithAccess_user() {
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
@@ -144,7 +146,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Logged out users don't have access to anything. */
-  @Test
+  @TestOfyAndSql
   void getAllClientIdWithAccess_loggedOutUser() {
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
@@ -165,7 +167,7 @@ class AuthenticatedRegistrarAccessorTest {
    *
    * <p>(in other words - they don't have OWNER access only to REAL registrars owned by others)
    */
-  @Test
+  @TestOfyAndSql
   void getAllClientIdWithAccess_gaeAdmin() {
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
@@ -197,7 +199,7 @@ class AuthenticatedRegistrarAccessorTest {
    *
    * <p>(in other words - they don't have OWNER access only to REAL registrars owned by others)
    */
-  @Test
+  @TestOfyAndSql
   void getAllClientIdWithAccess_userInSupportGroup() {
     when(groupsConnection.isMemberOfGroup("user@gmail.com", SUPPORT_GROUP.get())).thenReturn(true);
     AuthenticatedRegistrarAccessor registrarAccessor =
@@ -220,7 +222,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Empty Support group email - skips check and doesn't generate the lazy. */
-  @Test
+  @TestOfyAndSql
   void getAllClientIdWithAccess_emptySupportEmail_works() {
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
@@ -233,7 +235,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Support group check throws - continue anyway. */
-  @Test
+  @TestOfyAndSql
   void getAllClientIdWithAccess_throwingGroupCheck_stillWorks() {
     when(groupsConnection.isMemberOfGroup(any(), any())).thenThrow(new RuntimeException("blah"));
     AuthenticatedRegistrarAccessor registrarAccessor =
@@ -247,7 +249,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Fail loading registrar if user doesn't have access to it. */
-  @Test
+  @TestOfyAndSql
   void testGetRegistrarForUser_noAccess_isNotAdmin() {
     expectGetRegistrarFailure(
         REAL_CLIENT_ID_WITHOUT_CONTACT,
@@ -256,7 +258,7 @@ class AuthenticatedRegistrarAccessorTest {
     verify(lazyGroupsConnection).get();
   }
 
-  @Test
+  @TestOfyAndSql
   void testGetRegistrarForUser_registrarIsDisabled_isNotAdmin() {
     persistResource(
         Registrar.loadByClientId("TheRegistrar")
@@ -272,7 +274,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Fail loading registrar if user doesn't have access to it, even if it's not REAL. */
-  @Test
+  @TestOfyAndSql
   void testGetRegistrarForUser_noAccess_isNotAdmin_notReal() {
     expectGetRegistrarFailure(
         OTE_CLIENT_ID_WITHOUT_CONTACT,
@@ -282,7 +284,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Fail loading registrar if there's no user associated with the request. */
-  @Test
+  @TestOfyAndSql
   void testGetRegistrarForUser_noUser() {
     expectGetRegistrarFailure(
         CLIENT_ID_WITH_CONTACT,
@@ -292,7 +294,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Succeed loading registrar if user has access to it. */
-  @Test
+  @TestOfyAndSql
   void testGetRegistrarForUser_inContacts_isNotAdmin() throws Exception {
     expectGetRegistrarSuccess(
         CLIENT_ID_WITH_CONTACT,
@@ -302,7 +304,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Succeed loading registrar if admin with access. */
-  @Test
+  @TestOfyAndSql
   void testGetRegistrarForUser_inContacts_isAdmin() throws Exception {
     expectGetRegistrarSuccess(
         CLIENT_ID_WITH_CONTACT,
@@ -312,7 +314,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Succeed loading registrar for admin even if they aren't on the approved contacts list. */
-  @Test
+  @TestOfyAndSql
   void testGetRegistrarForUser_notInContacts_isAdmin() throws Exception {
     expectGetRegistrarSuccess(
         REAL_CLIENT_ID_WITHOUT_CONTACT,
@@ -321,7 +323,7 @@ class AuthenticatedRegistrarAccessorTest {
     verifyNoInteractions(lazyGroupsConnection);
   }
 
-  @Test
+  @TestOfyAndSql
   void testGetRegistrarForUser_registrarIsDisabled_isAdmin() throws Exception {
     persistResource(
         Registrar.loadByClientId("NewRegistrar")
@@ -337,7 +339,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Succeed loading non-REAL registrar for admin. */
-  @Test
+  @TestOfyAndSql
   void testGetRegistrarForUser_notInContacts_isAdmin_notReal() throws Exception {
     expectGetRegistrarSuccess(
         OTE_CLIENT_ID_WITHOUT_CONTACT,
@@ -347,7 +349,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** Fail loading registrar even if admin, if registrar doesn't exist. */
-  @Test
+  @TestOfyAndSql
   void testGetRegistrarForUser_doesntExist_isAdmin() {
     expectGetRegistrarFailure(
         "BadClientId",
@@ -382,7 +384,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** guessClientIdForUser returns the first clientId in getAllClientIdWithRoles. */
-  @Test
+  @TestOfyAndSql
   void testGuessClientIdForUser_hasAccess_returnsFirst() throws Exception {
     AuthenticatedRegistrarAccessor registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(
@@ -395,7 +397,7 @@ class AuthenticatedRegistrarAccessorTest {
   }
 
   /** If a user doesn't have access to any registrars, guess fails. */
-  @Test
+  @TestOfyAndSql
   void testGuessClientIdForUser_noAccess_fails() {
     AuthenticatedRegistrarAccessor registrarAccessor =
         AuthenticatedRegistrarAccessor.createForTesting(ImmutableSetMultimap.of());
@@ -405,7 +407,7 @@ class AuthenticatedRegistrarAccessorTest {
         .isEqualTo("TestUserId isn't associated with any registrar");
   }
 
-  @Test
+  @TestOfyAndSql
   void testNullness() {
     new NullPointerTester()
         .setDefault(HttpServletRequest.class, req)

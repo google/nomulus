@@ -21,7 +21,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
@@ -30,7 +32,11 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import java.util.Comparator;
+import java.util.stream.Stream;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 import org.joda.time.DateTime;
 
 /**
@@ -85,21 +91,56 @@ public class HistoryEntryDao {
     }
   }
 
+  /** Loads all history objects from all time from the given registrars. */
+  public static Iterable<? extends HistoryEntry> loadHistoryObjectsByRegistrars(
+      ImmutableCollection<String> registrarIds) {
+    if (tm().isOfy()) {
+      return ofy()
+          .load()
+          .type(HistoryEntry.class)
+          .filter("clientId in", registrarIds)
+          .order("modificationTime");
+    } else {
+      return jpaTm()
+          .transact(
+              () ->
+                  Streams.concat(
+                          loadHistoryObjectFromSqlByRegistrars(ContactHistory.class, registrarIds),
+                          loadHistoryObjectFromSqlByRegistrars(DomainHistory.class, registrarIds),
+                          loadHistoryObjectFromSqlByRegistrars(HostHistory.class, registrarIds))
+                      .sorted(Comparator.comparing(HistoryEntry::getModificationTime))
+                      .collect(toImmutableList()));
+    }
+  }
+
+  private static Stream<? extends HistoryEntry> loadHistoryObjectFromSqlByRegistrars(
+      Class<? extends HistoryEntry> historyClass, ImmutableCollection<String> registrarIds) {
+    return jpaTm()
+        .getEntityManager()
+        .createQuery(
+            CriteriaQueryBuilder.create(historyClass)
+                .whereFieldIsIn("clientId", registrarIds)
+                .build())
+        .getResultStream();
+  }
+
   private static Iterable<? extends HistoryEntry> loadHistoryObjectsForResourceFromSql(
       VKey<? extends EppResource> parentKey, DateTime afterTime, DateTime beforeTime) {
+    // The class we're searching from is based on which parent type (e.g. Domain) we have
     Class<? extends HistoryEntry> historyClass = getHistoryClassFromParent(parentKey.getKind());
+    // The field representing repo ID unfortunately varies by history class
     String repoIdFieldName = getRepoIdFieldNameFromHistoryClass(historyClass);
-    String tableName = jpaTm().getEntityManager().getMetamodel().entity(historyClass).getName();
-    String queryString =
-        String.format(
-            "SELECT entry FROM %s entry WHERE entry.modificationTime >= :afterTime AND "
-                + "entry.modificationTime <= :beforeTime AND entry.%s = :parentKey",
-            tableName, repoIdFieldName);
+    CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
+    CriteriaQuery<? extends HistoryEntry> criteriaQuery =
+        CriteriaQueryBuilder.create(historyClass)
+            .where("modificationTime", criteriaBuilder::greaterThanOrEqualTo, afterTime)
+            .where("modificationTime", criteriaBuilder::lessThanOrEqualTo, beforeTime)
+            .where(repoIdFieldName, criteriaBuilder::equal, parentKey.getSqlKey().toString())
+            .build();
+
     return jpaTm()
-        .query(queryString, historyClass)
-        .setParameter("afterTime", afterTime)
-        .setParameter("beforeTime", beforeTime)
-        .setParameter("parentKey", parentKey.getSqlKey().toString())
+        .getEntityManager()
+        .createQuery(criteriaQuery)
         .getResultStream()
         .sorted(Comparator.comparing(HistoryEntry::getModificationTime))
         .collect(toImmutableList());
@@ -127,15 +168,14 @@ public class HistoryEntryDao {
 
   private static Iterable<? extends HistoryEntry> loadAllHistoryObjectsFromSql(
       Class<? extends HistoryEntry> historyClass, DateTime afterTime, DateTime beforeTime) {
+    CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
     return jpaTm()
-        .query(
-            String.format(
-                "SELECT entry FROM %s entry WHERE entry.modificationTime >= :afterTime AND "
-                    + "entry.modificationTime <= :beforeTime",
-                jpaTm().getEntityManager().getMetamodel().entity(historyClass).getName()),
-            historyClass)
-        .setParameter("afterTime", afterTime)
-        .setParameter("beforeTime", beforeTime)
+        .getEntityManager()
+        .createQuery(
+            CriteriaQueryBuilder.create(historyClass)
+                .where("modificationTime", criteriaBuilder::greaterThanOrEqualTo, afterTime)
+                .where("modificationTime", criteriaBuilder::lessThanOrEqualTo, beforeTime)
+                .build())
         .getResultList();
   }
 }

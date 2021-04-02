@@ -17,7 +17,6 @@ package google.registry.model;
 import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.eppcommon.EppXmlTransformer.unmarshal;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX;
 
@@ -28,7 +27,6 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multiset;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.cmd.Query;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.fee.FeeCreateCommandExtension;
 import google.registry.model.domain.launch.LaunchCreateExtension;
@@ -39,6 +37,7 @@ import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.host.HostCommand;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.Type;
+import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.xml.XmlException;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -196,16 +195,10 @@ public class OteStats {
    * <p>Stops when it notices that all tests have passed.
    */
   private OteStats recordRegistrarHistory(String registrarName) {
-    ImmutableCollection<String> clientIds =
+    ImmutableCollection<String> registrarIds =
         OteAccountBuilder.createClientIdToTldMap(registrarName).keySet();
 
-    Query<HistoryEntry> query =
-        ofy()
-            .load()
-            .type(HistoryEntry.class)
-            .filter("clientId in", clientIds)
-            .order("modificationTime");
-    for (HistoryEntry historyEntry : query) {
+    for (HistoryEntry historyEntry : HistoryEntryDao.loadHistoryObjectsByRegistrars(registrarIds)) {
       try {
         record(historyEntry);
       } catch (XmlException e) {

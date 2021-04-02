@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -41,10 +40,10 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.PremiumListDualDao;
+import google.registry.persistence.VKey;
 import google.registry.util.CidrAddressBlock;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import org.joda.money.CurrencyUnit;
@@ -225,15 +224,14 @@ public final class OteAccountBuilder {
   }
 
   /**
-   * Persists all the OT&amp;E entities to datastore.
+   * Persists all the OT&amp;E entities to the database.
    *
    * @return map from the new clientIds created to the new TLDs they have access to. Can be used to
    *     go over all the newly created Registrars / Registries / RegistrarContacts if any
    *     post-creation work is needed.
    */
   public ImmutableMap<String, String> buildAndPersist() {
-    // save all the entitiesl in a single transaction
-    tm().transact(this::saveAllEntities);
+    saveAllEntities();
     return clientIdToTld;
   }
 
@@ -246,30 +244,38 @@ public final class OteAccountBuilder {
 
   /** Saves all the OT&amp;E entities we created. */
   private void saveAllEntities() {
-    tm().assertInTransaction();
-
     // use ImmutableObject instead of Registry so that the Key generation doesn't break
-    ImmutableList<ImmutableObject> registries = ImmutableList.of(sunriseTld, gaTld, eapTld);
+    ImmutableList<Registry> registries = ImmutableList.of(sunriseTld, gaTld, eapTld);
     ImmutableList<RegistrarContact> contacts = contactsBuilder.build();
 
-    if (!replaceExisting) {
-      ImmutableList<Key<ImmutableObject>> keys =
-          Streams.concat(registries.stream(), registrars.stream(), contacts.stream())
-              .map(Key::create)
-              .collect(toImmutableList());
-      Set<Key<ImmutableObject>> existingKeys = ofy().load().keys(keys).keySet();
-      checkState(
-          existingKeys.isEmpty(),
-          "Found existing object(s) conflicting with OT&E objects: %s",
-          existingKeys);
-    }
-    // Save the Registries (TLDs) first
-    ofy().save().entities(registries).now();
-    // Now we can set the allowedTlds for the registrars
-    registrars = registrars.stream().map(this::addAllowedTld).collect(toImmutableList());
-    // and we can save the registrars and contacts!
-    ofy().save().entities(registrars);
-    ofy().save().entities(contacts);
+    tm().transact(
+            () -> {
+              if (!replaceExisting) {
+                ImmutableList<VKey<? extends ImmutableObject>> keys =
+                    Streams.concat(
+                            registries.stream()
+                                .map(registry -> Registry.createVKey(registry.getTldStr())),
+                            registrars.stream().map(Registrar::createVKey),
+                            contacts.stream().map(RegistrarContact::createVKey))
+                        .collect(toImmutableList());
+                ImmutableMap<VKey<? extends ImmutableObject>, ImmutableObject> existingObjects =
+                    tm().loadByKeysIfPresent(keys);
+                checkState(
+                    existingObjects.isEmpty(),
+                    "Found existing object(s) conflicting with OT&E objects: %s",
+                    existingObjects.keySet());
+              }
+              // Save the Registries (TLDs) first
+              tm().putAll(registries);
+            });
+    // Now we can set the allowedTlds for the registrars in a new transaction
+    tm().transact(
+            () -> {
+              registrars = registrars.stream().map(this::addAllowedTld).collect(toImmutableList());
+              // and we can save the registrars and contacts!
+              tm().putAll(registrars);
+              tm().putAll(contacts);
+            });
   }
 
   private Registrar addAllowedTld(Registrar registrar) {
