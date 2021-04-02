@@ -119,6 +119,7 @@ import google.registry.tmch.LordnTaskUtils;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -1208,6 +1209,7 @@ public class DatabaseHelper {
             .setType(getHistoryEntryType(parentResource))
             .setModificationTime(DateTime.now(DateTimeZone.UTC))
             .setParent(parentResource)
+            .setClientId(parentResource.getPersistedCurrentSponsorClientId())
             .build());
   }
 
@@ -1327,6 +1329,20 @@ public class DatabaseHelper {
    */
   public static <T> ImmutableList<T> loadAllOf(Class<T> clazz) {
     return transactIfJpaTm(() -> tm().loadAllOf(clazz));
+  }
+
+  /**
+   * Loads the set of entities by their keys from the DB.
+   *
+   * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
+   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   *
+   * <p>Nonexistent keys / entities are absent from the resulting map, but no {@link
+   * NoSuchElementException} will be thrown.
+   */
+  public static <T> ImmutableMap<VKey<? extends T>, T> loadByKeysIfPresent(
+      Iterable<? extends VKey<? extends T>> keys) {
+    return transactIfJpaTm(() -> tm().loadByKeysIfPresent(keys));
   }
 
   private DatabaseHelper() {}

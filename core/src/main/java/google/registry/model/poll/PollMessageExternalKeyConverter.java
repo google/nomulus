@@ -24,6 +24,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.VKey;
 import java.util.List;
 
 /**
@@ -78,14 +79,14 @@ public class PollMessageExternalKeyConverter {
   /**
    * Returns an Objectify Key to a PollMessage corresponding with the external ID.
    *
-   * <p>Note that the year field that is included at the end of the poll message isn't actually
-   * used for anything; it exists solely to create unique externally visible IDs for autorenews. We
-   * thus ignore it (for now) for backwards compatibility reasons, so that registrars can still ACK
+   * <p>Note that the year field that is included at the end of the poll message isn't actually used
+   * for anything; it exists solely to create unique externally visible IDs for autorenews. We thus
+   * ignore it (for now) for backwards compatibility reasons, so that registrars can still ACK
    * existing poll message IDs they may have lying around.
    *
    * @throws PollMessageExternalKeyParseException if the external key has an invalid format.
    */
-  public static Key<PollMessage> parsePollMessageExternalId(String externalKey) {
+  public static VKey<PollMessage> parsePollMessageExternalId(String externalKey) {
     List<String> idComponents = Splitter.on('-').splitToList(externalKey);
     if (idComponents.size() != 6) {
       throw new PollMessageExternalKeyParseException();
@@ -96,16 +97,17 @@ public class PollMessageExternalKeyConverter {
       if (resourceClazz == null) {
         throw new PollMessageExternalKeyParseException();
       }
-      return Key.create(
+      return VKey.from(
           Key.create(
               Key.create(
-                  null,
-                  resourceClazz,
-                  String.format("%s-%s", idComponents.get(1), idComponents.get(2))),
-              HistoryEntry.class,
-              Long.parseLong(idComponents.get(3))),
-          PollMessage.class,
-          Long.parseLong(idComponents.get(4)));
+                  Key.create(
+                      null,
+                      resourceClazz,
+                      String.format("%s-%s", idComponents.get(1), idComponents.get(2))),
+                  HistoryEntry.class,
+                  Long.parseLong(idComponents.get(3))),
+              PollMessage.class,
+              Long.parseLong(idComponents.get(4))));
       // Note that idComponents.get(5) is entirely ignored; we never use the year field internally.
     } catch (NumberFormatException e) {
       throw new PollMessageExternalKeyParseException();

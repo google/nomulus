@@ -38,14 +38,16 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferResponse.ContactTransferResponse;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.SetClockExtension;
+import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PollRequestFlow}. */
+@DualDatabaseTest
 class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
 
   @Order(value = Order.DEFAULT - 3)
@@ -92,14 +94,14 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
             .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_domainTransferApproved() throws Exception {
     persistPendingTransferPollMessage();
     assertTransactionalFlow(false);
     runFlowAssertResponse(loadFile("poll_response_domain_transfer.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_clTridNotSpecified() throws Exception {
     setEppInput("poll_no_cltrid.xml");
     persistPendingTransferPollMessage();
@@ -107,7 +109,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     runFlowAssertResponse(loadFile("poll_response_domain_transfer_no_cltrid.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_contactTransferPending() throws Exception {
     setClientIdForFlow("TheRegistrar");
     persistResource(
@@ -130,7 +132,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     runFlowAssertResponse(loadFile("poll_response_contact_transfer.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_domainPendingActionComplete() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -145,7 +147,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     runFlowAssertResponse(loadFile("poll_response_domain_pending_notification.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_domainAutorenewMessage() throws Exception {
     persistResource(
         new PollMessage.Autorenew.Builder()
@@ -159,12 +161,12 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     runFlowAssertResponse(loadFile("poll_response_autorenew.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_empty() throws Exception {
     runFlowAssertResponse(loadFile("poll_response_empty.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_wrongRegistrar() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -176,7 +178,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     runFlowAssertResponse(loadFile("poll_response_empty.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_futurePollMessage() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -188,7 +190,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     runFlowAssertResponse(loadFile("poll_response_empty.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_futureAutorenew() throws Exception {
     persistResource(
         new PollMessage.Autorenew.Builder()
@@ -202,7 +204,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     runFlowAssertResponse(loadFile("poll_response_empty.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_contactDelete() throws Exception {
     // Contact delete poll messages do not have any response data, so ensure that no
     // response data block is produced in the poll message.
@@ -223,7 +225,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     runFlowAssertResponse(loadFile("poll_response_contact_delete.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_hostDelete() throws Exception {
     // Host delete poll messages do not have any response data, so ensure that no
     // response data block is produced in the poll message.
@@ -245,7 +247,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     runFlowAssertResponse(loadFile("poll_response_host_delete.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_messageIdProvided() throws Exception {
     setEppInput("poll_with_id.xml");
     assertTransactionalFlow(false);
