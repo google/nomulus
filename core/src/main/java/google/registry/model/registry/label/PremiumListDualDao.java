@@ -16,9 +16,10 @@ package google.registry.model.registry.label;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.Streams;
+import google.registry.model.DatabaseMigrationUtils;
+import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.schema.tld.PremiumListSqlDao;
@@ -46,8 +47,7 @@ public class PremiumListDualDao {
    * or absent if no such list exists.
    */
   public static Optional<PremiumList> getLatestRevision(String premiumListName) {
-    // TODO(gbrodman): Use Sarah's DB scheduler instead of this isOfy check
-    if (tm().isOfy()) {
+    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
       return PremiumListDatastoreDao.getLatestRevision(premiumListName);
     } else {
       return PremiumListSqlDao.getLatestRevision(premiumListName);
@@ -68,16 +68,14 @@ public class PremiumListDualDao {
     }
     String premiumListName = registry.getPremiumList().getName();
     Optional<Money> primaryResult;
-    // TODO(gbrodman): Use Sarah's DB scheduler instead of this isOfy check
-    if (tm().isOfy()) {
+    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
       primaryResult =
           PremiumListDatastoreDao.getPremiumPrice(premiumListName, label, registry.getTldStr());
     } else {
       primaryResult = PremiumListSqlDao.getPremiumPrice(premiumListName, label);
     }
     // Also load the value from the secondary DB, compare the two results, and log if different.
-    // TODO(gbrodman): Use Sarah's DB scheduler instead of this isOfy check
-    if (tm().isOfy()) {
+    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
       suppressExceptionUnlessInTest(
           () -> {
             Optional<Money> secondaryResult =
@@ -120,8 +118,7 @@ public class PremiumListDualDao {
    */
   public static PremiumList save(String name, List<String> inputData) {
     PremiumList result;
-    // TODO(gbrodman): Use Sarah's DB scheduler instead of this isOfy check
-    if (tm().isOfy()) {
+    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
       result = PremiumListDatastoreDao.save(name, inputData);
       suppressExceptionUnlessInTest(
           () -> PremiumListSqlDao.save(name, inputData), "Error when saving premium list to SQL.");
@@ -141,8 +138,7 @@ public class PremiumListDualDao {
    * secondary database.
    */
   public static void delete(PremiumList premiumList) {
-    // TODO(gbrodman): Use Sarah's DB scheduler instead of this isOfy check
-    if (tm().isOfy()) {
+    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
       PremiumListDatastoreDao.delete(premiumList);
       suppressExceptionUnlessInTest(
           () -> PremiumListSqlDao.delete(premiumList),
@@ -159,8 +155,7 @@ public class PremiumListDualDao {
   public static boolean exists(String premiumListName) {
     // It may seem like overkill, but loading the list has ways been the way we check existence and
     // given that we usually load the list around the time we check existence, we'll hit the cache
-    // TODO(gbrodman): Use Sarah's DB scheduler instead of this isOfy check
-    if (tm().isOfy()) {
+    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
       return PremiumListDatastoreDao.getLatestRevision(premiumListName).isPresent();
     } else {
       return PremiumListSqlDao.getLatestRevision(premiumListName).isPresent();
@@ -179,8 +174,7 @@ public class PremiumListDualDao {
                 () ->
                     new IllegalArgumentException(
                         String.format("No premium list with name %s.", premiumListName)));
-    // TODO(gbrodman): Use Sarah's DB scheduler instead of this isOfy check
-    if (tm().isOfy()) {
+    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
       return PremiumListDatastoreDao.loadPremiumListEntriesUncached(premiumList);
     } else {
       CurrencyUnit currencyUnit = premiumList.getCurrency();

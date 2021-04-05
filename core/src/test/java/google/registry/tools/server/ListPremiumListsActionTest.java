@@ -69,7 +69,7 @@ class ListPremiumListsActionTest extends ListActionTestCase {
         Optional.empty(),
         "^name\\s+labelsToPrices\\s*$",
         "^-+\\s+-+\\s*$",
-        "^how\\s+\\{richer=5000\\.00\\}$",
+        "^how\\s+\\{richer=5000\\}\\s+$",
         "^xn--q9jyb4c\\s+\\{rich=100\\.00\\}\\s+$");
   }
 
