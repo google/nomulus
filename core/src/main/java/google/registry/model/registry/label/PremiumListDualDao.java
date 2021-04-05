@@ -25,6 +25,7 @@ import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.schema.tld.PremiumListSqlDao;
 import java.util.List;
 import java.util.Optional;
+import org.joda.money.BigMoney;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 
@@ -182,7 +183,7 @@ public class PremiumListDualDao {
           .map(
               premiumEntry ->
                   new PremiumListEntry.Builder()
-                      .setPrice(Money.of(currencyUnit, premiumEntry.getPrice()))
+                      .setPrice(BigMoney.of(currencyUnit, premiumEntry.getPrice()).toMoney())
                       .setLabel(premiumEntry.getDomainLabel())
                       .build())
           .collect(toImmutableList());
