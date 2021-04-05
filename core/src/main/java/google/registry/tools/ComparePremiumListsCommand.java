@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import google.registry.model.registry.label.PremiumList;
@@ -34,6 +35,9 @@ import org.joda.money.BigMoney;
 import org.joda.money.CurrencyUnit;
 
 /** Command to compare all PremiumLists in Datastore to all PremiumLists in Cloud SQL. */
+@Parameters(
+    separators = " =",
+    commandDescription = "Compare all the PremiumLists in Datastore to those in Cloud SQL.")
 final class ComparePremiumListsCommand implements CommandWithRemoteApi {
 
   @Override
