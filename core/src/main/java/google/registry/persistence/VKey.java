@@ -230,7 +230,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    * <p>TODO(b/184350590): After migration, we'll want remove the ofy key dependency from this.
    */
   @Nullable
-  public static <T> VKey<T> from(String ofyKeyRepr) {
+  public static <T> VKey<T> fromWebsafeKey(String ofyKeyRepr) {
     return from(Key.create(ofyKeyRepr));
   }
 }
