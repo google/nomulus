@@ -63,6 +63,7 @@ import google.registry.util.SystemClock;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.logging.Level;
 import javax.annotation.Nullable;
@@ -320,7 +321,7 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
               checkNotNull(params.get(PARAM_HOST_KEY), "Host to refresh not specified"));
       HostResource host =
           tm().transact(() -> tm().loadByKeyIfPresent(hostKey))
-              .orElseThrow(() -> new NullPointerException("Host to refresh doesn't exist"));
+              .orElseThrow(() -> new NoSuchElementException("Host to refresh doesn't exist"));
       boolean isHostDeleted =
           isDeleted(host, latestOf(now, host.getUpdateTimestamp().getTimestamp()));
       if (isHostDeleted) {
