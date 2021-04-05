@@ -18,19 +18,19 @@
 # - /flyway/jars: the schema jar to be deployed.
 #
 # Database login info may be passed in two ways:
-# - Decrypt the admin_credential.enc file on GCS and map it as
-#   /secrets/admin_credential.dec
-# - Provide the content of the admin_credential as command line arguments
+# - Save it in the format of "cloud_sql_instance login password" in a file and
+#   map the file as /secrets/schema_deployer_credential.dec
+# - Provide the content of the credential as command line arguments
 
 set -e
 if [ "$#" -le 1 ]; then
-  if [ ! -f /secrets/admin_credential.dec ]; then
-    echo "Missing /secrets/admin_credential.dec"
+  if [ ! -f /secrets/schema_deployer_credential.dec ]; then
+    echo "Missing /secrets/schema_deployer_credential.dec"
     exit 1
   fi
-  cloud_sql_instance=$(cut -d' ' -f1 /secrets/admin_credential.dec)
-  db_user=$(cut -d' ' -f2 /secrets/admin_credential.dec)
-  db_password=$(cut -d' ' -f3 /secrets/admin_credential.dec)
+  cloud_sql_instance=$(cut -d' ' -f1 /secrets/schema_deployer_credential.dec)
+  db_user=$(cut -d' ' -f2 /secrets/schema_deployer_credential.dec)
+  db_password=$(cut -d' ' -f3 /secrets/schema_deployer_credential.dec)
   flyway_action=${1:-validate}
 elif [ "$#" -ge 3 ]; then
   cloud_sql_instance=$1

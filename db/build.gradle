@@ -1,3 +1,5 @@
+import org.gradle.process.internal.ExecException
+
 // Copyright 2019 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,7 +42,7 @@ ext {
   }
 
   getSocketFactoryAccessInfo = { env ->
-    def cred = getCloudSqlCredential(env, 'admin').split(' ')
+    def cred = getCloudSqlCredential(env).split(' ')
     def sqlInstance = cred[0]
     println "Database set to Cloud SQL instance ${sqlInstance}."
     return [
@@ -65,26 +67,25 @@ ext {
     }
   }
 
-  // Retrieves Cloud SQL credential for a given role. Result is in the form of
-  // 'instancename username password'.
+  // Retrieves the Cloud SQL credential for the schema deployer. Result is in
+  // the form of 'instancename username password'.
   //
   // The env parameter may be one of the following: alpha, crash, sandbox, or
-  // production. The role parameter may be superuser. (More roles will be added
-  // later).
-  getCloudSqlCredential = { env, role ->
-    def devProject = rootProject.devProject
-    def gcpProject = rootProject.projects[env]
-    def keyProject = env in restrictedDbEnv? devProject : gcpProject
+  // production.
+  //
+  // User must make sure that the nomulus tool can be found on PATH. An alias
+  // will not work.
+  getCloudSqlCredential = { env ->
+    try {
+      execInBash('which nomulus', '/tmp')
+    } catch (ExecException e) {
+      throw new IllegalStateException(
+          'nomulus not found. Make sure it is on PATH, not just an alias.')
+    }
     def command =
-        """gsutil cp \
-           gs://${gcpProject}-beam/cloudsql/${role}_credential.enc - | \
-           base64 -d | \
-           gcloud kms decrypt --location global --keyring nomulus-tool-keyring \
-           --key nomulus-tool-key --plaintext-file=- \
-           --ciphertext-file=- \
-           --project=${keyProject}"""
+        "nomulus -e ${env} get_sql_credential --user schema_deployer"
 
-    return execInBash(command, '/tmp')
+    return execInBash(command, project.rootDir)
   }
 }
 
