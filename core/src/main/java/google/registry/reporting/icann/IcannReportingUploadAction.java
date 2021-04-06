@@ -278,9 +278,15 @@ public final class IcannReportingUploadAction implements Runnable {
   }
 
   private void emailUploadResults(ImmutableMap<String, Boolean> reportSummary) {
-    String subject = String.format(
-        "ICANN Monthly report upload summary: %d/%d succeeded",
-        reportSummary.values().stream().filter((b) -> b).count(), reportSummary.size());
+    if (reportSummary.size() == 0) {
+      logger.atInfo().log("No uploads were attempted today; skipping notification email.");
+      return;
+    }
+    String subject =
+        String.format(
+            "ICANN Monthly report upload summary: %d/%d succeeded",
+            // This filter() does in fact do something: It counts only the trues.
+            reportSummary.values().stream().filter((b) -> b).count(), reportSummary.size());
     String body =
         String.format(
             "Report Filename - Upload status:\n%s",
