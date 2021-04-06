@@ -111,8 +111,7 @@ final class ComparePremiumListsCommand implements CommandWithRemoteApi {
                           .collect(Collectors.joining("\n"));
 
                   // This will only print out the name of the unequal list. GetPremiumListCommand
-                  // should be
-                  // used to determine what the actual differences are.
+                  // should be used to determine what the actual differences are.
                   if (!datastoreListString.equals(sqlListString)) {
                     listsWithDiffs++;
                     System.out.printf(
