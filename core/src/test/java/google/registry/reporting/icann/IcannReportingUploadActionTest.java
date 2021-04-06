@@ -210,13 +210,7 @@ class IcannReportingUploadActionTest {
     action.run();
     tm().clearSessionCache();
     verifyNoMoreInteractions(mockReporter);
-    verify(emailService)
-        .sendEmail(
-            EmailMessage.create(
-                "ICANN Monthly report upload summary: 0/0 succeeded",
-                "Report Filename - Upload status:\n",
-                new InternetAddress("recipient@example.com"),
-                new InternetAddress("sender@example.com")));
+    verifyNoMoreInteractions(emailService);
   }
 
   @TestOfyAndSql
