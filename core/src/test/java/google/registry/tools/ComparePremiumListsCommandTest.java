@@ -40,7 +40,7 @@ public class ComparePremiumListsCommandTest extends CommandTestCase<ComparePremi
   void test_success() throws Exception {
     runCommand();
     String stdout = getStdoutAsString();
-    assertThat(stdout).isEqualTo("Found 0 unequal lists.\n");
+    assertThat(stdout).isEqualTo("Found 0 unequal list(s).\n");
   }
 
   @Test
@@ -58,7 +58,7 @@ public class ComparePremiumListsCommandTest extends CommandTestCase<ComparePremi
     assertThat(stdout)
         .isEqualTo(
             "PremiumList with name how is present in Datastore, but not in Cloud SQL\n"
-                + "Found 1 unequal lists.\n");
+                + "Found 1 unequal list(s).\n");
   }
 
   @Test
@@ -70,7 +70,7 @@ public class ComparePremiumListsCommandTest extends CommandTestCase<ComparePremi
     assertThat(stdout)
         .isEqualTo(
             "PremiumList with name how is present in Cloud SQL, but not in Datastore\n"
-                + "Found 1 unequal lists.\n");
+                + "Found 1 unequal list(s).\n");
   }
 
   @Test
@@ -87,6 +87,6 @@ public class ComparePremiumListsCommandTest extends CommandTestCase<ComparePremi
     assertThat(stdout)
         .isEqualTo(
             "PremiumList with name how has different entries in each database\n"
-                + "Found 1 unequal lists.\n");
+                + "Found 1 unequal list(s).\n");
   }
 }
