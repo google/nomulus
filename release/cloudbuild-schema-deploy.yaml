@@ -27,9 +27,9 @@
 # See https://github.com/spinnaker/spinnaker/issues/3028 for more information.
 steps:
 # Download and decrypt the nomulus tool credential, which has the privilege to
-# start Cloud SQL proxy to all environments.
-# Also download and decrypt the admin_credential file, which has the cloud
-# instance name and database login name and password.
+# start Cloud SQL proxy to all environments. This credential is also used to
+# authenticate the nomulus tool when fetching the schema deployer credential in
+# the next step.
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
   volumes:
   - name: 'secrets'
@@ -45,13 +45,21 @@ steps:
         --ciphertext-file=- \
         --plaintext-file=/secrets/cloud_sql_credential.json \
         --location=global --keyring=nomulus-tool-keyring --key=nomulus-tool-key
-    gsutil cp gs://$PROJECT_ID-deploy/cloudsql-credentials/${_ENV}/admin_credential.enc - \
-      | base64 -d \
-      | gcloud kms decrypt \
-        --ciphertext-file=- \
-        --plaintext-file=/secrets/admin_credential.dec \
-        --location global --keyring=nomulus-tool-keyring \
-        --key=nomulus-tool-key
+# Fetch the Cloud SQL credential for schema_deployer
+- name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
+  volumes:
+  - name: 'secrets'
+    path: '/secrets'
+  args:
+  - -e
+  - ${_ENV}
+  - --credential
+  - /secrets/cloud_sql_credential.json
+  - get_sql_credential
+  - --user
+  - schema_deployer
+  - --output
+  - /secrets/schema_deployer_credential.dec
 # Download the schema jar to be deployed.
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
   volumes:
