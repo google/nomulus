@@ -39,8 +39,7 @@ public class ComparePremiumListsCommandTest extends CommandTestCase<ComparePremi
   @Test
   void test_success() throws Exception {
     runCommand();
-    String stdout = getStdoutAsString();
-    assertThat(stdout).isEqualTo("Found 0 unequal list(s).\n");
+    assertThat(getStdoutAsString()).isEqualTo("Found 0 unequal list(s).\n");
   }
 
   @Test
@@ -54,8 +53,7 @@ public class ComparePremiumListsCommandTest extends CommandTestCase<ComparePremi
               }
             });
     runCommand();
-    String stdout = getStdoutAsString();
-    assertThat(stdout)
+    assertThat(getStdoutAsString())
         .isEqualTo(
             "PremiumList 'how' is present in Datastore, but not in Cloud SQL.\n"
                 + "Found 1 unequal list(s).\n");
@@ -66,8 +64,7 @@ public class ComparePremiumListsCommandTest extends CommandTestCase<ComparePremi
     PremiumList premiumList = PremiumListDatastoreDao.getLatestRevision("how").get();
     ofyTm().transact(() -> ofyTm().delete(premiumList));
     runCommand();
-    String stdout = getStdoutAsString();
-    assertThat(stdout)
+    assertThat(getStdoutAsString())
         .isEqualTo(
             "PremiumList 'how' is present in Cloud SQL, but not in Datastore.\n"
                 + "Found 1 unequal list(s).\n");
@@ -83,8 +80,7 @@ public class ComparePremiumListsCommandTest extends CommandTestCase<ComparePremi
             .setCreationTime(fakeClock.nowUtc())
             .build());
     runCommand();
-    String stdout = getStdoutAsString();
-    assertThat(stdout)
+    assertThat(getStdoutAsString())
         .isEqualTo(
             "PremiumList 'how' has different entries in each database.\n"
                 + "Found 1 unequal list(s).\n");
