@@ -37,18 +37,6 @@ public final class KeyModule {
   }
 
   @Provides
-  @Key("cloudSqlPassword")
-  static String providesCloudSqlPassword(Keyring keyring) {
-    return keyring.getCloudSqlPassword();
-  }
-
-  @Provides
-  @Key("toolsCloudSqlPassword")
-  static String providesToolsCloudSqlPassword(Keyring keyring) {
-    return keyring.getToolsCloudSqlPassword();
-  }
-
-  @Provides
   @Key("brdaReceiverKey")
   static PGPPublicKey provideBrdaReceiverKey(Keyring keyring) {
     return keyring.getBrdaReceiverKey();

@@ -31,7 +31,6 @@ import dagger.BindsOptionalOf;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.keyring.kms.KmsKeyring;
 import google.registry.persistence.transaction.CloudSqlCredentialSupplier;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.JpaTransactionManagerImpl;
@@ -202,18 +201,11 @@ public abstract class PersistenceModule {
   @Singleton
   @AppEngineJpaTm
   static JpaTransactionManager provideAppEngineJpaTm(
-      @Config("cloudSqlUsername") String username,
-      KmsKeyring kmsKeyring,
       SqlCredentialStore credentialStore,
       @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
       Clock clock) {
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
-    validateAndSetCredential(
-        credentialStore,
-        new RobotUser(RobotId.NOMULUS),
-        overrides,
-        username,
-        kmsKeyring.getCloudSqlPassword());
+    setSqlCredential(credentialStore, new RobotUser(RobotId.NOMULUS), overrides);
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -258,20 +250,13 @@ public abstract class PersistenceModule {
   @Singleton
   @NomulusToolJpaTm
   static JpaTransactionManager provideNomulusToolJpaTm(
-      @Config("toolsCloudSqlUsername") String username,
-      KmsKeyring kmsKeyring,
       SqlCredentialStore credentialStore,
       @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
       @CloudSqlClientCredential Credential credential,
       Clock clock) {
     CloudSqlCredentialSupplier.setupCredentialSupplier(credential);
     HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
-    validateAndSetCredential(
-        credentialStore,
-        new RobotUser(RobotId.TOOL),
-        overrides,
-        username,
-        kmsKeyring.getToolsCloudSqlPassword());
+    setSqlCredential(credentialStore, new RobotUser(RobotId.TOOL), overrides);
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
@@ -349,35 +334,15 @@ public abstract class PersistenceModule {
     return emf;
   }
 
-  /**
-   * Verifies that the credential from the Secret Manager matches the one currently in use, and
-   * configures JPA with the credential from the Secret Manager.
-   *
-   * <p>This is a helper for the transition to the Secret Manager, and will be removed once data and
-   * permissions are properly set up for all projects.
-   */
-  private static void validateAndSetCredential(
-      SqlCredentialStore credentialStore,
-      SqlUser sqlUser,
-      Map<String, String> overrides,
-      String expectedLogin,
-      String expectedPassword) {
+  /** Configures JPA with the credential from the Secret Manager. */
+  private static void setSqlCredential(
+      SqlCredentialStore credentialStore, SqlUser sqlUser, Map<String, String> overrides) {
     try {
       SqlCredential credential = credentialStore.getCredential(sqlUser);
-      checkState(
-          credential.login().equals(expectedLogin),
-          "Wrong login for %s. Expecting %s, found %s.",
-          sqlUser.geUserName(),
-          expectedLogin,
-          credential.login());
-      checkState(
-          credential.password().equals(expectedPassword),
-          "Wrong password for %s.",
-          sqlUser.geUserName());
       overrides.put(Environment.USER, credential.login());
       overrides.put(Environment.PASS, credential.password());
-      logger.atWarning().log("Credentials in the kerying and the secret manager match.");
     } catch (Throwable e) {
+      // TODO(b/184631990): after SQL becomes primary, throw an exception to fail fast
       logger.atSevere().withCause(e).log("Failed to get SQL credential from Secret Manager");
     }
   }

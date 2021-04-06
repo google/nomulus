@@ -225,8 +225,6 @@ cloudSql:
   # If jdbcUrl in this file is moved elsewhere, be sure to move this notice
   # with it until the change is applied.
   jdbcUrl: jdbc:postgresql://localhost
-  # Username for the database user.
-  username: username
   # This name is used by Cloud SQL when connecting to the database.
   instanceConnectionName: project-id:region:instance-id
   # Set this to true to replicate cloud SQL transactions to datastore in the
@@ -447,7 +445,6 @@ registryTool:
   clientId: YOUR_CLIENT_ID
   # OAuth client secret used by the tool.
   clientSecret: YOUR_CLIENT_SECRET
-  username: toolusername
 
 # Configuration options for checking SSL certificates.
 sslCertificateValidation:

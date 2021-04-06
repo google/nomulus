@@ -72,7 +72,6 @@ public class KmsKeyring implements Keyring {
 
   /** Key labels for string secrets. */
   enum StringKeyLabel {
-    CLOUD_SQL_PASSWORD_STRING,
     SAFE_BROWSING_API_KEY,
     ICANN_REPORTING_PASSWORD_STRING,
     JSON_CREDENTIAL_STRING,
@@ -80,8 +79,7 @@ public class KmsKeyring implements Keyring {
     MARKSDB_LORDN_PASSWORD_STRING,
     MARKSDB_SMDRL_LOGIN_STRING,
     RDE_SSH_CLIENT_PRIVATE_STRING,
-    RDE_SSH_CLIENT_PUBLIC_STRING,
-    TOOLS_CLOUD_SQL_PASSWORD_STRING;
+    RDE_SSH_CLIENT_PUBLIC_STRING;
 
     String getLabel() {
       return UPPER_UNDERSCORE.to(LOWER_HYPHEN, name());
@@ -93,16 +91,6 @@ public class KmsKeyring implements Keyring {
   @Inject
   KmsKeyring(@Config("defaultKmsConnection") KmsConnection kmsConnection) {
     this.kmsConnection = kmsConnection;
-  }
-
-  @Override
-  public String getCloudSqlPassword() {
-    return getString(StringKeyLabel.CLOUD_SQL_PASSWORD_STRING);
-  }
-
-  @Override
-  public String getToolsCloudSqlPassword() {
-    return getString(StringKeyLabel.TOOLS_CLOUD_SQL_PASSWORD_STRING);
   }
 
   @Override
