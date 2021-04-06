@@ -123,7 +123,7 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
       }
       fieldBuilder.addAll(
           Stream.of(clazz.getDeclaredFields())
-              .filter(field -> field.getType().isAssignableFrom(AppEngineExtension.class))
+              .filter(field -> AppEngineExtension.class.isAssignableFrom(field.getType()))
               .collect(toImmutableList()));
       return fieldBuilder.build();
     }
