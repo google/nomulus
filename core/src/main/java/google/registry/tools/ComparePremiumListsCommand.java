@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.hibernate.Hibernate;
 import org.joda.money.BigMoney;
-import org.joda.money.CurrencyUnit;
 
 /** Command to compare all PremiumLists in Datastore to all PremiumLists in Cloud SQL. */
 @Parameters(
@@ -77,6 +76,9 @@ final class ComparePremiumListsCommand implements CommandWithRemoteApi {
                       "PremiumList with name %s is present in Datastore, but not in Cloud SQL%n",
                       premiumList.getName());
                 } else {
+
+                  // Datastore and Cloud SQL use different objects to represent premium list entries
+                  // so the best way to compare them is to compare their string representations.
                   String datastoreListString =
                       Streams.stream(
                               PremiumListDatastoreDao.loadPremiumListEntriesUncached(premiumList))
@@ -84,7 +86,6 @@ final class ComparePremiumListsCommand implements CommandWithRemoteApi {
                           .map(PremiumListEntry::toString)
                           .collect(Collectors.joining("\n"));
 
-                  CurrencyUnit currencyUnit = sqlList.get().getCurrency();
                   Iterable<PremiumEntry> sqlListEntries =
                       jpaTm()
                           .transact(
@@ -98,7 +99,9 @@ final class ComparePremiumListsCommand implements CommandWithRemoteApi {
                                       premiumEntry ->
                                           new PremiumListEntry.Builder()
                                               .setPrice(
-                                                  BigMoney.of(currencyUnit, premiumEntry.getPrice())
+                                                  BigMoney.of(
+                                                          sqlList.get().getCurrency(),
+                                                          premiumEntry.getPrice())
                                                       .toMoney())
                                               .setLabel(premiumEntry.getDomainLabel())
                                               .build())
@@ -130,7 +133,7 @@ final class ComparePremiumListsCommand implements CommandWithRemoteApi {
                 }
               }
 
-              System.out.printf("Found %s unequal lists.%n", listsWithDiffs);
+              System.out.printf("Found %s unequal list(s).%n", listsWithDiffs);
             });
   }
 }
