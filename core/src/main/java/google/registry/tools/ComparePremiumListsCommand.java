@@ -73,7 +73,7 @@ final class ComparePremiumListsCommand implements CommandWithRemoteApi {
                 if (!sqlList.isPresent()) {
                   listsWithDiffs++;
                   System.out.printf(
-                      "PremiumList with name %s is present in Datastore, but not in Cloud SQL%n",
+                      "PremiumList with name %s is present in Datastore, but not in Cloud SQL.%n",
                       premiumList.getName());
                 } else {
 
@@ -115,7 +115,7 @@ final class ComparePremiumListsCommand implements CommandWithRemoteApi {
                   if (!datastoreListString.equals(sqlListString)) {
                     listsWithDiffs++;
                     System.out.printf(
-                        "PremiumList with name %s has different entries in each database%n",
+                        "PremiumList with name %s has different entries in each database.%n",
                         premiumList.getName());
                   }
                 }
@@ -127,7 +127,7 @@ final class ComparePremiumListsCommand implements CommandWithRemoteApi {
                 if (!datastoreList.isPresent()) {
                   listsWithDiffs++;
                   System.out.printf(
-                      "PremiumList with name %s is present in Cloud SQL, but not in Datastore%n",
+                      "PremiumList with name %s is present in Cloud SQL, but not in Datastore.%n",
                       sqlList.getName());
                 }
               }
