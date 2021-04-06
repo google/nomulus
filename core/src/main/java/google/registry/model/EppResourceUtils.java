@@ -195,30 +195,6 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Loads resources that match some filter and that have {@link EppResource#deletionTime} that is
-   * not before "now".
-   *
-   * <p>This is an eventually consistent query.
-   *
-   * @param clazz the resource type to load
-   * @param now the logical time of the check
-   * @param filterDefinition the filter to apply when loading resources
-   * @param filterValue the acceptable value for the filter
-   */
-  public static <T extends EppResource> Iterable<T> queryNotDeleted(
-      Class<T> clazz, DateTime now, String filterDefinition, Object filterValue) {
-    return ofy()
-        .load()
-        .type(clazz)
-        .filter(filterDefinition, filterValue)
-        .filter("deletionTime >", now.toDate())
-        .list()
-        .stream()
-        .map(EppResourceUtils.transformAtTime(now))
-        .collect(toImmutableSet());
-  }
-
-  /**
    * Returns a Function that transforms an EppResource to the given DateTime, suitable for use with
    * Iterables.transform() over a collection of EppResources.
    */

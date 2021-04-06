@@ -48,8 +48,10 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.util.NonFinalForTesting;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -193,7 +195,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    * has been soft deleted.
    */
   public static <E extends EppResource> ImmutableMap<String, ForeignKeyIndex<E>> load(
-      Class<E> clazz, Iterable<String> foreignKeys, final DateTime now) {
+      Class<E> clazz, Collection<String> foreignKeys, final DateTime now) {
     return loadIndexesFromStore(clazz, foreignKeys).entrySet().stream()
         .filter(e -> now.isBefore(e.getValue().getDeletionTime()))
         .collect(entriesToImmutableMap());
@@ -207,7 +209,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    */
   private static <E extends EppResource>
       ImmutableMap<String, ForeignKeyIndex<E>> loadIndexesFromStore(
-          Class<E> clazz, Iterable<String> foreignKeys) {
+          Class<E> clazz, Collection<String> foreignKeys) {
     if (tm().isOfy()) {
       return ImmutableMap.copyOf(
           tm().doTransactionless(() -> ofy().load().type(mapToFkiClass(clazz)).ids(foreignKeys)));
@@ -215,19 +217,16 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
       String property = RESOURCE_CLASS_TO_FKI_PROPERTY.get(clazz);
       ImmutableList<ForeignKeyIndex<E>> indexes =
           tm().transact(
-                  () -> {
-                    String entityName =
-                        jpaTm().getEntityManager().getMetamodel().entity(clazz).getName();
-                    return jpaTm()
-                        .query(
-                            String.format(
-                                "FROM %s WHERE %s IN :propertyValue", entityName, property),
-                            clazz)
-                        .setParameter("propertyValue", foreignKeys)
-                        .getResultStream()
-                        .map(e -> ForeignKeyIndex.create(e, e.getDeletionTime()))
-                        .collect(toImmutableList());
-                  });
+                  () ->
+                      jpaTm()
+                          .getEntityManager()
+                          .createQuery(
+                              CriteriaQueryBuilder.create(clazz)
+                                  .whereFieldIsIn(property, foreignKeys)
+                                  .build())
+                          .getResultStream()
+                          .map(e -> ForeignKeyIndex.create(e, e.getDeletionTime()))
+                          .collect(toImmutableList()));
       // We need to find and return the entities with the maximum deletionTime for each foreign key.
       return Multimaps.index(indexes, ForeignKeyIndex::getForeignKey).asMap().entrySet().stream()
           .map(
@@ -318,7 +317,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    * reasons, and are OK with the trade-offs in loss of transactional consistency.
    */
   public static <E extends EppResource> ImmutableMap<String, ForeignKeyIndex<E>> loadCached(
-      Class<E> clazz, Iterable<String> foreignKeys, final DateTime now) {
+      Class<E> clazz, Collection<String> foreignKeys, final DateTime now) {
     if (!RegistryConfig.isEppResourceCachingEnabled()) {
       return tm().doTransactionless(() -> load(clazz, foreignKeys, now));
     }

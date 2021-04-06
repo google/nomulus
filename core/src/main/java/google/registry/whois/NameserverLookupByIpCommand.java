@@ -16,12 +16,15 @@ package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.EppResourceUtils.queryNotDeleted;
+import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
+import com.google.common.net.InetAddresses;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registries;
@@ -46,9 +49,34 @@ final class NameserverLookupByIpCommand implements WhoisCommand {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public WhoisResponse executeQuery(DateTime now) throws WhoisException {
+    Iterable<HostResource> hostsFromDb;
+    if (tm().isOfy()) {
+      hostsFromDb =
+          ofy()
+              .load()
+              .type(HostResource.class)
+              .filter("inetAddresses", ipAddress)
+              .filter("deletionTime >", now.toDate());
+    } else {
+      hostsFromDb =
+          jpaTm()
+              .transact(
+                  () ->
+                      // We cannot query @Convert-ed fields in HQL so we must use native Postgres
+                      jpaTm()
+                          .getEntityManager()
+                          .createNativeQuery(
+                              "SELECT * From \"Host\" WHERE :address = ANY(inet_addresses) AND "
+                                  + "deletion_time > CAST(:now AS timestamptz)",
+                              HostResource.class)
+                          .setParameter("address", InetAddresses.toAddrString(ipAddress))
+                          .setParameter("now", now.toString())
+                          .getResultList());
+    }
     ImmutableList<HostResource> hosts =
-        Streams.stream(queryNotDeleted(HostResource.class, now, "inetAddresses", ipAddress))
+        Streams.stream(hostsFromDb)
             .filter(
                 host ->
                     Registries.findTldForName(InternetDomainName.from(host.getHostName()))

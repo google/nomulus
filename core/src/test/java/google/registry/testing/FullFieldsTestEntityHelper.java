@@ -218,27 +218,20 @@ public final class FullFieldsTestEntityHelper {
             .setCountryCode("US")
             .build());
     }
-    ContactResource.Builder builder = new ContactResource.Builder()
-        .setContactId(id)
-        .setRepoId(generateNewContactHostRoid())
-        .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
-        .setInternationalizedPostalInfo(postalBuilder.build())
-        .setVoiceNumber(
-            new ContactPhoneNumber.Builder()
-            .setPhoneNumber("+1.2126660420")
-            .build())
-        .setFaxNumber(
-            new ContactPhoneNumber.Builder()
-            .setPhoneNumber("+1.2126660420")
-            .build());
+    ContactResource.Builder builder =
+        new ContactResource.Builder()
+            .setContactId(id)
+            .setRepoId(generateNewContactHostRoid())
+            .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
+            .setInternationalizedPostalInfo(postalBuilder.build())
+            .setVoiceNumber(
+                new ContactPhoneNumber.Builder().setPhoneNumber("+1.2126660420").build())
+            .setFaxNumber(new ContactPhoneNumber.Builder().setPhoneNumber("+1.2126660420").build());
     if (email != null) {
       builder.setEmailAddress(email);
     }
-    if (registrar != null) {
-      builder
-          .setCreationClientId(registrar.getClientId())
-          .setPersistedCurrentSponsorClientId(registrar.getClientId());
-    }
+    String registrarId = registrar == null ? "TheRegistrar" : registrar.getClientId();
+    builder.setCreationClientId(registrarId).setPersistedCurrentSponsorClientId(registrarId);
     if (deletionTime != null) {
       builder.setDeletionTime(deletionTime);
     }
