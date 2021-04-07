@@ -24,6 +24,7 @@ steps:
   - -m
   - rsync
   - -d
+  - -r
   - gs://$PROJECT_ID-deploy/${TAG_NAME}
   - gs://$PROJECT_ID-deploy/live
 timeout: 3600s
