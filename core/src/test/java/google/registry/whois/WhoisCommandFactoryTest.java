@@ -29,15 +29,17 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.registrar.Registrar;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
+import google.registry.testing.TestOfyAndSql;
 import java.net.InetAddress;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+@DualDatabaseTest
 class WhoisCommandFactoryTest {
 
   FakeClock clock = new FakeClock();
@@ -90,7 +92,7 @@ class WhoisCommandFactoryTest {
     RegistryConfig.CONFIG_SETTINGS.get().caching.singletonCacheRefreshSeconds = 0;
   }
 
-  @Test
+  @TestOfyAndSql
   void testNonCached_NameserverLookupByHostCommand() throws Exception {
     WhoisResponse response =
         noncachedFactory
@@ -114,7 +116,7 @@ class WhoisCommandFactoryTest {
         .contains("Registrar: OtherRegistrar name");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCached_NameserverLookupByHostCommand() throws Exception {
     WhoisResponse response =
         cachedFactory
@@ -137,7 +139,7 @@ class WhoisCommandFactoryTest {
         .contains("Registrar: The Registrar");
   }
 
-  @Test
+  @TestOfyAndSql
   void testNonCached_DomainLookupCommand() throws Exception {
     WhoisResponse response =
         noncachedFactory
@@ -161,7 +163,7 @@ class WhoisCommandFactoryTest {
         .contains("Registrar: OtherRegistrar name");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCached_DomainLookupCommand() throws Exception {
     WhoisResponse response =
         cachedFactory
@@ -185,7 +187,7 @@ class WhoisCommandFactoryTest {
         .contains("Registrar: The Registrar");
   }
 
-  @Test
+  @TestOfyAndSql
   void testNonCached_RegistrarLookupCommand() throws Exception {
     WhoisResponse response =
         noncachedFactory.registrarLookup("OtherRegistrar").executeQuery(clock.nowUtc());
@@ -199,7 +201,7 @@ class WhoisCommandFactoryTest {
         .contains("Phone Number: +1.2345677890");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCached_RegistrarLookupCommand() throws Exception {
     WhoisResponse response =
         cachedFactory.registrarLookup("OtherRegistrar").executeQuery(clock.nowUtc());
@@ -213,7 +215,7 @@ class WhoisCommandFactoryTest {
         .contains("Phone Number: +1.2223334444");
   }
 
-  @Test
+  @TestOfyAndSql
   void testNonCached_NameserverLookupByIpCommand() throws Exception {
     // Note that this lookup currently doesn't cache the hosts, so there's no point in testing the
     // "cached" case.  This test is here so that it will fail if anyone adds caching.
