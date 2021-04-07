@@ -91,4 +91,13 @@
     <target>backend</target>
   </cron>
 
+  <cron>
+    <url><![CDATA[/_dr/task/wipeOutDatastore]]></url>
+    <description>
+      This job runs an action that deletes all data in Cloud Datastore.
+    </description>
+    <schedule>every saturday 03:07</schedule>
+    <target>backend</target>
+  </cron>
+
 </cronentries>

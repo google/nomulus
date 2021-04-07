@@ -385,6 +385,12 @@
     <url-pattern>/_dr/task/wipeOutCloudSql</url-pattern>
   </servlet-mapping>
 
+  <!-- Action to wipeout Cloud Datastore data -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/wipeOutDatastore</url-pattern>
+  </servlet-mapping>
+
   <!-- Security config -->
   <security-constraint>
     <web-resource-collection>
