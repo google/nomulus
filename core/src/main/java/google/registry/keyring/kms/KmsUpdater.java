@@ -24,7 +24,6 @@ import static google.registry.keyring.kms.KmsKeyring.PublicKeyLabel.BRDA_SIGNING
 import static google.registry.keyring.kms.KmsKeyring.PublicKeyLabel.RDE_RECEIVER_PUBLIC;
 import static google.registry.keyring.kms.KmsKeyring.PublicKeyLabel.RDE_SIGNING_PUBLIC;
 import static google.registry.keyring.kms.KmsKeyring.PublicKeyLabel.RDE_STAGING_PUBLIC;
-import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.CLOUD_SQL_PASSWORD_STRING;
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.ICANN_REPORTING_PASSWORD_STRING;
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.JSON_CREDENTIAL_STRING;
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.MARKSDB_DNL_LOGIN_STRING;
@@ -33,7 +32,6 @@ import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.MARKSDB_SMDR
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.RDE_SSH_CLIENT_PRIVATE_STRING;
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.RDE_SSH_CLIENT_PUBLIC_STRING;
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.SAFE_BROWSING_API_KEY;
-import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.TOOLS_CLOUD_SQL_PASSWORD_STRING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
@@ -71,10 +69,6 @@ public final class KmsUpdater {
     this.secretValues = new LinkedHashMap<>();
   }
 
-  public KmsUpdater setCloudSqlPassword(String password) {
-    return setString(password, CLOUD_SQL_PASSWORD_STRING);
-  }
-
   public KmsUpdater setRdeSigningKey(PGPKeyPair keyPair) throws IOException, PGPException {
     return setKeyPair(keyPair, RDE_SIGNING_PRIVATE, RDE_SIGNING_PUBLIC);
   }
@@ -105,10 +99,6 @@ public final class KmsUpdater {
 
   public KmsUpdater setSafeBrowsingAPIKey(String apiKey) {
     return setString(apiKey, SAFE_BROWSING_API_KEY);
-  }
-
-  public KmsUpdater setToolsCloudSqlPassword(String password) {
-    return setString(password, TOOLS_CLOUD_SQL_PASSWORD_STRING);
   }
 
   public KmsUpdater setIcannReportingPassword(String password) {

@@ -404,12 +404,6 @@ public final class RegistryConfig {
     }
 
     @Provides
-    @Config("cloudSqlUsername")
-    public static String providesCloudSqlUsername(RegistryConfigSettings config) {
-      return config.cloudSql.username;
-    }
-
-    @Provides
     @Config("cloudSqlInstanceConnectionName")
     public static String providesCloudSqlInstanceConnectionName(RegistryConfigSettings config) {
       return config.cloudSql.instanceConnectionName;
@@ -1340,12 +1334,6 @@ public final class RegistryConfig {
     @Config("toolsClientSecret")
     public static String provideToolsClientSecret(RegistryConfigSettings config) {
       return config.registryTool.clientSecret;
-    }
-
-    @Provides
-    @Config("toolsCloudSqlUsername")
-    public static String providesToolsCloudSqlUsername(RegistryConfigSettings config) {
-      return config.registryTool.username;
     }
 
     @Provides

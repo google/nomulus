@@ -49,20 +49,6 @@ class KmsKeyringTest {
   }
 
   @TestOfyAndSql
-  void test_getCloudSqlPassword() {
-    saveCleartextSecret("cloud-sql-password-string");
-    String cloudSqlPassword = keyring.getCloudSqlPassword();
-    assertThat(cloudSqlPassword).isEqualTo("cloud-sql-password-stringmoo");
-  }
-
-  @TestOfyAndSql
-  void test_getToolsCloudSqlPassword() {
-    saveCleartextSecret("tools-cloud-sql-password-string");
-    String toolsCloudSqlPassword = keyring.getToolsCloudSqlPassword();
-    assertThat(toolsCloudSqlPassword).isEqualTo("tools-cloud-sql-password-stringmoo");
-  }
-
-  @TestOfyAndSql
   void test_getRdeSigningKey() throws Exception {
     saveKeyPairSecret("rde-signing-public", "rde-signing-private");
     PGPKeyPair rdeSigningKey = keyring.getRdeSigningKey();

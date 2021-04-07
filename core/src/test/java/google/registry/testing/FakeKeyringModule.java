@@ -56,8 +56,6 @@ public final class FakeKeyringModule {
   private static final String MARKSDB_LORDN_PASSWORD = "yolo";
   private static final String MARKSDB_SMDRL_LOGIN_AND_PASSWORD = "smdrl:yolo";
   private static final String JSON_CREDENTIAL = "json123";
-  private static final String CLOUD_SQL_PASSWORD = "cloudsqlpw";
-  private static final String TOOLS_CLOUD_SQL_PASSWORD = "toolscloudsqlpw";
 
   @Provides
   public Keyring get() {
@@ -82,15 +80,6 @@ public final class FakeKeyringModule {
     final String sshPrivate = loadFile(FakeKeyringModule.class, "registry-unittest.id_rsa");
 
     return new Keyring() {
-      @Override
-      public String getCloudSqlPassword() {
-        return CLOUD_SQL_PASSWORD;
-      }
-
-      @Override
-      public String getToolsCloudSqlPassword() {
-        return TOOLS_CLOUD_SQL_PASSWORD;
-      }
 
       @Override
       public PGPPublicKey getRdeStagingEncryptionKey() {
