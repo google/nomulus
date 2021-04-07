@@ -14,6 +14,8 @@
 
 package google.registry.model.contact;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.ImmutableObject;
@@ -112,6 +114,12 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
   @Override
   public Optional<DatastoreEntity> toDatastoreEntity() {
     return Optional.of(asHistoryEntry());
+  }
+
+  // Used to fill out the contactBase field during asynchronous replay
+  public static void beforeSqlSave(ContactHistory contactHistory) {
+    contactHistory.contactBase =
+        jpaTm().loadByKey(VKey.createSql(ContactResource.class, contactHistory.getContactRepoId()));
   }
 
   /** Class to represent the composite primary key of {@link ContactHistory} entity. */

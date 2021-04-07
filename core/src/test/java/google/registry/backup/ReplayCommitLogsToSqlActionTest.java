@@ -125,6 +125,7 @@ public class ReplayCommitLogsToSqlActionTest {
     action.diffLister.gcsBucket = GCS_BUCKET;
     action.diffLister.executor = newDirectExecutorService();
     RegistryConfig.overrideCloudSqlReplayCommitLogs(true);
+    TestObject.beforeSqlSaveCallCount = 0;
     TestObject.beforeSqlDeleteCallCount = 0;
   }
 
@@ -440,6 +441,21 @@ public class ReplayCommitLogsToSqlActionTest {
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
         .isEqualTo("Can't acquire SQL commit log replay lock, aborting.");
+  }
+
+  @Test
+  void testSuccess_beforeSqlSaveCallback() throws Exception {
+    DateTime now = fakeClock.nowUtc();
+    Key<CommitLogBucket> bucketKey = getBucketKey(1);
+    Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(bucketKey, now);
+    jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
+    saveDiffFile(
+        gcsService,
+        createCheckpoint(now.minusMinutes(1)),
+        CommitLogManifest.create(bucketKey, now, null),
+        CommitLogMutation.create(manifestKey, TestObject.create("a")));
+    runAndAssertSuccess(now.minusMinutes(1));
+    assertThat(TestObject.beforeSqlSaveCallCount).isEqualTo(1);
   }
 
   @Test
