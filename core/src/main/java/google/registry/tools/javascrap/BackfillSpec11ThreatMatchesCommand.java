@@ -19,6 +19,7 @@ import static com.google.common.collect.ImmutableListMultimap.flatteningToImmuta
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -135,12 +136,7 @@ public class BackfillSpec11ThreatMatchesCommand extends ConfirmingCommand
             flatteningToImmutableListMultimap(
                 Function.identity(),
                 (domainName) -> {
-                  List<DomainBase> domains =
-                      ofy()
-                          .load()
-                          .type(DomainBase.class)
-                          .filter("fullyQualifiedDomainName", domainName)
-                          .list();
+                  List<DomainBase> domains = loadDomainsForFqdn(domainName);
                   domains.sort(Comparator.comparing(DomainBase::getCreationTime).reversed());
                   checkState(
                       !domains.isEmpty(),
@@ -148,6 +144,25 @@ public class BackfillSpec11ThreatMatchesCommand extends ConfirmingCommand
                       domainName);
                   return domains.stream();
                 }));
+  }
+
+  /** Loads in all {@link DomainBase} objects for a given FQDN. */
+  private List<DomainBase> loadDomainsForFqdn(String fullyQualifiedDomainName) {
+    if (tm().isOfy()) {
+      return ofy()
+          .load()
+          .type(DomainBase.class)
+          .filter("fullyQualifiedDomainName", fullyQualifiedDomainName)
+          .list();
+    } else {
+      return jpaTm()
+          .transact(
+              () ->
+                  jpaTm()
+                      .query("FROM Domain WHERE fullyQualifiedDomainName = :fqdn", DomainBase.class)
+                      .setParameter("fqdn", fullyQualifiedDomainName)
+                      .getResultList());
+    }
   }
 
   /** Converts the previous {@link ThreatMatch} object to {@link Spec11ThreatMatch}. */

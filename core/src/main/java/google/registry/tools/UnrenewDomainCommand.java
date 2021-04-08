@@ -20,8 +20,8 @@ import static google.registry.flows.domain.DomainFlowUtils.newAutorenewBillingEv
 import static google.registry.flows.domain.DomainFlowUtils.newAutorenewPollMessage;
 import static google.registry.flows.domain.DomainFlowUtils.updateAutorenewRecurrenceEndTime;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DateTimeUtils.leapSafeSubtractYears;
 
@@ -33,12 +33,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
+import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
@@ -87,7 +87,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
         new ImmutableMap.Builder<>();
 
     for (String domainName : mainParameters) {
-      if (ofy().load().type(ForeignKeyDomainIndex.class).id(domainName).now() == null) {
+      if (ForeignKeyIndex.load(DomainBase.class, domainName, START_OF_TIME) == null) {
         domainsNonexistentBuilder.add(domainName);
         continue;
       }
@@ -183,8 +183,8 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
 
     DateTime newExpirationTime =
         leapSafeSubtractYears(domain.getRegistrationExpirationTime(), period);
-    HistoryEntry historyEntry =
-        new HistoryEntry.Builder()
+    DomainHistory domainHistory =
+        new DomainHistory.Builder()
             .setParent(domain)
             .setModificationTime(now)
             .setBySuperuser(true)
@@ -201,19 +201,19 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
                 String.format(
                     "Domain %s was unrenewed by %d years; now expires at %s.",
                     domainName, period, newExpirationTime))
-            .setParent(historyEntry)
+            .setParent(domainHistory)
             .setEventTime(now)
             .build();
     // Create a new autorenew billing event and poll message starting at the new expiration time.
     BillingEvent.Recurring newAutorenewEvent =
         newAutorenewBillingEvent(domain)
             .setEventTime(newExpirationTime)
-            .setParent(historyEntry)
+            .setParent(domainHistory)
             .build();
     PollMessage.Autorenew newAutorenewPollMessage =
         newAutorenewPollMessage(domain)
             .setEventTime(newExpirationTime)
-            .setParent(historyEntry)
+            .setParent(domainHistory)
             .build();
     // End the old autorenew billing event and poll message now.
     updateAutorenewRecurrenceEndTime(domain, now);
@@ -229,11 +229,9 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
     // In order to do it'll need to write out a new HistoryEntry (likely of type SYNTHETIC), a new
     // autorenew billing event and poll message, and a new one time poll message at the present time
     // informing the registrar of this out-of-band change.
-    ofy()
-        .save()
-        .entities(
+    tm().putAll(
             newDomain,
-            historyEntry,
+            domainHistory,
             oneTimePollMessage,
             newAutorenewEvent,
             newAutorenewPollMessage);

@@ -18,13 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
 import static google.registry.model.eppcommon.StatusValue.PENDING_TRANSFER;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.HistoryEntry.Type.SYNTHETIC;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsEqual;
 import static google.registry.testing.DatabaseHelper.assertPollMessagesEqual;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
+import static google.registry.testing.DatabaseHelper.getPollMessages;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -45,64 +45,79 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.testing.FakeClock;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UnrenewDomainCommand}. */
+@DualDatabaseTest
 public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainCommand> {
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2016-12-06T13:55:01Z"));
-
   @BeforeEach
   void beforeEach() {
     createTld("tld");
-    inject.setStaticField(Ofy.class, "clock", clock);
-    command.clock = clock;
+    fakeClock.setTo(DateTime.parse("2016-12-06T13:55:01Z"));
+    inject.setStaticField(Ofy.class, "clock", fakeClock);
+    command.clock = fakeClock;
   }
 
-  @Test
+  @TestOfyAndSql
   void test_unrenewTwoDomains_worksSuccessfully() throws Exception {
     ContactResource contact = persistActiveContact("jd1234");
-    clock.advanceOneMilli();
+    fakeClock.advanceOneMilli();
     persistDomainWithDependentResources(
-        "foo", "tld", contact, clock.nowUtc(), clock.nowUtc(), clock.nowUtc().plusYears(5));
-    clock.advanceOneMilli();
+        "foo",
+        "tld",
+        contact,
+        fakeClock.nowUtc(),
+        fakeClock.nowUtc(),
+        fakeClock.nowUtc().plusYears(5));
+    fakeClock.advanceOneMilli();
     persistDomainWithDependentResources(
-        "bar", "tld", contact, clock.nowUtc(), clock.nowUtc(), clock.nowUtc().plusYears(4));
-    clock.advanceOneMilli();
+        "bar",
+        "tld",
+        contact,
+        fakeClock.nowUtc(),
+        fakeClock.nowUtc(),
+        fakeClock.nowUtc().plusYears(4));
+    fakeClock.advanceOneMilli();
     runCommandForced("-p", "2", "foo.tld", "bar.tld");
-    clock.advanceOneMilli();
+    fakeClock.advanceOneMilli();
     assertThat(
-            loadByForeignKey(DomainBase.class, "foo.tld", clock.nowUtc())
+            loadByForeignKey(DomainBase.class, "foo.tld", fakeClock.nowUtc())
                 .get()
                 .getRegistrationExpirationTime())
         .isEqualTo(DateTime.parse("2019-12-06T13:55:01.001Z"));
     assertThat(
-            loadByForeignKey(DomainBase.class, "bar.tld", clock.nowUtc())
+            loadByForeignKey(DomainBase.class, "bar.tld", fakeClock.nowUtc())
                 .get()
                 .getRegistrationExpirationTime())
         .isEqualTo(DateTime.parse("2018-12-06T13:55:01.002Z"));
     assertInStdout("Successfully unrenewed all domains.");
   }
 
-  @Test
+  @TestOfyAndSql
   void test_unrenewDomain_savesDependentEntitiesCorrectly() throws Exception {
     ContactResource contact = persistActiveContact("jd1234");
-    clock.advanceOneMilli();
+    fakeClock.advanceOneMilli();
     persistDomainWithDependentResources(
-        "foo", "tld", contact, clock.nowUtc(), clock.nowUtc(), clock.nowUtc().plusYears(5));
-    DateTime newExpirationTime = clock.nowUtc().plusYears(3);
-    clock.advanceOneMilli();
+        "foo",
+        "tld",
+        contact,
+        fakeClock.nowUtc(),
+        fakeClock.nowUtc(),
+        fakeClock.nowUtc().plusYears(5));
+    DateTime newExpirationTime = fakeClock.nowUtc().plusYears(3);
+    fakeClock.advanceOneMilli();
     runCommandForced("-p", "2", "foo.tld");
-    DateTime unrenewTime = clock.nowUtc();
-    clock.advanceOneMilli();
-    DomainBase domain = loadByForeignKey(DomainBase.class, "foo.tld", clock.nowUtc()).get();
+    DateTime unrenewTime = fakeClock.nowUtc();
+    fakeClock.advanceOneMilli();
+    DomainBase domain = loadByForeignKey(DomainBase.class, "foo.tld", fakeClock.nowUtc()).get();
 
     assertAboutHistoryEntries()
         .that(getOnlyHistoryEntryOfType(domain, SYNTHETIC))
@@ -120,7 +135,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     HistoryEntry synthetic = getOnlyHistoryEntryOfType(domain, SYNTHETIC);
 
     assertBillingEventsEqual(
-        tm().loadByKey(domain.getAutorenewBillingEvent()),
+        loadByKey(domain.getAutorenewBillingEvent()),
         new BillingEvent.Recurring.Builder()
             .setParent(synthetic)
             .setReason(Reason.RENEW)
@@ -130,7 +145,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
             .setEventTime(newExpirationTime)
             .build());
     assertPollMessagesEqual(
-        ofy().load().type(PollMessage.class).ancestor(synthetic).list(),
+        getPollMessages(domain),
         ImmutableSet.of(
             new PollMessage.OneTime.Builder()
                 .setParent(synthetic)
@@ -156,7 +171,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertThat(domain.getLastEppUpdateClientId()).isEqualTo("TheRegistrar");
   }
 
-  @Test
+  @TestOfyAndSql
   void test_periodTooLow_fails() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -164,7 +179,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertThat(thrown).hasMessageThat().isEqualTo("Period must be in the range 1-9");
   }
 
-  @Test
+  @TestOfyAndSql
   void test_periodTooHigh_fails() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -172,9 +187,9 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
     assertThat(thrown).hasMessageThat().isEqualTo("Period must be in the range 1-9");
   }
 
-  @Test
+  @TestOfyAndSql
   void test_varietyOfInvalidDomains_displaysErrors() {
-    DateTime now = clock.nowUtc();
+    DateTime now = fakeClock.nowUtc();
     persistResource(
         newDomainBase("deleting.tld")
             .asBuilder()

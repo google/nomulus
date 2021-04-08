@@ -37,14 +37,16 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParser;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.tools.CommandTestCase;
 import java.io.IOException;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Tests for {@link BackfillSpec11ThreatMatchesCommand}. */
+@DualDatabaseTest
 public class BackfillSpec11ThreatMatchesCommandTest
     extends CommandTestCase<BackfillSpec11ThreatMatchesCommand> {
 
@@ -67,7 +69,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
         .thenReturn(ImmutableSet.of());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_singleFile() throws Exception {
     when(threatMatchesParser.getRegistrarThreatMatches(CURRENT_DATE))
         .thenReturn(sampleThreatMatches());
@@ -77,7 +79,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
     verifyExactlyThreeEntriesInDbFromLastDay();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_sameDomain_multipleDays() throws Exception {
     // If the same domains show up on multiple days, there should be multiple entries for them
     when(threatMatchesParser.getRegistrarThreatMatches(CURRENT_DATE))
@@ -106,14 +108,14 @@ public class BackfillSpec11ThreatMatchesCommandTest
             });
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_empty() throws Exception {
     runCommandForced();
     assertInStdout("Backfill Spec11 results from 692 files?");
     assertInStdout("Successfully parsed through 692 files with 0 threats.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_sameDayTwice() throws Exception {
     when(threatMatchesParser.getRegistrarThreatMatches(CURRENT_DATE))
         .thenReturn(sampleThreatMatches());
@@ -122,7 +124,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
     verifyExactlyThreeEntriesInDbFromLastDay();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_threeDomainsForDomainName() throws Exception {
     // We should use the repo ID from the proper DomainBase object at the scan's point in time.
     // First, domain was created at START_OF_TIME and deleted one year ago
@@ -161,7 +163,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
     assertThat(threatMatchRepoId).isNotEqualTo(thirdSave.getRepoId());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_skipsExistingDatesWithoutOverwrite() throws Exception {
     when(threatMatchesParser.getRegistrarThreatMatches(CURRENT_DATE))
         .thenReturn(sampleThreatMatches());
@@ -183,7 +185,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
         .isEqualExceptFields(previous, "id");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_overwritesExistingDatesWhenSpecified() throws Exception {
     when(threatMatchesParser.getRegistrarThreatMatches(CURRENT_DATE))
         .thenReturn(sampleThreatMatches());
@@ -201,7 +203,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
     verifyExactlyThreeEntriesInDbFromLastDay();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_oneFileFails() throws Exception {
     // If there are any exceptions, we should fail loud and fast
     when(threatMatchesParser.getRegistrarThreatMatches(CURRENT_DATE))
@@ -215,7 +217,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
     jpaTm().transact(() -> assertThat(jpaTm().loadAllOf(Spec11ThreatMatch.class)).isEmpty());
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_noDomainForDomainName() throws Exception {
     deleteResource(domainA);
     when(threatMatchesParser.getRegistrarThreatMatches(CURRENT_DATE))
@@ -225,7 +227,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
         .isEqualTo("Domain name a.com had no associated DomainBase objects.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_noDomainAtTimeOfScan() throws Exception {
     // If the domain existed at some point(s) in time but not the time of the scan, fail.
     // First, domain was created at START_OF_TIME and deleted one year ago

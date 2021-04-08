@@ -34,6 +34,8 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.util.CidrAddressBlock;
 import google.registry.util.SystemClock;
 import org.joda.money.Money;
@@ -41,16 +43,16 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+@DualDatabaseTest
 public final class OteAccountBuilderTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  @Test
+  @TestOfyAndSql
   void testGetRegistrarToTldMap() {
     assertThat(OteAccountBuilder.forClientId("myclientid").getClientIdToTldMap())
         .containsExactly(
@@ -102,7 +104,7 @@ public final class OteAccountBuilderTest {
     assertThat(contact.getGaeUserId()).isNotEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_success() {
     OteAccountBuilder.forClientId("myclientid").addContact("email@example.com").buildAndPersist();
 
@@ -119,7 +121,7 @@ public final class OteAccountBuilderTest {
     assertContactExists("myclientid-5", "email@example.com");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_multipleContacts_success() {
     OteAccountBuilder.forClientId("myclientid")
         .addContact("email@example.com")
@@ -148,7 +150,7 @@ public final class OteAccountBuilderTest {
     assertContactExists("myclientid-5", "someone@example.com");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_setPassword() {
     OteAccountBuilder.forClientId("myclientid").setPassword("myPassword").buildAndPersist();
 
@@ -156,7 +158,7 @@ public final class OteAccountBuilderTest {
         .isTrue();
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_setCertificate() {
     OteAccountBuilder.forClientId("myclientid")
         .setCertificate(SAMPLE_CERT, new SystemClock().nowUtc())
@@ -168,7 +170,7 @@ public final class OteAccountBuilderTest {
         .hasValue(SAMPLE_CERT);
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_setIpAllowList() {
     OteAccountBuilder.forClientId("myclientid")
         .setIpAllowList(ImmutableList.of("1.1.1.0/24"))
@@ -178,7 +180,7 @@ public final class OteAccountBuilderTest {
         .containsExactly(CidrAddressBlock.create("1.1.1.0/24"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_invalidClientId_fails() {
     assertThat(
             assertThrows(
@@ -187,7 +189,7 @@ public final class OteAccountBuilderTest {
         .isEqualTo("Invalid registrar name: 3blo-bio");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_clientIdTooShort_fails() {
     assertThat(
             assertThrows(IllegalArgumentException.class, () -> OteAccountBuilder.forClientId("bl")))
@@ -195,7 +197,7 @@ public final class OteAccountBuilderTest {
         .isEqualTo("Invalid registrar name: bl");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_clientIdTooLong_fails() {
     assertThat(
             assertThrows(
@@ -205,7 +207,7 @@ public final class OteAccountBuilderTest {
         .isEqualTo("Invalid registrar name: blobiotoooolong");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_clientIdBadCharacter_fails() {
     assertThat(
             assertThrows(
@@ -214,7 +216,7 @@ public final class OteAccountBuilderTest {
         .isEqualTo("Invalid registrar name: blo#bio");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_registrarExists_failsWhenNotReplaceExisting() {
     persistSimpleResource(makeRegistrar1().asBuilder().setClientId("myclientid-1").build());
 
@@ -225,7 +227,7 @@ public final class OteAccountBuilderTest {
         .contains("Found existing object(s) conflicting with OT&E objects");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_tldExists_failsWhenNotReplaceExisting() {
     createTld("myclientid-ga", START_DATE_SUNRISE);
 
@@ -236,7 +238,7 @@ public final class OteAccountBuilderTest {
         .contains("Found existing object(s) conflicting with OT&E objects");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_entitiesExist_succeedsWhenReplaceExisting() {
     persistSimpleResource(makeRegistrar1().asBuilder().setClientId("myclientid-1").build());
     // we intentionally create the -ga TLD with the wrong state, to make sure it's overwritten.
@@ -251,7 +253,7 @@ public final class OteAccountBuilderTest {
     assertRegistrarExists("myclientid-3", "myclientid-ga");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_doubleCreation_actuallyReplaces() {
     OteAccountBuilder.forClientId("myclientid")
         .setPassword("oldPassword")
@@ -273,7 +275,7 @@ public final class OteAccountBuilderTest {
         .isTrue();
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateOteEntities_doubleCreation_keepsOldContacts() {
     OteAccountBuilder.forClientId("myclientid").addContact("email@example.com").buildAndPersist();
 
@@ -288,7 +290,7 @@ public final class OteAccountBuilderTest {
     assertContactExists("myclientid-3", "email@example.com");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateClientIdToTldMap_validEntries() {
     assertThat(OteAccountBuilder.createClientIdToTldMap("myclientid"))
         .containsExactly(
@@ -298,7 +300,7 @@ public final class OteAccountBuilderTest {
             "myclientid-5", "myclientid-eap");
   }
 
-  @Test
+  @TestOfyAndSql
   void testCreateClientIdToTldMap_invalidId() {
     IllegalArgumentException exception =
         assertThrows(
@@ -306,12 +308,12 @@ public final class OteAccountBuilderTest {
     assertThat(exception).hasMessageThat().isEqualTo("Invalid registrar name: a");
   }
 
-  @Test
+  @TestOfyAndSql
   void testGetBaseClientId_validOteId() {
     assertThat(OteAccountBuilder.getBaseClientId("myclientid-4")).isEqualTo("myclientid");
   }
 
-  @Test
+  @TestOfyAndSql
   void testGetBaseClientId_invalidInput_malformed() {
     assertThat(
             assertThrows(
@@ -321,7 +323,7 @@ public final class OteAccountBuilderTest {
         .isEqualTo("Invalid OT&E client ID: myclientid");
   }
 
-  @Test
+  @TestOfyAndSql
   void testGetBaseClientId_invalidInput_wrongForBase() {
     assertThat(
             assertThrows(

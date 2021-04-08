@@ -18,7 +18,8 @@ import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.forceEmptyToNull;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -772,10 +773,10 @@ public abstract class BillingEvent extends ImmutableObject
         Modification instance = getInstance();
         checkNotNull(instance.reason);
         checkNotNull(instance.eventRef);
-        BillingEvent.OneTime billingEvent = ofy().load().key(instance.eventRef).now();
-        checkArgument(Objects.equals(
-            instance.cost.getCurrencyUnit(),
-            billingEvent.cost.getCurrencyUnit()),
+        BillingEvent.OneTime billingEvent =
+            transactIfJpaTm(() -> tm().loadByKey(VKey.from(instance.eventRef)));
+        checkArgument(
+            Objects.equals(instance.cost.getCurrencyUnit(), billingEvent.cost.getCurrencyUnit()),
             "Referenced billing event is in a different currency");
         return super.build();
       }
