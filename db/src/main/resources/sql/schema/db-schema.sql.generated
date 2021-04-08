@@ -665,8 +665,9 @@
     );
 
     create table "ServerSecret" (
-       secret uuid not null,
-        primary key (secret)
+       id int8 not null,
+        secret uuid,
+        primary key (id)
     );
 
     create table "SignedMarkRevocationEntry" (
@@ -742,10 +743,11 @@
     );
 
     create table "TmchCrl" (
-       certificate_revocations text not null,
+       id int8 not null,
+        certificate_revocations text not null,
         update_timestamp timestamptz not null,
         url text not null,
-        primary key (certificate_revocations, update_timestamp, url)
+        primary key (id)
     );
 
     create table "Transaction" (

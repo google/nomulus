@@ -15,8 +15,6 @@
 package google.registry.model.server;
 
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -35,10 +33,10 @@ import google.registry.model.common.CrossTldSingleton;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.NonReplicatedEntity;
 import java.nio.ByteBuffer;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import javax.persistence.Column;
-import javax.persistence.Id;
 import javax.persistence.PostLoad;
 import javax.persistence.Transient;
 
@@ -67,22 +65,28 @@ public class ServerSecret extends CrossTldSingleton implements NonReplicatedEnti
               });
 
   private static ServerSecret retrieveAndSaveSecret() {
-    VKey<ServerSecret> key =
+    VKey<ServerSecret> vkey =
         VKey.create(
             ServerSecret.class,
             SINGLETON_ID,
             Key.create(getCrossTldKey(), ServerSecret.class, SINGLETON_ID));
+    if (tm().isOfy()) {
+      // Attempt a quick load if we're in ofy first to short-circuit sans transaction
+      Optional<ServerSecret> secretWithoutTransaction = tm().loadByKeyIfPresent(vkey);
+      if (secretWithoutTransaction.isPresent()) {
+        return secretWithoutTransaction.get();
+      }
+    }
     return tm().transact(
             () -> {
-              // transactionally create a new ServerSecret (once per app setup) if necessary.
-              // return the ofy() result during Datastore-primary phase
-              ServerSecret secret =
-                  ofyTm().loadByKeyIfPresent(key).orElseGet(() -> create(UUID.randomUUID()));
-              // During a dual-write period, write it to both Datastore and SQL
-              // even if we didn't have to retrieve it from the DB
-              ofyTm().transact(() -> ofyTm().putWithoutBackup(secret));
-              jpaTm().transact(() -> jpaTm().putWithoutBackup(secret));
-              return secret;
+              // Make sure we're in a transaction and attempt to load any existing secret, then
+              // create it if it's absent.
+              Optional<ServerSecret> secret = tm().loadByKeyIfPresent(vkey);
+              if (!secret.isPresent()) {
+                secret = Optional.of(create(UUID.randomUUID()));
+                tm().insertWithoutBackup(secret.get());
+              }
+              return secret.get();
             });
   }
 
@@ -102,7 +106,6 @@ public class ServerSecret extends CrossTldSingleton implements NonReplicatedEnti
   @Transient long leastSignificant;
 
   /** The UUID value itself. */
-  @Id
   @Column(columnDefinition = "uuid")
   @Ignore
   UUID secret;

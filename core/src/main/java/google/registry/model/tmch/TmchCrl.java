@@ -25,15 +25,11 @@ import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.model.tmch.TmchCrl.TmchCrlId;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.NonReplicatedEntity;
-import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
 import org.joda.time.DateTime;
 
 /** Datastore singleton for ICANN's TMCH CA certificate revocation list (CRL). */
@@ -41,22 +37,26 @@ import org.joda.time.DateTime;
 @javax.persistence.Entity
 @Immutable
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
-@IdClass(TmchCrlId.class)
 public final class TmchCrl extends CrossTldSingleton implements NonReplicatedEntity {
 
-  @Id String crl;
+  @Column(name = "certificateRevocations", nullable = false)
+  String crl;
 
-  @Id DateTime updated;
+  @Column(name = "updateTimestamp", nullable = false)
+  DateTime updated;
 
-  @Id String url;
+  @Column(nullable = false)
+  String url;
 
   /** Returns the singleton instance of this entity, without memoization. */
   public static Optional<TmchCrl> get() {
-    VKey<TmchCrl> key =
-        VKey.create(
-            TmchCrl.class, SINGLETON_ID, Key.create(getCrossTldKey(), TmchCrl.class, SINGLETON_ID));
-    // return the ofy() result during Datastore-primary phase
-    return ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(key));
+    return tm().transact(
+            () ->
+                tm().loadByKeyIfPresent(
+                        VKey.create(
+                            TmchCrl.class,
+                            SINGLETON_ID,
+                            Key.create(getCrossTldKey(), TmchCrl.class, SINGLETON_ID))));
   }
 
   /**
@@ -75,13 +75,7 @@ public final class TmchCrl extends CrossTldSingleton implements NonReplicatedEnt
               tmchCrl.crl = checkNotNull(crl, "crl");
               tmchCrl.url = checkNotNull(url, "url");
               ofyTm().transactNew(() -> ofyTm().putWithoutBackup(tmchCrl));
-              jpaTm()
-                  .transactNew(
-                      () -> {
-                        // Delete the old one and insert the new one
-                        jpaTm().query("DELETE FROM TmchCrl").executeUpdate();
-                        jpaTm().putWithoutBackup(tmchCrl);
-                      });
+              jpaTm().transactNew(() -> jpaTm().putWithoutBackup(tmchCrl));
             });
   }
 
@@ -98,27 +92,5 @@ public final class TmchCrl extends CrossTldSingleton implements NonReplicatedEnt
   /** Time we last updated the Datastore with a newer ICANN CRL. */
   public final DateTime getUpdated() {
     return updated;
-  }
-
-  static class TmchCrlId implements Serializable {
-
-    @Column(name = "certificateRevocations")
-    String crl;
-
-    @Column(name = "updateTimestamp")
-    DateTime updated;
-
-    String url;
-
-    /** Hibernate requires this default constructor. */
-    private TmchCrlId() {}
-
-    static TmchCrlId create(String crl, DateTime updated, String url) {
-      TmchCrlId result = new TmchCrlId();
-      result.crl = crl;
-      result.updated = updated;
-      result.url = url;
-      return result;
-    }
   }
 }

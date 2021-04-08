@@ -15,61 +15,43 @@
 package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 
 import google.registry.model.EntityTestCase;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import java.util.Optional;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TmchCrl}. */
+@DualDatabaseTest
 public class TmchCrlTest extends EntityTestCase {
 
   TmchCrlTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess() {
     assertThat(TmchCrl.get()).isEqualTo(Optional.empty());
     TmchCrl.set("lolcat", "https://lol.cat");
     assertThat(TmchCrl.get().get().getCrl()).isEqualTo("lolcat");
   }
 
-  @Test
+  @TestOfyAndSql
   void testDualWrite() {
     TmchCrl expected = new TmchCrl();
     expected.crl = "lolcat";
     expected.url = "https://lol.cat";
     expected.updated = fakeClock.nowUtc();
     TmchCrl.set("lolcat", "https://lol.cat");
-    assertThat(ofy().load().entity(new TmchCrl()).now()).isEqualTo(expected);
-    assertThat(loadFromSql()).isEqualTo(expected);
+    assertThat(loadByEntity(new TmchCrl())).isEqualTo(expected);
   }
 
-  @Test
+  @TestOfyAndSql
   void testMultipleWrites() {
     TmchCrl.set("first", "https://first.cat");
     assertThat(TmchCrl.get().get().getCrl()).isEqualTo("first");
     TmchCrl.set("second", "https://second.cat");
     assertThat(TmchCrl.get().get().getCrl()).isEqualTo("second");
-    jpaTm()
-        .transact(
-            () ->
-                assertThat(
-                        jpaTm().query("SELECT COUNT(*) FROM TmchCrl", Long.class).getSingleResult())
-                    .isEqualTo(1L));
-  }
-
-  private static TmchCrl loadFromSql() {
-    return jpaTm()
-        .transact(
-            () ->
-                jpaTm()
-                    .query("FROM TmchCrl", TmchCrl.class)
-                    .setMaxResults(1)
-                    .getResultStream()
-                    .findFirst()
-                    .get());
   }
 }
