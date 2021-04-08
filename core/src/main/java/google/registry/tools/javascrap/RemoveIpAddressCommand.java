@@ -14,13 +14,15 @@
 
 package google.registry.tools.javascrap;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.VKey;
 import google.registry.tools.MutatingEppToolCommand;
 import google.registry.tools.params.PathParameter;
 import google.registry.tools.soy.RemoveIpAddressSoyInfo;
@@ -30,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Command to remove external IP Addresses from HostResources identified by text file listing
@@ -56,14 +59,15 @@ public class RemoveIpAddressCommand extends MutatingEppToolCommand {
 
     for (String roid : roids) {
       // Look up the HostResource from its roid.
-      HostResource host = ofy().load().type(HostResource.class).id(roid).now();
-      if (host == null) {
+      Optional<HostResource> host =
+          transactIfJpaTm(() -> tm().loadByKeyIfPresent(VKey.create(HostResource.class, roid)));
+      if (!host.isPresent()) {
         System.err.printf("Record for %s not found.\n", roid);
         continue;
       }
 
       ArrayList<SoyMapData> ipAddresses = new ArrayList<>();
-      for (InetAddress address : host.getInetAddresses()) {
+      for (InetAddress address : host.get().getInetAddresses()) {
         SoyMapData dataMap = new SoyMapData(
             "address", address.getHostAddress(),
             "version", address instanceof Inet6Address ? "v6" : "v4");
@@ -76,7 +80,7 @@ public class RemoveIpAddressCommand extends MutatingEppToolCommand {
       addSoyRecord(
           registrarId,
           new SoyMapData(
-              "name", host.getHostName(),
+              "name", host.get().getHostName(),
               "ipAddresses", ipAddresses,
               "requestedByRegistrar", registrarId));
     }

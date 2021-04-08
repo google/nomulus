@@ -17,7 +17,6 @@ package google.registry.model;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
@@ -107,14 +106,14 @@ public final class ResourceTransferUtils {
   /** Update the relevant {@link ForeignKeyIndex} to cache the new deletion time. */
   public static <R extends EppResource> void updateForeignKeyIndexDeletionTime(R resource) {
     if (resource instanceof ForeignKeyedEppResource) {
-      ofy().save().entity(ForeignKeyIndex.create(resource, resource.getDeletionTime()));
+      tm().insert(ForeignKeyIndex.create(resource, resource.getDeletionTime()));
     }
   }
 
   /** If there is a transfer out, delete the server-approve entities and enqueue a poll message. */
   public static <R extends EppResource & ResourceWithTransferData>
       void handlePendingTransferOnDelete(
-            R resource, R newResource, DateTime now, HistoryEntry historyEntry) {
+          R resource, R newResource, DateTime now, HistoryEntry historyEntry) {
     if (resource.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       TransferData oldTransferData = resource.getTransferData();
       tm().delete(oldTransferData.getServerApproveEntities());

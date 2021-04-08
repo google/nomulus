@@ -15,8 +15,6 @@
 package google.registry.tools.javascrap;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
@@ -38,7 +36,7 @@ public class PopulateNullRegistrarFieldsCommand extends MutatingCommand {
 
   @Override
   protected void init() {
-    for (Registrar registrar : ofy().load().type(Registrar.class).ancestor(getCrossTldKey())) {
+    for (Registrar registrar : Registrar.loadAll()) {
       Registrar.Builder changeBuilder = registrar.asBuilder();
       changeBuilder.setRegistrarName(
           firstNonNull(registrar.getRegistrarName(), registrar.getClientId()));
