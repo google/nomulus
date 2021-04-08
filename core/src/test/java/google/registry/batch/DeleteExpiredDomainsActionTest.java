@@ -16,6 +16,7 @@ package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -121,14 +122,30 @@ class DeleteExpiredDomainsActionTest {
   }
 
   @Test
-  void test_deletesThreeDomainsInOneRun() {
+  void test_deletesThreeDomainsInOneRun() throws Exception {
     DomainBase domain1 = persistNonAutorenewingDomain("ecck1.tld");
     DomainBase domain2 = persistNonAutorenewingDomain("veee2.tld");
     DomainBase domain3 = persistNonAutorenewingDomain("tarm3.tld");
 
-    // action.run() executes a non-transactional query by design but makes this test flaky.
-    // Executing a transaction here seems to force the test Datastore to become up to date.
-    assertThat(tm().loadByEntity(domain3).getStatusValues()).doesNotContain(PENDING_DELETE);
+    // action.run() executes an ancestor-less query which is subject to eventual consistency (it
+    // uses an index that is updated asynchronously). For a deterministic test outcome, we busy
+    // wait here until all domains above are returned by the query.
+    for (int attempts = 0; attempts < 3; attempts++) {
+      ImmutableSet<String> matchingDomains =
+          ofy()
+              .load()
+              .type(DomainBase.class)
+              .filter("autorenewEndTime <=", clock.nowUtc())
+              .list()
+              .stream()
+              .map(DomainBase::getDomainName)
+              .collect(ImmutableSet.toImmutableSet());
+      if (matchingDomains.containsAll(ImmutableSet.of("ecck1.tld", "veee2.tld", "tarm3.tld"))) {
+        break;
+      }
+      Thread.sleep(100);
+    }
+
     action.run();
 
     assertThat(tm().loadByEntity(domain1).getStatusValues()).contains(PENDING_DELETE);
