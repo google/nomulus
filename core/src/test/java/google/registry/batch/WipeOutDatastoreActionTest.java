@@ -31,6 +31,7 @@ import com.google.api.services.dataflow.Dataflow;
 import com.google.api.services.dataflow.model.Job;
 import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
 import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
+import google.registry.beam.BeamActionTestBase;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,30 +41,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /** Unit tests for {@link WipeoutDatastoreAction}. */
-@ExtendWith(MockitoExtension.class)
-class WipeOutDatastoreActionTest {
-
-  @Mock private Dataflow dataflow;
-  @Mock private Dataflow.Projects projects;
-  @Mock private Dataflow.Projects.Locations locations;
-  @Mock private Dataflow.Projects.Locations.FlexTemplates flexTemplates;
-  @Mock private Dataflow.Projects.Locations.FlexTemplates.Launch launch;
-  private LaunchFlexTemplateResponse launchResponse =
-      new LaunchFlexTemplateResponse().setJob(new Job());
+class WipeOutDatastoreActionTest extends BeamActionTestBase {
 
   private final FakeClock clock = new FakeClock();
   private final FakeResponse response = new FakeResponse();
-
-  @BeforeEach
-  void beforeEach() throws Exception {
-    lenient().when(dataflow.projects()).thenReturn(projects);
-    lenient().when(projects.locations()).thenReturn(locations);
-    lenient().when(locations.flexTemplates()).thenReturn(flexTemplates);
-    lenient()
-        .when(flexTemplates.launch(anyString(), anyString(), any(LaunchFlexTemplateRequest.class)))
-        .thenReturn(launch);
-    lenient().when(launch.execute()).thenReturn(launchResponse);
-  }
 
   @Test
   void run_projectNotAllowed() {
