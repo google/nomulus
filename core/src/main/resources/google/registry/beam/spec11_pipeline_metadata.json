@@ -1,0 +1,74 @@
+{
+  "name": "Spec11 Report Generation",
+  "description": "An Apache Beam batch pipeline that reads from a Datastore export and generate Spec11 report for the month, saving it to both SQL and as a JSON file on GCS.",
+  "parameters": [
+    {
+      "name": "registryEnvironment",
+      "label": "The Registry environment.",
+      "helpText": "The Registry environment, required if environment-specific initialization is needed on worker VMs.",
+      "is_optional": true,
+      "regexes": [
+        "^[0-9A-Z_]+$"
+      ]
+    },
+    {
+      "name": "isolationOverride",
+      "label": "The desired SQL transaction isolation level.",
+      "helpText": "The desired SQL transaction isolation level.",
+      "is_optional": true,
+      "regexes": [
+        "^[0-9A-Z_]+$"
+      ]
+    },
+    {
+      "name": "sqlWriteBatchSize",
+      "label": "SQL write batch size.",
+      "helpText": "The number of entities to write to the SQL database in one operation.",
+      "is_optional": true,
+      "regexes": [
+        "^[1-9][0-9]*$"
+      ]
+    },
+    {
+      "name": "sqlWriteShards",
+      "label": "Number of output shards to create when writing to SQL.",
+      "helpText": "Number of shards to create out of the data before writing to the SQL database. Please refer to the Javadoc of RegistryJpaIO.Write.shards() for how to choose this value.",
+      "is_optional": true,
+      "regexes": [
+        "^[1-9][0-9]*$"
+      ]
+    },
+    {
+      "name": "projectId",
+      "label": "GCP Project ID from where the data is sourced",
+      "helpText": "The ID of the project where the BigQuery table of the source data resides.",
+      "regexes": [
+        "^[0-9a-z\\-]+$"
+      ]
+    },
+    {
+      "name": "date",
+      "label": "The date when the pipeline runs",
+      "helpText": "The date then the threat scan is performed, in yyyy-MM-dd format.",
+      "regexes": [
+        "^2[0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+      ]
+    },
+    {
+      "name": "safeBrowsingApiKey",
+      "label": "Nomulus CommitLog start time",
+      "helpText": "The earliest CommitLogs to load, in ISO8601 format.",
+      "regexes": [
+        "^[0-9a-zA-Z_]+$"
+      ]
+    },
+    {
+      "name": "reportingBucketUrl",
+      "label": "Spec11 report upload dir.",
+      "helpText": "The root directory of the report to upload.",
+      "regexes": [
+        "^gs:\\/\\/[^\\n\\r]+$"
+      ]
+    }
+  ]
+}

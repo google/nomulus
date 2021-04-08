@@ -15,6 +15,7 @@
 package google.registry.beam.spec11;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.Serializable;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,16 +32,9 @@ public abstract class ThreatMatch implements Serializable {
   /** Returns the fully qualified domain name [SLD].[TLD] of the matched threat. */
   public abstract String fullyQualifiedDomainName();
 
-  /**
-   * Constructs a {@link ThreatMatch} by parsing a {@code SafeBrowsing API} response {@link
-   * JSONObject}.
-   *
-   * @throws JSONException when encountering parse errors in the response format
-   */
-  static ThreatMatch create(JSONObject threatMatchJSON, String fullyQualifiedDomainName)
-      throws JSONException {
-    return new AutoValue_ThreatMatch(
-        threatMatchJSON.getString(THREAT_TYPE_FIELD), fullyQualifiedDomainName);
+  @VisibleForTesting
+  static ThreatMatch create(String threatType, String fullyQualifiedDomainName) {
+    return new AutoValue_ThreatMatch(threatType, fullyQualifiedDomainName);
   }
 
   /** Returns a {@link JSONObject} representing a subset of this object's data. */

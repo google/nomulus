@@ -21,9 +21,9 @@ import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.services.dataflow.Dataflow;
-import com.google.api.services.dataflow.model.LaunchTemplateParameters;
-import com.google.api.services.dataflow.model.LaunchTemplateResponse;
-import com.google.api.services.dataflow.model.RuntimeEnvironment;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateParameter;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
@@ -37,6 +37,8 @@ import google.registry.request.auth.Auth;
 import java.io.IOException;
 import java.util.Map;
 import javax.inject.Inject;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 
 /**
@@ -55,11 +57,12 @@ public class GenerateSpec11ReportAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   static final String PATH = "/_dr/task/generateSpec11";
+  static final String PIPELINE_NAME = "spec11_pipeline";
 
   private final String projectId;
-  private final String beamBucketUrl;
-  private final String spec11TemplateUrl;
-  private final String jobZone;
+  private final String jobRegion;
+  private final String stagingBucketUrl;
+  private final String reportingBucketUrl;
   private final String apiKey;
   private final LocalDate date;
   private final Response response;
@@ -68,17 +71,17 @@ public class GenerateSpec11ReportAction implements Runnable {
   @Inject
   GenerateSpec11ReportAction(
       @Config("projectId") String projectId,
-      @Config("apacheBeamBucketUrl") String beamBucketUrl,
-      @Config("spec11TemplateUrl") String spec11TemplateUrl,
-      @Config("defaultJobZone") String jobZone,
+      @Config("defaultJobRegion") String jobRegion,
+      @Config("beamStagingBucketUrl") String stagingBucketUrl,
+      @Config("reportingBucketUrl") String reportingBucketUrl,
       @Key("safeBrowsingAPIKey") String apiKey,
       @Parameter(PARAM_DATE) LocalDate date,
       Response response,
       Dataflow dataflow) {
     this.projectId = projectId;
-    this.beamBucketUrl = beamBucketUrl;
-    this.spec11TemplateUrl = spec11TemplateUrl;
-    this.jobZone = jobZone;
+    this.jobRegion = jobRegion;
+    this.stagingBucketUrl = stagingBucketUrl;
+    this.reportingBucketUrl = reportingBucketUrl;
     this.apiKey = apiKey;
     this.date = date;
     this.response = response;
@@ -87,23 +90,35 @@ public class GenerateSpec11ReportAction implements Runnable {
 
   @Override
   public void run() {
+    response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
+
     try {
-      LaunchTemplateParameters params =
-          new LaunchTemplateParameters()
-              .setJobName(String.format("spec11_%s", date))
-              .setEnvironment(
-                  new RuntimeEnvironment()
-                      .setZone(jobZone)
-                      .setTempLocation(beamBucketUrl + "/temporary"))
+      LaunchFlexTemplateParameter parameter =
+          new LaunchFlexTemplateParameter()
+              // Job name must be unique and in [-a-z0-9].
+              .setJobName(
+                  "spec11-" + DateTime.now(DateTimeZone.UTC).toString("yyyy-MM-dd'T'HH-mm-ss'Z'"))
+              .setContainerSpecGcsPath(
+                  String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
               .setParameters(
                   ImmutableMap.of(
-                      "safeBrowsingApiKey", apiKey, ReportingModule.PARAM_DATE, date.toString()));
-      LaunchTemplateResponse launchResponse =
+                      "projectId",
+                      projectId,
+                      "safeBrowsingApiKey",
+                      apiKey,
+                      ReportingModule.PARAM_DATE,
+                      date.toString(),
+                      "reportingBucketUrl",
+                      reportingBucketUrl));
+      LaunchFlexTemplateResponse launchResponse =
           dataflow
               .projects()
-              .templates()
-              .launch(projectId, params)
-              .setGcsPath(spec11TemplateUrl)
+              .locations()
+              .flexTemplates()
+              .launch(
+                  projectId,
+                  jobRegion,
+                  new LaunchFlexTemplateRequest().setLaunchParameter(parameter))
               .execute();
       Map<String, String> beamTaskParameters =
           ImmutableMap.of(
@@ -116,12 +131,10 @@ public class GenerateSpec11ReportAction implements Runnable {
     } catch (IOException e) {
       logger.atWarning().withCause(e).log("Template Launch failed");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
-      response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
       response.setPayload(String.format("Template launch failed: %s", e.getMessage()));
       return;
     }
     response.setStatus(SC_OK);
-    response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
     response.setPayload("Launched Spec11 dataflow template.");
   }
 }
