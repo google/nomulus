@@ -14,23 +14,20 @@
 
 package google.registry.tools;
 
-import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumListDatastoreDao;
 import google.registry.schema.tld.PremiumEntry;
 import google.registry.schema.tld.PremiumListSqlDao;
-import java.util.Comparator;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import org.hibernate.Hibernate;
 import org.joda.money.BigMoney;
 
 /** Command to compare all PremiumLists in Datastore to all PremiumLists in Cloud SQL. */
@@ -41,98 +38,71 @@ final class ComparePremiumListsCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() {
-    ImmutableSet<PremiumList> datastoreLists =
-        tm().loadAllOf(PremiumList.class).stream()
+    ImmutableSet<String> datastoreLists =
+        ofyTm().loadAllOf(PremiumList.class).stream()
             .map(PremiumList::getName)
-            .map(PremiumListDatastoreDao::getLatestRevision)
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .peek(list -> Hibernate.initialize(list.getLabelsToPrices()))
-            .collect(toImmutableSortedSet(Comparator.comparing(PremiumList::getName)));
+            .collect(toImmutableSet());
 
-    ImmutableSet<PremiumList> sqlLists =
+    ImmutableSet<String> sqlLists =
         jpaTm()
             .transact(
                 () ->
                     jpaTm().loadAllOf(PremiumList.class).stream()
                         .map(PremiumList::getName)
-                        .map(PremiumListSqlDao::getLatestRevision)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .peek(list -> Hibernate.initialize(list.getLabelsToPrices()))
-                        .collect(toImmutableSortedSet(Comparator.comparing(PremiumList::getName))));
+                        .collect(toImmutableSet()));
 
-    jpaTm()
-        .transact(
-            () -> {
-              int listsWithDiffs = 0;
+    ImmutableSet<String> notInCloudSql = Sets.difference(datastoreLists, sqlLists).immutableCopy();
+    ImmutableSet<String> notInDatastore = Sets.difference(sqlLists, datastoreLists).immutableCopy();
 
-              for (PremiumList premiumList : datastoreLists) {
-                Optional<PremiumList> sqlList =
-                    PremiumListSqlDao.getLatestRevision(premiumList.getName());
-                if (!sqlList.isPresent()) {
-                  listsWithDiffs++;
-                  System.out.printf(
-                      "PremiumList '%s' is present in Datastore, but not in Cloud SQL.%n",
-                      premiumList.getName());
-                } else {
+    int listsWithDiffs = 0;
 
-                  // Datastore and Cloud SQL use different objects to represent premium list entries
-                  // so the best way to compare them is to compare their string representations.
-                  String datastoreListString =
-                      Streams.stream(
-                              PremiumListDatastoreDao.loadPremiumListEntriesUncached(premiumList))
-                          .sorted(Comparator.comparing(PremiumListEntry::getLabel))
-                          .map(PremiumListEntry::toString)
-                          .collect(Collectors.joining("\n"));
+    for (String listName : notInCloudSql) {
+      listsWithDiffs++;
+      System.out.printf(
+          "PremiumList '%s' is present in Datastore, but not in Cloud SQL.%n", listName);
+    }
+    for (String listName : notInDatastore) {
+      listsWithDiffs++;
+      System.out.printf(
+          "PremiumList '%s' is present in Cloud SQL, but not in Datastore.%n", listName);
+    }
 
-                  Iterable<PremiumEntry> sqlListEntries =
-                      jpaTm()
-                          .transact(
-                              () ->
-                                  PremiumListSqlDao.loadPremiumListEntriesUncached(sqlList.get()));
+    for (String listName : Sets.intersection(datastoreLists, sqlLists)) {
+      Optional<PremiumList> sqlList = PremiumListSqlDao.getLatestRevision(listName);
 
-                  String sqlListString =
-                      Streams.stream(
-                              Streams.stream(sqlListEntries)
-                                  .map(
-                                      premiumEntry ->
-                                          new PremiumListEntry.Builder()
-                                              .setPrice(
-                                                  BigMoney.of(
-                                                          sqlList.get().getCurrency(),
-                                                          premiumEntry.getPrice())
-                                                      .toMoney())
-                                              .setLabel(premiumEntry.getDomainLabel())
-                                              .build())
-                                  .collect(toImmutableList()))
-                          .sorted(Comparator.comparing(PremiumListEntry::getLabel))
-                          .map(PremiumListEntry::toString)
-                          .collect(Collectors.joining("\n"));
+      // Datastore and Cloud SQL use different objects to represent premium list entries
+      // so the best way to compare them is to compare their string representations.
+      ImmutableSet<String> datastoreListStrings =
+          Streams.stream(
+                  PremiumListDatastoreDao.loadPremiumListEntriesUncached(
+                      PremiumListDatastoreDao.getLatestRevision(listName).get()))
+              .map(PremiumListEntry::toString)
+              .collect(toImmutableSet());
 
-                  // This will only print out the name of the unequal list. GetPremiumListCommand
-                  // should be used to determine what the actual differences are.
-                  if (!datastoreListString.equals(sqlListString)) {
-                    listsWithDiffs++;
-                    System.out.printf(
-                        "PremiumList '%s' has different entries in each database.%n",
-                        premiumList.getName());
-                  }
-                }
-              }
+      Iterable<PremiumEntry> sqlListEntries =
+          jpaTm().transact(() -> PremiumListSqlDao.loadPremiumListEntriesUncached(sqlList.get()));
 
-              for (PremiumList sqlList : sqlLists) {
-                Optional<PremiumList> datastoreList =
-                    PremiumListDatastoreDao.getLatestRevision(sqlList.getName());
-                if (!datastoreList.isPresent()) {
-                  listsWithDiffs++;
-                  System.out.printf(
-                      "PremiumList '%s' is present in Cloud SQL, but not in Datastore.%n",
-                      sqlList.getName());
-                }
-              }
+      ImmutableSet<String> sqlListStrings =
+          Streams.stream(sqlListEntries)
+              .map(
+                  premiumEntry ->
+                      new PremiumListEntry.Builder()
+                          .setPrice(
+                              BigMoney.of(sqlList.get().getCurrency(), premiumEntry.getPrice())
+                                  .toMoney())
+                          .setLabel(premiumEntry.getDomainLabel())
+                          .build()
+                          .toString())
+              .collect(toImmutableSet());
 
-              System.out.printf("Found %s unequal list(s).%n", listsWithDiffs);
-            });
+      // This will only print out the name of the unequal list. GetPremiumListCommand
+      // should be used to determine what the actual differences are.
+      if (!datastoreListStrings.equals(sqlListStrings)) {
+        listsWithDiffs++;
+        System.out.printf("PremiumList '%s' has different entries in each database.%n", listName);
+      }
+    }
+
+    System.out.printf("Found %d unequal list(s).%n", listsWithDiffs);
   }
 }
