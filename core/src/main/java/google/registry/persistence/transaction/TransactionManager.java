@@ -273,6 +273,11 @@ public interface TransactionManager {
    */
   void deleteWithoutBackup(Object entity);
 
+  /**
+   * Returns a QueryComposer which can be used to construct portable queries for the given entity.
+   */
+  <T> QueryComposer<T> createQueryComposer(Class<T> entity);
+
   /** Clears the session cache if the underlying database is Datastore, otherwise it is a no-op. */
   void clearSessionCache();
 

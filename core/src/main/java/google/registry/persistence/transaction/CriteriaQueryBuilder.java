@@ -18,6 +18,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableList;
 import java.util.Collection;
+import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
@@ -94,7 +95,12 @@ public class CriteriaQueryBuilder<T> {
 
   /** Creates a query builder that will SELECT from the given class. */
   public static <T> CriteriaQueryBuilder<T> create(Class<T> clazz) {
-    CriteriaQuery<T> query = jpaTm().getEntityManager().getCriteriaBuilder().createQuery(clazz);
+    return create(jpaTm().getEntityManager(), clazz);
+  }
+
+  /** Creates a query builder for the given entity manager. */
+  public static <T> CriteriaQueryBuilder<T> create(EntityManager em, Class<T> clazz) {
+    CriteriaQuery<T> query = em.getCriteriaBuilder().createQuery(clazz);
     Root<T> root = query.from(clazz);
     query = query.select(root);
     return new CriteriaQueryBuilder<>(query, root);

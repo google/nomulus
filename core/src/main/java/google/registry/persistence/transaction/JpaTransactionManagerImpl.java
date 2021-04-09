@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -54,6 +55,7 @@ import javax.persistence.EntityTransaction;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.SingularAttribute;
 import org.joda.time.DateTime;
@@ -531,6 +533,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
+    return new QueryComposerImpl<T>(entity, getEntityManager());
+  }
+
+  @Override
   public void clearSessionCache() {
     // This is an intended no-op method as there is no session cache in Postgresql.
   }
@@ -679,6 +686,42 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
           entityManager.persist(persistedTxn.toEntity());
         }
       }
+    }
+  }
+
+  private static class QueryComposerImpl<T> extends QueryComposer<T> {
+
+    EntityManager em;
+
+    QueryComposerImpl(Class<T> entity, EntityManager em) {
+      super(entity);
+      this.em = em;
+    }
+
+    private TypedQuery<T> buildQuery() {
+      CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
+      CriteriaQueryBuilder<T> builder = CriteriaQueryBuilder.create(em, entity);
+
+      for (WhereCondition pred : predicates) {
+        pred.addToCriteriaQueryBuilder(builder, criteriaBuilder);
+      }
+
+      if (orderBy != null) {
+        // TODO: Convert object field name to hibernate column names.
+        builder.orderByAsc(orderBy);
+      }
+
+      return em.createQuery(builder.build());
+    }
+
+    @Override
+    public T first() {
+      return buildQuery().getSingleResult();
+    }
+
+    @Override
+    public Stream<T> stream() {
+      return buildQuery().getResultList().stream();
     }
   }
 }

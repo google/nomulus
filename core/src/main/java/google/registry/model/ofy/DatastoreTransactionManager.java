@@ -37,12 +37,15 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.QueryComposer;
 import google.registry.persistence.transaction.TransactionManager;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
+import javax.persistence.NoResultException;
 import org.joda.time.DateTime;
 
 /** Datastore implementation of {@link TransactionManager}. */
@@ -303,6 +306,11 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
+  public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
+    return new QueryComposerImpl(entity);
+  }
+
+  @Override
   public void clearSessionCache() {
     getOfy().clearSessionCache();
   }
@@ -362,5 +370,40 @@ public class DatastoreTransactionManager implements TransactionManager {
       return (T) ((HistoryEntry) obj).toChildHistoryEntity();
     }
     return obj;
+  }
+
+  private static class QueryComposerImpl<T> extends QueryComposer<T> {
+    QueryComposerImpl(Class<T> entity) {
+      super(entity);
+    }
+
+    Query<T> buildQuery() {
+      Query<T> result = ofy().load().type(entity);
+      for (WhereCondition pred : predicates) {
+        result = result.filter(pred.fieldName + pred.comparator.getDatastoreString(), pred.value);
+      }
+
+      if (orderBy != null) {
+        result = result.order(orderBy);
+      }
+
+      return result;
+    }
+
+    @Override
+    public T first() {
+      T result = buildQuery().first().now();
+      if (result == null) {
+        // The exception text here is the same as what we get for JPA queries.
+        throw new NoResultException("No entity found for query");
+      }
+      return result;
+    }
+
+    @Override
+    public Stream<T> stream() {
+      // TODO: there should be a better way to do this.
+      return buildQuery().list().stream();
+    }
   }
 }
