@@ -200,7 +200,7 @@ public class QueryComposerTest {
   }
 
   @javax.persistence.Entity
-  @Entity
+  @Entity(name = "QueryComposerTestEntity")
   private static class TestEntity extends ImmutableObject {
     @javax.persistence.Id @Id private String name;
 
