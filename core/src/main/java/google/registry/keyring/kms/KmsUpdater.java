@@ -43,6 +43,7 @@ import google.registry.keyring.kms.KmsKeyring.PublicKeyLabel;
 import google.registry.keyring.kms.KmsKeyring.StringKeyLabel;
 import google.registry.model.server.KmsSecret;
 import google.registry.model.server.KmsSecretRevision;
+import google.registry.privileges.secretmanager.KeyringSecretStore;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -59,11 +60,14 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 public final class KmsUpdater {
 
   private final KmsConnection kmsConnection;
+  private final KeyringSecretStore secretStore;
   private final HashMap<String, byte[]> secretValues;
 
   @Inject
-  public KmsUpdater(@Config("defaultKmsConnection") KmsConnection kmsConnection) {
+  public KmsUpdater(
+      @Config("defaultKmsConnection") KmsConnection kmsConnection, KeyringSecretStore secretStore) {
     this.kmsConnection = kmsConnection;
+    this.secretStore = secretStore;
 
     // Use LinkedHashMap to preserve insertion order on update() to simplify testing and debugging
     this.secretValues = new LinkedHashMap<>();
@@ -132,6 +136,12 @@ public final class KmsUpdater {
     checkState(!secretValues.isEmpty(), "At least one Keyring value must be persisted");
 
     persistEncryptedValues(encryptValues(secretValues));
+
+    // Errors when writing to secret store can be thrown to the top, since writes are always
+    // executed by a human user using the UpdateKmsKeyringCommand.
+    secretValues
+        .entrySet()
+        .forEach(e -> secretStore.createOrUpdateSecret(e.getKey(), e.getValue()));
   }
 
   /**

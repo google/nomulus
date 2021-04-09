@@ -44,6 +44,15 @@ public interface SecretManagerClient {
   /** Returns the {@link SecretVersionState} of all secrets with {@code secretId}. */
   Iterable<SecretVersionState> listSecretVersions(String secretId);
 
+  /** Creates a secret if it does not already exists. */
+  default void createSecretIfAbsent(String secretId) {
+    try {
+      createSecret(secretId);
+    } catch (SecretAlreadyExistsException ignore) {
+      // Not a problem.
+    }
+  }
+
   /**
    * Returns the version strings of all secrets in the given {@code state} with {@code secretId}.
    */

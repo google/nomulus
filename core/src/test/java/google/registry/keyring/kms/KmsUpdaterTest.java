@@ -24,6 +24,8 @@ import google.registry.keyring.api.KeySerializer;
 import google.registry.model.server.KmsSecret;
 import google.registry.model.server.KmsSecretRevision;
 import google.registry.model.server.KmsSecretRevisionSqlDao;
+import google.registry.privileges.secretmanager.FakeSecretManagerClient;
+import google.registry.privileges.secretmanager.KeyringSecretStore;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.DualDatabaseTest;
@@ -49,7 +51,9 @@ public class KmsUpdaterTest {
 
   @BeforeEach
   void beforeEach() {
-    updater = new KmsUpdater(new FakeKmsConnection());
+    updater =
+        new KmsUpdater(
+            new FakeKmsConnection(), new KeyringSecretStore(new FakeSecretManagerClient()));
   }
 
   @TestOfyAndSql

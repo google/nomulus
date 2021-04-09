@@ -138,6 +138,8 @@ interface RegistryToolComponent {
 
   void inject(LogoutCommand command);
 
+  void inject(MigrateKmsKeyringCommand command);
+
   void inject(PendingEscrowCommand command);
 
   void inject(RenewDomainCommand command);
