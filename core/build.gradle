@@ -423,7 +423,7 @@ task jaxbToJava {
       }
     }
     execInBash(
-        'find . -name *.java -exec sed -i /\\*\\ \\<p\\>\\$/d {} +',
+        'find . -name *.java -exec sed -i -e /\\*\\ \\<p\\>\\$/d {} +',
         generatedDir)
   }
 }
