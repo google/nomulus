@@ -307,7 +307,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
-    return new QueryComposerImpl(entity);
+    return new DatastoreQueryComposerImpl(entity);
   }
 
   @Override
@@ -372,13 +372,13 @@ public class DatastoreTransactionManager implements TransactionManager {
     return obj;
   }
 
-  private static class QueryComposerImpl<T> extends QueryComposer<T> {
-    QueryComposerImpl(Class<T> entity) {
-      super(entity);
+  private static class DatastoreQueryComposerImpl<T> extends QueryComposer<T> {
+    DatastoreQueryComposerImpl(Class<T> entityClass) {
+      super(entityClass);
     }
 
     Query<T> buildQuery() {
-      Query<T> result = ofy().load().type(entity);
+      Query<T> result = ofy().load().type(entityClass);
       for (WhereCondition pred : predicates) {
         result = result.filter(pred.fieldName + pred.comparator.getDatastoreString(), pred.value);
       }
