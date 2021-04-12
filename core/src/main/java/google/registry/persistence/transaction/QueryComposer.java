@@ -14,6 +14,7 @@
 
 package google.registry.persistence.transaction;
 
+import com.google.common.base.Function;
 import google.registry.persistence.transaction.CriteriaQueryBuilder.WhereClause;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,15 +34,15 @@ public abstract class QueryComposer<T> {
 
   // The class whose entities we're querying.  Note that this limits us to single table queries in
   // SQL.  In datastore, there's really no other kind of query.
-  protected Class<T> entity;
+  protected Class<T> entityClass;
 
   // Field to order by, if any.  Null if we don't care about order.
   @Nullable protected String orderBy;
 
   protected List<WhereCondition<?>> predicates = new ArrayList<WhereCondition<?>>();
 
-  protected QueryComposer(Class<T> entity) {
-    this.entity = entity;
+  protected QueryComposer(Class<T> entityClass) {
+    this.entityClass = entityClass;
   }
 
   /**
@@ -75,75 +76,54 @@ public abstract class QueryComposer<T> {
   // We have to wrap the CriteriaQueryBuilder predicate factories in our own functions because at
   // the point where we pass them to the Comparator constructor, the compiler can't determine which
   // of the overloads to use since there is no "value" object for context.
-  // The only place where this context exists is in the call to the "where" method, which is why we
-  // wrap the entire "where" method instead of just the original predicate factory.
 
-  @com.google.errorprone.annotations.Immutable
-  private interface ConditionAppender {
-    <U extends Comparable<? super U>> void add(
-        CriteriaQueryBuilder queryBuilder,
-        CriteriaBuilder criteriaBuilder,
-        String fieldName,
-        U value);
+  public static <U extends Comparable<? super U>> WhereClause<U> equal(
+      CriteriaBuilder criteriaBuilder) {
+    return criteriaBuilder::equal;
   }
 
-  private static <U extends Comparable<? super U>> void addEqualCond(
-      CriteriaQueryBuilder queryBuilder,
-      CriteriaBuilder criteriaBuilder,
-      String fieldName,
-      U value) {
-    queryBuilder.where(fieldName, criteriaBuilder::equal, value);
+  public static <U extends Comparable<? super U>> WhereClause<U> lessThan(
+      CriteriaBuilder criteriaBuilder) {
+    return criteriaBuilder::lessThan;
   }
 
-  private static <U extends Comparable<? super U>> void addLessThanCond(
-      CriteriaQueryBuilder queryBuilder,
-      CriteriaBuilder criteriaBuilder,
-      String fieldName,
-      U value) {
-    queryBuilder.where(fieldName, (WhereClause<U>) criteriaBuilder::lessThan, value);
+  public static <U extends Comparable<? super U>> WhereClause<U> lessThanOrEqualTo(
+      CriteriaBuilder criteriaBuilder) {
+    return criteriaBuilder::lessThanOrEqualTo;
   }
 
-  private static <U extends Comparable<? super U>> void addLessThanOrEqualToCond(
-      CriteriaQueryBuilder queryBuilder,
-      CriteriaBuilder criteriaBuilder,
-      String fieldName,
-      U value) {
-    queryBuilder.where(fieldName, (WhereClause<U>) criteriaBuilder::lessThanOrEqualTo, value);
+  public static <U extends Comparable<? super U>> WhereClause<U> greaterThanOrEqualTo(
+      CriteriaBuilder criteriaBuilder) {
+    return criteriaBuilder::greaterThanOrEqualTo;
   }
 
-  private static <U extends Comparable<? super U>> void addGreaterThanOrEqualToCond(
-      CriteriaQueryBuilder queryBuilder,
-      CriteriaBuilder criteriaBuilder,
-      String fieldName,
-      U value) {
-    queryBuilder.where(fieldName, (WhereClause<U>) criteriaBuilder::greaterThanOrEqualTo, value);
-  }
-
-  private static <U extends Comparable<? super U>> void addGreaterThanCond(
-      CriteriaQueryBuilder queryBuilder,
-      CriteriaBuilder criteriaBuilder,
-      String fieldName,
-      U value) {
-    queryBuilder.where(fieldName, (WhereClause<U>) criteriaBuilder::greaterThan, value);
+  public static <U extends Comparable<? super U>> WhereClause<U> greaterThan(
+      CriteriaBuilder criteriaBuilder) {
+    return criteriaBuilder::greaterThan;
   }
 
   public enum Comparator {
-    EQ("", QueryComposer::addEqualCond),
-    LT(" <", QueryComposer::addLessThanCond),
-    LTE(" <=", QueryComposer::addLessThanOrEqualToCond),
-    GTE(" >=", QueryComposer::addGreaterThanOrEqualToCond),
-    GT(" >", QueryComposer::addGreaterThanCond);
+    EQ("", QueryComposer::equal),
+    LT(" <", QueryComposer::lessThan),
+    LTE(" <=", QueryComposer::lessThanOrEqualTo),
+    GTE(" >=", QueryComposer::greaterThanOrEqualTo),
+    GT(" >", QueryComposer::greaterThan);
 
     private final String datastoreString;
-    private final ConditionAppender conditionAppender;
+    final Function<CriteriaBuilder, WhereClause<?>> comparisonFactory;
 
-    Comparator(String datastoreString, ConditionAppender conditionAppender) {
+    Comparator(
+        String datastoreString, Function<CriteriaBuilder, WhereClause<?>> comparisonFactory) {
       this.datastoreString = datastoreString;
-      this.conditionAppender = conditionAppender;
+      this.comparisonFactory = comparisonFactory;
     }
 
     public String getDatastoreString() {
       return datastoreString;
+    }
+
+    public Function<CriteriaBuilder, WhereClause<?>> getComparisonFactory() {
+      return comparisonFactory;
     }
   };
 
@@ -160,7 +140,8 @@ public abstract class QueryComposer<T> {
 
     public void addToCriteriaQueryBuilder(
         CriteriaQueryBuilder queryBuilder, CriteriaBuilder criteriaBuilder) {
-      comparator.conditionAppender.add(queryBuilder, criteriaBuilder, fieldName, (U) value);
+      queryBuilder.where(
+          fieldName, comparator.getComparisonFactory().apply(criteriaBuilder), value);
     }
   }
 }

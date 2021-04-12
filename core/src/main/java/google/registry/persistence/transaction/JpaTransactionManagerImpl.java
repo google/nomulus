@@ -534,7 +534,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
-    return new QueryComposerImpl<T>(entity, getEntityManager());
+    return new JpaQueryComposerImpl<T>(entity, getEntityManager());
   }
 
   @Override
@@ -689,29 +689,28 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
   }
 
-  private static class QueryComposerImpl<T> extends QueryComposer<T> {
+  private static class JpaQueryComposerImpl<T> extends QueryComposer<T> {
 
     EntityManager em;
 
-    QueryComposerImpl(Class<T> entity, EntityManager em) {
-      super(entity);
+    JpaQueryComposerImpl(Class<T> entityClass, EntityManager em) {
+      super(entityClass);
       this.em = em;
     }
 
     private TypedQuery<T> buildQuery() {
       CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
-      CriteriaQueryBuilder<T> builder = CriteriaQueryBuilder.create(em, entity);
+      CriteriaQueryBuilder<T> queryBuilder = CriteriaQueryBuilder.create(em, entityClass);
 
-      for (WhereCondition pred : predicates) {
-        pred.addToCriteriaQueryBuilder(builder, criteriaBuilder);
+      for (WhereCondition<?> pred : predicates) {
+        pred.addToCriteriaQueryBuilder(queryBuilder, criteriaBuilder);
       }
 
       if (orderBy != null) {
-        // TODO: Convert object field name to hibernate column names.
-        builder.orderByAsc(orderBy);
+        queryBuilder.orderByAsc(orderBy);
       }
 
-      return em.createQuery(builder.build());
+      return em.createQuery(queryBuilder.build());
     }
 
     @Override
@@ -721,7 +720,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     @Override
     public Stream<T> stream() {
-      return buildQuery().getResultList().stream();
+      return buildQuery().getResultStream();
     }
   }
 }
