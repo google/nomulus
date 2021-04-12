@@ -40,7 +40,7 @@ class EntityWritePrioritiesTest {
             Key.create(HistoryEntry.class, 200), "fake history entry",
             Key.create(Registrar.class, 300), "fake registrar");
     ImmutableMap<Long, Integer> expectedValues =
-        ImmutableMap.of(100L, EntityWritePriorities.DELETE_RANGE + 10, 200L, -10, 300L, 0);
+        ImmutableMap.of(100L, EntityWritePriorities.DELETE_RANGE - 20, 200L, 20, 300L, 0);
 
     for (ImmutableMap.Entry<Key<?>, Object> entry : actions.entrySet()) {
       assertThat(

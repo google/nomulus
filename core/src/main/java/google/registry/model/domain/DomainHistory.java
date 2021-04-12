@@ -15,6 +15,7 @@
 package google.registry.model.domain;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
 import com.google.common.collect.ImmutableSet;
@@ -261,6 +262,12 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @Override
   public Optional<DatastoreEntity> toDatastoreEntity() {
     return Optional.of(asHistoryEntry());
+  }
+
+  // Used to fill out the domainContent field during asynchronous replay
+  public static void beforeSqlSave(DomainHistory domainHistory) {
+    domainHistory.domainContent =
+        jpaTm().loadByKey(VKey.createSql(DomainBase.class, domainHistory.getDomainRepoId()));
   }
 
   /** Class to represent the composite primary key of {@link DomainHistory} entity. */

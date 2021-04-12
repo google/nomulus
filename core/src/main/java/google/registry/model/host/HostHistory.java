@@ -14,6 +14,8 @@
 
 package google.registry.model.host;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.ImmutableObject;
@@ -113,6 +115,12 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
   @Override
   public Optional<DatastoreEntity> toDatastoreEntity() {
     return Optional.of(asHistoryEntry());
+  }
+
+  // Used to fill out the hostBase field during asynchronous replay
+  public static void beforeSqlSave(HostHistory hostHistory) {
+    hostHistory.hostBase =
+        jpaTm().loadByKey(VKey.createSql(HostResource.class, hostHistory.getHostRepoId()));
   }
 
   /** Class to represent the composite primary key of {@link HostHistory} entity. */

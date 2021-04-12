@@ -34,6 +34,7 @@ import javax.persistence.Transient;
 @EntityForTesting
 public class TestObject extends ImmutableObject implements DatastoreAndSqlEntity {
 
+  public static int beforeSqlSaveCallCount;
   public static int beforeSqlDeleteCallCount;
 
   @Parent @Transient Key<EntityGroupRoot> parent;
@@ -72,6 +73,10 @@ public class TestObject extends ImmutableObject implements DatastoreAndSqlEntity
 
   public static void beforeSqlDelete(VKey<TestObject> key) {
     beforeSqlDeleteCallCount++;
+  }
+
+  public static void beforeSqlSave(TestObject testObject) {
+    beforeSqlSaveCallCount++;
   }
 
   /** A test @VirtualEntity model object, which should not be persisted. */

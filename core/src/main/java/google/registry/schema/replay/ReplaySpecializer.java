@@ -26,21 +26,30 @@ import java.lang.reflect.Method;
  * to invoke special class methods if they are present.
  */
 public class ReplaySpecializer {
+
   public static void beforeSqlDelete(VKey<?> key) {
+    invokeMethod(key.getKind(), "beforeSqlDelete", key);
+  }
+
+  public static void beforeSqlSave(SqlEntity sqlEntity) {
+    invokeMethod(sqlEntity.getClass(), "beforeSqlSave", sqlEntity);
+  }
+
+  private static <T> void invokeMethod(Class<T> clazz, String methodName, Object argument) {
     try {
-      Method method = key.getKind().getMethod("beforeSqlDelete", VKey.class);
-      method.invoke(null, new Object[] {key});
+      Method method = clazz.getMethod(methodName, argument.getClass());
+      method.invoke(null, argument);
     } catch (NoSuchMethodException e) {
       // Ignore, this just means that the class doesn't need this hook.
     } catch (IllegalAccessException e) {
       throw new RuntimeException(
-          "beforeSqlDelete() method is defined for class "
-              + key.getKind().getName()
-              + " but is not public.",
+          String.format(
+              "%s() method is defined for class %s but is not public.",
+              methodName, clazz.getName()),
           e);
     } catch (InvocationTargetException e) {
       throw new RuntimeException(
-          "beforeSqlDelete() method for class " + key.getKind().getName() + " threw an exception.",
+          String.format("%s() method for class %s threw an exception", methodName, clazz.getName()),
           e);
     }
   }

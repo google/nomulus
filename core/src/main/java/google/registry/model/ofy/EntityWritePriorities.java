@@ -41,10 +41,11 @@ public class EntityWritePriorities {
    */
   static final ImmutableMap<String, Integer> CLASS_PRIORITIES =
       ImmutableMap.of(
-          "ContactResource", -15,
-          "HistoryEntry", -10,
           "AllocationToken", -9,
-          "DomainBase", 10);
+          "ContactResource", 8,
+          "HostResource", 9,
+          "DomainBase", 10,
+          "HistoryEntry", 20);
 
   // The beginning of the range of priority numbers reserved for delete.  This must be greater than
   // any of the values in CLASS_PRIORITIES by enough overhead to accommodate  any negative values in
