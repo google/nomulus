@@ -47,10 +47,8 @@ public class ComparePremiumListsCommandTest extends CommandTestCase<ComparePremi
     jpaTm()
         .transact(
             () -> {
-              while (PremiumListSqlDao.getLatestRevision("how").isPresent()) {
-                PremiumList premiumList = PremiumListSqlDao.getLatestRevision("how").get();
-                PremiumListSqlDao.delete(premiumList);
-              }
+              PremiumList premiumList = PremiumListSqlDao.getLatestRevision("how").get();
+              PremiumListSqlDao.delete(premiumList);
             });
     runCommand();
     assertThat(getStdoutAsString())

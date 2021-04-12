@@ -51,17 +51,14 @@ final class ComparePremiumListsCommand implements CommandWithRemoteApi {
                         .map(PremiumList::getName)
                         .collect(toImmutableSet()));
 
-    ImmutableSet<String> notInCloudSql = Sets.difference(datastoreLists, sqlLists).immutableCopy();
-    ImmutableSet<String> notInDatastore = Sets.difference(sqlLists, datastoreLists).immutableCopy();
-
     int listsWithDiffs = 0;
 
-    for (String listName : notInCloudSql) {
+    for (String listName : Sets.difference(datastoreLists, sqlLists)) {
       listsWithDiffs++;
       System.out.printf(
           "PremiumList '%s' is present in Datastore, but not in Cloud SQL.%n", listName);
     }
-    for (String listName : notInDatastore) {
+    for (String listName : Sets.difference(sqlLists, datastoreLists)) {
       listsWithDiffs++;
       System.out.printf(
           "PremiumList '%s' is present in Cloud SQL, but not in Datastore.%n", listName);
