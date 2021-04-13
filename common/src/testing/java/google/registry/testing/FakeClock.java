@@ -35,6 +35,8 @@ public final class FakeClock implements Clock {
   // threads should see a consistent flow.
   private final AtomicLong currentTimeMillis = new AtomicLong();
 
+  private volatile long autoIncrementStepMs;
+
   /** Creates a FakeClock that starts at START_OF_TIME. */
   public FakeClock() {
     this(START_OF_TIME);
@@ -48,7 +50,21 @@ public final class FakeClock implements Clock {
   /** Returns the current time. */
   @Override
   public DateTime nowUtc() {
-    return new DateTime(currentTimeMillis.get(), UTC);
+    return new DateTime(currentTimeMillis.addAndGet(autoIncrementStepMs), UTC);
+  }
+
+  /**
+   * Sets the increment applied to the clock whenever it is queried. The increment is zero by
+   * default: the clock is left unchanged when queried.
+   *
+   * <p>Passing a duration of zero to this method effectively unsets the auto increment mode.
+   *
+   * @param autoIncrementStep the new auto increment duration
+   * @return this
+   */
+  public FakeClock setAutoIncrementStep(ReadableDuration autoIncrementStep) {
+    this.autoIncrementStepMs = autoIncrementStep.getMillis();
+    return this;
   }
 
   /** Advances clock by one millisecond. */
