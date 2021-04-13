@@ -379,7 +379,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
     Query<T> buildQuery() {
       Query<T> result = ofy().load().type(entityClass);
-      for (WhereCondition pred : predicates) {
+      for (WhereClause pred : predicates) {
         result = result.filter(pred.fieldName + pred.comparator.getDatastoreString(), pred.value);
       }
 

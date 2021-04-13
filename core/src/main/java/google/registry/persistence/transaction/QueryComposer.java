@@ -14,8 +14,10 @@
 
 package google.registry.persistence.transaction;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+
 import com.google.common.base.Function;
-import google.registry.persistence.transaction.CriteriaQueryBuilder.WhereClause;
+import google.registry.persistence.transaction.CriteriaQueryBuilder.WhereOperator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -39,7 +41,7 @@ public abstract class QueryComposer<T> {
   // Field to order by, if any.  Null if we don't care about order.
   @Nullable protected String orderBy;
 
-  protected List<WhereCondition<?>> predicates = new ArrayList<WhereCondition<?>>();
+  protected List<WhereClause<?>> predicates = new ArrayList<WhereClause<?>>();
 
   protected QueryComposer(Class<T> entityClass) {
     this.entityClass = entityClass;
@@ -53,11 +55,15 @@ public abstract class QueryComposer<T> {
    */
   public <U extends Comparable<? super U>> QueryComposer<T> where(
       String fieldName, Comparator comparator, U value) {
-    predicates.add(new WhereCondition(fieldName, comparator, value));
+    predicates.add(new WhereClause(fieldName, comparator, value));
     return this;
   }
 
-  /** Order the query results by the value of the specified field. */
+  /**
+   * Order the query results by the value of the specified field.
+   *
+   * <p>TODO(mmuller): add the ability to do descending sort order.
+   */
   public QueryComposer<T> orderBy(String fieldName) {
     orderBy = fieldName;
     return this;
@@ -77,27 +83,27 @@ public abstract class QueryComposer<T> {
   // the point where we pass them to the Comparator constructor, the compiler can't determine which
   // of the overloads to use since there is no "value" object for context.
 
-  public static <U extends Comparable<? super U>> WhereClause<U> equal(
+  public static <U extends Comparable<? super U>> WhereOperator<U> equal(
       CriteriaBuilder criteriaBuilder) {
     return criteriaBuilder::equal;
   }
 
-  public static <U extends Comparable<? super U>> WhereClause<U> lessThan(
+  public static <U extends Comparable<? super U>> WhereOperator<U> lessThan(
       CriteriaBuilder criteriaBuilder) {
     return criteriaBuilder::lessThan;
   }
 
-  public static <U extends Comparable<? super U>> WhereClause<U> lessThanOrEqualTo(
+  public static <U extends Comparable<? super U>> WhereOperator<U> lessThanOrEqualTo(
       CriteriaBuilder criteriaBuilder) {
     return criteriaBuilder::lessThanOrEqualTo;
   }
 
-  public static <U extends Comparable<? super U>> WhereClause<U> greaterThanOrEqualTo(
+  public static <U extends Comparable<? super U>> WhereOperator<U> greaterThanOrEqualTo(
       CriteriaBuilder criteriaBuilder) {
     return criteriaBuilder::greaterThanOrEqualTo;
   }
 
-  public static <U extends Comparable<? super U>> WhereClause<U> greaterThan(
+  public static <U extends Comparable<? super U>> WhereOperator<U> greaterThan(
       CriteriaBuilder criteriaBuilder) {
     return criteriaBuilder::greaterThan;
   }
@@ -110,36 +116,36 @@ public abstract class QueryComposer<T> {
     GT(" >", QueryComposer::greaterThan);
 
     private final String datastoreString;
-    final Function<CriteriaBuilder, WhereClause<?>> comparisonFactory;
+    private final Function<CriteriaBuilder, WhereOperator<?>> operatorFactory;
 
     Comparator(
-        String datastoreString, Function<CriteriaBuilder, WhereClause<?>> comparisonFactory) {
+        String datastoreString, Function<CriteriaBuilder, WhereOperator<?>> operatorFactory) {
       this.datastoreString = datastoreString;
-      this.comparisonFactory = comparisonFactory;
+      this.operatorFactory = operatorFactory;
     }
 
     public String getDatastoreString() {
       return datastoreString;
     }
 
-    public Function<CriteriaBuilder, WhereClause<?>> getComparisonFactory() {
-      return comparisonFactory;
+    public Function<CriteriaBuilder, WhereOperator<?>> getComparisonFactory() {
+      return operatorFactory;
     }
   };
 
-  protected static class WhereCondition<U extends Comparable<? super U>> {
+  protected static class WhereClause<U extends Comparable<? super U>> {
     public String fieldName;
     public Comparator comparator;
     public U value;
 
-    WhereCondition(String fieldName, Comparator comparator, U value) {
+    WhereClause(String fieldName, Comparator comparator, U value) {
       this.fieldName = fieldName;
       this.comparator = comparator;
       this.value = value;
     }
 
-    public void addToCriteriaQueryBuilder(
-        CriteriaQueryBuilder queryBuilder, CriteriaBuilder criteriaBuilder) {
+    public void addToCriteriaQueryBuilder(CriteriaQueryBuilder queryBuilder) {
+      CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
       queryBuilder.where(
           fieldName, comparator.getComparisonFactory().apply(criteriaBuilder), value);
     }

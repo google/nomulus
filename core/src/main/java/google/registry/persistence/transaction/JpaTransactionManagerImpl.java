@@ -55,7 +55,6 @@ import javax.persistence.EntityTransaction;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.SingularAttribute;
 import org.joda.time.DateTime;
@@ -699,11 +698,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
 
     private TypedQuery<T> buildQuery() {
-      CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
       CriteriaQueryBuilder<T> queryBuilder = CriteriaQueryBuilder.create(em, entityClass);
 
-      for (WhereCondition<?> pred : predicates) {
-        pred.addToCriteriaQueryBuilder(queryBuilder, criteriaBuilder);
+      for (WhereClause<?> pred : predicates) {
+        pred.addToCriteriaQueryBuilder(queryBuilder);
       }
 
       if (orderBy != null) {

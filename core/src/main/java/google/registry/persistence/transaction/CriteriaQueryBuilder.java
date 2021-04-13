@@ -36,7 +36,7 @@ import javax.persistence.criteria.Root;
 public class CriteriaQueryBuilder<T> {
 
   /** Functional interface that defines the 'where' operator, e.g. {@link CriteriaBuilder#equal}. */
-  public interface WhereClause<U> {
+  public interface WhereOperator<U> {
     Predicate predicate(Expression<U> expression, U object);
   }
 
@@ -51,7 +51,8 @@ public class CriteriaQueryBuilder<T> {
   }
 
   /** Adds a WHERE clause to the query, given the specified operation, field, and value. */
-  public <V> CriteriaQueryBuilder<T> where(String fieldName, WhereClause<V> whereClause, V value) {
+  public <V> CriteriaQueryBuilder<T> where(
+      String fieldName, WhereOperator<V> whereClause, V value) {
     Expression<V> expression = root.get(fieldName);
     return where(whereClause.predicate(expression, value));
   }
