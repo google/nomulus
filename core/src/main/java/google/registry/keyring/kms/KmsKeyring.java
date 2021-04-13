@@ -246,6 +246,14 @@ public class KmsKeyring implements Keyring {
     return dsData;
   }
 
+  /**
+   * Generates the tasks to migrate secrets from Datastore to Secret Manager.
+   *
+   * <p>The keys in the returned {@link ImmutableMap} are the names of the secrets that need
+   * migration. The values in the map are {@link Runnable Runnables} that copy secret data from
+   * Datastore to Secret Manager for their corresponding keys. Only secrets that are absent in
+   * Secret Manager or have inconsistent values are included in the returned map.
+   */
   public ImmutableMap<String, Runnable> migrationPlan() {
 
     ImmutableMap.Builder<String, Runnable> tasks = new ImmutableMap.Builder<>();

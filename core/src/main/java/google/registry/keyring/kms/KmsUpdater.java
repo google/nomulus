@@ -139,9 +139,16 @@ public final class KmsUpdater {
 
     // Errors when writing to secret store can be thrown to the top, since writes are always
     // executed by a human user using the UpdateKmsKeyringCommand.
-    secretValues
-        .entrySet()
-        .forEach(e -> secretStore.createOrUpdateSecret(e.getKey(), e.getValue()));
+    try {
+      secretValues
+          .entrySet()
+          .forEach(e -> secretStore.createOrUpdateSecret(e.getKey(), e.getValue()));
+    } catch (RuntimeException e) {
+      throw new RuntimeException(
+          "Failed to persist secrets to Secret Manager. "
+              + "Please check the status of Secret Manager and re-run the command.",
+          e);
+    }
   }
 
   /**
