@@ -19,7 +19,6 @@ import static google.registry.util.X509Utils.getCertificateHash;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
-import google.registry.util.Clock;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -43,7 +42,6 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLSession;
-import org.joda.time.DateTime;
 
 /**
  * Adds a server side SSL handler to the channel pipeline.
@@ -102,19 +100,13 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
   private final Supplier<PrivateKey> privateKeySupplier;
   private final Supplier<ImmutableList<X509Certificate>> certificatesSupplier;
   private final ImmutableList<String> supportedSslVersions;
-  // TODO(sarahbot): Remove this variable and its check after enforcement start date has passed.
-  private final ImmutableList<String> oldSupportedSslVersions;
-  private final DateTime enforcementStartTime;
-  private final Clock clock;
 
   public SslServerInitializer(
       boolean requireClientCert,
       boolean validateClientCert,
       SslProvider sslProvider,
       Supplier<PrivateKey> privateKeySupplier,
-      Supplier<ImmutableList<X509Certificate>> certificatesSupplier,
-      DateTime enforcementStartTime,
-      Clock clock) {
+      Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
     logger.atInfo().log("Server SSL Provider: %s", sslProvider);
     checkArgument(
         requireClientCert || !validateClientCert,
@@ -130,12 +122,6 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
             // JDK support for TLS 1.3 won't be available until 2021-04-20 at the earliest.
             // See: https://java.com/en/jre-jdk-cryptoroadmap.html
             : ImmutableList.of("TLSv1.2");
-    this.oldSupportedSslVersions =
-        sslProvider == SslProvider.OPENSSL
-            ? ImmutableList.of("TLSv1.3", "TLSv1.2", "TLSv1.1", "TLSv1")
-            : ImmutableList.of("TLSv1.2", "TLSv1.1", "TLSv1");
-    this.enforcementStartTime = enforcementStartTime;
-    this.clock = clock;
   }
 
   @Override
@@ -147,13 +133,8 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
             .sslProvider(sslProvider)
             .trustManager(InsecureTrustManagerFactory.INSTANCE)
             .clientAuth(requireClientCert ? ClientAuth.REQUIRE : ClientAuth.NONE)
-            .protocols(
-                enforcementStartTime.isBefore(clock.nowUtc())
-                    ? supportedSslVersions
-                    : oldSupportedSslVersions)
-            .ciphers(
-                enforcementStartTime.isBefore(clock.nowUtc()) ? ALLOWED_TLS_CIPHERS : null,
-                SupportedCipherSuiteFilter.INSTANCE)
+            .protocols(supportedSslVersions)
+            .ciphers(ALLOWED_TLS_CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
             .build();
 
     logger.atInfo().log("Available Cipher Suites: %s", sslContext.cipherSuites());

@@ -50,7 +50,6 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Qualifier;
 import javax.inject.Singleton;
-import org.joda.time.DateTime;
 
 /** A module that provides the {@link FrontendProtocol} used for epp protocol. */
 @Module
@@ -160,19 +159,11 @@ public final class EppProtocolModule {
   @Provides
   @EppProtocol
   static SslServerInitializer<NioSocketChannel> provideSslServerInitializer(
-      ProxyConfig config,
       SslProvider sslProvider,
       Supplier<PrivateKey> privateKeySupplier,
-      Supplier<ImmutableList<X509Certificate>> certificatesSupplier,
-      Clock clock) {
+      Supplier<ImmutableList<X509Certificate>> certificatesSupplier) {
     return new SslServerInitializer<>(
-        true,
-        false,
-        sslProvider,
-        privateKeySupplier,
-        certificatesSupplier,
-        DateTime.parse(config.tlsEnforcementStartTime),
-        clock);
+        true, false, sslProvider, privateKeySupplier, certificatesSupplier);
   }
 
   @Provides
