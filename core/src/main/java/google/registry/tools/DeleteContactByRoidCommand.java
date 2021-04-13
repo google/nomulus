@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.base.Verify.verify;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -24,6 +23,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.util.SystemClock;
@@ -53,8 +54,9 @@ public class DeleteContactByRoidCommand extends ConfirmingCommand implements Com
     System.out.printf("Deleting %s, which refers to %s.\n", roid, contactId);
     ObjectifyService.initOfy();
     Key<ContactResource> targetKey = Key.create(ContactResource.class, roid);
-    ContactResource contact = ofy().load().key(targetKey).now();
-    verify(Objects.equals(contact.getContactId(), contactId), "contactId does not match.");
+    ContactResource targetContact = ofy().load().key(targetKey).now();
+    verify(Objects.equals(targetContact.getContactId(), contactId), "contactId does not match.");
+    verify(Objects.equals(targetContact.getStatusValues(), ImmutableSet.of(StatusValue.OK)));
     System.out.println("Target contact has the expected contactId");
     String canonicalResource =
         ForeignKeyIndex.load(ContactResource.class, contactId, new SystemClock().nowUtc())
@@ -80,13 +82,25 @@ public class DeleteContactByRoidCommand extends ConfirmingCommand implements Com
             .map(Key::create)
             .filter(key -> deletetableKinds.contains(key.getKind()))
             .collect(ImmutableList.toImmutableList());
+
+    EppResourceIndex eppResourceIndex =
+        ofy().load().entity(EppResourceIndex.create(targetKey)).now();
+    verify(eppResourceIndex.getKey().equals(targetKey), "Wrong EppResource Index loaded");
+    System.out.printf("\n\nEppResourceIndex found (%s).\n", Key.create(eppResourceIndex));
+
+    toDelete =
+        new ImmutableList.Builder<Key<?>>()
+            .addAll(toDelete)
+            .add(Key.create(eppResourceIndex))
+            .build();
+
     System.out.printf("\n\nAbout to delete %s entities:\n", toDelete.size());
     toDelete.forEach(key -> System.out.println(key));
   }
 
   @Override
   protected String execute() {
-    tm().transact(() -> ofy().delete().keys(toDelete).now());
+    // tm().transact(() -> ofy().delete().keys(toDelete).now());
     return "Done";
   }
 }
