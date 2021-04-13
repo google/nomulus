@@ -196,7 +196,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    */
   public static <E extends EppResource> ImmutableMap<String, ForeignKeyIndex<E>> load(
       Class<E> clazz, Collection<String> foreignKeys, final DateTime now) {
-    return loadIndexesFromStore(clazz, foreignKeys).entrySet().stream()
+    return loadIndexesFromStore(clazz, foreignKeys, true).entrySet().stream()
         .filter(e -> now.isBefore(e.getValue().getDeletionTime()))
         .collect(entriesToImmutableMap());
   }
@@ -206,13 +206,22 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
    * keys, regardless of whether or not they have been soft-deleted.
    *
    * <p>Used by both the cached (w/o deletion check) and the non-cached (with deletion check) calls.
+   *
+   * <p>Note that in the cached case, we wish to run this outside of any transaction because we may
+   * be loading many entities, going over the Datastore limit on the number of enrolled entity
+   * groups per transaction (25). If we require consistency, however, we must use a transaction.
+   *
+   * @param inTransaction whether or not to use an Objectify transaction
    */
   private static <E extends EppResource>
       ImmutableMap<String, ForeignKeyIndex<E>> loadIndexesFromStore(
-          Class<E> clazz, Collection<String> foreignKeys) {
+          Class<E> clazz, Collection<String> foreignKeys, boolean inTransaction) {
     if (tm().isOfy()) {
+      Class<ForeignKeyIndex<E>> fkiClass = mapToFkiClass(clazz);
       return ImmutableMap.copyOf(
-          tm().doTransactionless(() -> ofy().load().type(mapToFkiClass(clazz)).ids(foreignKeys)));
+          inTransaction
+              ? ofy().load().type(fkiClass).ids(foreignKeys)
+              : tm().doTransactionless(() -> ofy().load().type(fkiClass).ids(foreignKeys)));
     } else {
       String property = RESOURCE_CLASS_TO_FKI_PROPERTY.get(clazz);
       ImmutableList<ForeignKeyIndex<E>> indexes =
@@ -249,7 +258,8 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
           return Optional.ofNullable(
               loadIndexesFromStore(
                       RESOURCE_CLASS_TO_FKI_CLASS.inverse().get(key.getKind()),
-                      ImmutableSet.of(foreignKey))
+                      ImmutableSet.of(foreignKey),
+                      false)
                   .get(foreignKey));
         }
 
@@ -265,7 +275,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
               Streams.stream(keys).map(v -> v.getSqlKey().toString()).collect(toImmutableSet());
           ImmutableSet<VKey<ForeignKeyIndex<?>>> typedKeys = ImmutableSet.copyOf(keys);
           ImmutableMap<String, ? extends ForeignKeyIndex<? extends EppResource>> existingFkis =
-              loadIndexesFromStore(resourceClass, foreignKeys);
+              loadIndexesFromStore(resourceClass, foreignKeys, false);
           // ofy() omits keys that don't have values in Datastore, so re-add them in
           // here with Optional.empty() values.
           return Maps.asMap(
