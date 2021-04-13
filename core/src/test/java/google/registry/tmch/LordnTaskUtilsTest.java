@@ -15,7 +15,6 @@
 package google.registry.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
@@ -29,23 +28,30 @@ import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import google.registry.util.Clock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link LordnTaskUtils}. */
+@DualDatabaseTest
 public class LordnTaskUtilsTest {
 
   private static final Clock clock = new FakeClock(DateTime.parse("2010-05-01T10:11:12Z"));
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .withClock(clock)
+          .withTaskQueue()
+          .build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
@@ -58,12 +64,14 @@ public class LordnTaskUtilsTest {
   private DomainBase.Builder newDomainBuilder() {
     return new DomainBase.Builder()
         .setDomainName("fleece.example")
+        .setPersistedCurrentSponsorClientId("TheRegistrar")
+        .setCreationClientId("TheRegistrar")
         .setRegistrant(persistActiveContact("jd1234").createVKey())
         .setSmdId("smdzzzz")
         .setCreationClientId("TheRegistrar");
   }
 
-  @Test
+  @TestOfyAndSql
   void test_enqueueDomainBaseTask_sunrise() {
     persistDomainAndEnqueueLordn(newDomainBuilder().setRepoId("A-EXAMPLE").build());
     String expectedPayload =
@@ -72,7 +80,7 @@ public class LordnTaskUtilsTest {
         "lordn-sunrise", new TaskMatcher().payload(expectedPayload).tag("example"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_enqueueDomainBaseTask_claims() {
     DomainBase domain =
         newDomainBuilder()
@@ -84,18 +92,14 @@ public class LordnTaskUtilsTest {
     persistDomainAndEnqueueLordn(domain);
     String expectedPayload = "11-EXAMPLE,fleece.example,landrush1tcn,1,2010-05-01T10:11:12.000Z,"
         + "2010-05-01T09:11:12.000Z";
-    assertTasksEnqueued(
-        "lordn-claims", new TaskMatcher().payload(expectedPayload).tag("example"));
+    assertTasksEnqueued("lordn-claims", new TaskMatcher().payload(expectedPayload).tag("example"));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_oteRegistrarWithNullIanaId() {
-    tm()
-        .transact(
+    tm().transact(
             () ->
-                ofy()
-                    .save()
-                    .entity(
+                tm().put(
                         loadRegistrar("TheRegistrar")
                             .asBuilder()
                             .setType(Type.OTE)
@@ -107,7 +111,7 @@ public class LordnTaskUtilsTest {
         "lordn-sunrise", new TaskMatcher().payload(expectedPayload).tag("example"));
   }
 
-  @Test
+  @TestOfyOnly // moot in SQL since the domain creation fails the registrar foreign key check
   void test_enqueueDomainBaseTask_throwsExceptionOnInvalidRegistrar() {
     DomainBase domain =
         newDomainBuilder()
@@ -121,7 +125,7 @@ public class LordnTaskUtilsTest {
         .contains("No registrar found for client id: nonexistentRegistrar");
   }
 
-  @Test
+  @TestOfyAndSql
   void test_enqueueDomainBaseTask_throwsNpeOnNullDomain() {
     assertThrows(
         NullPointerException.class,
