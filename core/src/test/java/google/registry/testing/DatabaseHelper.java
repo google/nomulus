@@ -116,6 +116,7 @@ import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
+import java.lang.reflect.Field;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -124,6 +125,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import javax.annotation.Nullable;
+import org.hibernate.Hibernate;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -339,8 +341,7 @@ public class DatabaseHelper {
   /** Persists a domain and enqueues a LORDN task of the appropriate type for it. */
   public static DomainBase persistDomainAndEnqueueLordn(final DomainBase domain) {
     final DomainBase persistedDomain = persistResource(domain);
-    // Calls {@link LordnTaskUtils#enqueueDomainBaseTask} wrapped in an ofy transaction so that
-    // the
+    // Calls {@link LordnTaskUtils#enqueueDomainBaseTask} wrapped in a transaction so that the
     // transaction time is set correctly.
     tm().transactNew(() -> LordnTaskUtils.enqueueDomainBaseTask(persistedDomain));
     maybeAdvanceClock();
@@ -995,8 +996,8 @@ public class DatabaseHelper {
    * Persists a test resource to Datastore and returns it.
    *
    * <p>Tests should always use this method (or the shortcut persist methods in this class) to
-   * persist test data, to avoid potentially subtle bugs related to race conditions and a stale
-   * ofy() session cache. Specifically, this method calls .now() on the save to force the write to
+   * persist test data, to avoid potentially subtle bugs related to race conditions and a stale ofy
+   * session cache. Specifically, this method calls .now() on the save to force the write to
    * actually get sent to Datastore (although it does not force it to be applied) and clears the
    * session cache. If necessary, this method also updates the relevant {@link EppResourceIndex},
    * {@link ForeignKeyIndex}.
@@ -1279,6 +1280,45 @@ public class DatabaseHelper {
         Registrar.loadByClientId(clientId),
         "Error in tests: Registrar %s does not exist",
         clientId);
+  }
+
+  public static List<Object> loadAllEntities() {
+    if (tm().isOfy()) {
+      return ofy().load().list();
+    } else {
+      return jpaTm()
+          .transact(
+              () -> {
+                ImmutableList<? extends Class<?>> entityClasses =
+                    jpaTm().getEntityManager().getMetamodel().getEntities().stream()
+                        .map(javax.persistence.metamodel.Type::getJavaType)
+                        .collect(toImmutableList());
+                ImmutableList.Builder<Object> result = new ImmutableList.Builder<>();
+                for (Class<?> entityClass : entityClasses) {
+                  for (Object object : jpaTm().loadAllOf(entityClass)) {
+                    // Initialize and detach the objects so they can be used for comparison later
+                    initializeObject(object);
+                    jpaTm().getEntityManager().detach(object);
+                    result.add(object);
+                  }
+                }
+                return result.build();
+              });
+    }
+  }
+
+  private static void initializeObject(Object object) {
+    // We must initialize all possible collection fields in this object if we wish to
+    // use them outside of the transaction. Use reflection to initialize all fields
+    // for all objects.
+    for (Field field : object.getClass().getDeclaredFields()) {
+      field.setAccessible(true);
+      try {
+        Hibernate.initialize(field.get(object));
+      } catch (IllegalAccessException e) {
+        // shouldn't happen since we set the field to be accessible
+      }
+    }
   }
 
   /**

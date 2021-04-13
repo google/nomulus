@@ -16,6 +16,7 @@ package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
 import static google.registry.testing.DatabaseHelper.stripBillingEventId;
 import static google.registry.testing.TestDataHelper.loadFile;
@@ -216,7 +217,7 @@ public class EppTestCase {
         "Running " + inputFilename + " => " + outputFilename,
         "epp.response.resData.infData.roid",
         "epp.response.trID.svTRID");
-    ofy().clearSessionCache(); // Clear the cache like OfyFilter would.
+    tm().clearSessionCache(); // Clear the cache like OfyFilter would.
     return actualOutput;
   }
 
