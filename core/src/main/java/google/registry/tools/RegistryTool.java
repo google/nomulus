@@ -55,6 +55,7 @@ public final class RegistryTool {
           .put("dedupe_recurring_billing_event_ids", DedupeRecurringBillingEventIdsCommand.class)
           .put("delete_allocation_tokens", DeleteAllocationTokensCommand.class)
           .put("delete_domain", DeleteDomainCommand.class)
+          .put("delete_contact_by_roid", DeleteContactByRoidCommand.class)
           .put("delete_host", DeleteHostCommand.class)
           .put("delete_premium_list", DeletePremiumListCommand.class)
           .put("delete_reserved_list", DeleteReservedListCommand.class)

@@ -104,6 +104,8 @@ interface RegistryToolComponent {
 
   void inject(CreateTldCommand command);
 
+  void inject(DeleteContactByRoidCommand command);
+
   void inject(DeployInvoicingPipelineCommand command);
 
   void inject(DeploySpec11PipelineCommand command);
