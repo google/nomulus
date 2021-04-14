@@ -21,6 +21,10 @@ import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Streams;
+import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeySerializer;
@@ -29,8 +33,11 @@ import google.registry.keyring.api.KeyringException;
 import google.registry.model.server.KmsSecret;
 import google.registry.model.server.KmsSecretRevision;
 import google.registry.model.server.KmsSecretRevisionSqlDao;
+import google.registry.privileges.secretmanager.KeyringSecretStore;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -45,6 +52,8 @@ import org.bouncycastle.openpgp.PGPPublicKey;
  *     Documentation</a>
  */
 public class KmsKeyring implements Keyring {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** Key labels for private key secrets. */
   enum PrivateKeyLabel {
@@ -87,10 +96,13 @@ public class KmsKeyring implements Keyring {
   }
 
   private final KmsConnection kmsConnection;
+  private final KeyringSecretStore secretStore;
 
   @Inject
-  KmsKeyring(@Config("defaultKmsConnection") KmsConnection kmsConnection) {
+  KmsKeyring(
+      @Config("defaultKmsConnection") KmsConnection kmsConnection, KeyringSecretStore secretStore) {
     this.kmsConnection = kmsConnection;
+    this.secretStore = secretStore;
   }
 
   @Override
@@ -192,7 +204,7 @@ public class KmsKeyring implements Keyring {
     return getKeyPair(keyLabel).getPrivateKey();
   }
 
-  private byte[] getDecryptedData(String keyName) {
+  private byte[] getDecryptedDataFromDatastore(String keyName) {
     String encryptedData;
     if (tm().isOfy()) {
       KmsSecret secret =
@@ -212,5 +224,57 @@ public class KmsKeyring implements Keyring {
       throw new KeyringException(
           String.format("CloudKMS decrypt operation failed for secret %s", keyName), e);
     }
+  }
+
+  private byte[] getDataFromSecretStore(String keyName) {
+    try {
+      return secretStore.getSecret(keyName);
+    } catch (Exception e) {
+      return new byte[0];
+    }
+  }
+
+  private byte[] getDecryptedData(String keyName) {
+    byte[] dsData = getDecryptedDataFromDatastore(keyName);
+    byte[] secretStoreData = getDataFromSecretStore(keyName);
+
+    if (Arrays.equals(dsData, secretStoreData)) {
+      logger.atInfo().log("Values for %s in Datastore and Secret Manager match.", keyName);
+      return secretStoreData;
+    }
+    logger.atWarning().log("Values for %s in Datastore and Secret Manager do not match.", keyName);
+    return dsData;
+  }
+
+  /**
+   * Generates the tasks to migrate secrets from Datastore to Secret Manager.
+   *
+   * <p>The keys in the returned {@link ImmutableMap} are the names of the secrets that need
+   * migration. The values in the map are {@link Runnable Runnables} that copy secret data from
+   * Datastore to Secret Manager for their corresponding keys. Only secrets that are absent in
+   * Secret Manager or have inconsistent values are included in the returned map.
+   */
+  public ImmutableMap<String, Runnable> migrationPlan() {
+
+    ImmutableMap.Builder<String, Runnable> tasks = new ImmutableMap.Builder<>();
+
+    ImmutableList<String> labels =
+        Streams.concat(
+                Stream.of(PrivateKeyLabel.values()).map(PrivateKeyLabel::getLabel),
+                Stream.of(PublicKeyLabel.values()).map(PublicKeyLabel::getLabel),
+                Stream.of(StringKeyLabel.values()).map(StringKeyLabel::getLabel))
+            .collect(ImmutableList.toImmutableList());
+
+    for (String keyName : labels) {
+      byte[] dsData = getDecryptedDataFromDatastore(keyName);
+      byte[] secretStoreData = getDataFromSecretStore(keyName);
+      if (Arrays.equals(dsData, secretStoreData)) {
+        logger.atInfo().log("%s is already up to date.\n", keyName);
+        continue;
+      }
+      logger.atInfo().log("%s needs to be migrated.\n", keyName);
+      tasks.put(keyName, () -> secretStore.createOrUpdateSecret(keyName, dsData));
+    }
+    return tasks.build();
   }
 }

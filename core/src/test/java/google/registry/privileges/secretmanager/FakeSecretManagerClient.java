@@ -30,7 +30,7 @@ public class FakeSecretManagerClient implements SecretManagerClient {
   private final HashMap<String, SecretEntry> secrets = new HashMap<>();
 
   @Inject
-  FakeSecretManagerClient() {}
+  public FakeSecretManagerClient() {}
 
   @Override
   public String getProject() {

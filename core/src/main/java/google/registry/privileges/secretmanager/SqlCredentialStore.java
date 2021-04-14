@@ -17,7 +17,6 @@ package google.registry.privileges.secretmanager;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.privileges.secretmanager.SecretManagerClient.NoSuchSecretResourceException;
-import google.registry.privileges.secretmanager.SecretManagerClient.SecretAlreadyExistsException;
 import java.util.Optional;
 import javax.inject.Inject;
 
@@ -74,17 +73,9 @@ public class SqlCredentialStore {
     }
   }
 
-  private void createSecretIfAbsent(String secretId) {
-    try {
-      csmClient.createSecret(secretId);
-    } catch (SecretAlreadyExistsException ignore) {
-      // Not a problem.
-    }
-  }
-
   private SecretVersionName saveCredentialData(SqlUser user, String password) {
     String credentialDataSecretId = getCredentialDataSecretId(user, dbInstance);
-    createSecretIfAbsent(credentialDataSecretId);
+    csmClient.createSecretIfAbsent(credentialDataSecretId);
     String credentialVersion =
         csmClient.addSecretVersion(
             credentialDataSecretId,
@@ -94,7 +85,7 @@ public class SqlCredentialStore {
 
   private void saveLiveLabel(SqlUser user, SecretVersionName dataVersionName) {
     String liveLabelSecretId = getLiveLabelSecretId(user, dbInstance);
-    createSecretIfAbsent(liveLabelSecretId);
+    csmClient.createSecretIfAbsent(liveLabelSecretId);
     csmClient.addSecretVersion(liveLabelSecretId, dataVersionName.toString());
   }
 

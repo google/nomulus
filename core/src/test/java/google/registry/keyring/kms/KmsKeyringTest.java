@@ -20,6 +20,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import google.registry.keyring.api.KeySerializer;
 import google.registry.model.server.KmsSecret;
 import google.registry.model.server.KmsSecretRevision;
+import google.registry.privileges.secretmanager.FakeSecretManagerClient;
+import google.registry.privileges.secretmanager.KeyringSecretStore;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.DualDatabaseTest;
@@ -45,7 +47,9 @@ class KmsKeyringTest {
 
   @BeforeEach
   void beforeEach() {
-    keyring = new KmsKeyring(new FakeKmsConnection());
+    keyring =
+        new KmsKeyring(
+            new FakeKmsConnection(), new KeyringSecretStore(new FakeSecretManagerClient()));
   }
 
   @TestOfyAndSql

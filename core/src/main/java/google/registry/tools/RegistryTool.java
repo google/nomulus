@@ -104,6 +104,7 @@ public final class RegistryTool {
           .put("lock_domain", LockDomainCommand.class)
           .put("login", LoginCommand.class)
           .put("logout", LogoutCommand.class)
+          .put("migrate_kms_keyring", MigrateKmsKeyringCommand.class)
           .put("pending_escrow", PendingEscrowCommand.class)
           .put("populate_null_registrar_fields", PopulateNullRegistrarFieldsCommand.class)
           .put("registrar_contact", RegistrarContactCommand.class)
