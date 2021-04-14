@@ -14,6 +14,8 @@
 
 package google.registry.tools;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableSortedMap;
@@ -23,14 +25,13 @@ import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTr
 import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.tools.params.TransitionListParameter.PrimaryDatabaseTransitions;
-import java.util.Optional;
 import org.joda.time.DateTime;
 
 /** Command to update {@link DatabaseTransitionSchedule}. */
 @Parameters(
     separators = " =",
     commandDescription = "Set the database transition schedule for transition id.")
-public class SetDatabaseTransitionScheduleCommand extends MutatingCommand {
+public class SetDatabaseTransitionScheduleCommand extends ConfirmingCommand {
 
   @Parameter(
       names = "--transition_schedule",
@@ -47,16 +48,20 @@ public class SetDatabaseTransitionScheduleCommand extends MutatingCommand {
   private TransitionId transitionId;
 
   @Override
-  protected void init() {
-    Optional<DatabaseTransitionSchedule> currentSchedule =
-        DatabaseTransitionSchedule.get(transitionId);
+  protected String prompt() {
+    return String.format(
+        "Insert new schedule %s for transition ID %s?", transitionSchedule, transitionId);
+  }
 
+  @Override
+  protected String execute() {
     DatabaseTransitionSchedule newSchedule =
         DatabaseTransitionSchedule.create(
             transitionId,
             TimedTransitionProperty.fromValueMap(
                 transitionSchedule, PrimaryDatabaseTransition.class));
-
-    stageEntityChange(currentSchedule.orElse(null), newSchedule);
+    ofyTm().transact(() -> ofyTm().put(newSchedule));
+    return String.format(
+        "Inserted new schedule %s for transition ID %s.", transitionSchedule, transitionId);
   }
 }

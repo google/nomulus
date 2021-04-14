@@ -16,18 +16,19 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.truth.Truth8;
 import com.googlecode.objectify.Key;
 import google.registry.model.common.DatabaseTransitionSchedule;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
 import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
 import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.common.TimedTransitionProperty;
+import google.registry.persistence.VKey;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,17 +38,20 @@ import org.junit.jupiter.api.Test;
 public class SetDatabaseTransitionScheduleCommandTest
     extends CommandTestCase<SetDatabaseTransitionScheduleCommand> {
 
-  Key<DatabaseTransitionSchedule> key;
-
   @BeforeEach
   void setup() {
-    key = Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, "test");
     fakeClock.setTo(DateTime.parse("2020-12-01T00:00:00Z"));
   }
 
   @Test
   void testSuccess_currentScheduleIsEmpty() throws Exception {
-    assertThat(ofy().load().key(key).now()).isNull();
+    Truth8.assertThat(
+            ofyTm()
+                .loadByKeyIfPresent(
+                    VKey.createOfy(
+                        DatabaseTransitionSchedule.class,
+                        Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, "test"))))
+        .isEmpty();
     runCommandForced(
         "--transition_id=SIGNED_MARK_REVOCATION_LIST",
         "--transition_schedule=1970-01-01T00:00:00.000Z=DATASTORE");
@@ -59,7 +63,10 @@ public class SetDatabaseTransitionScheduleCommandTest
                             .get()
                             .getPrimaryDatabase()))
         .isEqualTo(PrimaryDatabase.DATASTORE);
-    assertThat(command.prompt()).contains("Create DatabaseTransitionSchedule");
+    assertThat(command.prompt())
+        .isEqualTo(
+            "Insert new schedule {1970-01-01T00:00:00.000Z=DATASTORE} "
+                + "for transition ID SIGNED_MARK_REVOCATION_LIST?");
   }
 
   @Test
@@ -81,7 +88,8 @@ public class SetDatabaseTransitionScheduleCommandTest
         .isEqualTo(transitionMap);
     runCommandForced(
         "--transition_id=SIGNED_MARK_REVOCATION_LIST",
-        "--transition_schedule=1970-01-01T00:00:00.000Z=DATASTORE,2020-11-30T00:00:00.000Z=CLOUD_SQL,2020-12-06T00:00:00.000Z=DATASTORE");
+        "--transition_schedule=1970-01-01T00:00:00.000Z=DATASTORE,"
+            + "2020-11-30T00:00:00.000Z=CLOUD_SQL,2020-12-06T00:00:00.000Z=DATASTORE");
     ImmutableSortedMap<DateTime, PrimaryDatabase> retrievedTransitionMap =
         ofyTm()
             .transact(
@@ -106,6 +114,10 @@ public class SetDatabaseTransitionScheduleCommandTest
                             .get()
                             .getPrimaryDatabase()))
         .isEqualTo(PrimaryDatabase.DATASTORE);
-    assertThat(command.prompt()).contains("Update DatabaseTransitionSchedule");
+    assertThat(command.prompt())
+        .isEqualTo(
+            "Insert new schedule {1970-01-01T00:00:00.000Z=DATASTORE, "
+                + "2020-11-30T00:00:00.000Z=CLOUD_SQL, 2020-12-06T00:00:00.000Z=DATASTORE} "
+                + "for transition ID SIGNED_MARK_REVOCATION_LIST?");
   }
 }
