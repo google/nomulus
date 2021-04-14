@@ -20,6 +20,7 @@ import com.google.common.base.Strings;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.flows.picker.FlowPicker;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.Trid;
@@ -237,6 +238,12 @@ public class FlowModule {
           .setRequestedByRegistrar(metadataExtension.get().getRequestedByRegistrar());
     }
     return historyBuilder;
+  }
+
+  @Provides
+  static DomainHistory.Builder provideDomainHistoryBuilder(
+      HistoryEntry.Builder historyEntryBuilder) {
+    return new DomainHistory.Builder().copyFrom(historyEntryBuilder.build());
   }
 
   /**

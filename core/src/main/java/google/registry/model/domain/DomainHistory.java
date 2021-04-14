@@ -33,6 +33,7 @@ import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -76,6 +77,7 @@ import javax.persistence.Table;
 public class DomainHistory extends HistoryEntry implements SqlEntity {
 
   // Store DomainContent instead of DomainBase so we don't pick up its @Id
+  // Nullable for the sake of pre-Registry-3.0 history objects
   @Nullable DomainContent domainContent;
 
   @Id
@@ -126,7 +128,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         insertable = false,
         updatable = false)
   })
-  Set<DomainDsDataHistory> dsDataHistories = ImmutableSet.of();
+  // HashSet rather than ImmutableSet so that Hibernate can fill them out lazily on request
+  Set<DomainDsDataHistory> dsDataHistories = new HashSet<>();
 
   @Ignore
   @OneToMany(
@@ -145,7 +148,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         insertable = false,
         updatable = false)
   })
-  Set<GracePeriodHistory> gracePeriodHistories = ImmutableSet.of();
+  // HashSet rather than ImmutableSet so that Hibernate can fill them out lazily on request
+  Set<GracePeriodHistory> gracePeriodHistories = new HashSet<>();
 
   @Override
   @Nullable
@@ -341,9 +345,13 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
       super(instance);
     }
 
-    public Builder setDomainContent(DomainContent domainContent) {
+    public Builder setDomainContent(@Nullable DomainContent domainContent) {
+      // Nullable for the sake of pre-Registry-3.0 history objects
+      if (domainContent == null) {
+        return this;
+      }
       getInstance().domainContent = domainContent;
-      return this;
+      return super.setParent(domainContent);
     }
 
     public Builder setDomainRepoId(String domainRepoId) {

@@ -57,6 +57,7 @@ import javax.persistence.PostLoad;
 public class HostHistory extends HistoryEntry implements SqlEntity {
 
   // Store HostBase instead of HostResource so we don't pick up its @Id
+  // Nullable for the sake of pre-Registry-3.0 history objects
   @Nullable HostBase hostBase;
 
   @Id
@@ -194,9 +195,13 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
       super(instance);
     }
 
-    public Builder setHostBase(HostBase hostBase) {
+    public Builder setHostBase(@Nullable HostBase hostBase) {
+      // Nullable for the sake of pre-Registry-3.0 history objects
+      if (hostBase == null) {
+        return this;
+      }
       getInstance().hostBase = hostBase;
-      return this;
+      return super.setParent(hostBase);
     }
 
     public Builder setHostRepoId(String hostRepoId) {

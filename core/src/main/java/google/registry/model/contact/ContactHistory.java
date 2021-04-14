@@ -56,6 +56,7 @@ import javax.persistence.PostLoad;
 public class ContactHistory extends HistoryEntry implements SqlEntity {
 
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
+  // Nullable for the sake of pre-Registry-3.0 history objects
   @Nullable ContactBase contactBase;
 
   @Id
@@ -193,9 +194,13 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
       super(instance);
     }
 
-    public Builder setContactBase(ContactBase contactBase) {
+    public Builder setContactBase(@Nullable ContactBase contactBase) {
+      // Nullable for the sake of pre-Registry-3.0 history objects
+      if (contactBase == null) {
+        return this;
+      }
       getInstance().contactBase = contactBase;
-      return this;
+      return super.setParent(contactBase);
     }
 
     public Builder setContactRepoId(String contactRepoId) {
