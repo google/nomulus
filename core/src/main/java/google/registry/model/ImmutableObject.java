@@ -17,6 +17,7 @@ package google.registry.model;
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Maps.transformValues;
 import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static java.util.stream.Collectors.toCollection;
@@ -187,7 +188,10 @@ public abstract class ImmutableObject implements Cloneable {
   /** Helper function to recursively hydrate an ImmutableObject. */
   private static Object hydrate(Object value) {
     if (value instanceof Key) {
-      return hydrate(ofy().load().key((Key<?>) value).now());
+      if (tm().isOfy()) {
+        return hydrate(ofy().load().key((Key<?>) value).now());
+      }
+      return value;
     } else if (value instanceof Map) {
       return transformValues((Map<?, ?>) value, ImmutableObject::hydrate);
     } else if (value instanceof Collection) {
