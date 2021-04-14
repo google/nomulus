@@ -42,7 +42,6 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tmch.ClaimsListShard.ClaimsListSingleton;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.EppLoader;
@@ -112,8 +111,7 @@ public abstract class FlowTestCase<F extends Flow> {
     sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
     sessionMetadata.setClientId("TheRegistrar");
     sessionMetadata.setServiceExtensionUris(ProtocolDefinition.getVisibleServiceExtensionUris());
-    ofy().saveWithoutBackup().entity(new ClaimsListSingleton()).now();
- }
+  }
 
   protected void removeServiceExtensionUri(String uri) {
     sessionMetadata.setServiceExtensionUris(
