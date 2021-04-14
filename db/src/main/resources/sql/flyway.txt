@@ -89,3 +89,4 @@ V88__transfer_billing_cancellation_history_id.sql
 V89__host_history_host_deferred.sql
 V90__update_timestamp.sql
 V91__defer_fkeys.sql
+V92__singletons.sql
