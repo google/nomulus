@@ -38,6 +38,7 @@ public final class RegistryTool {
           .put("canonicalize_labels", CanonicalizeLabelsCommand.class)
           .put("check_domain", CheckDomainCommand.class)
           .put("check_domain_claims", CheckDomainClaimsCommand.class)
+          .put("compare_premium_lists", ComparePremiumListsCommand.class)
           .put("compare_reserved_lists", CompareReservedListsCommand.class)
           .put("convert_idn", ConvertIdnCommand.class)
           .put("count_domains", CountDomainsCommand.class)
