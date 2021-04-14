@@ -93,8 +93,15 @@ tasks.withType(Test).configureEach {
       throw new RuntimeException("Integration test with production or sandbox not allowed.")
     }
     systemProperty gcp_integration_env_property, targetEnv
-
   }
+
+  // This environment variable along with testcontainers 1.15.2 works around
+  // a race condition introduced in 1.15.0. This can be removed once httpclient5
+  // becomes the default transport type in testcontainers, which may happen
+  // in 1.16.x.
+  // See https://github.com/testcontainers/testcontainers-java/issues/3531
+  // for more information.
+  environment('TESTCONTAINERS_TRANSPORT_TYPE', 'httpclient5')
 }
 
 tasks.withType(JavaCompile).configureEach {
