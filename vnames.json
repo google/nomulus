@@ -1,10 +1,10 @@
 [
   {
-    "pattern": "([^/]+/build/[^/]+)/(.*)",
+    "pattern": "([^/]+/build/(.*)",
     "vname": {
       "corpus": "github.com/google/nomulus",
       "path": "@2@",
-      "root": "@1@"
+      "root": "external"
     }
   },
   {
