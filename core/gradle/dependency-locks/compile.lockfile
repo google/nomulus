@@ -253,10 +253,10 @@ org.postgresql:postgresql:42.2.18
 org.rnorth.duct-tape:duct-tape:1.0.8
 org.rnorth.visible-assertions:visible-assertions:2.1.2
 org.slf4j:slf4j-api:1.7.30
-org.testcontainers:database-commons:1.15.1
-org.testcontainers:jdbc:1.15.1
-org.testcontainers:postgresql:1.15.1
-org.testcontainers:testcontainers:1.15.1
+org.testcontainers:database-commons:1.15.2
+org.testcontainers:jdbc:1.15.2
+org.testcontainers:postgresql:1.15.2
+org.testcontainers:testcontainers:1.15.2
 org.threeten:threetenbp:1.5.0
 org.tukaani:xz:1.5
 org.w3c.css:sac:1.3
