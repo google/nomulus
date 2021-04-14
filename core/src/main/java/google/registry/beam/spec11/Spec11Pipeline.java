@@ -110,7 +110,7 @@ public class Spec11Pipeline implements Serializable {
             BigQueryIO.read(Subdomain::parseFromRecord)
                 .fromQuery(
                     SqlTemplate.create(getQueryFromFile(Spec11Pipeline.class, "subdomains.sql"))
-                        .put("PROJECT_ID", options.getProjectId())
+                        .put("PROJECT_ID", options.getProject())
                         .put("DATASTORE_EXPORT_DATASET", "latest_datastore_export")
                         .put("REGISTRAR_TABLE", "Registrar")
                         .put("DOMAIN_BASE_TABLE", "DomainBase")

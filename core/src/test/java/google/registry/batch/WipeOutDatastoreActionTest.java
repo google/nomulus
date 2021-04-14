@@ -31,6 +31,7 @@ import com.google.api.services.dataflow.Dataflow;
 import com.google.api.services.dataflow.model.Job;
 import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
 import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
+import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,8 @@ class WipeOutDatastoreActionTest {
   private LaunchFlexTemplateResponse launchResponse =
       new LaunchFlexTemplateResponse().setJob(new Job());
 
-  private FakeResponse response = new FakeResponse();
+  private final FakeClock clock = new FakeClock();
+  private final FakeResponse response = new FakeResponse();
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -67,7 +69,7 @@ class WipeOutDatastoreActionTest {
   void run_projectNotAllowed() {
     WipeoutDatastoreAction action =
         new WipeoutDatastoreAction(
-            "domain-registry", "us-central1", "gs://some-bucket", response, dataflow);
+            "domain-registry", "us-central1", "gs://some-bucket", clock, response, dataflow);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
     verifyNoInteractions(dataflow);
@@ -77,7 +79,7 @@ class WipeOutDatastoreActionTest {
   void run_projectAllowed() throws Exception {
     WipeoutDatastoreAction action =
         new WipeoutDatastoreAction(
-            "domain-registry-qa", "us-central1", "gs://some-bucket", response, dataflow);
+            "domain-registry-qa", "us-central1", "gs://some-bucket", clock, response, dataflow);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     verify(launch, times(1)).execute();
@@ -89,7 +91,7 @@ class WipeOutDatastoreActionTest {
     when(launch.execute()).thenThrow(new RuntimeException());
     WipeoutDatastoreAction action =
         new WipeoutDatastoreAction(
-            "domain-registry-qa", "us-central1", "gs://some-bucket", response, dataflow);
+            "domain-registry-qa", "us-central1", "gs://some-bucket", clock, response, dataflow);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     verify(launch, times(1)).execute();

@@ -66,7 +66,6 @@ import org.mockito.quality.Strictness;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.STRICT_STUBS)
 class Spec11PipelineTest {
-  private static final String PROJECT_ID = "test-project";
   private static final String DATE = "2020-01-27";
   private static final String SAFE_BROWSING_API_KEY = "api-key";
   private static final String REPORTING_BUCKET_URL = "reporting_bucket";
@@ -118,7 +117,6 @@ class Spec11PipelineTest {
   @BeforeEach
   void beforeAll() throws Exception {
     reportingBucketUrl = Files.createDirectory(tmpDir.resolve(REPORTING_BUCKET_URL)).toFile();
-    options.setProjectId(PROJECT_ID);
     options.setDate(DATE);
     options.setSafeBrowsingApiKey(SAFE_BROWSING_API_KEY);
     options.setReportingBucketUrl(reportingBucketUrl.getAbsolutePath());

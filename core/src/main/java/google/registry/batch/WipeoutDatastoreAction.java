@@ -15,6 +15,7 @@
 package google.registry.batch;
 
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
+import static google.registry.beam.BeamUtils.createJobName;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -30,9 +31,8 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.util.Clock;
 import javax.inject.Inject;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 
 /**
  * Wipes out all Cloud Datastore data in a Nomulus GCP environment.
@@ -58,17 +58,20 @@ public class WipeoutDatastoreAction implements Runnable {
   private final Response response;
   private final Dataflow dataflow;
   private final String stagingBucketUrl;
+  private final Clock clock;
 
   @Inject
   WipeoutDatastoreAction(
       @Config("projectId") String projectId,
       @Config("defaultJobRegion") String jobRegion,
       @Config("beamStagingBucketUrl") String stagingBucketUrl,
+      Clock clock,
       Response response,
       Dataflow dataflow) {
     this.projectId = projectId;
     this.jobRegion = jobRegion;
     this.stagingBucketUrl = stagingBucketUrl;
+    this.clock = clock;
     this.response = response;
     this.dataflow = dataflow;
   }
@@ -86,10 +89,7 @@ public class WipeoutDatastoreAction implements Runnable {
     try {
       LaunchFlexTemplateParameter parameters =
           new LaunchFlexTemplateParameter()
-              // Job name must be unique and in [-a-z0-9].
-              .setJobName(
-                  "bulk-delete-datastore-"
-                      + DateTime.now(DateTimeZone.UTC).toString("yyyy-MM-dd'T'HH-mm-ss'Z'"))
+              .setJobName(createJobName("bulk-delete-datastore-", clock))
               .setContainerSpecGcsPath(
                   String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
               .setParameters(ImmutableMap.of("kindsToDelete", "*"));

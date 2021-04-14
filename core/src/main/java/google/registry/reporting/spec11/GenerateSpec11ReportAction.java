@@ -14,6 +14,7 @@
 
 package google.registry.reporting.spec11;
 
+import static google.registry.beam.BeamUtils.createJobName;
 import static google.registry.reporting.ReportingModule.PARAM_DATE;
 import static google.registry.reporting.ReportingUtils.enqueueBeamReportingTask;
 import static google.registry.request.Action.Method.POST;
@@ -34,11 +35,10 @@ import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.util.Clock;
 import java.io.IOException;
 import java.util.Map;
 import javax.inject.Inject;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 
 /**
@@ -65,6 +65,7 @@ public class GenerateSpec11ReportAction implements Runnable {
   private final String reportingBucketUrl;
   private final String apiKey;
   private final LocalDate date;
+  private final Clock clock;
   private final Response response;
   private final Dataflow dataflow;
 
@@ -76,6 +77,7 @@ public class GenerateSpec11ReportAction implements Runnable {
       @Config("reportingBucketUrl") String reportingBucketUrl,
       @Key("safeBrowsingAPIKey") String apiKey,
       @Parameter(PARAM_DATE) LocalDate date,
+      Clock clock,
       Response response,
       Dataflow dataflow) {
     this.projectId = projectId;
@@ -84,6 +86,7 @@ public class GenerateSpec11ReportAction implements Runnable {
     this.reportingBucketUrl = reportingBucketUrl;
     this.apiKey = apiKey;
     this.date = date;
+    this.clock = clock;
     this.response = response;
     this.dataflow = dataflow;
   }
@@ -95,15 +98,11 @@ public class GenerateSpec11ReportAction implements Runnable {
     try {
       LaunchFlexTemplateParameter parameter =
           new LaunchFlexTemplateParameter()
-              // Job name must be unique and in [-a-z0-9].
-              .setJobName(
-                  "spec11-" + DateTime.now(DateTimeZone.UTC).toString("yyyy-MM-dd'T'HH-mm-ss'Z'"))
+              .setJobName(createJobName("spec11", clock))
               .setContainerSpecGcsPath(
                   String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
               .setParameters(
                   ImmutableMap.of(
-                      "projectId",
-                      projectId,
                       "safeBrowsingApiKey",
                       apiKey,
                       ReportingModule.PARAM_DATE,

@@ -34,10 +34,11 @@ import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
 import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
 import com.google.common.net.MediaType;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.io.IOException;
-import org.joda.time.LocalDate;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -60,6 +61,7 @@ class GenerateSpec11ReportActionTest {
   private LaunchFlexTemplateResponse launchResponse =
       new LaunchFlexTemplateResponse().setJob(new Job().setId("jobid"));
 
+  private final FakeClock clock = new FakeClock(DateTime.parse("2018-06-11T12:23:56Z"));
   private GenerateSpec11ReportAction action;
 
   @BeforeEach
@@ -81,7 +83,8 @@ class GenerateSpec11ReportActionTest {
             "gs://staging-project/staging-bucket/",
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
-            new LocalDate(2018, 6, 11),
+            clock.nowUtc().toLocalDate(),
+            clock,
             response,
             dataflow);
     when(launch.execute()).thenThrow(new IOException("Dataflow failure"));
@@ -101,7 +104,8 @@ class GenerateSpec11ReportActionTest {
             "gs://staging-project/staging-bucket/",
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
-            new LocalDate(2018, 6, 11),
+            clock.nowUtc().toLocalDate(),
+            clock,
             response,
             dataflow);
     action.run();

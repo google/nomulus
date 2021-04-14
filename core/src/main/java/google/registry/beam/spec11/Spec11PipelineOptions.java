@@ -20,11 +20,6 @@ import org.apache.beam.sdk.options.Description;
 /** Custom options for running the spec11 pipeline. */
 public interface Spec11PipelineOptions extends RegistryPipelineOptions {
 
-  @Description("The ID of the project from which the source data is read.")
-  String getProjectId();
-
-  void setProjectId(String value);
-
   @Description("The local date we generate the report for, in yyyy-MM-dd format.")
   String getDate();
 

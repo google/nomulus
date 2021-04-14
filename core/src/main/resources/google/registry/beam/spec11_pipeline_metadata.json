@@ -39,14 +39,6 @@
       ]
     },
     {
-      "name": "projectId",
-      "label": "GCP Project ID from where the data is sourced",
-      "helpText": "The ID of the project where the BigQuery table of the source data resides.",
-      "regexes": [
-        "^[0-9a-z\\-]+$"
-      ]
-    },
-    {
       "name": "date",
       "label": "The date when the pipeline runs",
       "helpText": "The date then the threat scan is performed, in yyyy-MM-dd format.",
