@@ -136,22 +136,24 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void putAll(Object... entities) {
-    syncIfTransactionless(getOfy().save().entities(entities));
+    syncIfTransactionless(
+        getOfy().save().entities(toHistoryEntriesIfNecessary(ImmutableList.copyOf(entities))));
   }
 
   @Override
   public void putAll(ImmutableCollection<?> entities) {
-    syncIfTransactionless(getOfy().save().entities(entities));
+    syncIfTransactionless(getOfy().save().entities(toHistoryEntriesIfNecessary(entities)));
   }
 
   @Override
   public void putWithoutBackup(Object entity) {
-    syncIfTransactionless(getOfy().saveWithoutBackup().entities(entity));
+    syncIfTransactionless(getOfy().saveWithoutBackup().entities(toHistoryEntryIfNecessary(entity)));
   }
 
   @Override
   public void putAllWithoutBackup(ImmutableCollection<?> entities) {
-    syncIfTransactionless(getOfy().saveWithoutBackup().entities(entities));
+    syncIfTransactionless(
+        getOfy().saveWithoutBackup().entities(toHistoryEntriesIfNecessary(entities)));
   }
 
   @Override
@@ -176,7 +178,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public boolean exists(Object entity) {
-    return getOfy().load().key(Key.create(entity)).now() != null;
+    return getOfy().load().key(Key.create(toHistoryEntryIfNecessary(entity))).now() != null;
   }
 
   @Override
@@ -239,7 +241,8 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> T loadByEntity(T entity) {
-    return ofy().load().entity(entity).now();
+    return (T)
+        toChildHistoryEntryIfPossible(ofy().load().entity(toHistoryEntryIfNecessary(entity)).now());
   }
 
   @Override
@@ -281,7 +284,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void delete(Object entity) {
-    syncIfTransactionless(getOfy().delete().entity(entity));
+    syncIfTransactionless(getOfy().delete().entity(toHistoryEntryIfNecessary(entity)));
   }
 
   @Override
@@ -299,7 +302,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void deleteWithoutBackup(Object entity) {
-    syncIfTransactionless(getOfy().deleteWithoutBackup().entity(entity));
+    syncIfTransactionless(getOfy().deleteWithoutBackup().entity(toHistoryEntryIfNecessary(entity)));
   }
 
   @Override
@@ -338,10 +341,7 @@ public class DatastoreTransactionManager implements TransactionManager {
    */
   private void saveEntity(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
-    if (entity instanceof HistoryEntry) {
-      entity = ((HistoryEntry) entity).asHistoryEntry();
-    }
-    syncIfTransactionless(getOfy().save().entity(entity));
+    syncIfTransactionless(getOfy().save().entity(toHistoryEntryIfNecessary(entity)));
   }
 
   @Nullable
@@ -349,7 +349,26 @@ public class DatastoreTransactionManager implements TransactionManager {
     return toChildHistoryEntryIfPossible(getOfy().load().key(key.getOfyKey()).now());
   }
 
-  /** Converts a nonnull {@link HistoryEntry} to the child format, e.g. {@link DomainHistory} */
+  /**
+   * Converts a {@link HistoryEntry} subclass e.g. {@link DomainHistory} to a {@link HistoryEntry}.
+   *
+   * <p>Returns the object unchanged if the object is not a {@link HistoryEntry}.
+   */
+  private static Object toHistoryEntryIfNecessary(@Nullable Object obj) {
+    if (obj instanceof HistoryEntry) {
+      return ((HistoryEntry) obj).asHistoryEntry();
+    }
+    return obj;
+  }
+
+  private static ImmutableList<Object> toHistoryEntriesIfNecessary(
+      ImmutableCollection<?> collection) {
+    return collection.stream()
+        .map(DatastoreTransactionManager::toHistoryEntryIfNecessary)
+        .collect(toImmutableList());
+  }
+
+  /** Converts a {@link HistoryEntry} to the child format, e.g. {@link DomainHistory} */
   @SuppressWarnings("unchecked")
   public static <T> T toChildHistoryEntryIfPossible(@Nullable T obj) {
     // NB: The Key of the object in question may not necessarily be the resulting class that we

@@ -445,7 +445,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> T loadByEntity(T entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     assertInTransaction();
-    entity = toChildHistoryEntryIfPossible(entity);
     // If the caller requested a HistoryEntry, load the corresponding *History class
     T possibleChild = toChildHistoryEntryIfPossible(entity);
     return (T)

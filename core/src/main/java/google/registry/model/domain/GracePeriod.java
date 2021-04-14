@@ -30,6 +30,7 @@ import google.registry.schema.replay.DatastoreAndSqlEntity;
 import javax.annotation.Nullable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Index;
@@ -50,7 +51,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
   @Id
   @Access(AccessType.PROPERTY)
   @Override
-  public long getGracePeriodId() {
+  public Long getGracePeriodId() {
     return super.getGracePeriodId();
   }
 
@@ -193,7 +194,8 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
 
     @Override
     @Access(AccessType.PROPERTY)
-    public long getGracePeriodId() {
+    @Column(nullable = false)
+    public Long getGracePeriodId() {
       return super.getGracePeriodId();
     }
 

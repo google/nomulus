@@ -75,7 +75,7 @@ public class GracePeriodBase extends ImmutableObject {
   @Access(AccessType.FIELD)
   BillingRecurrenceVKey billingEventRecurring = null;
 
-  public long getGracePeriodId() {
+  public Long getGracePeriodId() {
     return gracePeriodId;
   }
 

@@ -24,6 +24,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.EppResource;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
@@ -67,7 +68,10 @@ public class HostHistoryTest extends EntityTestCase {
 
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().loadByKey(host.createVKey()));
     HostHistory hostHistory =
-        createHostHistory(hostFromDb, host.getRepoId()).asBuilder().setHostBase(null).build();
+        createHostHistory(hostFromDb, host.getRepoId())
+            .asBuilder()
+            .setParent((EppResource) null)
+            .build();
     jpaTm().transact(() -> jpaTm().insert(hostHistory));
 
     jpaTm()
@@ -121,7 +125,7 @@ public class HostHistoryTest extends EntityTestCase {
         .setBySuperuser(false)
         .setReason("reason")
         .setRequestedByRegistrar(true)
-        .setHostBase(hostBase)
+        .setParent(hostBase)
         .setHostRepoId(hostRepoId)
         .build();
   }

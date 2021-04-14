@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainContent;
@@ -81,7 +82,7 @@ public class DomainHistoryTest extends EntityTestCase {
   void testLegacyPersistence_nullResource() {
     DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
     DomainHistory domainHistory =
-        createDomainHistory(domain).asBuilder().setDomainContent(null).build();
+        createDomainHistory(domain).asBuilder().setParent((EppResource) null).build();
     jpaTm().transact(() -> jpaTm().insert(domainHistory));
 
     jpaTm()
@@ -253,7 +254,7 @@ public class DomainHistoryTest extends EntityTestCase {
         .setBySuperuser(false)
         .setReason("reason")
         .setRequestedByRegistrar(true)
-        .setDomainContent(domain)
+        .setParent(domain)
         .setDomainRepoId(domain.getRepoId())
         .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
         .setOtherClientId("otherClient")

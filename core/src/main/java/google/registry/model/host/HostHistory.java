@@ -14,10 +14,12 @@
 
 package google.registry.model.host;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
+import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.host.HostHistory.HostHistoryId;
 import google.registry.model.reporting.HistoryEntry;
@@ -194,9 +196,17 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
       super(instance);
     }
 
-    public Builder setHostBase(HostBase hostBase) {
-      getInstance().hostBase = hostBase;
-      return this;
+    @Override
+    public Builder setParent(@Nullable EppResource eppResource) {
+      if (eppResource == null) {
+        return this;
+      }
+      checkArgument(
+          eppResource instanceof HostBase,
+          "Expected HostBase but found %s",
+          eppResource.getClass());
+      getInstance().hostBase = (HostBase) eppResource;
+      return super.setParent(eppResource);
     }
 
     public Builder setHostRepoId(String hostRepoId) {

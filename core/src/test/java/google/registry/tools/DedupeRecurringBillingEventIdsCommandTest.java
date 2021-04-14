@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -225,7 +226,7 @@ class DedupeRecurringBillingEventIdsCommandTest
   private static void assertNotChangeExceptUpdateTime(ImmutableObject... entities) {
     for (ImmutableObject entity : entities) {
       assertAboutImmutableObjects()
-          .that(ofy().load().entity(entity).now())
+          .that(loadByEntity(entity))
           .isEqualExceptFields(entity, "updateTimestamp", "revisions");
     }
   }

@@ -14,6 +14,7 @@
 
 package google.registry.model.domain;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -22,6 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import com.googlecode.objectify.annotation.Ignore;
+import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod.GracePeriodHistory;
@@ -33,6 +35,7 @@ import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -126,7 +129,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         insertable = false,
         updatable = false)
   })
-  Set<DomainDsDataHistory> dsDataHistories = ImmutableSet.of();
+  Set<DomainDsDataHistory> dsDataHistories = new HashSet<>();
 
   @Ignore
   @OneToMany(
@@ -145,7 +148,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         insertable = false,
         updatable = false)
   })
-  Set<GracePeriodHistory> gracePeriodHistories = ImmutableSet.of();
+  Set<GracePeriodHistory> gracePeriodHistories = new HashSet<>();
 
   @Override
   @Nullable
@@ -341,9 +344,17 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
       super(instance);
     }
 
-    public Builder setDomainContent(DomainContent domainContent) {
-      getInstance().domainContent = domainContent;
-      return this;
+    @Override
+    public Builder setParent(@Nullable EppResource eppResource) {
+      if (eppResource == null) {
+        return this;
+      }
+      checkArgument(
+          eppResource instanceof DomainContent,
+          "Expected DomainContent but found %s",
+          eppResource.getClass());
+      getInstance().domainContent = (DomainContent) eppResource;
+      return super.setParent(eppResource);
     }
 
     public Builder setDomainRepoId(String domainRepoId) {

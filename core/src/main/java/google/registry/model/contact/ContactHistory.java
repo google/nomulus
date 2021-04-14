@@ -14,10 +14,12 @@
 
 package google.registry.model.contact;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
+import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.reporting.HistoryEntry;
@@ -193,9 +195,17 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
       super(instance);
     }
 
-    public Builder setContactBase(ContactBase contactBase) {
-      getInstance().contactBase = contactBase;
-      return this;
+    @Override
+    public Builder setParent(@Nullable EppResource eppResource) {
+      if (eppResource == null) {
+        return this;
+      }
+      checkArgument(
+          eppResource instanceof ContactBase,
+          "Expected ContactBase but found %s",
+          eppResource.getClass());
+      getInstance().contactBase = (ContactBase) eppResource;
+      return super.setParent(eppResource);
     }
 
     public Builder setContactRepoId(String contactRepoId) {

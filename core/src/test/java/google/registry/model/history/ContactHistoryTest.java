@@ -24,6 +24,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.EppResource;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
@@ -69,7 +70,7 @@ public class ContactHistoryTest extends EntityTestCase {
     ContactHistory contactHistory =
         createContactHistory(contactFromDb, contact.getRepoId())
             .asBuilder()
-            .setContactBase(null)
+            .setParent((EppResource) null)
             .build();
     jpaTm().transact(() -> jpaTm().insert(contactHistory));
 
@@ -116,7 +117,7 @@ public class ContactHistoryTest extends EntityTestCase {
         .setBySuperuser(false)
         .setReason("reason")
         .setRequestedByRegistrar(true)
-        .setContactBase(contact)
+        .setParent(contact)
         .setContactRepoId(contactRepoId)
         .build();
   }
