@@ -17,6 +17,7 @@ package google.registry.tools;
 import com.google.common.collect.ImmutableMap;
 import google.registry.tools.javascrap.BackfillRegistryLocksCommand;
 import google.registry.tools.javascrap.BackfillSpec11ThreatMatchesCommand;
+import google.registry.tools.javascrap.DeleteContactByRoidCommand;
 import google.registry.tools.javascrap.PopulateNullRegistrarFieldsCommand;
 import google.registry.tools.javascrap.RemoveIpAddressCommand;
 
@@ -54,6 +55,7 @@ public final class RegistryTool {
           .put("dedupe_one_time_billing_event_ids", DedupeOneTimeBillingEventIdsCommand.class)
           .put("dedupe_recurring_billing_event_ids", DedupeRecurringBillingEventIdsCommand.class)
           .put("delete_allocation_tokens", DeleteAllocationTokensCommand.class)
+          .put("delete_contact_by_roid", DeleteContactByRoidCommand.class)
           .put("delete_domain", DeleteDomainCommand.class)
           .put("delete_host", DeleteHostCommand.class)
           .put("delete_premium_list", DeletePremiumListCommand.class)
