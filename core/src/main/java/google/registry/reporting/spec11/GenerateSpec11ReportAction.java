@@ -96,19 +96,21 @@ public class GenerateSpec11ReportAction implements Runnable {
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
 
     try {
+      ImmutableMap<String, String> pipelineParameters =
+          ImmutableMap.of(
+              "safeBrowsingApiKey",
+              apiKey,
+              ReportingModule.PARAM_DATE,
+              date.toString(),
+              "reportingBucketUrl",
+              reportingBucketUrl);
+      logger.atInfo().log(pipelineParameters.toString());
       LaunchFlexTemplateParameter parameter =
           new LaunchFlexTemplateParameter()
               .setJobName(createJobName("spec11", clock))
               .setContainerSpecGcsPath(
                   String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
-              .setParameters(
-                  ImmutableMap.of(
-                      "safeBrowsingApiKey",
-                      apiKey,
-                      ReportingModule.PARAM_DATE,
-                      date.toString(),
-                      "reportingBucketUrl",
-                      reportingBucketUrl));
+              .setParameters(pipelineParameters);
       LaunchFlexTemplateResponse launchResponse =
           dataflow
               .projects()
