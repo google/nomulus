@@ -20,7 +20,9 @@ import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.common.DatabaseTransitionSchedule;
@@ -43,6 +45,15 @@ public class SetDatabaseTransitionScheduleCommandTest
   void setup() {
     key = Key.create(getCrossTldKey(), DatabaseTransitionSchedule.class, "test");
     fakeClock.setTo(DateTime.parse("2020-12-01T00:00:00Z"));
+  }
+
+  @Test
+  void testFailure_noTransitionId() throws Exception {
+    ParameterException thrown =
+        assertThrows(
+            ParameterException.class,
+            () -> runCommandForced("--transition_schedule=2021-04-14T00:00:00.000Z=DATASTORE"));
+    assertThat(thrown).hasMessageThat().contains("--transition_id");
   }
 
   @Test

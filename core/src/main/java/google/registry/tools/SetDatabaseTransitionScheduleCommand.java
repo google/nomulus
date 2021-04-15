@@ -43,6 +43,7 @@ public class SetDatabaseTransitionScheduleCommand extends MutatingCommand {
 
   @Parameter(
       names = "--transition_id",
+      required = true,
       description = "Transition id string for the schedule being updated")
   private TransitionId transitionId;
 
