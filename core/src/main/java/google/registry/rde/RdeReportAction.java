@@ -41,6 +41,7 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.joda.time.DateTime;
@@ -76,8 +77,9 @@ public final class RdeReportAction implements Runnable, EscrowTask {
 
   @Override
   public void runWithLock(DateTime watermark) throws Exception {
-    Cursor cursor =
-        transactIfJpaTm(() -> tm().loadByKey(Cursor.createVKey(CursorType.RDE_UPLOAD, tld)));
+    Optional<Cursor> cursor =
+        transactIfJpaTm(
+            () -> tm().loadByKeyIfPresent(Cursor.createVKey(CursorType.RDE_UPLOAD, tld)));
     DateTime cursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(cursorTime, watermark)) {
       throw new NoContentException(

@@ -319,6 +319,23 @@ public class RdeUploadActionTest {
   }
 
   @TestOfyAndSql
+  void testRunWithLock_nonexistentCursor_throws204() throws Exception {
+    int port = sftpd.serve("user", "password", folder);
+    URI uploadUrl = URI.create(String.format("sftp://user:password@localhost:%d/", port));
+    DateTime uploadCursor = DateTime.parse("2010-10-17TZ");
+    RdeUploadAction action = createAction(uploadUrl);
+    NoContentException thrown =
+        assertThrows(NoContentException.class, () -> action.runWithLock(uploadCursor));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Waiting on RdeStagingAction for TLD tld to send 2010-10-17T00:00:00.000Z upload; last"
+                + " RDE staging completion was at 1970-01-01T00:00:00.000Z");
+    assertNoTasksEnqueued("rde-upload");
+    assertThat(folder.list()).isEmpty();
+  }
+
+  @TestOfyAndSql
   void testRunWithLock_stagingNotFinished_throws204() {
     URI url = URI.create("sftp://user:password@localhost:32323/");
     DateTime stagingCursor = DateTime.parse("2010-10-17TZ");

@@ -64,6 +64,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -133,7 +134,8 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   @Override
   public void runWithLock(final DateTime watermark) throws Exception {
     logger.atInfo().log("Verifying readiness to upload the RDE deposit.");
-    Cursor cursor = transactIfJpaTm(() -> tm().loadByKey(Cursor.createVKey(RDE_STAGING, tld)));
+    Optional<Cursor> cursor =
+        transactIfJpaTm(() -> tm().loadByKeyIfPresent(Cursor.createVKey(RDE_STAGING, tld)));
     DateTime stagingCursorTime = getCursorTimeOrStartOfTime(cursor);
     if (isBeforeOrAt(stagingCursorTime, watermark)) {
       throw new NoContentException(
