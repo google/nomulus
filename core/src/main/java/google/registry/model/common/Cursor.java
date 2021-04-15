@@ -36,6 +36,7 @@ import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -280,8 +281,8 @@ public class Cursor extends ImmutableObject implements DatastoreAndSqlEntity {
   /**
    * Returns the current time for a given cursor, or {@code START_OF_TIME} if the cursor is null.
    */
-  public static DateTime getCursorTimeOrStartOfTime(Cursor cursor) {
-    return cursor != null ? cursor.getCursorTime() : START_OF_TIME;
+  public static DateTime getCursorTimeOrStartOfTime(Optional<Cursor> cursor) {
+    return cursor.map(Cursor::getCursorTime).orElse(START_OF_TIME);
   }
 
   public DateTime getCursorTime() {

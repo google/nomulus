@@ -19,6 +19,7 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.RDE_REPORT;
 import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -160,6 +161,19 @@ public class RdeReportActionTest {
     assertThat(report.getId()).isEqualTo("20101017001");
     assertThat(report.getCrDate()).isEqualTo(DateTime.parse("2010-10-17T00:15:00.0Z"));
     assertThat(report.getWatermark()).isEqualTo(DateTime.parse("2010-10-17T00:00:00Z"));
+  }
+
+  @TestOfyAndSql
+  void testRunWithLock_nonexistentCursor_throws204() {
+    tm().transact(() -> tm().delete(Cursor.createVKey(RDE_UPLOAD, "test")));
+    NoContentException thrown =
+        assertThrows(
+            NoContentException.class, () -> createAction().runWithLock(loadRdeReportCursor()));
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo(
+            "Waiting on RdeUploadAction for TLD test to send 2006-06-06T00:00:00.000Z report; last"
+                + " upload completion was at 1970-01-01T00:00:00.000Z");
   }
 
   @TestOfyAndSql

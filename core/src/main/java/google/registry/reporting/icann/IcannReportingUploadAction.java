@@ -16,7 +16,6 @@ package google.registry.reporting.icann;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
-import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -107,10 +106,10 @@ public final class IcannReportingUploadAction implements Runnable {
 
           // If cursor time is before now, upload the corresponding report
           cursors.entrySet().stream()
-              .filter(entry -> getCursorTimeOrStartOfTime(entry.getKey()).isBefore(clock.nowUtc()))
+              .filter(entry -> entry.getKey().getCursorTime().isBefore(clock.nowUtc()))
               .forEach(
                   entry -> {
-                    DateTime cursorTime = getCursorTimeOrStartOfTime(entry.getKey());
+                    DateTime cursorTime = entry.getKey().getCursorTime();
                     uploadReport(
                         cursorTime,
                         entry.getKey().getType(),

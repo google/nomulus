@@ -20,8 +20,8 @@ import static com.google.appengine.tools.cloudstorage.GcsServiceFactory.createGc
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
@@ -210,7 +210,11 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
     tm().transact(
             () -> {
               Registry registry = Registry.get(tld);
-              Cursor cursor = ofy().load().key(Cursor.createKey(key.cursor(), registry)).now();
+              Optional<Cursor> cursor =
+                  transactIfJpaTm(
+                      () ->
+                          tm().loadByKeyIfPresent(
+                                  Cursor.createVKey(key.cursor(), registry.getTldStr())));
               DateTime position = getCursorTimeOrStartOfTime(cursor);
               checkState(key.interval() != null, "Interval must be present");
               DateTime newPosition = key.watermark().plus(key.interval());
