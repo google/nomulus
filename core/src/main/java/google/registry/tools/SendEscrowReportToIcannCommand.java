@@ -16,6 +16,7 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import dagger.Lazy;
 import google.registry.rde.RdeReporter;
 import google.registry.tools.params.PathParameter;
 import java.nio.file.Files;
@@ -33,13 +34,12 @@ final class SendEscrowReportToIcannCommand implements CommandWithRemoteApi {
       required = true)
   private List<Path> files;
 
-  @Inject
-  RdeReporter rdeReporter;
+  @Inject Lazy<RdeReporter> rdeReporter;
 
   @Override
   public void run() throws Exception {
     for (Path file : files) {
-      rdeReporter.send(Files.readAllBytes(file));
+      rdeReporter.get().send(Files.readAllBytes(file));
       System.out.printf("Uploaded: %s\n", file);
     }
   }
