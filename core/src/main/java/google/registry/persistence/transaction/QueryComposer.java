@@ -80,8 +80,8 @@ public abstract class QueryComposer<T> {
   /**
    * Returns the one and only result of a query.
    *
-   * <p>Throws a {@link NonUniqueResultException} if there is more than one result, throws {@link
-   * NoResultException} if no results are found.
+   * <p>Throws a {@link javax.persistence.NonUniqueResultException} if there is more than one
+   * result, throws {@link javax.persistence.NoResultException} if no results are found.
    */
   public abstract T getSingleResult();
 
@@ -151,6 +151,8 @@ public abstract class QueryComposer<T> {
     GT(" >", QueryComposer::greaterThan);
 
     private final String datastoreString;
+
+    @SuppressWarnings("ImmutableEnumChecker") // Functions are immutable.
     private final Function<CriteriaBuilder, WhereOperator<?>> operatorFactory;
 
     Comparator(
