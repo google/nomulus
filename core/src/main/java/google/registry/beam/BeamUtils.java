@@ -67,9 +67,9 @@ public class BeamUtils {
 
   /** Creates a beam job name and validates that it conforms to the requirements. */
   public static String createJobName(String prefix, Clock clock) {
-    // Job name must be unique and consists of only characters [-a-z0-9], starting with a letter and
-    // ending with a letter or number. So we replace the "T" and "Z" in ISO 8601 with lowercase
-    // letters.
+    // Flex template job name must be unique and consists of only characters [-a-z0-9], starting
+    // with a letter and ending with a letter or number. So we replace the "T" and "Z" in ISO 8601
+    // with lowercase letters.
     String jobName =
         String.format("%s-%s", prefix, clock.nowUtc().toString("yyyy-MM-dd't'HH-mm-ss'z'"));
     checkArgument(

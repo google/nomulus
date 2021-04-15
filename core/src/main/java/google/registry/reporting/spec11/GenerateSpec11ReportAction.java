@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryEnvironment;
 import google.registry.keyring.api.KeyModule.Key;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
@@ -103,7 +104,9 @@ public class GenerateSpec11ReportAction implements Runnable {
               ReportingModule.PARAM_DATE,
               date.toString(),
               "reportingBucketUrl",
-              reportingBucketUrl);
+              reportingBucketUrl,
+              "registryEnvironment",
+              RegistryEnvironment.get().name());
       logger.atInfo().log(pipelineParameters.toString());
       LaunchFlexTemplateParameter parameter =
           new LaunchFlexTemplateParameter()
