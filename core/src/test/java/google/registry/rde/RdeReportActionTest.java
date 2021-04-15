@@ -19,10 +19,12 @@ import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.RDE_REPORT;
 import static google.registry.model.common.Cursor.CursorType.RDE_UPLOAD;
+import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.GcsTestingUtils.deleteGcsFile;
 import static google.registry.testing.GcsTestingUtils.writeGcsFile;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -47,6 +49,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.common.Cursor;
+import google.registry.model.rde.RdeRevision;
 import google.registry.model.registry.Registry;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.HttpException.NoContentException;
@@ -124,6 +127,7 @@ public class RdeReportActionTest {
     persistResource(
         Cursor.create(RDE_UPLOAD, DateTime.parse("2006-06-07TZ"), Registry.get("test")));
     writeGcsFile(gcsService, reportFile, Ghostryde.encode(REPORT_XML.read(), encryptKey));
+    tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 0));
   }
 
   @TestOfyAndSql
@@ -164,6 +168,20 @@ public class RdeReportActionTest {
   }
 
   @TestOfyAndSql
+  void testRunWithLock_regeneratedReport() throws Exception {
+    deleteGcsFile(gcsService, reportFile);
+    GcsFilename newReport =
+        new GcsFilename("tub", "test_2006-06-06_full_S1_R1-report.xml.ghostryde");
+    PGPPublicKey encryptKey = new FakeKeyringModule().get().getRdeStagingEncryptionKey();
+    writeGcsFile(gcsService, newReport, Ghostryde.encode(REPORT_XML.read(), encryptKey));
+    tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 1));
+    when(httpResponse.getResponseCode()).thenReturn(SC_OK);
+    when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
+    when(urlFetchService.fetch(request.capture())).thenReturn(httpResponse);
+    createAction().runWithLock(loadRdeReportCursor());
+    assertThat(response.getStatus()).isEqualTo(200);
+  }
+
   void testRunWithLock_nonexistentCursor_throws204() {
     tm().transact(() -> tm().delete(Cursor.createVKey(RDE_UPLOAD, "test")));
     NoContentException thrown =

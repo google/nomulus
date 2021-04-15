@@ -24,6 +24,7 @@ import static google.registry.request.Action.Method.POST;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
@@ -31,6 +32,7 @@ import google.registry.keyring.api.KeyModule.Key;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeNamingUtils;
+import google.registry.model.rde.RdeRevision;
 import google.registry.model.registry.Registry;
 import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.request.Action;
@@ -56,6 +58,8 @@ import org.joda.time.Duration;
     method = POST,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class RdeReportAction implements Runnable, EscrowTask {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   static final String PATH = "/_dr/task/rdeReport";
 
@@ -88,12 +92,15 @@ public final class RdeReportAction implements Runnable, EscrowTask {
                   + "last upload completion was at %s",
               tld, watermark, cursorTime));
     }
-    String prefix = RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, 0);
+    int revision = RdeRevision.getNextRevision(tld, watermark, FULL) - 1;
+    verify(revision >= 0, "RdeRevision was not set on generated deposit");
+    String prefix = RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
     GcsFilename reportFilename = new GcsFilename(bucket, prefix + "-report.xml.ghostryde");
     verify(gcsUtils.existsAndNotEmpty(reportFilename), "Missing file: %s", reportFilename);
     reporter.send(readReportFromGcs(reportFilename));
     response.setContentType(PLAIN_TEXT_UTF_8);
     response.setPayload(String.format("OK %s %s\n", tld, watermark));
+    logger.atInfo().log("Successfully sent %s", reportFilename);
   }
 
   /** Reads and decrypts the XML file from cloud storage. */

@@ -40,5 +40,9 @@ public final class GcsTestingUtils {
     gcsService.createOrReplace(file, GcsFileOptions.getDefaultInstance(), ByteBuffer.wrap(data));
   }
 
+  public static void deleteGcsFile(GcsService gcsService, GcsFilename file) throws IOException {
+    gcsService.delete(file);
+  }
+
   private GcsTestingUtils() {}
 }
