@@ -43,6 +43,7 @@ import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -712,7 +713,13 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
 
     @Override
-    public T first() {
+    public Optional<T> first() {
+      List<T> results = buildQuery().setMaxResults(1).getResultList();
+      return results.size() > 0 ? Optional.of(results.get(0)) : Optional.empty();
+    }
+
+    @Override
+    public T getSingleResult() {
       return buildQuery().getSingleResult();
     }
 

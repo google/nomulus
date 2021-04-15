@@ -20,6 +20,7 @@ import com.google.common.base.Function;
 import google.registry.persistence.transaction.CriteriaQueryBuilder.WhereOperator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -29,8 +30,12 @@ import javax.persistence.criteria.CriteriaBuilder;
  *
  * <p>Example usage:
  *
- * <p>tm().createQueryComposer(EntityType.class) .where("fieldName", Comparator.EQ, "value"
- * .orderBy("fieldName") .stream()
+ * <pre>
+ *    tm().createQueryComposer(EntityType.class)
+ *        .where("fieldName", Comparator.EQ, "value")
+ *        .orderBy("fieldName")
+ *        .stream()
+ * </pre>
  */
 public abstract class QueryComposer<T> {
 
@@ -69,12 +74,16 @@ public abstract class QueryComposer<T> {
     return this;
   }
 
+  /** Returns the first result of the query or an empty optional if there is none. */
+  public abstract Optional<T> first();
+
   /**
-   * Returns the first result of the query.
+   * Returns the one and only result of a query.
    *
-   * <p>Throws javax.persistence.NoResultException if not found.
+   * <p>Throws a {@link NonUniqueResultException} if there is more than one result, throws {@link
+   * NoResultException} if no results are found.
    */
-  public abstract T first();
+  public abstract T getSingleResult();
 
   /** Returns the results of the query as a stream. */
   public abstract Stream<T> stream();
@@ -108,11 +117,37 @@ public abstract class QueryComposer<T> {
     return criteriaBuilder::greaterThan;
   }
 
+  /**
+   * Enum used to specify comparison operations, e.g. {@code where("fieldName", Comparator.NE,
+   * "someval")'}.
+   *
+   * <p>These contain values that specify the comparison behavior for both objectify and criteria
+   * queries. For objectify, we provide a string to be appended to the field name in a {@code
+   * filter()} expression. For criteria queries we provide a function that knows how to obtain a
+   * {@link WhereOperator} from a {@link CriteriaBuilder}.
+   *
+   * <p>Note that the objectify strings for comparators other than equality are preceded by a space
+   * because {@code filter()} expects the fieldname to be separated from the operator by a space.
+   */
   public enum Comparator {
+    /**
+     * Return only records whose field is equal to the value.
+     *
+     * <p>Note that the datastore string for this is empty, which is consistent with the way {@code
+     * filter()} works (it uses an unadorned field name to check for equality).
+     */
     EQ("", QueryComposer::equal),
+
+    /** Return only records whose field is less than the value. */
     LT(" <", QueryComposer::lessThan),
+
+    /** Return only records whose field is less than or equal to the value. */
     LTE(" <=", QueryComposer::lessThanOrEqualTo),
+
+    /** Return only records whose field is greater than or equal to the value. */
     GTE(" >=", QueryComposer::greaterThanOrEqualTo),
+
+    /** Return only records whose field is greater than the value. */
     GT(" >", QueryComposer::greaterThan);
 
     private final String datastoreString;

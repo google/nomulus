@@ -141,7 +141,7 @@ public class Spec11EmailUtils {
                                   "fullyQualifiedDomainName",
                                   Comparator.EQ,
                                   threatMatch.fullyQualifiedDomainName())
-                              .first()
+                              .getSingleResult()
                               .shouldPublishToDns())
                   .collect(toImmutableList());
             });

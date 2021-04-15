@@ -30,8 +30,10 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestOfyAndSql;
+import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -72,36 +74,76 @@ public class QueryComposerTest {
                 () ->
                     tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.EQ, "bravo")
-                        .first()))
+                        .first()
+                        .get()))
         .isEqualTo(bravo);
     assertThat(
             transactIfJpaTm(
                 () ->
                     tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.GT, "bravo")
-                        .first()))
+                        .first()
+                        .get()))
         .isEqualTo(charlie);
     assertThat(
             transactIfJpaTm(
                 () ->
                     tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.GTE, "charlie")
-                        .first()))
+                        .first()
+                        .get()))
         .isEqualTo(charlie);
     assertThat(
             transactIfJpaTm(
                 () ->
                     tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.LT, "bravo")
-                        .first()))
+                        .first()
+                        .get()))
         .isEqualTo(alpha);
     assertThat(
             transactIfJpaTm(
                 () ->
                     tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.LTE, "alpha")
-                        .first()))
+                        .first()
+                        .get()))
         .isEqualTo(alpha);
+  }
+
+  @TestOfyAndSql
+  public void testGetSingleResult() {
+    assertThat(
+            transactIfJpaTm(
+                () ->
+                    tm().createQueryComposer(TestEntity.class)
+                        .where("name", Comparator.EQ, "alpha")
+                        .getSingleResult()))
+        .isEqualTo(alpha);
+  }
+
+  @TestOfyAndSql
+  public void testGetSingleResult_noResults() {
+    assertThrows(
+        NoResultException.class,
+        () ->
+            transactIfJpaTm(
+                () ->
+                    tm().createQueryComposer(TestEntity.class)
+                        .where("name", Comparator.EQ, "ziggy")
+                        .getSingleResult()));
+  }
+
+  @TestOfyAndSql
+  public void testGetSingleResult_nonUniqueResult() {
+    assertThrows(
+        NonUniqueResultException.class,
+        () ->
+            transactIfJpaTm(
+                () ->
+                    tm().createQueryComposer(TestEntity.class)
+                        .where("name", Comparator.GT, "alpha")
+                        .getSingleResult()));
   }
 
   @TestOfyAndSql
@@ -160,7 +202,8 @@ public class QueryComposerTest {
                 () ->
                     tm().createQueryComposer(TestEntity.class)
                         .where("val", Comparator.EQ, 2)
-                        .first()))
+                        .first()
+                        .get()))
         .isEqualTo(bravo);
   }
 
@@ -180,14 +223,13 @@ public class QueryComposerTest {
 
   @TestOfyAndSql
   public void testEmptyQueries() {
-    assertThrows(
-        NoResultException.class,
-        () ->
+    assertThat(
             transactIfJpaTm(
                 () ->
                     tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.GT, "foxtrot")
-                        .first()));
+                        .first()))
+        .isEqualTo(Optional.empty());
     assertThat(
             transactIfJpaTm(
                 () ->
