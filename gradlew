@@ -22,6 +22,9 @@
 ##
 ##############################################################################
 
+echo "#### test of the repo:"
+curl https://storage.googleapis.com/domain-registry-maven-repository/plugins/nebula/lint/nebula.lint.gradle.plugin/16.0.2/nebula.lint.gradle.plugin-16.0.2.pom
+
 # Attempt to set APP_HOME
 # Resolve links: $0 may be a link
 PRG="$0"
