@@ -41,11 +41,11 @@ public class CriteriaQueryBuilder<T> {
   }
 
   private final CriteriaQuery<T> query;
-  private final Root<T> root;
+  private final Root<?> root;
   private final ImmutableList.Builder<Predicate> predicates = new ImmutableList.Builder<>();
   private final ImmutableList.Builder<Order> orders = new ImmutableList.Builder<>();
 
-  private CriteriaQueryBuilder(CriteriaQuery<T> query, Root<T> root) {
+  private CriteriaQueryBuilder(CriteriaQuery<T> query, Root<?> root) {
     this.query = query;
     this.root = root;
   }
@@ -104,6 +104,15 @@ public class CriteriaQueryBuilder<T> {
     CriteriaQuery<T> query = em.getCriteriaBuilder().createQuery(clazz);
     Root<T> root = query.from(clazz);
     query = query.select(root);
+    return new CriteriaQueryBuilder<>(query, root);
+  }
+
+  /** Creates a "count" query for the table for the class. */
+  public static <T> CriteriaQueryBuilder<Long> createCount(EntityManager em, Class<T> clazz) {
+    CriteriaBuilder builder = em.getCriteriaBuilder();
+    CriteriaQuery<Long> query = builder.createQuery(Long.class);
+    Root<T> root = query.from(clazz);
+    query = query.select(builder.count(root));
     return new CriteriaQueryBuilder<>(query, root);
   }
 }

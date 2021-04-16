@@ -413,5 +413,10 @@ public class DatastoreTransactionManager implements TransactionManager {
     public Stream<T> stream() {
       return Streams.stream(buildQuery());
     }
+
+    @Override
+    public long count() {
+      return Iterables.size(buildQuery().chunkAll().keys());
+    }
   }
 }
