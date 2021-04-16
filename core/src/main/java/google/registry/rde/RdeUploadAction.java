@@ -160,8 +160,10 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
               sftpCursorTime,
               timeSinceLastSftp.getStandardMinutes()));
     }
-    int revision = RdeRevision.getNextRevision(tld, watermark, FULL) - 1;
-    verify(revision >= 0, "RdeRevision was not set on generated deposit");
+    int revision =
+        RdeRevision.getCurrentRevision(tld, watermark, FULL)
+            .orElseThrow(
+                () -> new IllegalStateException("RdeRevision was not set on generated deposit"));
     final String name = RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
     final GcsFilename xmlFilename = new GcsFilename(bucket, name + ".xml.ghostryde");
     final GcsFilename xmlLengthFilename = new GcsFilename(bucket, name + ".xml.length");

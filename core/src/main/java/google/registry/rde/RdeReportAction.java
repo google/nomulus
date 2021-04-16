@@ -92,15 +92,17 @@ public final class RdeReportAction implements Runnable, EscrowTask {
                   + "last upload completion was at %s",
               tld, watermark, cursorTime));
     }
-    int revision = RdeRevision.getNextRevision(tld, watermark, FULL) - 1;
-    verify(revision >= 0, "RdeRevision was not set on generated deposit");
+    int revision =
+        RdeRevision.getCurrentRevision(tld, watermark, FULL)
+            .orElseThrow(
+                () -> new IllegalStateException("RdeRevision was not set on generated deposit"));
     String prefix = RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
     GcsFilename reportFilename = new GcsFilename(bucket, prefix + "-report.xml.ghostryde");
     verify(gcsUtils.existsAndNotEmpty(reportFilename), "Missing file: %s", reportFilename);
     reporter.send(readReportFromGcs(reportFilename));
     response.setContentType(PLAIN_TEXT_UTF_8);
     response.setPayload(String.format("OK %s %s\n", tld, watermark));
-    logger.atInfo().log("Successfully sent %s", reportFilename);
+    logger.atInfo().log("Successfully sent report %s.", reportFilename);
   }
 
   /** Reads and decrypts the XML file from cloud storage. */
