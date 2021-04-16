@@ -14,7 +14,9 @@
 
 package google.registry.tools;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.QueryComposer.Comparator;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -53,12 +55,20 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
       required = true)
   private Path sunriseOutputPath;
 
+  public GenerateLordnCommand() {} // CommandTestCase wants a constructor.
+
   @Override
   public void run() throws IOException {
     DateTime now = DateTime.now(UTC);
     ImmutableList.Builder<String> claimsCsv = new ImmutableList.Builder<>();
     ImmutableList.Builder<String> sunriseCsv = new ImmutableList.Builder<>();
-    for (DomainBase domain : ofy().load().type(DomainBase.class).filter("tld", tld)) {
+    for (DomainBase domain :
+        transactIfJpaTm(
+            () ->
+                tm().createQueryComposer(DomainBase.class)
+                    .where("tld", Comparator.EQ, tld)
+                    .orderBy("repoId")
+                    .list())) {
       String status = " ";
       if (domain.getLaunchNotice() == null && domain.getSmdId() != null) {
         sunriseCsv.add(LordnTaskUtils.getCsvLineForSunriseDomain(domain, domain.getCreationTime()));

@@ -737,5 +737,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       CriteriaQueryBuilder<Long> queryBuilder = CriteriaQueryBuilder.createCount(em, entityClass);
       return addCriteria(queryBuilder).getSingleResult();
     }
+
+    @Override
+    public List<T> list() {
+      return buildQuery().getResultList();
+    }
   }
 }
