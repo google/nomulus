@@ -43,10 +43,12 @@ import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -531,6 +533,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
+    return new JpaQueryComposerImpl<T>(entity, getEntityManager());
+  }
+
+  @Override
   public void clearSessionCache() {
     // This is an intended no-op method as there is no session cache in Postgresql.
   }
@@ -679,6 +686,46 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
           entityManager.persist(persistedTxn.toEntity());
         }
       }
+    }
+  }
+
+  private static class JpaQueryComposerImpl<T> extends QueryComposer<T> {
+
+    EntityManager em;
+
+    JpaQueryComposerImpl(Class<T> entityClass, EntityManager em) {
+      super(entityClass);
+      this.em = em;
+    }
+
+    private TypedQuery<T> buildQuery() {
+      CriteriaQueryBuilder<T> queryBuilder = CriteriaQueryBuilder.create(em, entityClass);
+
+      for (WhereClause<?> pred : predicates) {
+        pred.addToCriteriaQueryBuilder(queryBuilder);
+      }
+
+      if (orderBy != null) {
+        queryBuilder.orderByAsc(orderBy);
+      }
+
+      return em.createQuery(queryBuilder.build());
+    }
+
+    @Override
+    public Optional<T> first() {
+      List<T> results = buildQuery().setMaxResults(1).getResultList();
+      return results.size() > 0 ? Optional.of(results.get(0)) : Optional.empty();
+    }
+
+    @Override
+    public T getSingleResult() {
+      return buildQuery().getSingleResult();
+    }
+
+    @Override
+    public Stream<T> stream() {
+      return buildQuery().getResultStream();
     }
   }
 }

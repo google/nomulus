@@ -17,11 +17,11 @@ package google.registry.reporting.spec11;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.CLIENT_HOLD;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.getMatchA;
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.getMatchB;
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.sampleThreatMatches;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -39,6 +39,8 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.reporting.spec11.soy.Spec11EmailSoyInfo;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
 import java.util.LinkedHashSet;
@@ -48,11 +50,11 @@ import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import org.joda.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link Spec11EmailUtils}. */
+@DualDatabaseTest
 class Spec11EmailUtilsTest {
 
   private static final ImmutableList<String> FAKE_RESOURCES = ImmutableList.of("foo");
@@ -128,7 +130,7 @@ class Spec11EmailUtilsTest {
     persistDomainWithHost("c.com", host);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_emailMonthlySpec11Reports() throws Exception {
     emailUtils.emailSpec11Reports(
         date,
@@ -166,7 +168,7 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_emailDailySpec11Reports() throws Exception {
     emailUtils.emailSpec11Reports(
         date,
@@ -204,13 +206,11 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_skipsInactiveDomain() throws Exception {
     // CLIENT_HOLD and SERVER_HOLD mean no DNS so we don't need to email it out
-    persistResource(
-        ofy().load().entity(aDomain).now().asBuilder().addStatusValue(SERVER_HOLD).build());
-    persistResource(
-        ofy().load().entity(bDomain).now().asBuilder().addStatusValue(CLIENT_HOLD).build());
+    persistResource(loadByEntity(aDomain).asBuilder().addStatusValue(SERVER_HOLD).build());
+    persistResource(loadByEntity(bDomain).asBuilder().addStatusValue(CLIENT_HOLD).build());
     emailUtils.emailSpec11Reports(
         date,
         Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
@@ -237,7 +237,7 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-  @Test
+  @TestOfyAndSql
   void testOneFailure_sendsAlert() throws Exception {
     // If there is one failure, we should still send the other message and then an alert email
     LinkedHashSet<RegistrarThreatMatches> matches = new LinkedHashSet<>();
@@ -292,7 +292,7 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_sendAlertEmail() throws Exception {
     emailUtils.sendAlertEmail("Spec11 Pipeline Alert: 2018-07", "Alert!");
     verify(emailService).sendEmail(contentCaptor.capture());
@@ -306,7 +306,7 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_useWhoisAbuseEmailIfAvailable() throws Exception {
     // if John Doe is the whois abuse contact, email them instead of the regular email
     persistResource(
@@ -325,7 +325,7 @@ class Spec11EmailUtilsTest {
         .containsExactly(new InternetAddress("johndoe@theregistrar.com"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_badClientId() {
     RuntimeException thrown =
         assertThrows(

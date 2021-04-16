@@ -37,12 +37,17 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.QueryComposer;
 import google.registry.persistence.transaction.TransactionManager;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
+import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import org.joda.time.DateTime;
 
 /** Datastore implementation of {@link TransactionManager}. */
@@ -303,6 +308,11 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
+  public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
+    return new DatastoreQueryComposerImpl(entity);
+  }
+
+  @Override
   public void clearSessionCache() {
     getOfy().clearSessionCache();
   }
@@ -362,5 +372,46 @@ public class DatastoreTransactionManager implements TransactionManager {
       return (T) ((HistoryEntry) obj).toChildHistoryEntity();
     }
     return obj;
+  }
+
+  private static class DatastoreQueryComposerImpl<T> extends QueryComposer<T> {
+    DatastoreQueryComposerImpl(Class<T> entityClass) {
+      super(entityClass);
+    }
+
+    Query<T> buildQuery() {
+      Query<T> result = ofy().load().type(entityClass);
+      for (WhereClause pred : predicates) {
+        result = result.filter(pred.fieldName + pred.comparator.getDatastoreString(), pred.value);
+      }
+
+      if (orderBy != null) {
+        result = result.order(orderBy);
+      }
+
+      return result;
+    }
+
+    @Override
+    public Optional<T> first() {
+      return Optional.ofNullable(buildQuery().first().now());
+    }
+
+    @Override
+    public T getSingleResult() {
+      List<T> results = buildQuery().limit(2).list();
+      if (results.size() == 0) {
+        // The exception text here is the same as what we get for JPA queries.
+        throw new NoResultException("No entity found for query");
+      } else if (results.size() > 1) {
+        throw new NonUniqueResultException("More than one result found for getSingleResult query");
+      }
+      return results.get(0);
+    }
+
+    @Override
+    public Stream<T> stream() {
+      return Streams.stream(buildQuery());
+    }
   }
 }

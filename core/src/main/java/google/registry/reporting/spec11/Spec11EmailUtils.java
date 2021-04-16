@@ -17,7 +17,9 @@ package google.registry.reporting.spec11;
 import static com.google.common.base.Throwables.getRootCause;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.Resources.getResource;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.QueryComposer.Comparator;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -129,17 +131,20 @@ public class Spec11EmailUtils {
   private RegistrarThreatMatches filterOutNonPublishedMatches(
       RegistrarThreatMatches registrarThreatMatches) {
     ImmutableList<ThreatMatch> filteredMatches =
-        registrarThreatMatches.threatMatches().stream()
-            .filter(
-                threatMatch ->
-                    ofy()
-                        .load()
-                        .type(DomainBase.class)
-                        .filter("fullyQualifiedDomainName", threatMatch.fullyQualifiedDomainName())
-                        .first()
-                        .now()
-                        .shouldPublishToDns())
-            .collect(toImmutableList());
+        transactIfJpaTm(
+            () -> {
+              return registrarThreatMatches.threatMatches().stream()
+                  .filter(
+                      threatMatch ->
+                          tm().createQueryComposer(DomainBase.class)
+                              .where(
+                                  "fullyQualifiedDomainName",
+                                  Comparator.EQ,
+                                  threatMatch.fullyQualifiedDomainName())
+                              .getSingleResult()
+                              .shouldPublishToDns())
+                  .collect(toImmutableList());
+            });
     return RegistrarThreatMatches.create(registrarThreatMatches.clientId(), filteredMatches);
   }
 
