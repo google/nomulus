@@ -103,6 +103,15 @@ public final class RdeRevision extends BackupGroupRoot implements NonReplicatedE
     return revisionOptional.map(rdeRevision -> rdeRevision.revision + 1).orElse(0);
   }
 
+  /** Returns the latest revision of the report already generated for the given triplet. */
+  public static Optional<Integer> getCurrentRevision(String tld, DateTime date, RdeMode mode) {
+    int nextRevision = getNextRevision(tld, date, mode);
+    if (nextRevision == 0) {
+      return Optional.empty();
+    }
+    return Optional.of(nextRevision - 1);
+  }
+
   /**
    * Sets the revision ID for a given triplet.
    *
