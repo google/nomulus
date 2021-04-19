@@ -43,6 +43,7 @@ import static google.registry.util.CollectionUtils.difference;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static google.registry.util.DomainNameUtils.ACE_PREFIX_REGEX;
 import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
@@ -918,15 +919,12 @@ public class DatabaseHelper {
                 .collect(toImmutableList()));
   }
 
-  public static ImmutableList<PollMessage> getPollMessages(String clientId, DateTime now) {
+  public static ImmutableList<PollMessage> getPollMessages(String clientId, DateTime beforeOrAt) {
     return transactIfJpaTm(
         () ->
             tm().loadAllOf(PollMessage.class).stream()
                 .filter(pollMessage -> pollMessage.getClientId().equals(clientId))
-                .filter(
-                    pollMessage ->
-                        pollMessage.getEventTime().isEqual(now)
-                            || pollMessage.getEventTime().isBefore(now))
+                .filter(pollMessage -> isBeforeOrAt(pollMessage.getEventTime(), beforeOrAt))
                 .collect(toImmutableList()));
   }
 
