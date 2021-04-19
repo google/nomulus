@@ -18,7 +18,6 @@ import static google.registry.persistence.transaction.QueryComposer.Comparator;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -26,9 +25,11 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.DomainBase;
 import google.registry.tmch.LordnTaskUtils;
 import google.registry.tools.params.PathParameter;
+import google.registry.util.Clock;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** Command to generate a LORDN CSV file for an entire TLD. */
@@ -55,11 +56,11 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
       required = true)
   private Path sunriseOutputPath;
 
-  public GenerateLordnCommand() {} // CommandTestCase wants a constructor.
+  @Inject Clock clock;
 
   @Override
   public void run() throws IOException {
-    DateTime now = DateTime.now(UTC);
+    DateTime now = clock.nowUtc();
     ImmutableList.Builder<String> claimsCsv = new ImmutableList.Builder<>();
     ImmutableList.Builder<String> sunriseCsv = new ImmutableList.Builder<>();
     for (DomainBase domain :
