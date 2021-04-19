@@ -48,10 +48,10 @@
     },
     {
       "name": "safeBrowsingApiKey",
-      "label": "Nomulus CommitLog start time",
+      "label": "API Key used to identify the project with Safe Browsing",
       "helpText": "The earliest CommitLogs to load, in ISO8601 format.",
       "regexes": [
-        "^[0-9a-zA-Z_]+$"
+        "^[0-9a-zA-Z_]+[\\n]?$"
       ]
     },
     {
