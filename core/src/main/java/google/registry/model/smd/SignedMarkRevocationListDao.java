@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.isEmpty;
 import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
-import static google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase.DATASTORE;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.ofy;
@@ -35,9 +34,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
-import google.registry.model.DatabaseMigrationUtils;
-import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
-import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.util.CollectionUtils;
 import java.util.Map;
 import java.util.Optional;
@@ -50,42 +46,24 @@ public class SignedMarkRevocationListDao {
   /**
    * Loads the {@link SignedMarkRevocationList}.
    *
-   * <p>Loads the list from the specified primary database, and attempts to load from the secondary
-   * database. If the load the secondary database fails, or the list from the secondary database
-   * does not match the list from the primary database, the error will be logged but no exception
-   * will be thrown.
+   * <p>Loads the list from Cloud SQL, and attempts to load from Datastore. If the load from
+   * Datastore fails, or the list from Datastore does not match the list from Cloud SQL, the error
+   * will be logged but no exception will be thrown.
    */
   static SignedMarkRevocationList load() {
-    PrimaryDatabase primaryDatabase =
-        tm().transactNew(
-                () ->
-                    DatabaseMigrationUtils.getPrimaryDatabase(
-                        TransitionId.SIGNED_MARK_REVOCATION_LIST));
-    Optional<SignedMarkRevocationList> primaryList =
-        primaryDatabase.equals(DATASTORE) ? loadFromDatastore() : loadFromCloudSql();
+    Optional<SignedMarkRevocationList> primaryList = loadFromCloudSql();
     if (!primaryList.isPresent()) {
-      throw new IllegalStateException(
-          String.format(
-              "SignedMarkRevocationList not found in the primary database (%s).",
-              primaryDatabase.name()));
+      return SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of());
     }
     suppressExceptionUnlessInTest(
-        () -> loadAndCompare(primaryDatabase, primaryList.get()),
-        String.format(
-            "Error loading and comparing the SignedMarkRevocationList from the secondary database"
-                + " (%s).",
-            primaryDatabase.equals(DATASTORE) ? "Cloud SQL" : "Datastore"));
+        () -> loadAndCompare(primaryList.get()),
+        "Error loading and comparing the SignedMarkRevocationList from Datastore");
     return primaryList.get();
   }
 
-  /**
-   * Loads the list from the secondary database and compares it to the list from the primary
-   * database.
-   */
-  private static void loadAndCompare(
-      PrimaryDatabase primaryDatabase, SignedMarkRevocationList primaryList) {
-    Optional<SignedMarkRevocationList> secondaryList =
-        primaryDatabase.equals(DATASTORE) ? loadFromCloudSql() : loadFromDatastore();
+  /** Loads the list from Datastore and compares it to the list from Cloud SQL. */
+  private static void loadAndCompare(SignedMarkRevocationList primaryList) {
+    Optional<SignedMarkRevocationList> secondaryList = loadFromDatastore();
     if (secondaryList.isPresent() && !isNullOrEmpty(secondaryList.get().revokes)) {
       MapDifference<String, DateTime> diff =
           Maps.difference(primaryList.revokes, secondaryList.get().revokes);
@@ -93,11 +71,9 @@ public class SignedMarkRevocationListDao {
         if (diff.entriesDiffering().size() > 10) {
           String message =
               String.format(
-                  "Unequal SignedMarkRevocationList detected, %s list with revision id"
-                      + " %d has %d different records than the current primary database list.",
-                  primaryDatabase.equals(DATASTORE) ? "Cloud SQL" : "Datastore",
-                  secondaryList.get().revisionId,
-                  diff.entriesDiffering().size());
+                  "Unequal SignedMarkRevocationList detected, Datastore list with revision id"
+                      + " %d has %d different records than the current Cloud SQL list.",
+                  secondaryList.get().revisionId, diff.entriesDiffering().size());
           throw new IllegalStateException(message);
         } else {
           StringBuilder diffMessage =
@@ -107,21 +83,15 @@ public class SignedMarkRevocationListDao {
                   (label, valueDiff) ->
                       diffMessage.append(
                           String.format(
-                              "SMD %s has key %s in %s and key %s in secondary database.\n",
-                              label,
-                              valueDiff.leftValue(),
-                              primaryDatabase.name(),
-                              valueDiff.rightValue())));
+                              "SMD %s has key %s in Cloud SQL and key %s in Datastore.\n",
+                              label, valueDiff.leftValue(), valueDiff.rightValue())));
           throw new IllegalStateException(diffMessage.toString());
         }
       }
     } else {
       if (primaryList.size() != 0) {
         throw new IllegalStateException(
-            String.format(
-                "SignedMarkRevocationList in %s is empty while it is not empty in the primary"
-                    + " database.",
-                primaryDatabase.equals(DATASTORE) ? "Cloud SQL" : "Datastore"));
+            "SignedMarkRevocationList in Datastore is empty while it is not empty in Cloud SQL.");
       }
     }
   }
@@ -172,29 +142,16 @@ public class SignedMarkRevocationListDao {
   /**
    * Save the given {@link SignedMarkRevocationList}
    *
-   * <p>Saves the list to the specified primary database, and attempts to save to the secondary
-   * database. If the save to the secondary database fails, the error will be logged but no
-   * exception will be thrown.
+   * <p>Saves the list to Cloud SQL, and attempts to save to Datastore. If the save to Datastore
+   * fails, the error will be logged but no exception will be thrown.
    */
   static void save(SignedMarkRevocationList signedMarkRevocationList) {
-    PrimaryDatabase primaryDatabase =
-        tm().transactNew(
-                () ->
-                    DatabaseMigrationUtils.getPrimaryDatabase(
-                        TransitionId.SIGNED_MARK_REVOCATION_LIST));
-    if (primaryDatabase.equals(DATASTORE)) {
-      saveToDatastore(signedMarkRevocationList.revokes, signedMarkRevocationList.creationTime);
-      suppressExceptionUnlessInTest(
-          () -> SignedMarkRevocationListDao.saveToCloudSql(signedMarkRevocationList),
-          "Error inserting signed mark revocations into secondary database (Cloud SQL).");
-    } else {
       SignedMarkRevocationListDao.saveToCloudSql(signedMarkRevocationList);
       suppressExceptionUnlessInTest(
           () ->
               saveToDatastore(
                   signedMarkRevocationList.revokes, signedMarkRevocationList.creationTime),
           "Error inserting signed mark revocations into secondary database (Datastore).");
-    }
   }
 
   private static void saveToCloudSql(SignedMarkRevocationList signedMarkRevocationList) {
