@@ -15,9 +15,9 @@
 package google.registry.ui.server.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -301,7 +301,7 @@ final class RegistryLockVerifyActionTest {
   }
 
   private DomainBase reloadDomain() {
-    return ofy().load().entity(domain).now();
+    return loadByEntity(domain);
   }
 
   private void assertNoDomainChanges() {

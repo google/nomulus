@@ -16,7 +16,6 @@ package google.registry.keyring.kms;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.googlecode.objectify.Key;
@@ -24,6 +23,7 @@ import google.registry.keyring.api.KeySerializer;
 import google.registry.model.server.KmsSecret;
 import google.registry.model.server.KmsSecretRevision;
 import google.registry.model.server.KmsSecretRevisionSqlDao;
+import google.registry.persistence.VKey;
 import google.registry.privileges.secretmanager.FakeSecretManagerClient;
 import google.registry.privileges.secretmanager.KeyringSecretStore;
 import google.registry.testing.AppEngineExtension;
@@ -208,9 +208,12 @@ public class KmsUpdaterTest {
     KmsSecretRevision secretRevision;
     if (tm().isOfy()) {
       KmsSecret secret =
-          ofy().load().key(Key.create(getCrossTldKey(), KmsSecret.class, secretName)).now();
+          tm().loadByKey(
+                  VKey.createOfy(
+                      KmsSecret.class, Key.create(getCrossTldKey(), KmsSecret.class, secretName)));
       assertThat(secret).isNotNull();
-      secretRevision = ofy().load().key(secret.getLatestRevision()).now();
+      secretRevision =
+          tm().loadByKey(VKey.createOfy(KmsSecretRevision.class, secret.getLatestRevision()));
     } else {
       secretRevision =
           tm().transact(() -> KmsSecretRevisionSqlDao.getLatestRevision(secretName).get());
