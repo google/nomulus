@@ -1842,7 +1842,7 @@ CREATE INDEX spec11threatmatch_tld_idx ON public."Spec11ThreatMatch" USING btree
 --
 
 ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk1sfyj7o7954prbn1exk7lpnoe FOREIGN KEY (creation_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk1sfyj7o7954prbn1exk7lpnoe FOREIGN KEY (creation_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1850,7 +1850,7 @@ ALTER TABLE ONLY public."Contact"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk2jc69qyg2tv9hhnmif6oa1cx1 FOREIGN KEY (creation_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk2jc69qyg2tv9hhnmif6oa1cx1 FOREIGN KEY (creation_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1858,7 +1858,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."RegistryLock"
-    ADD CONSTRAINT fk2lhcwpxlnqijr96irylrh1707 FOREIGN KEY (relock_revision_id) REFERENCES public."RegistryLock"(revision_id);
+    ADD CONSTRAINT fk2lhcwpxlnqijr96irylrh1707 FOREIGN KEY (relock_revision_id) REFERENCES public."RegistryLock"(revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1866,7 +1866,7 @@ ALTER TABLE ONLY public."RegistryLock"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk2u3srsfbei272093m3b3xwj23 FOREIGN KEY (current_sponsor_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk2u3srsfbei272093m3b3xwj23 FOREIGN KEY (current_sponsor_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1874,7 +1874,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."SignedMarkRevocationEntry"
-    ADD CONSTRAINT fk5ivlhvs3121yx2li5tqh54u4 FOREIGN KEY (revision_id) REFERENCES public."SignedMarkRevocationList"(revision_id);
+    ADD CONSTRAINT fk5ivlhvs3121yx2li5tqh54u4 FOREIGN KEY (revision_id) REFERENCES public."SignedMarkRevocationList"(revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1882,7 +1882,7 @@ ALTER TABLE ONLY public."SignedMarkRevocationEntry"
 --
 
 ALTER TABLE ONLY public."ClaimsEntry"
-    ADD CONSTRAINT fk6sc6at5hedffc0nhdcab6ivuq FOREIGN KEY (revision_id) REFERENCES public."ClaimsList"(revision_id);
+    ADD CONSTRAINT fk6sc6at5hedffc0nhdcab6ivuq FOREIGN KEY (revision_id) REFERENCES public."ClaimsList"(revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1890,7 +1890,7 @@ ALTER TABLE ONLY public."ClaimsEntry"
 --
 
 ALTER TABLE ONLY public."GracePeriodHistory"
-    ADD CONSTRAINT fk7w3cx8d55q8bln80e716tr7b8 FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+    ADD CONSTRAINT fk7w3cx8d55q8bln80e716tr7b8 FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1898,7 +1898,7 @@ ALTER TABLE ONLY public."GracePeriodHistory"
 --
 
 ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk93c185fx7chn68uv7nl6uv2s0 FOREIGN KEY (current_sponsor_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk93c185fx7chn68uv7nl6uv2s0 FOREIGN KEY (current_sponsor_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1906,7 +1906,7 @@ ALTER TABLE ONLY public."Contact"
 --
 
 ALTER TABLE ONLY public."BillingCancellation"
-    ADD CONSTRAINT fk_billing_cancellation_billing_event_id FOREIGN KEY (billing_event_id) REFERENCES public."BillingEvent"(billing_event_id);
+    ADD CONSTRAINT fk_billing_cancellation_billing_event_id FOREIGN KEY (billing_event_id) REFERENCES public."BillingEvent"(billing_event_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1914,7 +1914,7 @@ ALTER TABLE ONLY public."BillingCancellation"
 --
 
 ALTER TABLE ONLY public."BillingCancellation"
-    ADD CONSTRAINT fk_billing_cancellation_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
+    ADD CONSTRAINT fk_billing_cancellation_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1930,7 +1930,7 @@ ALTER TABLE ONLY public."BillingCancellation"
 --
 
 ALTER TABLE ONLY public."BillingCancellation"
-    ADD CONSTRAINT fk_billing_cancellation_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_billing_cancellation_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1938,7 +1938,7 @@ ALTER TABLE ONLY public."BillingCancellation"
 --
 
 ALTER TABLE ONLY public."BillingEvent"
-    ADD CONSTRAINT fk_billing_event_allocation_token FOREIGN KEY (allocation_token) REFERENCES public."AllocationToken"(token);
+    ADD CONSTRAINT fk_billing_event_allocation_token FOREIGN KEY (allocation_token) REFERENCES public."AllocationToken"(token) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1946,7 +1946,7 @@ ALTER TABLE ONLY public."BillingEvent"
 --
 
 ALTER TABLE ONLY public."BillingEvent"
-    ADD CONSTRAINT fk_billing_event_cancellation_matching_billing_recurrence_id FOREIGN KEY (cancellation_matching_billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
+    ADD CONSTRAINT fk_billing_event_cancellation_matching_billing_recurrence_id FOREIGN KEY (cancellation_matching_billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1962,7 +1962,7 @@ ALTER TABLE ONLY public."BillingEvent"
 --
 
 ALTER TABLE ONLY public."BillingEvent"
-    ADD CONSTRAINT fk_billing_event_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_billing_event_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1978,7 +1978,7 @@ ALTER TABLE ONLY public."BillingRecurrence"
 --
 
 ALTER TABLE ONLY public."BillingRecurrence"
-    ADD CONSTRAINT fk_billing_recurrence_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_billing_recurrence_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1986,7 +1986,7 @@ ALTER TABLE ONLY public."BillingRecurrence"
 --
 
 ALTER TABLE ONLY public."ContactHistory"
-    ADD CONSTRAINT fk_contact_history_contact_repo_id FOREIGN KEY (contact_repo_id) REFERENCES public."Contact"(repo_id);
+    ADD CONSTRAINT fk_contact_history_contact_repo_id FOREIGN KEY (contact_repo_id) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -1994,7 +1994,7 @@ ALTER TABLE ONLY public."ContactHistory"
 --
 
 ALTER TABLE ONLY public."ContactHistory"
-    ADD CONSTRAINT fk_contact_history_registrar_id FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_contact_history_registrar_id FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2002,7 +2002,7 @@ ALTER TABLE ONLY public."ContactHistory"
 --
 
 ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk_contact_transfer_gaining_registrar_id FOREIGN KEY (transfer_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_contact_transfer_gaining_registrar_id FOREIGN KEY (transfer_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2010,7 +2010,7 @@ ALTER TABLE ONLY public."Contact"
 --
 
 ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fk_contact_transfer_losing_registrar_id FOREIGN KEY (transfer_losing_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_contact_transfer_losing_registrar_id FOREIGN KEY (transfer_losing_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2018,7 +2018,7 @@ ALTER TABLE ONLY public."Contact"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_admin_contact FOREIGN KEY (admin_contact) REFERENCES public."Contact"(repo_id);
+    ADD CONSTRAINT fk_domain_admin_contact FOREIGN KEY (admin_contact) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2026,7 +2026,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_billing_contact FOREIGN KEY (billing_contact) REFERENCES public."Contact"(repo_id);
+    ADD CONSTRAINT fk_domain_billing_contact FOREIGN KEY (billing_contact) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2034,7 +2034,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
+    ADD CONSTRAINT fk_domain_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2050,7 +2050,7 @@ ALTER TABLE ONLY public."DomainHistory"
 --
 
 ALTER TABLE ONLY public."DomainHistory"
-    ADD CONSTRAINT fk_domain_history_registrar_id FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_domain_history_registrar_id FOREIGN KEY (history_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2058,7 +2058,7 @@ ALTER TABLE ONLY public."DomainHistory"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_registrant_contact FOREIGN KEY (registrant_contact) REFERENCES public."Contact"(repo_id);
+    ADD CONSTRAINT fk_domain_registrant_contact FOREIGN KEY (registrant_contact) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2066,7 +2066,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_tech_contact FOREIGN KEY (tech_contact) REFERENCES public."Contact"(repo_id);
+    ADD CONSTRAINT fk_domain_tech_contact FOREIGN KEY (tech_contact) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2074,7 +2074,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_tld FOREIGN KEY (tld) REFERENCES public."Tld"(tld_name);
+    ADD CONSTRAINT fk_domain_tld FOREIGN KEY (tld) REFERENCES public."Tld"(tld_name) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2082,7 +2082,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."DomainTransactionRecord"
-    ADD CONSTRAINT fk_domain_transaction_record_tld FOREIGN KEY (tld) REFERENCES public."Tld"(tld_name);
+    ADD CONSTRAINT fk_domain_transaction_record_tld FOREIGN KEY (tld) REFERENCES public."Tld"(tld_name) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2090,7 +2090,7 @@ ALTER TABLE ONLY public."DomainTransactionRecord"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_transfer_billing_cancellation_id FOREIGN KEY (transfer_billing_cancellation_id) REFERENCES public."BillingCancellation"(billing_cancellation_id);
+    ADD CONSTRAINT fk_domain_transfer_billing_cancellation_id FOREIGN KEY (transfer_billing_cancellation_id) REFERENCES public."BillingCancellation"(billing_cancellation_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2106,7 +2106,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_transfer_billing_recurrence_id FOREIGN KEY (transfer_billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
+    ADD CONSTRAINT fk_domain_transfer_billing_recurrence_id FOREIGN KEY (transfer_billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2114,7 +2114,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_transfer_gaining_registrar_id FOREIGN KEY (transfer_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_domain_transfer_gaining_registrar_id FOREIGN KEY (transfer_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2122,7 +2122,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fk_domain_transfer_losing_registrar_id FOREIGN KEY (transfer_losing_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_domain_transfer_losing_registrar_id FOREIGN KEY (transfer_losing_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2130,7 +2130,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."DomainHost"
-    ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (host_repo_id) REFERENCES public."Host"(repo_id);
+    ADD CONSTRAINT fk_domainhost_host_valid FOREIGN KEY (host_repo_id) REFERENCES public."Host"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2138,7 +2138,7 @@ ALTER TABLE ONLY public."DomainHost"
 --
 
 ALTER TABLE ONLY public."GracePeriod"
-    ADD CONSTRAINT fk_grace_period_billing_event_id FOREIGN KEY (billing_event_id) REFERENCES public."BillingEvent"(billing_event_id);
+    ADD CONSTRAINT fk_grace_period_billing_event_id FOREIGN KEY (billing_event_id) REFERENCES public."BillingEvent"(billing_event_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2146,7 +2146,7 @@ ALTER TABLE ONLY public."GracePeriod"
 --
 
 ALTER TABLE ONLY public."GracePeriod"
-    ADD CONSTRAINT fk_grace_period_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id);
+    ADD CONSTRAINT fk_grace_period_billing_recurrence_id FOREIGN KEY (billing_recurrence_id) REFERENCES public."BillingRecurrence"(billing_recurrence_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2162,7 +2162,7 @@ ALTER TABLE ONLY public."GracePeriod"
 --
 
 ALTER TABLE ONLY public."GracePeriod"
-    ADD CONSTRAINT fk_grace_period_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_grace_period_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2178,7 +2178,7 @@ ALTER TABLE ONLY public."HostHistory"
 --
 
 ALTER TABLE ONLY public."Host"
-    ADD CONSTRAINT fk_host_creation_registrar_id FOREIGN KEY (creation_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_host_creation_registrar_id FOREIGN KEY (creation_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2186,7 +2186,7 @@ ALTER TABLE ONLY public."Host"
 --
 
 ALTER TABLE ONLY public."Host"
-    ADD CONSTRAINT fk_host_current_sponsor_registrar_id FOREIGN KEY (current_sponsor_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_host_current_sponsor_registrar_id FOREIGN KEY (current_sponsor_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2194,7 +2194,7 @@ ALTER TABLE ONLY public."Host"
 --
 
 ALTER TABLE ONLY public."Host"
-    ADD CONSTRAINT fk_host_last_epp_update_registrar_id FOREIGN KEY (last_epp_update_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_host_last_epp_update_registrar_id FOREIGN KEY (last_epp_update_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2226,7 +2226,7 @@ ALTER TABLE ONLY public."PollMessage"
 --
 
 ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_contact_repo_id FOREIGN KEY (contact_repo_id) REFERENCES public."Contact"(repo_id);
+    ADD CONSTRAINT fk_poll_message_contact_repo_id FOREIGN KEY (contact_repo_id) REFERENCES public."Contact"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2250,7 +2250,7 @@ ALTER TABLE ONLY public."PollMessage"
 --
 
 ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_host_history FOREIGN KEY (host_repo_id, host_history_revision_id) REFERENCES public."HostHistory"(host_repo_id, history_revision_id);
+    ADD CONSTRAINT fk_poll_message_host_history FOREIGN KEY (host_repo_id, host_history_revision_id) REFERENCES public."HostHistory"(host_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2258,7 +2258,7 @@ ALTER TABLE ONLY public."PollMessage"
 --
 
 ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_host_repo_id FOREIGN KEY (host_repo_id) REFERENCES public."Host"(repo_id);
+    ADD CONSTRAINT fk_poll_message_host_repo_id FOREIGN KEY (host_repo_id) REFERENCES public."Host"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2266,7 +2266,7 @@ ALTER TABLE ONLY public."PollMessage"
 --
 
 ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_poll_message_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2274,7 +2274,7 @@ ALTER TABLE ONLY public."PollMessage"
 --
 
 ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_transfer_response_gaining_registrar_id FOREIGN KEY (transfer_response_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_poll_message_transfer_response_gaining_registrar_id FOREIGN KEY (transfer_response_gaining_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2282,7 +2282,7 @@ ALTER TABLE ONLY public."PollMessage"
 --
 
 ALTER TABLE ONLY public."PollMessage"
-    ADD CONSTRAINT fk_poll_message_transfer_response_losing_registrar_id FOREIGN KEY (transfer_response_losing_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_poll_message_transfer_response_losing_registrar_id FOREIGN KEY (transfer_response_losing_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2290,7 +2290,7 @@ ALTER TABLE ONLY public."PollMessage"
 --
 
 ALTER TABLE ONLY public."RegistrarPoc"
-    ADD CONSTRAINT fk_registrar_poc_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fk_registrar_poc_registrar_id FOREIGN KEY (registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2298,7 +2298,7 @@ ALTER TABLE ONLY public."RegistrarPoc"
 --
 
 ALTER TABLE ONLY public."DomainHistoryHost"
-    ADD CONSTRAINT fka9woh3hu8gx5x0vly6bai327n FOREIGN KEY (domain_history_domain_repo_id, domain_history_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+    ADD CONSTRAINT fka9woh3hu8gx5x0vly6bai327n FOREIGN KEY (domain_history_domain_repo_id, domain_history_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2306,7 +2306,7 @@ ALTER TABLE ONLY public."DomainHistoryHost"
 --
 
 ALTER TABLE ONLY public."DomainTransactionRecord"
-    ADD CONSTRAINT fkcjqe54u72kha71vkibvxhjye7 FOREIGN KEY (domain_repo_id, history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+    ADD CONSTRAINT fkcjqe54u72kha71vkibvxhjye7 FOREIGN KEY (domain_repo_id, history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2314,7 +2314,7 @@ ALTER TABLE ONLY public."DomainTransactionRecord"
 --
 
 ALTER TABLE ONLY public."DomainHost"
-    ADD CONSTRAINT fkfmi7bdink53swivs390m2btxg FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
+    ADD CONSTRAINT fkfmi7bdink53swivs390m2btxg FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2322,7 +2322,7 @@ ALTER TABLE ONLY public."DomainHost"
 --
 
 ALTER TABLE ONLY public."ReservedEntry"
-    ADD CONSTRAINT fkgq03rk0bt1hb915dnyvd3vnfc FOREIGN KEY (revision_id) REFERENCES public."ReservedList"(revision_id);
+    ADD CONSTRAINT fkgq03rk0bt1hb915dnyvd3vnfc FOREIGN KEY (revision_id) REFERENCES public."ReservedList"(revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2330,7 +2330,7 @@ ALTER TABLE ONLY public."ReservedEntry"
 --
 
 ALTER TABLE ONLY public."Domain"
-    ADD CONSTRAINT fkjc0r9r5y1lfbt4gpbqw4wsuvq FOREIGN KEY (last_epp_update_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fkjc0r9r5y1lfbt4gpbqw4wsuvq FOREIGN KEY (last_epp_update_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2338,7 +2338,7 @@ ALTER TABLE ONLY public."Domain"
 --
 
 ALTER TABLE ONLY public."Contact"
-    ADD CONSTRAINT fkmb7tdiv85863134w1wogtxrb2 FOREIGN KEY (last_epp_update_registrar_id) REFERENCES public."Registrar"(registrar_id);
+    ADD CONSTRAINT fkmb7tdiv85863134w1wogtxrb2 FOREIGN KEY (last_epp_update_registrar_id) REFERENCES public."Registrar"(registrar_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2346,7 +2346,7 @@ ALTER TABLE ONLY public."Contact"
 --
 
 ALTER TABLE ONLY public."PremiumEntry"
-    ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id);
+    ADD CONSTRAINT fko0gw90lpo1tuee56l0nb6y6g5 FOREIGN KEY (revision_id) REFERENCES public."PremiumList"(revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2354,7 +2354,7 @@ ALTER TABLE ONLY public."PremiumEntry"
 --
 
 ALTER TABLE ONLY public."DomainDsDataHistory"
-    ADD CONSTRAINT fko4ilgyyfnvppbpuivus565i0j FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id);
+    ADD CONSTRAINT fko4ilgyyfnvppbpuivus565i0j FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
@@ -2362,7 +2362,7 @@ ALTER TABLE ONLY public."DomainDsDataHistory"
 --
 
 ALTER TABLE ONLY public."DelegationSignerData"
-    ADD CONSTRAINT fktr24j9v14ph2mfuw2gsmt12kq FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id);
+    ADD CONSTRAINT fktr24j9v14ph2mfuw2gsmt12kq FOREIGN KEY (domain_repo_id) REFERENCES public."Domain"(repo_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
