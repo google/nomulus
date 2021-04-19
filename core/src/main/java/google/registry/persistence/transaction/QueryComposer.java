@@ -88,12 +88,7 @@ public abstract class QueryComposer<T> {
   /** Returns the results of the query as a stream. */
   public abstract Stream<T> stream();
 
-  /**
-   * Returns the number of results of the query.
-   *
-   * <p>While this is implemented optimally in JPA (by building a "count" query), note that in
-   * datastore it will actually obtain all of the keys matched by the query.
-   */
+  /** Returns the number of results of the query. */
   public abstract long count();
 
   // We have to wrap the CriteriaQueryBuilder predicate factories in our own functions because at

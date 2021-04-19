@@ -416,7 +416,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
     @Override
     public long count() {
-      return Iterables.size(buildQuery().chunkAll().keys());
+      return buildQuery().count();
     }
   }
 }
