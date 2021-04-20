@@ -14,12 +14,13 @@
 
 package google.registry.tools;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registries.assertTldsExist;
+import static google.registry.persistence.transaction.QueryComposer.Comparator;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.Iterables;
 import google.registry.model.domain.DomainBase;
 import google.registry.util.Clock;
 import java.util.List;
@@ -45,14 +46,12 @@ final class CountDomainsCommand implements CommandWithRemoteApi {
         .forEach(tld -> System.out.printf("%s,%d\n", tld, getCountForTld(tld, now)));
   }
 
-  private int getCountForTld(String tld, DateTime now) {
-    return Iterables.size(
-        ofy()
-            .load()
-            .type(DomainBase.class)
-            .filter("tld", tld)
-            .filter("deletionTime >", now)
-            .chunkAll()
-            .keys());
+  private long getCountForTld(String tld, DateTime now) {
+    return transactIfJpaTm(
+        () ->
+            tm().createQueryComposer(DomainBase.class)
+                .where("tld", Comparator.EQ, tld)
+                .where("deletionTime", Comparator.GT, now)
+                .count());
   }
 }

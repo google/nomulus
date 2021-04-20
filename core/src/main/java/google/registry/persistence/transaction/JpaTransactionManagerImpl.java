@@ -700,7 +700,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     private TypedQuery<T> buildQuery() {
       CriteriaQueryBuilder<T> queryBuilder = CriteriaQueryBuilder.create(em, entityClass);
+      return addCriteria(queryBuilder);
+    }
 
+    private <U> TypedQuery<U> addCriteria(CriteriaQueryBuilder<U> queryBuilder) {
       for (WhereClause<?> pred : predicates) {
         pred.addToCriteriaQueryBuilder(queryBuilder);
       }
@@ -726,6 +729,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     @Override
     public Stream<T> stream() {
       return buildQuery().getResultStream();
+    }
+
+    @Override
+    public long count() {
+      CriteriaQueryBuilder<Long> queryBuilder = CriteriaQueryBuilder.createCount(em, entityClass);
+      return addCriteria(queryBuilder).getSingleResult();
     }
   }
 }

@@ -112,6 +112,17 @@ public class QueryComposerTest {
   }
 
   @TestOfyAndSql
+  public void testCount() {
+    assertThat(
+            transactIfJpaTm(
+                () ->
+                    tm().createQueryComposer(TestEntity.class)
+                        .where("name", Comparator.GTE, "bravo")
+                        .count()))
+        .isEqualTo(2L);
+  }
+
+  @TestOfyAndSql
   public void testGetSingleResult() {
     assertThat(
             transactIfJpaTm(
