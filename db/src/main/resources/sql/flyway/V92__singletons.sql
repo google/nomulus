@@ -13,9 +13,9 @@
 -- limitations under the License.
 
 ALTER TABLE "ServerSecret" DROP CONSTRAINT "ServerSecret_pkey";
-ALTER TABLE "ServerSecret" ADD COLUMN id bigint NOT NULL;
+ALTER TABLE "ServerSecret" ADD COLUMN id bigint DEFAULT 1 NOT NULL;
 ALTER TABLE "ServerSecret" ADD PRIMARY KEY(id);
 
 ALTER TABLE "TmchCrl" DROP CONSTRAINT "TmchCrl_pkey";
-ALTER TABLE "TmchCrl" ADD COLUMN id bigint NOT NULL;
+ALTER TABLE "TmchCrl" ADD COLUMN id bigint DEFAULT 1 NOT NULL;
 ALTER TABLE "TmchCrl" ADD PRIMARY KEY(id);

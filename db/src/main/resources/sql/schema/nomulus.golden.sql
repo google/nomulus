@@ -949,7 +949,7 @@ ALTER SEQUENCE public."SafeBrowsingThreat_id_seq" OWNED BY public."Spec11ThreatM
 
 CREATE TABLE public."ServerSecret" (
     secret uuid NOT NULL,
-    id bigint NOT NULL
+    id bigint DEFAULT 1 NOT NULL
 );
 
 
@@ -1057,7 +1057,7 @@ CREATE TABLE public."TmchCrl" (
     certificate_revocations text NOT NULL,
     update_timestamp timestamp with time zone NOT NULL,
     url text NOT NULL,
-    id bigint NOT NULL
+    id bigint DEFAULT 1 NOT NULL
 );
 
 
