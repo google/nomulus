@@ -16,39 +16,22 @@ package google.registry.model.smd;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.config.RegistryEnvironment;
 import google.registry.model.EntityTestCase;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
-import google.registry.testing.DatastoreEntityExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.SystemPropertyExtension;
-import google.registry.testing.TestOfyAndSql;
-import org.joda.time.DateTime;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-@DualDatabaseTest
 public class SignedMarkRevocationListDaoTest extends EntityTestCase {
 
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
-  @RegisterExtension
-  @Order(value = 1)
-  final DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
-
-  @RegisterExtension
-  @Order(value = Integer.MAX_VALUE)
-  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
-
-  @TestOfyAndSql
-  void testSave_cloudSqlPrimary_success() {
+  @Test
+  void testSave_success() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
@@ -57,8 +40,8 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
     assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list);
   }
 
-  @TestOfyAndSql
-  void testSaveAndLoad_cloudSqlPrimary_emptyList() {
+  @Test
+  void testSaveAndLoad_emptyList() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(fakeClock.nowUtc(), ImmutableMap.of());
     SignedMarkRevocationListDao.save(list);
@@ -66,8 +49,8 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
     assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list, "revisionId");
   }
 
-  @TestOfyAndSql
-  void testSave_cloudSqlPrimary_multipleVersions() {
+  @Test
+  void testSave_multipleVersions() {
     SignedMarkRevocationList list =
         SignedMarkRevocationList.create(
             fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
@@ -83,52 +66,4 @@ public class SignedMarkRevocationListDaoTest extends EntityTestCase {
         .isFalse();
   }
 
-  @TestOfyAndSql
-  void testLoad_cloudSqlPrimary_unequalLists() {
-    fakeClock.setTo(DateTime.parse("1984-12-26T00:00:00.000Z"));
-    SignedMarkRevocationList list =
-        SignedMarkRevocationList.create(
-            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
-    SignedMarkRevocationListDao.save(list);
-    SignedMarkRevocationList list2 =
-        SignedMarkRevocationList.create(
-            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(3)));
-    jpaTm().transact(() -> jpaTm().put(list2));
-    RuntimeException thrown =
-        assertThrows(RuntimeException.class, SignedMarkRevocationListDao::load);
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "SMD mark has key 1984-12-25T21:00:00.000Z in Cloud SQL and key"
-                + " 1984-12-25T23:00:00.000Z in Datastore.");
-  }
-
-  @TestOfyAndSql
-  void testLoad_cloudSqlPrimary_unequalLists_succeedsInProduction() {
-    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
-    SignedMarkRevocationList list =
-        SignedMarkRevocationList.create(
-            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
-    SignedMarkRevocationListDao.save(list);
-    SignedMarkRevocationList list2 =
-        SignedMarkRevocationList.create(
-            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(3)));
-    jpaTm().transact(() -> jpaTm().put(list2));
-    SignedMarkRevocationList fromDb = SignedMarkRevocationListDao.load();
-    assertAboutImmutableObjects().that(fromDb).isEqualExceptFields(list2, "revisionId");
-  }
-
-  @TestOfyAndSql
-  void testLoad_cloudSqlPrimary_noListInDatastore() {
-    SignedMarkRevocationList list =
-        SignedMarkRevocationList.create(
-            fakeClock.nowUtc(), ImmutableMap.of("mark", fakeClock.nowUtc().minusHours(1)));
-    jpaTm().transact(() -> jpaTm().put(list));
-    RuntimeException thrown =
-        assertThrows(RuntimeException.class, SignedMarkRevocationListDao::load);
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains(
-            "SignedMarkRevocationList in Datastore is empty while it is not empty in Cloud SQL.");
-  }
 }

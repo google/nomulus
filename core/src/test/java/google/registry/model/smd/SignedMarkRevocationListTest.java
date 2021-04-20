@@ -15,11 +15,7 @@
 package google.registry.model.smd;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.smd.SignedMarkRevocationList.SHARD_SIZE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,63 +37,10 @@ public class SignedMarkRevocationListTest {
   private final FakeClock clock = new FakeClock(DateTime.parse("2013-01-01T00:00:00Z"));
 
   @Test
-  void testUnshardedSaveFails() {
-    // Our @Entity's @OnSave method will notice that this shouldn't be saved.
-    assertThrows(
-        SignedMarkRevocationList.UnshardedSaveException.class,
-        () ->
-            tm()
-                .transact(
-                    () -> {
-                      SignedMarkRevocationList smdrl =
-                          SignedMarkRevocationList.create(
-                              tm().getTransactionTime(),
-                              ImmutableMap.of("a", tm().getTransactionTime()));
-                      smdrl.id = 1; // Without an id this won't save anyways.
-                      ofy().saveWithoutBackup().entity(smdrl).now();
-                    }));
-  }
-
-  @Test
   void testEmpty() {
     // When Datastore is empty, it should give us an empty thing.
     assertThat(SignedMarkRevocationList.get())
         .isEqualTo(SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of()));
-  }
-
-  @Test
-  void testSharding2() {
-    final int rows = SHARD_SIZE + 1;
-    // Create a SignedMarkRevocationList that will need 2 shards to save.
-    ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
-    for (int i = 0; i < rows; i++) {
-      revokes.put(Integer.toString(i), clock.nowUtc());
-    }
-    // Save it with sharding, and make sure that reloading it works.
-    SignedMarkRevocationList unsharded =
-        SignedMarkRevocationList.create(clock.nowUtc(), revokes.build()).save();
-    assertAboutImmutableObjects()
-        .that(SignedMarkRevocationList.get())
-        .isEqualExceptFields(unsharded, "revisionId");
-    assertThat(ofy().load().type(SignedMarkRevocationList.class).count()).isEqualTo(2);
-  }
-
-  @Test
-  void testSharding4() {
-    final int rows = SHARD_SIZE * 3 + 1;
-    // Create a SignedMarkRevocationList that will need 4 shards to save.
-    ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
-    for (int i = 0; i < rows; i++) {
-      revokes.put(Integer.toString(i), clock.nowUtc());
-    }
-    // Save it with sharding, and make sure that reloading it works.
-    SignedMarkRevocationList unsharded = SignedMarkRevocationList
-        .create(clock.nowUtc(), revokes.build())
-        .save();
-    assertAboutImmutableObjects()
-        .that(SignedMarkRevocationList.get())
-        .isEqualExceptFields(unsharded, "revisionId");
-    assertThat(ofy().load().type(SignedMarkRevocationList.class).count()).isEqualTo(4);
   }
 
   private SignedMarkRevocationList createSaveGetHelper(int rows) {
@@ -137,22 +80,6 @@ public class SignedMarkRevocationListTest {
     clock.advanceBy(standardDays(1));
     assertThat(SignedMarkRevocationList.get().getCreationTime())
         .isEqualTo(DateTime.parse("2000-01-01T00:00:00Z"));
-  }
-
-  @Test
-  void test_getCreationTime_unequalListsInDatabases() {
-    clock.setTo(DateTime.parse("2000-01-01T00:00:00Z"));
-    createSaveGetHelper(1);
-    ImmutableMap.Builder<String, DateTime> revokes = new ImmutableMap.Builder<>();
-    for (int i = 0; i < 3; i++) {
-      revokes.put(Integer.toString(i), clock.nowUtc());
-    }
-    jpaTm()
-        .transact(
-            () -> jpaTm().insert(SignedMarkRevocationList.create(clock.nowUtc(), revokes.build())));
-    RuntimeException thrown =
-        assertThrows(RuntimeException.class, () -> SignedMarkRevocationList.get());
-    assertThat(thrown).hasMessageThat().contains("Unequal SignedMarkRevocationList detected:");
   }
 
   @Test
