@@ -266,7 +266,13 @@ public class KmsKeyring implements Keyring {
             .collect(ImmutableList.toImmutableList());
 
     for (String keyName : labels) {
-      byte[] dsData = getDecryptedDataFromDatastore(keyName);
+      byte[] dsData;
+      try {
+        dsData = getDecryptedDataFromDatastore(keyName);
+      } catch (IllegalStateException e) {
+        logger.atWarning().log("Cannot load %s from Datastore. Skipping...", keyName);
+        continue;
+      }
       byte[] secretStoreData = getDataFromSecretStore(keyName);
       if (Arrays.equals(dsData, secretStoreData)) {
         logger.atInfo().log("%s is already up to date.\n", keyName);
