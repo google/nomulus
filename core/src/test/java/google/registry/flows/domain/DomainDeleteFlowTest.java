@@ -59,6 +59,7 @@ import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardSeconds;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
@@ -87,6 +88,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PendingActionNotificationResponse;
+import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
@@ -328,12 +330,12 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     dryRunFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
   }
 
-  private void doImmediateDeleteTest(GracePeriodStatus gracePeriodStatus, String responseFilename)
-      throws Exception {
-    doImmediateDeleteTest(gracePeriodStatus, responseFilename, ImmutableMap.of());
+  private void doAddGracePeriodDeleteTest(
+      GracePeriodStatus gracePeriodStatus, String responseFilename) throws Exception {
+    doAddGracePeriodDeleteTest(gracePeriodStatus, responseFilename, ImmutableMap.of());
   }
 
-  private void doImmediateDeleteTest(
+  private void doAddGracePeriodDeleteTest(
       GracePeriodStatus gracePeriodStatus,
       String responseFilename,
       Map<String, String> substitutions)
@@ -355,7 +357,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         graceBillingEvent, getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE));
     assertDnsTasksEnqueued("example.tld");
     // There should be no poll messages. The previous autorenew poll message should now be deleted.
-    assertThat(getPollMessages("TheRegistrar", A_MONTH_FROM_NOW)).isEmpty();
+    assertThat(getPollMessages("TheRegistrar")).isEmpty();
   }
 
   @Test
@@ -385,25 +387,25 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   @Test
   void testSuccess_addGracePeriodResultsInImmediateDelete() throws Exception {
     sessionMetadata.setServiceExtensionUris(ImmutableSet.of());
-    doImmediateDeleteTest(GracePeriodStatus.ADD, "generic_success_response.xml");
+    doAddGracePeriodDeleteTest(GracePeriodStatus.ADD, "generic_success_response.xml");
   }
 
   @Test
   void testSuccess_addGracePeriodCredit_v06() throws Exception {
     removeServiceExtensionUri(ServiceExtension.FEE_0_11.getUri());
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
-    doImmediateDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_06_MAP);
+    doAddGracePeriodDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_06_MAP);
   }
 
   @Test
   void testSuccess_addGracePeriodCredit_v11() throws Exception {
     removeServiceExtensionUri(ServiceExtension.FEE_0_12.getUri());
-    doImmediateDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_11_MAP);
+    doAddGracePeriodDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_11_MAP);
   }
 
   @Test
   void testSuccess_addGracePeriodCredit_v12() throws Exception {
-    doImmediateDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_12_MAP);
+    doAddGracePeriodDeleteTest(GracePeriodStatus.ADD, "domain_delete_response_fee.xml", FEE_12_MAP);
   }
 
   private void doSuccessfulTest_noAddGracePeriod(String responseFilename) throws Exception {
@@ -838,6 +840,30 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     clock.advanceOneMilli();
     runFlowAssertResponse(
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("domain_delete_response_pending.xml"));
+
+    HistoryEntry deleteHistoryEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
+    assertPollMessages(
+        new PollMessage.OneTime.Builder()
+            .setClientId("TheRegistrar")
+            .setParent(deleteHistoryEntry)
+            .setEventTime(clock.nowUtc())
+            .setMsg(
+                "Domain example.tld was deleted by registry administrator with final deletion"
+                    + " effective: 2000-07-11T22:00:00.013Z")
+            .build(),
+        new PollMessage.OneTime.Builder()
+            .setClientId("TheRegistrar")
+            .setParent(deleteHistoryEntry)
+            .setEventTime(DateTime.parse("2000-07-11T22:00:00.013Z"))
+            .setMsg("Deleted by registry administrator.")
+            .setResponseData(
+                ImmutableList.of(
+                    DomainPendingActionNotificationResponse.create(
+                        "example.tld",
+                        true,
+                        deleteHistoryEntry.getTrid(),
+                        DateTime.parse("2000-07-11T22:00:00.013Z"))))
+            .build());
   }
 
   @Test
@@ -1201,6 +1227,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   @Test
   void testSuccess_immediateDelete_withSuperuserAndMetadataExtension() throws Exception {
+    sessionMetadata.setClientId("NewRegistrar");
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput(
         "domain_delete_superuser_and_metadata_extension.xml",

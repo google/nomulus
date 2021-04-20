@@ -208,11 +208,19 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     // Enqueue the deletion poll message if the delete is asynchronous or if requested by a
     // superuser (i.e. the registrar didn't request this delete and thus should be notified even if
     // it is synchronous).
-    if (!durationUntilDelete.equals(Duration.ZERO) || isSuperuser) {
+    if (durationUntilDelete.isLongerThan(Duration.ZERO) || isSuperuser) {
       PollMessage.OneTime deletePollMessage =
           createDeletePollMessage(existingDomain, historyEntry, deletionTime);
       entitiesToSave.add(deletePollMessage);
       builder.setDeletePollMessage(deletePollMessage.createVKey());
+    }
+
+    // Send a second poll message immediately if the domain is being deleted asynchronously by a
+    // registrar other than the sponsoring registrar (which will necessarily be a superuser).
+    if (durationUntilDelete.isLongerThan(Duration.ZERO)
+        && !clientId.equals(existingDomain.getPersistedCurrentSponsorClientId())) {
+      entitiesToSave.add(
+          createImmediateDeletePollMessage(existingDomain, historyEntry, now, deletionTime));
     }
 
     // Cancel any grace periods that were still active, and set the expiration time accordingly.
@@ -343,6 +351,19 @@ public final class DomainDeleteFlow implements TransactionalFlow {
                 DomainPendingActionNotificationResponse.create(
                     existingDomain.getDomainName(), true, trid, deletionTime)))
         .setParent(historyEntry)
+        .build();
+  }
+
+  private PollMessage.OneTime createImmediateDeletePollMessage(
+      DomainBase existingDomain, HistoryEntry historyEntry, DateTime now, DateTime deletionTime) {
+    return new PollMessage.OneTime.Builder()
+        .setClientId(existingDomain.getPersistedCurrentSponsorClientId())
+        .setEventTime(now)
+        .setParent(historyEntry)
+        .setMsg(
+            String.format(
+                "Domain %s was deleted by registry administrator with final deletion effective: %s",
+                existingDomain.getDomainName(), deletionTime))
         .build();
   }
 
