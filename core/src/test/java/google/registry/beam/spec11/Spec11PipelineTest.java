@@ -115,7 +115,7 @@ class Spec11PipelineTest {
   private PCollection<KV<Subdomain, ThreatMatch>> threatMatches;
 
   @BeforeEach
-  void beforeAll() throws Exception {
+  void beforeEach() throws Exception {
     reportingBucketUrl = Files.createDirectory(tmpDir.resolve(REPORTING_BUCKET_URL)).toFile();
     options.setDate(DATE);
     options.setSafeBrowsingApiKey(SAFE_BROWSING_API_KEY);
