@@ -18,10 +18,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
-import static google.registry.util.X509Utils.encodeX509CertificateFromPemString;
 import static google.registry.util.X509Utils.getCertificateHash;
 import static google.registry.util.X509Utils.loadCertificate;
-import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -30,7 +28,6 @@ import google.registry.flows.certs.CertificateChecker;
 import google.registry.model.registrar.Registrar;
 import google.registry.tools.params.PathParameter;
 import google.registry.util.Clock;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -80,10 +77,7 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
     checkArgument(
         clientCertificatePath == null || isNullOrEmpty(clientCertificateHash),
         "Can't specify both --cert_hash and --cert_file");
-    String encodedCertificate = "";
     if (clientCertificatePath != null) {
-      String certificateString = new String(Files.readAllBytes(clientCertificatePath), US_ASCII);
-      encodedCertificate = encodeX509CertificateFromPemString(certificateString);
       clientCertificateHash = getCertificateHash(loadCertificate(clientCertificatePath));
     }
     Registrar registrar =
@@ -92,10 +86,8 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
     new TlsCredentials(
             true,
             Optional.ofNullable(clientCertificateHash),
-            Optional.ofNullable(encodedCertificate),
             Optional.ofNullable(clientIpAddress),
-            certificateChecker,
-            clock)
+            certificateChecker)
         .validate(registrar, password);
     checkState(
         registrar.isLive(), "Registrar %s has non-live state: %s", clientId, registrar.getState());

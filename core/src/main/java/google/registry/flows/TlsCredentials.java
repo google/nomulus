@@ -16,7 +16,6 @@ package google.registry.flows;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static google.registry.request.RequestParameters.extractOptionalHeader;
-import static google.registry.util.X509Utils.loadCertificate;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -26,24 +25,17 @@ import com.google.common.net.InetAddresses;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.config.RegistryEnvironment;
 import google.registry.flows.EppException.AuthenticationErrorException;
 import google.registry.flows.certs.CertificateChecker;
 import google.registry.flows.certs.CertificateChecker.InsecureCertificateException;
 import google.registry.model.registrar.Registrar;
 import google.registry.request.Header;
 import google.registry.util.CidrAddressBlock;
-import google.registry.util.Clock;
 import google.registry.util.ProxyHttpHeaders;
-import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import org.joda.time.DateTime;
 
 /**
  * Container and validation for TLS certificate and IP-allow-listing.
@@ -54,10 +46,6 @@ import org.joda.time.DateTime;
  *   <dt>X-SSL-Certificate
  *   <dd>This field should contain a base64 encoded digest of the client's TLS certificate. It is
  *       used only if the validation of the full certificate fails.
- *   <dt>X-SSL-Full-Certificate
- *   <dd>This field should contain a base64 encoding of the client's TLS certificate. It is
- *       validated during an EPP login command against a known good value that is transmitted out of
- *       band.
  *   <dt>X-Forwarded-For
  *   <dd>This field should contain the host and port of the connecting client. It is validated
  *       during an EPP login command against an IP allow list that is transmitted out of band.
@@ -66,30 +54,22 @@ import org.joda.time.DateTime;
 public class TlsCredentials implements TransportCredentials {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final DateTime CERT_ENFORCEMENT_START_TIME =
-      DateTime.parse("2021-03-01T16:00:00Z");
 
   private final boolean requireSslCertificates;
   private final Optional<String> clientCertificateHash;
-  private final Optional<String> clientCertificate;
   private final Optional<InetAddress> clientInetAddr;
   private final CertificateChecker certificateChecker;
-  private final Clock clock;
 
   @Inject
   public TlsCredentials(
       @Config("requireSslCertificates") boolean requireSslCertificates,
       @Header(ProxyHttpHeaders.CERTIFICATE_HASH) Optional<String> clientCertificateHash,
-      @Header(ProxyHttpHeaders.FULL_CERTIFICATE) Optional<String> clientCertificate,
       @Header(ProxyHttpHeaders.IP_ADDRESS) Optional<String> clientAddress,
-      CertificateChecker certificateChecker,
-      Clock clock) {
+      CertificateChecker certificateChecker) {
     this.requireSslCertificates = requireSslCertificates;
     this.clientCertificateHash = clientCertificateHash;
-    this.clientCertificate = clientCertificate;
     this.clientInetAddr = clientAddress.map(TlsCredentials::parseInetAddress);
     this.certificateChecker = certificateChecker;
-    this.clock = clock;
   }
 
   static InetAddress parseInetAddress(String asciiAddr) {
@@ -103,7 +83,7 @@ public class TlsCredentials implements TransportCredentials {
   @Override
   public void validate(Registrar registrar, String password) throws AuthenticationErrorException {
     validateIp(registrar);
-    validateCertificate(registrar);
+    validateCertificateHash(registrar);
     validatePassword(registrar, password);
   }
 
@@ -137,89 +117,8 @@ public class TlsCredentials implements TransportCredentials {
     throw new BadRegistrarIpAddressException();
   }
 
-  /**
-   * Verifies client SSL certificate is permitted to issue commands as {@code registrar}.
-   *
-   * @throws MissingRegistrarCertificateException if frontend didn't send certificate header
-   * @throws BadRegistrarCertificateException if registrar requires certificate and it didn't match
-   */
   @VisibleForTesting
-  void validateCertificate(Registrar registrar) throws AuthenticationErrorException {
-    // Check that certificate is present in registrar object
-    if (!registrar.getClientCertificate().isPresent()
-        && !registrar.getFailoverClientCertificate().isPresent()) {
-      // Log an error and validate using certificate hash instead
-      // TODO(sarahbot): throw a RegistrarCertificateNotConfiguredException once hash is no longer
-      // used as failover
-      logger.atWarning().log(
-          "There is no certificate configured for registrar %s.", registrar.getClientId());
-    } else if (!clientCertificate.isPresent()) {
-      // Check that the request included the full certificate
-      // Log an error and validate using certificate hash instead
-      // TODO(sarahbot): throw a MissingRegistrarCertificateException once hash is no longer used as
-      // failover
-      logger.atWarning().log(
-          "Request from registrar %s did not include X-SSL-Full-Certificate.",
-          registrar.getClientId());
-    } else {
-      X509Certificate passedCert;
-      Optional<X509Certificate> storedCert;
-      Optional<X509Certificate> storedFailoverCert;
-
-      try {
-        storedCert = deserializePemCert(registrar.getClientCertificate());
-        storedFailoverCert = deserializePemCert(registrar.getFailoverClientCertificate());
-        passedCert = decodeCertString(clientCertificate.get());
-      } catch (Exception e) {
-        // TODO(Sarahbot@): remove this catch once we know it's working
-        logger.atWarning().log(
-            "Error converting certificate string to certificate for %s: %s",
-            registrar.getClientId(), e);
-        validateCertificateHash(registrar);
-        return;
-      }
-
-      // Check if the certificate is equal to the one on file for the registrar.
-      if (passedCert.equals(storedCert.orElse(null))
-          || passedCert.equals(storedFailoverCert.orElse(null))) {
-        // Check certificate for any requirement violations
-        // TODO(Sarahbot@): Throw exceptions instead of just logging once requirement enforcement
-        // begins
-        try {
-          certificateChecker.validateCertificate(passedCert);
-        } catch (InsecureCertificateException e) {
-          // TODO(Sarahbot@): Remove this if statement after March 1. After March 1, exception
-          // should be thrown in all environments.
-          // throw exception in unit tests and Sandbox
-          if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
-              || RegistryEnvironment.get().equals(RegistryEnvironment.SANDBOX)
-              || clock.nowUtc().isAfter(CERT_ENFORCEMENT_START_TIME)) {
-            throw new CertificateContainsSecurityViolationsException(e);
-          }
-          logger.atWarning().log(
-              "Registrar certificate used for %s does not meet certificate requirements: %s",
-              registrar.getClientId(), e.getMessage());
-        } catch (Exception e) {
-          logger.atWarning().log(
-              "Error validating certificate for %s: %s", registrar.getClientId(), e);
-        }
-        // successfully validated, return here since hash validation is not necessary
-        return;
-      }
-      // Log an error and validate using certificate hash instead
-      // TODO(sarahbot): throw a BadRegistrarCertificateException once hash is no longer used as
-      // failover
-      logger.atWarning().log("Non-matching certificate for registrar %s.", registrar.getClientId());
-    }
-    validateCertificateHash(registrar);
-  }
-
-  private void validateCertificateHash(Registrar registrar) throws AuthenticationErrorException {
-    logger.atWarning().log(
-        "Error validating certificate for %s, attempting to validate using certificate hash.",
-        registrar.getClientId());
-    // Check the certificate hash as a failover
-    // TODO(sarahbot): Remove hash checks once certificate checks are working.
+  void validateCertificateHash(Registrar registrar) throws AuthenticationErrorException {
     if (!registrar.getClientCertificateHash().isPresent()
         && !registrar.getFailoverClientCertificateHash().isPresent()) {
       if (requireSslCertificates) {
@@ -247,6 +146,20 @@ public class TlsCredentials implements TransportCredentials {
           registrar.getFailoverClientCertificateHash());
       throw new BadRegistrarCertificateException();
     }
+    if (requireSslCertificates) {
+      String passedCert =
+          clientCertificateHash.equals(registrar.getClientCertificateHash())
+              ? registrar.getClientCertificate().get()
+              : registrar.getFailoverClientCertificate().get();
+      try {
+        certificateChecker.validateCertificate(passedCert);
+      } catch (InsecureCertificateException e) {
+        logger.atWarning().log(
+            "Registrar certificate used for %s does not meet certificate requirements: %s",
+            registrar.getClientId(), e.getMessage());
+        throw new CertificateContainsSecurityViolationsException(e);
+      }
+    }
   }
 
   private void validatePassword(Registrar registrar, String password)
@@ -256,26 +169,9 @@ public class TlsCredentials implements TransportCredentials {
     }
   }
 
-  // Converts a PEM formatted certificate string into an X509Certificate
-  private Optional<X509Certificate> deserializePemCert(Optional<String> certificateString)
-      throws CertificateException {
-    if (certificateString.isPresent()) {
-      return Optional.of(loadCertificate(certificateString.get()));
-    }
-    return Optional.empty();
-  }
-
-  // Decodes the string representation of an encoded certificate back into an X509Certificate
-  private X509Certificate decodeCertString(String encodedCertString) throws CertificateException {
-    byte decodedCert[] = Base64.getDecoder().decode(encodedCertString);
-    ByteArrayInputStream inputStream = new ByteArrayInputStream(decodedCert);
-    return loadCertificate(inputStream);
-  }
-
   @Override
   public String toString() {
     return toStringHelper(getClass())
-        .add("clientCertificate", clientCertificate.orElse(null))
         .add("clientCertificateHash", clientCertificateHash.orElse(null))
         .add("clientAddress", clientInetAddr.orElse(null))
         .toString();
@@ -334,14 +230,6 @@ public class TlsCredentials implements TransportCredentials {
       // Note: This header is actually required, we just want to handle its absence explicitly
       // by throwing an EPP exception rather than a generic Bad Request exception.
       return extractOptionalHeader(req, ProxyHttpHeaders.CERTIFICATE_HASH);
-    }
-
-    @Provides
-    @Header(ProxyHttpHeaders.FULL_CERTIFICATE)
-    static Optional<String> provideClientCertificate(HttpServletRequest req) {
-      // Note: This header is actually required, we just want to handle its absence explicitly
-      // by throwing an EPP exception rather than a generic Bad Request exception.
-      return extractOptionalHeader(req, ProxyHttpHeaders.FULL_CERTIFICATE);
     }
 
     @Provides
