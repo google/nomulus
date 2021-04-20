@@ -15,65 +15,69 @@
 package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.schema.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CreateAutoTimestamp}. */
+@DualDatabaseTest
 public class CreateAutoTimestampTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
-          .withOfyTestEntities(TestObject.class)
+          .withOfyTestEntities(CreateAutoTimestampTestObject.class)
+          .withJpaUnitTestEntities(CreateAutoTimestampTestObject.class)
           .build();
 
   /** Timestamped class. */
   @Entity(name = "CatTestEntity")
   @EntityForTesting
-  public static class TestObject extends CrossTldSingleton {
+  @javax.persistence.Entity
+  public static class CreateAutoTimestampTestObject extends CrossTldSingleton {
+    @Ignore @javax.persistence.Id long id = SINGLETON_ID;
     CreateAutoTimestamp createTime = CreateAutoTimestamp.create(null);
   }
 
-  private TestObject reload() {
-    return ofy().load().entity(new TestObject()).now();
+  private CreateAutoTimestampTestObject reload() {
+    return loadByEntity(new CreateAutoTimestampTestObject());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSaveSetsTime() {
     DateTime transactionTime =
-        tm()
-            .transact(
+        tm().transact(
                 () -> {
-                  TestObject object = new TestObject();
+                  CreateAutoTimestampTestObject object = new CreateAutoTimestampTestObject();
                   assertThat(object.createTime.getTimestamp()).isNull();
-                  ofy().save().entity(object);
+                  tm().put(object);
                   return tm().getTransactionTime();
                 });
-    ofy().clearSessionCache();
+    tm().clearSessionCache();
     assertThat(reload().createTime.timestamp).isEqualTo(transactionTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testResavingRespectsOriginalTime() {
     final DateTime oldCreateTime = DateTime.now(UTC).minusDays(1);
-    tm()
-        .transact(
+    tm().transact(
             () -> {
-              TestObject object = new TestObject();
+              CreateAutoTimestampTestObject object = new CreateAutoTimestampTestObject();
               object.createTime = CreateAutoTimestamp.create(oldCreateTime);
-              ofy().save().entity(object);
+              tm().put(object);
             });
-    ofy().clearSessionCache();
+    tm().clearSessionCache();
     assertThat(reload().createTime.timestamp).isEqualTo(oldCreateTime);
   }
 }

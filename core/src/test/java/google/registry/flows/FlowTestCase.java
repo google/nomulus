@@ -20,10 +20,11 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.eppcommon.EppXmlTransformer.marshal;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.stripBillingEventId;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.xml.XmlTestUtils.assertXmlEquals;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
@@ -41,9 +42,10 @@ import google.registry.model.eppcommon.ProtocolDefinition;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.ofy.Ofy;
-import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
@@ -172,7 +174,7 @@ public abstract class FlowTestCase<F extends Flow> {
   }
 
   protected void assertNoHistory() {
-    assertThat(ofy().load().type(HistoryEntry.class)).isEmpty();
+    assertThat(HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, END_OF_TIME)).isEmpty();
   }
 
   /**
@@ -301,10 +303,10 @@ public abstract class FlowTestCase<F extends Flow> {
   private TmchCaMode tmchCaMode = TmchCaMode.PILOT;
 
   public EppOutput dryRunFlowAssertResponse(String xml, String... ignoredPaths) throws Exception {
-    List<Object> beforeEntities = ofy().load().list();
+    List<Object> beforeEntities = DatabaseHelper.loadAllEntities();
     EppOutput output =
         runFlowAssertResponse(CommitMode.DRY_RUN, UserPrivileges.NORMAL, xml, ignoredPaths);
-    assertThat(ofy().load()).containsExactlyElementsIn(beforeEntities);
+    assertThat(DatabaseHelper.loadAllEntities()).containsExactlyElementsIn(beforeEntities);
     return output;
   }
 

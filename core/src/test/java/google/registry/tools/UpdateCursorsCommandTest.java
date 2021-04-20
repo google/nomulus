@@ -15,8 +15,10 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByKey;
+import static google.registry.testing.DatabaseHelper.loadByKeyIfPresent;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -25,11 +27,13 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.RegistryNotFoundException;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link UpdateCursorsCommand}. */
+@DualDatabaseTest
 class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
   private Registry registry;
@@ -42,7 +46,7 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
   void doUpdateTest() throws Exception {
     runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "foo");
-    assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry)).now().getCursorTime())
+    assertThat(loadByKey(Cursor.createVKey(CursorType.BRDA, "foo")).getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
     String changes = command.prompt();
     assertThat(changes)
@@ -51,12 +55,7 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
 
   void doGlobalUpdateTest() throws Exception {
     runCommandForced("--type=recurring_billing", "--timestamp=1984-12-18T00:00:00Z");
-    assertThat(
-            ofy()
-                .load()
-                .key(Cursor.createGlobalKey(CursorType.RECURRING_BILLING))
-                .now()
-                .getCursorTime())
+    assertThat(loadByKey(Cursor.createGlobalVKey(CursorType.RECURRING_BILLING)).getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
     String changes = command.prompt();
     assertThat(changes)
@@ -65,42 +64,42 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
                 + " 1984-12-18T00:00:00.000Z\n");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_oldValueisEmpty() throws Exception {
-    assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry)).now()).isNull();
+    assertThat(loadByKeyIfPresent(Cursor.createVKey(CursorType.BRDA, registry.getTldStr())))
+        .isEmpty();
     doUpdateTest();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_hasOldValue() throws Exception {
     persistResource(Cursor.create(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
     doUpdateTest();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_global_hasOldValue() throws Exception {
     persistResource(
         Cursor.createGlobal(CursorType.RECURRING_BILLING, DateTime.parse("1950-12-18TZ")));
     doGlobalUpdateTest();
   }
 
-  @Test
-  void testSuccess_global_oldValueisEmpty() throws Exception {
-    assertThat(ofy().load().key(Cursor.createGlobalKey(CursorType.RECURRING_BILLING)).now())
-        .isNull();
+  @TestOfyAndSql
+  void testSuccess_global_oldValueIsEmpty() throws Exception {
+    assertThat(loadByKeyIfPresent(Cursor.createGlobalVKey(CursorType.RECURRING_BILLING))).isEmpty();
     doGlobalUpdateTest();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_multipleTlds_hasOldValue() throws Exception {
     createTld("bar");
     Registry registry2 = Registry.get("bar");
     persistResource(Cursor.create(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry));
     persistResource(Cursor.create(CursorType.BRDA, DateTime.parse("1950-12-18TZ"), registry2));
     runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "foo", "bar");
-    assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry)).now().getCursorTime())
+    assertThat(loadByKey(Cursor.createVKey(CursorType.BRDA, "foo")).getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
-    assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry2)).now().getCursorTime())
+    assertThat(loadByKey(Cursor.createVKey(CursorType.BRDA, "bar")).getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
     String changes = command.prompt();
     assertThat(changes)
@@ -109,16 +108,15 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
                 + "Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z\n");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_multipleTlds_oldValueisEmpty() throws Exception {
     createTld("bar");
-    Registry registry2 = Registry.get("bar");
-    assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry)).now()).isNull();
-    assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry2)).now()).isNull();
+    assertThat(loadByKeyIfPresent(Cursor.createVKey(CursorType.BRDA, "foo"))).isEmpty();
+    assertThat(loadByKeyIfPresent(Cursor.createVKey(CursorType.BRDA, "bar"))).isEmpty();
     runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "foo", "bar");
-    assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry)).now().getCursorTime())
+    assertThat(loadByKey(Cursor.createVKey(CursorType.BRDA, "foo")).getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
-    assertThat(ofy().load().key(Cursor.createKey(CursorType.BRDA, registry2)).now().getCursorTime())
+    assertThat(loadByKey(Cursor.createVKey(CursorType.BRDA, "bar")).getCursorTime())
         .isEqualTo(DateTime.parse("1984-12-18TZ"));
     String changes = command.prompt();
     assertThat(changes)
@@ -127,14 +125,14 @@ class UpdateCursorsCommandTest extends CommandTestCase<UpdateCursorsCommand> {
                 + "Change cursorTime of BRDA for Scope:bar to 1984-12-18T00:00:00.000Z\n");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_badTld() {
     assertThrows(
         RegistryNotFoundException.class,
         () -> runCommandForced("--type=brda", "--timestamp=1984-12-18T00:00:00Z", "bar"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_badCursorType() {
     ParameterException thrown =
         assertThrows(
