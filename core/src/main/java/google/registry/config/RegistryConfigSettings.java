@@ -133,7 +133,6 @@ public class RegistryConfigSettings {
   /** Configuration for Apache Beam (Cloud Dataflow). */
   public static class Beam {
     public String defaultJobRegion;
-    public String defaultJobZone;
     public String stagingBucketUrl;
   }
 
