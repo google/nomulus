@@ -25,7 +25,6 @@ import com.google.common.collect.Streams;
 import com.google.common.truth.Correspondence;
 import com.google.common.truth.Correspondence.BinaryPredicate;
 import google.registry.beam.TestPipelineExtension;
-import google.registry.beam.initsql.BeamJpaExtension;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.model.reporting.Spec11ThreatMatchDao;
@@ -102,11 +101,6 @@ class Spec11PipelineTest {
   @RegisterExtension
   final JpaIntegrationTestExtension database =
       new JpaTestRules.Builder().withClock(new FakeClock()).buildIntegrationTestRule();
-
-  @RegisterExtension
-  @Order(Order.DEFAULT + 1)
-  final BeamJpaExtension beamJpaExtension =
-      new BeamJpaExtension(() -> tmpDir.resolve("credential.dat"), database.getDatabase());
 
   private final Spec11PipelineOptions options =
       PipelineOptionsFactory.create().as(Spec11PipelineOptions.class);
