@@ -810,7 +810,7 @@ if (environment in ['alpha', 'crash']) {
           metaData: 'google/registry/beam/spec11_pipeline_metadata.json'
       ],
       [
-          mainClass: 'google.registry.beam.invocing.InvoicingPipeline',
+          mainClass: 'google.registry.beam.invoicing.InvoicingPipeline',
           metaData: 'google/registry/beam/invoicing_pipeline_metadata.json'
       ],
   ]
