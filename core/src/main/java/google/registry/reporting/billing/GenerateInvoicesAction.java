@@ -104,7 +104,7 @@ public class GenerateInvoicesAction implements Runnable {
     try {
       LaunchFlexTemplateParameter parameter =
           new LaunchFlexTemplateParameter()
-              .setJobName(createJobName("spec11", clock))
+              .setJobName(createJobName("invoicing", clock))
               .setContainerSpecGcsPath(
                   String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
               .setParameters(
