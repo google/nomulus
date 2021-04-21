@@ -51,7 +51,7 @@
       "label": "Filename prefix for the invoice CSV file.",
       "helpText": "The prefix that will be applied to the invoice file.",
       "regexes": [
-        "^[\\w\\-]+$"
+        "^[a-zA-Z0-9_\\-]+$"
       ]
     },
     {
