@@ -14,10 +14,14 @@
 
 package google.registry.beam;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
+import google.registry.util.Clock;
 import google.registry.util.ResourceUtils;
+import java.util.regex.Pattern;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
 
@@ -41,8 +45,7 @@ public class BeamUtils {
       ImmutableList<String> fieldNames, SchemaAndRecord schemaAndRecord) {
     GenericRecord record = schemaAndRecord.getRecord();
     ImmutableList<String> nullFields =
-        fieldNames
-            .stream()
+        fieldNames.stream()
             .filter(fieldName -> record.get(fieldName) == null)
             .collect(ImmutableList.toImmutableList());
     String missingFieldList = Joiner.on(", ").join(nullFields);
@@ -60,5 +63,20 @@ public class BeamUtils {
    */
   public static String getQueryFromFile(Class<?> clazz, String filename) {
     return ResourceUtils.readResourceUtf8(Resources.getResource(clazz, "sql/" + filename));
+  }
+
+  /** Creates a beam job name and validates that it conforms to the requirements. */
+  public static String createJobName(String prefix, Clock clock) {
+    // Flex template job name must be unique and consists of only characters [-a-z0-9], starting
+    // with a letter and ending with a letter or number. So we replace the "T" and "Z" in ISO 8601
+    // with lowercase letters.
+    String jobName =
+        String.format("%s-%s", prefix, clock.nowUtc().toString("yyyy-MM-dd't'HH-mm-ss'z'"));
+    checkArgument(
+        Pattern.compile("^[a-z][-a-z0-9]*[a-z0-9]*").matcher(jobName).matches(),
+        "The job name %s is illegal, it consists of only characters [-a-z0-9], "
+            + "starting with a letter and ending with a letter or number,",
+        jobName);
+    return jobName;
   }
 }

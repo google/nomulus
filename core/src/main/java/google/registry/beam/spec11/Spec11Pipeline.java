@@ -17,32 +17,28 @@ package google.registry.beam.spec11;
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.beam.BeamUtils.getQueryFromFile;
 
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auto.value.AutoValue;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
-import google.registry.beam.initsql.Transforms;
-import google.registry.beam.initsql.Transforms.SerializableSupplier;
+import dagger.Component;
+import dagger.Module;
+import dagger.Provides;
+import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
-import google.registry.config.CredentialModule.LocalCredential;
-import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
-import google.registry.persistence.transaction.JpaTransactionManager;
-import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
 import google.registry.util.SqlTemplate;
+import google.registry.util.UtilsModule;
 import java.io.Serializable;
-import javax.inject.Inject;
-import org.apache.beam.runners.dataflow.DataflowRunner;
-import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
+import javax.inject.Singleton;
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO;
-import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
-import org.apache.beam.sdk.options.ValueProvider;
-import org.apache.beam.sdk.options.ValueProvider.NestedValueProvider;
 import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -58,21 +54,20 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Definition of a Dataflow pipeline template, which generates a given month's spec11 report.
+ * Definition of a Dataflow Flex template, which generates a given month's spec11 report.
  *
- * <p>To stage this template on GCS, run the {@link
- * google.registry.tools.DeploySpec11PipelineCommand} Nomulus command.
+ * <p>To stage this template locally, run the {@code stage_beam_pipeline.sh} shell script.
  *
  * <p>Then, you can run the staged template via the API client library, gCloud or a raw REST call.
  *
- * @see <a href="https://cloud.google.com/dataflow/docs/templates/overview">Dataflow Templates</a>
+ * @see <a href="https://cloud.google.com/dataflow/docs/guides/templates/using-flex-templates">Using
+ *     Flex Templates</a>
  */
 public class Spec11Pipeline implements Serializable {
 
   /**
    * Returns the subdirectory spec11 reports reside in for a given local date in yyyy-MM-dd format.
    *
-   * @see google.registry.beam.spec11.Spec11Pipeline
    * @see google.registry.reporting.spec11.Spec11EmailUtils
    */
   public static String getSpec11ReportFilePath(LocalDate localDate) {
@@ -87,84 +82,35 @@ public class Spec11Pipeline implements Serializable {
   /** The JSON object field into which we put the threat match array for Spec11 reports. */
   public static final String THREAT_MATCHES_FIELD = "threatMatches";
 
-  private final String projectId;
-  private final String beamJobRegion;
-  private final String beamStagingUrl;
-  private final String spec11TemplateUrl;
-  private final String reportingBucketUrl;
-  private final GoogleCredentials googleCredentials;
-  private final Retrier retrier;
-  private final SerializableSupplier<JpaTransactionManager> jpaSupplierFactory;
+  private final Spec11PipelineOptions options;
+  private final EvaluateSafeBrowsingFn safeBrowsingFn;
+  private final Pipeline pipeline;
 
-  @Inject
-  public Spec11Pipeline(
-      @Config("projectId") String projectId,
-      @Config("defaultJobRegion") String beamJobRegion,
-      @Config("beamStagingUrl") String beamStagingUrl,
-      @Config("spec11TemplateUrl") String spec11TemplateUrl,
-      @Config("reportingBucketUrl") String reportingBucketUrl,
-      SerializableSupplier<JpaTransactionManager> jpaSupplierFactory,
-      @LocalCredential GoogleCredentialsBundle googleCredentialsBundle,
-      Retrier retrier) {
-    this.projectId = projectId;
-    this.beamJobRegion = beamJobRegion;
-    this.beamStagingUrl = beamStagingUrl;
-    this.spec11TemplateUrl = spec11TemplateUrl;
-    this.reportingBucketUrl = reportingBucketUrl;
-    this.jpaSupplierFactory = jpaSupplierFactory;
-    this.googleCredentials = googleCredentialsBundle.getGoogleCredentials();
-    this.retrier = retrier;
+  @VisibleForTesting
+  Spec11Pipeline(
+      Spec11PipelineOptions options, EvaluateSafeBrowsingFn safeBrowsingFn, Pipeline pipeline) {
+    this.options = options;
+    this.safeBrowsingFn = safeBrowsingFn;
+    this.pipeline = pipeline;
   }
 
-  /** Custom options for running the spec11 pipeline. */
-  public interface Spec11PipelineOptions extends DataflowPipelineOptions {
-    /** Returns the local date we're generating the report for, in yyyy-MM-dd format. */
-    @Description("The local date we generate the report for, in yyyy-MM-dd format.")
-    ValueProvider<String> getDate();
-
-    /**
-     * Sets the local date we generate invoices for.
-     *
-     * <p>This is implicitly set when executing the Dataflow template, by specifying the "date"
-     * parameter.
-     */
-    void setDate(ValueProvider<String> value);
-
-    /** Returns the SafeBrowsing API key we use to evaluate subdomain health. */
-    @Description("The API key we use to access the SafeBrowsing API.")
-    ValueProvider<String> getSafeBrowsingApiKey();
-
-    /**
-     * Sets the SafeBrowsing API key we use.
-     *
-     * <p>This is implicitly set when executing the Dataflow template, by specifying the
-     * "safeBrowsingApiKey" parameter.
-     */
-    void setSafeBrowsingApiKey(ValueProvider<String> value);
+  Spec11Pipeline(Spec11PipelineOptions options, EvaluateSafeBrowsingFn safeBrowsingFn) {
+    this(options, safeBrowsingFn, Pipeline.create(options));
   }
 
-  /** Deploys the spec11 pipeline as a template on GCS. */
-  public void deploy() {
-    // We can't store options as a member variable due to serialization concerns.
-    Spec11PipelineOptions options = PipelineOptionsFactory.as(Spec11PipelineOptions.class);
-    options.setProject(projectId);
-    options.setRegion(beamJobRegion);
-    options.setRunner(DataflowRunner.class);
-    // This causes p.run() to stage the pipeline as a template on GCS, as opposed to running it.
-    options.setTemplateLocation(spec11TemplateUrl);
-    options.setStagingLocation(beamStagingUrl);
-    // This credential is used when Dataflow deploys the template to GCS in target GCP project.
-    // So, make sure the credential has write permission to GCS in that project.
-    options.setGcpCredential(googleCredentials);
+  PipelineResult run() {
+    setupPipeline();
+    return pipeline.run();
+  }
 
-    Pipeline p = Pipeline.create(options);
+  void setupPipeline() {
     PCollection<Subdomain> domains =
-        p.apply(
+        pipeline.apply(
             "Read active domains from BigQuery",
             BigQueryIO.read(Subdomain::parseFromRecord)
                 .fromQuery(
                     SqlTemplate.create(getQueryFromFile(Spec11Pipeline.class, "subdomains.sql"))
-                        .put("PROJECT_ID", projectId)
+                        .put("PROJECT_ID", options.getProject())
                         .put("DATASTORE_EXPORT_DATASET", "latest_datastore_export")
                         .put("REGISTRAR_TABLE", "Registrar")
                         .put("DOMAIN_BASE_TABLE", "DomainBase")
@@ -174,48 +120,40 @@ public class Spec11Pipeline implements Serializable {
                 .withoutValidation()
                 .withTemplateCompatibility());
 
-    evaluateUrlHealth(
-        domains,
-        new EvaluateSafeBrowsingFn(options.getSafeBrowsingApiKey(), retrier),
-        options.getDate());
-    p.run();
+    PCollection<KV<Subdomain, ThreatMatch>> threatMatches =
+        domains.apply("Run through SafeBrowsing API", ParDo.of(safeBrowsingFn));
+
+    saveToSql(threatMatches, options);
+    saveToGcs(threatMatches, options);
   }
 
-  /**
-   * Evaluate each {@link Subdomain} URL via the SafeBrowsing API.
-   *
-   * <p>This is factored out to facilitate testing.
-   */
-  void evaluateUrlHealth(
-      PCollection<Subdomain> domains,
-      EvaluateSafeBrowsingFn evaluateSafeBrowsingFn,
-      ValueProvider<String> dateProvider) {
-    PCollection<KV<Subdomain, ThreatMatch>> subdomainsSql =
-        domains.apply("Run through SafeBrowsing API", ParDo.of(evaluateSafeBrowsingFn));
-    TypeDescriptor<KV<Subdomain, ThreatMatch>> descriptor =
-        new TypeDescriptor<KV<Subdomain, ThreatMatch>>() {};
-    subdomainsSql.apply(
-        Transforms.writeToSql(
-            "Spec11ThreatMatch",
-            4,
-            4,
-            jpaSupplierFactory,
-            (kv) -> {
-              Subdomain subdomain = kv.getKey();
-              return new Spec11ThreatMatch.Builder()
-                  .setThreatTypes(ImmutableSet.of(ThreatType.valueOf(kv.getValue().threatType())))
-                  .setCheckDate(LocalDate.parse(dateProvider.get(), ISODateTimeFormat.date()))
-                  .setDomainName(subdomain.domainName())
-                  .setDomainRepoId(subdomain.domainRepoId())
-                  .setRegistrarId(subdomain.registrarId())
-                  .build();
-            },
-            descriptor));
+  static void saveToSql(
+      PCollection<KV<Subdomain, ThreatMatch>> threatMatches, Spec11PipelineOptions options) {
+    String transformId = "Spec11 Threat Matches";
+    LocalDate date = LocalDate.parse(options.getDate(), ISODateTimeFormat.date());
+    threatMatches.apply(
+        "Write to Sql: " + transformId,
+        RegistryJpaIO.<KV<Subdomain, ThreatMatch>>write()
+            .withName(transformId)
+            .withBatchSize(options.getSqlWriteBatchSize())
+            .withShards(options.getSqlWriteShards())
+            .withJpaConverter(
+                (kv) -> {
+                  Subdomain subdomain = kv.getKey();
+                  return new Spec11ThreatMatch.Builder()
+                      .setThreatTypes(
+                          ImmutableSet.of(ThreatType.valueOf(kv.getValue().threatType())))
+                      .setCheckDate(date)
+                      .setDomainName(subdomain.domainName())
+                      .setDomainRepoId(subdomain.domainRepoId())
+                      .setRegistrarId(subdomain.registrarId())
+                      .build();
+                }));
+  }
 
-    /* Store ThreatMatch objects in JSON. */
-    PCollection<KV<Subdomain, ThreatMatch>> subdomainsJson =
-        domains.apply("Run through SafeBrowsingAPI", ParDo.of(evaluateSafeBrowsingFn));
-    subdomainsJson
+  static void saveToGcs(
+      PCollection<KV<Subdomain, ThreatMatch>> threatMatches, Spec11PipelineOptions options) {
+    threatMatches
         .apply(
             "Map registrar ID to email/ThreatMatch pair",
             MapElements.into(
@@ -260,15 +198,52 @@ public class Spec11Pipeline implements Serializable {
             "Output to text file",
             TextIO.write()
                 .to(
-                    NestedValueProvider.of(
-                        dateProvider,
-                        date ->
-                            String.format(
-                                "%s/%s",
-                                reportingBucketUrl,
-                                getSpec11ReportFilePath(LocalDate.parse(date)))))
+                    String.format(
+                        "%s/%s",
+                        options.getReportingBucketUrl(),
+                        getSpec11ReportFilePath(LocalDate.parse(options.getDate()))))
                 .withoutSharding()
                 .withHeader("Map from registrar email / name to detected subdomain threats:"));
+  }
+
+  public static void main(String[] args) {
+    PipelineOptionsFactory.register(Spec11PipelineOptions.class);
+    DaggerSpec11Pipeline_Spec11PipelineComponent.builder()
+        .spec11PipelineModule(new Spec11PipelineModule(args))
+        .build()
+        .spec11Pipeline()
+        .run();
+  }
+
+  @Module
+  static class Spec11PipelineModule {
+    private final String[] args;
+
+    Spec11PipelineModule(String[] args) {
+      this.args = args;
+    }
+
+    @Provides
+    Spec11PipelineOptions provideOptions() {
+      return PipelineOptionsFactory.fromArgs(args).withValidation().as(Spec11PipelineOptions.class);
+    }
+
+    @Provides
+    EvaluateSafeBrowsingFn provideSafeBrowsingFn(Spec11PipelineOptions options, Retrier retrier) {
+      return new EvaluateSafeBrowsingFn(options.getSafeBrowsingApiKey(), retrier);
+    }
+
+    @Provides
+    Spec11Pipeline providePipeline(
+        Spec11PipelineOptions options, EvaluateSafeBrowsingFn safeBrowsingFn) {
+      return new Spec11Pipeline(options, safeBrowsingFn);
+    }
+  }
+
+  @Component(modules = {Spec11PipelineModule.class, UtilsModule.class, ConfigModule.class})
+  @Singleton
+  interface Spec11PipelineComponent {
+    Spec11Pipeline spec11Pipeline();
   }
 
   @AutoValue

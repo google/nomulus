@@ -69,6 +69,7 @@ public class PublishSpec11ReportAction implements Runnable {
   private static final String JOB_FAILED = "JOB_STATE_FAILED";
 
   private final String projectId;
+  private final String jobRegion;
   private final String registryName;
   private final String jobId;
   private final Spec11EmailUtils emailUtils;
@@ -80,6 +81,7 @@ public class PublishSpec11ReportAction implements Runnable {
   @Inject
   PublishSpec11ReportAction(
       @Config("projectId") String projectId,
+      @Config("defaultJobRegion") String jobRegion,
       @Config("registryName") String registryName,
       @Parameter(ReportingModule.PARAM_JOB_ID) String jobId,
       Spec11EmailUtils emailUtils,
@@ -88,6 +90,7 @@ public class PublishSpec11ReportAction implements Runnable {
       Response response,
       @Parameter(PARAM_DATE) LocalDate date) {
     this.projectId = projectId;
+    this.jobRegion = jobRegion;
     this.registryName = registryName;
     this.jobId = jobId;
     this.emailUtils = emailUtils;
@@ -101,7 +104,7 @@ public class PublishSpec11ReportAction implements Runnable {
   public void run() {
     try {
       logger.atInfo().log("Starting publish job.");
-      Job job = dataflow.projects().jobs().get(projectId, jobId).execute();
+      Job job = dataflow.projects().locations().jobs().get(projectId, jobRegion, jobId).execute();
       String state = job.getCurrentState();
       switch (state) {
         case JOB_DONE:

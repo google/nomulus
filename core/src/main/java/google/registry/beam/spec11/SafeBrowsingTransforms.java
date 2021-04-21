@@ -14,7 +14,6 @@
 
 package google.registry.beam.spec11;
 
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.http.HttpStatus.SC_OK;
 
@@ -30,7 +29,6 @@ import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
-import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.windowing.GlobalWindow;
 import org.apache.beam.sdk.values.KV;
@@ -73,7 +71,7 @@ public class SafeBrowsingTransforms {
     private static final int BATCH_SIZE = 490;
 
     /** Provides the SafeBrowsing API key at runtime. */
-    private final ValueProvider<String> apiKeyProvider;
+    private final String apiKey;
 
     /**
      * Maps a subdomain's {@code fullyQualifiedDomainName} to its corresponding {@link Subdomain} to
@@ -93,20 +91,18 @@ public class SafeBrowsingTransforms {
     private final Retrier retrier;
 
     /**
-     * Constructs a {@link EvaluateSafeBrowsingFn} that gets its API key from the given provider.
+     * Constructs a {@link EvaluateSafeBrowsingFn} with a given API key.
      *
      * <p>We need to dual-cast the closeableHttpClientSupplier lambda because all {@code DoFn}
      * member variables need to be serializable. The (Supplier & Serializable) dual cast is safe
      * because class methods are generally serializable, especially a static function such as {@link
      * HttpClients#createDefault()}.
-     *
-     * @param apiKeyProvider provides the SafeBrowsing API key from {@code KMS} at runtime
      */
     @SuppressWarnings("unchecked")
-    EvaluateSafeBrowsingFn(ValueProvider<String> apiKeyProvider, Retrier retrier) {
-      this.apiKeyProvider = apiKeyProvider;
+    EvaluateSafeBrowsingFn(String apiKey, Retrier retrier) {
+      this.apiKey = apiKey;
       this.retrier = retrier;
-      this.closeableHttpClientSupplier = (Supplier & Serializable) HttpClients::createDefault;
+      closeableHttpClientSupplier = (Supplier & Serializable) HttpClients::createDefault;
     }
 
     /**
@@ -117,12 +113,10 @@ public class SafeBrowsingTransforms {
      */
     @VisibleForTesting
     EvaluateSafeBrowsingFn(
-        ValueProvider<String> apiKeyProvider,
-        Retrier retrier,
-        Supplier<CloseableHttpClient> clientSupplier) {
-      this.apiKeyProvider = apiKeyProvider;
+        String apiKey, Retrier retrier, Supplier<CloseableHttpClient> clientSupplier) {
+      this.apiKey = apiKey;
       this.retrier = retrier;
-      this.closeableHttpClientSupplier = clientSupplier;
+      closeableHttpClientSupplier = clientSupplier;
     }
 
     /** Evaluates any buffered {@link Subdomain} objects upon completing the bundle. */
@@ -159,7 +153,7 @@ public class SafeBrowsingTransforms {
       try {
         URIBuilder uriBuilder = new URIBuilder(SAFE_BROWSING_URL);
         // Add the API key param
-        uriBuilder.addParameter("key", apiKeyProvider.get());
+        uriBuilder.addParameter("key", apiKey);
 
         HttpPost httpPost = new HttpPost(uriBuilder.build());
         httpPost.addHeader(HTTP.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString());
@@ -175,7 +169,7 @@ public class SafeBrowsingTransforms {
               }
             },
             IOException.class);
-      } catch (URISyntaxException | JSONException  e) {
+      } catch (URISyntaxException | JSONException e) {
         // Fail the pipeline on a parsing exception- this indicates the API likely changed.
         throw new RuntimeException("Caught parsing exception, failing pipeline.", e);
       } finally {
@@ -239,7 +233,9 @@ public class SafeBrowsingTransforms {
             String url = match.getJSONObject("threat").getString("url");
             Subdomain subdomain = subdomainBuffer.get(url);
             resultBuilder.add(
-                KV.of(subdomain, ThreatMatch.create(match, subdomain.domainName())));
+                KV.of(
+                    subdomain,
+                    ThreatMatch.create(match.getString("threatType"), subdomain.domainName())));
           }
         }
       }

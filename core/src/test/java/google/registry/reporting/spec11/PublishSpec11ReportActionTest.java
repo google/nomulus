@@ -29,8 +29,9 @@ import static org.mockito.Mockito.when;
 
 import com.google.api.services.dataflow.Dataflow;
 import com.google.api.services.dataflow.Dataflow.Projects;
-import com.google.api.services.dataflow.Dataflow.Projects.Jobs;
-import com.google.api.services.dataflow.Dataflow.Projects.Jobs.Get;
+import com.google.api.services.dataflow.Dataflow.Projects.Locations;
+import com.google.api.services.dataflow.Dataflow.Projects.Locations.Jobs;
+import com.google.api.services.dataflow.Dataflow.Projects.Locations.Jobs.Get;
 import com.google.api.services.dataflow.model.Job;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -51,6 +52,7 @@ class PublishSpec11ReportActionTest {
 
   private Dataflow dataflow;
   private Projects projects;
+  private Locations locations;
   private Jobs jobs;
   private Get get;
   private Spec11EmailUtils emailUtils;
@@ -64,11 +66,13 @@ class PublishSpec11ReportActionTest {
   void beforeEach() throws Exception {
     dataflow = mock(Dataflow.class);
     projects = mock(Projects.class);
+    locations = mock(Locations.class);
     jobs = mock(Jobs.class);
     get = mock(Get.class);
     when(dataflow.projects()).thenReturn(projects);
-    when(projects.jobs()).thenReturn(jobs);
-    when(jobs.get("test-project", "12345")).thenReturn(get);
+    when(projects.locations()).thenReturn(locations);
+    when(locations.jobs()).thenReturn(jobs);
+    when(jobs.get("test-project", "test-region", "12345")).thenReturn(get);
     expectedJob = new Job();
     when(get.execute()).thenReturn(expectedJob);
     emailUtils = mock(Spec11EmailUtils.class);
@@ -78,6 +82,7 @@ class PublishSpec11ReportActionTest {
     publishAction =
         new PublishSpec11ReportAction(
             "test-project",
+            "test-region",
             "Super Cool Registry",
             "12345",
             emailUtils,
@@ -95,6 +100,7 @@ class PublishSpec11ReportActionTest {
     publishAction =
         new PublishSpec11ReportAction(
             "test-project",
+            "test-region",
             "Super Cool Registry",
             "12345",
             emailUtils,

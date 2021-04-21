@@ -20,12 +20,9 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.beam.initsql.BackupPaths.getCommitLogTimestamp;
 import static google.registry.beam.initsql.BackupPaths.getExportFilePatterns;
 import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.setJpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.util.Comparator.comparing;
-import static org.apache.beam.sdk.values.TypeDescriptors.integers;
 import static org.apache.beam.sdk.values.TypeDescriptors.kvs;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 
@@ -36,14 +33,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
-import google.registry.backup.AppEngineEnvironment;
 import google.registry.backup.CommitLogImports;
 import google.registry.backup.VersionedEntity;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import google.registry.schema.replay.SqlEntity;
 import google.registry.tools.LevelDbLogReader;
@@ -53,7 +46,6 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
@@ -62,18 +54,14 @@ import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.FileIO.ReadableFile;
 import org.apache.beam.sdk.io.fs.EmptyMatchTreatment;
 import org.apache.beam.sdk.io.fs.MatchResult.Metadata;
-import org.apache.beam.sdk.metrics.Counter;
-import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.Flatten;
 import org.apache.beam.sdk.transforms.GroupByKey;
-import org.apache.beam.sdk.transforms.GroupIntoBatches;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.ProcessFunction;
-import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PBegin;
 import org.apache.beam.sdk.values.PCollection;
@@ -268,80 +256,6 @@ public final class Transforms {
                     .iterator()));
   }
 
-  /**
-   * Returns a {@link PTransform} that writes a {@link PCollection} of {@link VersionedEntity}s to a
-   * SQL database. and outputs an empty {@code PCollection<Void>}. This allows other operations to
-   * {@link org.apache.beam.sdk.transforms.Wait wait} for the completion of this transform.
-   *
-   * <p>Errors are handled according to the pipeline runner's default policy. As part of a one-time
-   * job, we will not add features unless proven necessary.
-   *
-   * @param transformId a unique ID for an instance of the returned transform
-   * @param maxWriters the max number of concurrent writes to SQL, which also determines the max
-   *     number of connection pools created
-   * @param batchSize the number of entities to write in each operation
-   * @param jpaSupplier supplier of a {@link JpaTransactionManager}
-   */
-  public static PTransform<PCollection<VersionedEntity>, PCollection<Void>> writeToSql(
-      String transformId,
-      int maxWriters,
-      int batchSize,
-      SerializableSupplier<JpaTransactionManager> jpaSupplier) {
-    return writeToSql(
-        transformId,
-        maxWriters,
-        batchSize,
-        jpaSupplier,
-        Transforms::convertVersionedEntityToSqlEntity,
-        TypeDescriptor.of(VersionedEntity.class));
-  }
-
-  /**
-   * Returns a {@link PTransform} that writes a {@link PCollection} of entities to a SQL database.
-   * and outputs an empty {@code PCollection<Void>}. This allows other operations to {@link
-   * org.apache.beam.sdk.transforms.Wait wait} for the completion of this transform.
-   *
-   * <p>The converter and type descriptor are generics so that we can convert any type of entity to
-   * an object to be placed in SQL.
-   *
-   * <p>Errors are handled according to the pipeline runner's default policy. As part of a one-time
-   * job, we will not add features unless proven necessary.
-   *
-   * @param transformId a unique ID for an instance of the returned transform
-   * @param maxWriters the max number of concurrent writes to SQL, which also determines the max
-   *     number of connection pools created
-   * @param batchSize the number of entities to write in each operation
-   * @param jpaSupplier supplier of a {@link JpaTransactionManager}
-   * @param jpaConverter the function that converts the input object to a JPA entity
-   * @param objectDescriptor the type descriptor of the input object
-   */
-  public static <T> PTransform<PCollection<T>, PCollection<Void>> writeToSql(
-      String transformId,
-      int maxWriters,
-      int batchSize,
-      SerializableSupplier<JpaTransactionManager> jpaSupplier,
-      SerializableFunction<T, Object> jpaConverter,
-      TypeDescriptor<T> objectDescriptor) {
-    return new PTransform<PCollection<T>, PCollection<Void>>() {
-      @Override
-      public PCollection<Void> expand(PCollection<T> input) {
-        return input
-            .apply(
-                "Shard data for " + transformId,
-                MapElements.into(kvs(integers(), objectDescriptor))
-                    .via(ve -> KV.of(ThreadLocalRandom.current().nextInt(maxWriters), ve)))
-            .apply("Batch output by shard " + transformId, GroupIntoBatches.ofSize(batchSize))
-            .apply(
-                "Write in batch for " + transformId,
-                ParDo.of(new SqlBatchWriter<T>(transformId, jpaSupplier, jpaConverter)));
-      }
-    };
-  }
-
-  private static Key toOfyKey(Object ofyEntity) {
-    return Key.create(ofyEntity);
-  }
-
   private static boolean isMigratable(Entity entity) {
     if (entity.getKind().equals("HistoryEntry")) {
       // DOMAIN_APPLICATION_CREATE is deprecated type and should not be migrated.
@@ -454,93 +368,6 @@ public final class Transforms {
         // means retrying up to 4 times (may include other files grouped with this one), and failing
         // the pipeline if no success.
         throw new RuntimeException(e);
-      }
-    }
-  }
-
-  /**
-   * Writes a batch of entities to a SQL database.
-   *
-   * <p>Note that an arbitrary number of instances of this class may be created and freed in
-   * arbitrary order in a single JVM. Due to the tech debt that forced us to use a static variable
-   * to hold the {@code JpaTransactionManager} instance, we must ensure that JpaTransactionManager
-   * is not changed or torn down while being used by some instance.
-   */
-  private static class SqlBatchWriter<T> extends DoFn<KV<Integer, Iterable<T>>, Void> {
-
-    private static int instanceCount = 0;
-    private static JpaTransactionManager originalJpa;
-
-    private Counter counter;
-
-    private final SerializableSupplier<JpaTransactionManager> jpaSupplier;
-    private final SerializableFunction<T, Object> jpaConverter;
-
-    SqlBatchWriter(
-        String type,
-        SerializableSupplier<JpaTransactionManager> jpaSupplier,
-        SerializableFunction<T, Object> jpaConverter) {
-      counter = Metrics.counter("SQL_WRITE", type);
-      this.jpaSupplier = jpaSupplier;
-      this.jpaConverter = jpaConverter;
-    }
-
-    @Setup
-    public void setup() {
-      try (AppEngineEnvironment env = new AppEngineEnvironment()) {
-        ObjectifyService.initOfy();
-      }
-
-      synchronized (SqlBatchWriter.class) {
-        if (instanceCount == 0) {
-          originalJpa = jpaTm();
-          setJpaTm(jpaSupplier);
-        }
-        instanceCount++;
-      }
-    }
-
-    @Teardown
-    public void teardown() {
-      synchronized (SqlBatchWriter.class) {
-        instanceCount--;
-        if (instanceCount == 0) {
-          jpaTm().teardown();
-          setJpaTm(() -> originalJpa);
-        }
-      }
-    }
-
-    @ProcessElement
-    public void processElement(@Element KV<Integer, Iterable<T>> kv) {
-      try (AppEngineEnvironment env = new AppEngineEnvironment()) {
-        ImmutableList<Object> ofyEntities =
-            Streams.stream(kv.getValue())
-                .map(this.jpaConverter::apply)
-                // TODO(b/177340730): post migration delete the line below.
-                .filter(Objects::nonNull)
-                .collect(ImmutableList.toImmutableList());
-        try {
-          jpaTm().transact(() -> jpaTm().putAll(ofyEntities));
-          counter.inc(ofyEntities.size());
-        } catch (RuntimeException e) {
-          processSingly(ofyEntities);
-        }
-      }
-    }
-
-    /**
-     * Writes entities in a failed batch one by one to identify the first bad entity and throws a
-     * {@link RuntimeException} on it.
-     */
-    private void processSingly(ImmutableList<Object> ofyEntities) {
-      for (Object ofyEntity : ofyEntities) {
-        try {
-          jpaTm().transact(() -> jpaTm().put(ofyEntity));
-          counter.inc();
-        } catch (RuntimeException e) {
-          throw new RuntimeException(toOfyKey(ofyEntity).toString(), e);
-        }
       }
     }
   }
