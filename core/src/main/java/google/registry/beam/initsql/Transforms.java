@@ -32,9 +32,13 @@ import com.google.appengine.api.datastore.EntityTranslator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import google.registry.backup.CommitLogImports;
 import google.registry.backup.VersionedEntity;
+import google.registry.config.RegistryEnvironment;
+import google.registry.model.billing.BillingEvent.Flag;
+import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
@@ -256,7 +260,56 @@ public final class Transforms {
                     .iterator()));
   }
 
+  // Production data repair configs go below. See b/185954992.
+
+  // Prober domains in bad state, without associated contacts, hosts, billings, and history.
+  // They can be safely ignored.
+  private static final ImmutableSet<String> IGNORED_DOMAINS =
+      ImmutableSet.of("6AF6D2-IQCANT", "2-IQANYT");
+
+  // Prober hosts referencing phantom registrars. They and their associated history entries can be
+  // safely ignored.
+  private static final ImmutableSet<String> IGNORED_HOSTS =
+      ImmutableSet.of(
+          "4E21_WJ0TEST-GOOGLE",
+          "4E21_WJ1TEST-GOOGLE",
+          "4E21_WJ2TEST-GOOGLE",
+          "4E21_WJ3TEST-GOOGLE");
+
+  // Prober contacts referencing phantom registrars, created back in 2015. They and their associated
+  // history entries can be safely ignored.
+  private static final ImmutableSet IGNORED_CONTACTS =
+      ImmutableSet.of(
+          "1_WJ0TEST-GOOGLE", "1_WJ1TEST-GOOGLE", "1_WJ2TEST-GOOGLE", "1_WJ3TEST-GOOGLE");
+
   private static boolean isMigratable(Entity entity) {
+    if (RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)) {
+      if (entity.getKind().equals("DomainBase")
+          && IGNORED_DOMAINS.contains(entity.getKey().getName())) {
+        return false;
+      }
+      if (entity.getKind().equals("ContactResource")) {
+        String roid = entity.getKey().getName();
+        return !IGNORED_CONTACTS.contains(roid);
+      }
+      if (entity.getKind().equals("HostResource")) {
+        String roid = entity.getKey().getName();
+        return !IGNORED_HOSTS.contains(roid);
+      }
+      if (entity.getKind().equals("HistoryEntry")) {
+        // Remove production bad data: History of the contacts to be ignored:
+        com.google.appengine.api.datastore.Key parentKey = entity.getKey().getParent();
+        if (parentKey.getKind().equals("ContactResource")) {
+          String contactRoid = parentKey.getName();
+          return !IGNORED_CONTACTS.contains(contactRoid);
+        }
+        if (parentKey.getKind().equals("HostResource")) {
+          String hostRoid = parentKey.getName();
+          return !IGNORED_HOSTS.contains(hostRoid);
+        }
+      }
+    }
+
     if (entity.getKind().equals("HistoryEntry")) {
       // DOMAIN_APPLICATION_CREATE is deprecated type and should not be migrated.
       // The Enum name DOMAIN_APPLICATION_CREATE no longer exists in Java and cannot
@@ -264,6 +317,21 @@ public final class Transforms {
       return !Objects.equals(entity.getProperty("type"), "DOMAIN_APPLICATION_CREATE");
     }
     return true;
+  }
+
+  private static Entity repairBadData(Entity entity) {
+    if (!RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)) {
+      return entity;
+    }
+    if (entity.getKind().equals("Cancellation")
+        && Objects.equals(entity.getProperty("reason"), "AUTO_RENEW")) {
+      // AUTO_RENEW has been moved from 'reason' to flags. Change reason to RENEW and add the
+      // AUTO_RENEW flag. Note: all affected entities have empty flags so we can simply assign
+      // instead of append. See b/185954992.
+      entity.setUnindexedProperty("reason", Reason.RENEW.name());
+      entity.setUnindexedProperty("flags", ImmutableList.of(Flag.AUTO_RENEW.name()));
+    }
+    return entity;
   }
 
   private static SqlEntity toSqlEntity(Object ofyEntity) {
@@ -286,6 +354,7 @@ public final class Transforms {
     return dsEntity
         .getEntity()
         .filter(Transforms::isMigratable)
+        .map(Transforms::repairBadData)
         .map(e -> ofy().toPojo(e))
         .map(Transforms::toSqlEntity)
         .orElse(null);
