@@ -177,7 +177,7 @@ public class InvoicingPipeline implements Serializable {
         .build();
   }
 
-  private static void main(String[] args) {
+  public static void main(String[] args) {
     PipelineOptionsFactory.register(InvoicingPipelineOptions.class);
     InvoicingPipelineOptions options =
         PipelineOptionsFactory.fromArgs(args).withValidation().as(InvoicingPipelineOptions.class);

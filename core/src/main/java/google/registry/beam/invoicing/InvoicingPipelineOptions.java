@@ -25,13 +25,13 @@ public interface InvoicingPipelineOptions extends RegistryPipelineOptions {
 
   void setYearMonth(String value);
 
+  @Description("Filename prefix for the invoice CSV file.")
+  String getInvoiceFilePrefix();
+
+  void setInvoiceFilePrefix(String value);
+
   @Description("The GCS bucket URL for invoices and detailed  reports to be uploaded.")
   String getBillingBucketUrl();
 
   void setBillingBucketUrl(String value);
-
-  @Description("Filename prefix for the detailed reports.")
-  String getInvoiceFilePrefix();
-
-  void setInvoiceFilePrefix(String value);
 }

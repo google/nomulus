@@ -44,7 +44,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class WipeOutDatastoreActionTest extends BeamActionTestBase {
 
   private final FakeClock clock = new FakeClock();
-  private final FakeResponse response = new FakeResponse();
 
   @Test
   void run_projectNotAllowed() {

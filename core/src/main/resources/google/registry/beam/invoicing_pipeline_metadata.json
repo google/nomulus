@@ -1,6 +1,6 @@
 {
-  "name": "Init SQL From Datastore Backup",
-  "description": "An Apache Beam batch pipeline that reads a Datastore export and Nomulus CommitLog files, transforms data into JPA entities, and writes the results to a SQL database.",
+  "name": "Invoice and Detailed Reports Generation",
+  "description": "An Apache Beam batch pipeline that reads from a Datastore export and generate monthly invoice and detailed reports, saving them on GCS.",
   "parameters": [
     {
       "name": "registryEnvironment",
@@ -39,30 +39,28 @@
       ]
     },
     {
-      "name": "datastoreExportDir",
-      "label": "Datastore export dir",
-      "helpText": "The root directory of the export to load.",
+      "name": "yearMonth",
+      "label": "The year and month we generate invoice and detailed reports for.",
+      "helpText": "The year and month for which the invoice and detailed reports are generated, in yyyy-MM format.",
       "regexes": [
-        "^gs:\\/\\/[^\\n\\r]+$"
+        "^2[0-9]{3}-(0[1-9]|1[0-2])$"
       ]
     },
     {
-      "name": "commitLogDir",
-      "label": "Nomulus CommitLog dir",
-      "helpText": "The directory with all Nomulus CommitLogs.",
+      "name": "invoiceFilePrefix",
+      "label": "Filename prefix for the invoice CSV file.",
+      "helpText": "The prefix that will be applied to the invoice file.",
       "regexes": [
-        "^gs:\\/\\/[^\\n\\r]+$"
+        "^[\\w\\-]+$"
       ]
     },
     {
-      "name": "commitLogStartTimestamp",
-      "label": "Nomulus CommitLog start time",
-      "helpText": "The earliest CommitLogs to load, in ISO8601 format."
-    },
-    {
-      "name": "commitLogEndTimestamp",
-      "label": "Nomulus CommitLog end time",
-      "helpText": "The latest CommitLogs to load, in ISO8601 format."
+      "name": "billingBucketUrl",
+      "label": "invoice and detailed reports upload dir.",
+      "helpText": "The root directory of the reports to upload.",
+      "regexes": [
+        "^gs:\\/\\/[^\\n\\r]+$"
+      ]
     }
   ]
 }

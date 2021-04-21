@@ -5,7 +5,7 @@
     {
       "name": "registryEnvironment",
       "label": "The Registry environment.",
-      "helpText": "The Registry environment, required if environment-specific initialization is needed on worker VMs.",
+      "helpText": "The Registry environment, required if environment-specific initialization (such as JPA) is needed on worker VMs.",
       "is_optional": true,
       "regexes": [
         "^[0-9A-Z_]+$"
@@ -41,7 +41,7 @@
     {
       "name": "date",
       "label": "The date when the pipeline runs",
-      "helpText": "The date then the threat scan is performed, in yyyy-MM-dd format.",
+      "helpText": "The date when the threat scan is performed, in yyyy-MM-dd format.",
       "regexes": [
         "^2[0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
       ]
