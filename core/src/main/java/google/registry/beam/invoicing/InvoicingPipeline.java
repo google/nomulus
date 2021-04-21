@@ -181,6 +181,6 @@ public class InvoicingPipeline implements Serializable {
     PipelineOptionsFactory.register(InvoicingPipelineOptions.class);
     InvoicingPipelineOptions options =
         PipelineOptionsFactory.fromArgs(args).withValidation().as(InvoicingPipelineOptions.class);
-    new InvoicingPipeline(options);
+    new InvoicingPipeline(options).run();
   }
 }
