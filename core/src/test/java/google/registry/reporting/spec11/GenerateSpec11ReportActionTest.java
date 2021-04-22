@@ -79,7 +79,6 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase  {
             clock,
             response,
             dataflow);
-    when(launch.execute()).thenThrow(new IOException("Dataflow failure"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
