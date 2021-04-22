@@ -30,10 +30,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link SignedMarkRevocationList}. */
 public class SignedMarkRevocationListTest extends EntityTestCase {
 
-  SignedMarkRevocationListTest() {
-    super(JpaEntityCoverageCheck.ENABLED);
-  }
-
   @RegisterExtension
   public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 

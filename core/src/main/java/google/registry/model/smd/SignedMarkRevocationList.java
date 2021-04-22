@@ -21,8 +21,6 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
-import google.registry.model.annotations.NotBackedUp;
-import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import java.util.Map;
@@ -50,7 +48,6 @@ import org.joda.time.DateTime;
  *     functional specifications - SMD Revocation List</a>
  */
 @Entity
-@NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 public class SignedMarkRevocationList extends ImmutableObject implements SqlEntity {
 
   @Id
