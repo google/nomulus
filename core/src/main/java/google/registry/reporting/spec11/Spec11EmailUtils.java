@@ -141,8 +141,9 @@ public class Spec11EmailUtils {
                                   "fullyQualifiedDomainName",
                                   Comparator.EQ,
                                   threatMatch.fullyQualifiedDomainName())
-                              .getSingleResult()
-                              .shouldPublishToDns())
+                              .stream()
+                              .filter(domain -> domain.shouldPublishToDns())
+                              .count() > 0)
                   .collect(toImmutableList());
             });
     return RegistrarThreatMatches.create(registrarThreatMatches.clientId(), filteredMatches);
