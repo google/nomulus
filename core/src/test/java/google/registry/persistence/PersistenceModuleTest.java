@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 
 import dagger.Component;
-import google.registry.beam.initsql.BeamJpaModule;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
@@ -85,45 +84,9 @@ class PersistenceModuleTest {
         .isEqualTo(TransactionIsolationLevel.TRANSACTION_SERIALIZABLE.name());
   }
 
-  @Test
-  void beamIsolation_default() {
-    Optional<Provider<TransactionIsolationLevel>> injected =
-        DaggerPersistenceModuleTest_BeamConfigTestComponent.builder()
-            .beamJpaModule(new BeamJpaModule(null, null))
-            .build()
-            .getIsolationOverride();
-    assertThat(injected).isNotNull();
-    assertThat(injected.get().get()).isNull();
-    assertThat(
-            PersistenceModule.provideBeamPipelineCloudSqlConfigs(
-                    "", "", PersistenceModule.provideDefaultDatabaseConfigs(), injected)
-                .get(Environment.ISOLATION))
-        .isEqualTo(TransactionIsolationLevel.TRANSACTION_SERIALIZABLE.name());
-  }
-
-  @Test
-  void beamIsolation_override() {
-    Optional<Provider<TransactionIsolationLevel>> injected =
-        DaggerPersistenceModuleTest_BeamConfigTestComponent.builder()
-            .beamJpaModule(
-                new BeamJpaModule(
-                    null, null, TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED))
-            .build()
-            .getIsolationOverride();
-    assertThat(injected).isNotNull();
-    assertThat(injected.get().get())
-        .isEqualTo(TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED);
-    assertThat(
-            PersistenceModule.provideBeamPipelineCloudSqlConfigs(
-                    "", "", PersistenceModule.provideDefaultDatabaseConfigs(), injected)
-                .get(Environment.ISOLATION))
-        .isEqualTo(TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED.name());
-  }
-
   @Singleton
   @Component(
       modules = {
-        BeamJpaModule.class,
         ConfigModule.class,
         CredentialModule.class,
         KmsModule.class,
