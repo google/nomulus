@@ -826,12 +826,6 @@ class google.registry.model.server.ServerSecret {
   long leastSignificant;
   long mostSignificant;
 }
-class google.registry.model.smd.SignedMarkRevocationList {
-  @Id long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  java.util.Map<java.lang.String, org.joda.time.DateTime> revokes;
-  org.joda.time.DateTime creationTime;
-}
 class google.registry.model.tmch.ClaimsListShard {
   @Id long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsListShard$ClaimsListRevision> parent;
