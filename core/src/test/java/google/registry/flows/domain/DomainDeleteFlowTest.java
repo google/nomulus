@@ -456,6 +456,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     // where the expirationTime advances and the grace period appears, but since the delete flow
     // closed the autorenew recurrences immediately, there are no other autorenew effects.
     assertAboutDomains().that(resource).hasRegistrationExpirationTime(expectedExpirationTime);
+    assertLastHistoryContainsResource(resource);
     // All existing grace periods that were for billable actions should cause cancellations.
     assertAutorenewClosedAndCancellationCreatedFor(
         renewBillingEvent, getOnlyHistoryEntryOfType(resource, DOMAIN_DELETE));

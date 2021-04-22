@@ -41,6 +41,7 @@ import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppoutput.EppResponse;
@@ -79,7 +80,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject DomainHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainTransferRejectFlow() {}
 
@@ -91,7 +92,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
     DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
     Registry registry = Registry.get(existingDomain.getTld());
-    HistoryEntry historyEntry = buildHistoryEntry(existingDomain, registry, now);
+    DomainHistory domainHistory = buildDomainHistory(existingDomain, registry, now);
     verifyOptionalAuthInfo(authInfo, existingDomain);
     verifyHasPendingTransfer(existingDomain);
     verifyResourceOwnership(clientId, existingDomain);
@@ -102,9 +103,9 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
         denyPendingTransfer(existingDomain, TransferStatus.CLIENT_REJECTED, now, clientId);
     tm().putAll(
             newDomain,
-            historyEntry,
+            domainHistory.asBuilder().setDomainContent(newDomain).build(),
             createGainingTransferPollMessage(
-                targetId, newDomain.getTransferData(), null, historyEntry));
+                targetId, newDomain.getTransferData(), null, domainHistory));
     // Reopen the autorenew event and poll message that we closed for the implicit transfer. This
     // may end up recreating the poll message if it was deleted upon the transfer request.
     updateAutorenewRecurrenceEndTime(existingDomain, END_OF_TIME);
@@ -116,7 +117,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
         .build();
   }
 
-  private HistoryEntry buildHistoryEntry(
+  private DomainHistory buildDomainHistory(
       DomainBase existingDomain, Registry registry, DateTime now) {
     ImmutableSet<DomainTransactionRecord> cancelingRecords =
         createCancelingRecords(

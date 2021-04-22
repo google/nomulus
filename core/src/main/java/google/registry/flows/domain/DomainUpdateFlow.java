@@ -65,6 +65,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand.Update;
 import google.registry.model.domain.DomainCommand.Update.AddRemove;
 import google.registry.model.domain.DomainCommand.Update.Change;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.fee.FeeUpdateCommandExtension;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.secdns.DelegationSignerData;
@@ -142,7 +143,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject DomainHistory.Builder historyBuilder;
   @Inject DnsQueue dnsQueue;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainUpdateFlowCustomLogic flowCustomLogic;
@@ -165,19 +166,20 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     verifyUpdateAllowed(command, existingDomain, now);
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setExistingDomain(existingDomain).build());
-    HistoryEntry historyEntry = buildHistoryEntry(existingDomain, now);
     DomainBase newDomain = performUpdate(command, existingDomain, now);
+    DomainHistory domainHistory =
+        buildDomainHistory(existingDomain, now).asBuilder().setDomainContent(newDomain).build();
     validateNewState(newDomain);
     dnsQueue.addDomainRefreshTask(targetId);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
-    entitiesToSave.add(newDomain, historyEntry);
+    entitiesToSave.add(newDomain, domainHistory);
     Optional<BillingEvent.OneTime> statusUpdateBillingEvent =
-        createBillingEventForStatusUpdates(existingDomain, newDomain, historyEntry, now);
+        createBillingEventForStatusUpdates(existingDomain, newDomain, domainHistory, now);
     statusUpdateBillingEvent.ifPresent(entitiesToSave::add);
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(
             BeforeSaveParameters.newBuilder()
-                .setHistoryEntry(historyEntry)
+                .setHistoryEntry(domainHistory)
                 .setNewDomain(newDomain)
                 .setExistingDomain(existingDomain)
                 .setEntityChanges(
@@ -217,7 +219,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
         tld, add.getNameserverFullyQualifiedHostNames());
   }
 
-  private HistoryEntry buildHistoryEntry(DomainBase existingDomain, DateTime now) {
+  private DomainHistory buildDomainHistory(DomainBase existingDomain, DateTime now) {
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_UPDATE)
         .setModificationTime(now)

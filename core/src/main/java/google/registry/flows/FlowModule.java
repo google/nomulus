@@ -243,7 +243,7 @@ public class FlowModule {
   @Provides
   static DomainHistory.Builder provideDomainHistoryBuilder(
       HistoryEntry.Builder historyEntryBuilder) {
-    return new DomainHistory.Builder().copyFrom(historyEntryBuilder.build());
+    return new DomainHistory.Builder().copyFrom(historyEntryBuilder);
   }
 
   /**

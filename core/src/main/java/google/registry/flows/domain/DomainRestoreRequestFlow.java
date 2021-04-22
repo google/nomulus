@@ -49,6 +49,7 @@ import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand.Update;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
@@ -117,7 +118,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject DomainHistory.Builder historyBuilder;
   @Inject DnsQueue dnsQueue;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainPricingLogic pricingLogic;
@@ -142,7 +143,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
     Optional<FeeUpdateCommandExtension> feeUpdate =
         eppInput.getSingleExtension(FeeUpdateCommandExtension.class);
     verifyRestoreAllowed(command, existingDomain, feeUpdate, feesAndCredits, now);
-    HistoryEntry historyEntry = buildHistoryEntry(existingDomain, now);
+    DomainHistory domainHistory = buildDomainHistory(existingDomain, now);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
 
     DateTime newExpirationTime =
@@ -150,29 +151,34 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
     // Restore the expiration time on the deleted domain, except if that's already passed, then add
     // a year and bill for it immediately, with no grace period.
     if (isExpired) {
-      entitiesToSave.add(createRenewBillingEvent(historyEntry, feesAndCredits.getRenewCost(), now));
+      entitiesToSave.add(
+          createRenewBillingEvent(domainHistory, feesAndCredits.getRenewCost(), now));
     }
     // Always bill for the restore itself.
     entitiesToSave.add(
-        createRestoreBillingEvent(historyEntry, feesAndCredits.getRestoreCost(), now));
+        createRestoreBillingEvent(domainHistory, feesAndCredits.getRestoreCost(), now));
 
     BillingEvent.Recurring autorenewEvent =
         newAutorenewBillingEvent(existingDomain)
             .setEventTime(newExpirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
-            .setParent(historyEntry)
+            .setParent(domainHistory)
             .build();
     PollMessage.Autorenew autorenewPollMessage =
         newAutorenewPollMessage(existingDomain)
             .setEventTime(newExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
-            .setParent(historyEntry)
+            .setParent(domainHistory)
             .build();
     DomainBase newDomain =
         performRestore(
             existingDomain, newExpirationTime, autorenewEvent, autorenewPollMessage, now, clientId);
     updateForeignKeyIndexDeletionTime(newDomain);
-    entitiesToSave.add(newDomain, historyEntry, autorenewEvent, autorenewPollMessage);
+    entitiesToSave.add(
+        newDomain,
+        domainHistory.asBuilder().setDomainContent(newDomain).build(),
+        autorenewEvent,
+        autorenewPollMessage);
     tm().putAll(entitiesToSave.build());
     tm().delete(existingDomain.getDeletePollMessage());
     dnsQueue.addDomainRefreshTask(existingDomain.getDomainName());
@@ -181,7 +187,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
         .build();
   }
 
-  private HistoryEntry buildHistoryEntry(DomainBase existingDomain, DateTime now) {
+  private DomainHistory buildDomainHistory(DomainBase existingDomain, DateTime now) {
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_RESTORE)
         .setModificationTime(now)

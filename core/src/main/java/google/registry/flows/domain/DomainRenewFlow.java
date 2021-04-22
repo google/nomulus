@@ -52,6 +52,7 @@ import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand.Renew;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainRenewData;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -123,7 +124,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject DomainHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainRenewFlowCustomLogic flowCustomLogic;
   @Inject DomainPricingLogic pricingLogic;
@@ -157,21 +158,24 @@ public final class DomainRenewFlow implements TransactionalFlow {
             .setYears(years)
             .build());
     Registry registry = Registry.get(existingDomain.getTld());
-    HistoryEntry historyEntry = buildHistoryEntry(
-        existingDomain, now, command.getPeriod(), registry.getRenewGracePeriodLength());
+    DomainHistory domainHistory =
+        buildDomainHistory(
+            existingDomain, now, command.getPeriod(), registry.getRenewGracePeriodLength());
     String tld = existingDomain.getTld();
     // Bill for this explicit renew itself.
     BillingEvent.OneTime explicitRenewEvent =
-        createRenewBillingEvent(tld, feesAndCredits.getTotalCost(), years, historyEntry, now);
+        createRenewBillingEvent(tld, feesAndCredits.getTotalCost(), years, domainHistory, now);
     // Create a new autorenew billing event and poll message starting at the new expiration time.
-    BillingEvent.Recurring newAutorenewEvent = newAutorenewBillingEvent(existingDomain)
-        .setEventTime(newExpirationTime)
-        .setParent(historyEntry)
-        .build();
-    PollMessage.Autorenew newAutorenewPollMessage = newAutorenewPollMessage(existingDomain)
-        .setEventTime(newExpirationTime)
-        .setParent(historyEntry)
-        .build();
+    BillingEvent.Recurring newAutorenewEvent =
+        newAutorenewBillingEvent(existingDomain)
+            .setEventTime(newExpirationTime)
+            .setParent(domainHistory)
+            .build();
+    PollMessage.Autorenew newAutorenewPollMessage =
+        newAutorenewPollMessage(existingDomain)
+            .setEventTime(newExpirationTime)
+            .setParent(domainHistory)
+            .build();
     // End the old autorenew billing event and poll message now. This may delete the poll message.
     updateAutorenewRecurrenceEndTime(existingDomain, now);
     DomainBase newDomain =
@@ -193,19 +197,18 @@ public final class DomainRenewFlow implements TransactionalFlow {
                 .setNewDomain(newDomain)
                 .setNow(now)
                 .setYears(years)
-                .setHistoryEntry(historyEntry)
+                .setHistoryEntry(domainHistory)
                 .setEntityChanges(
                     EntityChanges.newBuilder()
                         .setSaves(
                             ImmutableSet.of(
                                 newDomain,
-                                historyEntry,
+                                domainHistory.asBuilder().setDomainContent(newDomain).build(),
                                 explicitRenewEvent,
                                 newAutorenewEvent,
                                 newAutorenewPollMessage))
                         .build())
                 .build());
-    persistEntityChanges(entityChanges);
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
@@ -213,13 +216,14 @@ public final class DomainRenewFlow implements TransactionalFlow {
                 .setResData(DomainRenewData.create(targetId, newExpirationTime))
                 .setResponseExtensions(createResponseExtensions(feesAndCredits, feeRenew))
                 .build());
+    persistEntityChanges(entityChanges);
     return responseBuilder
         .setResData(responseData.resData())
         .setExtensions(responseData.responseExtensions())
         .build();
   }
 
-  private HistoryEntry buildHistoryEntry(
+  private DomainHistory buildDomainHistory(
       DomainBase existingDomain, DateTime now, Period period, Duration renewGracePeriod) {
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_RENEW)

@@ -484,6 +484,7 @@ class DomainTransferRequestFlowTest
     assertAboutDomains()
         .that(domain)
         .hasOneHistoryEntryEachOfTypes(DOMAIN_CREATE, DOMAIN_TRANSFER_REQUEST);
+    assertLastHistoryContainsResource(domain);
     final HistoryEntry historyEntryTransferRequest =
         getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REQUEST);
     assertAboutHistoryEntries()

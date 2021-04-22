@@ -265,6 +265,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         isAnchorTenant
             ? clock.nowUtc().plus(Registry.get(domainTld).getAnchorTenantAddGracePeriodLength())
             : clock.nowUtc().plus(Registry.get(domainTld).getAddGracePeriodLength());
+    assertLastHistoryContainsResource(domain);
     HistoryEntry historyEntry = getHistoryEntries(domain).get(0);
     assertAboutDomains()
         .that(domain)

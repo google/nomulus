@@ -377,12 +377,16 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
       return thisCastToDerived();
     }
 
+    public B copyFrom(HistoryEntry.Builder<? extends HistoryEntry, ?> builder) {
+      return copyFrom(builder.getInstance());
+    }
+
     @Override
     public T build() {
       return super.build();
     }
 
-    public B setId(long id) {
+    public B setId(Long id) {
       getInstance().id = id;
       return thisCastToDerived();
     }

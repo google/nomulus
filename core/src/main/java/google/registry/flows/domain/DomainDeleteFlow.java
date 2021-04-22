@@ -63,6 +63,7 @@ import google.registry.flows.custom.EntityChanges;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Credit;
@@ -125,7 +126,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject DomainHistory.Builder historyBuilder;
   @Inject DnsQueue dnsQueue;
   @Inject Trid trid;
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
@@ -177,8 +178,8 @@ public final class DomainDeleteFlow implements TransactionalFlow {
             ? Duration.ZERO
             // By default, this should be 30 days of grace, and 5 days of pending delete.
             : redemptionGracePeriodLength.plus(pendingDeleteLength);
-    HistoryEntry historyEntry =
-        buildHistoryEntry(existingDomain, registry, now, durationUntilDelete, inAddGracePeriod);
+    DomainHistory domainHistory =
+        buildDomainHistory(existingDomain, registry, now, durationUntilDelete, inAddGracePeriod);
     DateTime deletionTime = now.plus(durationUntilDelete);
     if (durationUntilDelete.equals(Duration.ZERO)) {
       builder.setDeletionTime(now).setStatusValues(null);
@@ -210,7 +211,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     // it is synchronous).
     if (durationUntilDelete.isLongerThan(Duration.ZERO) || isSuperuser) {
       PollMessage.OneTime deletePollMessage =
-          createDeletePollMessage(existingDomain, historyEntry, deletionTime);
+          createDeletePollMessage(existingDomain, domainHistory, deletionTime);
       entitiesToSave.add(deletePollMessage);
       builder.setDeletePollMessage(deletePollMessage.createVKey());
     }
@@ -220,7 +221,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     if (durationUntilDelete.isLongerThan(Duration.ZERO)
         && !clientId.equals(existingDomain.getPersistedCurrentSponsorClientId())) {
       entitiesToSave.add(
-          createImmediateDeletePollMessage(existingDomain, historyEntry, now, deletionTime));
+          createImmediateDeletePollMessage(existingDomain, domainHistory, now, deletionTime));
     }
 
     // Cancel any grace periods that were still active, and set the expiration time accordingly.
@@ -229,7 +230,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
       // No cancellation is written if the grace period was not for a billable event.
       if (gracePeriod.hasBillingEvent()) {
         entitiesToSave.add(
-            BillingEvent.Cancellation.forGracePeriod(gracePeriod, historyEntry, targetId));
+            BillingEvent.Cancellation.forGracePeriod(gracePeriod, domainHistory, targetId));
         if (gracePeriod.getOneTimeBillingEvent() != null) {
           // Take the amount of amount of registration time being refunded off the expiration time.
           // This can be either add grace periods or renew grace periods.
@@ -246,7 +247,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
 
     DomainBase newDomain = builder.build();
     updateForeignKeyIndexDeletionTime(newDomain);
-    handlePendingTransferOnDelete(existingDomain, newDomain, now, historyEntry);
+    handlePendingTransferOnDelete(existingDomain, newDomain, now, domainHistory);
     // Close the autorenew billing event and poll message. This may delete the poll message.
     updateAutorenewRecurrenceEndTime(existingDomain, now);
     // If there's a pending transfer, the gaining client's autorenew billing
@@ -254,14 +255,16 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     // ResourceDeleteFlow since it's listed in serverApproveEntities.
     dnsQueue.addDomainRefreshTask(existingDomain.getDomainName());
 
-    entitiesToSave.add(newDomain, historyEntry);
-    EntityChanges entityChanges = flowCustomLogic.beforeSave(
-        BeforeSaveParameters.newBuilder()
-            .setExistingDomain(existingDomain)
-            .setNewDomain(newDomain)
-            .setHistoryEntry(historyEntry)
-            .setEntityChanges(EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
-            .build());
+    entitiesToSave.add(newDomain, domainHistory.asBuilder().setDomainContent(newDomain).build());
+    EntityChanges entityChanges =
+        flowCustomLogic.beforeSave(
+            BeforeSaveParameters.newBuilder()
+                .setExistingDomain(existingDomain)
+                .setNewDomain(newDomain)
+                .setHistoryEntry(domainHistory)
+                .setEntityChanges(
+                    EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
+                .build());
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
@@ -292,7 +295,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     }
   }
 
-  private HistoryEntry buildHistoryEntry(
+  private DomainHistory buildDomainHistory(
       DomainBase existingResource,
       Registry registry,
       DateTime now,
