@@ -51,12 +51,15 @@ public class HistoryEntryDao {
   public static Iterable<? extends HistoryEntry> loadAllHistoryObjects(
       DateTime afterTime, DateTime beforeTime) {
     if (tm().isOfy()) {
-      return ofy()
-          .load()
-          .type(HistoryEntry.class)
-          .order("modificationTime")
-          .filter("modificationTime >=", afterTime)
-          .filter("modificationTime <=", beforeTime);
+      return Streams.stream(
+              ofy()
+                  .load()
+                  .type(HistoryEntry.class)
+                  .order("modificationTime")
+                  .filter("modificationTime >=", afterTime)
+                  .filter("modificationTime <=", beforeTime))
+          .map(HistoryEntry::toChildHistoryEntity)
+          .collect(toImmutableList());
     } else {
       return jpaTm()
           .transact(
@@ -78,13 +81,16 @@ public class HistoryEntryDao {
   public static Iterable<? extends HistoryEntry> loadHistoryObjectsForResource(
       VKey<? extends EppResource> parentKey, DateTime afterTime, DateTime beforeTime) {
     if (tm().isOfy()) {
-      return ofy()
-          .load()
-          .type(HistoryEntry.class)
-          .ancestor(parentKey.getOfyKey())
-          .order("modificationTime")
-          .filter("modificationTime >=", afterTime)
-          .filter("modificationTime <=", beforeTime);
+      return Streams.stream(
+              ofy()
+                  .load()
+                  .type(HistoryEntry.class)
+                  .ancestor(parentKey.getOfyKey())
+                  .order("modificationTime")
+                  .filter("modificationTime >=", afterTime)
+                  .filter("modificationTime <=", beforeTime))
+          .map(HistoryEntry::toChildHistoryEntity)
+          .collect(toImmutableList());
     } else {
       return jpaTm()
           .transact(() -> loadHistoryObjectsForResourceFromSql(parentKey, afterTime, beforeTime));

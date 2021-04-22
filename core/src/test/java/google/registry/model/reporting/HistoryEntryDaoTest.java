@@ -41,7 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 class HistoryEntryDaoTest extends EntityTestCase {
 
   private DomainBase domain;
-  private HistoryEntry historyEntry;
+  private HistoryEntry domainHistory;
 
   @BeforeEach
   void beforeEach() {
@@ -55,10 +55,10 @@ class HistoryEntryDaoTest extends EntityTestCase {
             .setReportField(TransactionReportField.NET_ADDS_1_YR)
             .setReportAmount(1)
             .build();
-    // Set up a new persisted HistoryEntry entity.
-    historyEntry =
+    // Set up a new persisted DomainHistory entity.
+    domainHistory =
         new DomainHistory.Builder()
-            .setParent(domain)
+            .setDomainContent(domain)
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
@@ -71,14 +71,14 @@ class HistoryEntryDaoTest extends EntityTestCase {
             .setRequestedByRegistrar(false)
             .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
             .build();
-    persistResource(historyEntry);
+    persistResource(domainHistory);
   }
 
   @TestOfyAndSql
   void testSimpleLoadAll() {
     assertThat(HistoryEntryDao.loadAllHistoryObjects(START_OF_TIME, END_OF_TIME))
-        .comparingElementsUsing(immutableObjectCorrespondence("nsHosts"))
-        .containsExactly(historyEntry);
+        .comparingElementsUsing(immutableObjectCorrespondence("nsHosts", "domainContent"))
+        .containsExactly(domainHistory);
   }
 
   @TestOfyAndSql
@@ -99,8 +99,8 @@ class HistoryEntryDaoTest extends EntityTestCase {
     transactIfJpaTm(
         () ->
             assertThat(HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey()))
-                .comparingElementsUsing(immutableObjectCorrespondence("nsHosts"))
-                .containsExactly(historyEntry));
+                .comparingElementsUsing(immutableObjectCorrespondence("nsHosts", "domainContent"))
+                .containsExactly(domainHistory));
   }
 
   @TestOfyAndSql

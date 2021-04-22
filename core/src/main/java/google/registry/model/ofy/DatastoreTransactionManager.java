@@ -39,6 +39,8 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.QueryComposer;
 import google.registry.persistence.transaction.TransactionManager;
+import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.SqlEntity;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -141,22 +143,23 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void putAll(Object... entities) {
-    syncIfTransactionless(getOfy().save().entities(entities));
+    syncIfTransactionless(
+        getOfy().save().entities(toDatastoreEntities(ImmutableList.copyOf(entities))));
   }
 
   @Override
   public void putAll(ImmutableCollection<?> entities) {
-    syncIfTransactionless(getOfy().save().entities(entities));
+    syncIfTransactionless(getOfy().save().entities(toDatastoreEntities(entities)));
   }
 
   @Override
   public void putWithoutBackup(Object entity) {
-    syncIfTransactionless(getOfy().saveWithoutBackup().entities(entity));
+    syncIfTransactionless(getOfy().saveWithoutBackup().entities(toDatastoreEntity(entity)));
   }
 
   @Override
   public void putAllWithoutBackup(ImmutableCollection<?> entities) {
-    syncIfTransactionless(getOfy().saveWithoutBackup().entities(entities));
+    syncIfTransactionless(getOfy().saveWithoutBackup().entities(toDatastoreEntities(entities)));
   }
 
   @Override
@@ -181,7 +184,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public boolean exists(Object entity) {
-    return getOfy().load().key(Key.create(entity)).now() != null;
+    return getOfy().load().key(Key.create(toDatastoreEntity(entity))).now() != null;
   }
 
   @Override
@@ -210,8 +213,7 @@ public class DatastoreTransactionManager implements TransactionManager {
     return getOfy().load().keys(keyMap.keySet()).entrySet().stream()
         .collect(
             toImmutableMap(
-                entry -> keyMap.get(entry.getKey()),
-                entry -> toChildHistoryEntryIfPossible(entry.getValue())));
+                entry -> keyMap.get(entry.getKey()), entry -> toSqlEntity(entry.getValue())));
   }
 
   @Override
@@ -244,7 +246,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> T loadByEntity(T entity) {
-    return ofy().load().entity(entity).now();
+    return (T) toSqlEntity(ofy().load().entity(toDatastoreEntity(entity)).now());
   }
 
   @Override
@@ -286,7 +288,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void delete(Object entity) {
-    syncIfTransactionless(getOfy().delete().entity(entity));
+    syncIfTransactionless(getOfy().delete().entity(toDatastoreEntity(entity)));
   }
 
   @Override
@@ -304,7 +306,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void deleteWithoutBackup(Object entity) {
-    syncIfTransactionless(getOfy().deleteWithoutBackup().entity(entity));
+    syncIfTransactionless(getOfy().deleteWithoutBackup().entity(toDatastoreEntity(entity)));
   }
 
   @Override
@@ -348,28 +350,52 @@ public class DatastoreTransactionManager implements TransactionManager {
    */
   private void saveEntity(Object entity) {
     checkArgumentNotNull(entity, "entity must be specified");
-    if (entity instanceof HistoryEntry) {
-      entity = ((HistoryEntry) entity).asHistoryEntry();
-    }
-    syncIfTransactionless(getOfy().save().entity(entity));
+    syncIfTransactionless(getOfy().save().entity(toDatastoreEntity(entity)));
   }
 
   @Nullable
   private <T> T loadNullable(VKey<T> key) {
-    return toChildHistoryEntryIfPossible(getOfy().load().key(key.getOfyKey()).now());
+    return toSqlEntity(getOfy().load().key(key.getOfyKey()).now());
   }
 
-  /** Converts a nonnull {@link HistoryEntry} to the child format, e.g. {@link DomainHistory} */
+  /**
+   * Converts a possible {@link SqlEntity} to a {@link DatastoreEntity}.
+   *
+   * <p>One example is that this would convert a {@link DomainHistory} to a {@link HistoryEntry}.
+   */
+  private static Object toDatastoreEntity(@Nullable Object obj) {
+    if (obj instanceof SqlEntity) {
+      Optional<DatastoreEntity> possibleDatastoreEntity = ((SqlEntity) obj).toDatastoreEntity();
+      if (possibleDatastoreEntity.isPresent()) {
+        return possibleDatastoreEntity.get();
+      }
+    }
+    return obj;
+  }
+
+  /** Converts many possible {@link SqlEntity} objects to {@link DatastoreEntity} objects. */
+  private static ImmutableList<Object> toDatastoreEntities(ImmutableCollection<?> collection) {
+    return collection.stream()
+        .map(DatastoreTransactionManager::toDatastoreEntity)
+        .collect(toImmutableList());
+  }
+
+  /**
+   * Converts an object to the corresponding {@link SqlEntity} if necessary and possible.
+   *
+   * <p>This should be used when returning objects from Datastore to make sure they reflect the most
+   * recent type of the object in question.
+   */
   @SuppressWarnings("unchecked")
-  public static <T> T toChildHistoryEntryIfPossible(@Nullable T obj) {
+  public static <T> T toSqlEntity(@Nullable T obj) {
     // NB: The Key of the object in question may not necessarily be the resulting class that we
-    // wish to have. Because all *History classes are @EntitySubclasses, their Keys will have type
-    // HistoryEntry -- even if you create them based off the *History class.
-    if (obj instanceof HistoryEntry
-        && !(obj instanceof ContactHistory)
-        && !(obj instanceof DomainHistory)
-        && !(obj instanceof HostHistory)) {
-      return (T) ((HistoryEntry) obj).toChildHistoryEntity();
+    // wish to have. For example, because all *History classes are @EntitySubclasses, their Keys
+    // will have type HistoryEntry -- even if you create them based off the *History class.
+    if (obj instanceof DatastoreEntity && !(obj instanceof SqlEntity)) {
+      Optional<SqlEntity> possibleSqlEntity = ((DatastoreEntity) obj).toSqlEntity();
+      if (possibleSqlEntity.isPresent()) {
+        return (T) possibleSqlEntity.get();
+      }
     }
     return obj;
   }

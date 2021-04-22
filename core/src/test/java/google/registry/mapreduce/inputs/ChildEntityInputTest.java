@@ -35,8 +35,10 @@ import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.AppEngineExtension;
@@ -64,9 +66,9 @@ class ChildEntityInputTest {
 
   private DomainBase domainA;
   private DomainBase domainB;
-  private HistoryEntry domainHistoryEntryA;
-  private HistoryEntry domainHistoryEntryB;
-  private HistoryEntry contactHistoryEntry;
+  private DomainHistory domainHistoryEntryA;
+  private DomainHistory domainHistoryEntryB;
+  private ContactHistory contactHistoryEntry;
   private BillingEvent.OneTime oneTimeA;
   private BillingEvent.OneTime oneTimeB;
   private BillingEvent.Recurring recurringA;
@@ -78,10 +80,10 @@ class ChildEntityInputTest {
     domainA = persistEppResourceInFirstBucket(newDomainBase("a.tld", contact));
     domainHistoryEntryA =
         persistResource(
-            new HistoryEntry.Builder().setParent(domainA).setModificationTime(now).build());
+            new DomainHistory.Builder().setDomainContent(domainA).setModificationTime(now).build());
     contactHistoryEntry =
         persistResource(
-            new HistoryEntry.Builder().setParent(contact).setModificationTime(now).build());
+            new ContactHistory.Builder().setContactBase(contact).setModificationTime(now).build());
     oneTimeA =
         persistResource(
             new BillingEvent.OneTime.Builder()
@@ -111,7 +113,7 @@ class ChildEntityInputTest {
     domainB = persistEppResourceInFirstBucket(newDomainBase("b.tld"));
     domainHistoryEntryB =
         persistResource(
-            new HistoryEntry.Builder().setParent(domainB).setModificationTime(now).build());
+            new DomainHistory.Builder().setDomainContent(domainB).setModificationTime(now).build());
     oneTimeB =
         persistResource(
             new BillingEvent.OneTime.Builder()
@@ -177,9 +179,9 @@ class ChildEntityInputTest {
     }
     assertThat(seen)
         .containsExactly(
-            domainHistoryEntryA,
-            domainHistoryEntryB,
-            contactHistoryEntry,
+            domainHistoryEntryA.asHistoryEntry(),
+            domainHistoryEntryB.asHistoryEntry(),
+            contactHistoryEntry.asHistoryEntry(),
             oneTimeA,
             recurringA,
             oneTimeB,
@@ -202,7 +204,11 @@ class ChildEntityInputTest {
             .createReaders()
             .get(0);
     assertThat(getAllFromReader(reader))
-        .containsExactly(domainHistoryEntryA, contactHistoryEntry, oneTimeA, recurringA);
+        .containsExactly(
+            domainHistoryEntryA.asHistoryEntry(),
+            contactHistoryEntry.asHistoryEntry(),
+            oneTimeA,
+            recurringA);
   }
 
   private static Set<ImmutableObject> getAllFromReader(InputReader<ImmutableObject> reader)
@@ -230,7 +236,7 @@ class ChildEntityInputTest {
                     HistoryEntry.class, BillingEvent.OneTime.class, BillingEvent.Recurring.class))
             .createReaders()
             .get(0);
-    assertThat(getAllFromReader(reader)).containsExactly(contactHistoryEntry);
+    assertThat(getAllFromReader(reader)).containsExactly(contactHistoryEntry.asHistoryEntry());
   }
 
   @Test
@@ -287,11 +293,12 @@ class ChildEntityInputTest {
       DomainBase domain = persistSimpleResource(newDomainBase(i + ".tld"));
       historyEntries.add(
           persistResource(
-              new HistoryEntry.Builder()
-                  .setParent(domain)
-                  .setModificationTime(now)
-                  .setClientId(i + ".tld")
-                  .build()));
+                  new DomainHistory.Builder()
+                      .setDomainContent(domain)
+                      .setModificationTime(now)
+                      .setClientId(i + ".tld")
+                      .build())
+              .asHistoryEntry());
       persistResource(EppResourceIndex.create(getBucketKey(i), Key.create(domain)));
     }
     Set<ImmutableObject> seen = new HashSet<>();
@@ -333,7 +340,11 @@ class ChildEntityInputTest {
     seen.add(deserializedReader.next());
     seen.add(deserializedReader.next());
     assertThat(seen)
-        .containsExactly(domainHistoryEntryA, contactHistoryEntry, oneTimeA, recurringA);
+        .containsExactly(
+            domainHistoryEntryA.asHistoryEntry(),
+            contactHistoryEntry.asHistoryEntry(),
+            oneTimeA,
+            recurringA);
     assertThrows(NoSuchElementException.class, deserializedReader::next);
   }
 }

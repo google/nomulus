@@ -64,7 +64,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.common.net.InetAddresses;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.cmd.Saver;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
@@ -124,6 +123,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.Nullable;
 import org.hibernate.Hibernate;
@@ -642,7 +642,7 @@ public class DatabaseHelper {
             new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setModificationTime(now)
-                .setParent(domain)
+                .setDomainContent(domain)
                 .build());
     BillingEvent.Recurring autorenewEvent =
         persistResource(
@@ -683,7 +683,7 @@ public class DatabaseHelper {
             new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
                 .setModificationTime(tm().transact(() -> tm().getTransactionTime()))
-                .setParent(domain)
+                .setDomainContent(domain)
                 .build());
     BillingEvent.OneTime transferBillingEvent =
         persistResource(
@@ -1014,8 +1014,9 @@ public class DatabaseHelper {
 
   private static <R> void saveResource(R resource, boolean wantBackup) {
     if (tm().isOfy()) {
-      Saver saver = wantBackup || alwaysSaveWithBackup ? ofy().save() : ofy().saveWithoutBackup();
-      saver.entity(resource);
+      Consumer<Object> saver =
+          wantBackup || alwaysSaveWithBackup ? tm()::put : tm()::putWithoutBackup;
+      saver.accept(resource);
       if (resource instanceof EppResource) {
         EppResource eppResource = (EppResource) resource;
         persistEppResourceExtras(
@@ -1027,13 +1028,13 @@ public class DatabaseHelper {
   }
 
   private static <R extends EppResource> void persistEppResourceExtras(
-      R resource, EppResourceIndex index, Saver saver) {
+      R resource, EppResourceIndex index, Consumer<Object> saver) {
     assertWithMessage("Cannot persist an EppResource with a missing repoId in tests")
         .that(resource.getRepoId())
         .isNotEmpty();
-    saver.entity(index);
+    saver.accept(index);
     if (resource instanceof ForeignKeyedEppResource) {
-      saver.entity(ForeignKeyIndex.create(resource, resource.getDeletionTime()));
+      saver.accept(ForeignKeyIndex.create(resource, resource.getDeletionTime()));
     }
   }
 
@@ -1058,8 +1059,8 @@ public class DatabaseHelper {
     tm().transact(
             () -> {
               if (tm().isOfy()) {
-                Saver saver = ofy().save();
-                saver.entity(resource);
+                Consumer<Object> saver = tm()::put;
+                saver.accept(resource);
                 persistEppResourceExtras(resource, eppResourceIndex, saver);
               } else {
                 tm().put(resource);

@@ -80,6 +80,7 @@ import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.DomainCommand.Create;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeCreateCommandExtension;
@@ -206,7 +207,7 @@ public class DomainCreateFlow implements TransactionalFlow {
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject DomainHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
   @Inject AllocationTokenFlowUtils allocationTokenFlowUtils;
   @Inject DomainCreateFlowCustomLogic flowCustomLogic;
@@ -303,8 +304,8 @@ public class DomainCreateFlow implements TransactionalFlow {
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
     String repoId = createDomainRepoId(ObjectifyService.allocateId(), registry.getTldStr());
     DateTime registrationExpirationTime = leapSafeAddYears(now, years);
-    HistoryEntry historyEntry = buildHistoryEntry(
-        repoId, registry, now, period, registry.getAddGracePeriodLength());
+    DomainHistory domainHistory =
+        buildHistoryEntry(repoId, registry, now, period, registry.getAddGracePeriodLength());
     // Bill for the create.
     BillingEvent.OneTime createBillingEvent =
         createOneTimeBillingEvent(
@@ -314,20 +315,16 @@ public class DomainCreateFlow implements TransactionalFlow {
             isReserved(domainName, isSunriseCreate),
             years,
             feesAndCredits,
-            historyEntry,
+            domainHistory,
             allocationToken,
             now);
     // Create a new autorenew billing event and poll message starting at the expiration time.
     BillingEvent.Recurring autorenewBillingEvent =
-        createAutorenewBillingEvent(historyEntry, registrationExpirationTime);
+        createAutorenewBillingEvent(domainHistory, registrationExpirationTime);
     PollMessage.Autorenew autorenewPollMessage =
-        createAutorenewPollMessage(historyEntry, registrationExpirationTime);
+        createAutorenewPollMessage(domainHistory, registrationExpirationTime);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
-    entitiesToSave.add(
-        historyEntry,
-        createBillingEvent,
-        autorenewBillingEvent,
-        autorenewPollMessage);
+    entitiesToSave.add(createBillingEvent, autorenewBillingEvent, autorenewPollMessage);
     // Bill for EAP cost, if any.
     if (!feesAndCredits.getEapCost().isZero()) {
       entitiesToSave.add(createEapBillingEvent(feesAndCredits, createBillingEvent));
@@ -337,7 +334,7 @@ public class DomainCreateFlow implements TransactionalFlow {
     if (getReservationTypes(domainName).contains(NAME_COLLISION)) {
       statuses.add(SERVER_HOLD);
       entitiesToSave.add(
-          createNameCollisionOneTimePollMessage(targetId, historyEntry, clientId, now));
+          createNameCollisionOneTimePollMessage(targetId, domainHistory, clientId, now));
     }
 
     DomainBase newDomain =
@@ -365,13 +362,13 @@ public class DomainCreateFlow implements TransactionalFlow {
             .build();
     entitiesToSave.add(
         newDomain,
+        domainHistory.asBuilder().setDomainContent(newDomain).build(),
         ForeignKeyIndex.create(newDomain, newDomain.getDeletionTime()),
         EppResourceIndex.create(Key.create(newDomain)));
     if (allocationToken.isPresent()
         && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {
       entitiesToSave.add(
-          allocationTokenFlowUtils.redeemToken(
-              allocationToken.get(), HistoryEntry.createVKey(Key.create(historyEntry))));
+          allocationTokenFlowUtils.redeemToken(allocationToken.get(), domainHistory.createVKey()));
     }
     enqueueTasks(newDomain, hasSignedMarks, hasClaimsNotice);
 
@@ -379,7 +376,7 @@ public class DomainCreateFlow implements TransactionalFlow {
         flowCustomLogic.beforeSave(
             DomainCreateFlowCustomLogic.BeforeSaveParameters.newBuilder()
                 .setNewDomain(newDomain)
-                .setHistoryEntry(historyEntry)
+                .setHistoryEntry(domainHistory)
                 .setEntityChanges(
                     EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
                 .setYears(years)
@@ -483,7 +480,7 @@ public class DomainCreateFlow implements TransactionalFlow {
             : null);
   }
 
-  private HistoryEntry buildHistoryEntry(
+  private DomainHistory buildHistoryEntry(
       String repoId, Registry registry, DateTime now, Period period, Duration addGracePeriod) {
     // We ignore prober transactions
     if (registry.getTldType() == TldType.REAL) {
@@ -511,7 +508,7 @@ public class DomainCreateFlow implements TransactionalFlow {
       boolean isReserved,
       int years,
       FeesAndCredits feesAndCredits,
-      HistoryEntry historyEntry,
+      DomainHistory domainHistory,
       Optional<AllocationToken> allocationToken,
       DateTime now) {
     ImmutableSet.Builder<Flag> flagsBuilder = new ImmutableSet.Builder<>();
@@ -540,12 +537,12 @@ public class DomainCreateFlow implements TransactionalFlow {
                     ? registry.getAnchorTenantAddGracePeriodLength()
                     : registry.getAddGracePeriodLength()))
         .setFlags(flagsBuilder.build())
-        .setParent(historyEntry)
+        .setParent(domainHistory)
         .build();
   }
 
   private Recurring createAutorenewBillingEvent(
-      HistoryEntry historyEntry, DateTime registrationExpirationTime) {
+      DomainHistory domainHistory, DateTime registrationExpirationTime) {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -553,7 +550,7 @@ public class DomainCreateFlow implements TransactionalFlow {
         .setClientId(clientId)
         .setEventTime(registrationExpirationTime)
         .setRecurrenceEndTime(END_OF_TIME)
-        .setParent(historyEntry)
+        .setParent(domainHistory)
         .build();
   }
 

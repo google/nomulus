@@ -39,7 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 @DualDatabaseTest
 class HistoryEntryTest extends EntityTestCase {
 
-  private HistoryEntry historyEntry;
+  private DomainHistory domainHistory;
 
   @BeforeEach
   void setUp() {
@@ -53,9 +53,9 @@ class HistoryEntryTest extends EntityTestCase {
             .setReportAmount(1)
             .build();
     // Set up a new persisted HistoryEntry entity.
-    historyEntry =
+    domainHistory =
         new DomainHistory.Builder()
-            .setParent(domain)
+            .setDomainContent(domain)
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
@@ -68,26 +68,27 @@ class HistoryEntryTest extends EntityTestCase {
             .setRequestedByRegistrar(false)
             .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
             .build();
-    persistResource(historyEntry);
+    persistResource(domainHistory);
   }
 
   @TestOfyAndSql
   void testPersistence() {
     transactIfJpaTm(
         () -> {
-          HistoryEntry fromDatabase = tm().loadByEntity(historyEntry);
+          HistoryEntry fromDatabase = tm().loadByEntity(domainHistory);
           assertAboutImmutableObjects()
               .that(fromDatabase)
-              .isEqualExceptFields(historyEntry, "nsHosts", "domainTransactionRecords");
+              .isEqualExceptFields(
+                  domainHistory, "nsHosts", "domainTransactionRecords", "domainContent");
           assertAboutImmutableObjects()
               .that(Iterables.getOnlyElement(fromDatabase.getDomainTransactionRecords()))
               .isEqualExceptFields(
-                  Iterables.getOnlyElement(historyEntry.getDomainTransactionRecords()), "id");
+                  Iterables.getOnlyElement(domainHistory.getDomainTransactionRecords()), "id");
         });
   }
 
   @TestOfyOnly
   void testIndexing() throws Exception {
-    verifyIndexing(historyEntry.asHistoryEntry(), "modificationTime", "clientId");
+    verifyIndexing(domainHistory.asHistoryEntry(), "modificationTime", "clientId");
   }
 }

@@ -38,7 +38,7 @@ import org.joda.time.DateTime;
 public class GracePeriodBase extends ImmutableObject {
 
   /** Unique id required for hibernate representation. */
-  @Transient Long gracePeriodId;
+  @Transient long gracePeriodId;
 
   /** Repository id for the domain which this grace period belongs to. */
   @Ignore

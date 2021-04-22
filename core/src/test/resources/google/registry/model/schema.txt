@@ -294,8 +294,8 @@ class google.registry.model.domain.GracePeriod {
   google.registry.model.domain.rgp.GracePeriodStatus type;
   google.registry.persistence.BillingVKey$BillingEventVKey billingEventOneTime;
   google.registry.persistence.BillingVKey$BillingRecurrenceVKey billingEventRecurring;
-  java.lang.Long gracePeriodId;
   java.lang.String clientId;
+  long gracePeriodId;
   org.joda.time.DateTime expirationTime;
 }
 class google.registry.model.domain.Period {
