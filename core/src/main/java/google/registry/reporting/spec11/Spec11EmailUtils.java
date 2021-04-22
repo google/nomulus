@@ -136,14 +136,14 @@ public class Spec11EmailUtils {
               return registrarThreatMatches.threatMatches().stream()
                   .filter(
                       threatMatch ->
-                          tm().createQueryComposer(DomainBase.class)
+                          tm()
+                              .createQueryComposer(DomainBase.class)
                               .where(
                                   "fullyQualifiedDomainName",
                                   Comparator.EQ,
                                   threatMatch.fullyQualifiedDomainName())
                               .stream()
-                              .filter(domain -> domain.shouldPublishToDns())
-                              .count() > 0)
+                              .anyMatch(DomainBase::shouldPublishToDns))
                   .collect(toImmutableList());
             });
     return RegistrarThreatMatches.create(registrarThreatMatches.clientId(), filteredMatches);

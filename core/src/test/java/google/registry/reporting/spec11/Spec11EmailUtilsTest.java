@@ -280,7 +280,6 @@ class Spec11EmailUtilsTest {
         Optional.empty());
   }
 
-
   @TestOfyAndSql
   void testOneFailure_sendsAlert() throws Exception {
     // If there is one failure, we should still send the other message and then an alert email
