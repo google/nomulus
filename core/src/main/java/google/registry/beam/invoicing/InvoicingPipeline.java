@@ -147,15 +147,16 @@ public class InvoicingPipeline implements Serializable {
                     "%s/%s/%s",
                     options.getBillingBucketUrl(), BillingModule.INVOICES_DIRECTORY, yearMonth))
             .by(BillingEvent::getDetailedReportGroupingKey)
+            .withNumShards(1)
             .withDestinationCoder(StringUtf8Coder.of())
-            .via(
-                Contextful.fn(BillingEvent::toCsv),
-                TextIO.sink().withHeader(BillingEvent.getHeader()))
             .withNaming(
                 key ->
                     (window, pane, numShards, shardIndex, compression) ->
                         String.format(
-                            "%s_%s_%s.csv", BillingModule.DETAIL_REPORT_PREFIX, yearMonth, key)));
+                            "%s_%s_%s.csv", BillingModule.DETAIL_REPORT_PREFIX, yearMonth, key))
+            .via(
+                Contextful.fn(BillingEvent::toCsv),
+                TextIO.sink().withHeader(BillingEvent.getHeader())));
   }
 
   /** Create the Bigquery query for a given project and yearMonth at runtime. */
