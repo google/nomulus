@@ -19,9 +19,6 @@ import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.net.MediaType;
@@ -33,11 +30,9 @@ import java.io.IOException;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link GenerateSpec11ReportAction}. */
-class GenerateSpec11ReportActionTest extends BeamActionTestBase  {
+class GenerateSpec11ReportActionTest extends BeamActionTestBase {
 
   @RegisterExtension
   final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();

@@ -69,8 +69,8 @@ public class PublishInvoicesAction implements Runnable {
   @Inject
   PublishInvoicesAction(
       @Config("projectId") String projectId,
-      @Parameter(ReportingModule.PARAM_JOB_ID) String jobId,
       @Config("defaultJobRegion") String jobRegion,
+      @Parameter(ReportingModule.PARAM_JOB_ID) String jobId,
       BillingEmailUtils emailUtils,
       Dataflow dataflow,
       Response response,
