@@ -384,19 +384,6 @@ public final class RegistryConfig {
       return Duration.standardHours(1);
     }
 
-    /**
-     * Number of sharded entity group roots used for performing strongly consistent scans.
-     *
-     * <p><b>Warning:</b> This number may increase but never decrease.
-     *
-     * @see google.registry.model.index.EppResourceIndex
-     */
-    @Provides
-    @Config("eppResourceIndexBucketCount")
-    public static int provideEppResourceIndexBucketCount(RegistryConfigSettings config) {
-      return config.datastore.eppResourceIndexBucketsNum;
-    }
-
     @Provides
     @Config("cloudSqlJdbcUrl")
     public static String providesCloudSqlJdbcUrl(RegistryConfigSettings config) {
@@ -565,53 +552,6 @@ public final class RegistryConfig {
     }
 
     /**
-     * Returns the name of the GCS bucket for storing Beam templates and results.
-     *
-     * @see google.registry.reporting.billing.GenerateInvoicesAction
-     */
-    @Provides
-    @Config("apacheBeamBucket")
-    public static String provideApacheBeamBucket(@Config("projectId") String projectId) {
-      return projectId + "-beam";
-    }
-
-    /**
-     * Returns the URL of the GCS location for storing Apache Beam related objects.
-     *
-     * @see google.registry.reporting.billing.GenerateInvoicesAction
-     */
-    @Provides
-    @Config("apacheBeamBucketUrl")
-    public static String provideApacheBeamBucketUrl(@Config("apacheBeamBucket") String beamBucket) {
-      return "gs://" + beamBucket;
-    }
-
-    /**
-     * Returns the URL of the GCS location for storing the monthly invoicing Beam template.
-     *
-     * @see google.registry.reporting.billing.GenerateInvoicesAction
-     * @see google.registry.beam.invoicing.InvoicingPipeline
-     */
-    @Provides
-    @Config("invoiceTemplateUrl")
-    public static String provideInvoiceTemplateUrl(
-        @Config("apacheBeamBucketUrl") String beamBucketUrl) {
-      return beamBucketUrl + "/templates/invoicing";
-    }
-
-    /**
-     * Returns the URL of the GCS location for storing the monthly spec11 Beam template.
-     *
-     * @see google.registry.beam.spec11.Spec11Pipeline
-     */
-    @Provides
-    @Config("spec11TemplateUrl")
-    public static String provideSpec11TemplateUrl(
-        @Config("apacheBeamBucketUrl") String beamBucketUrl) {
-      return beamBucketUrl + "/templates/spec11";
-    }
-
-    /**
      * Returns whether an SSL certificate hash is required to log in via EPP and run flows.
      *
      * @see google.registry.flows.TlsCredentials
@@ -634,36 +574,11 @@ public final class RegistryConfig {
       return config.beam.defaultJobRegion;
     }
 
-    /**
-     * Returns the default job zone to run Apache Beam (Cloud Dataflow) jobs in.
-     *
-     * @see google.registry.reporting.billing.GenerateInvoicesAction
-     * @see google.registry.reporting.spec11.GenerateSpec11ReportAction
-     */
-    @Provides
-    @Config("defaultJobZone")
-    public static String provideDefaultJobZone(RegistryConfigSettings config) {
-      return config.beam.defaultJobZone;
-    }
-
     /** Returns the GCS bucket URL with all staged BEAM flex templates. */
     @Provides
     @Config("beamStagingBucketUrl")
     public static String provideBeamStagingBucketUrl(RegistryConfigSettings config) {
       return config.beam.stagingBucketUrl;
-    }
-
-    /**
-     * Returns the URL of the GCS location we store jar dependencies for beam pipelines.
-     *
-     * @see google.registry.beam.invoicing.InvoicingPipeline
-     * @see google.registry.beam.spec11.Spec11Pipeline
-     */
-    @Provides
-    @Config("beamStagingUrl")
-    public static String provideInvoiceStagingUrl(
-        @Config("apacheBeamBucketUrl") String beamBucketUrl) {
-      return beamBucketUrl + "/staging";
     }
 
     /**
@@ -1225,14 +1140,6 @@ public final class RegistryConfig {
     @Config("reservedTermsExportDisclaimer")
     public static String provideReservedTermsExportDisclaimer(RegistryConfigSettings config) {
       return formatComments(config.registryPolicy.reservedTermsExportDisclaimer);
-    }
-
-    /** Returns the clientId of the registrar used by the {@code CheckApiServlet}. */
-    // TODO(b/80417678): remove this once CheckApiAction no longer uses this id.
-    @Provides
-    @Config("checkApiServletRegistrarClientId")
-    public static String provideCheckApiServletRegistrarClientId(RegistryConfigSettings config) {
-      return config.registryPolicy.checkApiServletClientId;
     }
 
     /**

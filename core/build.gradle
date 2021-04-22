@@ -810,6 +810,10 @@ if (environment in ['alpha', 'crash']) {
           mainClass: 'google.registry.beam.spec11.Spec11Pipeline',
           metaData: 'google/registry/beam/spec11_pipeline_metadata.json'
       ],
+      [
+          mainClass: 'google.registry.beam.invoicing.InvoicingPipeline',
+          metaData: 'google/registry/beam/invoicing_pipeline_metadata.json'
+      ],
   ]
   project.tasks.create("stage_beam_pipelines") {
     doLast {

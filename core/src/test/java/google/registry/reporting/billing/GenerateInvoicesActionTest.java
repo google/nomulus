@@ -17,94 +17,57 @@ package google.registry.reporting.billing;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
-import static org.mockito.ArgumentMatchers.any;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.api.services.dataflow.Dataflow;
-import com.google.api.services.dataflow.Dataflow.Projects;
-import com.google.api.services.dataflow.Dataflow.Projects.Templates;
-import com.google.api.services.dataflow.Dataflow.Projects.Templates.Launch;
-import com.google.api.services.dataflow.model.Job;
-import com.google.api.services.dataflow.model.LaunchTemplateParameters;
-import com.google.api.services.dataflow.model.LaunchTemplateResponse;
-import com.google.api.services.dataflow.model.RuntimeEnvironment;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.net.MediaType;
+import google.registry.beam.BeamActionTestBase;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.FakeResponse;
+import google.registry.testing.FakeClock;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import java.io.IOException;
 import org.joda.time.YearMonth;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.billing.GenerateInvoicesAction}. */
-class GenerateInvoicesActionTest {
+class GenerateInvoicesActionTest extends BeamActionTestBase {
 
   @RegisterExtension
   final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
 
-  private Dataflow dataflow;
-  private Projects projects;
-  private Templates templates;
-  private Launch launch;
-  private FakeResponse response;
-  private BillingEmailUtils emailUtils;
+  private final BillingEmailUtils emailUtils = mock(BillingEmailUtils.class);
+  private FakeClock clock = new FakeClock();
   private GenerateInvoicesAction action;
-
-  @BeforeEach
-  void beforeEach() throws IOException {
-    dataflow = mock(Dataflow.class);
-    projects = mock(Projects.class);
-    templates = mock(Templates.class);
-    launch = mock(Launch.class);
-    emailUtils = mock(BillingEmailUtils.class);
-    when(dataflow.projects()).thenReturn(projects);
-    when(projects.templates()).thenReturn(templates);
-    when(templates.launch(any(String.class), any(LaunchTemplateParameters.class)))
-        .thenReturn(launch);
-    when(launch.setGcsPath(any(String.class))).thenReturn(launch);
-
-    response = new FakeResponse();
-    Job job = new Job();
-    job.setId("12345");
-    when(launch.execute()).thenReturn(new LaunchTemplateResponse().setJob(job));
-  }
 
   @Test
   void testLaunchTemplateJob_withPublish() throws Exception {
     action =
         new GenerateInvoicesAction(
             "test-project",
-            "gs://test-project-beam",
-            "gs://test-project-beam/templates/invoicing",
-            "us-east1-c",
+            "test-region",
+            "staging_bucket",
+            "billing_bucket",
+            "REG-INV",
             true,
             new YearMonth(2017, 10),
-            dataflow,
+            emailUtils,
+            clock,
             response,
-            emailUtils);
+            dataflow);
     action.run();
-    LaunchTemplateParameters expectedParams =
-        new LaunchTemplateParameters()
-            .setJobName("invoicing-2017-10")
-            .setEnvironment(
-                new RuntimeEnvironment()
-                    .setZone("us-east1-c")
-                    .setTempLocation("gs://test-project-beam/temporary"))
-            .setParameters(ImmutableMap.of("yearMonth", "2017-10"));
-    verify(templates).launch("test-project", expectedParams);
-    verify(launch).setGcsPath("gs://test-project-beam/templates/invoicing");
-    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).isEqualTo("Launched dataflow template.");
 
     TaskMatcher matcher =
         new TaskMatcher()
             .url("/_dr/task/publishInvoices")
             .method("POST")
-            .param("jobId", "12345")
+            .param("jobId", "jobid")
             .param("yearMonth", "2017-10");
     assertTasksEnqueued("beam-reporting", matcher);
   }
@@ -114,47 +77,43 @@ class GenerateInvoicesActionTest {
     action =
         new GenerateInvoicesAction(
             "test-project",
-            "gs://test-project-beam",
-            "gs://test-project-beam/templates/invoicing",
-            "us-east1-c",
+            "test-region",
+            "staging_bucket",
+            "billing_bucket",
+            "REG-INV",
             false,
             new YearMonth(2017, 10),
-            dataflow,
+            emailUtils,
+            clock,
             response,
-            emailUtils);
+            dataflow);
     action.run();
-    LaunchTemplateParameters expectedParams =
-        new LaunchTemplateParameters()
-            .setJobName("invoicing-2017-10")
-            .setEnvironment(
-                new RuntimeEnvironment()
-                    .setZone("us-east1-c")
-                    .setTempLocation("gs://test-project-beam/temporary"))
-            .setParameters(ImmutableMap.of("yearMonth", "2017-10"));
-    verify(templates).launch("test-project", expectedParams);
-    verify(launch).setGcsPath("gs://test-project-beam/templates/invoicing");
-    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).isEqualTo("Launched dataflow template.");
-    assertNoTasksEnqueued();
+    assertNoTasksEnqueued("beam-reporting");
   }
 
   @Test
   void testCaughtIOException() throws IOException {
-    when(launch.execute()).thenThrow(new IOException("expected"));
+    when(launch.execute()).thenThrow(new IOException("Pipeline error"));
     action =
         new GenerateInvoicesAction(
             "test-project",
-            "gs://test-project-beam",
-            "gs://test-project-beam/templates/invoicing",
-            "us-east1-c",
-            true,
+            "test-region",
+            "staging_bucket",
+            "billing_bucket",
+            "REG-INV",
+            false,
             new YearMonth(2017, 10),
-            dataflow,
+            emailUtils,
+            clock,
             response,
-            emailUtils);
+            dataflow);
     action.run();
-    assertThat(response.getStatus()).isEqualTo(500);
-    assertThat(response.getPayload()).isEqualTo("Template launch failed: expected");
-    verify(emailUtils).sendAlertEmail("Template Launch failed due to expected");
+    assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(response.getPayload()).isEqualTo("Template launch failed: Pipeline error");
+    verify(emailUtils).sendAlertEmail("Template Launch failed due to Pipeline error");
+    assertNoTasksEnqueued("beam-reporting");
   }
 }

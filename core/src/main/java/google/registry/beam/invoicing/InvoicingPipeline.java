@@ -14,28 +14,28 @@
 
 package google.registry.beam.invoicing;
 
-import com.google.auth.oauth2.GoogleCredentials;
+import static google.registry.beam.BeamUtils.getQueryFromFile;
+import static org.apache.beam.sdk.values.TypeDescriptors.strings;
+
+import com.google.common.annotations.VisibleForTesting;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
-import google.registry.config.CredentialModule.LocalCredential;
-import google.registry.config.RegistryConfig.Config;
 import google.registry.reporting.billing.BillingModule;
-import google.registry.reporting.billing.GenerateInvoicesAction;
-import google.registry.util.GoogleCredentialsBundle;
+import google.registry.util.SqlTemplate;
 import java.io.Serializable;
-import javax.inject.Inject;
-import org.apache.beam.runners.dataflow.DataflowRunner;
-import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
-import org.apache.beam.sdk.io.DefaultFilenamePolicy.Params;
-import org.apache.beam.sdk.io.FileBasedSink;
+import org.apache.beam.sdk.coders.StringUtf8Coder;
+import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO;
-import org.apache.beam.sdk.options.Description;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
-import org.apache.beam.sdk.options.ValueProvider;
-import org.apache.beam.sdk.options.ValueProvider.NestedValueProvider;
+import org.apache.beam.sdk.transforms.Contextful;
 import org.apache.beam.sdk.transforms.Count;
 import org.apache.beam.sdk.transforms.Filter;
 import org.apache.beam.sdk.transforms.MapElements;
@@ -43,107 +43,54 @@ import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.TypeDescriptor;
-import org.apache.beam.sdk.values.TypeDescriptors;
 
 /**
- * Definition of a Dataflow pipeline template, which generates a given month's invoices.
+ * Definition of a Dataflow Flex pipeline template, which generates a given month's invoices.
  *
- * <p>To stage this template on GCS, run the {@link
- * google.registry.tools.DeployInvoicingPipelineCommand} Nomulus command.
+ * <p>To stage this template locally, run the {@code stage_beam_pipeline.sh} shell script.
  *
  * <p>Then, you can run the staged template via the API client library, gCloud or a raw REST call.
- * For an example using the API client library, see {@link GenerateInvoicesAction}.
  *
- * @see <a href="https://cloud.google.com/dataflow/docs/templates/overview">Dataflow Templates</a>
+ * @see <a href="https://cloud.google.com/dataflow/docs/guides/templates/using-flex-templates">Using
+ *     Flex Templates</a>
  */
 public class InvoicingPipeline implements Serializable {
 
-  private final String projectId;
-  private final String beamJobRegion;
-  private final String beamBucketUrl;
-  private final String invoiceTemplateUrl;
-  private final String beamStagingUrl;
-  private final String billingBucketUrl;
-  private final String invoiceFilePrefix;
-  private final GoogleCredentials googleCredentials;
+  private static final DateTimeFormatter TIMESTAMP_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
 
-  @Inject
-  public InvoicingPipeline(
-      @Config("projectId") String projectId,
-      @Config("defaultJobRegion") String beamJobRegion,
-      @Config("apacheBeamBucketUrl") String beamBucketUrl,
-      @Config("invoiceTemplateUrl") String invoiceTemplateUrl,
-      @Config("beamStagingUrl") String beamStagingUrl,
-      @Config("billingBucketUrl") String billingBucketUrl,
-      @Config("invoiceFilePrefix") String invoiceFilePrefix,
-      @LocalCredential GoogleCredentialsBundle googleCredentialsBundle) {
-    this.projectId = projectId;
-    this.beamJobRegion = beamJobRegion;
-    this.beamBucketUrl = beamBucketUrl;
-    this.invoiceTemplateUrl = invoiceTemplateUrl;
-    this.beamStagingUrl = beamStagingUrl;
-    this.billingBucketUrl = billingBucketUrl;
-    this.invoiceFilePrefix = invoiceFilePrefix;
-    this.googleCredentials = googleCredentialsBundle.getGoogleCredentials();
+  private final InvoicingPipelineOptions options;
+  private final Pipeline pipeline;
+
+  @VisibleForTesting
+  InvoicingPipeline(InvoicingPipelineOptions options, Pipeline pipeline) {
+    this.options = options;
+    this.pipeline = pipeline;
   }
 
-  /** Custom options for running the invoicing pipeline. */
-  public interface InvoicingPipelineOptions extends DataflowPipelineOptions {
-    /** Returns the yearMonth we're generating invoices for, in yyyy-MM format. */
-    @Description("The yearMonth we generate invoices for, in yyyy-MM format.")
-    ValueProvider<String> getYearMonth();
-    /**
-     * Sets the yearMonth we generate invoices for.
-     *
-     * <p>This is implicitly set when executing the Dataflow template, by specifying the 'yearMonth
-     * parameter.
-     */
-    void setYearMonth(ValueProvider<String> value);
+  InvoicingPipeline(InvoicingPipelineOptions options) {
+    this(options, Pipeline.create(options));
   }
 
-  /** Deploys the invoicing pipeline as a template on GCS, for a given projectID and GCS bucket. */
-  public void deploy() {
-    // We can't store options as a member variable due to serialization concerns.
-    InvoicingPipelineOptions options = PipelineOptionsFactory.as(InvoicingPipelineOptions.class);
-    options.setProject(projectId);
-    options.setRegion(beamJobRegion);
-    options.setRunner(DataflowRunner.class);
-    // This causes p.run() to stage the pipeline as a template on GCS, as opposed to running it.
-    options.setTemplateLocation(invoiceTemplateUrl);
-    options.setStagingLocation(beamStagingUrl);
-    // This credential is used when Dataflow deploys the template to GCS in target GCP project.
-    // So, make sure the credential has write permission to GCS in that project.
-    options.setGcpCredential(googleCredentials);
+  PipelineResult run() {
+    setupPipeline();
+    return pipeline.run();
+  }
 
-    Pipeline p = Pipeline.create(options);
-
+  void setupPipeline() {
     PCollection<BillingEvent> billingEvents =
-        p.apply(
+        pipeline.apply(
             "Read BillingEvents from Bigquery",
             BigQueryIO.read(BillingEvent::parseFromRecord)
-                .fromQuery(InvoicingUtils.makeQueryProvider(options.getYearMonth(), projectId))
+                .fromQuery(makeQuery(options.getYearMonth(), options.getProject()))
                 .withCoder(SerializableCoder.of(BillingEvent.class))
                 .usingStandardSql()
                 .withoutValidation()
                 .withTemplateCompatibility());
-    applyTerminalTransforms(billingEvents, options.getYearMonth());
-    p.run();
-  }
 
-  /**
-   * Applies output transforms to the {@code BillingEvent} source collection.
-   *
-   * <p>This is factored out purely to facilitate testing.
-   */
-  void applyTerminalTransforms(
-      PCollection<BillingEvent> billingEvents, ValueProvider<String> yearMonthProvider) {
-    billingEvents
-        .apply("Generate overall invoice rows", new GenerateInvoiceRows())
-        .apply("Write overall invoice to CSV", writeInvoice(yearMonthProvider));
+    saveInvoiceCsv(billingEvents, options);
 
-    billingEvents.apply(
-        "Write detail reports to separate CSVs keyed by registrarId_tld pair",
-        writeDetailReports(yearMonthProvider));
+    saveDetailedCsv(billingEvents, options);
   }
 
   /** Transform that converts a {@code BillingEvent} into an invoice CSV row. */
@@ -156,49 +103,85 @@ public class InvoicingPipeline implements Serializable {
               "Map to invoicing key",
               MapElements.into(TypeDescriptor.of(InvoiceGroupingKey.class))
                   .via(BillingEvent::getInvoiceGroupingKey))
-          .apply(Filter.by((InvoiceGroupingKey key) -> key.unitPrice() != 0))
+          .apply(
+              "Filter out free events", Filter.by((InvoiceGroupingKey key) -> key.unitPrice() != 0))
           .setCoder(new InvoiceGroupingKeyCoder())
           .apply("Count occurrences", Count.perElement())
           .apply(
               "Format as CSVs",
-              MapElements.into(TypeDescriptors.strings())
+              MapElements.into(strings())
                   .via((KV<InvoiceGroupingKey, Long> kv) -> kv.getKey().toCsv(kv.getValue())));
     }
   }
 
-  /** Returns an IO transform that writes the overall invoice to a single CSV file. */
-  private TextIO.Write writeInvoice(ValueProvider<String> yearMonthProvider) {
-    return TextIO.write()
-        .to(
-            NestedValueProvider.of(
-                yearMonthProvider,
-                yearMonth ->
+  /** Saves the billing events to a single overall invoice CSV file. */
+  static void saveInvoiceCsv(
+      PCollection<BillingEvent> billingEvents, InvoicingPipelineOptions options) {
+    billingEvents
+        .apply("Generate overall invoice rows", new GenerateInvoiceRows())
+        .apply(
+            "Write overall invoice to CSV",
+            TextIO.write()
+                .to(
                     String.format(
                         "%s/%s/%s/%s-%s",
-                        billingBucketUrl,
+                        options.getBillingBucketUrl(),
                         BillingModule.INVOICES_DIRECTORY,
-                        yearMonth,
-                        invoiceFilePrefix,
-                        yearMonth)))
-        .withHeader(InvoiceGroupingKey.invoiceHeader())
-        .withoutSharding()
-        .withSuffix(".csv");
+                        options.getYearMonth(),
+                        options.getInvoiceFilePrefix(),
+                        options.getYearMonth()))
+                .withHeader(InvoiceGroupingKey.invoiceHeader())
+                .withoutSharding()
+                .withSuffix(".csv"));
   }
 
-  /** Returns an IO transform that writes detail reports to registrar-tld keyed CSV files. */
-  private TextIO.TypedWrite<BillingEvent, Params> writeDetailReports(
-      ValueProvider<String> yearMonthProvider) {
-    return TextIO.<BillingEvent>writeCustomType()
-        .to(
-            InvoicingUtils.makeDestinationFunction(
-                String.format("%s/%s", billingBucketUrl, BillingModule.INVOICES_DIRECTORY),
-                yearMonthProvider),
-            InvoicingUtils.makeEmptyDestinationParams(billingBucketUrl + "/errors"))
-        .withFormatFunction(BillingEvent::toCsv)
-        .withoutSharding()
-        .withTempDirectory(
-            FileBasedSink.convertToFileResourceIfPossible(beamBucketUrl + "/temporary"))
-        .withHeader(BillingEvent.getHeader())
-        .withSuffix(".csv");
+  /** Saves the billing events to detailed report CSV files keyed by registrar-tld pairs. */
+  static void saveDetailedCsv(
+      PCollection<BillingEvent> billingEvents, InvoicingPipelineOptions options) {
+    String yearMonth = options.getYearMonth();
+    billingEvents.apply(
+        "Write detailed report for each registrar-tld pair",
+        FileIO.<String, BillingEvent>writeDynamic()
+            .to(
+                String.format(
+                    "%s/%s/%s",
+                    options.getBillingBucketUrl(), BillingModule.INVOICES_DIRECTORY, yearMonth))
+            .by(BillingEvent::getDetailedReportGroupingKey)
+            .withNumShards(1)
+            .withDestinationCoder(StringUtf8Coder.of())
+            .withNaming(
+                key ->
+                    (window, pane, numShards, shardIndex, compression) ->
+                        String.format(
+                            "%s_%s_%s.csv", BillingModule.DETAIL_REPORT_PREFIX, yearMonth, key))
+            .via(
+                Contextful.fn(BillingEvent::toCsv),
+                TextIO.sink().withHeader(BillingEvent.getHeader())));
+  }
+
+  /** Create the Bigquery query for a given project and yearMonth at runtime. */
+  static String makeQuery(String yearMonth, String projectId) {
+    // Get the timestamp endpoints capturing the entire month with microsecond precision
+    YearMonth reportingMonth = YearMonth.parse(yearMonth);
+    LocalDateTime firstMoment = reportingMonth.atDay(1).atTime(LocalTime.MIDNIGHT);
+    LocalDateTime lastMoment = reportingMonth.atEndOfMonth().atTime(LocalTime.MAX);
+    // Construct the month's query by filling in the billing_events.sql template
+    return SqlTemplate.create(getQueryFromFile(InvoicingPipeline.class, "billing_events.sql"))
+        .put("FIRST_TIMESTAMP_OF_MONTH", firstMoment.format(TIMESTAMP_FORMATTER))
+        .put("LAST_TIMESTAMP_OF_MONTH", lastMoment.format(TIMESTAMP_FORMATTER))
+        .put("PROJECT_ID", projectId)
+        .put("DATASTORE_EXPORT_DATA_SET", "latest_datastore_export")
+        .put("ONETIME_TABLE", "OneTime")
+        .put("REGISTRY_TABLE", "Registry")
+        .put("REGISTRAR_TABLE", "Registrar")
+        .put("CANCELLATION_TABLE", "Cancellation")
+        .build();
+  }
+
+  public static void main(String[] args) {
+    PipelineOptionsFactory.register(InvoicingPipelineOptions.class);
+    InvoicingPipelineOptions options =
+        PipelineOptionsFactory.fromArgs(args).withValidation().as(InvoicingPipelineOptions.class);
+    new InvoicingPipeline(options).run();
   }
 }

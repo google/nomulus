@@ -14,6 +14,7 @@
 
 package google.registry.reporting.billing;
 
+import static google.registry.beam.BeamUtils.createJobName;
 import static google.registry.reporting.ReportingUtils.enqueueBeamReportingTask;
 import static google.registry.reporting.billing.BillingModule.PARAM_SHOULD_PUBLISH;
 import static google.registry.request.Action.Method.POST;
@@ -21,9 +22,9 @@ import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.services.dataflow.Dataflow;
-import com.google.api.services.dataflow.model.LaunchTemplateParameters;
-import com.google.api.services.dataflow.model.LaunchTemplateResponse;
-import com.google.api.services.dataflow.model.RuntimeEnvironment;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateParameter;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
@@ -33,6 +34,7 @@ import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.util.Clock;
 import java.io.IOException;
 import java.util.Map;
 import javax.inject.Inject;
@@ -42,9 +44,8 @@ import org.joda.time.YearMonth;
  * Invokes the {@code InvoicingPipeline} beam template via the REST api, and enqueues the {@link
  * PublishInvoicesAction} to publish the subsequent output.
  *
- * <p>This action runs the {@link google.registry.beam.invoicing.InvoicingPipeline} beam template,
- * staged at gs://&lt;projectId&gt;-beam/templates/invoicing. The pipeline then generates invoices
- * for the month and stores them on GCS.
+ * <p>This action runs the {@link google.registry.beam.invoicing.InvoicingPipeline} beam flex
+ * template. The pipeline then generates invoices for the month and stores them on GCS.
  */
 @Action(
     service = Action.Service.BACKEND,
@@ -56,57 +57,73 @@ public class GenerateInvoicesAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   static final String PATH = "/_dr/task/generateInvoices";
+  static final String PIPELINE_NAME = "invoicing_pipeline";
 
   private final String projectId;
-  private final String beamBucketUrl;
-  private final String invoiceTemplateUrl;
-  private final String jobZone;
+  private final String jobRegion;
+  private final String stagingBucketUrl;
+  private final String billingBucketUrl;
+  private final String invoiceFilePrefix;
   private final boolean shouldPublish;
   private final YearMonth yearMonth;
-  private final Dataflow dataflow;
-  private final Response response;
   private final BillingEmailUtils emailUtils;
+  private final Clock clock;
+  private final Response response;
+  private final Dataflow dataflow;
 
   @Inject
   GenerateInvoicesAction(
       @Config("projectId") String projectId,
-      @Config("apacheBeamBucketUrl") String beamBucketUrl,
-      @Config("invoiceTemplateUrl") String invoiceTemplateUrl,
-      @Config("defaultJobZone") String jobZone,
+      @Config("defaultJobRegion") String jobRegion,
+      @Config("beamStagingBucketUrl") String stagingBucketUrl,
+      @Config("billingBucketUrl") String billingBucketUrl,
+      @Config("invoiceFilePrefix") String invoiceFilePrefix,
       @Parameter(PARAM_SHOULD_PUBLISH) boolean shouldPublish,
       YearMonth yearMonth,
-      Dataflow dataflow,
+      BillingEmailUtils emailUtils,
+      Clock clock,
       Response response,
-      BillingEmailUtils emailUtils) {
+      Dataflow dataflow) {
     this.projectId = projectId;
-    this.beamBucketUrl = beamBucketUrl;
-    this.invoiceTemplateUrl = invoiceTemplateUrl;
-    this.jobZone = jobZone;
+    this.jobRegion = jobRegion;
+    this.stagingBucketUrl = stagingBucketUrl;
+    this.billingBucketUrl = billingBucketUrl;
+    this.invoiceFilePrefix = invoiceFilePrefix;
     this.shouldPublish = shouldPublish;
     this.yearMonth = yearMonth;
-    this.dataflow = dataflow;
-    this.response = response;
     this.emailUtils = emailUtils;
+    this.clock = clock;
+    this.response = response;
+    this.dataflow = dataflow;
   }
 
   @Override
   public void run() {
+    response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
     logger.atInfo().log("Launching invoicing pipeline for %s", yearMonth);
     try {
-      LaunchTemplateParameters params =
-          new LaunchTemplateParameters()
-              .setJobName(String.format("invoicing-%s", yearMonth))
-              .setEnvironment(
-                  new RuntimeEnvironment()
-                      .setZone(jobZone)
-                      .setTempLocation(beamBucketUrl + "/temporary"))
-              .setParameters(ImmutableMap.of("yearMonth", yearMonth.toString("yyyy-MM")));
-      LaunchTemplateResponse launchResponse =
+      LaunchFlexTemplateParameter parameter =
+          new LaunchFlexTemplateParameter()
+              .setJobName(createJobName("invoicing", clock))
+              .setContainerSpecGcsPath(
+                  String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
+              .setParameters(
+                  ImmutableMap.of(
+                      "yearMonth",
+                      yearMonth.toString("yyyy-MM"),
+                      "invoiceFilePrefix",
+                      invoiceFilePrefix,
+                      "billingBucketUrl",
+                      billingBucketUrl));
+      LaunchFlexTemplateResponse launchResponse =
           dataflow
               .projects()
-              .templates()
-              .launch(projectId, params)
-              .setGcsPath(invoiceTemplateUrl)
+              .locations()
+              .flexTemplates()
+              .launch(
+                  projectId,
+                  jobRegion,
+                  new LaunchFlexTemplateRequest().setLaunchParameter(parameter))
               .execute();
       logger.atInfo().log("Got response: %s", launchResponse.getJob().toPrettyString());
       String jobId = launchResponse.getJob().getId();
@@ -123,12 +140,10 @@ public class GenerateInvoicesAction implements Runnable {
       logger.atWarning().withCause(e).log("Template Launch failed");
       emailUtils.sendAlertEmail(String.format("Template Launch failed due to %s", e.getMessage()));
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
-      response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
       response.setPayload(String.format("Template launch failed: %s", e.getMessage()));
       return;
     }
     response.setStatus(SC_OK);
-    response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
     response.setPayload("Launched dataflow template.");
   }
 }

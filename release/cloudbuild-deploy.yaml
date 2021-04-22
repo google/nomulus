@@ -37,14 +37,6 @@ steps:
     cat tool-credential.json.enc | base64 -d | gcloud kms decrypt \
       --ciphertext-file=- --plaintext-file=tool-credential.json \
       --location=global --keyring=nomulus-tool-keyring --key=nomulus-tool-key
-# Deploy the invoicing pipeline to GCS.
-- name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
-  args:
-  - -e
-  - ${_ENV}
-  - --credential
-  - tool-credential.json
-  - deploy_invoicing_pipeline
 # Deploy the GAE config files.
 # First authorize the gcloud tool to use the credential json file, then
 # download and unzip the tarball that contains the relevant config files

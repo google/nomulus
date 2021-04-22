@@ -105,8 +105,6 @@ interface RegistryToolComponent {
 
   void inject(DeleteContactByRoidCommand command);
 
-  void inject(DeployInvoicingPipelineCommand command);
-
   void inject(EncryptEscrowDepositCommand command);
 
   void inject(GenerateAllocationTokensCommand command);

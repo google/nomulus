@@ -59,6 +59,7 @@ public class PublishInvoicesAction implements Runnable {
   private static final String JOB_FAILED = "JOB_STATE_FAILED";
 
   private final String projectId;
+  private final String jobRegion;
   private final String jobId;
   private final BillingEmailUtils emailUtils;
   private final Dataflow dataflow;
@@ -68,12 +69,14 @@ public class PublishInvoicesAction implements Runnable {
   @Inject
   PublishInvoicesAction(
       @Config("projectId") String projectId,
+      @Config("defaultJobRegion") String jobRegion,
       @Parameter(ReportingModule.PARAM_JOB_ID) String jobId,
       BillingEmailUtils emailUtils,
       Dataflow dataflow,
       Response response,
       YearMonth yearMonth) {
     this.projectId = projectId;
+    this.jobRegion = jobRegion;
     this.jobId = jobId;
     this.emailUtils = emailUtils;
     this.dataflow = dataflow;
@@ -87,7 +90,7 @@ public class PublishInvoicesAction implements Runnable {
   public void run() {
     try {
       logger.atInfo().log("Starting publish job.");
-      Job job = dataflow.projects().jobs().get(projectId, jobId).execute();
+      Job job = dataflow.projects().locations().jobs().get(projectId, jobRegion, jobId).execute();
       String state = job.getCurrentState();
       switch (state) {
         case JOB_DONE:

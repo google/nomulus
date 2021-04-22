@@ -260,6 +260,11 @@ public abstract class BillingEvent implements Serializable {
         poNumber());
   }
 
+  /** Returns the grouping key for this {@code BillingEvent}, to generate the detailed report. */
+  String getDetailedReportGroupingKey() {
+    return String.format("%s_%s", registrarId(), tld());
+  }
+
   /** Key for each {@code BillingEvent}, when aggregating for the overall invoice. */
   @AutoValue
   abstract static class InvoiceGroupingKey implements Serializable {

@@ -26,8 +26,9 @@ import static org.mockito.Mockito.when;
 
 import com.google.api.services.dataflow.Dataflow;
 import com.google.api.services.dataflow.Dataflow.Projects;
-import com.google.api.services.dataflow.Dataflow.Projects.Jobs;
-import com.google.api.services.dataflow.Dataflow.Projects.Jobs.Get;
+import com.google.api.services.dataflow.Dataflow.Projects.Locations;
+import com.google.api.services.dataflow.Dataflow.Projects.Locations.Jobs;
+import com.google.api.services.dataflow.Dataflow.Projects.Locations.Jobs.Get;
 import com.google.api.services.dataflow.model.Job;
 import com.google.common.net.MediaType;
 import google.registry.testing.AppEngineExtension;
@@ -42,11 +43,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link PublishInvoicesAction}. */
 class PublishInvoicesActionTest {
 
-  private Get get;
-  private BillingEmailUtils emailUtils;
-
-  private Job expectedJob;
-  private FakeResponse response;
+  private final Dataflow dataflow = mock(Dataflow.class);
+  private final Projects projects = mock(Projects.class);
+  private final Locations locations = mock(Locations.class);
+  private final Jobs jobs = mock(Jobs.class);
+  private final Get get = mock(Get.class);
+  private final Job expectedJob = new Job();
+  private final BillingEmailUtils emailUtils = mock(BillingEmailUtils.class);
+  private final FakeResponse response = new FakeResponse();
   private PublishInvoicesAction uploadAction;
 
   @RegisterExtension
@@ -54,20 +58,21 @@ class PublishInvoicesActionTest {
 
   @BeforeEach
   void beforeEach() throws IOException {
-    Dataflow dataflow = mock(Dataflow.class);
-    Projects projects = mock(Projects.class);
-    Jobs jobs = mock(Jobs.class);
-    get = mock(Get.class);
     when(dataflow.projects()).thenReturn(projects);
-    when(projects.jobs()).thenReturn(jobs);
-    when(jobs.get("test-project", "12345")).thenReturn(get);
-    expectedJob = new Job();
+    when(projects.locations()).thenReturn(locations);
+    when(locations.jobs()).thenReturn(jobs);
+    when(jobs.get("test-project", "test-region", "12345")).thenReturn(get);
     when(get.execute()).thenReturn(expectedJob);
-    emailUtils = mock(BillingEmailUtils.class);
-    response = new FakeResponse();
+
     uploadAction =
         new PublishInvoicesAction(
-            "test-project", "12345", emailUtils, dataflow, response, new YearMonth(2017, 10));
+            "test-project",
+            "test-region",
+            "12345",
+            emailUtils,
+            dataflow,
+            response,
+            new YearMonth(2017, 10));
   }
 
   @Test

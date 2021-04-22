@@ -420,9 +420,6 @@ misc:
 beam:
   # The default region to run Apache Beam (Cloud Dataflow) jobs in.
   defaultJobRegion: us-east1
-  # The default zone to run Apache Beam (Cloud Dataflow) jobs in.
-  # TODO(weiminyu): consider dropping zone config. No obvious needs for this.
-  defaultJobZone: us-east1-c
   stagingBucketUrl: gcs-bucket-with-staged-templates
 
 keyring:
