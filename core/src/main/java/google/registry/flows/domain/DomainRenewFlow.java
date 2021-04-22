@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static google.registry.flows.FlowUtils.createHistoryKey;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -33,6 +34,7 @@ import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValueRangeErrorException;
 import google.registry.flows.ExtensionManager;
@@ -52,6 +54,7 @@ import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand.Renew;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainRenewData;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
@@ -123,7 +126,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject DomainHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainRenewFlowCustomLogic flowCustomLogic;
   @Inject DomainPricingLogic pricingLogic;
@@ -156,22 +159,23 @@ public final class DomainRenewFlow implements TransactionalFlow {
             .setNow(now)
             .setYears(years)
             .build());
-    Registry registry = Registry.get(existingDomain.getTld());
-    HistoryEntry historyEntry = buildHistoryEntry(
-        existingDomain, now, command.getPeriod(), registry.getRenewGracePeriodLength());
+    Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
+    historyBuilder.setId(domainHistoryKey.getId());
     String tld = existingDomain.getTld();
     // Bill for this explicit renew itself.
     BillingEvent.OneTime explicitRenewEvent =
-        createRenewBillingEvent(tld, feesAndCredits.getTotalCost(), years, historyEntry, now);
+        createRenewBillingEvent(tld, feesAndCredits.getTotalCost(), years, domainHistoryKey, now);
     // Create a new autorenew billing event and poll message starting at the new expiration time.
-    BillingEvent.Recurring newAutorenewEvent = newAutorenewBillingEvent(existingDomain)
-        .setEventTime(newExpirationTime)
-        .setParent(historyEntry)
-        .build();
-    PollMessage.Autorenew newAutorenewPollMessage = newAutorenewPollMessage(existingDomain)
-        .setEventTime(newExpirationTime)
-        .setParent(historyEntry)
-        .build();
+    BillingEvent.Recurring newAutorenewEvent =
+        newAutorenewBillingEvent(existingDomain)
+            .setEventTime(newExpirationTime)
+            .setParent(domainHistoryKey)
+            .build();
+    PollMessage.Autorenew newAutorenewPollMessage =
+        newAutorenewPollMessage(existingDomain)
+            .setEventTime(newExpirationTime)
+            .setParentKey(domainHistoryKey)
+            .build();
     // End the old autorenew billing event and poll message now. This may delete the poll message.
     updateAutorenewRecurrenceEndTime(existingDomain, now);
     DomainBase newDomain =
@@ -186,6 +190,10 @@ public final class DomainRenewFlow implements TransactionalFlow {
                 GracePeriod.forBillingEvent(
                     GracePeriodStatus.RENEW, existingDomain.getRepoId(), explicitRenewEvent))
             .build();
+    Registry registry = Registry.get(existingDomain.getTld());
+    DomainHistory domainHistory =
+        buildDomainHistory(
+            newDomain, now, command.getPeriod(), registry.getRenewGracePeriodLength());
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(
             BeforeSaveParameters.newBuilder()
@@ -193,19 +201,18 @@ public final class DomainRenewFlow implements TransactionalFlow {
                 .setNewDomain(newDomain)
                 .setNow(now)
                 .setYears(years)
-                .setHistoryEntry(historyEntry)
+                .setHistoryEntry(domainHistory)
                 .setEntityChanges(
                     EntityChanges.newBuilder()
                         .setSaves(
                             ImmutableSet.of(
                                 newDomain,
-                                historyEntry,
+                                domainHistory,
                                 explicitRenewEvent,
                                 newAutorenewEvent,
                                 newAutorenewPollMessage))
                         .build())
                 .build());
-    persistEntityChanges(entityChanges);
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
@@ -213,23 +220,24 @@ public final class DomainRenewFlow implements TransactionalFlow {
                 .setResData(DomainRenewData.create(targetId, newExpirationTime))
                 .setResponseExtensions(createResponseExtensions(feesAndCredits, feeRenew))
                 .build());
+    persistEntityChanges(entityChanges);
     return responseBuilder
         .setResData(responseData.resData())
         .setExtensions(responseData.responseExtensions())
         .build();
   }
 
-  private HistoryEntry buildHistoryEntry(
-      DomainBase existingDomain, DateTime now, Period period, Duration renewGracePeriod) {
+  private DomainHistory buildDomainHistory(
+      DomainBase newDomain, DateTime now, Period period, Duration renewGracePeriod) {
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_RENEW)
         .setPeriod(period)
         .setModificationTime(now)
-        .setParent(existingDomain)
+        .setDomainContent(newDomain)
         .setDomainTransactionRecords(
             ImmutableSet.of(
                 DomainTransactionRecord.create(
-                    existingDomain.getTld(),
+                    newDomain.getTld(),
                     now.plus(renewGracePeriod),
                     TransactionReportField.netRenewsFieldFromYears(period.getValue()),
                     1)))
@@ -255,7 +263,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
   }
 
   private OneTime createRenewBillingEvent(
-      String tld, Money renewCost, int years, HistoryEntry historyEntry, DateTime now) {
+      String tld, Money renewCost, int years, Key<DomainHistory> domainHistoryKey, DateTime now) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.RENEW)
         .setTargetId(targetId)
@@ -264,7 +272,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
         .setCost(renewCost)
         .setEventTime(now)
         .setBillingTime(now.plus(Registry.get(tld).getRenewGracePeriodLength()))
-        .setParent(historyEntry)
+        .setParent(domainHistoryKey)
         .build();
   }
 

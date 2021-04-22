@@ -15,6 +15,7 @@
 package google.registry.flows.domain;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
+import static google.registry.flows.FlowUtils.createHistoryKey;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.computeExDateForApprovalTime;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -48,6 +49,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -90,7 +92,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject DomainHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
   @Inject DomainTransferApproveFlow() {}
 
@@ -114,10 +116,10 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     }
     DomainTransferData transferData = existingDomain.getTransferData();
     String gainingClientId = transferData.getGainingClientId();
-    Registry registry = Registry.get(existingDomain.getTld());
-    HistoryEntry historyEntry = buildHistoryEntry(existingDomain, registry, now, gainingClientId);
     // Create a transfer billing event for 1 year, unless the superuser extension was used to set
     // the transfer period to zero. There is not a transfer cost if the transfer period is zero.
+    Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
+    historyBuilder.setId(domainHistoryKey.getId());
     Optional<BillingEvent.OneTime> billingEvent =
         (transferData.getTransferPeriod().getValue() == 0)
             ? Optional.empty()
@@ -130,10 +132,9 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                     .setCost(getDomainRenewCost(targetId, transferData.getTransferRequestTime(), 1))
                     .setEventTime(now)
                     .setBillingTime(now.plus(Registry.get(tld).getTransferGracePeriodLength()))
-                    .setParent(historyEntry)
+                    .setParent(domainHistoryKey)
                     .build());
     ImmutableList.Builder<ImmutableObject> entitiesToSave = new ImmutableList.Builder<>();
-    entitiesToSave.add(historyEntry);
     // If we are within an autorenew grace period, cancel the autorenew billing event and don't
     // increase the registration time, since the transfer subsumes the autorenew's extra year.
     GracePeriod autorenewGrace =
@@ -146,7 +147,8 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
       // still needs to be charged for the auto-renew.
       if (billingEvent.isPresent()) {
         entitiesToSave.add(
-            BillingEvent.Cancellation.forGracePeriod(autorenewGrace, historyEntry, targetId));
+            BillingEvent.Cancellation.forGracePeriod(
+                autorenewGrace, now, domainHistoryKey, targetId));
       }
     }
     // Close the old autorenew event and poll message at the transfer time (aka now). This may end
@@ -155,24 +157,26 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     DateTime newExpirationTime =
         computeExDateForApprovalTime(existingDomain, now, transferData.getTransferPeriod());
     // Create a new autorenew event starting at the expiration time.
-    BillingEvent.Recurring autorenewEvent = new BillingEvent.Recurring.Builder()
-        .setReason(Reason.RENEW)
-        .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-        .setTargetId(targetId)
-        .setClientId(gainingClientId)
-        .setEventTime(newExpirationTime)
-        .setRecurrenceEndTime(END_OF_TIME)
-        .setParent(historyEntry)
-        .build();
+    BillingEvent.Recurring autorenewEvent =
+        new BillingEvent.Recurring.Builder()
+            .setReason(Reason.RENEW)
+            .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+            .setTargetId(targetId)
+            .setClientId(gainingClientId)
+            .setEventTime(newExpirationTime)
+            .setRecurrenceEndTime(END_OF_TIME)
+            .setParent(domainHistoryKey)
+            .build();
     // Create a new autorenew poll message.
-    PollMessage.Autorenew gainingClientAutorenewPollMessage = new PollMessage.Autorenew.Builder()
-        .setTargetId(targetId)
-        .setClientId(gainingClientId)
-        .setEventTime(newExpirationTime)
-        .setAutorenewEndTime(END_OF_TIME)
-        .setMsg("Domain was auto-renewed.")
-        .setParent(historyEntry)
-        .build();
+    PollMessage.Autorenew gainingClientAutorenewPollMessage =
+        new PollMessage.Autorenew.Builder()
+            .setTargetId(targetId)
+            .setClientId(gainingClientId)
+            .setEventTime(newExpirationTime)
+            .setAutorenewEndTime(END_OF_TIME)
+            .setMsg("Domain was auto-renewed.")
+            .setParentKey(domainHistoryKey)
+            .build();
     // Construct the post-transfer domain.
     DomainBase partiallyApprovedDomain =
         approvePendingTransfer(existingDomain, TransferStatus.CLIENT_APPROVED, now);
@@ -204,13 +208,19 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setLastEppUpdateTime(now)
             .setLastEppUpdateClientId(clientId)
             .build();
+    Registry registry = Registry.get(existingDomain.getTld());
+    DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now, gainingClientId);
     // Create a poll message for the gaining client.
     PollMessage gainingClientPollMessage =
         createGainingTransferPollMessage(
-            targetId, newDomain.getTransferData(), newExpirationTime, historyEntry);
+            targetId, newDomain.getTransferData(), newExpirationTime, now, domainHistoryKey);
     billingEvent.ifPresent(entitiesToSave::add);
     entitiesToSave.add(
-        autorenewEvent, gainingClientPollMessage, gainingClientAutorenewPollMessage, newDomain);
+        autorenewEvent,
+        gainingClientPollMessage,
+        gainingClientAutorenewPollMessage,
+        newDomain,
+        domainHistory);
     tm().putAll(entitiesToSave.build());
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.
@@ -221,11 +231,11 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
         .build();
   }
 
-  private HistoryEntry buildHistoryEntry(
-      DomainBase existingDomain, Registry registry, DateTime now, String gainingClientId) {
+  private DomainHistory buildDomainHistory(
+      DomainBase newDomain, Registry registry, DateTime now, String gainingClientId) {
     ImmutableSet<DomainTransactionRecord> cancelingRecords =
         createCancelingRecords(
-            existingDomain,
+            newDomain,
             now,
             registry.getAutomaticTransferLength().plus(registry.getTransferGracePeriodLength()),
             ImmutableSet.of(TRANSFER_SUCCESSFUL));
@@ -233,15 +243,15 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
         .setType(HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE)
         .setModificationTime(now)
         .setOtherClientId(gainingClientId)
-        .setParent(Key.create(existingDomain))
+        .setDomainContent(newDomain)
         .setDomainTransactionRecords(
             union(
                 cancelingRecords,
                 DomainTransactionRecord.create(
-                        existingDomain.getTld(),
-                        now.plus(registry.getTransferGracePeriodLength()),
-                        TRANSFER_SUCCESSFUL,
-                        1)))
+                    newDomain.getTld(),
+                    now.plus(registry.getTransferGracePeriodLength()),
+                    TRANSFER_SUCCESSFUL,
+                    1)))
         .build();
   }
 }

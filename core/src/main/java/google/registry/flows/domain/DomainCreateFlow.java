@@ -97,7 +97,6 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CreateData.DomainCreateData;
 import google.registry.model.eppoutput.EppResponse;
-import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.ObjectifyService;
@@ -107,11 +106,11 @@ import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.Registry.TldType;
+import google.registry.model.registry.label.ReservationType;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -302,10 +301,14 @@ public class DomainCreateFlow implements TransactionalFlow {
     validateFeeChallenge(targetId, now, feeCreate, feesAndCredits);
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
-    String repoId = createDomainRepoId(ObjectifyService.allocateId(), registry.getTldStr());
     DateTime registrationExpirationTime = leapSafeAddYears(now, years);
-    DomainHistory domainHistory =
-        buildHistoryEntry(repoId, registry, now, period, registry.getAddGracePeriodLength());
+    String repoId = createDomainRepoId(ObjectifyService.allocateId(), registry.getTldStr());
+    Key<DomainHistory> domainHistoryKey =
+        Key.create(
+            Key.create(DomainBase.class, repoId),
+            DomainHistory.class,
+            ObjectifyService.allocateId());
+    historyBuilder.setId(domainHistoryKey.getId());
     // Bill for the create.
     BillingEvent.OneTime createBillingEvent =
         createOneTimeBillingEvent(
@@ -315,14 +318,14 @@ public class DomainCreateFlow implements TransactionalFlow {
             isReserved(domainName, isSunriseCreate),
             years,
             feesAndCredits,
-            domainHistory,
+            domainHistoryKey,
             allocationToken,
             now);
     // Create a new autorenew billing event and poll message starting at the expiration time.
     BillingEvent.Recurring autorenewBillingEvent =
-        createAutorenewBillingEvent(domainHistory, registrationExpirationTime);
+        createAutorenewBillingEvent(domainHistoryKey, registrationExpirationTime);
     PollMessage.Autorenew autorenewPollMessage =
-        createAutorenewPollMessage(domainHistory, registrationExpirationTime);
+        createAutorenewPollMessage(domainHistoryKey, registrationExpirationTime);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
     entitiesToSave.add(createBillingEvent, autorenewBillingEvent, autorenewPollMessage);
     // Bill for EAP cost, if any.
@@ -330,14 +333,12 @@ public class DomainCreateFlow implements TransactionalFlow {
       entitiesToSave.add(createEapBillingEvent(feesAndCredits, createBillingEvent));
     }
 
-    ImmutableSet.Builder<StatusValue> statuses = new ImmutableSet.Builder<>();
-    if (getReservationTypes(domainName).contains(NAME_COLLISION)) {
-      statuses.add(SERVER_HOLD);
-      entitiesToSave.add(
-          createNameCollisionOneTimePollMessage(targetId, domainHistory, clientId, now));
-    }
-
-    DomainBase newDomain =
+    ImmutableSet<ReservationType> reservationTypes = getReservationTypes(domainName);
+    ImmutableSet<StatusValue> statuses =
+        reservationTypes.contains(NAME_COLLISION)
+            ? ImmutableSet.of(SERVER_HOLD)
+            : ImmutableSet.of();
+    DomainBase domain =
         new DomainBase.Builder()
             .setCreationClientId(clientId)
             .setPersistedCurrentSponsorClientId(clientId)
@@ -348,34 +349,38 @@ public class DomainCreateFlow implements TransactionalFlow {
             .setAutorenewPollMessage(autorenewPollMessage.createVKey())
             .setLaunchNotice(hasClaimsNotice ? launchCreate.get().getNotice() : null)
             .setSmdId(signedMarkId)
-            .setDsData(secDnsCreate.isPresent() ? secDnsCreate.get().getDsData() : null)
+            .setDsData(secDnsCreate.map(SecDnsCreateExtension::getDsData).orElse(null))
             .setRegistrant(command.getRegistrant())
             .setAuthInfo(command.getAuthInfo())
             .setDomainName(targetId)
-            .setNameservers(
-                (ImmutableSet<VKey<HostResource>>)
-                    command.getNameservers().stream().collect(toImmutableSet()))
-            .setStatusValues(statuses.build())
+            .setNameservers(command.getNameservers().stream().collect(toImmutableSet()))
+            .setStatusValues(statuses)
             .setContacts(command.getContacts())
             .addGracePeriod(
                 GracePeriod.forBillingEvent(GracePeriodStatus.ADD, repoId, createBillingEvent))
             .build();
+    DomainHistory domainHistory =
+        buildDomainHistory(domain, registry, now, period, registry.getAddGracePeriodLength());
+    if (reservationTypes.contains(NAME_COLLISION)) {
+      entitiesToSave.add(
+          createNameCollisionOneTimePollMessage(targetId, domainHistory, clientId, now));
+    }
     entitiesToSave.add(
-        newDomain,
-        domainHistory.asBuilder().setDomainContent(newDomain).build(),
-        ForeignKeyIndex.create(newDomain, newDomain.getDeletionTime()),
-        EppResourceIndex.create(Key.create(newDomain)));
+        domain,
+        domainHistory,
+        ForeignKeyIndex.create(domain, domain.getDeletionTime()),
+        EppResourceIndex.create(Key.create(domain)));
     if (allocationToken.isPresent()
         && TokenType.SINGLE_USE.equals(allocationToken.get().getTokenType())) {
       entitiesToSave.add(
           allocationTokenFlowUtils.redeemToken(allocationToken.get(), domainHistory.createVKey()));
     }
-    enqueueTasks(newDomain, hasSignedMarks, hasClaimsNotice);
+    enqueueTasks(domain, hasSignedMarks, hasClaimsNotice);
 
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(
             DomainCreateFlowCustomLogic.BeforeSaveParameters.newBuilder()
-                .setNewDomain(newDomain)
+                .setNewDomain(domain)
                 .setHistoryEntry(domainHistory)
                 .setEntityChanges(
                     EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
@@ -480,8 +485,8 @@ public class DomainCreateFlow implements TransactionalFlow {
             : null);
   }
 
-  private DomainHistory buildHistoryEntry(
-      String repoId, Registry registry, DateTime now, Period period, Duration addGracePeriod) {
+  private DomainHistory buildDomainHistory(
+      DomainBase domain, Registry registry, DateTime now, Period period, Duration addGracePeriod) {
     // We ignore prober transactions
     if (registry.getTldType() == TldType.REAL) {
       historyBuilder
@@ -497,7 +502,7 @@ public class DomainCreateFlow implements TransactionalFlow {
         .setType(HistoryEntry.Type.DOMAIN_CREATE)
         .setPeriod(period)
         .setModificationTime(now)
-        .setParent(Key.create(DomainBase.class, repoId))
+        .setDomainContent(domain)
         .build();
   }
 
@@ -508,7 +513,7 @@ public class DomainCreateFlow implements TransactionalFlow {
       boolean isReserved,
       int years,
       FeesAndCredits feesAndCredits,
-      DomainHistory domainHistory,
+      Key<DomainHistory> domainHistoryKey,
       Optional<AllocationToken> allocationToken,
       DateTime now) {
     ImmutableSet.Builder<Flag> flagsBuilder = new ImmutableSet.Builder<>();
@@ -537,12 +542,12 @@ public class DomainCreateFlow implements TransactionalFlow {
                     ? registry.getAnchorTenantAddGracePeriodLength()
                     : registry.getAddGracePeriodLength()))
         .setFlags(flagsBuilder.build())
-        .setParent(domainHistory)
+        .setParent(domainHistoryKey)
         .build();
   }
 
   private Recurring createAutorenewBillingEvent(
-      DomainHistory domainHistory, DateTime registrationExpirationTime) {
+      Key<DomainHistory> domainHistoryKey, DateTime registrationExpirationTime) {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -550,18 +555,18 @@ public class DomainCreateFlow implements TransactionalFlow {
         .setClientId(clientId)
         .setEventTime(registrationExpirationTime)
         .setRecurrenceEndTime(END_OF_TIME)
-        .setParent(domainHistory)
+        .setParent(domainHistoryKey)
         .build();
   }
 
   private Autorenew createAutorenewPollMessage(
-      HistoryEntry historyEntry, DateTime registrationExpirationTime) {
+      Key<DomainHistory> domainHistoryKey, DateTime registrationExpirationTime) {
     return new PollMessage.Autorenew.Builder()
         .setTargetId(targetId)
         .setClientId(clientId)
         .setEventTime(registrationExpirationTime)
         .setMsg("Domain was auto-renewed.")
-        .setParent(historyEntry)
+        .setParentKey(domainHistoryKey)
         .build();
   }
 

@@ -36,6 +36,7 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
@@ -59,8 +60,8 @@ public class BillingEventTest extends EntityTestCase {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
-  private HistoryEntry historyEntry;
-  private HistoryEntry historyEntry2;
+  private DomainHistory domainHistory;
+  private DomainHistory domainHistory2;
   private DomainBase domain;
   private BillingEvent.OneTime oneTime;
   private BillingEvent.OneTime oneTimeSynthetic;
@@ -73,26 +74,24 @@ public class BillingEventTest extends EntityTestCase {
   void setUp() {
     createTld("tld");
     domain = persistActiveDomain("foo.tld");
-    historyEntry =
+    domainHistory =
         persistResource(
-            new HistoryEntry.Builder()
-                .setParent(domain)
+            new DomainHistory.Builder()
+                .setDomainContent(domain)
                 .setModificationTime(now)
                 .setRequestedByRegistrar(false)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setXmlBytes(new byte[0])
-                .build()
-                .toChildHistoryEntity());
-    historyEntry2 =
+                .build());
+    domainHistory2 =
         persistResource(
-            new HistoryEntry.Builder()
-                .setParent(domain)
+            new DomainHistory.Builder()
+                .setDomainContent(domain)
                 .setModificationTime(now.plusDays(1))
                 .setRequestedByRegistrar(false)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setXmlBytes(new byte[0])
-                .build()
-                .toChildHistoryEntity());
+                .build());
 
     AllocationToken allocationToken =
         persistResource(
@@ -112,7 +111,7 @@ public class BillingEventTest extends EntityTestCase {
         persistResource(
             commonInit(
                 new BillingEvent.OneTime.Builder()
-                    .setParent(historyEntry)
+                    .setParent(domainHistory)
                     .setReason(Reason.CREATE)
                     .setFlags(ImmutableSet.of(BillingEvent.Flag.ANCHOR_TENANT))
                     .setPeriodYears(2)
@@ -125,7 +124,7 @@ public class BillingEventTest extends EntityTestCase {
         persistResource(
             commonInit(
                 new BillingEvent.Recurring.Builder()
-                    .setParent(historyEntry)
+                    .setParent(domainHistory)
                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusYears(1))
@@ -134,7 +133,7 @@ public class BillingEventTest extends EntityTestCase {
         persistResource(
             commonInit(
                 new BillingEvent.OneTime.Builder()
-                    .setParent(historyEntry)
+                    .setParent(domainHistory)
                     .setReason(Reason.CREATE)
                     .setFlags(
                         ImmutableSet.of(
@@ -150,7 +149,7 @@ public class BillingEventTest extends EntityTestCase {
         persistResource(
             commonInit(
                 new BillingEvent.Cancellation.Builder()
-                    .setParent(historyEntry2)
+                    .setParent(domainHistory2)
                     .setReason(Reason.CREATE)
                     .setEventTime(now.plusDays(1))
                     .setBillingTime(now.plusDays(5))
@@ -160,7 +159,7 @@ public class BillingEventTest extends EntityTestCase {
         persistResource(
             commonInit(
                 new BillingEvent.Cancellation.Builder()
-                    .setParent(historyEntry2)
+                    .setParent(domainHistory2)
                     .setReason(Reason.RENEW)
                     .setEventTime(now.plusDays(1))
                     .setBillingTime(now.plusYears(1).plusDays(45))
@@ -171,7 +170,7 @@ public class BillingEventTest extends EntityTestCase {
                 persistResource(
                     commonInit(
                         new BillingEvent.Modification.Builder()
-                            .setParent(historyEntry2)
+                            .setParent(domainHistory2)
                             .setReason(Reason.CREATE)
                             .setCost(Money.of(USD, 1))
                             .setDescription("Something happened")
@@ -206,13 +205,13 @@ public class BillingEventTest extends EntityTestCase {
         .containsExactly(cancellationOneTime, cancellationRecurring);
     assertThat(ofy().load().type(BillingEvent.Modification.class).ancestor(domain).list())
         .containsExactly(modification);
-    assertThat(ofy().load().type(BillingEvent.OneTime.class).ancestor(historyEntry).list())
+    assertThat(ofy().load().type(BillingEvent.OneTime.class).ancestor(domainHistory).list())
         .containsExactly(oneTime, oneTimeSynthetic);
-    assertThat(ofy().load().type(BillingEvent.Recurring.class).ancestor(historyEntry).list())
+    assertThat(ofy().load().type(BillingEvent.Recurring.class).ancestor(domainHistory).list())
         .containsExactly(recurring);
-    assertThat(ofy().load().type(BillingEvent.Cancellation.class).ancestor(historyEntry2).list())
+    assertThat(ofy().load().type(BillingEvent.Cancellation.class).ancestor(domainHistory2).list())
         .containsExactly(cancellationOneTime, cancellationRecurring);
-    assertThat(ofy().load().type(BillingEvent.Modification.class).ancestor(historyEntry2).list())
+    assertThat(ofy().load().type(BillingEvent.Modification.class).ancestor(domainHistory2).list())
         .containsExactly(modification);
   }
 
@@ -311,7 +310,8 @@ public class BillingEventTest extends EntityTestCase {
     BillingEvent.Cancellation newCancellation =
         BillingEvent.Cancellation.forGracePeriod(
             GracePeriod.forBillingEvent(GracePeriodStatus.ADD, domain.getRepoId(), oneTime),
-            historyEntry2,
+            domainHistory2.getModificationTime(),
+            Key.create(domainHistory2),
             "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
     assertThat(newCancellation.asBuilder().setId(cancellationOneTime.getId()).build())
@@ -328,7 +328,8 @@ public class BillingEventTest extends EntityTestCase {
                 now.plusYears(1).plusDays(45),
                 "TheRegistrar",
                 recurring.createVKey()),
-            historyEntry2,
+            domainHistory2.getModificationTime(),
+            Key.create(domainHistory2),
             "foo.tld");
     // Set ID to be the same to ignore for the purposes of comparison.
     assertThat(newCancellation.asBuilder().setId(cancellationRecurring.getId()).build())
@@ -347,7 +348,8 @@ public class BillingEventTest extends EntityTestCase {
                         domain.getRepoId(),
                         now.plusDays(1),
                         "a registrar"),
-                    historyEntry,
+                    domainHistory.getModificationTime(),
+                    Key.create(domainHistory),
                     "foo.tld"));
     assertThat(thrown).hasMessageThat().contains("grace period without billing event");
   }
@@ -382,7 +384,7 @@ public class BillingEventTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testDeadCodeThatDeletedScrapCommandsReference() {
-    assertThat(recurring.getParentKey()).isEqualTo(Key.create(historyEntry));
-    new BillingEvent.OneTime.Builder().setParent(Key.create(historyEntry));
+    assertThat(recurring.getParentKey()).isEqualTo(Key.create(domainHistory));
+    new BillingEvent.OneTime.Builder().setParent(Key.create(domainHistory));
   }
 }

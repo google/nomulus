@@ -42,6 +42,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.TimeOfYear;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
@@ -114,7 +115,7 @@ public abstract class BillingEvent extends ImmutableObject
   /** Entity id. */
   @Id @javax.persistence.Id Long id;
 
-  @Parent @DoNotHydrate @Transient Key<HistoryEntry> parent;
+  @Parent @DoNotHydrate @Transient Key<? extends HistoryEntry> parent;
 
   /** The registrar to bill. */
   @Index
@@ -191,7 +192,7 @@ public abstract class BillingEvent extends ImmutableObject
     return targetId;
   }
 
-  public Key<HistoryEntry> getParentKey() {
+  public Key<? extends HistoryEntry> getParentKey() {
     return parent;
   }
 
@@ -258,7 +259,7 @@ public abstract class BillingEvent extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setParent(Key<HistoryEntry> parentKey) {
+    public B setParent(Key<? extends HistoryEntry> parentKey) {
       getInstance().parent = parentKey;
       return thisCastToDerived();
     }
@@ -602,23 +603,27 @@ public abstract class BillingEvent extends ImmutableObject
             GracePeriodStatus.TRANSFER, Reason.TRANSFER);
 
     /**
-     * Creates a cancellation billing event (parented on the provided history entry, and with the
-     * history entry's event time) that will cancel out the provided grace period's billing event,
+     * Creates a cancellation billing event (parented on the provided history key, and with the
+     * corresponding event time) that will cancel out the provided grace period's billing event,
      * using the supplied targetId and deriving other metadata (clientId, billing time, and the
      * cancellation reason) from the grace period.
      */
     public static BillingEvent.Cancellation forGracePeriod(
-        GracePeriod gracePeriod, HistoryEntry historyEntry, String targetId) {
+        GracePeriod gracePeriod,
+        DateTime eventTime,
+        Key<DomainHistory> domainHistoryKey,
+        String targetId) {
       checkArgument(gracePeriod.hasBillingEvent(),
           "Cannot create cancellation for grace period without billing event");
-      BillingEvent.Cancellation.Builder builder = new BillingEvent.Cancellation.Builder()
-          .setReason(checkNotNull(GRACE_PERIOD_TO_REASON.get(gracePeriod.getType())))
-          .setTargetId(targetId)
-          .setClientId(gracePeriod.getClientId())
-          .setEventTime(historyEntry.getModificationTime())
-          // The charge being cancelled will take place at the grace period's expiration time.
-          .setBillingTime(gracePeriod.getExpirationTime())
-          .setParent(historyEntry);
+      BillingEvent.Cancellation.Builder builder =
+          new BillingEvent.Cancellation.Builder()
+              .setReason(checkNotNull(GRACE_PERIOD_TO_REASON.get(gracePeriod.getType())))
+              .setTargetId(targetId)
+              .setClientId(gracePeriod.getClientId())
+              .setEventTime(eventTime)
+              // The charge being cancelled will take place at the grace period's expiration time.
+              .setBillingTime(gracePeriod.getExpirationTime())
+              .setParent(domainHistoryKey);
       // Set the grace period's billing event using the appropriate Cancellation builder method.
       if (gracePeriod.getOneTimeBillingEvent() != null) {
         builder.setOneTimeEventKey(gracePeriod.getOneTimeBillingEvent());
