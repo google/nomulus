@@ -117,12 +117,6 @@ class InitSqlPipelineTest {
   final transient JpaIntegrationTestExtension database =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
 
-  // Must not be transient!
-  @RegisterExtension
-  @Order(Order.DEFAULT + 1)
-  final BeamJpaExtension beamJpaExtension =
-      new BeamJpaExtension(() -> tmpDir.resolve("credential.dat"), database.getDatabase());
-
   private File exportRootDir;
   private File exportDir;
   private File commitLogDir;

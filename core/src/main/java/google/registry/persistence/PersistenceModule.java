@@ -47,7 +47,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Supplier;
@@ -260,55 +259,6 @@ public abstract class PersistenceModule {
     return new JpaTransactionManagerImpl(create(overrides), clock);
   }
 
-  @Provides
-  @Singleton
-  @SocketFactoryJpaTm
-  static JpaTransactionManager provideSocketFactoryJpaTm(
-      SqlCredentialStore credentialStore,
-      @Config("beamCloudSqlUsername") String username,
-      @Config("beamCloudSqlPassword") String password,
-      @Config("beamHibernateHikariMaximumPoolSize") int hikariMaximumPoolSize,
-      @BeamPipelineCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
-      Clock clock) {
-    HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
-    overrides.put(HIKARI_MAXIMUM_POOL_SIZE, String.valueOf(hikariMaximumPoolSize));
-    overrides.put(Environment.USER, username);
-    overrides.put(Environment.PASS, password);
-    // TODO(b/175700623): consider assigning different logins to pipelines
-    // TODO(b/179839014): Make SqlCredentialStore injectable in BEAM
-    // Note: the logs below appear in the pipeline's Worker logs, not the Job log.
-    try {
-      SqlCredential credential = credentialStore.getCredential(new RobotUser(RobotId.NOMULUS));
-      if (!Objects.equals(username, credential.login())) {
-        logger.atWarning().log(
-            "Wrong username for nomulus. Expecting %s, found %s.", username, credential.login());
-      } else if (!Objects.equals(password, credential.password())) {
-        logger.atWarning().log("Wrong password for nomulus.");
-      } else {
-        logger.atWarning().log("Credentials in the kerying and the secret manager match.");
-      }
-    } catch (Exception e) {
-      logger.atWarning().withCause(e).log("Failed to get SQL credential from Secret Manager.");
-    }
-    return new JpaTransactionManagerImpl(create(overrides), clock);
-  }
-
-  @Provides
-  @Singleton
-  @JdbcJpaTm
-  static JpaTransactionManager provideLocalJpaTm(
-      @Config("beamCloudSqlJdbcUrl") String jdbcUrl,
-      @Config("beamCloudSqlUsername") String username,
-      @Config("beamCloudSqlPassword") String password,
-      @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs,
-      Clock clock) {
-    HashMap<String, String> overrides = Maps.newHashMap(defaultConfigs);
-    overrides.put(Environment.URL, jdbcUrl);
-    overrides.put(Environment.USER, username);
-    overrides.put(Environment.PASS, password);
-    return new JpaTransactionManagerImpl(create(overrides), clock);
-  }
-
   /** Constructs the {@link EntityManagerFactory} instance. */
   @VisibleForTesting
   static EntityManagerFactory create(
@@ -398,23 +348,6 @@ public abstract class PersistenceModule {
   @Qualifier
   @Documented
   public @interface NomulusToolJpaTm {}
-
-  /**
-   * Dagger qualifier for {@link JpaTransactionManager} that accesses Cloud SQL using socket
-   * factory. This is meant for applications not running on AppEngine, therefore without access to a
-   * {@link google.registry.keyring.api.Keyring}.
-   */
-  @Qualifier
-  @Documented
-  public @interface SocketFactoryJpaTm {}
-
-  /**
-   * Dagger qualifier for {@link JpaTransactionManager} backed by plain JDBC connections. This is
-   * mainly used by tests.
-   */
-  @Qualifier
-  @Documented
-  public @interface JdbcJpaTm {}
 
   /** Dagger qualifier for the partial Cloud SQL configs. */
   @Qualifier
