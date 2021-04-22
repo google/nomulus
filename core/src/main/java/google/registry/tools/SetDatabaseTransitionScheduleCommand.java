@@ -31,7 +31,8 @@ import org.joda.time.DateTime;
 @Parameters(
     separators = " =",
     commandDescription = "Set the database transition schedule for transition id.")
-public class SetDatabaseTransitionScheduleCommand extends ConfirmingCommand {
+public class SetDatabaseTransitionScheduleCommand extends ConfirmingCommand
+    implements CommandWithRemoteApi {
 
   @Parameter(
       names = "--transition_schedule",

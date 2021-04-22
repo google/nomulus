@@ -27,9 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Command to create groups in Google Groups for all contact types for a registrar.
- */
+/** Command to create groups in Google Groups for all contact types for a registrar. */
 @Parameters(separators = " =", commandDescription = "Create groups for a registrar.")
 public class CreateRegistrarGroupsCommand extends ConfirmingCommand
     implements CommandWithConnection, CommandWithRemoteApi {
