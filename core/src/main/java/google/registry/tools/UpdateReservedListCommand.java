@@ -34,9 +34,13 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
   @Override
   protected void init() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
-    ReservedList existingReservedList = ReservedList.get(name).orElseThrow(
-        () -> new IllegalArgumentException(
-            String.format("Could not update reserved list %s because it doesn't exist.", name)));
+    ReservedList existingReservedList =
+        ReservedList.get(name)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        String.format(
+                            "Could not update reserved list %s because it doesn't exist.", name)));
     boolean shouldPublish =
         this.shouldPublish == null ? existingReservedList.getShouldPublish() : this.shouldPublish;
     List<String> allLines = Files.readAllLines(input, UTF_8);
@@ -62,6 +66,5 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
           reservedList,
           VKey.createOfy(ReservedList.class, Key.create(existingReservedList)));
     }
-
   }
 }
