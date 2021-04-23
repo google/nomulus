@@ -65,11 +65,12 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
     ImmutableList.Builder<String> sunriseCsv = new ImmutableList.Builder<>();
     transactIfJpaTm(
         () ->
-              tm().createQueryComposer(DomainBase.class)
-                  .where("tld", Comparator.EQ, tld)
-                  .orderBy("repoId")
-                  .stream()
-                  .forEach(domain -> processDomain(claimsCsv, sunriseCsv, domain)));
+            tm()
+                .createQueryComposer(DomainBase.class)
+                .where("tld", Comparator.EQ, tld)
+                .orderBy("repoId")
+                .stream()
+                .forEach(domain -> processDomain(claimsCsv, sunriseCsv, domain)));
     ImmutableList<String> claimsRows = claimsCsv.build();
     ImmutableList<String> claimsAll =
         new ImmutableList.Builder<String>()
@@ -88,9 +89,10 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
     Files.write(sunriseOutputPath, sunriseAll, UTF_8);
   }
 
-  private static void processDomain(ImmutableList.Builder<String> claimsCsv,
-                             ImmutableList.Builder<String> sunriseCsv,
-                             DomainBase domain) {
+  private static void processDomain(
+      ImmutableList.Builder<String> claimsCsv,
+      ImmutableList.Builder<String> sunriseCsv,
+      DomainBase domain) {
     String status = " ";
     if (domain.getLaunchNotice() == null && domain.getSmdId() != null) {
       sunriseCsv.add(LordnTaskUtils.getCsvLineForSunriseDomain(domain, domain.getCreationTime()));

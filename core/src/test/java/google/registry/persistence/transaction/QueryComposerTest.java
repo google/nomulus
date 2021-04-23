@@ -211,8 +211,7 @@ public class QueryComposerTest {
     assertThat(
             transactIfJpaTm(
                 () ->
-                    tm()
-                        .createQueryComposer(TestEntity.class)
+                    tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.GT, "alpha")
                         .list()))
         .isEqualTo(ImmutableList.of(bravo, charlie));
