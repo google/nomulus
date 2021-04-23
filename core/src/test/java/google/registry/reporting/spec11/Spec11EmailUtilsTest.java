@@ -238,6 +238,49 @@ class Spec11EmailUtilsTest {
   }
 
   @TestOfyAndSql
+  void testSuccess_dealsWithDeletedDomains() throws Exception {
+    // Create an inactive domain and an active domain with the same name.
+    persistResource(loadByEntity(aDomain).asBuilder().addStatusValue(SERVER_HOLD).build());
+    HostResource host = persistActiveHost("ns1.example.com");
+    aDomain = persistDomainWithHost("a.com", host);
+
+    emailUtils.emailSpec11Reports(
+        date,
+        Spec11EmailSoyInfo.MONTHLY_SPEC_11_EMAIL,
+        "Super Cool Registry Monthly Threat Detector [2018-07-15]",
+        sampleThreatMatches());
+    // We inspect individual parameters because Message doesn't implement equals().
+    verify(emailService, times(3)).sendEmail(contentCaptor.capture());
+    List<EmailMessage> capturedContents = contentCaptor.getAllValues();
+    validateMessage(
+        capturedContents.get(0),
+        "abuse@test.com",
+        "the.registrar@example.com",
+        ImmutableList.of("abuse@test.com", "bcc@test.com"),
+        "Super Cool Registry Monthly Threat Detector [2018-07-15]",
+        String.format(MONTHLY_EMAIL_FORMAT, "<tr><td>a.com</td><td>MALWARE</td></tr>"),
+        Optional.of(MediaType.HTML_UTF_8));
+    validateMessage(
+        capturedContents.get(1),
+        "abuse@test.com",
+        "new.registrar@example.com",
+        ImmutableList.of("abuse@test.com", "bcc@test.com"),
+        "Super Cool Registry Monthly Threat Detector [2018-07-15]",
+        String.format(
+            MONTHLY_EMAIL_FORMAT,
+            "<tr><td>b.com</td><td>MALWARE</td></tr><tr><td>c.com</td><td>MALWARE</td></tr>"),
+        Optional.of(MediaType.HTML_UTF_8));
+    validateMessage(
+        capturedContents.get(2),
+        "abuse@test.com",
+        "my-receiver@test.com",
+        ImmutableList.of(),
+        "Spec11 Pipeline Success 2018-07-15",
+        "Spec11 reporting completed successfully.",
+        Optional.empty());
+  }
+
+  @TestOfyAndSql
   void testOneFailure_sendsAlert() throws Exception {
     // If there is one failure, we should still send the other message and then an alert email
     LinkedHashSet<RegistrarThreatMatches> matches = new LinkedHashSet<>();
