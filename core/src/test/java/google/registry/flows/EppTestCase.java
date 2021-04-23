@@ -15,9 +15,10 @@
 package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
+import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.stripBillingEventId;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.xml.XmlTestUtils.assertXmlEqualsWithMessage;
@@ -28,7 +29,6 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
-import com.google.common.truth.Truth8;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
 import google.registry.model.billing.BillingEvent;
@@ -411,17 +411,13 @@ public class EppTestCase {
    */
   private static Key<OneTime> findKeyToActualOneTimeBillingEvent(OneTime expectedBillingEvent) {
     Optional<OneTime> actualCreateBillingEvent =
-        ofy()
-            .load()
-            .type(BillingEvent.OneTime.class)
-            .list()
-            .stream()
+        loadAllOf(BillingEvent.OneTime.class).stream()
             .filter(
                 b ->
                     Objects.equals(
                         stripBillingEventId(b), stripBillingEventId(expectedBillingEvent)))
             .findFirst();
-    Truth8.assertThat(actualCreateBillingEvent).isPresent();
+    assertThat(actualCreateBillingEvent).isPresent();
     return Key.create(actualCreateBillingEvent.get());
   }
 }

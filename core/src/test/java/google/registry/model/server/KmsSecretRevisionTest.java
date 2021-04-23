@@ -15,7 +15,7 @@
 package google.registry.model.server;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -63,6 +63,6 @@ public class KmsSecretRevisionTest {
 
   @Test
   void testPersistence() {
-    assertThat(ofy().load().entity(secretRevision).now()).isEqualTo(secretRevision);
+    assertThat(ofyTm().loadByEntity(secretRevision)).isEqualTo(secretRevision);
   }
 }

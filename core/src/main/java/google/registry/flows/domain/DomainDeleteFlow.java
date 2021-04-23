@@ -262,7 +262,6 @@ public final class DomainDeleteFlow implements TransactionalFlow {
             .setHistoryEntry(historyEntry)
             .setEntityChanges(EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
             .build());
-    persistEntityChanges(entityChanges);
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
@@ -272,6 +271,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
                         : SUCCESS)
                 .setResponseExtensions(getResponseExtensions(existingDomain, now))
                 .build());
+    persistEntityChanges(entityChanges);
     return responseBuilder
         .setResultFromCode(responseData.resultCode())
         .setExtensions(responseData.responseExtensions())
