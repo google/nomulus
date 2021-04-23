@@ -236,7 +236,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
   }
 
   /**
-   * Stage an entity change that will be applied by execute(). Both ImmutableObject instances must
+   * Stages an entity change that will be applied by execute(). Both ImmutableObject instances must
    * be some version of the same entity with the same key.
    *
    * @param oldEntity the existing version of the entity, or null to create a new entity
