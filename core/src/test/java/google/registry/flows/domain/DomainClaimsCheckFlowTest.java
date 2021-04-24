@@ -36,13 +36,15 @@ import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
+import google.registry.testing.TestOfyAndSql;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DomainClaimsCheckFlow}. */
+@DualDatabaseTest
 public class DomainClaimsCheckFlowTest
     extends ResourceFlowTestCase<DomainClaimsCheckFlow, DomainBase> {
 
@@ -66,25 +68,25 @@ public class DomainClaimsCheckFlowTest
     runFlowAssertResponse(loadFile(expectedXmlFilename));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_noClaims() throws Exception {
     doSuccessfulTest("domain_check_claims_response_none.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_quietPeriod() throws Exception {
     createTld("tld", TldState.QUIET_PERIOD);
     doSuccessfulTest("domain_check_claims_response_none.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_oneClaim() throws Exception {
     persistClaimsList(
         ImmutableMap.of("example2", "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001"));
     doSuccessfulTest("domain_check_claims_response.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_multipleTlds() throws Exception {
     setEppInput("domain_check_claims_multiple_tlds.xml");
     createTld("tld1");
@@ -94,28 +96,28 @@ public class DomainClaimsCheckFlowTest
     doSuccessfulTest("domain_check_claims_response_multiple_tlds.xml");
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_50IdsAllowed() throws Exception {
     // Make sure we don't have a regression that reduces the number of allowed checks.
     setEppInput("domain_check_claims_50.xml");
     runFlow();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_TooManyIds() {
     setEppInput("domain_check_claims_51.xml");
     EppException thrown = assertThrows(TooManyResourceChecksException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_tldDoesntExist() {
     setEppInput("domain_check_claims_bad_tld.xml");
     EppException thrown = assertThrows(TldDoesNotExistException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_notAuthorizedForTld() {
     persistResource(
         loadRegistrar("TheRegistrar").asBuilder().setAllowedTlds(ImmutableSet.of()).build());
@@ -123,7 +125,7 @@ public class DomainClaimsCheckFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_superuserNotAuthorizedForTld() throws Exception {
     persistClaimsList(
         ImmutableMap.of("example2", "2013041500/2/6/9/rJ1NrDO92vDsAzf7EQzgjX4R0000000001"));
@@ -136,7 +138,7 @@ public class DomainClaimsCheckFlowTest
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("domain_check_claims_response.xml"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_predelgation() {
     createTld("tld", PREDELEGATION);
     setEppInput("domain_check_claims.xml");
@@ -144,7 +146,7 @@ public class DomainClaimsCheckFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_allocationToken() {
     createTld("tld");
     setEppInput("domain_check_claims_allocationtoken.xml");
@@ -153,7 +155,7 @@ public class DomainClaimsCheckFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_multipleTlds_oneHasEndedClaims() {
     createTlds("tld1", "tld2");
     persistResource(
@@ -163,7 +165,7 @@ public class DomainClaimsCheckFlowTest
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-dom-check");
