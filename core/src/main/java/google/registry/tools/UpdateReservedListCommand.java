@@ -51,6 +51,7 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
             .setReservedListMapFromLines(allLines)
             .setLastUpdateTime(now)
             .setShouldPublish(shouldPublish);
+<<<<<<< HEAD
     reservedList = updated.build();
     // only call stageEntityChange if there are changes in entries
     if (!existingReservedList
@@ -66,5 +67,13 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
           reservedList,
           VKey.createOfy(ReservedList.class, Key.create(existingReservedList)));
     }
+=======
+    ReservedList updatedReservedList = updated.build();
+    stageEntityChange(
+        existingReservedList,
+        updatedReservedList,
+        VKey.createOfy(ReservedList.class, Key.create(existingReservedList)));
+    reservedList = updatedReservedList;
+>>>>>>> 945714ed7 (use VKey.createOfy instead of VKey.create)
   }
 }
