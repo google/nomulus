@@ -15,7 +15,6 @@
 package google.registry.model.smd;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.smd.SignedMarkRevocationList.SHARD_SIZE;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,14 +30,13 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class SignedMarkRevocationListTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
+  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2013-01-01T00:00:00Z"));
 
   @Test
   void testEmpty() {
-    // When Datastore is empty, it should give us an empty thing.
+    // When Cloud SQL is empty, it should give us an empty thing.
     assertThat(SignedMarkRevocationList.get())
         .isEqualTo(SignedMarkRevocationList.create(START_OF_TIME, ImmutableMap.of()));
   }
@@ -65,7 +63,7 @@ public class SignedMarkRevocationListTest {
 
   @Test
   void test_isSmdRevoked_garbage() {
-    SignedMarkRevocationList smdrl = createSaveGetHelper(SHARD_SIZE + 1);
+    SignedMarkRevocationList smdrl = createSaveGetHelper(100);
     assertThat(smdrl.getCreationTime()).isEqualTo(clock.nowUtc());
     assertThat(smdrl.isSmdRevoked("rofl", clock.nowUtc())).isFalse();
     assertThat(smdrl.isSmdRevoked("31337", clock.nowUtc())).isFalse();
@@ -84,7 +82,7 @@ public class SignedMarkRevocationListTest {
 
   @Test
   void test_isSmdRevoked_present() {
-    final int rows = SHARD_SIZE + 1;
+    final int rows = 100;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isTrue();
     assertThat(smdrl.isSmdRevoked(Integer.toString(rows - 1), clock.nowUtc())).isTrue();
@@ -93,7 +91,7 @@ public class SignedMarkRevocationListTest {
 
   @Test
   void test_isSmdRevoked_future() {
-    final int rows = SHARD_SIZE;
+    final int rows = 100;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     clock.advanceOneMilli();
     assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isTrue();
@@ -103,7 +101,7 @@ public class SignedMarkRevocationListTest {
 
   @Test
   void test_isSmdRevoked_past() {
-    final int rows = SHARD_SIZE;
+    final int rows = 100;
     SignedMarkRevocationList smdrl = createSaveGetHelper(rows);
     clock.setTo(clock.nowUtc().minusMillis(1));
     assertThat(smdrl.isSmdRevoked("0", clock.nowUtc())).isFalse();

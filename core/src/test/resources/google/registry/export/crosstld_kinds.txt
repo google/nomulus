@@ -12,5 +12,4 @@ RegistrarContact
 Registry
 ReservedList
 ServerSecret
-SignedMarkRevocationList
 TmchCrl

@@ -47,7 +47,6 @@ import google.registry.model.server.KmsSecret;
 import google.registry.model.server.KmsSecretRevision;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
-import google.registry.model.smd.SignedMarkRevocationList;
 import google.registry.model.tmch.ClaimsListShard;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListRevision;
 import google.registry.model.tmch.ClaimsListShard.ClaimsListSingleton;
@@ -105,7 +104,6 @@ public final class EntityClasses {
           Registry.class,
           ReservedList.class,
           ServerSecret.class,
-          SignedMarkRevocationList.class,
           TmchCrl.class);
 
   private EntityClasses() {}

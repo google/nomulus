@@ -172,6 +172,13 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       return this;
     }
 
+    /** Turns on Cloud SQL only, for use by test data generators. */
+    public Builder withCloudSql() {
+      rule.withCloudSql = true;
+      rule.withDatastore = false;
+      return this;
+    }
+
     /** Disables insertion of canned data. */
     public Builder withoutCannedData() {
       rule.withoutCannedData = true;
