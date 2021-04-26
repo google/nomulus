@@ -270,7 +270,7 @@ def generate_gradle_properties() -> str:
 def get_root() -> str:
     """Returns the root of the nomulus build tree."""
     cur_dir = os.getcwd()
-    if not os.path.exists(os.path.join(cur_dir, '.git')) or \
+    if not os.path.exists(os.path.join(cur_dir, 'buildSrc')) or \
        not os.path.exists(os.path.join(cur_dir, 'core')) or \
        not os.path.exists(os.path.join(cur_dir, 'gradle.properties')):
         raise Exception('You must run this script from the root directory')
