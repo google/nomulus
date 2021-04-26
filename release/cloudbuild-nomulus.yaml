@@ -91,7 +91,7 @@ steps:
       google.registry.beam.datastore.BulkDeleteDatastorePipeline \
       google/registry/beam/bulk_delete_datastore_pipeline_metadata.json \
       google.registry.beam.spec11.Spec11Pipeline \
-      google/registry/beam/spec11_pipeline_metadata.json
+      google/registry/beam/spec11_pipeline_metadata.json \
       google.registry.beam.invoicing.InvoicingPipeline \
       google/registry/beam/invoicing_pipeline_metadata.json
 # Tentatively build and publish Cloud SQL schema jar here, before schema release
