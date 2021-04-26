@@ -18,14 +18,19 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
+import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Files;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import google.registry.model.registry.label.ReservedListSqlDao;
+import java.io.File;
+import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -134,5 +139,39 @@ class UpdateReservedListCommandTest
     runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     verifyXnq9jyb4cInDatastore();
     assertThat(ReservedListSqlDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
+  }
+
+  @Test
+  void testSuccess_noChanges() throws Exception {
+    File reservedTermsFile = tmpDir.resolve("xn--q9jyb4c_common-reserved.txt").toFile();
+    // after running runCommandForced, the file now contains "helicopter,FULLY_BLOCKED" which is
+    // populated in the @BeforeEach method of this class and the rest of terms from
+    // example_reserved_terms.csv, which are populated in the @BeforeEach of
+    // CreateOrUpdateReservedListCommandTestCases.java.
+    runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
+
+    // set up to write content already in file
+    String reservedTermsCsv =
+        loadFile(CreateOrUpdateReservedListCommandTestCase.class, "example_reserved_terms.csv");
+    Files.asCharSink(reservedTermsFile, UTF_8).write(reservedTermsCsv);
+    reservedTermsPath = reservedTermsFile.getPath();
+    // create a command instance and assign its input
+    UpdateReservedListCommand command = new UpdateReservedListCommand();
+    command.input = Paths.get(reservedTermsPath);
+    // run again with terms from example_reserved_terms.csv
+    command.init();
+
+    assertThat(command.prompt()).isEqualTo("No entity changes to apply.");
+  }
+
+  @Test
+  void testSuccess_withChanges() throws Exception {
+    // changes come from example_reserved_terms.csv, which are populated in @BeforeEach of
+    // CreateOrUpdateReservedListCommandTestCases.java
+    UpdateReservedListCommand command = new UpdateReservedListCommand();
+    command.input = Paths.get(reservedTermsPath);
+    command.init();
+
+    assertThat(command.prompt()).contains("Update ReservedList@xn--q9jyb4c_common-reserved");
   }
 }

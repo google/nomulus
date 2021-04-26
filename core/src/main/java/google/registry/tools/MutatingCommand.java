@@ -55,7 +55,9 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
 
     /** The possible types of mutation that can be performed on an entity. */
     public enum ChangeType {
-      CREATE, DELETE, UPDATE;
+      CREATE,
+      DELETE,
+      UPDATE;
 
       /** Return the ChangeType corresponding to the given combination of version existences. */
       public static ChangeType get(boolean hasOldVersion, boolean hasNewVersion) {
@@ -78,7 +80,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
     /** The key that points to the entity being changed. */
     final VKey<?> key;
 
-    public EntityChange(ImmutableObject oldEntity, ImmutableObject newEntity) {
+    private EntityChange(ImmutableObject oldEntity, ImmutableObject newEntity) {
       type = ChangeType.get(oldEntity != null, newEntity != null);
       checkArgument(
           type != ChangeType.UPDATE || Key.create(oldEntity).equals(Key.create(newEntity)),
@@ -96,6 +98,34 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
               : VKey.createOfy(entity.getClass(), Key.create(entity));
     }
 
+    /**
+     * EntityChange constructor that supports Vkey override. A Vkey is a key of an entity. This is a
+     * workaround to handle cases when a SqlEntity instance does not have a primary key before being
+     * persisted.
+     */
+    private EntityChange(ImmutableObject oldEntity, ImmutableObject newEntity, VKey<?> vkey) {
+      type = ChangeType.get(oldEntity != null, newEntity != null);
+      Key<?> oldKey = Key.create(oldEntity), newKey = Key.create(newEntity);
+      if (type == ChangeType.UPDATE) {
+        checkArgument(
+            oldKey.equals(newKey), "Both entity versions in an update must have the same Key.");
+        checkArgument(
+            oldKey.equals(vkey.getOfyKey()),
+            "The Key of the entity must be the same as the OfyKey of the vkey");
+      } else if (type == ChangeType.CREATE) {
+        checkArgument(
+            newKey.equals(vkey.getOfyKey()),
+            "Both entity versions in an update must have the same Key.");
+      } else if (type == ChangeType.DELETE) {
+        checkArgument(
+            oldKey.equals(vkey.getOfyKey()),
+            "The Key of the entity must be the same as the OfyKey of the vkey");
+      }
+      this.oldEntity = oldEntity;
+      this.newEntity = newEntity;
+      key = vkey;
+    }
+
     /** Returns a human-readable ID string for the entity being changed. */
     public String getEntityId() {
       return String.format(
@@ -110,8 +140,9 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
     public String toString() {
       String changeText;
       if (type == ChangeType.UPDATE) {
-        String diffText = prettyPrintEntityDeepDiff(
-            oldEntity.toDiffableFieldMap(), newEntity.toDiffableFieldMap());
+        String diffText =
+            prettyPrintEntityDeepDiff(
+                oldEntity.toDiffableFieldMap(), newEntity.toDiffableFieldMap());
         changeText = Optional.ofNullable(emptyToNull(diffText)).orElse("[no changes]\n");
       } else {
         changeText = MoreObjects.firstNonNull(oldEntity, newEntity) + "\n";
@@ -205,8 +236,8 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
   }
 
   /**
-   * Subclasses can call this to stage a mutation to an entity that will be applied by execute().
-   * Note that both objects passed must correspond to versions of the same entity with the same key.
+   * Stages an entity change that will be applied by execute(). Both ImmutableObject instances must
+   * be some version of the same entity with the same key.
    *
    * @param oldEntity the existing version of the entity, or null to create a new entity
    * @param newEntity the new version of the entity to save, or null to delete the entity
@@ -214,6 +245,25 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
   protected void stageEntityChange(
       @Nullable ImmutableObject oldEntity, @Nullable ImmutableObject newEntity) {
     EntityChange change = new EntityChange(oldEntity, newEntity);
+    checkArgument(
+        !changedEntitiesMap.containsKey(change.key),
+        "Cannot apply multiple changes for the same entity: %s",
+        change.getEntityId());
+    changedEntitiesMap.put(change.key, change);
+    lastAddedKey = change.key;
+  }
+
+  /**
+   * Stages an entity change which will be applied by execute(), with the support of Vkey override.
+   * It supports cases of SqlEntity instances that do not have primary keys before being persisted.
+   *
+   * @param oldEntity the existing version of the entity, or null to create a new entity
+   * @param newEntity the new version of the entity to save, or null to delete the entity
+   * @param vkey the key of the entity
+   */
+  protected void stageEntityChange(
+      @Nullable ImmutableObject oldEntity, @Nullable ImmutableObject newEntity, VKey vkey) {
+    EntityChange change = new EntityChange(oldEntity, newEntity, vkey);
     checkArgument(
         !changedEntitiesMap.containsKey(change.key),
         "Cannot apply multiple changes for the same entity: %s",
