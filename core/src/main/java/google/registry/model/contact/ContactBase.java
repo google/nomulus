@@ -287,7 +287,7 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
   }
 
   @Override
-  public Builder asBuilder() {
+  public Builder<? extends ContactBase, ?> asBuilder() {
     return new Builder<>(clone(this));
   }
 

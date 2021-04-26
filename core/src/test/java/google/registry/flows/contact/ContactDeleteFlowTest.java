@@ -78,6 +78,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.CONTACT_PENDING_DELETE);
     assertNoBillingEvents();
+    assertLastHistoryContainsResource(deletedContact);
   }
 
   @TestOfyAndSql

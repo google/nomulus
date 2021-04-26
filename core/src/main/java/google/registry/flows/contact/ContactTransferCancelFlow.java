@@ -32,6 +32,7 @@ import google.registry.flows.FlowModule.ClientId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
@@ -66,7 +67,7 @@ public final class ContactTransferCancelFlow implements TransactionalFlow {
   @Inject Optional<AuthInfo> authInfo;
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject ContactHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
   @Inject ContactTransferCancelFlow() {}
 
@@ -82,15 +83,17 @@ public final class ContactTransferCancelFlow implements TransactionalFlow {
     verifyTransferInitiator(clientId, existingContact);
     ContactResource newContact =
         denyPendingTransfer(existingContact, TransferStatus.CLIENT_CANCELLED, now, clientId);
-    HistoryEntry historyEntry = historyBuilder
-        .setType(HistoryEntry.Type.CONTACT_TRANSFER_CANCEL)
-        .setModificationTime(now)
-        .setParent(Key.create(existingContact))
-        .build();
+    ContactHistory contactHistory =
+        historyBuilder
+            .setType(HistoryEntry.Type.CONTACT_TRANSFER_CANCEL)
+            .setModificationTime(now)
+            .setContactBase(newContact)
+            .build();
     // Create a poll message for the losing client.
     PollMessage losingPollMessage =
-        createLosingTransferPollMessage(targetId, newContact.getTransferData(), historyEntry);
-    tm().insertAll(ImmutableSet.of(historyEntry.toChildHistoryEntity(), losingPollMessage));
+        createLosingTransferPollMessage(
+            targetId, newContact.getTransferData(), Key.create(contactHistory));
+    tm().insertAll(ImmutableSet.of(contactHistory, losingPollMessage));
     tm().update(newContact);
     // Delete the billing event and poll messages that were written in case the transfer would have
     // been implicitly server approved.

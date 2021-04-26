@@ -109,6 +109,9 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
     if (contactBase != null && contactBase.getContactId() == null) {
       contactBase = null;
     }
+    if (contactBase != null && contactBase.getRepoId() == null) {
+      contactBase = contactBase.asBuilder().setRepoId(parent.getName()).build();
+    }
   }
 
   // In Datastore, save as a HistoryEntry object regardless of this object's type

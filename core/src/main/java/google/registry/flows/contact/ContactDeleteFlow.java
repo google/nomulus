@@ -24,7 +24,6 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PE
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -33,6 +32,7 @@ import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.metadata.MetadataExtension;
@@ -74,7 +74,7 @@ public final class ContactDeleteFlow implements TransactionalFlow {
   @Inject Trid trid;
   @Inject @Superuser boolean isSuperuser;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject ContactHistory.Builder historyBuilder;
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
   @Inject ContactDeleteFlow() {}
@@ -99,8 +99,8 @@ public final class ContactDeleteFlow implements TransactionalFlow {
     historyBuilder
         .setType(HistoryEntry.Type.CONTACT_PENDING_DELETE)
         .setModificationTime(now)
-        .setParent(Key.create(existingContact));
-    tm().insert(historyBuilder.build().toChildHistoryEntity());
+        .setContactBase(newContact);
+    tm().insert(historyBuilder.build());
     tm().update(newContact);
     return responseBuilder.setResultFromCode(SUCCESS_WITH_ACTION_PENDING).build();
   }

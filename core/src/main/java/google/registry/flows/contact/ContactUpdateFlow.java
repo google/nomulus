@@ -27,7 +27,6 @@ import static google.registry.flows.contact.ContactFlowUtils.validateContactAgai
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.ClientId;
@@ -38,6 +37,7 @@ import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceHasClientUpdateProhibitedException;
 import google.registry.model.contact.ContactCommand.Update;
 import google.registry.model.contact.ContactCommand.Update.Change;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.contact.PostalInfo;
 import google.registry.model.domain.metadata.MetadataExtension;
@@ -82,7 +82,7 @@ public final class ContactUpdateFlow implements TransactionalFlow {
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject ContactHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
   @Inject ContactUpdateFlow() {}
 
@@ -102,11 +102,6 @@ public final class ContactUpdateFlow implements TransactionalFlow {
       verifyAllStatusesAreClientSettable(union(statusesToAdd, statusToRemove));
     }
     verifyNoDisallowedStatuses(existingContact, DISALLOWED_STATUSES);
-    historyBuilder
-        .setType(HistoryEntry.Type.CONTACT_UPDATE)
-        .setModificationTime(now)
-        .setXmlBytes(null)  // We don't want to store contact details in the history entry.
-        .setParent(Key.create(existingContact));
     checkSameValuesNotAddedAndRemoved(statusesToAdd, statusToRemove);
     ContactResource.Builder builder = existingContact.asBuilder();
     Change change = command.getInnerChange();
@@ -150,7 +145,12 @@ public final class ContactUpdateFlow implements TransactionalFlow {
     }
     validateAsciiPostalInfo(newContact.getInternationalizedPostalInfo());
     validateContactAgainstPolicy(newContact);
-    tm().insert(historyBuilder.build().toChildHistoryEntity());
+    historyBuilder
+        .setType(HistoryEntry.Type.CONTACT_UPDATE)
+        .setModificationTime(now)
+        .setXmlBytes(null) // We don't want to store contact details in the history entry.
+        .setContactBase(newContact);
+    tm().insert(historyBuilder.build());
     tm().update(newContact);
     return responseBuilder.build();
   }

@@ -20,6 +20,7 @@ import com.google.common.base.Strings;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.flows.picker.FlowPicker;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
@@ -238,6 +239,12 @@ public class FlowModule {
           .setRequestedByRegistrar(metadataExtension.get().getRequestedByRegistrar());
     }
     return historyBuilder;
+  }
+
+  @Provides
+  static ContactHistory.Builder provideContactHistoryBuilder(
+      HistoryEntry.Builder historyEntryBuilder) {
+    return new ContactHistory.Builder().copyFrom(historyEntryBuilder);
   }
 
   @Provides
