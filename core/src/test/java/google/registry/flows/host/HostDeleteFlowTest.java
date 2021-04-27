@@ -375,6 +375,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     } else {
       assertNoDnsTasksEnqueued();
     }
+    assertLastHistoryContainsResource(deletedHost);
     assertNoTasksEnqueued(QUEUE_ASYNC_DELETE);
   }
 

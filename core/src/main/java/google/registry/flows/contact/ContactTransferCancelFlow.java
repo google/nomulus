@@ -87,7 +87,7 @@ public final class ContactTransferCancelFlow implements TransactionalFlow {
         historyBuilder
             .setType(HistoryEntry.Type.CONTACT_TRANSFER_CANCEL)
             .setModificationTime(now)
-            .setContactBase(newContact)
+            .setContact(newContact)
             .build();
     // Create a poll message for the losing client.
     PollMessage losingPollMessage =

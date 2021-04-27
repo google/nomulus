@@ -91,7 +91,7 @@ public final class ContactTransferApproveFlow implements TransactionalFlow {
         historyBuilder
             .setType(HistoryEntry.Type.CONTACT_TRANSFER_APPROVE)
             .setModificationTime(now)
-            .setContactBase(newContact)
+            .setContact(newContact)
             .build();
     // Create a poll message for the gaining client.
     PollMessage gainingPollMessage =

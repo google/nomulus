@@ -176,6 +176,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.HOST_UPDATE);
     assertNoBillingEvents();
+    assertLastHistoryContainsResource(renamedHost);
     return renamedHost;
   }
 

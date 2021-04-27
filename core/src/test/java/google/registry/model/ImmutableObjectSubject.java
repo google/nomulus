@@ -51,6 +51,10 @@ public final class ImmutableObjectSubject extends Subject {
     this.actual = actual;
   }
 
+  public void hasFieldsEqualTo(@Nullable ImmutableObject expected) {
+    isEqualExceptFields(expected);
+  }
+
   public void isEqualExceptFields(
       @Nullable ImmutableObject expected, Iterable<String> ignoredFields) {
     isEqualExceptFields(expected, Iterables.toArray(ignoredFields, String.class));

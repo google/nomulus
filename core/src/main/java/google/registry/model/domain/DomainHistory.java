@@ -345,7 +345,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
       super(instance);
     }
 
-    public Builder setDomainContent(@Nullable DomainContent domainContent) {
+    public Builder setDomain(@Nullable DomainContent domainContent) {
       // Nullable for the sake of pre-Registry-3.0 history objects
       if (domainContent == null) {
         return this;

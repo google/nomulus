@@ -125,7 +125,7 @@ public final class ContactDeleteFlow implements TransactionalFlow {
         historyBuilder
             .setType(historyEntryType)
             .setModificationTime(now)
-            .setContactBase(newContact)
+            .setContact(newContact)
             .build();
     if (!tm().isOfy()) {
       handlePendingTransferOnDelete(existingContact, newContact, now, contactHistory);

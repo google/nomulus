@@ -318,7 +318,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
         .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
         .setPeriod(period)
         .setModificationTime(now)
-        .setDomainContent(newDomain)
+        .setDomain(newDomain)
         .setDomainTransactionRecords(
             ImmutableSet.of(
                 DomainTransactionRecord.create(
