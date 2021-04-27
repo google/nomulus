@@ -70,7 +70,8 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
     checkArgument(nameParts.size() == 2, INVALID_FORMAT_ERROR_MESSAGE);
     String tld = nameParts.get(0);
     if (!tld.equals("common")) {
-      assertTldExists(tld);
+      assertTldExists(
+          tld, "The name must be in the format {tld|common}_list-name, yet TLD %s does not exist");
     }
     checkArgument(nameParts.get(1).matches("[-a-zA-Z0-9]+"), INVALID_FORMAT_ERROR_MESSAGE);
   }
