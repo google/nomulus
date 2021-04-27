@@ -31,6 +31,7 @@ import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.eppoutput.Result;
+import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry;
 import java.lang.annotation.Documented;
 import java.util.Optional;
@@ -244,6 +245,11 @@ public class FlowModule {
   static DomainHistory.Builder provideDomainHistoryBuilder(
       HistoryEntry.Builder historyEntryBuilder) {
     return new DomainHistory.Builder().copyFrom(historyEntryBuilder);
+  }
+
+  @Provides
+  static HostHistory.Builder provideHostHistoryBuilder(HistoryEntry.Builder historyEntryBuilder) {
+    return new HostHistory.Builder().copyFrom(historyEntryBuilder);
   }
 
   /**

@@ -24,7 +24,6 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PE
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
@@ -39,6 +38,7 @@ import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
@@ -75,7 +75,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
   @Inject @TargetId String targetId;
   @Inject Trid trid;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject HostHistory.Builder historyBuilder;
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
   @Inject HostDeleteFlow() {}
@@ -106,8 +106,8 @@ public final class HostDeleteFlow implements TransactionalFlow {
     historyBuilder
         .setType(HistoryEntry.Type.HOST_PENDING_DELETE)
         .setModificationTime(now)
-        .setParent(Key.create(existingHost));
-    tm().insert(historyBuilder.build().toChildHistoryEntity());
+        .setHostBase(newHost);
+    tm().insert(historyBuilder.build());
     tm().update(newHost);
     return responseBuilder.setResultFromCode(SUCCESS_WITH_ACTION_PENDING).build();
   }

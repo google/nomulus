@@ -89,6 +89,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
         .hasType(HistoryEntry.Type.HOST_PENDING_DELETE);
     assertNoBillingEvents();
     assertNoDnsTasksEnqueued();
+    assertLastHistoryContainsResource(deletedHost);
   }
 
   @TestOfyAndSql
