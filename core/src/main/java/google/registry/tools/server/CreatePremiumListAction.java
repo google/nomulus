@@ -51,9 +51,12 @@ public class CreatePremiumListAction extends CreateOrUpdatePremiumListAction {
   @Override
   protected void save() {
     checkArgument(
-        !PremiumListDualDao.exists(name), "A premium list of this name already exists: %s.", name);
+        !PremiumListDualDao.exists(name), "A premium list of this name already exists: %s", name);
     if (!override) {
-      assertTldExists(name);
+      assertTldExists(
+          name,
+          "Premium names must match the name of the TLD they are intended to be used on"
+              + " (unless --override is specified), yet TLD %s does not exist");
     }
     logger.atInfo().log("Saving premium list for TLD %s", name);
     logInputData();

@@ -71,6 +71,18 @@ public class CreatePremiumListActionTest {
   }
 
   @Test
+  void test_nonExistentTld_fails() {
+    action.name = "zanzibar";
+    action.inputData = "zanzibar,USD 100";
+    action.run();
+    assertThat(response.getResponseMap().get("status")).isEqualTo("error");
+    assertThat(response.getResponseMap().get("error").toString())
+        .isEqualTo(
+            "Premium names must match the name of the TLD they are intended to be used on"
+                + " (unless --override is specified), yet TLD zanzibar does not exist");
+  }
+
+  @Test
   void test_nonExistentTld_successWithOverride() {
     action.name = "zanzibar";
     action.inputData = "zanzibar,USD 100";

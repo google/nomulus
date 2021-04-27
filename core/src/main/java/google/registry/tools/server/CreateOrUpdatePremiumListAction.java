@@ -15,6 +15,7 @@
 package google.registry.tools.server;
 
 import static com.google.common.flogger.LazyArgs.lazy;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
@@ -45,27 +46,29 @@ public abstract class CreateOrUpdatePremiumListAction implements Runnable {
   @Override
   public void run() {
     try {
+      checkArgumentNotNull(inputData, "Input data must not be null");
       save();
     } catch (IllegalArgumentException e) {
       logger.atInfo().withCause(e).log(
           "Usage error in attempting to save premium list from nomulus tool command");
-      response.setPayload(ImmutableMap.of("error", e.toString(), "status", "error"));
+      response.setPayload(ImmutableMap.of("error", e.getMessage(), "status", "error"));
     } catch (Exception e) {
       logger.atSevere().withCause(e).log(
           "Unexpected error saving premium list to Datastore from nomulus tool command");
-      response.setPayload(ImmutableMap.of("error", e.toString(), "status", "error"));
+      response.setPayload(ImmutableMap.of("error", e.getMessage(), "status", "error"));
     }
   }
 
   /** Logs the premium list data at INFO, truncated if too long. */
   void logInputData() {
+    String logData = (inputData == null) ? "(null)" : inputData;
     logger.atInfo().log(
         "Received the following input data: %s",
         lazy(
             () ->
-                (inputData.length() < MAX_LOGGING_PREMIUM_LIST_LENGTH)
-                    ? inputData
-                    : (inputData.substring(0, MAX_LOGGING_PREMIUM_LIST_LENGTH) + "<truncated>")));
+                (logData.length() < MAX_LOGGING_PREMIUM_LIST_LENGTH)
+                    ? logData
+                    : (logData.substring(0, MAX_LOGGING_PREMIUM_LIST_LENGTH) + "<truncated>")));
   }
 
   /** Saves the premium list to both Datastore and Cloud SQL. */
