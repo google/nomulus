@@ -16,15 +16,11 @@ package google.registry.tools.server;
 
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
-import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ListPremiumListsAction}. */
-@DualDatabaseTest
 class ListPremiumListsActionTest extends ListActionTestCase {
 
   private ListPremiumListsAction action;
@@ -36,7 +32,7 @@ class ListPremiumListsActionTest extends ListActionTestCase {
     action = new ListPremiumListsAction();
   }
 
-  @TestOfyAndSql
+  @Test
   void testRun_noParameters() {
     testRunSuccess(
         action,
@@ -47,20 +43,7 @@ class ListPremiumListsActionTest extends ListActionTestCase {
         "^xn--q9jyb4c$");
   }
 
-  @TestOfyOnly // only ofy has revisionKey
-  void testRun_withParameters() {
-    testRunSuccess(
-        action,
-        Optional.of("revisionKey"),
-        Optional.empty(),
-        Optional.empty(),
-        "^name\\s+revisionKey\\s*$",
-        "^-+\\s+-+\\s*$",
-        "^how\\s+.*PremiumList.*$",
-        "^xn--q9jyb4c\\s+.*PremiumList.*$");
-  }
-
-  @TestSqlOnly
+  @Test
   void testRun_withLabelsToPrices() {
     testRunSuccess(
         action,
@@ -69,24 +52,11 @@ class ListPremiumListsActionTest extends ListActionTestCase {
         Optional.empty(),
         "^name\\s+labelsToPrices\\s*$",
         "^-+\\s+-+\\s*$",
-        "^how\\s+\\{richer=5000\\}\\s+$",
+        "^how\\s+\\{richer=5000.00\\}$",
         "^xn--q9jyb4c\\s+\\{rich=100\\.00\\}\\s+$");
   }
 
-  @TestOfyOnly
-  void testRun_withWildcard() {
-    testRunSuccess(
-        action,
-        Optional.of("*"),
-        Optional.empty(),
-        Optional.empty(),
-        "^name\\s+.*revisionKey",
-        "^-+\\s+-+.*",
-        "^how\\s+.*PremiumList",
-        "^xn--q9jyb4c\\s+.*PremiumList");
-  }
-
-  @TestOfyAndSql
+  @Test
   void testRun_withBadField_returnsError() {
     testRunError(
         action,

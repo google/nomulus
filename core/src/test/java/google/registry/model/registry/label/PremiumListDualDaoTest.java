@@ -15,40 +15,27 @@
 package google.registry.model.registry.label;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.Duration.standardDays;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth8;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.EntityTestCase;
-import google.registry.model.common.DatabaseTransitionSchedule;
-import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
-import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
-import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
-import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registry.Registry;
-import google.registry.schema.tld.PremiumListSqlDao;
-import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestCacheExtension;
-import google.registry.testing.TestOfyAndSql;
-import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link PremiumListDualDao}. */
-@DualDatabaseTest
 public class PremiumListDualDaoTest extends EntityTestCase {
 
   // Set long persist times on caches so they can be tested (cache times default to 0 in tests).
@@ -63,19 +50,6 @@ public class PremiumListDualDaoTest extends EntityTestCase {
   void before() {
     createTld("tld");
     fakeClock.setAutoIncrementStep(Duration.millis(1));
-    fakeClock.setTo(DateTime.parse("1984-12-21T00:00:00.000Z"));
-    DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create(
-            TransitionId.DOMAIN_LABEL_LISTS,
-            TimedTransitionProperty.fromValueMap(
-                ImmutableSortedMap.of(
-                    START_OF_TIME,
-                    PrimaryDatabase.DATASTORE,
-                    fakeClock.nowUtc().plusDays(1),
-                    PrimaryDatabase.CLOUD_SQL),
-                PrimaryDatabaseTransition.class));
-
-    tm().transactNew(() -> ofyTm().putWithoutBackup(schedule));
   }
 
   @AfterEach
@@ -83,22 +57,8 @@ public class PremiumListDualDaoTest extends EntityTestCase {
     fakeClock.setAutoIncrementStep(Duration.ZERO);
   }
 
-  @TestOfyAndSql
-  void testGetPremiumPrice_secondaryLoadMissingSql() {
-    PremiumListSqlDao.delete(PremiumListSqlDao.getLatestRevision("tld").get());
-    assertThat(
-            assertThrows(
-                IllegalStateException.class,
-                () -> PremiumListDualDao.getPremiumPrice("brass", Registry.get("tld"))))
-        .hasMessageThat()
-        .isEqualTo(
-            "Unequal prices for domain brass.tld from primary Datastore DB "
-                + "(Optional[USD 20.00]) and secondary SQL db (Optional.empty).");
-  }
-
-  @TestOfyAndSql
+  @Test
   void testGetPremiumPrice_secondaryLoadMissingOfy() {
-    fakeClock.advanceBy(Duration.standardDays(5));
     PremiumList premiumList = PremiumListDatastoreDao.getLatestRevision("tld").get();
     PremiumListDatastoreDao.delete(premiumList);
     assertThat(
@@ -111,22 +71,8 @@ public class PremiumListDualDaoTest extends EntityTestCase {
                 + "and secondary Datastore db (Optional.empty).");
   }
 
-  @TestOfyAndSql
-  void testGetPremiumPrice_secondaryDifferentSql() {
-    PremiumListSqlDao.save("tld", ImmutableList.of("brass,USD 50"));
-    assertThat(
-            assertThrows(
-                IllegalStateException.class,
-                () -> PremiumListDualDao.getPremiumPrice("brass", Registry.get("tld"))))
-        .hasMessageThat()
-        .isEqualTo(
-            "Unequal prices for domain brass.tld from primary Datastore DB "
-                + "(Optional[USD 20.00]) and secondary SQL db (Optional[USD 50.00]).");
-  }
-
-  @TestOfyAndSql
+  @Test
   void testGetPremiumPrice_secondaryDifferentOfy() {
-    fakeClock.advanceBy(Duration.standardDays(5));
     PremiumListDatastoreDao.save("tld", ImmutableList.of("brass,USD 50"));
     assertThat(
             assertThrows(
@@ -138,7 +84,7 @@ public class PremiumListDualDaoTest extends EntityTestCase {
                 + "(Optional[USD 20.00]) and secondary Datastore db (Optional[USD 50.00]).");
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetPremiumPrice_returnsNoPriceWhenNoPremiumListConfigured() {
     createTld("ghost");
     persistResource(
@@ -151,14 +97,14 @@ public class PremiumListDualDaoTest extends EntityTestCase {
     Truth8.assertThat(PremiumListDualDao.getPremiumPrice("blah", Registry.get("ghost"))).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void testGetPremiumPrice_emptyWhenPremiumListDeleted() {
     PremiumList toDelete = PremiumListDualDao.getLatestRevision("tld").get();
     PremiumListDualDao.delete(toDelete);
     Truth8.assertThat(PremiumListDualDao.getPremiumPrice("blah", Registry.get("tld"))).isEmpty();
   }
 
-  @TestOfyAndSql
+  @Test
   void getPremiumPrice_returnsNoneWhenNoPremiumListConfigured() {
     persistResource(newRegistry("foobar", "FOOBAR").asBuilder().setPremiumList(null).build());
     Truth8.assertThat(PremiumListDualDao.getPremiumPrice("rich", Registry.get("foobar"))).isEmpty();

@@ -75,16 +75,6 @@ class UpdateReservedListCommandTest
   }
 
   @Test
-  void testSuccess_lastUpdateTime_updatedCorrectly() throws Exception {
-    ReservedList original = ReservedList.get("xn--q9jyb4c_common-reserved").get();
-    runCommandForced("--input=" + reservedTermsPath);
-    ReservedList updated = ReservedList.get("xn--q9jyb4c_common-reserved").get();
-    assertThat(updated.getLastUpdateTime()).isGreaterThan(original.getLastUpdateTime());
-    assertThat(updated.getCreationTime()).isEqualTo(original.getCreationTime());
-    assertThat(updated.getLastUpdateTime()).isGreaterThan(updated.getCreationTime());
-  }
-
-  @Test
   void testSuccess_shouldPublish_setToFalseCorrectly() throws Exception {
     runSuccessfulUpdateTest("--input=" + reservedTermsPath, "--should_publish=false");
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();

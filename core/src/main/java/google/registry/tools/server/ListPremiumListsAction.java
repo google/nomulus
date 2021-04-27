@@ -15,8 +15,8 @@
 package google.registry.tools.server;
 
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
@@ -51,14 +51,15 @@ public final class ListPremiumListsAction extends ListObjectsAction<PremiumList>
 
   @Override
   public ImmutableSet<PremiumList> loadObjects() {
-    return transactIfJpaTm(
-        () ->
-            tm().loadAllOf(PremiumList.class).stream()
-                .map(PremiumList::getName)
-                .map(PremiumListDualDao::getLatestRevision)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .peek(list -> Hibernate.initialize(list.getLabelsToPrices()))
-                .collect(toImmutableSortedSet(Comparator.comparing(PremiumList::getName))));
+    return jpaTm()
+        .transact(
+            () ->
+                tm().loadAllOf(PremiumList.class).stream()
+                    .map(PremiumList::getName)
+                    .map(PremiumListDualDao::getLatestRevision)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .peek(list -> Hibernate.initialize(list.getLabelsToPrices()))
+                    .collect(toImmutableSortedSet(Comparator.comparing(PremiumList::getName))));
   }
 }

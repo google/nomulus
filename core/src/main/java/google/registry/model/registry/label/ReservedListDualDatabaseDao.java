@@ -15,13 +15,11 @@
 package google.registry.model.registry.label;
 
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static google.registry.model.DatabaseMigrationUtils.isDatastore;
 
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.MapDifference.ValueDifference;
 import com.google.common.collect.Maps;
 import google.registry.model.DatabaseMigrationUtils;
-import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import java.util.Map;
 import java.util.Optional;
@@ -38,32 +36,18 @@ public class ReservedListDualDatabaseDao {
 
   /** Persist a new reserved list to the database. */
   public static void save(ReservedList reservedList) {
-    if (isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
-      ReservedListDatastoreDao.save(reservedList);
-      DatabaseMigrationUtils.suppressExceptionUnlessInTest(
-          () -> ReservedListSqlDao.save(reservedList),
-          "Error saving the reserved list to Cloud SQL.");
-    } else {
       ReservedListSqlDao.save(reservedList);
       DatabaseMigrationUtils.suppressExceptionUnlessInTest(
           () -> ReservedListDatastoreDao.save(reservedList),
           "Error saving the reserved list to Datastore.");
-    }
   }
 
   /** Delete a reserved list from both databases. */
   public static void delete(ReservedList reservedList) {
-    if (isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
-      ReservedListDatastoreDao.delete(reservedList);
-      DatabaseMigrationUtils.suppressExceptionUnlessInTest(
-          () -> ReservedListSqlDao.delete(reservedList),
-          "Error deleting the reserved list from Cloud SQL.");
-    } else {
       ReservedListSqlDao.delete(reservedList);
       DatabaseMigrationUtils.suppressExceptionUnlessInTest(
           () -> ReservedListDatastoreDao.delete(reservedList),
           "Error deleting the reserved list from Datastore.");
-    }
   }
 
   /**
@@ -72,9 +56,7 @@ public class ReservedListDualDatabaseDao {
    */
   public static Optional<ReservedList> getLatestRevision(String reservedListName) {
     Optional<ReservedList> maybePrimaryList =
-        isDatastore(TransitionId.DOMAIN_LABEL_LISTS)
-            ? ReservedListDatastoreDao.getLatestRevision(reservedListName)
-            : ReservedListSqlDao.getLatestRevision(reservedListName);
+        ReservedListSqlDao.getLatestRevision(reservedListName);
     DatabaseMigrationUtils.suppressExceptionUnlessInTest(
         () -> maybePrimaryList.ifPresent(primaryList -> loadAndCompare(primaryList)),
         "Error comparing reserved lists.");
@@ -83,14 +65,9 @@ public class ReservedListDualDatabaseDao {
 
   private static void loadAndCompare(ReservedList primaryList) {
     Optional<ReservedList> maybeSecondaryList =
-        isDatastore(TransitionId.DOMAIN_LABEL_LISTS)
-            ? ReservedListSqlDao.getLatestRevision(primaryList.getName())
-            : ReservedListDatastoreDao.getLatestRevision(primaryList.getName());
+        ReservedListDatastoreDao.getLatestRevision(primaryList.getName());
     if (!maybeSecondaryList.isPresent()) {
-      throw new IllegalStateException(
-          String.format(
-              "Reserved list in the secondary database (%s) is empty.",
-              isDatastore(TransitionId.DOMAIN_LABEL_LISTS) ? "Cloud SQL" : "Datastore"));
+      throw new IllegalStateException("Reserved list in Datastore is empty.");
     }
     Map<String, ReservedListEntry> labelsToReservations =
         primaryList.reservedListMap.entrySet().parallelStream()
@@ -110,12 +87,10 @@ public class ReservedListDualDatabaseDao {
         if (diff.entriesDiffering().size() > 10) {
         throw new IllegalStateException(
             String.format(
-                "Unequal reserved lists detected, %s list with revision"
+                "Unequal reserved lists detected, Datastore list with revision"
                     + " id %d has %d different records than the current"
-                    + " primary database list.",
-                isDatastore(TransitionId.DOMAIN_LABEL_LISTS) ? "Cloud SQL" : "Datastore",
-                secondaryList.getRevisionId(),
-                diff.entriesDiffering().size()));
+                    + " Cloud SQL list.",
+                secondaryList.getRevisionId(), diff.entriesDiffering().size()));
       }
           StringBuilder diffMessage = new StringBuilder("Unequal reserved lists detected:\n");
       diff.entriesDiffering().entrySet().stream()
@@ -125,12 +100,9 @@ public class ReservedListDualDatabaseDao {
                 ValueDifference<ReservedListEntry> valueDiff = entry.getValue();
                 diffMessage.append(
                     String.format(
-                        "Domain label %s has entry %s in %s and entry"
-                            + " %s in the secondary database.\n",
-                        label,
-                        valueDiff.leftValue(),
-                        isDatastore(TransitionId.DOMAIN_LABEL_LISTS) ? "Datastore" : "Cloud SQL",
-                        valueDiff.rightValue()));
+                        "Domain label %s has entry %s in Cloud SQL and entry"
+                            + " %s in the Datastore.\n",
+                        label, valueDiff.leftValue(), valueDiff.rightValue()));
               });
       diff.entriesOnlyOnLeft().entrySet().stream()
           .forEach(
@@ -138,9 +110,7 @@ public class ReservedListDualDatabaseDao {
                 String label = entry.getKey();
                 diffMessage.append(
                     String.format(
-                        "Domain label %s has entry in %s, but not in the secondary database.\n",
-                        label,
-                        isDatastore(TransitionId.DOMAIN_LABEL_LISTS) ? "Datastore" : "Cloud SQL"));
+                        "Domain label %s has entry in Cloud SQL, but not in Datastore.\n", label));
               });
       diff.entriesOnlyOnRight().entrySet().stream()
           .forEach(
@@ -148,9 +118,7 @@ public class ReservedListDualDatabaseDao {
                 String label = entry.getKey();
                 diffMessage.append(
                     String.format(
-                        "Domain label %s has entry in %s, but not in the primary database.\n",
-                        label,
-                        isDatastore(TransitionId.DOMAIN_LABEL_LISTS) ? "Cloud SQL" : "Datastore"));
+                        "Domain label %s has entry in Datastore, but not in Cloud SQL.\n", label));
               });
           throw new IllegalStateException(diffMessage.toString());
       }

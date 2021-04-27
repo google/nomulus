@@ -55,7 +55,7 @@ final class DeletePremiumListCommand extends ConfirmingCommand implements Comman
 
   @Override
   protected String prompt() {
-    return "You are about to delete the premium list: \n" + premiumList;
+    return "You are about to delete the premium list: \n" + premiumList.getName();
   }
 
   @Override
