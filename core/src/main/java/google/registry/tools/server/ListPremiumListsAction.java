@@ -16,7 +16,6 @@ package google.registry.tools.server;
 
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
@@ -54,7 +53,7 @@ public final class ListPremiumListsAction extends ListObjectsAction<PremiumList>
     return jpaTm()
         .transact(
             () ->
-                tm().loadAllOf(PremiumList.class).stream()
+                jpaTm().loadAllOf(PremiumList.class).stream()
                     .map(PremiumList::getName)
                     .map(PremiumListDualDao::getLatestRevision)
                     .filter(Optional::isPresent)

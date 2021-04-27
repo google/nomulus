@@ -30,7 +30,7 @@ import org.joda.money.Money;
 /**
  * DAO for {@link PremiumList} objects that handles the branching paths for SQL and Datastore.
  *
- * <p>For write actions, this class will perform the action against the Cloud SQL then, after that
+ * <p>For write actions, this class will perform the action against Cloud SQL then, after that
  * success or failure, against Datastore. If Datastore fails, an error is logged (but not thrown).
  *
  * <p>For read actions, when retrieving a price, we will log if the primary and secondary databases
@@ -52,7 +52,7 @@ public class PremiumListDualDao {
    * <p>Returns absent if the label is not premium or there is no premium list for this registry.
    *
    * <p>Retrieves the price from both primary and secondary databases, and logs in the event of a
-   * failure Datastore (but does not throw an exception).
+   * failure in Datastore (but does not throw an exception).
    */
   public static Optional<Money> getPremiumPrice(String label, Registry registry) {
     if (registry.getPremiumList() == null) {
