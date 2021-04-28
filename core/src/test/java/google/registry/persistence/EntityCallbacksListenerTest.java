@@ -74,7 +74,7 @@ class EntityCallbacksListenerTest {
             .transact(
                 () -> {
                   TestEntity removed = jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id"));
-                  jpaTm().delete(removed);
+                  removed = jpaTm().delete(removed);
                   return removed;
                 });
     checkAll(testRemove, 0, 0, 1, 1);
@@ -97,6 +97,19 @@ class EntityCallbacksListenerTest {
   @Test
   void verifyHasMethodAnnotatedWithEmbedded_work() {
     assertThat(hasMethodAnnotatedWithEmbedded(ViolationEntity.class)).isTrue();
+  }
+
+  @Test
+  void verifyCallbacksNotCalledOnCommit() {
+    TestEntity testEntity = new TestEntity();
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
+
+    TestEntity testLoad =
+        jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id")));
+    assertThat(testLoad.entityPreUpdate).isEqualTo(0);
+
+    testLoad = jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id")));
+    assertThat(testLoad.foo).isEqualTo(1); // since we didn't save it, should only be 1
   }
 
   private static boolean hasMethodAnnotatedWithEmbedded(Class<?> entityType) {
@@ -155,12 +168,19 @@ class EntityCallbacksListenerTest {
     int foo = 0;
 
     @Transient int entityPostLoad = 0;
+    @Transient int entityPreUpdate = 0;
 
     @Embedded EntityEmbedded entityEmbedded = new EntityEmbedded();
 
     @PostLoad
     void entityPostLoad() {
       entityPostLoad++;
+      foo++;
+    }
+
+    @PreUpdate
+    void entityPreUpdate() {
+      entityPreUpdate++;
     }
   }
 

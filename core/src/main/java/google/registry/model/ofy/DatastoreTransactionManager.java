@@ -297,8 +297,9 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public void delete(Object entity) {
+  public <T> T delete(T entity) {
     syncIfTransactionless(getOfy().delete().entity(toDatastoreEntity(entity)));
+    return entity;
   }
 
   @Override
