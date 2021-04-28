@@ -57,8 +57,8 @@ import java.util.stream.IntStream;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junitpioneer.jupiter.RetryingTest;
 
 /** Unit tests for {@link ReadDnsQueueAction}. */
 public class ReadDnsQueueActionTest {
@@ -167,7 +167,7 @@ public class ReadDnsQueueActionTest {
                     .header("content-type", "application/x-www-form-urlencoded")));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_methodPostIsDefault() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.net");
@@ -183,7 +183,7 @@ public class ReadDnsQueueActionTest {
         new TaskMatcher().method("POST"));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_allSingleLockTlds() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.net");
@@ -196,7 +196,7 @@ public class ReadDnsQueueActionTest {
         ImmutableMultimap.of("com", "comWriter", "net", "netWriter", "example", "exampleWriter"));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_moreUpdatesThanQueueBatchSize() {
     // The task queue has a batch size of 1000 (that's the maximum number of items you can lease at
     // once).
@@ -222,7 +222,7 @@ public class ReadDnsQueueActionTest {
         .containsExactlyElementsIn(domains);
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_twoDnsWriters() {
     persistResource(
         Registry.get("com")
@@ -237,7 +237,7 @@ public class ReadDnsQueueActionTest {
     assertTldsEnqueuedInPushQueue(ImmutableMultimap.of("com", "comWriter", "com", "otherWriter"));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_differentUpdateTimes_usesMinimum() {
     clock.setTo(DateTime.parse("3000-02-03TZ"));
     dnsQueue.addDomainRefreshTask("domain1.com");
@@ -262,7 +262,7 @@ public class ReadDnsQueueActionTest {
             "numPublishLocks", "1");
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_oneTldPaused_returnedToQueue() {
     persistResource(Registry.get("net").asBuilder().setDnsPaused(true).build());
     dnsQueue.addDomainRefreshTask("domain.com");
@@ -276,7 +276,7 @@ public class ReadDnsQueueActionTest {
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_oneTldUnknown_returnedToQueue() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.example");
@@ -296,7 +296,7 @@ public class ReadDnsQueueActionTest {
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_corruptTaskTldMismatch_published() {
     // TODO(mcilwain): what's the correct action to take in this case?
     dnsQueue.addDomainRefreshTask("domain.com");
@@ -317,7 +317,7 @@ public class ReadDnsQueueActionTest {
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter", "net", "netWriter"));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_corruptTaskNoTld_discarded() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.example");
@@ -336,7 +336,7 @@ public class ReadDnsQueueActionTest {
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_corruptTaskNoName_discarded() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.example");
@@ -355,7 +355,7 @@ public class ReadDnsQueueActionTest {
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_corruptTaskNoType_discarded() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.example");
@@ -374,7 +374,7 @@ public class ReadDnsQueueActionTest {
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_corruptTaskWrongType_discarded() {
     dnsQueue.addDomainRefreshTask("domain.com");
     dnsQueue.addDomainRefreshTask("domain.example");
@@ -394,7 +394,7 @@ public class ReadDnsQueueActionTest {
         ImmutableMultimap.of("com", "comWriter", "example", "exampleWriter"));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_zone_getsIgnored() {
     dnsQueue.addHostRefreshTask("ns1.domain.com");
     dnsQueue.addDomainRefreshTask("domain.net");
@@ -415,7 +415,7 @@ public class ReadDnsQueueActionTest {
         .collect(Collectors.joining(","));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_manyDomainsAndHosts() {
     for (int i = 0; i < 150; i++) {
       // 0: domain; 1: host 1; 2: host 2
@@ -486,7 +486,7 @@ public class ReadDnsQueueActionTest {
             .param("hosts", makeCommaSeparatedRange(100, 150, "ns2.domain%04d.net")));
   }
 
-  @Test
+  @RetryingTest(4)
   void testSuccess_lockGroupsHostBySuperordinateDomain() {
     dnsQueue.addDomainRefreshTask("hello.multilock.uk");
     dnsQueue.addHostRefreshTask("ns1.abc.hello.multilock.uk");
