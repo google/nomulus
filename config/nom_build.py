@@ -256,6 +256,7 @@ GRADLE_FLAGS = [
                'Specify a task to be excluded from execution.',
                True),
 ]
+
 def generate_gradle_properties() -> str:
     """Returns the expected contents of gradle.properties."""
     out = io.StringIO()
