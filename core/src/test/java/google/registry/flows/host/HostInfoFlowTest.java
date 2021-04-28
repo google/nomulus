@@ -17,6 +17,7 @@ package google.registry.flows.host;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.deleteResource;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -35,15 +36,17 @@ import google.registry.flows.host.HostFlowUtils.HostNameNotPunyCodedException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
+import google.registry.testing.TestOfyAndSql;
 import javax.annotation.Nullable;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link HostInfoFlow}. */
+@DualDatabaseTest
 class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> {
 
   @Order(value = Order.DEFAULT - 2)
@@ -80,7 +83,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
             .build());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess() throws Exception {
     persistHostResource();
     assertTransactionalFlow(false);
@@ -93,7 +96,7 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
     assertNoBillingEvents();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_linked() throws Exception {
     persistHostResource();
     persistResource(
@@ -122,13 +125,16 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
                 .setLastTransferTime(domainTransferTime)
                 .setPersistedCurrentSponsorClientId("superclientid")
                 .build());
+    HostResource firstHost = persistHostResource();
     persistResource(
-        persistHostResource()
+        firstHost
             .asBuilder()
             .setRepoId("CEEF-FOOBAR")
             .setSuperordinateDomain(domain.createVKey())
             .setLastSuperordinateChange(lastSuperordinateChange)
             .build());
+    // we shouldn't have two active hosts with the same hostname
+    deleteResource(firstHost);
     assertTransactionalFlow(false);
     runFlowAssertResponse(
         loadFile("host_info_response_superordinate_clientid.xml"),
@@ -138,31 +144,31 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
     assertNoBillingEvents();
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_withSuperordinateDomain_hostMovedAfterDomainTransfer() throws Exception {
     runTest_superordinateDomain(
         DateTime.parse("2000-01-08T09:00:00.0Z"), DateTime.parse("2000-03-01T01:00:00.0Z"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_withSuperordinateDomain_hostMovedBeforeDomainTransfer() throws Exception {
     runTest_superordinateDomain(
         DateTime.parse("2000-04-08T09:00:00.0Z"), DateTime.parse("2000-02-08T09:00:00.0Z"));
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_withSuperordinateDomain() throws Exception {
     runTest_superordinateDomain(DateTime.parse("2000-04-08T09:00:00.0Z"), null);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_neverExisted() throws Exception {
     ResourceDoesNotExistException thrown =
         assertThrows(ResourceDoesNotExistException.class, this::runFlow);
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_existedButWasDeleted() throws Exception {
     persistResource(
         persistHostResource().asBuilder().setDeletionTime(clock.nowUtc().minusDays(1)).build());
@@ -171,14 +177,14 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
     assertThat(thrown).hasMessageThat().contains(String.format("(%s)", getUniqueIdFromCommand()));
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonLowerCaseHostname() {
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "NS1.EXAMPLE.NET"));
     EppException thrown = assertThrows(HostNameNotLowerCaseException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonPunyCodedHostname() {
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "ns1.çauçalito.tld"));
     HostNameNotPunyCodedException thrown =
@@ -186,14 +192,14 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
     assertThat(thrown).hasMessageThat().contains("expected ns1.xn--aualito-txac.tld");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_nonCanonicalHostname() {
     setEppInput("host_info.xml", ImmutableMap.of("HOSTNAME", "ns1.example.tld."));
     EppException thrown = assertThrows(HostNameNotNormalizedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @Test
+  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     persistHostResource();
     runFlow();
