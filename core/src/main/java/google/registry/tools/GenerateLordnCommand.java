@@ -14,9 +14,10 @@
 
 package google.registry.tools;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.QueryComposer.Comparator;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -24,9 +25,11 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.domain.DomainBase;
 import google.registry.tmch.LordnTaskUtils;
 import google.registry.tools.params.PathParameter;
+import google.registry.util.Clock;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /** Command to generate a LORDN CSV file for an entire TLD. */
@@ -53,22 +56,21 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
       required = true)
   private Path sunriseOutputPath;
 
+  @Inject Clock clock;
+
   @Override
   public void run() throws IOException {
-    DateTime now = DateTime.now(UTC);
+    DateTime now = clock.nowUtc();
     ImmutableList.Builder<String> claimsCsv = new ImmutableList.Builder<>();
     ImmutableList.Builder<String> sunriseCsv = new ImmutableList.Builder<>();
-    for (DomainBase domain : ofy().load().type(DomainBase.class).filter("tld", tld)) {
-      String status = " ";
-      if (domain.getLaunchNotice() == null && domain.getSmdId() != null) {
-        sunriseCsv.add(LordnTaskUtils.getCsvLineForSunriseDomain(domain, domain.getCreationTime()));
-        status = "S";
-      } else if (domain.getLaunchNotice() != null || domain.getSmdId() != null) {
-        claimsCsv.add(LordnTaskUtils.getCsvLineForClaimsDomain(domain, domain.getCreationTime()));
-        status = "C";
-      }
-      System.out.printf("%s[%s] ", domain.getDomainName(), status);
-    }
+    transactIfJpaTm(
+        () ->
+            tm()
+                .createQueryComposer(DomainBase.class)
+                .where("tld", Comparator.EQ, tld)
+                .orderBy("repoId")
+                .stream()
+                .forEach(domain -> processDomain(claimsCsv, sunriseCsv, domain)));
     ImmutableList<String> claimsRows = claimsCsv.build();
     ImmutableList<String> claimsAll =
         new ImmutableList.Builder<String>()
@@ -85,5 +87,20 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
             .build();
     Files.write(claimsOutputPath, claimsAll, UTF_8);
     Files.write(sunriseOutputPath, sunriseAll, UTF_8);
+  }
+
+  private static void processDomain(
+      ImmutableList.Builder<String> claimsCsv,
+      ImmutableList.Builder<String> sunriseCsv,
+      DomainBase domain) {
+    String status = " ";
+    if (domain.getLaunchNotice() == null && domain.getSmdId() != null) {
+      sunriseCsv.add(LordnTaskUtils.getCsvLineForSunriseDomain(domain, domain.getCreationTime()));
+      status = "S";
+    } else if (domain.getLaunchNotice() != null || domain.getSmdId() != null) {
+      claimsCsv.add(LordnTaskUtils.getCsvLineForClaimsDomain(domain, domain.getCreationTime()));
+      status = "C";
+    }
+    System.out.printf("%s[%s] ", domain.getDomainName(), status);
   }
 }

@@ -207,6 +207,17 @@ public class QueryComposerTest {
   }
 
   @TestOfyAndSql
+  public void testListQueries() {
+    assertThat(
+            transactIfJpaTm(
+                () ->
+                    tm().createQueryComposer(TestEntity.class)
+                        .where("name", Comparator.GT, "alpha")
+                        .list()))
+        .isEqualTo(ImmutableList.of(bravo, charlie));
+  }
+
+  @TestOfyAndSql
   public void testNonPrimaryKey() {
     assertThat(
             transactIfJpaTm(
