@@ -337,8 +337,7 @@ public class DomainContent extends EppResource
   }
 
   @PostLoad
-  @SuppressWarnings("UnusedMethod")
-  private void postLoad() {
+  protected void postLoad() {
     // Reconstitute the contact list.
     ImmutableSet.Builder<DesignatedContact> contactsBuilder = new ImmutableSet.Builder<>();
 
