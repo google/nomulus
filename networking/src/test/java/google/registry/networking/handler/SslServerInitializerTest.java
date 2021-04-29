@@ -23,6 +23,7 @@ import static google.registry.networking.handler.SslServerInitializer.CLIENT_CER
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import google.registry.util.SelfSignedCaCertificate;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
@@ -280,6 +281,10 @@ class SslServerInitializerTest {
         localAddress,
         getClientHandler(
             sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert(), "TLSv1", null));
+
+    FluentLogger.forEnclosingClass()
+        .atInfo()
+        .log("Java version: " + System.getProperty("java.version"));
 
     verifySslException(
         nettyExtension.getServerChannel(),
