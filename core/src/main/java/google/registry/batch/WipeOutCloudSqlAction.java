@@ -19,6 +19,7 @@ import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
@@ -28,6 +29,8 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Retrier;
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.function.Supplier;
 import javax.inject.Inject;
@@ -80,9 +83,9 @@ public class WipeOutCloudSqlAction implements Runnable {
     try {
       retrier.callWithRetry(
           () -> {
-            try (Connection conn = connectionSupplier.get();
-                Statement statement = conn.createStatement()) {
-              statement.execute("drop owned by schema_deployer;");
+            try (Connection conn = connectionSupplier.get()) {
+              dropAllTables(conn, listTables(conn));
+              dropAllSequences(conn, listSequences(conn));
             }
             return null;
           },
@@ -93,6 +96,74 @@ public class WipeOutCloudSqlAction implements Runnable {
       logger.atSevere().withCause(e).log("Failed to wipe out Cloud SQL data.");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload("Failed to wipe out Cloud SQL in " + projectId);
+    }
+  }
+
+  /** Returns a list of all tables in the public schema of a Postgresql database. */
+  static ImmutableList<String> listTables(Connection connection) {
+    try (ResultSet resultSet =
+        connection.getMetaData().getTables(null, null, null, new String[] {"TABLE"})) {
+      ImmutableList.Builder<String> tables = new ImmutableList.Builder<>();
+      while (resultSet.next()) {
+        String schema = resultSet.getString("TABLE_SCHEM");
+        if (schema == null || !schema.equalsIgnoreCase("public")) {
+          continue;
+        }
+        String tableName = resultSet.getString("TABLE_NAME");
+        tables.add("public.\"" + tableName + "\"");
+      }
+      return tables.build();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  static void dropAllTables(Connection conn, ImmutableList<String> tables) throws Exception {
+    if (tables.isEmpty()) {
+      return;
+    }
+
+    try (Statement statement = conn.createStatement()) {
+      for (String table : tables) {
+        statement.addBatch(String.format("DROP TABLE IF EXISTS %s CASCADE;", table));
+      }
+      for (int code : statement.executeBatch()) {
+        if (code == Statement.EXECUTE_FAILED) {
+          throw new RuntimeException("Failed to drop some tables. Please check.");
+        }
+      }
+    }
+  }
+
+  /** Returns a list of all sequences in a Postgresql database. */
+  static ImmutableList<String> listSequences(Connection conn) {
+    try (Statement statement = conn.createStatement();
+        ResultSet resultSet =
+            statement.executeQuery("SELECT c.relname FROM pg_class c WHERE c.relkind = 'S';")) {
+      ImmutableList.Builder<String> sequences = new ImmutableList.Builder<>();
+      while (resultSet.next()) {
+        sequences.add('\"' + resultSet.getString(1) + '\"');
+      }
+      return sequences.build();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  static void dropAllSequences(Connection conn, ImmutableList<String> sequences) throws Exception {
+    if (sequences.isEmpty()) {
+      return;
+    }
+
+    try (Statement statement = conn.createStatement()) {
+      for (String sequence : sequences) {
+        statement.addBatch(String.format("DROP SEQUENCE IF EXISTS %s CASCADE;", sequence));
+      }
+      for (int code : statement.executeBatch()) {
+        if (code == Statement.EXECUTE_FAILED) {
+          throw new RuntimeException("Failed to drop some sequences. Please check.");
+        }
+      }
     }
   }
 }
