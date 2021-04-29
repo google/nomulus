@@ -259,43 +259,6 @@ class SslServerInitializerTest {
     assertThat(sslSession.getCipherSuite()).isEqualTo("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
   }
 
-  @ParameterizedTest
-  @MethodSource("provideTestCombinations")
-  void testSuccess_cipherNotAccepted_beforeEnforcementDate(SslProvider sslProvider)
-      throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
-    LocalAddress localAddress = new LocalAddress("CIPHER_ACCEPTED_BEFORE_DATE_" + sslProvider);
-
-    nettyExtension.setUpServer(
-        localAddress,
-        new SslServerInitializer<LocalChannel>(
-            true,
-            true,
-            sslProvider,
-            Suppliers.ofInstance(serverSsc.key()),
-            Suppliers.ofInstance(ImmutableList.of(serverSsc.cert()))));
-    SelfSignedCaCertificate clientSsc =
-        SelfSignedCaCertificate.create(
-            "CLIENT",
-            Date.from(Instant.now().minus(Duration.ofDays(2))),
-            Date.from(Instant.now().plus(Duration.ofDays(1))));
-    nettyExtension.setUpClient(
-        localAddress,
-        getClientHandler(
-            sslProvider,
-            serverSsc.cert(),
-            clientSsc.key(),
-            clientSsc.cert(),
-            "TLSv1.2",
-            Collections.singletonList("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA")));
-
-    SSLSession sslSession = setUpSslChannel(nettyExtension.getClientChannel(), serverSsc.cert());
-    nettyExtension.assertThatMessagesWork();
-
-    assertThat(sslSession.getLocalCertificates()).asList().containsExactly(clientSsc.cert());
-    assertThat(sslSession.getPeerCertificates()).asList().containsExactly(serverSsc.cert());
-  }
-
   // This test is a bit tricky to fix because apparently some new OpenJDK 11 version does no
   // support TLS 1.1 anymore, and in that case it throws a ClosedChannelException instead of a
   // SSLHandShakeException. It's going to be hard to accommodate both the OpenSSL and the JDK
