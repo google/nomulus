@@ -15,7 +15,7 @@
 package google.registry.flows.host;
 
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
-import static google.registry.flows.ResourceFlowUtils.failfastForAsyncDelete;
+import static google.registry.flows.ResourceFlowUtils.checkLinkedDomains;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
@@ -65,10 +65,11 @@ import org.joda.time.DateTime;
 @ReportingSpec(ActivityReportField.HOST_DELETE)
 public final class HostDeleteFlow implements TransactionalFlow {
 
-  private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES = ImmutableSet.of(
-      StatusValue.CLIENT_DELETE_PROHIBITED,
-      StatusValue.PENDING_DELETE,
-      StatusValue.SERVER_DELETE_PROHIBITED);
+  private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES =
+      ImmutableSet.of(
+          StatusValue.CLIENT_DELETE_PROHIBITED,
+          StatusValue.PENDING_DELETE,
+          StatusValue.SERVER_DELETE_PROHIBITED);
 
   @Inject ExtensionManager extensionManager;
   @Inject @ClientId String clientId;
@@ -78,7 +79,9 @@ public final class HostDeleteFlow implements TransactionalFlow {
   @Inject HistoryEntry.Builder historyBuilder;
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
-  @Inject HostDeleteFlow() {}
+
+  @Inject
+  HostDeleteFlow() {}
 
   @Override
   public final EppResponse run() throws EppException {
@@ -87,7 +90,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
     validateClientIsLoggedIn(clientId);
     DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
-    failfastForAsyncDelete(targetId, now, HostResource.class, DomainBase::getNameservers);
+    checkLinkedDomains(targetId, now, HostResource.class, DomainBase::getNameservers);
     HostResource existingHost = loadAndVerifyExistence(HostResource.class, targetId, now);
     verifyNoDisallowedStatuses(existingHost, DISALLOWED_STATUSES);
     if (!isSuperuser) {

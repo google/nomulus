@@ -1,9 +1,10 @@
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <response>
-    <result code="1000">
-      <msg>Command completed successfully</msg>
+    <result code="1001">
+      <msg>Command completed successfully; action pending</msg>
     </result>
     <trID>
+      <clTRID>ABC-12345</clTRID>
       <svTRID>server-trid</svTRID>
     </trID>
   </response>

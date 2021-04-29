@@ -15,12 +15,16 @@
 package google.registry.flows.contact;
 
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
-import static google.registry.flows.ResourceFlowUtils.failfastForAsyncDelete;
+import static google.registry.flows.ResourceFlowUtils.checkLinkedDomains;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
+import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
+import static google.registry.model.ResourceTransferUtils.handlePendingTransferOnDelete;
+import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
+import static google.registry.model.transfer.TransferStatus.SERVER_CANCELLED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -40,7 +44,8 @@ import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse;
-import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.eppoutput.Result.Code;
+import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -63,10 +68,11 @@ import org.joda.time.DateTime;
 @ReportingSpec(ActivityReportField.CONTACT_DELETE)
 public final class ContactDeleteFlow implements TransactionalFlow {
 
-  private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES = ImmutableSet.of(
-      StatusValue.CLIENT_DELETE_PROHIBITED,
-      StatusValue.PENDING_DELETE,
-      StatusValue.SERVER_DELETE_PROHIBITED);
+  private static final ImmutableSet<StatusValue> DISALLOWED_STATUSES =
+      ImmutableSet.of(
+          StatusValue.CLIENT_DELETE_PROHIBITED,
+          StatusValue.PENDING_DELETE,
+          StatusValue.SERVER_DELETE_PROHIBITED);
 
   @Inject ExtensionManager extensionManager;
   @Inject @ClientId String clientId;
@@ -77,7 +83,9 @@ public final class ContactDeleteFlow implements TransactionalFlow {
   @Inject ContactHistory.Builder historyBuilder;
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
-  @Inject ContactDeleteFlow() {}
+
+  @Inject
+  ContactDeleteFlow() {}
 
   @Override
   public final EppResponse run() throws EppException {
@@ -85,23 +93,45 @@ public final class ContactDeleteFlow implements TransactionalFlow {
     extensionManager.validate();
     validateClientIsLoggedIn(clientId);
     DateTime now = tm().getTransactionTime();
-    failfastForAsyncDelete(targetId, now, ContactResource.class, DomainBase::getReferencedContacts);
+    checkLinkedDomains(targetId, now, ContactResource.class, DomainBase::getReferencedContacts);
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     verifyNoDisallowedStatuses(existingContact, DISALLOWED_STATUSES);
     verifyOptionalAuthInfo(authInfo, existingContact);
     if (!isSuperuser) {
       verifyResourceOwnership(clientId, existingContact);
     }
-    asyncTaskEnqueuer.enqueueAsyncDelete(
-        existingContact, tm().getTransactionTime(), clientId, trid, isSuperuser);
-    ContactResource newContact =
-        existingContact.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build();
-    historyBuilder
-        .setType(HistoryEntry.Type.CONTACT_PENDING_DELETE)
-        .setModificationTime(now)
-        .setContactBase(newContact);
-    tm().insert(historyBuilder.build());
+    Type historyEntryType;
+    Code resultCode;
+    ContactResource newContact;
+    if (tm().isOfy()) {
+      asyncTaskEnqueuer.enqueueAsyncDelete(
+          existingContact, tm().getTransactionTime(), clientId, trid, isSuperuser);
+      newContact = existingContact.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build();
+      historyEntryType = Type.CONTACT_PENDING_DELETE;
+      resultCode = SUCCESS_WITH_ACTION_PENDING;
+    } else {
+      // Handle pending transfers on contact deletion.
+      newContact =
+          existingContact.getStatusValues().contains(StatusValue.PENDING_TRANSFER)
+              ? denyPendingTransfer(existingContact, SERVER_CANCELLED, now, clientId)
+              : existingContact;
+      // Wipe out PII on contact deletion.
+      newContact =
+          newContact.asBuilder().wipeOut().setStatusValues(null).setDeletionTime(now).build();
+      historyEntryType = Type.CONTACT_DELETE;
+      resultCode = SUCCESS;
+    }
+    ContactHistory contactHistory =
+        historyBuilder
+            .setType(historyEntryType)
+            .setModificationTime(now)
+            .setContactBase(newContact)
+            .build();
+    if (!tm().isOfy()) {
+      handlePendingTransferOnDelete(existingContact, newContact, now, contactHistory);
+    }
+    tm().insert(contactHistory);
     tm().update(newContact);
-    return responseBuilder.setResultFromCode(SUCCESS_WITH_ACTION_PENDING).build();
+    return responseBuilder.setResultFromCode(resultCode).build();
   }
 }
