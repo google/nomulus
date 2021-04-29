@@ -34,7 +34,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.function.Supplier;
 import javax.inject.Inject;
-import org.flywaydb.core.api.FlywayException;
 
 /**
  * Wipes out all Cloud SQL data in a Nomulus GCP environment.
@@ -89,7 +88,7 @@ public class WipeOutCloudSqlAction implements Runnable {
             }
             return null;
           },
-          e -> !(e instanceof FlywayException));
+          e -> !(e instanceof SQLException));
       response.setStatus(SC_OK);
       response.setPayload("Wiped out Cloud SQL in " + projectId);
     } catch (RuntimeException e) {
@@ -100,7 +99,7 @@ public class WipeOutCloudSqlAction implements Runnable {
   }
 
   /** Returns a list of all tables in the public schema of a Postgresql database. */
-  static ImmutableList<String> listTables(Connection connection) {
+  static ImmutableList<String> listTables(Connection connection) throws SQLException {
     try (ResultSet resultSet =
         connection.getMetaData().getTables(null, null, null, new String[] {"TABLE"})) {
       ImmutableList.Builder<String> tables = new ImmutableList.Builder<>();
@@ -113,12 +112,10 @@ public class WipeOutCloudSqlAction implements Runnable {
         tables.add("public.\"" + tableName + "\"");
       }
       return tables.build();
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
     }
   }
 
-  static void dropAllTables(Connection conn, ImmutableList<String> tables) throws Exception {
+  static void dropAllTables(Connection conn, ImmutableList<String> tables) throws SQLException {
     if (tables.isEmpty()) {
       return;
     }
@@ -136,7 +133,7 @@ public class WipeOutCloudSqlAction implements Runnable {
   }
 
   /** Returns a list of all sequences in a Postgresql database. */
-  static ImmutableList<String> listSequences(Connection conn) {
+  static ImmutableList<String> listSequences(Connection conn) throws SQLException {
     try (Statement statement = conn.createStatement();
         ResultSet resultSet =
             statement.executeQuery("SELECT c.relname FROM pg_class c WHERE c.relkind = 'S';")) {
@@ -145,12 +142,11 @@ public class WipeOutCloudSqlAction implements Runnable {
         sequences.add('\"' + resultSet.getString(1) + '\"');
       }
       return sequences.build();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
     }
   }
 
-  static void dropAllSequences(Connection conn, ImmutableList<String> sequences) throws Exception {
+  static void dropAllSequences(Connection conn, ImmutableList<String> sequences)
+      throws SQLException {
     if (sequences.isEmpty()) {
       return;
     }
