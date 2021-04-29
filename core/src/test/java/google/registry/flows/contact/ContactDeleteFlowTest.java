@@ -14,19 +14,26 @@
 
 package google.registry.flows.contact;
 
+import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
+import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_PENDING_DELETE;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.newContactResource;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.DatabaseHelper.persistContactWithPendingTransfer;
 import static google.registry.testing.DatabaseHelper.persistDeletedContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
+import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import google.registry.flows.EppException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -36,10 +43,19 @@ import google.registry.flows.exceptions.ResourceToDeleteIsReferencedException;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.poll.PendingActionNotificationResponse;
+import google.registry.model.poll.PollMessage;
+import google.registry.model.registry.Registry;
+import google.registry.model.reporting.HistoryEntry.Type;
+import google.registry.model.transfer.TransferData;
+import google.registry.model.transfer.TransferResponse;
+import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -57,18 +73,24 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     setEppInput("contact_delete.xml");
   }
 
-  @TestOfyAndSql
-  void testDryRun() throws Exception {
+  @TestOfyOnly
+  void testDryRun_ofy() throws Exception {
+    persistActiveContact(getUniqueIdFromCommand());
+    dryRunFlowAssertResponse(loadFile("contact_delete_response_pending.xml"));
+  }
+
+  @TestSqlOnly
+  void testDryRun_sql() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     dryRunFlowAssertResponse(loadFile("contact_delete_response.xml"));
   }
 
-  @TestOfyAndSql
-  void testSuccess() throws Exception {
+  @TestOfyOnly
+  void testSuccess_ofy() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
-    runFlowAssertResponse(loadFile("contact_delete_response.xml"));
+    runFlowAssertResponse(loadFile("contact_delete_response_pending.xml"));
     ContactResource deletedContact = reloadResourceByForeignKey();
     assertAboutContacts().that(deletedContact).hasStatusValue(StatusValue.PENDING_DELETE);
     assertAsyncDeletionTaskEnqueued(
@@ -76,18 +98,104 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertAboutContacts()
         .that(deletedContact)
         .hasOnlyOneHistoryEntryWhich()
-        .hasType(HistoryEntry.Type.CONTACT_PENDING_DELETE);
+        .hasType(Type.CONTACT_PENDING_DELETE);
     assertNoBillingEvents();
     assertLastHistoryContainsResource(deletedContact);
   }
 
-  @TestOfyAndSql
-  void testSuccess_clTridNotSpecified() throws Exception {
+  @TestSqlOnly
+  void testSuccess_sql() throws Exception {
+    persistActiveContact(getUniqueIdFromCommand());
+    clock.advanceOneMilli();
+    assertTransactionalFlow(true);
+    runFlowAssertResponse(loadFile("contact_delete_response.xml"));
+    assertThat(reloadResourceByForeignKey()).isNull();
+    assertAboutContacts()
+        .that(reloadResourceByForeignKey(clock.nowUtc().minusMillis(1)))
+        .isNotActiveAt(clock.nowUtc())
+        .and()
+        .hasNullLocalizedPostalInfo()
+        .and()
+        .hasNullInternationalizedPostalInfo()
+        .and()
+        .hasNullEmailAddress()
+        .and()
+        .hasNullVoiceNumber()
+        .and()
+        .hasNullFaxNumber()
+        .and()
+        .hasOnlyOneHistoryEntryWhich()
+        .hasType(Type.CONTACT_DELETE);
+    assertNoTasksEnqueued(QUEUE_ASYNC_DELETE);
+    assertNoBillingEvents();
+  }
+
+  @TestSqlOnly
+  void testSuccess_pendingTransfer_sql() throws Exception {
+    DateTime transferRequestTime = clock.nowUtc().minusDays(3);
+    TransferData oldTransferData =
+        persistContactWithPendingTransfer(
+                persistActiveContact(getUniqueIdFromCommand()),
+                transferRequestTime,
+                transferRequestTime.plus(Registry.DEFAULT_TRANSFER_GRACE_PERIOD),
+                clock.nowUtc())
+            .getTransferData();
+    clock.advanceOneMilli();
+    assertTransactionalFlow(true);
+    runFlowAssertResponse(loadFile("contact_delete_response.xml"));
+    assertThat(reloadResourceByForeignKey()).isNull();
+    ContactResource softDeletedContact = reloadResourceByForeignKey(clock.nowUtc().minusMillis(1));
+    assertAboutContacts()
+        .that(softDeletedContact)
+        .isNotActiveAt(clock.nowUtc())
+        .and()
+        .hasNullLocalizedPostalInfo()
+        .and()
+        .hasNullInternationalizedPostalInfo()
+        .and()
+        .hasNullEmailAddress()
+        .and()
+        .hasNullVoiceNumber()
+        .and()
+        .hasNullFaxNumber()
+        .and()
+        .hasOneHistoryEntryEachOfTypes(Type.CONTACT_DELETE, Type.CONTACT_TRANSFER_REQUEST);
+    assertThat(softDeletedContact.getTransferData())
+        .isEqualTo(
+            oldTransferData
+                .copyConstantFieldsToBuilder()
+                .setTransferStatus(TransferStatus.SERVER_CANCELLED)
+                .setPendingTransferExpirationTime(softDeletedContact.getDeletionTime())
+                .build());
+    PollMessage gainingPollMessage =
+        Iterables.getOnlyElement(getPollMessages("NewRegistrar", clock.nowUtc()));
+    assertThat(gainingPollMessage.getEventTime()).isEqualTo(clock.nowUtc());
+    assertThat(
+            gainingPollMessage.getResponseData().stream()
+                .filter(TransferResponse.class::isInstance)
+                .map(TransferResponse.class::cast)
+                .collect(onlyElement())
+                .getTransferStatus())
+        .isEqualTo(TransferStatus.SERVER_CANCELLED);
+    PendingActionNotificationResponse panData =
+        gainingPollMessage.getResponseData().stream()
+            .filter(PendingActionNotificationResponse.class::isInstance)
+            .map(PendingActionNotificationResponse.class::cast)
+            .collect(onlyElement());
+    assertThat(panData.getTrid())
+        .isEqualTo(Trid.create("transferClient-trid", "transferServer-trid"));
+    assertThat(panData.getActionResult()).isFalse();
+    assertNoTasksEnqueued(QUEUE_ASYNC_DELETE);
+    assertNoBillingEvents();
+  }
+
+  @TestOfyOnly
+  void testSuccess_clTridNotSpecified_ofy() throws Exception {
     setEppInput("contact_delete_no_cltrid.xml");
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
-    runFlowAssertResponse(loadFile("contact_delete_response_no_cltrid.xml"));
+    runFlowAssertResponse(loadFile("contact_delete_response_no_cltrid_pending.xml"));
     ContactResource deletedContact = reloadResourceByForeignKey();
     assertAboutContacts().that(deletedContact).hasStatusValue(StatusValue.PENDING_DELETE);
     assertAsyncDeletionTaskEnqueued(
@@ -95,7 +203,35 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertAboutContacts()
         .that(deletedContact)
         .hasOnlyOneHistoryEntryWhich()
-        .hasType(HistoryEntry.Type.CONTACT_PENDING_DELETE);
+        .hasType(CONTACT_PENDING_DELETE);
+    assertNoBillingEvents();
+  }
+
+  @TestSqlOnly
+  void testSuccess_clTridNotSpecified_sql() throws Exception {
+    setEppInput("contact_delete_no_cltrid.xml");
+    persistActiveContact(getUniqueIdFromCommand());
+    clock.advanceOneMilli();
+    assertTransactionalFlow(true);
+    runFlowAssertResponse(loadFile("contact_delete_response_no_cltrid.xml"));
+    assertThat(reloadResourceByForeignKey()).isNull();
+    assertAboutContacts()
+        .that(reloadResourceByForeignKey(clock.nowUtc().minusMillis(1)))
+        .isNotActiveAt(clock.nowUtc())
+        .and()
+        .hasNullLocalizedPostalInfo()
+        .and()
+        .hasNullInternationalizedPostalInfo()
+        .and()
+        .hasNullEmailAddress()
+        .and()
+        .hasNullVoiceNumber()
+        .and()
+        .hasNullFaxNumber()
+        .and()
+        .hasOnlyOneHistoryEntryWhich()
+        .hasType(Type.CONTACT_DELETE);
+    assertNoTasksEnqueued(QUEUE_ASYNC_DELETE);
     assertNoBillingEvents();
   }
 
@@ -137,7 +273,8 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
   private void doFailingStatusTest(StatusValue statusValue, Class<? extends EppException> exception)
       throws Exception {
     persistResource(
-        newContactResource(getUniqueIdFromCommand()).asBuilder()
+        newContactResource(getUniqueIdFromCommand())
+            .asBuilder()
             .setStatusValues(ImmutableSet.of(statusValue))
             .build());
     EppException thrown = assertThrows(exception, this::runFlow);
@@ -153,13 +290,13 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
-  @TestOfyAndSql
-  void testSuccess_superuserUnauthorizedClient() throws Exception {
+  @TestOfyOnly
+  void testSuccess_superuserUnauthorizedClient_ofy() throws Exception {
     sessionMetadata.setClientId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     runFlowAssertResponse(
-        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("contact_delete_response.xml"));
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("contact_delete_response_pending.xml"));
     ContactResource deletedContact = reloadResourceByForeignKey();
     assertAboutContacts().that(deletedContact).hasStatusValue(StatusValue.PENDING_DELETE);
     assertAsyncDeletionTaskEnqueued(
@@ -167,15 +304,42 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertAboutContacts()
         .that(deletedContact)
         .hasOnlyOneHistoryEntryWhich()
-        .hasType(HistoryEntry.Type.CONTACT_PENDING_DELETE);
+        .hasType(CONTACT_PENDING_DELETE);
+    assertNoBillingEvents();
+  }
+
+  @TestSqlOnly
+  void testSuccess_superuserUnauthorizedClient_sql() throws Exception {
+    sessionMetadata.setClientId("NewRegistrar");
+    persistActiveContact(getUniqueIdFromCommand());
+    clock.advanceOneMilli();
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("contact_delete_response.xml"));
+    assertThat(reloadResourceByForeignKey()).isNull();
+    assertAboutContacts()
+        .that(reloadResourceByForeignKey(clock.nowUtc().minusMillis(1)))
+        .isNotActiveAt(clock.nowUtc())
+        .and()
+        .hasNullLocalizedPostalInfo()
+        .and()
+        .hasNullInternationalizedPostalInfo()
+        .and()
+        .hasNullEmailAddress()
+        .and()
+        .hasNullVoiceNumber()
+        .and()
+        .hasNullFaxNumber()
+        .and()
+        .hasOnlyOneHistoryEntryWhich()
+        .hasType(Type.CONTACT_DELETE);
+    assertNoTasksEnqueued(QUEUE_ASYNC_DELETE);
     assertNoBillingEvents();
   }
 
   @TestOfyAndSql
   void testFailure_failfastWhenLinkedToDomain() throws Exception {
     createTld("tld");
-    persistResource(
-        newDomainBase("example.tld", persistActiveContact(getUniqueIdFromCommand())));
+    persistResource(newDomainBase("example.tld", persistActiveContact(getUniqueIdFromCommand())));
     EppException thrown = assertThrows(ResourceToDeleteIsReferencedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -183,8 +347,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
   @TestOfyAndSql
   void testFailure_failfastWhenLinkedToApplication() throws Exception {
     createTld("tld");
-    persistResource(
-        newDomainBase("example.tld", persistActiveContact(getUniqueIdFromCommand())));
+    persistResource(newDomainBase("example.tld", persistActiveContact(getUniqueIdFromCommand())));
     EppException thrown = assertThrows(ResourceToDeleteIsReferencedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
