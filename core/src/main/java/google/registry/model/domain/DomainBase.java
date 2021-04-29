@@ -143,17 +143,13 @@ public class DomainBase extends DomainContent
     return dsData;
   }
 
-  /**
-   * Post-load method to eager load the collections.
-   *
-   * <p>We've named this "postLoad2" because there's already a "postLoad" in DomainContent and our
-   * code to invoke all post-loads doesn't seem to call both if they have the same name.
-   */
+  /** Post-load method to eager load the collections. */
   @PostLoad
-  @SuppressWarnings("UnusedMethod")
-  private void postLoad2() {
-    Hibernate.initialize(getInternalDelegationSignerData());
-    Hibernate.initialize(getInternalGracePeriods());
+  @Override
+  protected void postLoad() {
+    super.postLoad();
+    Hibernate.initialize(dsData);
+    Hibernate.initialize(gracePeriods);
   }
 
   @Override

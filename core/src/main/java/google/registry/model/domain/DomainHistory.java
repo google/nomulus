@@ -264,8 +264,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
     }
 
     // Eager fetch doesn't seem to work for this, so we do it explicitly.
-    Hibernate.initialize(getDomainTransactionRecords());
-    Hibernate.initialize(getNsHosts());
+    Hibernate.initialize(domainTransactionRecords);
+    Hibernate.initialize(nsHosts);
     Hibernate.initialize(dsDataHistories);
     Hibernate.initialize(gracePeriodHistories);
   }
