@@ -14,6 +14,7 @@
 
 package google.registry.model.registry.label;
 
+import static avro.shaded.com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
 
@@ -66,13 +67,14 @@ public class PremiumListDualDao {
         () -> {
           Optional<Money> secondaryResult =
               PremiumListDatastoreDao.getPremiumPrice(premiumListName, label, registry.getTldStr());
-          if (!primaryResult.equals(secondaryResult)) {
-            throw new IllegalStateException(
-                String.format(
-                    "Unequal prices for domain %s.%s from primary SQL DB (%s) and secondary "
-                        + "Datastore db (%s).",
-                    label, registry.getTldStr(), primaryResult, secondaryResult));
-          }
+          checkState(
+              primaryResult.equals(secondaryResult),
+              "Unequal prices for domain %s.%s from primary SQL DB (%s) and secondary Datastore db"
+                  + " (%s).",
+              label,
+              registry.getTldStr(),
+              primaryResult,
+              secondaryResult);
         },
         String.format(
             "Error loading price of domain %s.%s from Datastore.", label, registry.getTldStr()));
