@@ -14,11 +14,21 @@
 
 package google.registry.tools;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.model.registry.Registries.assertTldExists;
+import static google.registry.util.ListNamingUtils.convertFilePathToName;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.base.Strings;
+import com.google.common.flogger.FluentLogger;
+import com.googlecode.objectify.Key;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.tools.server.CreatePremiumListAction;
+import google.registry.model.registry.label.PremiumListDualDao;
+import google.registry.persistence.VKey;
+import google.registry.schema.tld.PremiumListUtils;
+import java.nio.file.Files;
 
 /** Command to create a {@link PremiumList} on Datastore. */
 @Parameters(separators = " =", commandDescription = "Create a PremiumList in Datastore.")
@@ -29,18 +39,24 @@ public class CreatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
       description = "Override restrictions on premium list naming")
   boolean override;
 
-  /** Returns the path to the servlet task. */
   @Override
-  public String getCommandPath() {
-    return CreatePremiumListAction.PATH;
-  }
-
-  @Override
-  ImmutableMap<String, String> getParameterMap() {
-    if (override) {
-      return ImmutableMap.of("override", "true");
-    } else {
-      return ImmutableMap.of();
+  // Using CreatePremiumListAction.java as reference;
+  protected void init() throws Exception {
+    name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
+    checkArgument(!PremiumListDualDao.exists(name),
+        "A premium list already exists by this name");
+    if (!override) {
+      // refer to CreatePremiumListAction.java
+      assertTldExists(
+          name,
+          "Premium names must match the name of the TLD they are intended to be used on"
+              + " (unless --override is specified), yet TLD %s does not exist");
     }
+    allLines = Files.readAllLines(inputFile, UTF_8);
+    inputLineCount = allLines.size();
+    PremiumList newPremiumList = PremiumListUtils.parseToPremiumList(name, allLines);
+    stageEntityChange(
+        null, newPremiumList,
+        VKey.createOfy(PremiumList.class, Key.create(newPremiumList)));
   }
 }

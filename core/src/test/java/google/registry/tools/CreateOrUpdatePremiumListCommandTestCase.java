@@ -14,47 +14,26 @@
 
 package google.registry.tools;
 
-import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
-import com.google.common.net.MediaType;
-import google.registry.testing.UriParameters;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
+import java.io.IOException;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Base class for common testing setup for create and update commands for Premium Lists. */
 abstract class CreateOrUpdatePremiumListCommandTestCase<T extends CreateOrUpdatePremiumListCommand>
     extends CommandTestCase<T> {
 
-  @Captor
-  ArgumentCaptor<ImmutableMap<String, String>> urlParamCaptor;
+  protected static final String TLD_TEST = "prime";
+  protected String premiumTermsPath;
 
-  @Captor
-  ArgumentCaptor<byte[]> requestBodyCaptor;
-
-  static String generateInputData(String premiumTermsPath) throws Exception {
-    return Files.asCharSource(new File(premiumTermsPath), StandardCharsets.UTF_8).read();
-  }
-
-  void verifySentParams(
-      AppEngineConnection connection, String path, ImmutableMap<String, String> parameterMap)
-      throws Exception {
-    verify(connection)
-        .sendPostRequest(
-            eq(path),
-            urlParamCaptor.capture(),
-            eq(MediaType.FORM_DATA),
-            requestBodyCaptor.capture());
-    assertThat(new ImmutableMap.Builder<String, String>()
-        .putAll(urlParamCaptor.getValue())
-        .putAll(UriParameters.parse(new String(requestBodyCaptor.getValue(), UTF_8)).entries())
-        .build())
-            .containsExactlyEntriesIn(parameterMap);
+  @BeforeEach
+  void beforeEachCreateOrUpdateReservedListCommandTestCase() throws IOException {
+    // set up for initial data
+    File premiumTermsFile = tmpDir.resolve("prime.txt").toFile();
+    String premiumTermsCsv = "foo,USD 2021";
+    Files.asCharSink(premiumTermsFile, UTF_8).write(premiumTermsCsv);
+    premiumTermsPath = premiumTermsFile.getPath();
   }
 }
