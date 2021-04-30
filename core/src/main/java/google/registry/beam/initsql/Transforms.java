@@ -36,7 +36,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import google.registry.backup.CommitLogImports;
 import google.registry.backup.VersionedEntity;
-import google.registry.config.RegistryEnvironment;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
@@ -276,39 +275,41 @@ public final class Transforms {
           "4E21_WJ2TEST-GOOGLE",
           "4E21_WJ3TEST-GOOGLE");
 
-  // Prober contacts referencing phantom registrars, created back in 2015. They and their associated
-  // history entries can be safely ignored.
+  // Prober contacts referencing phantom registrars. They and their associated history entries can
+  // be safely ignored.
   private static final ImmutableSet IGNORED_CONTACTS =
       ImmutableSet.of(
           "1_WJ0TEST-GOOGLE", "1_WJ1TEST-GOOGLE", "1_WJ2TEST-GOOGLE", "1_WJ3TEST-GOOGLE");
 
   private static boolean isMigratable(Entity entity) {
-    if (RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)) {
-      if (entity.getKind().equals("DomainBase")
-          && IGNORED_DOMAINS.contains(entity.getKey().getName())) {
-        return false;
+    // Checks specific to production data. See b/185954992 for details.
+    // The names of these bad entities in production do not conflict with other environments. For
+    // simplicities sake we apply them regardless of the source of the data.
+    if (entity.getKind().equals("DomainBase")
+        && IGNORED_DOMAINS.contains(entity.getKey().getName())) {
+      return false;
+    }
+    if (entity.getKind().equals("ContactResource")) {
+      String roid = entity.getKey().getName();
+      return !IGNORED_CONTACTS.contains(roid);
+    }
+    if (entity.getKind().equals("HostResource")) {
+      String roid = entity.getKey().getName();
+      return !IGNORED_HOSTS.contains(roid);
+    }
+    if (entity.getKind().equals("HistoryEntry")) {
+      // Remove production bad data: History of the contacts to be ignored:
+      com.google.appengine.api.datastore.Key parentKey = entity.getKey().getParent();
+      if (parentKey.getKind().equals("ContactResource")) {
+        String contactRoid = parentKey.getName();
+        return !IGNORED_CONTACTS.contains(contactRoid);
       }
-      if (entity.getKind().equals("ContactResource")) {
-        String roid = entity.getKey().getName();
-        return !IGNORED_CONTACTS.contains(roid);
-      }
-      if (entity.getKind().equals("HostResource")) {
-        String roid = entity.getKey().getName();
-        return !IGNORED_HOSTS.contains(roid);
-      }
-      if (entity.getKind().equals("HistoryEntry")) {
-        // Remove production bad data: History of the contacts to be ignored:
-        com.google.appengine.api.datastore.Key parentKey = entity.getKey().getParent();
-        if (parentKey.getKind().equals("ContactResource")) {
-          String contactRoid = parentKey.getName();
-          return !IGNORED_CONTACTS.contains(contactRoid);
-        }
-        if (parentKey.getKind().equals("HostResource")) {
-          String hostRoid = parentKey.getName();
-          return !IGNORED_HOSTS.contains(hostRoid);
-        }
+      if (parentKey.getKind().equals("HostResource")) {
+        String hostRoid = parentKey.getName();
+        return !IGNORED_HOSTS.contains(hostRoid);
       }
     }
+    // End of production-specific checks.
 
     if (entity.getKind().equals("HistoryEntry")) {
       // DOMAIN_APPLICATION_CREATE is deprecated type and should not be migrated.
@@ -320,9 +321,6 @@ public final class Transforms {
   }
 
   private static Entity repairBadData(Entity entity) {
-    if (!RegistryEnvironment.get().equals(RegistryEnvironment.PRODUCTION)) {
-      return entity;
-    }
     if (entity.getKind().equals("Cancellation")
         && Objects.equals(entity.getProperty("reason"), "AUTO_RENEW")) {
       // AUTO_RENEW has been moved from 'reason' to flags. Change reason to RENEW and add the
