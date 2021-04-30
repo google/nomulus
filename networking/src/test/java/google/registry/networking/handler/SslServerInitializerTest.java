@@ -23,7 +23,6 @@ import static google.registry.networking.handler.SslServerInitializer.CLIENT_CER
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
-import google.registry.testing.FakeClock;
 import google.registry.util.SelfSignedCaCertificate;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
@@ -35,6 +34,7 @@ import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
+import java.nio.channels.ClosedChannelException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
@@ -43,6 +43,7 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -52,8 +53,6 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
-import org.joda.time.DateTime;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -102,9 +101,7 @@ class SslServerInitializerTest {
         validateClientCert,
         sslProvider,
         Suppliers.ofInstance(privateKey),
-        Suppliers.ofInstance(ImmutableList.copyOf(certificates)),
-        DateTime.parse("2021-04-01T16:00:00Z"),
-        new FakeClock(DateTime.parse("2021-05-01T16:00:00Z")));
+        Suppliers.ofInstance(ImmutableList.copyOf(certificates)));
   }
 
   private ChannelHandler getClientHandler(
@@ -160,9 +157,7 @@ class SslServerInitializerTest {
             false,
             sslProvider,
             Suppliers.ofInstance(ssc.key()),
-            Suppliers.ofInstance(ImmutableList.of(ssc.cert())),
-            DateTime.parse("2021-04-01T16:00:00Z"),
-            new FakeClock(DateTime.parse("2021-05-01T16:00:00Z")));
+            Suppliers.ofInstance(ImmutableList.of(ssc.cert())));
     EmbeddedChannel channel = new EmbeddedChannel();
     ChannelPipeline pipeline = channel.pipeline();
     pipeline.addLast(sslServerInitializer);
@@ -239,9 +234,7 @@ class SslServerInitializerTest {
             true,
             sslProvider,
             Suppliers.ofInstance(serverSsc.key()),
-            Suppliers.ofInstance(ImmutableList.of(serverSsc.cert())),
-            DateTime.parse("2021-04-01T16:00:00Z"),
-            new FakeClock(DateTime.parse("2021-05-01T16:00:00Z"))));
+            Suppliers.ofInstance(ImmutableList.of(serverSsc.cert()))));
     SelfSignedCaCertificate clientSsc =
         SelfSignedCaCertificate.create(
             "CLIENT",
@@ -270,50 +263,6 @@ class SslServerInitializerTest {
 
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
-  void testSuccess_cipherNotAccepted_beforeEnforcementDate(SslProvider sslProvider)
-      throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
-    LocalAddress localAddress = new LocalAddress("CIPHER_ACCEPTED_BEFORE_DATE_" + sslProvider);
-
-    nettyExtension.setUpServer(
-        localAddress,
-        new SslServerInitializer<LocalChannel>(
-            true,
-            true,
-            sslProvider,
-            Suppliers.ofInstance(serverSsc.key()),
-            Suppliers.ofInstance(ImmutableList.of(serverSsc.cert())),
-            DateTime.parse("2021-04-01T16:00:00Z"),
-            new FakeClock(DateTime.parse("2021-03-01T16:00:00Z"))));
-    SelfSignedCaCertificate clientSsc =
-        SelfSignedCaCertificate.create(
-            "CLIENT",
-            Date.from(Instant.now().minus(Duration.ofDays(2))),
-            Date.from(Instant.now().plus(Duration.ofDays(1))));
-    nettyExtension.setUpClient(
-        localAddress,
-        getClientHandler(
-            sslProvider,
-            serverSsc.cert(),
-            clientSsc.key(),
-            clientSsc.cert(),
-            "TLSv1.2",
-            Collections.singletonList("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA")));
-
-    SSLSession sslSession = setUpSslChannel(nettyExtension.getClientChannel(), serverSsc.cert());
-    nettyExtension.assertThatMessagesWork();
-
-    assertThat(sslSession.getLocalCertificates()).asList().containsExactly(clientSsc.cert());
-    assertThat(sslSession.getPeerCertificates()).asList().containsExactly(serverSsc.cert());
-  }
-
-  // This test is a bit tricky to fix because apparently some new OpenJDK 11 version does no
-  // support TLS 1.1 anymore, and in that case it throws a ClosedChannelException instead of a
-  // SSLHandShakeException. It's going to be hard to accommodate both the OpenSSL and the JDK
-  // provider. Disable it for now to unblock people.
-  @Disabled
-  @ParameterizedTest
-  @MethodSource("provideTestCombinations")
   void testFailure_protocolNotAccepted(SslProvider sslProvider) throws Exception {
     SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
     LocalAddress localAddress = new LocalAddress("PROTOCOL_NOT_ACCEPTED_" + sslProvider);
@@ -330,45 +279,24 @@ class SslServerInitializerTest {
         getClientHandler(
             sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert(), "TLSv1.1", null));
 
+    ImmutableList<Integer> jdkVersion =
+        Arrays.asList(System.getProperty("java.version").split("\\.")).stream()
+            .map(Integer::parseInt)
+            .collect(ImmutableList.toImmutableList());
+
+    // In JDK v11.0.11 and above TLS 1.1 is not supported any more, in which case attempting to
+    // connect with TLS 1.1 results in a ClosedChannelException instead of a SSLHandShakeException.
+    // See https://www.oracle.com/java/technologies/javase/11-0-11-relnotes.html#JDK-8202343
+    Class<? extends Exception> rootCause =
+        sslProvider == SslProvider.JDK
+                && compareSemanticVersion(jdkVersion, ImmutableList.of(11, 0, 11))
+            ? ClosedChannelException.class
+            : SSLHandshakeException.class;
+
     verifySslException(
         nettyExtension.getServerChannel(),
         channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
-        SSLHandshakeException.class);
-  }
-
-  @Disabled
-  @ParameterizedTest
-  @MethodSource("provideTestCombinations")
-  void testSuccess_protocolNotAccepted_beforeEnforcementDate(SslProvider sslProvider)
-      throws Exception {
-    SelfSignedCaCertificate serverSsc = SelfSignedCaCertificate.create(SSL_HOST);
-    LocalAddress localAddress = new LocalAddress("PROTOCOL_ACCEPTED_BEFORE_DATE_" + sslProvider);
-
-    nettyExtension.setUpServer(
-        localAddress,
-        new SslServerInitializer<LocalChannel>(
-            true,
-            true,
-            sslProvider,
-            Suppliers.ofInstance(serverSsc.key()),
-            Suppliers.ofInstance(ImmutableList.of(serverSsc.cert())),
-            DateTime.parse("2021-04-01T16:00:00Z"),
-            new FakeClock(DateTime.parse("2021-03-01T16:00:00Z"))));
-    SelfSignedCaCertificate clientSsc =
-        SelfSignedCaCertificate.create(
-            "CLIENT",
-            Date.from(Instant.now().minus(Duration.ofDays(2))),
-            Date.from(Instant.now().plus(Duration.ofDays(1))));
-    nettyExtension.setUpClient(
-        localAddress,
-        getClientHandler(
-            sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert(), "TLSv1.1", null));
-
-    SSLSession sslSession = setUpSslChannel(nettyExtension.getClientChannel(), serverSsc.cert());
-    nettyExtension.assertThatMessagesWork();
-
-    assertThat(sslSession.getLocalCertificates()).asList().containsExactly(clientSsc.cert());
-    assertThat(sslSession.getPeerCertificates()).asList().containsExactly(serverSsc.cert());
+        rootCause);
   }
 
   @ParameterizedTest
@@ -524,5 +452,15 @@ class SslServerInitializerTest {
     nettyExtension.assertThatClientRootCause().hasMessageThat().contains(SSL_HOST);
     nettyExtension.assertThatServerRootCause().isInstanceOf(SSLException.class);
     assertThat(nettyExtension.getClientChannel().isActive()).isFalse();
+  }
+
+  /** Returns true if v1 is larger or equals to v2. */
+  private static boolean compareSemanticVersion(
+      ImmutableList<Integer> v1, ImmutableList<Integer> v2) {
+    for (int i : ImmutableList.of(0, 1, 2)) {
+      if (v1.get(i) > v2.get(i)) return true;
+      if (v1.get(i) < v2.get(i)) return false;
+    }
+    return true;
   }
 }

@@ -43,7 +43,6 @@ dependencies {
 
   annotationProcessor deps['com.google.dagger:dagger-compiler']
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
-  compile 'joda-time:joda-time:2.9.2'
 }
 
 // Make testing artifacts available to be depended up on by other projects.
