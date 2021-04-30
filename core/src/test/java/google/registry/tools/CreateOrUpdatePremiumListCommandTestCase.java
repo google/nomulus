@@ -15,16 +15,22 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.testing.TestDataHelper.loadFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
+import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import google.registry.testing.UriParameters;
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 
@@ -32,29 +38,49 @@ import org.mockito.Captor;
 abstract class CreateOrUpdatePremiumListCommandTestCase<T extends CreateOrUpdatePremiumListCommand>
     extends CommandTestCase<T> {
 
-  @Captor
-  ArgumentCaptor<ImmutableMap<String, String>> urlParamCaptor;
+  String premiumTermsPath;
+  private String invalidPremiumTermsPath;
 
-  @Captor
-  ArgumentCaptor<byte[]> requestBodyCaptor;
+  @BeforeEach
+  void beforeEachCreateOrUpdateReservedListCommandTestCase() throws IOException {
+    File premiumTermsFile = tmpDir.resolve("xn--q9jyb4c_common-premium.txt").toFile();
+    File invalidPremiumTermsFile = tmpDir.resolve("reserved-terms-wontparse.csv").toFile();
+    String premiumTermsCsv =
+        loadFile(CreateOrUpdateReservedListCommandTestCase.class, "example_premium_terms.csv");
+    Files.asCharSink(premiumTermsFile, UTF_8).write(premiumTermsCsv);
+    Files.asCharSink(invalidPremiumTermsFile, UTF_8)
+        .write("sdfgagmsdgs,sdfgsd\nasdf234tafgs,asdfaw\n\n");
+    premiumTermsPath = premiumTermsFile.getPath();
+    invalidPremiumTermsPath = invalidPremiumTermsFile.getPath();
+  }
+
+  @Test
+  void testFailure_fileDoesntExist() {
+    assertThat(
+        assertThrows(
+            ParameterException.class,
+            () ->
+                runCommandForced(
+                    "--name=xn--q9jyb4c_common-premium",
+                    "--input=" + premiumTermsPath + "-nonexistent")))
+        .hasMessageThat()
+        .contains("-i not found");
+  }
+  @Test
+  void testFailure_fileDoesntParse() {
+    assertThat(
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                runCommandForced(
+                    "--name=xn--q9jyb4c_common-premium",
+                    "--input=" + invalidPremiumTermsPath)))
+        .hasMessageThat()
+        .contains("No enum constant");
+  }
 
   static String generateInputData(String premiumTermsPath) throws Exception {
     return Files.asCharSource(new File(premiumTermsPath), StandardCharsets.UTF_8).read();
   }
 
-  void verifySentParams(
-      AppEngineConnection connection, String path, ImmutableMap<String, String> parameterMap)
-      throws Exception {
-    verify(connection)
-        .sendPostRequest(
-            eq(path),
-            urlParamCaptor.capture(),
-            eq(MediaType.FORM_DATA),
-            requestBodyCaptor.capture());
-    assertThat(new ImmutableMap.Builder<String, String>()
-        .putAll(urlParamCaptor.getValue())
-        .putAll(UriParameters.parse(new String(requestBodyCaptor.getValue(), UTF_8)).entries())
-        .build())
-            .containsExactlyEntriesIn(parameterMap);
-  }
 }
