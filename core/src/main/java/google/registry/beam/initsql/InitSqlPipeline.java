@@ -120,26 +120,22 @@ public class InitSqlPipeline implements Serializable {
 
   private final InitSqlPipelineOptions options;
 
-  private final Pipeline pipeline;
-
   InitSqlPipeline(InitSqlPipelineOptions options) {
     this.options = options;
-    pipeline = Pipeline.create(options);
+  }
+
+  PipelineResult run() {
+    return run(Pipeline.create(options));
   }
 
   @VisibleForTesting
-  InitSqlPipeline(InitSqlPipelineOptions options, Pipeline pipeline) {
-    this.options = options;
-    this.pipeline = pipeline;
-  }
-
-  public PipelineResult run() {
-    setupPipeline();
+  PipelineResult run(Pipeline pipeline) {
+    setupPipeline(pipeline);
     return pipeline.run();
   }
 
   @VisibleForTesting
-  void setupPipeline() {
+  void setupPipeline(Pipeline pipeline) {
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_UNCOMMITTED);
     PCollectionTuple datastoreSnapshot =
         pipeline.apply(

@@ -87,20 +87,18 @@ public class BulkDeleteDatastorePipeline {
 
   private final BulkDeletePipelineOptions options;
 
-  private final Pipeline pipeline;
-
   BulkDeleteDatastorePipeline(BulkDeletePipelineOptions options) {
     this.options = options;
-    pipeline = Pipeline.create(options);
   }
 
   public void run() {
-    setupPipeline();
+    Pipeline pipeline = Pipeline.create(options);
+    setupPipeline(pipeline);
     pipeline.run();
   }
 
   @SuppressWarnings("deprecation") // org.apache.beam.sdk.transforms.Reshuffle
-  private void setupPipeline() {
+  private void setupPipeline(Pipeline pipeline) {
     checkState(
         !FORBIDDEN_PROJECTS.contains(options.getProject()),
         "Bulk delete is forbidden in %s",

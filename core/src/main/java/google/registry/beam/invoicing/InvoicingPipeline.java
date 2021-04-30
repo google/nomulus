@@ -17,7 +17,6 @@ package google.registry.beam.invoicing;
 import static google.registry.beam.BeamUtils.getQueryFromFile;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 
-import com.google.common.annotations.VisibleForTesting;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
 import google.registry.reporting.billing.BillingModule;
@@ -60,24 +59,18 @@ public class InvoicingPipeline implements Serializable {
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
 
   private final InvoicingPipelineOptions options;
-  private final Pipeline pipeline;
-
-  @VisibleForTesting
-  InvoicingPipeline(InvoicingPipelineOptions options, Pipeline pipeline) {
-    this.options = options;
-    this.pipeline = pipeline;
-  }
 
   InvoicingPipeline(InvoicingPipelineOptions options) {
-    this(options, Pipeline.create(options));
+    this.options = options;
   }
 
   PipelineResult run() {
-    setupPipeline();
+    Pipeline pipeline = Pipeline.create(options);
+    setupPipeline(pipeline);
     return pipeline.run();
   }
 
-  void setupPipeline() {
+  void setupPipeline(Pipeline pipeline) {
     PCollection<BillingEvent> billingEvents =
         pipeline.apply(
             "Read BillingEvents from Bigquery",
