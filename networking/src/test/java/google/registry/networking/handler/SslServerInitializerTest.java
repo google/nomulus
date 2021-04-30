@@ -23,7 +23,6 @@ import static google.registry.networking.handler.SslServerInitializer.CLIENT_CER
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
-import com.google.common.flogger.FluentLogger;
 import google.registry.util.SelfSignedCaCertificate;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
@@ -35,6 +34,7 @@ import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
+import java.nio.channels.ClosedChannelException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
@@ -43,6 +43,7 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -260,10 +261,6 @@ class SslServerInitializerTest {
     assertThat(sslSession.getCipherSuite()).isEqualTo("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
   }
 
-  // This test is a bit tricky to fix because apparently some new OpenJDK 11 version does no
-  // support TLS 1.1 anymore, and in that case it throws a ClosedChannelException instead of a
-  // SSLHandShakeException. It's going to be hard to accommodate both the OpenSSL and the JDK
-  // provider. Disable it for now to unblock people.
   @ParameterizedTest
   @MethodSource("provideTestCombinations")
   void testFailure_protocolNotAccepted(SslProvider sslProvider) throws Exception {
@@ -280,16 +277,26 @@ class SslServerInitializerTest {
     nettyExtension.setUpClient(
         localAddress,
         getClientHandler(
-            sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert(), "TLSv1", null));
+            sslProvider, serverSsc.cert(), clientSsc.key(), clientSsc.cert(), "TLSv1.1", null));
 
-    FluentLogger.forEnclosingClass()
-        .atInfo()
-        .log("Java version: " + System.getProperty("java.version"));
+    ImmutableList<Integer> jdkVersion =
+        Arrays.asList(System.getProperty("java.version").split("\\.")).stream()
+            .map(Integer::parseInt)
+            .collect(ImmutableList.toImmutableList());
+
+    // In JDK v11.0.11 and above TLS 1.1 is not supported any more, in which case attempting to
+    // connect with TLS 1.1 results in a ClosedChannelException instead of a SSLHandShakeException.
+    // See https://www.oracle.com/java/technologies/javase/11-0-11-relnotes.html#JDK-8202343
+    Class<? extends Exception> rootCause =
+        sslProvider == SslProvider.JDK
+                && compareSemanticVersion(jdkVersion, ImmutableList.of(11, 0, 11))
+            ? ClosedChannelException.class
+            : SSLHandshakeException.class;
 
     verifySslException(
         nettyExtension.getServerChannel(),
         channel -> channel.attr(CLIENT_CERTIFICATE_PROMISE_KEY).get().get(),
-        SSLHandshakeException.class);
+        rootCause);
   }
 
   @ParameterizedTest
@@ -445,5 +452,15 @@ class SslServerInitializerTest {
     nettyExtension.assertThatClientRootCause().hasMessageThat().contains(SSL_HOST);
     nettyExtension.assertThatServerRootCause().isInstanceOf(SSLException.class);
     assertThat(nettyExtension.getClientChannel().isActive()).isFalse();
+  }
+
+  /** Returns true if v1 is larger or equals to v2. */
+  private static boolean compareSemanticVersion(
+      ImmutableList<Integer> v1, ImmutableList<Integer> v2) {
+    for (int i : ImmutableList.of(0, 1, 2)) {
+      if (v1.get(i) > v2.get(i)) return true;
+      if (v1.get(i) < v2.get(i)) return false;
+    }
+    return true;
   }
 }
