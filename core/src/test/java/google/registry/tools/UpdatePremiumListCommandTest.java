@@ -14,60 +14,10 @@
 
 package google.registry.tools;
 
-import static google.registry.request.JsonResponse.JSON_SAFETY_PREFIX;
-import static google.registry.testing.TestDataHelper.loadFile;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.common.net.MediaType;
-import google.registry.tools.server.UpdatePremiumListAction;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-
 /** Unit tests for {@link UpdatePremiumListCommand}. */
 class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     extends CreateOrUpdatePremiumListCommandTestCase<C> {
 
-  @Mock AppEngineConnection connection;
 
-  private String premiumTermsPath;
-  String premiumTermsCsv;
-  private String servletPath;
 
-  @BeforeEach
-  void beforeEach() throws Exception {
-    command.setConnection(connection);
-    servletPath = "/_dr/admin/updatePremiumList";
-    premiumTermsPath =
-        writeToNamedTmpFile(
-            "example_premium_terms.csv",
-            loadFile(UpdatePremiumListCommandTest.class, "example_premium_terms.csv"));
-    when(connection.sendPostRequest(
-            eq(UpdatePremiumListAction.PATH), anyMap(), any(MediaType.class), any(byte[].class)))
-        .thenReturn(JSON_SAFETY_PREFIX + "{\"status\":\"success\",\"lines\":[]}");
-  }
-
-  @Test
-  void testRun() throws Exception {
-    runCommandForced("-i=" + premiumTermsPath, "-n=foo");
-    verifySentParams(
-        connection,
-        servletPath,
-        ImmutableMap.of("name", "foo", "inputData", generateInputData(premiumTermsPath)));
-  }
-
-  @Test
-  void testRun_noProvidedName_usesBasenameOfInputFile() throws Exception {
-    runCommandForced("-i=" + premiumTermsPath);
-    assertInStdout("Successfully");
-    verifySentParams(
-        connection,
-        servletPath,
-        ImmutableMap.of(
-            "name", "example_premium_terms", "inputData", generateInputData(premiumTermsPath)));
-  }
 }

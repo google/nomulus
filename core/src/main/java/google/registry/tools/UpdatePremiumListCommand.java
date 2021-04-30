@@ -14,18 +14,34 @@
 
 package google.registry.tools;
 
+import static google.registry.util.ListNamingUtils.convertFilePathToName;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.beust.jcommander.Parameters;
+import com.google.common.base.Strings;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.tools.server.UpdatePremiumListAction;
+import google.registry.model.registry.label.PremiumListDualDao;
+import google.registry.schema.tld.PremiumListUtils;
+import java.nio.file.Files;
 
 /** Command to safely update {@link PremiumList} in Datastore for a given TLD. */
 @Parameters(separators = " =", commandDescription = "Update a PremiumList in Datastore.")
 class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
 
-  /** Returns the path to the servlet task. */
   @Override
-  public String getCommandPath() {
-    return UpdatePremiumListAction.PATH;
+  protected void init() throws Exception {
+    name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
+    PremiumList existingPremiumList =
+        PremiumListDualDao.getLatestRevision(name)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        String.format(
+                            "Could not update premium list %s because it doesn't exist.", name)));
+    allLines = Files.readAllLines(inputFile, UTF_8);
+    inputLineCount = allLines.size();
+    PremiumList updatedPremiumList = PremiumListUtils.parseToPremiumList(name, allLines);
+    // TODO: determine the kind of change being staged
+    stageEntityChange(existingPremiumList, updatedPremiumList);
   }
 }
-
