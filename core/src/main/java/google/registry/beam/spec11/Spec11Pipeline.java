@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.beam.BeamUtils.getQueryFromFile;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import dagger.Component;
 import dagger.Module;
@@ -84,26 +83,19 @@ public class Spec11Pipeline implements Serializable {
 
   private final Spec11PipelineOptions options;
   private final EvaluateSafeBrowsingFn safeBrowsingFn;
-  private final Pipeline pipeline;
-
-  @VisibleForTesting
-  Spec11Pipeline(
-      Spec11PipelineOptions options, EvaluateSafeBrowsingFn safeBrowsingFn, Pipeline pipeline) {
-    this.options = options;
-    this.safeBrowsingFn = safeBrowsingFn;
-    this.pipeline = pipeline;
-  }
 
   Spec11Pipeline(Spec11PipelineOptions options, EvaluateSafeBrowsingFn safeBrowsingFn) {
-    this(options, safeBrowsingFn, Pipeline.create(options));
+    this.options = options;
+    this.safeBrowsingFn = safeBrowsingFn;
   }
 
   PipelineResult run() {
-    setupPipeline();
+    Pipeline pipeline = Pipeline.create(options);
+    setupPipeline(pipeline);
     return pipeline.run();
   }
 
-  void setupPipeline() {
+  void setupPipeline(Pipeline pipeline) {
     PCollection<Subdomain> domains =
         pipeline.apply(
             "Read active domains from BigQuery",

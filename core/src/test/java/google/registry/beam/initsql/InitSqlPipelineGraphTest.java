@@ -52,7 +52,7 @@ class InitSqlPipelineGraphTest {
 
   @Test
   void createPipeline_compareGraph() throws IOException {
-    new InitSqlPipeline(options, testPipeline).setupPipeline();
+    new InitSqlPipeline(options).setupPipeline(testPipeline);
     String dotString = PipelineDotRenderer.toDotString(testPipeline);
     URL goldenDotUrl = Resources.getResource(InitSqlPipelineGraphTest.class, GOLDEN_DOT_FILE);
     File outputFile = new File(new File(goldenDotUrl.getFile()).getParent(), "pipeline_curr.dot");

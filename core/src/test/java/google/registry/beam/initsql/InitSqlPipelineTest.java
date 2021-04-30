@@ -317,8 +317,8 @@ class InitSqlPipelineTest {
                 "--commitLogDir=" + commitLogDir.getAbsolutePath())
             .withValidation()
             .as(InitSqlPipelineOptions.class);
-    InitSqlPipeline initSqlPipeline = new InitSqlPipeline(options, testPipeline);
-    initSqlPipeline.run().waitUntilFinish();
+    InitSqlPipeline initSqlPipeline = new InitSqlPipeline(options);
+    initSqlPipeline.run(testPipeline).waitUntilFinish();
     try (AppEngineEnvironment env = new AppEngineEnvironment("test")) {
       assertHostResourceEquals(
           jpaTm().transact(() -> jpaTm().loadByKey(hostResource.createVKey())), hostResource);
