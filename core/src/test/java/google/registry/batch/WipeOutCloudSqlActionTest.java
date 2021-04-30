@@ -19,6 +19,7 @@ import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
@@ -32,8 +33,10 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.Retrier;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
-import org.flywaydb.core.api.FlywayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,6 +49,8 @@ public class WipeOutCloudSqlActionTest {
 
   @Mock private Statement stmt;
   @Mock private Connection conn;
+  @Mock private DatabaseMetaData metaData;
+  @Mock private ResultSet resultSet;
 
   private FakeResponse response = new FakeResponse();
   private Retrier retrier = new Retrier(new FakeSleeper(new FakeClock()), 2);
@@ -53,6 +58,17 @@ public class WipeOutCloudSqlActionTest {
   @BeforeEach
   void beforeEach() throws Exception {
     lenient().when(conn.createStatement()).thenReturn(stmt);
+    lenient().when(conn.getMetaData()).thenReturn(metaData);
+    lenient()
+        .when(
+            metaData.getTables(
+                nullable(String.class),
+                nullable(String.class),
+                nullable(String.class),
+                nullable(String[].class)))
+        .thenReturn(resultSet);
+    lenient().when(stmt.executeQuery(anyString())).thenReturn(resultSet);
+    lenient().when(resultSet.next()).thenReturn(false);
   }
 
   @Test
@@ -61,7 +77,7 @@ public class WipeOutCloudSqlActionTest {
         new WipeOutCloudSqlAction("domain-registry-qa", () -> conn, response, retrier);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    verify(stmt, times(1)).execute(anyString());
+    verify(stmt, times(1)).executeQuery(anyString());
     verify(stmt, times(1)).close();
     verifyNoMoreInteractions(stmt);
   }
@@ -77,25 +93,23 @@ public class WipeOutCloudSqlActionTest {
 
   @Test
   void run_nonRetrieableFailure() throws Exception {
-    doThrow(new FlywayException()).when(stmt).execute(anyString());
+    doThrow(new SQLException()).when(conn).getMetaData();
     WipeOutCloudSqlAction action =
         new WipeOutCloudSqlAction("domain-registry-qa", () -> conn, response, retrier);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
-    verify(stmt, times(1)).execute(anyString());
-    verify(stmt, times(1)).close();
-    verifyNoMoreInteractions(stmt);
+    verifyNoInteractions(stmt);
   }
 
   @Test
   void run_retrieableFailure() throws Exception {
-    when(stmt.execute(anyString())).thenThrow(new RuntimeException()).thenReturn(true);
+    when(conn.getMetaData()).thenThrow(new RuntimeException()).thenReturn(metaData);
     WipeOutCloudSqlAction action =
         new WipeOutCloudSqlAction("domain-registry-qa", () -> conn, response, retrier);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    verify(stmt, times(2)).execute(anyString());
-    verify(stmt, times(2)).close();
+    verify(stmt, times(1)).executeQuery(anyString());
+    verify(stmt, times(1)).close();
     verifyNoMoreInteractions(stmt);
   }
 }
