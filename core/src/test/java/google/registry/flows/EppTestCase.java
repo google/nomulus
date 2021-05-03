@@ -24,7 +24,6 @@ import static google.registry.testing.TestDataHelper.loadFile;
 import static google.registry.xml.XmlTestUtils.assertXmlEqualsWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -102,7 +101,7 @@ public class EppTestCase {
         String inputFilename, @Nullable Map<String, String> inputSubstitutions) {
       this.inputFilename = inputFilename;
       this.inputSubstitutions = inputSubstitutions;
-      this.now = DateTime.now(UTC);
+      this.now = clock.nowUtc();
     }
 
     public CommandAsserter atTime(DateTime now) {
@@ -125,7 +124,7 @@ public class EppTestCase {
     }
 
     public String hasSuccessfulLogin() throws Exception {
-      return assertLoginCommandAndResponse(inputFilename, inputSubstitutions, null, now);
+      return assertLoginCommandAndResponse(inputFilename, inputSubstitutions, null, clock.nowUtc());
     }
   }
 
@@ -139,11 +138,12 @@ public class EppTestCase {
   }
 
   CommandAsserter assertThatLogin(String clientId, String password) {
-    return assertThatCommand("login.xml", ImmutableMap.of("CLID", clientId, "PW", password));
+    return assertThatCommand("login.xml", ImmutableMap.of("CLID", clientId, "PW", password))
+        .atTime(clock.nowUtc());
   }
 
   protected void assertThatLoginSucceeds(String clientId, String password) throws Exception {
-    assertThatLogin(clientId, password).hasSuccessfulLogin();
+    assertThatLogin(clientId, password).atTime(clock.nowUtc()).hasSuccessfulLogin();
   }
 
   protected void assertThatLogoutSucceeds() throws Exception {

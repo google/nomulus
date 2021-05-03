@@ -64,6 +64,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
 
   @Test
   void testSuccess_withGoodCredentials() throws Exception {
+    clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     persistResource(getRegistrarBuilder().build());
     credentials = new TlsCredentials(true, GOOD_CERT_HASH, GOOD_IP, certificateChecker);
     doSuccessfulTest("login_valid.xml");
@@ -71,6 +72,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
 
   @Test
   void testSuccess_withGoodCredentialsIpv6() throws Exception {
+    clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     persistResource(
         getRegistrarBuilder()
             .setIpAddressAllowList(
@@ -82,6 +84,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
 
   @Test
   void testSuccess_withIpv6AddressInSubnet() throws Exception {
+    clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     persistResource(
         getRegistrarBuilder()
             .setIpAddressAllowList(
@@ -93,6 +96,7 @@ public class LoginFlowViaTlsTest extends LoginFlowTestCase {
 
   @Test
   void testSuccess_withIpv4AddressInSubnet() throws Exception {
+    clock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     persistResource(
         getRegistrarBuilder()
             .setIpAddressAllowList(ImmutableList.of(CidrAddressBlock.create("192.168.1.255/24")))

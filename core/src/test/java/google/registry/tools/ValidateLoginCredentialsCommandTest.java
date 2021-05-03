@@ -60,6 +60,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
             .setState(ACTIVE)
             .setAllowedTlds(ImmutableSet.of("tld"))
             .build());
+    fakeClock.setTo(DateTime.parse("2020-11-01T00:00:00Z"));
     command.certificateChecker =
         new CertificateChecker(
             ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
