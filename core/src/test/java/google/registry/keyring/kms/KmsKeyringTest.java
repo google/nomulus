@@ -44,12 +44,12 @@ class KmsKeyringTest {
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private KmsKeyring keyring;
+  private KeyringSecretStore fakeSecretStore =
+      new KeyringSecretStore(new FakeSecretManagerClient());
 
   @BeforeEach
   void beforeEach() {
-    keyring =
-        new KmsKeyring(
-            new FakeKmsConnection(), new KeyringSecretStore(new FakeSecretManagerClient()));
+    keyring = new KmsKeyring(new FakeKmsConnection(), fakeSecretStore);
   }
 
   @TestOfyAndSql
@@ -154,7 +154,7 @@ class KmsKeyringTest {
     assertThat(jsonCredential).isEqualTo("json-credential-stringmoo");
   }
 
-  private static void persistSecret(String secretName, byte[] secretValue) {
+  private void persistSecret(String secretName, byte[] secretValue) {
     KmsConnection kmsConnection = new FakeKmsConnection();
 
     KmsSecretRevision secretRevision =
@@ -165,22 +165,22 @@ class KmsKeyringTest {
             .build();
     KmsSecret secret = KmsSecret.create(secretName, secretRevision);
     tm().transact(() -> tm().putAll(secretRevision, secret));
+    fakeSecretStore.createOrUpdateSecret(secretName, secretValue);
   }
 
-  private static void saveCleartextSecret(String secretName) {
+  private void saveCleartextSecret(String secretName) {
     persistSecret(secretName, KeySerializer.serializeString(secretName + "moo"));
   }
 
-  private static void savePublicKeySecret(String publicKeyName) throws Exception {
+  private void savePublicKeySecret(String publicKeyName) throws Exception {
     persistSecret(publicKeyName, KeySerializer.serializePublicKey(KmsTestHelper.getPublicKey()));
   }
 
-  private static void savePrivateKeySecret(String privateKeyName) throws Exception {
+  private void savePrivateKeySecret(String privateKeyName) throws Exception {
     persistSecret(privateKeyName, KeySerializer.serializeKeyPair(KmsTestHelper.getKeyPair()));
   }
 
-  private static void saveKeyPairSecret(String publicKeyName, String privateKeyName)
-      throws Exception {
+  private void saveKeyPairSecret(String publicKeyName, String privateKeyName) throws Exception {
     savePublicKeySecret(publicKeyName);
     savePrivateKeySecret(privateKeyName);
   }
