@@ -1,4 +1,5 @@
 python/
+node_modules/
 **/build/
 **/out/
 .*/

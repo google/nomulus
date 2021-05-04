@@ -94,4 +94,4 @@ steps:
       gsutil cp - gs://$PROJECT_ID-deployed-tags/sql.${_ENV}.tag\
 timeout: 3600s
 options:
-  machineType: 'N1_HIGHCPU_8'
+  machineType: 'E2_HIGHCPU_32'
