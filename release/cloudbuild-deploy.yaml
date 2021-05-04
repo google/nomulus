@@ -3,8 +3,7 @@
 # cloud-build-local --config=cloudbuild-deploy.yaml --dryrun=false \
 # --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
 #
-# This will deploy Beam pipelines to GCS for the PROJECT_ID defined in gcloud
-# tool.
+# This will deploy the GAE config files and save the deployed tags in GCS.
 #
 # To manually trigger a build on GCB, run:
 # gcloud builds submit --config=cloudbuild-deploy.yaml \

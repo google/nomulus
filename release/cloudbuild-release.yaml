@@ -97,6 +97,8 @@ steps:
     for environment in alpha crash sandbox production; do
       sed s/'$${_ENV}'/${environment}/g release/cloudbuild-deploy.yaml \
         > release/cloudbuild-deploy-${environment}.yaml
+      sed s/'$${_ENV}'/${environment}/g release/cloudbuild-delete.yaml \
+        > release/cloudbuild-delete-${environment}.yaml
     done
 # Build the schema_deployer image and upload it to GCR.
 - name: 'gcr.io/cloud-builders/docker'
