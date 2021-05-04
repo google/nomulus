@@ -91,3 +91,4 @@ V90__update_timestamp.sql
 V91__defer_fkeys.sql
 V92__singletons.sql
 V93__defer_all_fkeys.sql
+V94__rename_lock_scope.sql

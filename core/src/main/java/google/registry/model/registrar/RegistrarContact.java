@@ -69,7 +69,7 @@ import javax.persistence.Transient;
  * *MUST* also modify the persisted Registrar entity with {@link Registrar#contactsRequireSyncing}
  * set to true.
  *
- * <p>TODO(b/163366543): Rename the class name to RegistrarPoc after database migration
+ * <p>TODO(b/177567432): Rename the class name to RegistrarPoc after database migration
  */
 @ReportedOn
 @Entity

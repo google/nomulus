@@ -127,7 +127,7 @@ public class DomainContent extends EppResource
    *
    * @invariant fullyQualifiedDomainName == fullyQualifiedDomainName.toLowerCase(Locale.ENGLISH)
    */
-  // TODO(b/158858642): Rename this to domainName when we are off Datastore
+  // TODO(b/177567432): Rename this to domainName when we are off Datastore
   @Column(name = "domainName")
   @Index
   String fullyQualifiedDomainName;

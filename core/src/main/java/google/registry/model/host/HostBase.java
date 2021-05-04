@@ -64,7 +64,7 @@ public class HostBase extends EppResource {
    * from (creationTime, deletionTime) there can only be one host in Datastore with this name.
    * However, there can be many hosts with the same name and non-overlapping lifetimes.
    */
-  // TODO(b/158858642): Rename this to hostName when we are off Datastore
+  // TODO(b/177567432): Rename this to hostName when we are off Datastore
   @Index
   @Column(name = "hostName")
   String fullyQualifiedHostName;

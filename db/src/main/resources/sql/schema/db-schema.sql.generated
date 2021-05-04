@@ -501,11 +501,11 @@
 
     create table "Lock" (
        resource_name text not null,
-        tld text not null,
+        scope text not null,
         acquired_time timestamptz not null,
         expiration_time timestamptz not null,
         request_log_id text not null,
-        primary key (resource_name, tld)
+        primary key (resource_name, scope)
     );
 
     create table "PollMessage" (

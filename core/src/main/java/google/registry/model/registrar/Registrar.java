@@ -236,7 +236,7 @@ public class Registrar extends ImmutableObject
    * Unique registrar client id. Must conform to "clIDType" as defined in RFC5730.
    *
    * @see <a href="http://tools.ietf.org/html/rfc5730#section-4.2">Shared Structure Schema</a>
-   *     <p>TODO(b/177568946): Rename this field to registrarId.
+   *     <p>TODO(b/177567432): Rename this field to registrarId.
    */
   @Id
   @javax.persistence.Id
@@ -301,7 +301,7 @@ public class Registrar extends ImmutableObject
   String failoverClientCertificateHash;
 
   /** An allow list of netmasks (in CIDR notation) which the client is allowed to connect from. */
-  // TODO: Rename to ipAddressAllowList once Cloud SQL migration is complete.
+  // TODO(b/177567432): Rename to ipAddressAllowList once Cloud SQL migration is complete.
   @Column(name = "ip_address_allow_list")
   List<CidrAddressBlock> ipAddressWhitelist;
 

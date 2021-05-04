@@ -26,35 +26,30 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import google.registry.model.ofy.Ofy;
+import google.registry.model.EntityTestCase;
 import google.registry.model.server.Lock.LockState;
-import google.registry.testing.AppEngineExtension;
-import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.util.RequestStatusChecker;
 import java.util.Optional;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link Lock}. */
-public class LockTest {
+@DualDatabaseTest
+public class LockTest extends EntityTestCase {
 
   private static final String RESOURCE_NAME = "foo";
   private static final Duration ONE_DAY = Duration.standardDays(1);
   private static final Duration TWO_MILLIS = Duration.millis(2);
   private static final RequestStatusChecker requestStatusChecker = mock(RequestStatusChecker.class);
-  private static final FakeClock clock = new FakeClock();
 
   private LockMetrics origLockMetrics;
 
-  @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(clock).build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+  public LockTest() {
+    super(JpaEntityCoverageCheck.ENABLED);
+  }
 
   private Optional<Lock> acquire(String tld, Duration leaseLength, LockState expectedLockState) {
     Lock.lockMetrics = mock(LockMetrics.class);
@@ -76,7 +71,6 @@ public class LockTest {
 
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(Ofy.class, "clock", clock);
     origLockMetrics = Lock.lockMetrics;
     Lock.lockMetrics = null;
     when(requestStatusChecker.getLogId()).thenReturn("current-request-id");
@@ -88,32 +82,32 @@ public class LockTest {
     Lock.lockMetrics = origLockMetrics;
   }
 
-  @Test
+  @TestOfyAndSql
   void testReleasedExplicitly() {
     Optional<Lock> lock = acquire("", ONE_DAY, FREE);
     assertThat(lock).isPresent();
     // We can't get it again at the same time.
     assertThat(acquire("", ONE_DAY, IN_USE)).isEmpty();
     // But if we release it, it's available.
-    clock.advanceBy(Duration.millis(123));
+    fakeClock.advanceBy(Duration.millis(123));
     release(lock.get(), "", 123);
     assertThat(acquire("", ONE_DAY, FREE)).isPresent();
   }
 
-  @Test
+  @TestOfyAndSql
   void testReleasedAfterTimeout() {
     assertThat(acquire("", TWO_MILLIS, FREE)).isPresent();
     // We can't get it again at the same time.
     assertThat(acquire("", TWO_MILLIS, IN_USE)).isEmpty();
     // A second later we still can't get the lock.
-    clock.advanceOneMilli();
+    fakeClock.advanceOneMilli();
     assertThat(acquire("", TWO_MILLIS, IN_USE)).isEmpty();
     // But two seconds later we can get it.
-    clock.advanceOneMilli();
+    fakeClock.advanceOneMilli();
     assertThat(acquire("", TWO_MILLIS, TIMED_OUT)).isPresent();
   }
 
-  @Test
+  @TestOfyAndSql
   void testReleasedAfterRequestFinish() {
     assertThat(acquire("", ONE_DAY, FREE)).isPresent();
     // We can't get it again while request is active
@@ -123,7 +117,7 @@ public class LockTest {
     assertThat(acquire("", ONE_DAY, OWNER_DIED)).isPresent();
   }
 
-  @Test
+  @TestOfyAndSql
   void testTldsAreIndependent() {
     Optional<Lock> lockA = acquire("a", ONE_DAY, FREE);
     assertThat(lockA).isPresent();
@@ -133,12 +127,12 @@ public class LockTest {
     // We can't get lockB again at the same time.
     assertThat(acquire("b", ONE_DAY, IN_USE)).isEmpty();
     // Releasing lockA has no effect on lockB (even though we are still using the "b" tld).
-    clock.advanceOneMilli();
+    fakeClock.advanceOneMilli();
     release(lockA.get(), "a", 1);
     assertThat(acquire("b", ONE_DAY, IN_USE)).isEmpty();
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_emptyResourceName() {
     IllegalArgumentException thrown =
         assertThrows(
