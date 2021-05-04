@@ -22,7 +22,7 @@ import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactHistory;
@@ -34,6 +34,7 @@ import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Stream;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -48,7 +49,7 @@ import org.joda.time.DateTime;
 public class HistoryEntryDao {
 
   /** Loads all history objects in the times specified, including all types. */
-  public static Iterable<? extends HistoryEntry> loadAllHistoryObjects(
+  public static ImmutableList<? extends HistoryEntry> loadAllHistoryObjects(
       DateTime afterTime, DateTime beforeTime) {
     if (tm().isOfy()) {
       return Streams.stream(
@@ -64,21 +65,25 @@ public class HistoryEntryDao {
       return jpaTm()
           .transact(
               () ->
-                  Iterables.concat(
-                      loadAllHistoryObjectsFromSql(ContactHistory.class, afterTime, beforeTime),
-                      loadAllHistoryObjectsFromSql(DomainHistory.class, afterTime, beforeTime),
-                      loadAllHistoryObjectsFromSql(HostHistory.class, afterTime, beforeTime)));
+                  new ImmutableList.Builder<HistoryEntry>()
+                      .addAll(
+                          loadAllHistoryObjectsFromSql(ContactHistory.class, afterTime, beforeTime))
+                      .addAll(
+                          loadAllHistoryObjectsFromSql(DomainHistory.class, afterTime, beforeTime))
+                      .addAll(
+                          loadAllHistoryObjectsFromSql(HostHistory.class, afterTime, beforeTime))
+                      .build());
     }
   }
 
   /** Loads all history objects corresponding to the given {@link EppResource}. */
-  public static Iterable<? extends HistoryEntry> loadHistoryObjectsForResource(
+  public static ImmutableList<? extends HistoryEntry> loadHistoryObjectsForResource(
       VKey<? extends EppResource> parentKey) {
     return loadHistoryObjectsForResource(parentKey, START_OF_TIME, END_OF_TIME);
   }
 
   /** Loads all history objects in the time period specified for the given {@link EppResource}. */
-  public static Iterable<? extends HistoryEntry> loadHistoryObjectsForResource(
+  public static ImmutableList<? extends HistoryEntry> loadHistoryObjectsForResource(
       VKey<? extends EppResource> parentKey, DateTime afterTime, DateTime beforeTime) {
     if (tm().isOfy()) {
       return Streams.stream(
@@ -130,7 +135,7 @@ public class HistoryEntryDao {
         .getResultStream();
   }
 
-  private static Iterable<? extends HistoryEntry> loadHistoryObjectsForResourceFromSql(
+  private static ImmutableList<? extends HistoryEntry> loadHistoryObjectsForResourceFromSql(
       VKey<? extends EppResource> parentKey, DateTime afterTime, DateTime beforeTime) {
     // The class we're searching from is based on which parent type (e.g. Domain) we have
     Class<? extends HistoryEntry> historyClass = getHistoryClassFromParent(parentKey.getKind());
@@ -144,12 +149,9 @@ public class HistoryEntryDao {
             .where(repoIdFieldName, criteriaBuilder::equal, parentKey.getSqlKey().toString())
             .build();
 
-    return jpaTm()
-        .getEntityManager()
-        .createQuery(criteriaQuery)
-        .getResultStream()
-        .sorted(Comparator.comparing(HistoryEntry::getModificationTime))
-        .collect(toImmutableList());
+    return ImmutableList.sortedCopyOf(
+        Comparator.comparing(HistoryEntry::getModificationTime),
+        jpaTm().getEntityManager().createQuery(criteriaQuery).getResultList());
   }
 
   private static Class<? extends HistoryEntry> getHistoryClassFromParent(
@@ -172,7 +174,7 @@ public class HistoryEntryDao {
         : historyClass.equals(DomainHistory.class) ? "domainRepoId" : "hostRepoId";
   }
 
-  private static Iterable<? extends HistoryEntry> loadAllHistoryObjectsFromSql(
+  private static List<? extends HistoryEntry> loadAllHistoryObjectsFromSql(
       Class<? extends HistoryEntry> historyClass, DateTime afterTime, DateTime beforeTime) {
     CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
     return jpaTm()

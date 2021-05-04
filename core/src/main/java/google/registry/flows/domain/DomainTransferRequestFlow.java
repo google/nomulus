@@ -14,6 +14,7 @@
 
 package google.registry.flows.domain;
 
+import static google.registry.flows.FlowUtils.createHistoryKey;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.computeExDateForApprovalTime;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -51,6 +52,7 @@ import google.registry.flows.exceptions.TransferPeriodMustBeOneYearException;
 import google.registry.flows.exceptions.TransferPeriodZeroAndFeeTransferExtensionException;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainCommand.Transfer;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.fee.FeeTransferCommandExtension;
 import google.registry.model.domain.fee.FeeTransformResponseExtension;
@@ -126,7 +128,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   @Inject @ClientId String gainingClientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject DomainHistory.Builder historyBuilder;
   @Inject Trid trid;
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
@@ -169,7 +171,10 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     if (feesAndCredits.isPresent()) {
       validateFeeChallenge(targetId, now, feeTransfer, feesAndCredits.get());
     }
-    HistoryEntry historyEntry = buildHistoryEntry(existingDomain, registry, now, period);
+    Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
+    historyBuilder
+        .setId(domainHistoryKey.getId())
+        .setOtherClientId(existingDomain.getCurrentSponsorClientId());
     DateTime automaticTransferTime =
         superuserExtension.isPresent()
             ? now.plusDays(superuserExtension.get().getAutomaticTransferLength())
@@ -190,7 +195,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
         createTransferServerApproveEntities(
             automaticTransferTime,
             serverApproveNewExpirationTime,
-            historyEntry,
+            domainHistoryKey,
             existingDomain,
             trid,
             gainingClientId,
@@ -209,9 +214,12 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             serverApproveEntities,
             period);
     // Create a poll message to notify the losing registrar that a transfer was requested.
-    PollMessage requestPollMessage = createLosingTransferPollMessage(
-        targetId, pendingTransferData, serverApproveNewExpirationTime, historyEntry)
-            .asBuilder().setEventTime(now).build();
+    PollMessage requestPollMessage =
+        createLosingTransferPollMessage(
+                targetId, pendingTransferData, serverApproveNewExpirationTime, domainHistoryKey)
+            .asBuilder()
+            .setEventTime(now)
+            .build();
     // End the old autorenew event and poll message at the implicit transfer time. This may delete
     // the poll message if it has no events left. Note that if the automatic transfer succeeds, then
     // cloneProjectedAtTime() will replace these old autorenew entities with the server approve ones
@@ -225,10 +233,12 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             .setLastEppUpdateTime(now)
             .setLastEppUpdateClientId(gainingClientId)
             .build();
+    DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now, period);
+
     asyncTaskEnqueuer.enqueueAsyncResave(newDomain, now, automaticTransferTime);
     tm().putAll(
             new ImmutableSet.Builder<>()
-                .add(newDomain, historyEntry, requestPollMessage)
+                .add(newDomain, domainHistory, requestPollMessage)
                 .addAll(serverApproveEntities)
                 .build());
     return responseBuilder
@@ -302,14 +312,13 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     }
   }
 
-  private HistoryEntry buildHistoryEntry(
-      DomainBase existingDomain, Registry registry, DateTime now, Period period) {
+  private DomainHistory buildDomainHistory(
+      DomainBase newDomain, Registry registry, DateTime now, Period period) {
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
-        .setOtherClientId(existingDomain.getCurrentSponsorClientId())
         .setPeriod(period)
         .setModificationTime(now)
-        .setParent(Key.create(existingDomain))
+        .setDomainContent(newDomain)
         .setDomainTransactionRecords(
             ImmutableSet.of(
                 DomainTransactionRecord.create(

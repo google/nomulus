@@ -50,7 +50,6 @@ import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.util.Arrays.asList;
 import static org.joda.money.CurrencyUnit.USD;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Splitter;
@@ -73,8 +72,6 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactAuthInfo;
-import google.registry.model.contact.ContactBase;
-import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -88,8 +85,6 @@ import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
-import google.registry.model.host.HostBase;
-import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
@@ -117,7 +112,6 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.tmch.LordnTaskUtils;
 import java.lang.reflect.Field;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -1127,29 +1121,7 @@ public class DatabaseHelper {
 
   /** Returns all of the history entries that are parented off the given EppResource. */
   public static List<? extends HistoryEntry> getHistoryEntries(EppResource resource) {
-    return tm().isOfy()
-        ? ofy().load().type(HistoryEntry.class).ancestor(resource).order("modificationTime").list()
-        : tm().transact(
-                () -> {
-                  ImmutableList<? extends HistoryEntry> unsorted = null;
-                  if (resource instanceof ContactBase) {
-                    unsorted = tm().loadAllOf(ContactHistory.class);
-                  } else if (resource instanceof HostBase) {
-                    unsorted = tm().loadAllOf(HostHistory.class);
-                  } else if (resource instanceof DomainContent) {
-                    unsorted = tm().loadAllOf(DomainHistory.class);
-                  } else {
-                    fail("Expected an EppResource instance, but got " + resource.getClass());
-                  }
-                  ImmutableList<? extends HistoryEntry> filtered =
-                      unsorted.stream()
-                          .filter(
-                              historyEntry ->
-                                  historyEntry.getParent().getName().equals(resource.getRepoId()))
-                          .collect(toImmutableList());
-                  return ImmutableList.sortedCopyOf(
-                      Comparator.comparing(HistoryEntry::getModificationTime), filtered);
-                });
+    return HistoryEntryDao.loadHistoryObjectsForResource(resource.createVKey());
   }
 
   /**

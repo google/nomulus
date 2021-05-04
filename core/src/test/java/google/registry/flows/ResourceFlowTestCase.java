@@ -17,6 +17,7 @@ package google.registry.flows;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
@@ -27,19 +28,28 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
 import com.googlecode.objectify.Key;
 import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.model.EppResource;
+import google.registry.model.contact.ContactBase;
+import google.registry.model.contact.ContactHistory;
+import google.registry.model.domain.DomainContent;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.eppinput.ResourceCommand;
+import google.registry.model.host.HostBase;
+import google.registry.model.host.HostHistory;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tmch.ClaimsListDualDatabaseDao;
 import google.registry.model.tmch.ClaimsListShard;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.util.logging.Level;
@@ -176,5 +186,23 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
         .hasLogAtLevelWithMessage(Level.INFO, "FLOW-LOG-SIGNATURE-METADATA")
         .which()
         .contains("\"icannActivityReportField\":" + JSONValue.toJSONString(fieldName));
+  }
+
+  protected void assertLastHistoryContainsResource(EppResource resource) {
+    if (!tm().isOfy()) {
+      HistoryEntry historyEntry = Iterables.getLast(DatabaseHelper.getHistoryEntries(resource));
+      if (resource instanceof ContactBase) {
+        ContactHistory contactHistory = (ContactHistory) historyEntry;
+        assertThat(contactHistory.getContactBase().get()).isEqualTo(resource);
+      } else if (resource instanceof DomainContent) {
+        DomainHistory domainHistory = (DomainHistory) historyEntry;
+        assertAboutImmutableObjects()
+            .that(domainHistory.getDomainContent().get())
+            .isEqualExceptFields(resource, "gracePeriods", "dsData", "nsHosts");
+      } else if (resource instanceof HostBase) {
+        HostHistory hostHistory = (HostHistory) historyEntry;
+        assertThat(hostHistory.getHostBase().get()).isEqualTo(resource);
+      }
+    }
   }
 }

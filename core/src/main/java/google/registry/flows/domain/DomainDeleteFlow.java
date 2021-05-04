@@ -16,6 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static google.registry.flows.FlowUtils.createHistoryKey;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
@@ -63,6 +64,7 @@ import google.registry.flows.custom.EntityChanges;
 import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Credit;
@@ -125,7 +127,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject DomainHistory.Builder historyBuilder;
   @Inject DnsQueue dnsQueue;
   @Inject Trid trid;
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
@@ -177,8 +179,8 @@ public final class DomainDeleteFlow implements TransactionalFlow {
             ? Duration.ZERO
             // By default, this should be 30 days of grace, and 5 days of pending delete.
             : redemptionGracePeriodLength.plus(pendingDeleteLength);
-    HistoryEntry historyEntry =
-        buildHistoryEntry(existingDomain, registry, now, durationUntilDelete, inAddGracePeriod);
+    Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
+    historyBuilder.setId(domainHistoryKey.getId());
     DateTime deletionTime = now.plus(durationUntilDelete);
     if (durationUntilDelete.equals(Duration.ZERO)) {
       builder.setDeletionTime(now).setStatusValues(null);
@@ -210,7 +212,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     // it is synchronous).
     if (durationUntilDelete.isLongerThan(Duration.ZERO) || isSuperuser) {
       PollMessage.OneTime deletePollMessage =
-          createDeletePollMessage(existingDomain, historyEntry, deletionTime);
+          createDeletePollMessage(existingDomain, domainHistoryKey, deletionTime);
       entitiesToSave.add(deletePollMessage);
       builder.setDeletePollMessage(deletePollMessage.createVKey());
     }
@@ -220,7 +222,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     if (durationUntilDelete.isLongerThan(Duration.ZERO)
         && !clientId.equals(existingDomain.getPersistedCurrentSponsorClientId())) {
       entitiesToSave.add(
-          createImmediateDeletePollMessage(existingDomain, historyEntry, now, deletionTime));
+          createImmediateDeletePollMessage(existingDomain, domainHistoryKey, now, deletionTime));
     }
 
     // Cancel any grace periods that were still active, and set the expiration time accordingly.
@@ -229,7 +231,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
       // No cancellation is written if the grace period was not for a billable event.
       if (gracePeriod.hasBillingEvent()) {
         entitiesToSave.add(
-            BillingEvent.Cancellation.forGracePeriod(gracePeriod, historyEntry, targetId));
+            BillingEvent.Cancellation.forGracePeriod(gracePeriod, now, domainHistoryKey, targetId));
         if (gracePeriod.getOneTimeBillingEvent() != null) {
           // Take the amount of amount of registration time being refunded off the expiration time.
           // This can be either add grace periods or renew grace periods.
@@ -245,8 +247,10 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     builder.setRegistrationExpirationTime(newExpirationTime);
 
     DomainBase newDomain = builder.build();
+    DomainHistory domainHistory =
+        buildDomainHistory(newDomain, registry, now, durationUntilDelete, inAddGracePeriod);
     updateForeignKeyIndexDeletionTime(newDomain);
-    handlePendingTransferOnDelete(existingDomain, newDomain, now, historyEntry);
+    handlePendingTransferOnDelete(existingDomain, newDomain, now, domainHistory);
     // Close the autorenew billing event and poll message. This may delete the poll message.
     updateAutorenewRecurrenceEndTime(existingDomain, now);
     // If there's a pending transfer, the gaining client's autorenew billing
@@ -254,14 +258,16 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     // ResourceDeleteFlow since it's listed in serverApproveEntities.
     dnsQueue.addDomainRefreshTask(existingDomain.getDomainName());
 
-    entitiesToSave.add(newDomain, historyEntry);
-    EntityChanges entityChanges = flowCustomLogic.beforeSave(
-        BeforeSaveParameters.newBuilder()
-            .setExistingDomain(existingDomain)
-            .setNewDomain(newDomain)
-            .setHistoryEntry(historyEntry)
-            .setEntityChanges(EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
-            .build());
+    entitiesToSave.add(newDomain, domainHistory);
+    EntityChanges entityChanges =
+        flowCustomLogic.beforeSave(
+            BeforeSaveParameters.newBuilder()
+                .setExistingDomain(existingDomain)
+                .setNewDomain(newDomain)
+                .setHistoryEntry(domainHistory)
+                .setEntityChanges(
+                    EntityChanges.newBuilder().setSaves(entitiesToSave.build()).build())
+                .build());
     BeforeResponseReturnData responseData =
         flowCustomLogic.beforeResponse(
             BeforeResponseParameters.newBuilder()
@@ -292,8 +298,8 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     }
   }
 
-  private HistoryEntry buildHistoryEntry(
-      DomainBase existingResource,
+  private DomainHistory buildDomainHistory(
+      DomainBase domain,
       Registry registry,
       DateTime now,
       Duration durationUntilDelete,
@@ -307,31 +313,30 @@ public final class DomainDeleteFlow implements TransactionalFlow {
               registry.getRenewGracePeriodLength()));
       ImmutableSet<DomainTransactionRecord> cancelledRecords =
           createCancelingRecords(
-              existingResource,
+              domain,
               now,
               maxGracePeriod,
               Sets.immutableEnumSet(Sets.union(ADD_FIELDS, RENEW_FIELDS)));
-      historyBuilder
-          .setDomainTransactionRecords(
-              union(
-                  cancelledRecords,
-                  DomainTransactionRecord.create(
-                      existingResource.getTld(),
-                      now.plus(durationUntilDelete),
-                      inAddGracePeriod
-                          ? TransactionReportField.DELETED_DOMAINS_GRACE
-                          : TransactionReportField.DELETED_DOMAINS_NOGRACE,
-                      1)));
+      historyBuilder.setDomainTransactionRecords(
+          union(
+              cancelledRecords,
+              DomainTransactionRecord.create(
+                  domain.getTld(),
+                  now.plus(durationUntilDelete),
+                  inAddGracePeriod
+                      ? TransactionReportField.DELETED_DOMAINS_GRACE
+                      : TransactionReportField.DELETED_DOMAINS_NOGRACE,
+                  1)));
     }
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_DELETE)
         .setModificationTime(now)
-        .setParent(Key.create(existingResource))
+        .setDomainContent(domain)
         .build();
   }
 
   private PollMessage.OneTime createDeletePollMessage(
-      DomainBase existingDomain, HistoryEntry historyEntry, DateTime deletionTime) {
+      DomainBase existingDomain, Key<DomainHistory> domainHistoryKey, DateTime deletionTime) {
     Optional<MetadataExtension> metadataExtension =
         eppInput.getSingleExtension(MetadataExtension.class);
     boolean hasMetadataMessage =
@@ -350,16 +355,19 @@ public final class DomainDeleteFlow implements TransactionalFlow {
             ImmutableList.of(
                 DomainPendingActionNotificationResponse.create(
                     existingDomain.getDomainName(), true, trid, deletionTime)))
-        .setParent(historyEntry)
+        .setParentKey(domainHistoryKey)
         .build();
   }
 
   private PollMessage.OneTime createImmediateDeletePollMessage(
-      DomainBase existingDomain, HistoryEntry historyEntry, DateTime now, DateTime deletionTime) {
+      DomainBase existingDomain,
+      Key<DomainHistory> domainHistoryKey,
+      DateTime now,
+      DateTime deletionTime) {
     return new PollMessage.OneTime.Builder()
         .setClientId(existingDomain.getPersistedCurrentSponsorClientId())
         .setEventTime(now)
-        .setParent(historyEntry)
+        .setParentKey(domainHistoryKey)
         .setMsg(
             String.format(
                 "Domain %s was deleted by registry administrator with final deletion effective: %s",

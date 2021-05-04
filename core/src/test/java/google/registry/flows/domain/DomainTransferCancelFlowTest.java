@@ -132,6 +132,7 @@ class DomainTransferCancelFlowTest
 
     // Transfer should have been cancelled. Verify correct fields were set.
     domain = reloadResourceByForeignKey();
+    assertLastHistoryContainsResource(domain);
     assertTransferFailed(domain, TransferStatus.CLIENT_CANCELLED, originalTransferData);
     assertAboutDomains()
         .that(domain)

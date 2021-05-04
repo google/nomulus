@@ -119,6 +119,7 @@ class DomainTransferRejectFlowTest
     final HistoryEntry historyEntryTransferRejected =
         getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REJECT);
     assertAboutHistoryEntries().that(historyEntryTransferRejected).hasOtherClientId("NewRegistrar");
+    assertLastHistoryContainsResource(domain);
     // The only billing event left should be the original autorenew event, now reopened.
     assertBillingEvents(
         getLosingClientAutorenewEvent().asBuilder().setRecurrenceEndTime(END_OF_TIME).build());
