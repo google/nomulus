@@ -20,6 +20,7 @@
 package google.registry.beam;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -27,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -295,6 +297,16 @@ public class TestPipelineExtension extends Pipeline
 
       enableAbandonedNodeEnforcement(true);
     }
+
+    // Clear this property so that when default Guava ThreadFactory is created
+    // it will not think that it is in App Engine and return an unusable
+    // ThreadFactory.
+    System.clearProperty("com.google.appengine.runtime.environment");
+    assertWithMessage(
+            "Beam pipelines don't run in an App Engine environment, and thus"
+                + " the tests shouldn't be mocking one either.")
+        .that(isAppEngine())
+        .isFalse();
   }
 
   @Override
@@ -497,6 +509,25 @@ public class TestPipelineExtension extends Pipeline
               expectedNumberOfAssertions, successfulAssertions),
           successfulAssertions,
           is(expectedNumberOfAssertions));
+    }
+  }
+
+  // Adapted from Guava's MoreExecutors (where it is a private method)
+  private static boolean isAppEngine() {
+    if (System.getProperty("com.google.appengine.runtime.environment") == null) {
+      return false;
+    } else {
+      try {
+        return Class.forName("com.google.apphosting.api.ApiProxy")
+                .getMethod("getCurrentEnvironment")
+                .invoke(null)
+            != null;
+      } catch (ClassNotFoundException
+          | InvocationTargetException
+          | IllegalAccessException
+          | NoSuchMethodException e) {
+        return false;
+      }
     }
   }
 

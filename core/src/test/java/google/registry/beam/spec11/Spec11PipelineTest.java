@@ -16,7 +16,6 @@ package google.registry.beam.spec11;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
@@ -35,7 +34,6 @@ import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.ResourceUtils;
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.beam.sdk.coders.KvCoder;
@@ -120,11 +118,6 @@ class Spec11PipelineTest {
                     KvCoder.of(
                         SerializableCoder.of(Subdomain.class),
                         SerializableCoder.of(ThreatMatch.class))));
-    assertWithMessage(
-            "Beam pipelines don't run in an App Engine environment, and thus the tests shouldn't be"
-                + " mocking one either")
-        .that(isAppEngine())
-        .isFalse();
   }
 
   @Test
@@ -193,25 +186,6 @@ class Spec11PipelineTest {
             Correspondence.from(
                 new ThreatMatchJsonPredicate(), "has fields with unordered threatTypes equal to"))
         .containsExactlyElementsIn(expectedFileContents.subList(1, expectedFileContents.size()));
-  }
-
-  // Adapted from Guava's MoreExecutors (where it is a private method)
-  private static boolean isAppEngine() {
-    if (System.getProperty("com.google.appengine.runtime.environment") == null) {
-      return false;
-    } else {
-      try {
-        return Class.forName("com.google.apphosting.api.ApiProxy")
-                .getMethod("getCurrentEnvironment")
-                .invoke(null)
-            != null;
-      } catch (ClassNotFoundException
-          | InvocationTargetException
-          | IllegalAccessException
-          | NoSuchMethodException e) {
-        return false;
-      }
-    }
   }
 
   /** Returns the text contents of a file under the beamBucket/results directory. */

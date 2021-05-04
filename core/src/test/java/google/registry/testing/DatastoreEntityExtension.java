@@ -26,9 +26,10 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
  * Allows instantiation of Datastore {@code Entity entities} without the heavyweight {@code
  * AppEngineRule}.
  *
- * <p>When used together with {@code JpaIntegrationWithCoverageExtension}, this extension must be
- * registered first. For consistency's sake, it is recommended that the field for this extension be
- * annotated with {@code @org.junit.jupiter.api.Order(value = 1)}. Please refer to {@link
+ * <p>When used together with {@code JpaIntegrationWithCoverageExtension} or @{@code
+ * TestPipelineExtension}, this extension must be registered first. For consistency's sake, it is
+ * recommended that the field for this extension be annotated with
+ * {@code @org.junit.jupiter.api.Order(value = 1)}. Please refer to {@link
  * google.registry.model.domain.DomainBaseSqlTest} for example, and to <a
  * href="https://junit.org/junit5/docs/current/user-guide/#extensions-registration-programmatic">
  * JUnit 5 User Guide</a> for details of extension ordering.
