@@ -49,7 +49,8 @@ import javax.persistence.Transient;
  * succeeds, we will end up with having two exact same revisions that differ only by revisionKey.
  * This is fine though, because we only use the revision with the highest revisionKey.
  *
- * <p>TODO: remove Datastore-specific fields post-Registry-3.0-migration and rename to KmsSecret.
+ * <p>TODO(b/177567432): remove Datastore-specific fields post-Registry-3.0-migration and rename to
+ * KmsSecret.
  *
  * @see <a href="https://cloud.google.com/kms/docs/">Google Cloud Key Management Service
  *     Documentation</a>
@@ -71,7 +72,7 @@ public class KmsSecretRevision extends ImmutableObject implements NonReplicatedE
   /**
    * The revision of this secret.
    *
-   * <p>TODO: change name of the variable to revisionId once we're off Datastore
+   * <p>TODO(b/177567432): change name of the variable to revisionId once we're off Datastore
    */
   @Id
   @javax.persistence.Id

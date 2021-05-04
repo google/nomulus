@@ -23,7 +23,7 @@ import java.util.Optional;
 /**
  * A {@link ReservedList} DAO for Cloud SQL.
  *
- * <p>TODO(b/160993806): Rename this class to ReservedListDao after migrating to Cloud SQL.
+ * <p>TODO(b/177567432): Rename this class to ReservedListDao after migrating to Cloud SQL.
  */
 public class ReservedListSqlDao {
 
