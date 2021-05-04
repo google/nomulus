@@ -58,7 +58,7 @@ class EntityCallbacksListenerTest {
             .transact(
                 () -> {
                   TestEntity merged = jpaTm().getEntityManager().merge(testUpdate);
-                  merged.foo++;
+                  merged.nonTransientField++;
                   jpaTm().getEntityManager().flush();
                   return merged;
                 });
@@ -109,7 +109,12 @@ class EntityCallbacksListenerTest {
     assertThat(testLoad.entityPreUpdate).isEqualTo(0);
 
     testLoad = jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id")));
-    assertThat(testLoad.foo).isEqualTo(1); // since we didn't save it, should only be 1
+
+    // Verify that post-load happened but pre-update didn't.
+    assertThat(testLoad.entityPostLoad).isEqualTo(1);
+    assertThat(testLoad.entityPreUpdate).isEqualTo(0);
+    // since we didn't save the non-transient field, should only be 1
+    assertThat(testLoad.nonTransientField).isEqualTo(1);
   }
 
   private static boolean hasMethodAnnotatedWithEmbedded(Class<?> entityType) {
@@ -165,7 +170,7 @@ class EntityCallbacksListenerTest {
   @Entity(name = "TestEntity")
   private static class TestEntity extends ParentEntity {
     @Id String name = "id";
-    int foo = 0;
+    int nonTransientField = 0;
 
     @Transient int entityPostLoad = 0;
     @Transient int entityPreUpdate = 0;
@@ -175,7 +180,7 @@ class EntityCallbacksListenerTest {
     @PostLoad
     void entityPostLoad() {
       entityPostLoad++;
-      foo++;
+      nonTransientField++;
     }
 
     @PreUpdate
