@@ -76,7 +76,7 @@ public class SslServerInitializer<C extends Channel> extends ChannelInitializer<
    * OpenSSL provider (if used), so there is no need to include the OpenSSL name variants here. More
    * information about these cipher suites and their OpenSSL names can be found at ciphersuite.info.
    */
-  private static final ImmutableList ALLOWED_TLS_CIPHERS =
+  private static final ImmutableList<String> ALLOWED_TLS_CIPHERS =
       ImmutableList.of(
           "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
           "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",

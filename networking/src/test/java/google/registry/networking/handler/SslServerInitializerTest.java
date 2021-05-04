@@ -458,8 +458,12 @@ class SslServerInitializerTest {
   private static boolean compareSemanticVersion(
       ImmutableList<Integer> v1, ImmutableList<Integer> v2) {
     for (int i : ImmutableList.of(0, 1, 2)) {
-      if (v1.get(i) > v2.get(i)) return true;
-      if (v1.get(i) < v2.get(i)) return false;
+      if (v1.get(i) > v2.get(i)) {
+        return true;
+      }
+      if (v1.get(i) < v2.get(i)) {
+        return false;
+      }
     }
     return true;
   }
