@@ -37,7 +37,6 @@ import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import java.io.Serializable;
-import java.nio.file.Path;
 import java.util.stream.Collectors;
 import org.apache.beam.sdk.transforms.Create;
 import org.joda.time.DateTime;
@@ -45,7 +44,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.jupiter.api.io.TempDir;
 
 /** Unit test for {@link RegistryJpaIO.Write}. */
 class RegistryJpaWriteTest implements Serializable {
@@ -63,10 +61,6 @@ class RegistryJpaWriteTest implements Serializable {
   @RegisterExtension
   final transient JpaIntegrationTestExtension database =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
-
-  @SuppressWarnings("WeakerAccess")
-  @TempDir
-  transient Path tmpDir;
 
   @RegisterExtension
   final transient TestPipelineExtension testPipeline =
