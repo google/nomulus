@@ -15,35 +15,16 @@
 package google.registry.model.registry.label;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSortedMap;
-import google.registry.config.RegistryEnvironment;
 import google.registry.model.EntityTestCase;
-import google.registry.model.common.DatabaseTransitionSchedule;
-import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
-import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTransition;
-import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
-import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.SystemPropertyExtension;
-import google.registry.testing.TestOfyAndSql;
 import java.util.Optional;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.Test;
 
-@DualDatabaseTest
 public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
-
-  @RegisterExtension
-  final SystemPropertyExtension systemPropertyExtension = new SystemPropertyExtension();
 
   private ImmutableMap<String, ReservedListEntry> reservations;
 
@@ -65,41 +46,18 @@ public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
             .setShouldPublish(false)
             .setReservedListMap(reservations)
             .build();
-
-    fakeClock.setTo(DateTime.parse("1984-12-21T00:00:00.000Z"));
-    DatabaseTransitionSchedule schedule =
-        DatabaseTransitionSchedule.create(
-            TransitionId.DOMAIN_LABEL_LISTS,
-            TimedTransitionProperty.fromValueMap(
-                ImmutableSortedMap.of(
-                    START_OF_TIME,
-                    PrimaryDatabase.DATASTORE,
-                    fakeClock.nowUtc().plusDays(1),
-                    PrimaryDatabase.CLOUD_SQL),
-                PrimaryDatabaseTransition.class));
-
-    tm().transactNew(() -> ofy().saveWithoutBackup().entity(schedule).now());
   }
 
-  @TestOfyAndSql
-  void testSave_datastorePrimary_success() {
+  @Test
+  void testSave_success() {
     ReservedListDualDatabaseDao.save(reservedList);
     Optional<ReservedList> savedList =
         ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName());
     assertThat(savedList.get()).isEqualTo(reservedList);
   }
 
-  @TestOfyAndSql
-  void testSave_cloudSqlPrimary_success() {
-    fakeClock.advanceBy(Duration.standardDays(5));
-    ReservedListDualDatabaseDao.save(reservedList);
-    Optional<ReservedList> savedList =
-        ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName());
-    assertThat(savedList.get()).isEqualTo(reservedList);
-  }
-
-  @TestOfyAndSql
-  void testDelete_datastorePrimary_success() {
+  @Test
+  void testDelete_success() {
     ReservedListDualDatabaseDao.save(reservedList);
     assertThat(ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName()).isPresent())
         .isTrue();
@@ -108,19 +66,8 @@ public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
         .isFalse();
   }
 
-  @TestOfyAndSql
-  void testDelete_cloudSqlPrimary_success() {
-    fakeClock.advanceBy(Duration.standardDays(5));
-    ReservedListDualDatabaseDao.save(reservedList);
-    assertThat(ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName()).isPresent())
-        .isTrue();
-    ReservedListDualDatabaseDao.delete(reservedList);
-    assertThat(ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName()).isPresent())
-        .isFalse();
-  }
-
-  @TestOfyAndSql
-  void testSaveAndLoad_datastorePrimary_emptyList() {
+  @Test
+  void testSaveAndLoad_emptyList() {
     ReservedList list =
         new ReservedList.Builder()
             .setName("empty")
@@ -132,22 +79,8 @@ public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
     assertThat(savedList.get()).isEqualTo(list);
   }
 
-  @TestOfyAndSql
-  void testSaveAndLoad_cloudSqlPrimary_emptyList() {
-    fakeClock.advanceBy(Duration.standardDays(5));
-    ReservedList list =
-        new ReservedList.Builder()
-            .setName("empty")
-            .setLastUpdateTime(fakeClock.nowUtc())
-            .setReservedListMap(ImmutableMap.of())
-            .build();
-    ReservedListDualDatabaseDao.save(list);
-    Optional<ReservedList> savedList = ReservedListDualDatabaseDao.getLatestRevision("empty");
-    assertThat(savedList.get()).isEqualTo(list);
-  }
-
-  @TestOfyAndSql
-  void testSave_datastorePrimary_multipleVersions() {
+  @Test
+  void testSave_multipleVersions() {
     ReservedListDualDatabaseDao.save(reservedList);
     assertThat(
             ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName())
@@ -173,36 +106,8 @@ public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
         .isEqualTo(newReservations);
   }
 
-  @TestOfyAndSql
-  void testSave_cloudSqlPrimary_multipleVersions() {
-    fakeClock.advanceBy(Duration.standardDays(5));
-    ReservedListDualDatabaseDao.save(reservedList);
-    assertThat(
-            ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName())
-                .get()
-                .getReservedListEntries())
-        .isEqualTo(reservations);
-    ImmutableMap<String, ReservedListEntry> newReservations =
-        ImmutableMap.of(
-            "food",
-            ReservedListEntry.create("food", ReservationType.RESERVED_FOR_SPECIFIC_USE, null));
-    ReservedList secondList =
-        new ReservedList.Builder()
-            .setName("testlist2")
-            .setLastUpdateTime(fakeClock.nowUtc())
-            .setShouldPublish(false)
-            .setReservedListMap(newReservations)
-            .build();
-    ReservedListDualDatabaseDao.save(secondList);
-    assertThat(
-            ReservedListDualDatabaseDao.getLatestRevision(secondList.getName())
-                .get()
-                .getReservedListEntries())
-        .isEqualTo(newReservations);
-  }
-
-  @TestOfyAndSql
-  void testLoad_datastorePrimary_unequalLists() {
+  @Test
+  void testLoad_unequalLists() {
     ReservedListDualDatabaseDao.save(reservedList);
     ReservedList secondList =
         new ReservedList.Builder()
@@ -222,78 +127,16 @@ public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
             () -> ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName()));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Domain label music has entry in Datastore, but not in the secondary database.");
+        .contains("Domain label music has entry in Datastore, but not in Cloud SQL.");
   }
 
-  @TestOfyAndSql
-  void testLoad_cloudSqlPrimary_unequalLists() {
-    fakeClock.advanceBy(Duration.standardDays(5));
-    ReservedListDualDatabaseDao.save(reservedList);
-    ReservedList secondList =
-        new ReservedList.Builder()
-            .setName(reservedList.name)
-            .setLastUpdateTime(fakeClock.nowUtc())
-            .setShouldPublish(false)
-            .setReservedListMap(
-                ImmutableMap.of(
-                    "food",
-                    ReservedListEntry.create(
-                        "food", ReservationType.RESERVED_FOR_SPECIFIC_USE, null)))
-            .build();
-    ReservedListSqlDao.save(secondList);
-    IllegalStateException thrown =
-        assertThrows(
-            IllegalStateException.class,
-            () -> ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName()));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("Domain label music has entry in Datastore, but not in the primary database.");
-  }
-
-  @TestOfyAndSql
-  void testLoad_cloudSqlPrimary_unequalLists_succeedsInProduction() {
-    RegistryEnvironment.PRODUCTION.setup(systemPropertyExtension);
-    fakeClock.advanceBy(Duration.standardDays(5));
-    ReservedListDualDatabaseDao.save(reservedList);
-    ReservedList secondList =
-        new ReservedList.Builder()
-            .setName(reservedList.name)
-            .setLastUpdateTime(fakeClock.nowUtc())
-            .setShouldPublish(false)
-            .setReservedListMap(
-                ImmutableMap.of(
-                    "food",
-                    ReservedListEntry.create(
-                        "food", ReservationType.RESERVED_FOR_SPECIFIC_USE, null)))
-            .build();
-    ReservedListSqlDao.save(secondList);
-    Optional<ReservedList> savedList =
-        ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName());
-    assertThat(savedList.get()).isEqualTo(secondList);
-  }
-
-  @TestOfyAndSql
-  void testLoad_DatastorePrimary_noListInCloudSql() {
-    ReservedListDatastoreDao.save(reservedList);
-    IllegalStateException thrown =
-        assertThrows(
-            IllegalStateException.class,
-            () -> ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName()));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("Reserved list in the secondary database (Cloud SQL) is empty.");
-  }
-
-  @TestOfyAndSql
-  void testLoad_cloudSqlPrimary_noListInDatastore() {
-    fakeClock.advanceBy(Duration.standardDays(5));
+  @Test
+  void testLoad_noListInDatastore() {
     ReservedListSqlDao.save(reservedList);
     IllegalStateException thrown =
         assertThrows(
             IllegalStateException.class,
             () -> ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName()));
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("Reserved list in the secondary database (Datastore) is empty.");
+    assertThat(thrown).hasMessageThat().contains("Reserved list in Datastore is empty.");
   }
 }

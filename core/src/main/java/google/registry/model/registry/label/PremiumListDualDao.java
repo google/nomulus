@@ -14,12 +14,11 @@
 
 package google.registry.model.registry.label;
 
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
 
 import com.google.common.collect.Streams;
-import google.registry.model.DatabaseMigrationUtils;
-import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.schema.tld.PremiumListSqlDao;
@@ -32,27 +31,20 @@ import org.joda.money.Money;
 /**
  * DAO for {@link PremiumList} objects that handles the branching paths for SQL and Datastore.
  *
- * <p>For write actions, this class will perform the action against the primary database then, after
- * that success or failure, against the secondary database. If the secondary database fails, an
- * error is logged (but not thrown).
+ * <p>For write actions, this class will perform the action against Cloud SQL then, after that
+ * success or failure, against Datastore. If Datastore fails, an error is logged (but not thrown).
  *
  * <p>For read actions, when retrieving a price, we will log if the primary and secondary databases
- * have different values (or if the retrieval from the second database fails).
- *
- * <p>TODO (gbrodman): Change the isOfy() calls to the runtime selection of DBs when available
+ * have different values (or if the retrieval from Datastore fails).
  */
 public class PremiumListDualDao {
 
   /**
-   * Retrieves from the appropriate DB and returns the most recent premium list with the given name,
-   * or absent if no such list exists.
+   * Retrieves from Cloud SQL and returns the most recent premium list with the given name, or
+   * absent if no such list exists.
    */
   public static Optional<PremiumList> getLatestRevision(String premiumListName) {
-    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
-      return PremiumListDatastoreDao.getLatestRevision(premiumListName);
-    } else {
       return PremiumListSqlDao.getLatestRevision(premiumListName);
-    }
   }
 
   /**
@@ -61,7 +53,7 @@ public class PremiumListDualDao {
    * <p>Returns absent if the label is not premium or there is no premium list for this registry.
    *
    * <p>Retrieves the price from both primary and secondary databases, and logs in the event of a
-   * failure in the secondary (but does not throw an exception).
+   * failure in Datastore (but does not throw an exception).
    */
   public static Optional<Money> getPremiumPrice(String label, Registry registry) {
     if (registry.getPremiumList() == null) {
@@ -69,98 +61,56 @@ public class PremiumListDualDao {
     }
     String premiumListName = registry.getPremiumList().getName();
     Optional<Money> primaryResult;
-    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
-      primaryResult =
-          PremiumListDatastoreDao.getPremiumPrice(premiumListName, label, registry.getTldStr());
-    } else {
       primaryResult = PremiumListSqlDao.getPremiumPrice(premiumListName, label);
-    }
-    // Also load the value from the secondary DB, compare the two results, and log if different.
-    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
-      suppressExceptionUnlessInTest(
-          () -> {
-            Optional<Money> secondaryResult =
-                PremiumListSqlDao.getPremiumPrice(premiumListName, label);
-            if (!primaryResult.equals(secondaryResult)) {
-              throw new IllegalStateException(
-                  String.format(
-                      "Unequal prices for domain %s.%s from primary Datastore DB (%s) and "
-                          + "secondary SQL db (%s).",
-                      label, registry.getTldStr(), primaryResult, secondaryResult));
-            }
-          },
-          String.format(
-              "Error loading price of domain %s.%s from Cloud SQL.", label, registry.getTldStr()));
-    } else {
-      suppressExceptionUnlessInTest(
-          () -> {
-            Optional<Money> secondaryResult =
-                PremiumListDatastoreDao.getPremiumPrice(
-                    premiumListName, label, registry.getTldStr());
-            if (!primaryResult.equals(secondaryResult)) {
-              throw new IllegalStateException(
-                  String.format(
-                      "Unequal prices for domain %s.%s from primary SQL DB (%s) and secondary "
-                          + "Datastore db (%s).",
-                      label, registry.getTldStr(), primaryResult, secondaryResult));
-            }
-          },
-          String.format(
-              "Error loading price of domain %s.%s from Datastore.", label, registry.getTldStr()));
-    }
+    // Also load the value from Datastore, compare the two results, and log if different.
+    suppressExceptionUnlessInTest(
+        () -> {
+          Optional<Money> secondaryResult =
+              PremiumListDatastoreDao.getPremiumPrice(premiumListName, label, registry.getTldStr());
+          checkState(
+              primaryResult.equals(secondaryResult),
+              "Unequal prices for domain %s.%s from primary SQL DB (%s) and secondary Datastore db"
+                  + " (%s).",
+              label,
+              registry.getTldStr(),
+              primaryResult,
+              secondaryResult);
+        },
+        String.format(
+            "Error loading price of domain %s.%s from Datastore.", label, registry.getTldStr()));
     return primaryResult;
   }
 
   /**
    * Saves the given list data to both primary and secondary databases.
    *
-   * <p>Logs but doesn't throw an exception in the event of a failure when writing to the secondary
-   * database.
+   * <p>Logs but doesn't throw an exception in the event of a failure when writing to Datastore.
    */
   public static PremiumList save(String name, List<String> inputData) {
-    PremiumList result;
-    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
-      result = PremiumListDatastoreDao.save(name, inputData);
-      suppressExceptionUnlessInTest(
-          () -> PremiumListSqlDao.save(name, inputData), "Error when saving premium list to SQL.");
-    } else {
-      result = PremiumListSqlDao.save(name, inputData);
+    PremiumList result = PremiumListSqlDao.save(name, inputData);
       suppressExceptionUnlessInTest(
           () -> PremiumListDatastoreDao.save(name, inputData),
           "Error when saving premium list to Datastore.");
-    }
     return result;
   }
 
   /**
    * Deletes the premium list.
    *
-   * <p>Logs but doesn't throw an exception in the event of a failure when deleting from the
-   * secondary database.
+   * <p>Logs but doesn't throw an exception in the event of a failure when deleting from Datastore.
    */
   public static void delete(PremiumList premiumList) {
-    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
-      PremiumListDatastoreDao.delete(premiumList);
-      suppressExceptionUnlessInTest(
-          () -> PremiumListSqlDao.delete(premiumList),
-          "Error when deleting premium list from SQL.");
-    } else {
       PremiumListSqlDao.delete(premiumList);
       suppressExceptionUnlessInTest(
           () -> PremiumListDatastoreDao.delete(premiumList),
           "Error when deleting premium list from Datastore.");
-    }
   }
 
   /** Returns whether or not there exists a premium list with the given name. */
   public static boolean exists(String premiumListName) {
     // It may seem like overkill, but loading the list has ways been the way we check existence and
     // given that we usually load the list around the time we check existence, we'll hit the cache
-    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
-      return PremiumListDatastoreDao.getLatestRevision(premiumListName).isPresent();
-    } else {
-      return PremiumListSqlDao.getLatestRevision(premiumListName).isPresent();
-    }
+    return PremiumListSqlDao.getLatestRevision(premiumListName).isPresent();
   }
 
   /**
@@ -175,9 +125,6 @@ public class PremiumListDualDao {
                 () ->
                     new IllegalArgumentException(
                         String.format("No premium list with name %s.", premiumListName)));
-    if (DatabaseMigrationUtils.isDatastore(TransitionId.DOMAIN_LABEL_LISTS)) {
-      return PremiumListDatastoreDao.loadPremiumListEntriesUncached(premiumList);
-    } else {
       CurrencyUnit currencyUnit = premiumList.getCurrency();
       return Streams.stream(PremiumListSqlDao.loadPremiumListEntriesUncached(premiumList))
           .map(
@@ -188,7 +135,6 @@ public class PremiumListDualDao {
                       .build())
           .collect(toImmutableList());
     }
-  }
 
   private PremiumListDualDao() {}
 }

@@ -25,10 +25,10 @@ import google.registry.model.registry.label.PremiumListDualDao;
 import javax.annotation.Nullable;
 
 /**
- * Command to delete a {@link PremiumList} in Datastore. This command will fail if the premium list
- * is currently in use on a tld.
+ * Command to delete a {@link PremiumList}. This command will fail if the premium list is currently
+ * in use on a tld.
  */
-@Parameters(separators = " =", commandDescription = "Delete a PremiumList from Datastore.")
+@Parameters(separators = " =", commandDescription = "Delete a PremiumList.")
 final class DeletePremiumListCommand extends ConfirmingCommand implements CommandWithRemoteApi {
 
   @Nullable PremiumList premiumList;
@@ -55,7 +55,7 @@ final class DeletePremiumListCommand extends ConfirmingCommand implements Comman
 
   @Override
   protected String prompt() {
-    return "You are about to delete the premium list: \n" + premiumList;
+    return "You are about to delete the premium list: \n" + premiumList.getName();
   }
 
   @Override

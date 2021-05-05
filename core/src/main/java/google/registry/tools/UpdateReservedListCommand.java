@@ -22,13 +22,11 @@ import com.google.common.base.Strings;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.persistence.VKey;
-import google.registry.util.SystemClock;
 import java.nio.file.Files;
 import java.util.List;
-import org.joda.time.DateTime;
 
-/** Command to safely update {@link ReservedList} on Datastore. */
-@Parameters(separators = " =", commandDescription = "Update a ReservedList in Datastore.")
+/** Command to safely update {@link ReservedList}. */
+@Parameters(separators = " =", commandDescription = "Update a ReservedList.")
 final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand {
 
   @Override
@@ -44,12 +42,10 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
     boolean shouldPublish =
         this.shouldPublish == null ? existingReservedList.getShouldPublish() : this.shouldPublish;
     List<String> allLines = Files.readAllLines(input, UTF_8);
-    DateTime now = new SystemClock().nowUtc();
     ReservedList.Builder updated =
         existingReservedList
             .asBuilder()
             .setReservedListMapFromLines(allLines)
-            .setLastUpdateTime(now)
             .setShouldPublish(shouldPublish);
     reservedList = updated.build();
     // only call stageEntityChange if there are changes in entries

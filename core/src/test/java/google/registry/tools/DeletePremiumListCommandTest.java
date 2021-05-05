@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadPremiumListEntries;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
@@ -25,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumListDualDao;
 import org.junit.jupiter.api.Test;
 
@@ -38,13 +36,6 @@ class DeletePremiumListCommandTest extends CommandTestCase<DeletePremiumListComm
     assertThat(loadPremiumListEntries(premiumList)).hasSize(1);
     runCommand("--force", "--name=xn--q9jyb4c");
     assertThat(PremiumListDualDao.getLatestRevision("xn--q9jyb4c")).isEmpty();
-
-    // Ensure that the Datastore premium list entry entities were deleted correctly.
-    assertThat(ofy().load()
-        .type(PremiumListEntry.class)
-        .ancestor(premiumList.getRevisionKey())
-        .keys())
-            .isEmpty();
   }
 
   @Test

@@ -21,15 +21,10 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.tools.CreateReservedListCommand.INVALID_FORMAT_ERROR_MESSAGE;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.common.collect.ImmutableMap;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.model.registry.label.ReservedList.ReservedListEntry;
-import google.registry.model.registry.label.ReservedListSqlDao;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -56,16 +51,6 @@ class CreateReservedListCommandTest
   void testSuccess_unspecifiedNameDefaultsToFileName() throws Exception {
     runCommandForced("--input=" + reservedTermsPath);
     assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-  }
-
-  @Test
-  void testSuccess_timestampsSetCorrectly() throws Exception {
-    DateTime before = DateTime.now(UTC);
-    runCommandForced("--input=" + reservedTermsPath);
-    assertThat(ReservedList.get("xn--q9jyb4c_common-reserved")).isPresent();
-    ReservedList rl = ReservedList.get("xn--q9jyb4c_common-reserved").get();
-    assertThat(rl.getCreationTime()).isAtLeast(before);
-    assertThat(rl.getLastUpdateTime()).isEqualTo(rl.getCreationTime());
   }
 
   @Test
@@ -185,21 +170,6 @@ class CreateReservedListCommandTest
     runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     verifyXnq9jyb4cInDatastore();
     verifyXnq9jyb4cInCloudSql();
-  }
-
-  @Test
-  void testSaveToCloudSql_noExceptionThrownWhenSaveFail() throws Exception {
-    // Note that, during the dual-write phase, we want to make sure that no exception will be
-    // thrown if saving reserved list to Cloud SQL fails.
-    ReservedListSqlDao.save(
-        createCloudSqlReservedList(
-            "xn--q9jyb4c_common-reserved",
-            fakeClock.nowUtc(),
-            true,
-            ImmutableMap.of(
-                "testdomain", ReservedListEntry.create("testdomain", FULLY_BLOCKED, ""))));
-    runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
-    verifyXnq9jyb4cInDatastore();
   }
 
   private void runNameTestExpectedFailure(String name, String expectedErrorMsg) {
