@@ -634,8 +634,8 @@ compileProdJS.dependsOn soyToJS
 task karmaTest(type: Exec) {
   dependsOn ':npmInstall'
   workingDir rootProject.projectDir
-  executable 'node_modules/karma/bin/karma'
-  args('start', "${project.projectDir}/karma.conf.js")
+  executable '.gradle/nodejs/node-v14.15.5-linux-x64/bin/node'
+  args('node_modules/karma/bin/karma', 'start', "${project.projectDir}/karma.conf.js")
 }
 
 test.dependsOn karmaTest
