@@ -93,7 +93,7 @@ public final class RegistryJpaIO {
    * PCollection<String> contactIds =
    *     pipeline
    *         .apply(RegistryJpaIO.read(
-   *             () -> CriteriaQueryBuilder.create(ContactResource.class).build(),
+   *             (JpaTransactionManager tm) -> tm.createQueryComposer...,
    *             contact -> KV.of(contact.getRepoId(), contact.getContactId()))
    *         .withCoder(KvCoder.of(StringUtf8Coder.of(), StringUtf8Coder.of())))
    *         .apply(Deduplicate.keyedValues())
