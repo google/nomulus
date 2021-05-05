@@ -22,13 +22,14 @@ import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.registrar.Registrar;
-import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
+import google.registry.testing.SystemPropertyExtension;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.testing.PAssert;
@@ -53,6 +54,14 @@ public class RegistryJpaReadTest {
   @Order(Order.DEFAULT - 1)
   final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
 
+  // The pipeline runner on Kokoro sometimes mistakes the platform as appengine, resulting in
+  // a null thread factory. The cause is unknown but it may be due to the interaction with
+  // the DatastoreEntityExtension above. To work around the problem, we explicitly unset the
+  // relevant property before test starts.
+  @RegisterExtension
+  final transient SystemPropertyExtension systemPropertyExtension =
+      new SystemPropertyExtension().setProperty("com.google.appengine.runtime.environment", null);
+
   @RegisterExtension
   final transient JpaIntegrationTestExtension database =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
@@ -61,11 +70,10 @@ public class RegistryJpaReadTest {
   final transient TestPipelineExtension testPipeline =
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
-  private ImmutableList<ContactResource> contacts;
+  private transient ImmutableList<ContactResource> contacts;
 
   @BeforeEach
-  void beforeEach() throws Exception {
-    // Required for contacts created below.
+  void beforeEach() {
     Registrar ofyRegistrar = AppEngineExtension.makeRegistrar2();
     jpaTm().transact(() -> jpaTm().put(ofyRegistrar));
 
@@ -83,7 +91,7 @@ public class RegistryJpaReadTest {
   void nonTransactionalQuery_noDedupe() {
     Read<ContactResource, String> read =
         RegistryJpaIO.read(
-            () -> CriteriaQueryBuilder.create(ContactResource.class).build(),
+            (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),
             ContactBase::getContactId);
     PCollection<String> repoIds = testPipeline.apply(read);
 
@@ -96,7 +104,7 @@ public class RegistryJpaReadTest {
     // This method only serves as an example of deduplication. Duplicates are not actually added.
     Read<ContactResource, KV<String, String>> read =
         RegistryJpaIO.read(
-                () -> CriteriaQueryBuilder.create(ContactResource.class).build(),
+                (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),
                 contact -> KV.of(contact.getRepoId(), contact.getContactId()))
             .withCoder(KvCoder.of(StringUtf8Coder.of(), StringUtf8Coder.of()));
     PCollection<String> repoIds =

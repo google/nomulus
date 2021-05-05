@@ -19,16 +19,12 @@ import java.util.function.Supplier;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaQuery;
 
 /** Sub-interface of {@link TransactionManager} which defines JPA related methods. */
 public interface JpaTransactionManager extends TransactionManager {
 
   /** Returns the {@link EntityManager} for the current request. */
   EntityManager getEntityManager();
-
-  /** Executes a JQL query that is safe from sql-injection attack. */
-  <T> TypedQuery<T> executeSafeQuery(CriteriaQuery<T> query);
 
   /**
    * Creates a JPA SQL query for the given query string and result class.

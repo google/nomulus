@@ -23,6 +23,7 @@ import com.google.common.collect.Streams;
 import google.registry.backup.AppEngineEnvironment;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.persistence.transaction.QueryComposer;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import java.io.Serializable;
 import java.util.Objects;
@@ -58,22 +59,28 @@ public final class RegistryJpaIO {
 
   private RegistryJpaIO() {}
 
-  public static <R> Read<R, R> read(SerializableSupplier<CriteriaQuery<R>> querySupplier) {
-    return Read.<R, R>builder().querySupplier(querySupplier).build();
+  public static <R> Read<R, R> read(QueryComposerFactory<R> queryFactory) {
+    return Read.<R, R>builder().queryFactory(queryFactory).build();
   }
 
   public static <R, T> Read<R, T> read(
-      SerializableSupplier<CriteriaQuery<R>> querySupplier,
-      SerializableFunction<R, T> resultMapper) {
-    return Read.<R, T>builder().querySupplier(querySupplier).resultMapper(resultMapper).build();
+      QueryComposerFactory<R> queryFactory, SerializableFunction<R, T> resultMapper) {
+    return Read.<R, T>builder().queryFactory(queryFactory).resultMapper(resultMapper).build();
   }
 
   public static <T> Write<T> write() {
     return Write.<T>builder().build();
   }
 
+  // TODO(mmuller): Consider detached JpaQueryComposer that works with any JpaTransactionManager
+  // instance, i.e., change composer.buildQuery() to composer.buildQuery(JpaTransactionManager).
+  // This way QueryComposer becomes reusable and serializable (at least with Hibernate), and this
+  // interface would no longer be necessary.
+  public interface QueryComposerFactory<T>
+      extends SerializableFunction<JpaTransactionManager, QueryComposer<T>> {}
+
   /**
-   * A {@link PTransform transform} that executes an JPA {@link CriteriaQuery} and adds the results
+   * A {@link PTransform transform} that executes a JPA {@link CriteriaQuery} and adds the results
    * to the BEAM pipeline. Users have the option to transform the results before sending them to the
    * next stages.
    *
@@ -100,7 +107,7 @@ public final class RegistryJpaIO {
 
     abstract String name();
 
-    abstract SerializableSupplier<CriteriaQuery<R>> querySupplier();
+    abstract RegistryJpaIO.QueryComposerFactory<R> queryFactory();
 
     abstract SerializableFunction<R, T> resultMapper();
 
@@ -116,12 +123,12 @@ public final class RegistryJpaIO {
           .apply("Starting " + name(), Create.of((Void) null))
           .apply(
               "Run query for " + name(),
-              ParDo.of(new QueryRunner<>(querySupplier(), resultMapper())))
+              ParDo.of(new QueryRunner<>(queryFactory(), resultMapper())))
           .setCoder(coder());
     }
 
     public Read<R, T> withName(String name) {
-      return toBuilder().build();
+      return toBuilder().name(name).build();
     }
 
     public Read<R, T> withResultMapper(SerializableFunction<R, T> mapper) {
@@ -149,7 +156,7 @@ public final class RegistryJpaIO {
 
       abstract Builder<R, T> name(String name);
 
-      abstract Builder<R, T> querySupplier(SerializableSupplier<CriteriaQuery<R>> querySupplier);
+      abstract Builder<R, T> queryFactory(RegistryJpaIO.QueryComposerFactory<R> queryFactory);
 
       abstract Builder<R, T> resultMapper(SerializableFunction<R, T> mapper);
 
@@ -161,12 +168,10 @@ public final class RegistryJpaIO {
     }
 
     static class QueryRunner<R, T> extends DoFn<Void, T> {
-      private final SerializableSupplier<CriteriaQuery<R>> querySupplier;
+      private final QueryComposerFactory<R> querySupplier;
       private final SerializableFunction<R, T> resultMapper;
 
-      QueryRunner(
-          SerializableSupplier<CriteriaQuery<R>> querySupplier,
-          SerializableFunction<R, T> resultMapper) {
+      QueryRunner(QueryComposerFactory<R> querySupplier, SerializableFunction<R, T> resultMapper) {
         this.querySupplier = querySupplier;
         this.resultMapper = resultMapper;
       }
@@ -178,9 +183,7 @@ public final class RegistryJpaIO {
         jpaTm()
             .transactNoRetry(
                 () ->
-                    jpaTm()
-                        .executeSafeQuery(querySupplier.get())
-                        .getResultStream()
+                    querySupplier.apply(jpaTm()).stream()
                         .map(resultMapper::apply)
                         .forEach(outputReceiver::output));
         // TODO(weiminyu): improve performance by reshuffle.
