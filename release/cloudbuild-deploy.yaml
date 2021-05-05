@@ -3,8 +3,7 @@
 # cloud-build-local --config=cloudbuild-deploy.yaml --dryrun=false \
 # --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
 #
-# This will deploy Beam pipelines to GCS for the PROJECT_ID defined in gcloud
-# tool.
+# This will deploy the GAE config files and save the deployed tags in GCS.
 #
 # To manually trigger a build on GCB, run:
 # gcloud builds submit --config=cloudbuild-deploy.yaml \
@@ -15,7 +14,7 @@
 #
 # Note: to work around issue in Spinnaker's 'Deployment Manifest' stage,
 # variable references must avoid the ${var} format. Valid formats include
-# $var or ${"${var}"}. This file use the former. Since TAG_NAME and _ENV are
+# $var or ${"${var}"}. This file uses the former. Since TAG_NAME and _ENV are
 # expanded in the copies sent to Spinnaker, we preserve the brackets around
 # them for safe pattern matching during release.
 # See https://github.com/spinnaker/spinnaker/issues/3028 for more information.

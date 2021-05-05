@@ -1,0 +1,52 @@
+# To run the build locally, install cloud-build-local first.
+# Then run:
+# cloud-build-local --config=cloudbuild-delete.yaml --dryrun=false \
+# --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
+#
+# This will delete all stopped GAE versions (save 3) as there is a limit on how
+# many versions can exist in a project.
+#
+# To manually trigger a build on GCB, run:
+# gcloud builds submit --config=cloudbuild-delete.yaml \
+# --substitutions=TAG_NAME=[TAG],_ENV=[ENV] ..
+#
+# To trigger a build automatically, follow the instructions below and add a trigger:
+# https://cloud.google.com/cloud-build/docs/running-builds/automate-builds
+#
+# Note: to work around issue in Spinnaker's 'Deployment Manifest' stage,
+# variable references must avoid the ${var} format. Valid formats include
+# $var or ${"${var}"}. This file uses the former. Since TAG_NAME and _ENV are
+# expanded in the copies sent to Spinnaker, we preserve the brackets around
+# them for safe pattern matching during release.
+# See https://github.com/spinnaker/spinnaker/issues/3028 for more information.
+steps:
+# Deploy the GAE config files.
+# First authorize the gcloud tool to use the credential json file, then
+# download and unzip the tarball that contains the relevant config files
+- name: 'gcr.io/$PROJECT_ID/builder:latest'
+  entrypoint: /bin/bash
+  args:
+  - -c
+  - |
+    if [ ${_ENV} == production ]
+    then
+      project_id="domain-registry"
+    else
+      project_id="domain-registry-${_ENV}"
+    fi
+
+    for service in default pubapi backend tools
+    do
+      for version in $(gcloud app versions list \
+        --filter="SERVICE:$service AND SERVING_STATUS:STOPPED" \
+        --sort-by=LAST_DEPLOYED --format="value(VERSION.ID)" \
+        --project=$project_id | head -n -3)
+      do
+        gcloud app versions delete $version --service=$service \
+          --project=$project_id --quiet;
+      done
+    done
+
+timeout: 3600s
+options:
+  machineType: 'N1_HIGHCPU_8'
