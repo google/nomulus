@@ -20,16 +20,16 @@ steps:
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['mkdir', 'nomulus']
 # Run tests
-#- name: 'gcr.io/${PROJECT_ID}/builder:latest'
-#  # Set home for Gradle caches. Must be consistent with last step below
-#  # and ./build_nomulus_for_env.sh
-#  env: [ 'GRADLE_USER_HOME=./cloudbuild-caches' ]
-#  args: ['./gradlew',
-#         'test',
-#         '-PskipDockerIncompatibleTests=true',
-#         '-PmavenUrl=gcs://domain-registry-maven-repository/maven',
-#         '-PpluginsUrl=gcs://domain-registry-maven-repository/plugins'
-#        ]
+- name: 'gcr.io/${PROJECT_ID}/builder:latest'
+  # Set home for Gradle caches. Must be consistent with last step below
+  # and ./build_nomulus_for_env.sh
+  env: [ 'GRADLE_USER_HOME=./cloudbuild-caches' ]
+  args: ['./gradlew',
+         'test',
+         '-PskipDockerIncompatibleTests=true',
+         '-PmavenUrl=gcs://domain-registry-maven-repository/maven',
+         '-PpluginsUrl=gcs://domain-registry-maven-repository/plugins'
+        ]
 # Build the tool binary and image.
 - name: 'gcr.io/${PROJECT_ID}/builder:latest'
   args: ['release/build_nomulus_for_env.sh', 'tool', 'output']
@@ -138,4 +138,4 @@ artifacts:
 
 timeout: 3600s
 options:
-  machineType: 'N1_HIGHCPU_8'
+  machineType: 'E2_HIGHCPU_32'

@@ -48,6 +48,8 @@ apt-get install docker.io -y
 apt-get install wget -y
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 apt install ./google-chrome-stable_current_amd64.deb -y
+# Install libxss1 (needed by Karma)
+apt install libxss1
 apt-get remove apt-utils locales -y
 apt-get autoclean -y
 apt-get autoremove -y
