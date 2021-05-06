@@ -15,7 +15,7 @@
 package google.registry.mapreduce.inputs;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.appengine.api.datastore.Cursor;
 import com.google.appengine.api.datastore.DatastoreTimeoutException;
@@ -150,7 +150,7 @@ abstract class RetryingInputReader<I, T> extends InputReader<T> {
           String.format("Got an unrecoverable failure while reading item %d/%d.", loaded, total),
           e);
     } finally {
-      ofy().clearSessionCache();
+      auditedOfy().clearSessionCache();
     }
   }
 

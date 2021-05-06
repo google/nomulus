@@ -14,7 +14,7 @@
 
 package google.registry.mapreduce.inputs;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.appengine.api.datastore.Cursor;
 import com.google.appengine.api.datastore.QueryResultIterator;
@@ -68,7 +68,8 @@ class CommitLogManifestReader
 
   /** Query for children of this bucket. */
   Query<CommitLogManifest> createBucketQuery() {
-    Query<CommitLogManifest> query = ofy().load().type(CommitLogManifest.class).ancestor(bucketKey);
+    Query<CommitLogManifest> query =
+        auditedOfy().load().type(CommitLogManifest.class).ancestor(bucketKey);
     if (olderThan != null) {
       query = query.filterKey(
           "<",

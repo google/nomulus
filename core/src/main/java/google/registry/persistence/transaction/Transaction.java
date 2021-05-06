@@ -16,6 +16,7 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -25,7 +26,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.VKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -214,7 +214,7 @@ public class Transaction extends ImmutableObject implements Buildable {
     @Override
     public void serializeTo(ObjectOutputStream out) throws IOException {
       out.writeObject(Type.UPDATE);
-      Entity realEntity = ObjectifyService.ofy().toEntity(entity);
+      Entity realEntity = auditedOfy().toEntity(entity);
       EntityProto proto = EntityTranslator.convertToPb(realEntity);
       out.write(VERSION_ID);
       proto.writeDelimitedTo(out);
@@ -223,7 +223,7 @@ public class Transaction extends ImmutableObject implements Buildable {
     public static Update deserializeFrom(ObjectInputStream in) throws IOException {
       EntityProto proto = new EntityProto();
       proto.parseDelimitedFrom(in);
-      return new Update(ObjectifyService.ofy().toPojo(EntityTranslator.createFromPb(proto)));
+      return new Update(auditedOfy().toPojo(EntityTranslator.createFromPb(proto)));
     }
   }
 

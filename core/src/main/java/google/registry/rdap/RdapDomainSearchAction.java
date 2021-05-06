@@ -17,7 +17,7 @@ package google.registry.rdap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
@@ -206,7 +206,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     RdapResultSet<DomainBase> resultSet;
     if (isDatastore()) {
       Query<DomainBase> query =
-          ofy()
+          auditedOfy()
               .load()
               .type(DomainBase.class)
               .filter("fullyQualifiedDomainName <", partialStringQuery.getNextInitialString())
@@ -261,7 +261,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     int querySizeLimit = RESULT_SET_SIZE_SCALING_FACTOR * rdapResultSetMaxSize;
     RdapResultSet<DomainBase> resultSet;
     if (isDatastore()) {
-      Query<DomainBase> query = ofy().load().type(DomainBase.class).filter("tld", tld);
+      Query<DomainBase> query = auditedOfy().load().type(DomainBase.class).filter("tld", tld);
       if (cursorString.isPresent()) {
         query = query.filter("fullyQualifiedDomainName >", cursorString.get());
       }
@@ -546,7 +546,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
       numHostKeysSearched += chunk.size();
       if (isDatastore()) {
         Query<DomainBase> query =
-            ofy()
+            auditedOfy()
                 .load()
                 .type(DomainBase.class)
                 .filter(
