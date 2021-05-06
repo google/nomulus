@@ -30,12 +30,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyExtension;
-import org.apache.beam.sdk.coders.KvCoder;
-import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.testing.PAssert;
-import org.apache.beam.sdk.transforms.Deduplicate;
-import org.apache.beam.sdk.transforms.Values;
-import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,12 +78,13 @@ public class RegistryJpaReadTest {
       ContactResource contact = DatabaseHelper.newContactResource("contact_" + i);
       builder.add(contact);
     }
+    // builder.add(DatabaseHelper.newContactResource("contact_1"));
     contacts = builder.build();
     jpaTm().transact(() -> jpaTm().putAll(contacts));
   }
 
   @Test
-  void nonTransactionalQuery_noDedupe() {
+  void nonTransactionalQuery_noDupe() {
     Read<ContactResource, String> read =
         RegistryJpaIO.read(
             (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),
@@ -100,18 +96,13 @@ public class RegistryJpaReadTest {
   }
 
   @Test
-  void nonTransactionalQuery_dedupe() {
-    // This method only serves as an example of deduplication. Duplicates are not actually added.
-    Read<ContactResource, KV<String, String>> read =
+  void nonTransactionalQuery_withDuplicates() {
+    jpaTm().transact(() -> jpaTm().put(DatabaseHelper.newContactResource("contact_1")));
+    Read<ContactResource, String> read =
         RegistryJpaIO.read(
-                (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),
-                contact -> KV.of(contact.getRepoId(), contact.getContactId()))
-            .withCoder(KvCoder.of(StringUtf8Coder.of(), StringUtf8Coder.of()));
-    PCollection<String> repoIds =
-        testPipeline
-            .apply(read)
-            .apply("Deduplicate", Deduplicate.keyedValues())
-            .apply("Get values", Values.create());
+            (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),
+            ContactBase::getContactId);
+    PCollection<String> repoIds = testPipeline.apply(read);
 
     PAssert.that(repoIds).containsInAnyOrder("contact_0", "contact_1", "contact_2");
     testPipeline.run();
