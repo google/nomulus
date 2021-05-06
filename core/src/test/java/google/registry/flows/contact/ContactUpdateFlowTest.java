@@ -64,12 +64,16 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
+    ContactResource contact = reloadResourceByForeignKey();
     // Check that the contact was updated. This value came from the xml.
-    assertAboutContacts().that(reloadResourceByForeignKey())
-        .hasAuthInfoPwd("2fooBAR").and()
+    assertAboutContacts()
+        .that(contact)
+        .hasAuthInfoPwd("2fooBAR")
+        .and()
         .hasOnlyOneHistoryEntryWhich()
         .hasNoXml();
     assertNoBillingEvents();
+    assertLastHistoryContainsResource(contact);
   }
 
   @TestOfyAndSql

@@ -104,6 +104,7 @@ class ContactTransferCancelFlowTest
                 .collect(onlyElement())
                 .getTransferStatus())
         .isEqualTo(TransferStatus.CLIENT_CANCELLED);
+    assertLastHistoryContainsResource(contact);
   }
 
   private void doFailingTest(String commandFilename) throws Exception {

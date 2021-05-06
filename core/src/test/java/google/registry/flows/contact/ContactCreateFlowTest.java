@@ -56,14 +56,13 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("contact_create_response.xml"));
     // Check that the contact was created and persisted with a history entry.
-    assertAboutContacts()
-        .that(reloadResourceByForeignKey())
-        .hasOnlyOneHistoryEntryWhich()
-        .hasNoXml();
+    ContactResource contact = reloadResourceByForeignKey();
+    assertAboutContacts().that(contact).hasOnlyOneHistoryEntryWhich().hasNoXml();
     assertNoBillingEvents();
     if (tm().isOfy()) {
-      assertEppResourceIndexEntityFor(reloadResourceByForeignKey());
+      assertEppResourceIndexEntityFor(contact);
     }
+    assertLastHistoryContainsResource(contact);
   }
 
   @TestOfyAndSql

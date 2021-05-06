@@ -33,6 +33,7 @@ import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.contact.ContactCommand.Create;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppinput.ResourceCommand;
@@ -61,7 +62,7 @@ public final class ContactCreateFlow implements TransactionalFlow {
   @Inject ExtensionManager extensionManager;
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject ContactHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
   @Inject @Config("contactAndHostRoidSuffix") String roidSuffix;
   @Inject ContactCreateFlow() {}
@@ -93,12 +94,12 @@ public final class ContactCreateFlow implements TransactionalFlow {
     historyBuilder
         .setType(HistoryEntry.Type.CONTACT_CREATE)
         .setModificationTime(now)
-        .setXmlBytes(null)  // We don't want to store contact details in the history entry.
-        .setParent(Key.create(newContact));
+        .setXmlBytes(null) // We don't want to store contact details in the history entry.
+        .setContactBase(newContact);
     tm().insertAll(
             ImmutableSet.of(
                 newContact,
-                historyBuilder.build().toChildHistoryEntity(),
+                historyBuilder.build(),
                 ForeignKeyIndex.create(newContact, newContact.getDeletionTime()),
                 EppResourceIndex.create(Key.create(newContact))));
     return responseBuilder

@@ -14,6 +14,7 @@
 
 package google.registry.flows.contact;
 
+import static google.registry.flows.FlowUtils.createHistoryKey;
 import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyAuthInfo;
@@ -36,6 +37,7 @@ import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.AlreadyPendingTransferException;
 import google.registry.flows.exceptions.ObjectAlreadySponsoredException;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
@@ -81,7 +83,8 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
   @Inject @ClientId String gainingClientId;
   @Inject @TargetId String targetId;
   @Inject @Config("contactAutomaticTransferLength") Duration automaticTransferLength;
-  @Inject HistoryEntry.Builder historyBuilder;
+
+  @Inject ContactHistory.Builder historyBuilder;
   @Inject Trid trid;
   @Inject EppResponse.Builder responseBuilder;
   @Inject ContactTransferRequestFlow() {}
@@ -105,11 +108,7 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
       throw new ObjectAlreadySponsoredException();
     }
     verifyNoDisallowedStatuses(existingContact, DISALLOWED_STATUSES);
-    HistoryEntry historyEntry = historyBuilder
-        .setType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST)
-        .setModificationTime(now)
-        .setParent(Key.create(existingContact))
-        .build();
+
     DateTime transferExpirationTime = now.plus(automaticTransferLength);
     ContactTransferData serverApproveTransferData =
         new ContactTransferData.Builder()
@@ -120,12 +119,18 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.SERVER_APPROVED)
             .build();
+    Key<ContactHistory> contactHistoryKey = createHistoryKey(existingContact, ContactHistory.class);
+    historyBuilder
+        .setId(contactHistoryKey.getId())
+        .setType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST)
+        .setModificationTime(now);
     // If the transfer is server approved, this message will be sent to the losing registrar. */
     PollMessage serverApproveLosingPollMessage =
-        createLosingTransferPollMessage(targetId, serverApproveTransferData, historyEntry);
+        createLosingTransferPollMessage(targetId, serverApproveTransferData, contactHistoryKey);
     // If the transfer is server approved, this message will be sent to the gaining registrar. */
     PollMessage serverApproveGainingPollMessage =
-        createGainingTransferPollMessage(targetId, serverApproveTransferData, historyEntry);
+        createGainingTransferPollMessage(
+            targetId, serverApproveTransferData, now, contactHistoryKey);
     ContactTransferData pendingTransferData =
         serverApproveTransferData
             .asBuilder()
@@ -137,8 +142,9 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
             .build();
     // When a transfer is requested, a poll message is created to notify the losing registrar.
     PollMessage requestPollMessage =
-        createLosingTransferPollMessage(targetId, pendingTransferData, historyEntry).asBuilder()
-            .setEventTime(now)  // Unlike the serverApprove messages, this applies immediately.
+        createLosingTransferPollMessage(targetId, pendingTransferData, contactHistoryKey)
+            .asBuilder()
+            .setEventTime(now) // Unlike the serverApprove messages, this applies immediately.
             .build();
     ContactResource newContact = existingContact.asBuilder()
         .setTransferData(pendingTransferData)
@@ -147,7 +153,7 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
     tm().update(newContact);
     tm().insertAll(
             ImmutableSet.of(
-                historyEntry.toChildHistoryEntity(),
+                historyBuilder.setContactBase(newContact).build(),
                 requestPollMessage,
                 serverApproveGainingPollMessage,
                 serverApproveLosingPollMessage));

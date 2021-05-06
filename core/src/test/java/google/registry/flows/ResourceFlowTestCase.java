@@ -193,7 +193,10 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
       HistoryEntry historyEntry = Iterables.getLast(DatabaseHelper.getHistoryEntries(resource));
       if (resource instanceof ContactBase) {
         ContactHistory contactHistory = (ContactHistory) historyEntry;
-        assertThat(contactHistory.getContactBase().get()).isEqualTo(resource);
+        // Don't use direct equals comparison since one might be a subclass of the other
+        assertAboutImmutableObjects()
+            .that(contactHistory.getContactBase().get())
+            .isEqualExceptFields(resource);
       } else if (resource instanceof DomainContent) {
         DomainHistory domainHistory = (DomainHistory) historyEntry;
         assertAboutImmutableObjects()

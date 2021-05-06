@@ -137,6 +137,7 @@ class ContactTransferRequestFlowTest
         Iterables.filter(
             loadByKeys(contact.getTransferData().getServerApproveEntities()), PollMessage.class),
         ImmutableList.of(gainingApproveMessage, losingApproveMessage));
+    assertLastHistoryContainsResource(contact);
   }
 
   private void doFailingTest(String commandFilename) throws Exception {

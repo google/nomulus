@@ -120,6 +120,7 @@ class ContactTransferApproveFlowTest
     assertThat(panData.getTrid())
         .isEqualTo(Trid.create("transferClient-trid", "transferServer-trid"));
     assertThat(panData.getActionResult()).isTrue();
+    assertLastHistoryContainsResource(contact);
   }
 
   private void doFailingTest(String commandFilename) throws Exception {
