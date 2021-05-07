@@ -23,6 +23,7 @@ import static google.registry.gradle.plugin.GcsPluginUtils.toByteArraySupplier;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.html.types.TrustedResourceUrls;
 import com.google.template.soy.SoyFileSet;
 import com.google.template.soy.tofu.SoyTofu;
 import google.registry.gradle.plugin.ProjectData.TaskData;
@@ -118,7 +119,7 @@ final class CoverPageGenerator {
 
     builder.put("projectState", state.toString());
     builder.put("title", title);
-    builder.put("cssFiles", ImmutableSet.of("css/style.css"));
+    builder.put("cssFiles", ImmutableSet.of(TrustedResourceUrls.fromConstant("css/style.css")));
     builder.put("invocation", getInvocation());
     builder.put("tasksByState", getTasksByStateSoyData());
     return builder.build();

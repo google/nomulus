@@ -54,7 +54,7 @@ goog.inherits(registry.registrar.ContactSettings, registry.ResourceComponent);
 registry.registrar.ContactSettings.prototype.setupAppbar = function() {
   registry.registrar.ContactSettings.base(this, 'setupAppbar');
   // Setup delete only on existing items, not on creates.
-  if (goog.isDefAndNotNull(this.model)) {
+  if (this.model != null) {
     var deleteBtn = goog.dom.createDom(
         goog.dom.TagName.BUTTON, {
           type: 'button',
@@ -159,7 +159,7 @@ registry.registrar.ContactSettings.prototype.sendDelete = function() {
       ndxToDel = i;
     }
   }
-  if (goog.isNull(ndxToDel)) {
+  if (ndxToDel === null) {
     throw new Error('Email to delete does not match model.');
   }
   var modelCopy = /** @type {!Object}

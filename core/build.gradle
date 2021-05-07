@@ -433,12 +433,9 @@ task soyToJava {
   // Relative paths of soy directories.
   def spec11SoyDir = "google/registry/reporting/spec11/soy"
   def toolsSoyDir = "google/registry/tools/soy"
-  def uiSoyDir = "google/registry/ui/soy"
   def registrarSoyDir = "google/registry/ui/soy/registrar"
 
-  def soyRelativeDirs = [
-          spec11SoyDir, toolsSoyDir, uiSoyDir, registrarSoyDir,
-  ]
+  def soyRelativeDirs = [spec11SoyDir, toolsSoyDir, registrarSoyDir]
   soyRelativeDirs.each {
     inputs.dir "${resourcesSourceDir}/${it}"
     outputs.dir "${generatedDir}/${it}"
@@ -452,7 +449,8 @@ task soyToJava {
               "--outputDirectory", "${outputDirectory}",
               "--javaClassNameSource", "filename",
               "--allowExternalCalls", "true",
-              "--srcs", "${soyFiles.join(',')}"
+              "--srcs", "${soyFiles.join(',')}",
+              "--compileTimeGlobalsFile", "${resourcesSourceDir}/google/registry/ui/globals.txt"
     }
   }
 
@@ -469,14 +467,6 @@ task soyToJava {
                     dir: "${resourcesSourceDir}/${registrarSoyDir}",
                     include: ['**/*.soy']))
 
-    soyToJava('google.registry.ui.soy',
-            "${generatedDir}/${uiSoyDir}",
-            files {
-              file("${resourcesSourceDir}/${uiSoyDir}").listFiles()
-            }.filter {
-              it.name.endsWith(".soy")
-            })
-
     soyToJava('google.registry.reporting.spec11.soy',
             "${generatedDir}/${spec11SoyDir}",
             fileTree(
@@ -485,42 +475,24 @@ task soyToJava {
   }
 }
 
-task soyToJS {
-  def rootSoyDirectory = "${resourcesSourceDir}/google/registry/ui/soy"
-  def outputSoyDirectory = "${generatedDir}/google/registry/ui/soy"
+task soyToJS(type: JavaExec) {
+  def rootSoyDirectory = "${resourcesSourceDir}/google/registry/ui/soy/registrar"
+  def outputSoyDirectory = "${generatedDir}/google/registry/ui/soy/registrar"
   inputs.dir rootSoyDirectory
   outputs.dir outputSoyDirectory
 
-  ext.soyToJS = { outputDirectory, soyFiles , deps->
-    javaexec {
-      main = "com.google.template.soy.SoyToJsSrcCompiler"
-      classpath configurations.soy
+  def inputSoyFiles = files {
+    file("${rootSoyDirectory}").listFiles()
+  }.filter {
+    it.name.endsWith(".soy")
+  }
 
-      args "--outputPathFormat", "${outputDirectory}/{INPUT_FILE_NAME}.js",
+  classpath configurations.soy
+  main = "com.google.template.soy.SoyToJsSrcCompiler"
+  args "--outputPathFormat", "${outputSoyDirectory}/{INPUT_FILE_NAME}.js",
           "--allowExternalCalls", "false",
-          "--srcs", "${soyFiles.join(',')}",
-          "--shouldProvideRequireSoyNamespaces", "true",
+          "--srcs", "${inputSoyFiles.join(',')}",
           "--compileTimeGlobalsFile", "${resourcesSourceDir}/google/registry/ui/globals.txt"
-      if (deps != "") {
-        args "--deps", "${deps.join(',')}"
-      }
-    }
-  }
-
-  doLast {
-    def rootSoyFiles =
-      fileTree(
-        dir: "${rootSoyDirectory}",
-        include: ['*.soy'])
-
-    soyToJS("${outputSoyDirectory}", rootSoyFiles, "")
-    soyToJS("${outputSoyDirectory}/registrar",
-      files {
-        file("${rootSoyDirectory}/registrar").listFiles()
-      }.filter {
-        it.name.endsWith(".soy")
-      }, rootSoyFiles)
-  }
 }
 
 task stylesheetsToJavascript {
@@ -603,8 +575,8 @@ task compileProdJS(type: JavaExec) {
   closureArgs << "--generate_exports"
 
   // manually include all the required js files
-  closureArgs << "--js=${nodeModulesDir}/google-closure-library/**.js"
-  closureArgs << "--js=${jsDir}/soyutils_usegoog.js"
+  closureArgs << "--js=${nodeModulesDir}/google-closure-library/**/*.js"
+  closureArgs << "--js=${jsDir}/*.js"
   closureArgs << "--js=${cssSourceDir}/registrar_bin.css.js"
   closureArgs << "--js=${jsSourceDir}/**.js"
   closureArgs << "--js=${externsDir}/json.js"
@@ -630,15 +602,6 @@ compileProdJS.dependsOn rootProject.npmInstall
 compileProdJS.dependsOn processResources
 compileProdJS.dependsOn processTestResources
 compileProdJS.dependsOn soyToJS
-
-task karmaTest(type: Exec) {
-  dependsOn ':npmInstall'
-  workingDir rootProject.projectDir
-  executable '.gradle/nodejs/node-v14.15.5-linux-x64/bin/node'
-  args('node_modules/karma/bin/karma', 'start', "${project.projectDir}/karma.conf.js")
-}
-
-test.dependsOn karmaTest
 
 // Make testing artifacts available to be depended up on by other projects.
 // TODO: factor out google.registry.testing to be a separate project.

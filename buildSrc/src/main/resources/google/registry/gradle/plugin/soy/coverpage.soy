@@ -16,7 +16,7 @@
 
 {template .coverPage}
   {@param title: string}
-  {@param cssFiles: list<string>}
+  {@param cssFiles: list<trusted_resource_uri>}
   {@param projectState: string}
   {@param invocation: string}
   {@param tasksByState: map<string, list<[uniqueName: string, description: string, log: string, reports: map<string, string>]>>}

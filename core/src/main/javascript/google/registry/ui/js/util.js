@@ -25,8 +25,7 @@ goog.require('goog.soy');
  */
 registry.util.log = function(var_args) {
   if (goog.DEBUG) {
-    if (goog.isDef(goog.global.console) &&
-        goog.isDef(goog.global.console['log'])) {
+    if (goog.global.console !== undefined && goog.global.console['log'] !== undefined) {
       goog.global.console.log.apply(goog.global.console, arguments);
     }
   }

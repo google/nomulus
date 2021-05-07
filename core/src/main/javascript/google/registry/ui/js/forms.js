@@ -33,7 +33,7 @@ goog.forwardDeclare('goog.events.KeyEvent');
  */
 registry.forms.focus = function(field) {
   field = goog.dom.getElement(field);
-  if (!goog.isNull(field) && goog.dom.isFocusable(field)) {
+  if (field !== null && goog.dom.isFocusable(field)) {
     goog.dom.forms.focusAndSelect(field);
   }
 };
@@ -45,7 +45,7 @@ registry.forms.focus = function(field) {
  * @param {string=} opt_field Erroneous field name.
  */
 registry.forms.displayError = function(message, opt_field) {
-  if (!goog.isDef(opt_field)) {
+  if (opt_field === undefined) {
     registry.util.butter(message);
     return;
   }
@@ -53,7 +53,7 @@ registry.forms.displayError = function(message, opt_field) {
       goog.dom.getElement(opt_field + '[0]');
   // XXX: Transitioning to use of form.eltId instead of DOM id. If DOM id
   //      lookup fails, then search forms for the named field.
-  if (goog.isDefAndNotNull(opt_field) && goog.isNull(input)) {
+  if (opt_field != null && input === null) {
     for (var fNdx in document.forms) {
       var form = document.forms[fNdx];
       if (form[opt_field]) {
@@ -62,7 +62,7 @@ registry.forms.displayError = function(message, opt_field) {
       }
     }
   }
-  if (!goog.isNull(input)) {
+  if (input !== null) {
     goog.dom.classlist.add(input, goog.getCssName('kd-formerror'));
     goog.dom.insertSiblingAfter(
         goog.dom.createDom(goog.dom.TagName.DIV,

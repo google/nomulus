@@ -318,7 +318,7 @@ subprojects {
   // expose to users.
   if (project.name != 'docs') {
     javadocSource << project.sourceSets.main.allJava
-    javadocClasspath << project.sourceSets.main.compileClasspath
+    javadocClasspath << project.sourceSets.main.runtimeClasspath
     javadocClasspath << "${buildDir}/generated/sources/annotationProcessor/java/main"
     javadocDependentTasks << project.tasks.compileJava
   }
@@ -457,6 +457,8 @@ task javaIncrementalFormatApply {
 task javadoc(type: Javadoc) {
   source javadocSource
   classpath = files(javadocClasspath)
+  // Exclude the misbehaving generated-by-Soy Java files
+  exclude "**/*SoyInfo.java"
   destinationDir = file("${buildDir}/docs/javadoc")
   options.encoding = "UTF-8"
   // In a lot of places we don't write @return so suppress warnings about that.
