@@ -20,12 +20,13 @@ import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
+import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskEnqueuer;
+import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.FlowModule.ClientId;
@@ -39,8 +40,11 @@ import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.eppoutput.Result;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -71,12 +75,14 @@ public final class HostDeleteFlow implements TransactionalFlow {
           StatusValue.PENDING_DELETE,
           StatusValue.SERVER_DELETE_PROHIBITED);
 
+  private static final DnsQueue dnsQueue = DnsQueue.create();
+
   @Inject ExtensionManager extensionManager;
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject Trid trid;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject HostHistory.Builder historyBuilder;
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject EppResponse.Builder responseBuilder;
 
@@ -102,16 +108,31 @@ public final class HostDeleteFlow implements TransactionalFlow {
               : existingHost;
       verifyResourceOwnership(clientId, owningResource);
     }
-    asyncTaskEnqueuer.enqueueAsyncDelete(
-        existingHost, tm().getTransactionTime(), clientId, trid, isSuperuser);
-    HostResource newHost =
-        existingHost.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build();
-    historyBuilder
-        .setType(HistoryEntry.Type.HOST_PENDING_DELETE)
-        .setModificationTime(now)
-        .setParent(Key.create(existingHost));
-    tm().insert(historyBuilder.build().toChildHistoryEntity());
+    HistoryEntry.Type historyEntryType;
+    Result.Code resultCode;
+    HostResource newHost;
+    if (tm().isOfy()) {
+      asyncTaskEnqueuer.enqueueAsyncDelete(
+          existingHost, tm().getTransactionTime(), clientId, trid, isSuperuser);
+      newHost = existingHost.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build();
+      historyEntryType = Type.HOST_PENDING_DELETE;
+      resultCode = SUCCESS_WITH_ACTION_PENDING;
+    } else {
+      newHost = existingHost.asBuilder().setStatusValues(null).setDeletionTime(now).build();
+      if (existingHost.isSubordinate()) {
+        dnsQueue.addHostRefreshTask(existingHost.getHostName());
+        tm().update(
+                tm().loadByKey(existingHost.getSuperordinateDomain())
+                    .asBuilder()
+                    .removeSubordinateHost(existingHost.getHostName())
+                    .build());
+      }
+      historyEntryType = Type.HOST_DELETE;
+      resultCode = SUCCESS;
+    }
+    historyBuilder.setType(historyEntryType).setModificationTime(now).setHostBase(newHost);
+    tm().insert(historyBuilder.build());
     tm().update(newHost);
-    return responseBuilder.setResultFromCode(SUCCESS_WITH_ACTION_PENDING).build();
+    return responseBuilder.setResultFromCode(resultCode).build();
   }
 }
