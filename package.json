@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/google/nomulus#readme",
   "dependencies": {
-    "google-closure-library": "20190325.0.0"
+    "google-closure-library": "20200315.0.0"
   },
   "devDependencies": {
     "jasmine-core": "3.4.0",
