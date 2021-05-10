@@ -36,6 +36,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeySerializer;
 import google.registry.keyring.kms.KmsKeyring.PrivateKeyLabel;
@@ -57,7 +58,9 @@ import org.bouncycastle.openpgp.PGPPublicKey;
  * The {@link KmsUpdater} accumulates updates to a {@link KmsKeyring} and persists them to KMS and
  * Datastore when closed.
  */
+// TODO(2021-06-01): rename this class to SecretManagerKeyringUpdater
 public final class KmsUpdater {
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final KmsConnection kmsConnection;
   private final KeyringSecretStore secretStore;
@@ -126,29 +129,30 @@ public final class KmsUpdater {
   }
 
   /**
-   * Generates new encryption keys in KMS, encrypts the updated secrets with them, and persists the
-   * encrypted secrets to Datastore.
+   * Persists the secrets in the Secret Manager (primary) and the Datastore (secondary).
    *
-   * <p>The operations in this method are organized so that existing {@link KmsSecretRevision}
-   * entities remain primary and decryptable if a failure occurs.
+   * <p>Updates to the Secret Manager are not transactional. If an error happens, the successful
+   * updates are not reverted; unwritten updates are aborted. This is not a problem right now, since
+   * this class is only used by the {@code UpdateKmsKeyringCommand}, which is invoked manually and
+   * only updates one secret at a time.
    */
   public void update() {
     checkState(!secretValues.isEmpty(), "At least one Keyring value must be persisted");
 
-    persistEncryptedValues(encryptValues(secretValues));
-
-    // Errors when writing to secret store can be thrown to the top, since writes are always
-    // executed by a human user using the UpdateKmsKeyringCommand.
     try {
-      secretValues
-          .entrySet()
-          .forEach(e -> secretStore.createOrUpdateSecret(e.getKey(), e.getValue()));
+      for (Map.Entry<String, byte[]> e : secretValues.entrySet()) {
+        secretStore.createOrUpdateSecret(e.getKey(), e.getValue());
+        logger.atInfo().log("Secret %s updated.", e.getKey());
+      }
     } catch (RuntimeException e) {
       throw new RuntimeException(
           "Failed to persist secrets to Secret Manager. "
               + "Please check the status of Secret Manager and re-run the command.",
           e);
     }
+
+    // TODO(2021-06-01): remove the writes to Datastore
+    persistEncryptedValues(encryptValues(secretValues));
   }
 
   /**

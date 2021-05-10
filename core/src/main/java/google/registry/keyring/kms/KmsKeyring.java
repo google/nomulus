@@ -21,9 +21,6 @@ import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
@@ -37,7 +34,6 @@ import google.registry.privileges.secretmanager.KeyringSecretStore;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -51,6 +47,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
  * @see <a href="https://cloud.google.com/kms/docs/">Google Cloud Key Management Service
  *     Documentation</a>
  */
+// TODO(2021-06-01): rename this class to SecretManagerKeyring and delete KmsSecretRevision
 public class KmsKeyring implements Keyring {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -221,8 +218,7 @@ public class KmsKeyring implements Keyring {
     try {
       return kmsConnection.decrypt(keyName, encryptedData);
     } catch (Exception e) {
-      throw new KeyringException(
-          String.format("CloudKMS decrypt operation failed for secret %s", keyName), e);
+      return new byte[0];
     }
   }
 
@@ -230,7 +226,7 @@ public class KmsKeyring implements Keyring {
     try {
       return secretStore.getSecret(keyName);
     } catch (Exception e) {
-      return new byte[0];
+      throw new KeyringException("Failed to retrieve secret for " + keyName, e);
     }
   }
 
@@ -243,44 +239,6 @@ public class KmsKeyring implements Keyring {
       return secretStoreData;
     }
     logger.atWarning().log("Values for %s in Datastore and Secret Manager do not match.", keyName);
-    return dsData;
-  }
-
-  /**
-   * Generates the tasks to migrate secrets from Datastore to Secret Manager.
-   *
-   * <p>The keys in the returned {@link ImmutableMap} are the names of the secrets that need
-   * migration. The values in the map are {@link Runnable Runnables} that copy secret data from
-   * Datastore to Secret Manager for their corresponding keys. Only secrets that are absent in
-   * Secret Manager or have inconsistent values are included in the returned map.
-   */
-  public ImmutableMap<String, Runnable> migrationPlan() {
-
-    ImmutableMap.Builder<String, Runnable> tasks = new ImmutableMap.Builder<>();
-
-    ImmutableList<String> labels =
-        Streams.concat(
-                Stream.of(PrivateKeyLabel.values()).map(PrivateKeyLabel::getLabel),
-                Stream.of(PublicKeyLabel.values()).map(PublicKeyLabel::getLabel),
-                Stream.of(StringKeyLabel.values()).map(StringKeyLabel::getLabel))
-            .collect(ImmutableList.toImmutableList());
-
-    for (String keyName : labels) {
-      byte[] dsData;
-      try {
-        dsData = getDecryptedDataFromDatastore(keyName);
-      } catch (IllegalStateException e) {
-        logger.atWarning().log("Cannot load %s from Datastore. Skipping...", keyName);
-        continue;
-      }
-      byte[] secretStoreData = getDataFromSecretStore(keyName);
-      if (Arrays.equals(dsData, secretStoreData)) {
-        logger.atInfo().log("%s is already up to date.\n", keyName);
-        continue;
-      }
-      logger.atInfo().log("%s needs to be migrated.\n", keyName);
-      tasks.put(keyName, () -> secretStore.createOrUpdateSecret(keyName, dsData));
-    }
-    return tasks.build();
+    return secretStoreData;
   }
 }
