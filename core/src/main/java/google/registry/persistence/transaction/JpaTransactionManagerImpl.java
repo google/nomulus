@@ -44,10 +44,13 @@ import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
 import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -535,6 +538,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     entity = toSqlEntity(entity);
     T managedEntity = entity;
     if (!getEntityManager().contains(entity)) {
+      // We don't add the entity to "objectsToSave": once deleted, the object should never be
+      // returned as a result of the query or lookup.
       managedEntity = getEntityManager().merge(entity);
     }
     getEntityManager().remove(managedEntity);
@@ -665,6 +670,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Nullable
   private <T> T detach(@Nullable T entity) {
     if (entity != null) {
+
+      // If the entity was previously persisted or merged, we have to throw an exception.
+      if (transactionInfo.get().objectsToSave.contains(entity)) {
+        throw new RuntimeException("Inserted/updated object reloaded.");
+      }
+
       getEntityManager().detach(entity);
     }
     return entity;
@@ -677,6 +688,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     // Serializable representation of the transaction to be persisted in the Transaction table.
     Transaction.Builder contentsBuilder;
+
+    // The set of entity objects that have been either persisted (via insert()) or merged (via
+    // put()/update()).  If the entity manager returns these as a result of a find() or query
+    // operation, we must not detach them but instead must clone them -- detaching removes them from
+    // the transaction and causes them to not be saved to the database.
+    Set<Object> objectsToSave = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
 
     /** Start a new transaction. */
     private void start(Clock clock) {
@@ -704,6 +721,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       if (contentsBuilder != null) {
         contentsBuilder.addUpdate(entity);
       }
+
+      // Record it in the "objects to save" set so we know to clone it on a subsequent load.
+      objectsToSave.add(entity);
     }
 
     private void addDelete(VKey<?> key) {

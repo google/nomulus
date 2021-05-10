@@ -1063,9 +1063,6 @@ public class DatabaseHelper {
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
     tm().clearSessionCache();
-    for (R resource : resources) {
-      transactIfJpaTm(() -> tm().loadByEntity(resource));
-    }
   }
 
   /**
