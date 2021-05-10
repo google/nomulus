@@ -100,13 +100,30 @@ public abstract class FlowTestCase<F extends Flow> {
   final InjectExtension inject =
       new InjectExtension().withStaticFieldOverride(Ofy.class, "clock", clock);
 
-  @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withClock(clock)
-          .withDatastoreAndCloudSql()
-          .withTaskQueue()
-          .build();
+  @RegisterExtension final AppEngineExtension appEngine;
+
+  protected FlowTestCase() {
+    this(true);
+  }
+
+  /**
+   * Allows subclass to disable/delay preloading of canned data.
+   *
+   * <p>CommitLog replay tests that also manipulate the clock may need to delay canned data loading
+   * until after the test clock is initialized.
+   */
+  protected FlowTestCase(boolean preloadCannedData) {
+    appEngine = createAppEngine(preloadCannedData);
+  }
+
+  private AppEngineExtension createAppEngine(boolean preloadCannedData) {
+    AppEngineExtension.Builder builder =
+        AppEngineExtension.builder().withClock(clock).withDatastoreAndCloudSql().withTaskQueue();
+    if (preloadCannedData) {
+      return builder.build();
+    }
+    return builder.withoutCannedData().build();
+  }
 
   @BeforeEach
   public void beforeEachFlowTestCase() {

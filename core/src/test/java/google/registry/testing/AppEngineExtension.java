@@ -652,7 +652,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   }
 
   /** Create some fake registrars. */
-  private static void loadInitialData() {
+  public static void loadInitialData() {
     persistSimpleResources(
         ImmutableList.of(
             makeRegistrar1(),

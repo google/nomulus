@@ -32,6 +32,7 @@ import google.registry.flows.poll.PollAckFlow.NotAuthorizedToAckMessageException
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.poll.PollMessage;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
@@ -54,11 +55,18 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   private DomainBase domain;
   private ContactResource contact;
 
+  PollAckFlowTest() {
+    // Delay canned test data creation until clock is initialized in setUp().
+    super(false);
+  }
+
   @BeforeEach
   void setUp() {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2011"));
     setClientIdForFlow("NewRegistrar");
     clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
+    AppEngineExtension.loadInitialData();
+    clock.advanceOneMilli();
     createTld("example");
     clock.advanceOneMilli();
     contact = persistActiveContact("jd1234");
