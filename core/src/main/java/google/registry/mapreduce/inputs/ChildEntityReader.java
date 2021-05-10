@@ -15,7 +15,7 @@
 package google.registry.mapreduce.inputs;
 
 import static google.registry.model.EntityClasses.ALL_CLASSES;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.appengine.api.datastore.Cursor;
 import com.google.appengine.api.datastore.QueryResultIterator;
@@ -232,7 +232,7 @@ class ChildEntityReader<R extends EppResource, I extends ImmutableObject> extend
     /** Query for children of the current resource and of the current child class. */
     @Override
     public QueryResultIterator<I> getQueryIterator(Cursor cursor) {
-      return startQueryAt(ofy().load().type(type).ancestor(ancestor), cursor).iterator();
+      return startQueryAt(auditedOfy().load().type(type).ancestor(ancestor), cursor).iterator();
     }
 
     @Override

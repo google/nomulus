@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.beam.initsql.BackupPaths.getCommitLogTimestamp;
 import static google.registry.beam.initsql.BackupPaths.getExportFilePatterns;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.util.Comparator.comparing;
@@ -353,7 +353,7 @@ public final class Transforms {
         .getEntity()
         .filter(Transforms::isMigratable)
         .map(Transforms::repairBadData)
-        .map(e -> ofy().toPojo(e))
+        .map(e -> auditedOfy().toPojo(e))
         .map(Transforms::toSqlEntity)
         .orElse(null);
   }

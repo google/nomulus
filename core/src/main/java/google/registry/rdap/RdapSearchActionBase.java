@@ -15,7 +15,7 @@
 package google.registry.rdap;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
@@ -358,7 +358,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
               "Initial search string must be at least %d characters",
               RdapSearchPattern.MIN_INITIAL_STRING_LENGTH));
     }
-    Query<T> query = ofy().load().type(clazz);
+    Query<T> query = auditedOfy().load().type(clazz);
     if (!partialStringQuery.getHasWildcard()) {
       query = query.filter(filterField, partialStringQuery.getInitialString());
     } else {
@@ -457,7 +457,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
               "Initial search string must be at least %d characters",
               RdapSearchPattern.MIN_INITIAL_STRING_LENGTH));
     }
-    Query<T> query = ofy().load().type(clazz).filter(filterField, queryString);
+    Query<T> query = auditedOfy().load().type(clazz).filter(filterField, queryString);
     if (cursorString.isPresent()) {
       if (cursorField.isPresent()) {
         query = query.filter(cursorField.get() + " >", cursorString.get());
@@ -526,7 +526,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
               "Initial search string must be at least %d characters",
               RdapSearchPattern.MIN_INITIAL_STRING_LENGTH));
     }
-    Query<T> query = ofy().load().type(clazz);
+    Query<T> query = auditedOfy().load().type(clazz);
     if (!partialStringQuery.getHasWildcard()) {
       query = query.filterKey("=", Key.create(clazz, partialStringQuery.getInitialString()));
     } else {

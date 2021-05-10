@@ -15,7 +15,7 @@
 package google.registry.mapreduce.inputs;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.appengine.api.datastore.Cursor;
 import com.google.appengine.api.datastore.QueryResultIterator;
@@ -68,7 +68,8 @@ abstract class EppResourceBaseReader<T> extends RetryingInputReader<EppResourceI
 
   /** Query for children of this bucket. */
   Query<EppResourceIndex> query() {
-    Query<EppResourceIndex> query = ofy().load().type(EppResourceIndex.class).ancestor(bucketKey);
+    Query<EppResourceIndex> query =
+        auditedOfy().load().type(EppResourceIndex.class).ancestor(bucketKey);
     return filterKinds.isEmpty() ? query : query.filter("kind in", filterKinds);
   }
 

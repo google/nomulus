@@ -163,9 +163,9 @@ public interface TransactionManager {
    * Updates an entity in the database without writing commit logs if the underlying database is
    * Datastore.
    *
-   * <p>This method is for the sake of keeping a single code path when replacing ofy() with tm() in
-   * the application code. When the method is invoked with Datastore, it won't write the commit log
-   * backup; when invoked with Cloud SQL, it behaves the same as the method which doesn't have
+   * <p>This method is for the sake of keeping a single code path when replacing ofy calls with tm()
+   * in the application code. When the method is invoked with Datastore, it won't write the commit
+   * log backup; when invoked with Cloud SQL, it behaves the same as the method which doesn't have
    * "WithoutBackup" in its method name because it is not necessary to have the backup mechanism in
    * SQL.
    */
@@ -175,9 +175,9 @@ public interface TransactionManager {
    * Updates all entities in the database without writing any backup if the underlying database is
    * Datastore.
    *
-   * <p>This method is for the sake of keeping a single code path when replacing ofy() with tm() in
-   * the application code. When the method is invoked with Datastore, it won't write the commit log
-   * backup; when invoked with Cloud SQL, it behaves the same as the method which doesn't have
+   * <p>This method is for the sake of keeping a single code path when replacing ofy calls with tm()
+   * in the application code. When the method is invoked with Datastore, it won't write the commit
+   * log backup; when invoked with Cloud SQL, it behaves the same as the method which doesn't have
    * "WithoutBackup" in its method name because it is not necessary to have the backup mechanism in
    * SQL.
    */
