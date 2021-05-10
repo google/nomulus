@@ -16,9 +16,7 @@ package google.registry.model.tmch;
 
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
 import static google.registry.model.CacheUtils.tryMemoizeWithExpiration;
-import static google.registry.model.DatabaseMigrationUtils.isDatastore;
 import static google.registry.model.DatabaseMigrationUtils.suppressExceptionUnlessInTest;
-import static google.registry.model.common.DatabaseTransitionSchedule.TransitionId.CLAIMS_LIST;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.base.Supplier;
@@ -31,12 +29,11 @@ import java.util.Optional;
 /**
  * DAO for {@link ClaimsListShard} objects that handles the branching paths for SQL and Datastore.
  *
- * <p>For write actions, this class will perform the action against the primary database then, after
- * * that success or failure, against the secondary database. If the secondary database fails, an
- * error is logged (but not thrown).
+ * <p>For write actions, this class will perform the action against Cloud SQL then, after that
+ * success or failure, against Datastore. If Datastore fails, an error is logged (but not thrown).
  *
- * <p>For read actions, we will log if the primary and secondary databases * have different values
- * (or if the retrieval from the second database fails).
+ * <p>For read actions, we will log if the two databases have different values (or if the retrieval
+ * from Datastore fails).
  */
 public class ClaimsListDualDatabaseDao {
 
@@ -48,18 +45,12 @@ public class ClaimsListDualDatabaseDao {
 
   /**
    * Saves the given {@link ClaimsListShard} to both the primary and secondary databases, logging
-   * and skipping errors in the secondary DB.
+   * and skipping errors in Datastore.
    */
   public static void save(ClaimsListShard claimsList) {
-    if (isDatastore(CLAIMS_LIST)) {
-      claimsList.saveToDatastore();
-      suppressExceptionUnlessInTest(
-          () -> ClaimsListSqlDao.save(claimsList), "Error saving ClaimsList to SQL.");
-    } else {
       ClaimsListSqlDao.save(claimsList);
       suppressExceptionUnlessInTest(
           claimsList::saveToDatastore, "Error saving ClaimsListShard to Datastore.");
-    }
   }
 
   /** Returns the most recent revision of the {@link ClaimsListShard}, from cache. */
@@ -69,42 +60,31 @@ public class ClaimsListDualDatabaseDao {
 
   /** Retrieves and compares the latest revision from the databases. */
   private static ClaimsListShard getUncached() {
-    Optional<ClaimsListShard> primaryResult;
-    if (isDatastore(CLAIMS_LIST)) {
-      primaryResult = ClaimsListShard.getFromDatastore();
-      suppressExceptionUnlessInTest(
-          () -> {
-            Optional<ClaimsListShard> secondaryResult = ClaimsListSqlDao.get();
-            compareClaimsLists(primaryResult, secondaryResult);
-          },
-          "Error loading ClaimsList from SQL.");
-    } else {
-      primaryResult = ClaimsListSqlDao.get();
-      suppressExceptionUnlessInTest(
-          () -> {
-            Optional<ClaimsListShard> secondaryResult = ClaimsListShard.getFromDatastore();
-            compareClaimsLists(primaryResult, secondaryResult);
-          },
-          "Error loading ClaimsListShard from Datastore.");
-    }
-    return primaryResult.orElse(ClaimsListShard.create(START_OF_TIME, ImmutableMap.of()));
+    Optional<ClaimsListShard> cloudSqlResult = ClaimsListSqlDao.get();
+    suppressExceptionUnlessInTest(
+        () -> {
+          Optional<ClaimsListShard> datastoreResult = ClaimsListShard.getFromDatastore();
+          compareClaimsLists(cloudSqlResult, datastoreResult);
+        },
+        "Error loading ClaimsListShard from Datastore.");
+    return cloudSqlResult.orElse(ClaimsListShard.create(START_OF_TIME, ImmutableMap.of()));
   }
 
   private static void compareClaimsLists(
-      Optional<ClaimsListShard> maybePrimary, Optional<ClaimsListShard> maybeSecondary) {
-    if (maybePrimary.isPresent() && !maybeSecondary.isPresent()) {
-      throw new IllegalStateException("Claims list found in primary DB but not in secondary DB.");
+      Optional<ClaimsListShard> maybeCloudSql, Optional<ClaimsListShard> maybeDatastore) {
+    if (maybeCloudSql.isPresent() && !maybeDatastore.isPresent()) {
+      throw new IllegalStateException("Claims list found in Cloud SQL but not in Datastore.");
     }
-    if (!maybePrimary.isPresent() && maybeSecondary.isPresent()) {
-      throw new IllegalStateException("Claims list found in secondary DB but not in primary DB.");
+    if (!maybeCloudSql.isPresent() && maybeDatastore.isPresent()) {
+      throw new IllegalStateException("Claims list found in Datastore but not in Cloud SQL.");
     }
-    if (!maybePrimary.isPresent()) {
+    if (!maybeCloudSql.isPresent()) {
       return;
     }
-    ClaimsListShard primary = maybePrimary.get();
-    ClaimsListShard secondary = maybeSecondary.get();
+    ClaimsListShard sqlList = maybeCloudSql.get();
+    ClaimsListShard datastoreList = maybeDatastore.get();
     MapDifference<String, String> diff =
-        Maps.difference(primary.labelsToKeys, secondary.getLabelsToKeys());
+        Maps.difference(sqlList.labelsToKeys, datastoreList.getLabelsToKeys());
     if (!diff.areEqual()) {
       if (diff.entriesDiffering().size()
               + diff.entriesOnlyOnRight().size()
@@ -112,9 +92,9 @@ public class ClaimsListDualDatabaseDao {
           > 10) {
         throw new IllegalStateException(
             String.format(
-                "Unequal claims lists detected, secondary list with revision id %d has %d"
-                    + " different records than the current primary list.",
-                secondary.getRevisionId(), diff.entriesDiffering().size()));
+                "Unequal claims lists detected, Datastore list with revision id %d has %d"
+                    + " different records than the current Cloud SQL list.",
+                datastoreList.getRevisionId(), diff.entriesDiffering().size()));
       } else {
         StringBuilder diffMessage = new StringBuilder("Unequal claims lists detected:\n");
         diff.entriesDiffering()
@@ -122,22 +102,22 @@ public class ClaimsListDualDatabaseDao {
                 (label, valueDiff) ->
                     diffMessage.append(
                         String.format(
-                            "Domain label %s has key %s in the primary DB and key %s "
-                                + "in the secondary DB.\n",
+                            "Domain label %s has key %s in Cloud SQL and key %s "
+                                + "in Datastore.\n",
                             label, valueDiff.leftValue(), valueDiff.rightValue())));
         diff.entriesOnlyOnLeft()
             .forEach(
                 (label, valueDiff) ->
                     diffMessage.append(
                         String.format(
-                            "Domain label %s with key %s only appears in the primary DB.\n",
+                            "Domain label %s with key %s only appears in Cloud SQL.\n",
                             label, valueDiff)));
         diff.entriesOnlyOnRight()
             .forEach(
                 (label, valueDiff) ->
                     diffMessage.append(
                         String.format(
-                            "Domain label %s with key %s only appears in the secondary DB.\n",
+                            "Domain label %s with key %s only appears in Datastore.\n",
                             label, valueDiff)));
         throw new IllegalStateException(diffMessage.toString());
       }
