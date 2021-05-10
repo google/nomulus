@@ -32,6 +32,7 @@ import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppinput.ResourceCommand.SingleResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.eppoutput.Result;
+import google.registry.model.host.HostHistory;
 import google.registry.model.reporting.HistoryEntry;
 import java.lang.annotation.Documented;
 import java.util.Optional;
@@ -233,11 +234,11 @@ public class FlowModule {
             .setClientId(clientId);
     Optional<MetadataExtension> metadataExtension =
         eppInput.getSingleExtension(MetadataExtension.class);
-    if (metadataExtension.isPresent()) {
-      historyBuilder
-          .setReason(metadataExtension.get().getReason())
-          .setRequestedByRegistrar(metadataExtension.get().getRequestedByRegistrar());
-    }
+    metadataExtension.ifPresent(
+        extension ->
+            historyBuilder
+                .setReason(extension.getReason())
+                .setRequestedByRegistrar(extension.getRequestedByRegistrar()));
     return historyBuilder;
   }
 
@@ -253,6 +254,11 @@ public class FlowModule {
     return new DomainHistory.Builder().copyFrom(historyEntryBuilder);
   }
 
+  @Provides
+  static HostHistory.Builder provideHostHistoryBuilder(HistoryEntry.Builder historyEntryBuilder) {
+    return new HostHistory.Builder().copyFrom(historyEntryBuilder);
+  }
+
   /**
    * Provides a partially filled in {@link EppResponse} builder.
    *
@@ -263,7 +269,7 @@ public class FlowModule {
   static EppResponse.Builder provideEppResponseBuilder(Trid trid) {
     return new EppResponse.Builder()
         .setTrid(trid)
-        .setResultFromCode(Result.Code.SUCCESS);  // Default to success.
+        .setResultFromCode(Result.Code.SUCCESS); // Default to success.
   }
 
   @Provides

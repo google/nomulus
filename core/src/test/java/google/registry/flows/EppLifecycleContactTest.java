@@ -65,22 +65,22 @@ class EppLifecycleContactTest extends EppTestCase {
         .hasCommandName("ContactInfo")
         .and()
         .hasStatus(SUCCESS);
-    Result.Code resultCode;
+    Result.Code deleteResultCode;
     if (tm().isOfy()) {
       assertThatCommand("contact_delete_sh8013.xml")
           .hasResponse("contact_delete_response_sh8013_pending.xml");
-      resultCode = SUCCESS_WITH_ACTION_PENDING;
+      deleteResultCode = SUCCESS_WITH_ACTION_PENDING;
     } else {
       assertThatCommand("contact_delete_sh8013.xml")
           .hasResponse("contact_delete_response_sh8013.xml");
-      resultCode = SUCCESS;
+      deleteResultCode = SUCCESS;
     }
     assertThat(getRecordedEppMetric())
         .hasClientId("NewRegistrar")
         .and()
         .hasCommandName("ContactDelete")
         .and()
-        .hasStatus(resultCode);
+        .hasStatus(deleteResultCode);
     assertThatLogoutSucceeds();
   }
 
