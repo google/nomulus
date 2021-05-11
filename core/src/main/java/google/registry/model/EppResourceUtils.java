@@ -368,6 +368,7 @@ public final class EppResourceUtils {
    * @param now the logical time of the check
    * @param limit the maximum number of returned keys
    */
+  @SuppressWarnings("unchecked")
   public static ImmutableSet<VKey<DomainBase>> getLinkedDomainKeys(
       VKey<? extends EppResource> key, DateTime now, int limit) {
     checkArgument(

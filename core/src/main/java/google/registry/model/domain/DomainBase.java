@@ -54,12 +54,16 @@ import org.joda.time.DateTime;
 @Table(
     name = "Domain",
     indexes = {
+      @Index(columnList = "adminContact"),
+      @Index(columnList = "autorenewEndTime"),
+      @Index(columnList = "billingContact"),
       @Index(columnList = "creationTime"),
       @Index(columnList = "currentSponsorRegistrarId"),
       @Index(columnList = "deletionTime"),
       @Index(columnList = "domainName"),
+      @Index(columnList = "techContact"),
       @Index(columnList = "tld"),
-      @Index(columnList = "autorenewEndTime")
+      @Index(columnList = "registrantContact")
     })
 @WithStringVKey
 @ExternalMessagingName("domain")
