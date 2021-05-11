@@ -22,6 +22,7 @@ import google.registry.util.Clock;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.concurrent.ThreadSafe;
 import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.joda.time.ReadableDuration;
 import org.joda.time.ReadableInstant;
 
@@ -80,5 +81,15 @@ public final class FakeClock implements Clock {
   /** Sets the time to the specified instant. */
   public void setTo(ReadableInstant time) {
     currentTimeMillis.set(time.getMillis());
+  }
+
+  /** Invokes {@link #setAutoIncrementStep} with one millisecond-step. */
+  public FakeClock setAutoIncrementByOneMilli() {
+    return setAutoIncrementStep(Duration.millis(1));
+  }
+
+  /** Disables the auto-increment mode. */
+  public FakeClock disableAutoIncrement() {
+    return setAutoIncrementStep(Duration.ZERO);
   }
 }

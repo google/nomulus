@@ -53,6 +53,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Tests for {@link DomainHistory}. */
 @DualDatabaseTest
@@ -60,6 +61,11 @@ public class DomainHistoryTest extends EntityTestCase {
 
   DomainHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
+  }
+
+  @BeforeEach
+  void beforeEach() {
+    fakeClock.setAutoIncrementByOneMilli();
   }
 
   @TestSqlOnly
@@ -105,7 +111,6 @@ public class DomainHistoryTest extends EntityTestCase {
               tm().insert(host);
               tm().insert(contact);
             });
-    fakeClock.advanceOneMilli();
 
     DomainBase domain =
         newDomainBase("example.tld", "domainRepoId", contact)
@@ -114,7 +119,6 @@ public class DomainHistoryTest extends EntityTestCase {
             .build();
     tm().transact(() -> tm().insert(domain));
 
-    fakeClock.advanceOneMilli();
     DomainHistory domainHistory = createDomainHistory(domain);
     tm().transact(() -> tm().insert(domainHistory));
 
@@ -164,7 +168,6 @@ public class DomainHistoryTest extends EntityTestCase {
               jpaTm().insert(host);
               jpaTm().insert(contact);
             });
-    fakeClock.advanceOneMilli();
     DomainBase domain =
         newDomainBase("example.tld", "domainRepoId", contact)
             .asBuilder()
@@ -172,7 +175,6 @@ public class DomainHistoryTest extends EntityTestCase {
             .build();
     tm().transact(() -> tm().insert(domain));
     jpaTm().transact(() -> jpaTm().insert(domain));
-    fakeClock.advanceOneMilli();
 
     DomainHistory domainHistory = createDomainHistory(domain);
     tm().transact(() -> tm().insert(domainHistory));

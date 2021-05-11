@@ -36,6 +36,7 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
@@ -57,6 +58,8 @@ class ReservedListTest {
   @BeforeEach
   void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
+    // Auto-increment clock in DatabaseHelper.
+    inject.setStaticField(DatabaseHelper.class, "clock", clock);
     createTld("tld");
     reservedListChecks.reset();
     reservedListProcessingTime.reset();

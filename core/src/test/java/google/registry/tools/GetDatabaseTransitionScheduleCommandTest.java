@@ -27,7 +27,6 @@ import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabaseTr
 import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.ofy.Ofy;
-import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,10 +39,13 @@ public class GetDatabaseTransitionScheduleCommandTest
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
+  GetDatabaseTransitionScheduleCommandTest() {
+    fakeClock.setTo(DateTime.parse("1984-12-21T06:07:08.789Z"));
+  }
+
   @BeforeEach
   void beforeEach() {
-    inject.setStaticField(
-        Ofy.class, "clock", new FakeClock(DateTime.parse("1984-12-21T06:07:08.789Z")));
+    inject.setStaticField(Ofy.class, "clock", fakeClock);
   }
 
   @Test
@@ -64,7 +66,6 @@ public class GetDatabaseTransitionScheduleCommandTest
 
   @Test
   void testSuccess_multipleArguments() throws Exception {
-    fakeClock.setTo(DateTime.parse("2020-10-01T00:00:00Z"));
     TimedTransitionProperty<PrimaryDatabase, PrimaryDatabaseTransition> databaseTransitions =
         TimedTransitionProperty.fromValueMap(
             ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.DATASTORE),
@@ -72,12 +73,13 @@ public class GetDatabaseTransitionScheduleCommandTest
     DatabaseTransitionSchedule schedule =
         DatabaseTransitionSchedule.create(TransitionId.DOMAIN_LABEL_LISTS, databaseTransitions);
     ofyTm().transactNew(() -> ofyTm().put(schedule));
+    fakeClock.advanceOneMilli(); // Now 1984-12-21T06:07:08.790Z
     TimedTransitionProperty<PrimaryDatabase, PrimaryDatabaseTransition> databaseTransitions2 =
         TimedTransitionProperty.fromValueMap(
             ImmutableSortedMap.of(
                 START_OF_TIME,
                 PrimaryDatabase.DATASTORE,
-                fakeClock.nowUtc(),
+                DateTime.parse("2020-10-01T00:00:00Z"),
                 PrimaryDatabase.CLOUD_SQL),
             PrimaryDatabaseTransition.class);
     DatabaseTransitionSchedule schedule2 =
@@ -88,7 +90,7 @@ public class GetDatabaseTransitionScheduleCommandTest
     assertStdoutIs(
         "DOMAIN_LABEL_LISTS(last updated at 1984-12-21T06:07:08.789Z):"
             + " {1970-01-01T00:00:00.000Z=DATASTORE}\n"
-            + "SIGNED_MARK_REVOCATION_LIST(last updated at 1984-12-21T06:07:08.789Z):"
+            + "SIGNED_MARK_REVOCATION_LIST(last updated at 1984-12-21T06:07:08.790Z):"
             + " {1970-01-01T00:00:00.000Z=DATASTORE, 2020-10-01T00:00:00.000Z=CLOUD_SQL}\n");
   }
 

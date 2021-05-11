@@ -54,17 +54,20 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   private DomainBase domain;
   private ContactResource contact;
 
+  PollAckFlowTest() {
+    // Setting the fake clock in constructor fixes the timestamp inversion problem when
+    // ReplayExtension is in effect. If done in setup, the canned data in AppEngineExtension
+    // will be saved with the time chosen by the parent class.
+    clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
+  }
+
   @BeforeEach
   void setUp() {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2011"));
     setClientIdForFlow("NewRegistrar");
-    clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
     createTld("example");
-    clock.advanceOneMilli();
     contact = persistActiveContact("jd1234");
-    clock.advanceOneMilli();
     domain = persistResource(newDomainBase("test.example", contact));
-    clock.advanceOneMilli();
   }
 
   private void persistOneTimePollMessage(long messageId) {

@@ -213,6 +213,7 @@ class ContactSettingsTest extends RegistrarSettingsActionTestCase {
             AppEngineExtension.makeRegistrarContact1().toJsonMap(),
             newContactMap,
             AppEngineExtension.makeRegistrarContact3().toJsonMap()));
+    clock.advanceOneMilli();
     Map<String, Object> response =
         action.handleJsonRequest(ImmutableMap.of("op", "update", "id", CLIENT_ID, "args", reqJson));
     assertThat(response).containsAtLeastEntriesIn(ImmutableMap.of("status", "SUCCESS"));

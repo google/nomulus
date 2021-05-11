@@ -32,6 +32,7 @@ public class ReservedListDualDatabaseDaoTest extends EntityTestCase {
 
   @BeforeEach
   void setUp() {
+    fakeClock.setAutoIncrementByOneMilli();
     reservations =
         ImmutableMap.of(
             "food",

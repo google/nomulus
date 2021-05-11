@@ -85,9 +85,9 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
         fakeClock.nowUtc(),
         fakeClock.nowUtc(),
         fakeClock.nowUtc().plusYears(4));
-    fakeClock.advanceOneMilli();
+    fakeClock.setAutoIncrementByOneMilli();
     runCommandForced("-p", "2", "foo.tld", "bar.tld");
-    fakeClock.advanceOneMilli();
+    fakeClock.disableAutoIncrement();
     assertThat(
             loadByForeignKey(DomainBase.class, "foo.tld", fakeClock.nowUtc())
                 .get()

@@ -44,6 +44,7 @@ import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.model.registry.label.ReservedList;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
@@ -62,6 +63,8 @@ public final class RegistryTest extends EntityTestCase {
 
   @BeforeEach
   void beforeEach() {
+    // Auto-increment fakeClock in DatabaseHelper.
+    inject.setStaticField(DatabaseHelper.class, "clock", fakeClock);
     createTld("tld");
   }
 

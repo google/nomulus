@@ -16,7 +16,6 @@ package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -81,7 +80,6 @@ class DeleteExpiredDomainsActionTest {
   void test_deletesOnlyExpiredDomain() {
     // A normal, active autorenewing domain that shouldn't be touched.
     DomainBase activeDomain = persistActiveDomain("foo.tld");
-    clock.advanceOneMilli();
 
     // A non-autorenewing domain that is already pending delete and shouldn't be touched.
     DomainBase alreadyDeletedDomain =
@@ -91,7 +89,6 @@ class DeleteExpiredDomainsActionTest {
                 .setAutorenewEndTime(Optional.of(clock.nowUtc().minusDays(10)))
                 .setDeletionTime(clock.nowUtc().plusDays(17))
                 .build());
-    clock.advanceOneMilli();
 
     // A non-autorenewing domain that hasn't reached its expiration time and shouldn't be touched.
     DomainBase notYetExpiredDomain =
@@ -100,7 +97,6 @@ class DeleteExpiredDomainsActionTest {
                 .asBuilder()
                 .setAutorenewEndTime(Optional.of(clock.nowUtc().plusDays(15)))
                 .build());
-    clock.advanceOneMilli();
 
     // A non-autorenewing domain that is past its expiration time and should be deleted.
     // (This is the only one that needs a full set of subsidiary resources, for the delete flow to
@@ -109,6 +105,10 @@ class DeleteExpiredDomainsActionTest {
 
     assertThat(tm().loadByEntity(pendingExpirationDomain).getStatusValues())
         .doesNotContain(PENDING_DELETE);
+    // action.run() does not use any test helper that can advance the fake clock. We manually
+    // advance the clock to emulate the actual behavior. This works because the action only has
+    // one transaction.
+    clock.advanceOneMilli();
     action.run();
 
     DomainBase reloadedActiveDomain = tm().loadByEntity(activeDomain);
@@ -127,26 +127,11 @@ class DeleteExpiredDomainsActionTest {
     DomainBase domain2 = persistNonAutorenewingDomain("veee2.tld");
     DomainBase domain3 = persistNonAutorenewingDomain("tarm3.tld");
 
-    // action.run() executes an ancestor-less query which is subject to eventual consistency (it
-    // uses an index that is updated asynchronously). For a deterministic test outcome, we busy
-    // wait here until all domains above are returned by the query.
-    for (int attempts = 0; attempts < 3; attempts++) {
-      ImmutableSet<String> matchingDomains =
-          ofy()
-              .load()
-              .type(DomainBase.class)
-              .filter("autorenewEndTime <=", clock.nowUtc())
-              .list()
-              .stream()
-              .map(DomainBase::getDomainName)
-              .collect(ImmutableSet.toImmutableSet());
-      if (matchingDomains.containsAll(ImmutableSet.of("ecck1.tld", "veee2.tld", "tarm3.tld"))) {
-        break;
-      }
-      Thread.sleep(100);
-    }
-
+    // action.run does multiple write transactions. We cannot emulate the behavior by manually
+    // advancing the clock. Auto-increment to avoid timestamp inversion.
+    clock.setAutoIncrementByOneMilli();
     action.run();
+    clock.disableAutoIncrement();
 
     assertThat(tm().loadByEntity(domain1).getStatusValues()).contains(PENDING_DELETE);
     assertThat(tm().loadByEntity(domain2).getStatusValues()).contains(PENDING_DELETE);
@@ -174,7 +159,6 @@ class DeleteExpiredDomainsActionTest {
                 .setAutorenewBillingEvent(autorenewBillingEvent.createVKey())
                 .setAutorenewPollMessage(autorenewPollMessage.createVKey())
                 .build());
-    clock.advanceOneMilli();
 
     return pendingExpirationDomain;
   }

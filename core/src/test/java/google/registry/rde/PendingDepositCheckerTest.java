@@ -86,7 +86,7 @@ public class PendingDepositCheckerTest {
   void testMethod_firstDepositOnBrdaDay_depositsBothRdeAndBrda() {
     clock.setTo(DateTime.parse("2000-01-04T08:00Z"));  // Tuesday
     createTldWithEscrowEnabled("lol");
-    clock.advanceOneMilli();
+    clock.setAutoIncrementByOneMilli();
     assertThat(checker.getTldsAndWatermarksPendingDepositForRdeAndBrda()).isEqualTo(
         ImmutableSetMultimap.of(
             "lol", PendingDeposit.create(
@@ -153,7 +153,7 @@ public class PendingDepositCheckerTest {
     createTldWithEscrowEnabled("pal");
     clock.advanceOneMilli();
     createTldWithEscrowEnabled("fun");
-    clock.advanceOneMilli();
+    clock.setAutoIncrementByOneMilli();
     assertThat(checker.getTldsAndWatermarksPendingDepositForRdeAndBrda())
         .isEqualTo(
             ImmutableSetMultimap.of(

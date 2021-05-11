@@ -592,7 +592,9 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     makeDomainBase(clock, "lol");
 
     clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setAutoIncrementByOneMilli();
     action.run();
+    clock.disableAutoIncrement();
     executeTasksUntilEmpty("mapreduce", clock);
 
     String boggleDeposit = readXml("boggle_2000-01-01_full_S1_R0.xml.ghostryde");
@@ -613,7 +615,9 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     makeHostResource(clock, "ns1.kuss.lol", "face::feed");
 
     clock.setTo(DateTime.parse("2000-01-01TZ"));
+    clock.setAutoIncrementByOneMilli();
     action.run();
+    clock.disableAutoIncrement();
     executeTasksUntilEmpty("mapreduce", clock);
 
     String fopDeposit = readXml("fop_2000-01-01_full_S1_R0.xml.ghostryde");
