@@ -72,17 +72,17 @@ Below are the steps to submit a schema change:
     You'll want to have a look at the diffs in the golden schema to verify that
     all changes are intentional.
 
-5.  Run ./nom_build :db:generateFlywayIndex to regenerate the Flyway index.
+5.  Run `./nom_build :db:generateFlywayIndex` to regenerate the Flyway index.
     This is a file listing all of the current Flyway files.  Its purpose is to
     produce a merge conflict when more than one person adds a Flyway file with
     the same sequence number.
 
-Relevant files (under db/src/main/resources/sql/schema/):
+Relevant files (under `db/src/main/resources/sql/schema/`):
 
-*   nomulus.golden.sql is the schema dump (pg_dump for postgres) of the final
+*   `nomulus.golden.sql` is the schema dump (pg_dump for postgres) of the final
     schema pushed by Flyway. This is mostly for informational, although it may
     be used in tests.
-*   db-schema.sql.generated is the schema generated from ORM classes by the
+*   `db-schema.sql.generated` is the schema generated from ORM classes by the
     GenerateSqlSchema command in Nomulus tool. This reflects the ORM-layer's
     view of the schema.
 
@@ -94,16 +94,16 @@ will contain the new column while the generated one does not.
 ### Schema Push
 
 Currently Cloud SQL schema is released with the Nomulus server, and shares the
-server release's tag (e.g., nomulus-20191101-RC00). Automatic schema push
-process (to apply new changes in a released schema to the databases) has not
-been set up yet, and new schema may be pushed manually on demand.
+server release's tag (e.g., `nomulus-20191101-RC00`). Automatic schema push
+process (to apply new changes in a released schema to the databases) has been
+set up as part of the overall release pipeline.
 
 Presubmit and continuous-integration tests are being implemented to ensure
 server/schema compatibility. Before the tests are activated, please look for
 breaking changes before deploying a schema.
 
-Released schema may be deployed using Cloud Build. Use the root project
-directory as working directory, run the following shell snippets:
+Released schema may be manually deployed using Cloud Build. Use the root
+project directory as working directory, run the following shell snippets:
 
 ```shell
 # Tags exist as folder names under gs://domain-registry-dev-deploy.
