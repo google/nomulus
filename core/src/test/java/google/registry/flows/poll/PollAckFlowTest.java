@@ -34,6 +34,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.poll.PollMessage;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
+import google.registry.testing.SetClockExtension;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 @DualDatabaseTest
 class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
 
+  @Order(value = Order.DEFAULT - 3)
+  @RegisterExtension
+  final SetClockExtension setClockExtension = new SetClockExtension(clock, "2011-01-02T01:01:01Z");
+
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
   final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
@@ -53,13 +58,6 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
 
   private DomainBase domain;
   private ContactResource contact;
-
-  PollAckFlowTest() {
-    // Setting the fake clock in constructor fixes the timestamp inversion problem when
-    // ReplayExtension is in effect. If done in setup, the canned data in AppEngineExtension
-    // will be saved with the time chosen by the parent class.
-    clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
-  }
 
   @BeforeEach
   void setUp() {

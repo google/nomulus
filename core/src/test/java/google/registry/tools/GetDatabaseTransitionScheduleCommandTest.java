@@ -28,8 +28,10 @@ import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.ofy.Ofy;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.SetClockExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -37,11 +39,12 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class GetDatabaseTransitionScheduleCommandTest
     extends CommandTestCase<GetDatabaseTransitionScheduleCommand> {
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+  @Order(value = Order.DEFAULT - 3)
+  @RegisterExtension
+  final SetClockExtension setClockExtension =
+      new SetClockExtension(fakeClock, "1984-12-21T06:07:08.789Z");
 
-  GetDatabaseTransitionScheduleCommandTest() {
-    fakeClock.setTo(DateTime.parse("1984-12-21T06:07:08.789Z"));
-  }
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   @BeforeEach
   void beforeEach() {
