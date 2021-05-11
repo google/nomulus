@@ -273,8 +273,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     assertInTransaction();
     // Necessary due to the changes in HistoryEntry representation during the migration to SQL
     Object toPersist = toSqlEntity(entity);
-    getEntityManager().persist(toPersist);
-    transactionInfo.get().addUpdate(toPersist);
+    transactionInfo.get().insertObject(toPersist);
   }
 
   @Override
@@ -303,8 +302,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     assertInTransaction();
     // Necessary due to the changes in HistoryEntry representation during the migration to SQL
     Object toPersist = toSqlEntity(entity);
-    getEntityManager().merge(toPersist);
-    transactionInfo.get().addUpdate(toPersist);
+    transactionInfo.get().updateObject(toPersist);
   }
 
   @Override
@@ -343,8 +341,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgument(exists(entity), "Given entity does not exist");
     // Necessary due to the changes in HistoryEntry representation during the migration to SQL
     Object toPersist = toSqlEntity(entity);
-    getEntityManager().merge(toPersist);
-    transactionInfo.get().addUpdate(toPersist);
+    transactionInfo.get().updateObject(toPersist);
   }
 
   @Override
@@ -673,7 +670,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
       // If the entity was previously persisted or merged, we have to throw an exception.
       if (transactionInfo.get().objectsToSave.contains(entity)) {
-        throw new RuntimeException("Inserted/updated object reloaded.");
+        throw new IllegalStateException("Inserted/updated object reloaded.");
       }
 
       getEntityManager().detach(entity);
@@ -709,6 +706,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       inTransaction = false;
       transactionTime = null;
       contentsBuilder = null;
+      objectsToSave = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
       if (entityManager != null) {
         // Close this EntityManager just let the connection pool be able to reuse it, it doesn't
         // close the underlying database connection.
@@ -721,9 +719,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       if (contentsBuilder != null) {
         contentsBuilder.addUpdate(entity);
       }
-
-      // Record it in the "objects to save" set so we know to clone it on a subsequent load.
-      objectsToSave.add(entity);
     }
 
     private void addDelete(VKey<?> key) {
@@ -739,6 +734,20 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
           entityManager.persist(persistedTxn.toEntity());
         }
       }
+    }
+
+    /** Does the full "update" on an object including all internal housekeeping. */
+    private void updateObject(Object object) {
+      Object merged = entityManager.merge(object);
+      objectsToSave.add(merged);
+      addUpdate(object);
+    }
+
+    /** Does the full "insert" on a new object including all internal housekeeping. */
+    private void insertObject(Object object) {
+      entityManager.persist(object);
+      objectsToSave.add(object);
+      addUpdate(object);
     }
   }
 

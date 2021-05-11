@@ -539,6 +539,46 @@ class JpaTransactionManagerImplTest {
         () -> jpaTm().transact(() -> jpaTm().assertDelete(theEntityKey)));
   }
 
+  @Test
+  void loadAfterInsert_fails() {
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            jpaTm()
+                .transact(
+                    () -> {
+                      jpaTm().insert(theEntity);
+                      jpaTm().loadByKey(theEntityKey);
+                    }));
+  }
+
+  @Test
+  void loadAfterUpdate_fails() {
+    jpaTm().transact(() -> jpaTm().insert(theEntity));
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            jpaTm()
+                .transact(
+                    () -> {
+                      jpaTm().update(theEntity);
+                      jpaTm().loadByKey(theEntityKey);
+                    }));
+  }
+
+  @Test
+  void loadAfterPut_fails() {
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            jpaTm()
+                .transact(
+                    () -> {
+                      jpaTm().put(theEntity);
+                      jpaTm().loadByKey(theEntityKey);
+                    }));
+  }
+
   private void insertPerson(int age) {
     jpaTm()
         .getEntityManager()
