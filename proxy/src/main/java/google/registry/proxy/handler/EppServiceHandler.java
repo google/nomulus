@@ -35,9 +35,7 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Promise;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.function.Supplier;
 
 /** Handler that processes EPP protocol logic. */
@@ -57,9 +55,7 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
   private final byte[] helloBytes;
 
   private String sslClientCertificateHash;
-  private X509Certificate sslClientCertificate;
   private String clientAddress;
-  private boolean isLoggedIn = false;
 
   public EppServiceHandler(
       String relayHost,
@@ -99,8 +95,7 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
             .addListener(
                 (Promise<X509Certificate> promise) -> {
                   if (promise.isSuccess()) {
-                    sslClientCertificate = promise.get();
-                    sslClientCertificateHash = getCertificateHash(sslClientCertificate);
+                    sslClientCertificateHash = getCertificateHash(promise.get());
                     // Set the client cert hash key attribute for both this channel,
                     // used for collecting metrics on specific clients.
                     ctx.channel().attr(CLIENT_CERTIFICATE_HASH_KEY).set(sslClientCertificateHash);
@@ -129,17 +124,6 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
         .set(ProxyHttpHeaders.IP_ADDRESS, clientAddress)
         .set(HttpHeaderNames.CONTENT_TYPE, EPP_CONTENT_TYPE)
         .set(HttpHeaderNames.ACCEPT, EPP_CONTENT_TYPE);
-    if (!isLoggedIn) {
-      try {
-        request
-            .headers()
-            .set(
-                ProxyHttpHeaders.FULL_CERTIFICATE,
-                Base64.getEncoder().encodeToString(sslClientCertificate.getEncoded()));
-      } catch (CertificateEncodingException e) {
-        throw new RuntimeException("Cannot encode client certificate", e);
-      }
-    }
     return request;
   }
 
@@ -149,12 +133,8 @@ public class EppServiceHandler extends HttpsRelayServiceHandler {
     checkArgument(msg instanceof HttpResponse);
     HttpResponse response = (HttpResponse) msg;
     String sessionAliveValue = response.headers().get(ProxyHttpHeaders.EPP_SESSION);
-    String loginValue = response.headers().get(ProxyHttpHeaders.LOGGED_IN);
     if (sessionAliveValue != null && sessionAliveValue.equals("close")) {
       promise.addListener(ChannelFutureListener.CLOSE);
-    }
-    if (loginValue != null && loginValue.equals("true")) {
-      isLoggedIn = true;
     }
     super.write(ctx, msg, promise);
   }
