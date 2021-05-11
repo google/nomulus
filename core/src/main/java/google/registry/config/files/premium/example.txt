@@ -1,5 +1,5 @@
-# Example of a reserved list file.  This is simply a CSV file with two
-# columns: sub-domain name and price (specified as currency type and value).
+# Example of a premium list file.  This is simply a CSV file with two
+# columns: sub-domain name, and price (specified as currency type and value).
 #
 # These are manipulated using the "nomulus" tool
 # {create,update,delete,list}_premium_list commands.
