@@ -117,7 +117,7 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
    * the DNL List creation datetime from the rfc. Since this field has been used by Datastore, we
    * cannot change its name until we finish the migration.
    *
-   * <p>TODO(b/166784536): Rename this field to tmdbGenerationTime.
+   * <p>TODO(b/177567432): Rename this field to tmdbGenerationTime.
    */
   @Column(name = "tmdb_generation_time", nullable = false)
   DateTime creationTime;

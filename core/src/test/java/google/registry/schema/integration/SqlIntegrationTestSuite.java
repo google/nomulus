@@ -31,6 +31,7 @@ import google.registry.model.registry.RegistryTest;
 import google.registry.model.registry.label.ReservedListSqlDaoTest;
 import google.registry.model.reporting.Spec11ThreatMatchTest;
 import google.registry.model.server.KmsSecretRevisionSqlDaoTest;
+import google.registry.model.server.LockTest;
 import google.registry.model.server.ServerSecretTest;
 import google.registry.model.smd.SignedMarkRevocationListDaoTest;
 import google.registry.model.tmch.ClaimsListSqlDaoTest;
@@ -41,7 +42,6 @@ import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest
 import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTest;
 import google.registry.schema.registrar.RegistrarDaoTest;
 import google.registry.schema.replay.SqlReplayCheckpointTest;
-import google.registry.schema.server.LockDaoTest;
 import google.registry.schema.tld.PremiumListSqlDaoTest;
 import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.AfterAll;
@@ -90,7 +90,7 @@ import org.junit.runner.RunWith;
   DomainHistoryTest.class,
   HostHistoryTest.class,
   KmsSecretRevisionSqlDaoTest.class,
-  LockDaoTest.class,
+  LockTest.class,
   PollMessageTest.class,
   PremiumListSqlDaoTest.class,
   RdeRevisionTest.class,

@@ -653,7 +653,7 @@ CREATE TABLE public."KmsSecret" (
 
 CREATE TABLE public."Lock" (
     resource_name text NOT NULL,
-    tld text NOT NULL,
+    scope text NOT NULL,
     acquired_time timestamp with time zone NOT NULL,
     expiration_time timestamp with time zone NOT NULL,
     request_log_id text NOT NULL
@@ -1303,7 +1303,7 @@ ALTER TABLE ONLY public."KmsSecret"
 --
 
 ALTER TABLE ONLY public."Lock"
-    ADD CONSTRAINT "Lock_pkey" PRIMARY KEY (resource_name, tld);
+    ADD CONSTRAINT "Lock_pkey" PRIMARY KEY (resource_name, scope);
 
 
 --

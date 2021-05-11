@@ -24,7 +24,7 @@ import java.util.Optional;
 /**
  * A {@link KmsSecretRevision} DAO for Cloud SQL.
  *
- * <p>TODO: Rename this class to KmsSecretDao after migrating to Cloud SQL.
+ * <p>TODO(b/177567432): Rename this class to KmsSecretDao after migrating to Cloud SQL.
  */
 public class KmsSecretRevisionSqlDao {
 
