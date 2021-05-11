@@ -21,10 +21,14 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.tools.CreateReservedListCommand.INVALID_FORMAT_ERROR_MESSAGE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.common.io.Files;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
+import java.io.File;
+import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -184,5 +188,28 @@ class CreateReservedListCommandTest
   private void runNameTestWithOverride(String name) throws Exception {
     runCommandForced("--name=" + name, "--override", "--input=" + reservedTermsPath);
     assertThat(ReservedList.get(name)).isPresent();
+  }
+
+  @Test
+  void testStageEntityChange_succeeds() throws Exception {
+    CreateReservedListCommand command = new CreateReservedListCommand();
+    // file content is populated in @BeforeEach of CreateOrUpdateReservedListCommandTestCase.java
+    command.input = Paths.get(reservedTermsPath);
+    command.init();
+    assertThat(command.prompt())
+        .contains(
+            "reservedListMap={baddies=baddies,FULLY_BLOCKED, "
+                + "ford=ford,FULLY_BLOCKED # random comment}");
+  }
+
+  @Test
+  void testStageEntityChange_succeedsWithEmptyFile() throws Exception {
+    File tmpFile = tmpDir.resolve("xn--q9jyb4c_common-tmp.txt").toFile();
+    String fileStr = "";
+    Files.asCharSink(tmpFile, UTF_8).write(fileStr);
+    CreateReservedListCommand command = new CreateReservedListCommand();
+    command.input = Paths.get(tmpFile.getPath());
+    command.init();
+    assertThat(command.prompt()).contains("reservedListMap={}");
   }
 }
