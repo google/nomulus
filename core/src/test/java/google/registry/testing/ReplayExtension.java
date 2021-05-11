@@ -18,10 +18,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
+import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.ReplayQueue;
 import google.registry.model.ofy.TransactionInfo;
 import google.registry.persistence.VKey;
@@ -46,6 +48,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
   FakeClock clock;
   boolean compare;
+  InjectExtension injectExtension = new InjectExtension();
 
   private ReplayExtension(FakeClock clock, boolean compare) {
     this.clock = clock;
@@ -62,6 +65,12 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
   @Override
   public void beforeEach(ExtensionContext context) {
+    // Use a single bucket to expose timestamp inversion problems. This typically happens when
+    // a test with this extension rolls back the fake clock in the setup method, creating inverted
+    // timestamp with the canned data preloaded by AppengineExtension. The solution is to move
+    // the clock change to the test's constructor.
+    injectExtension.setStaticField(
+        CommitLogBucket.class, "bucketIdSupplier", Suppliers.ofInstance(1));
     DatabaseHelper.setClock(clock);
     DatabaseHelper.setAlwaysSaveWithBackup(true);
     ReplayQueue.clear();
@@ -74,6 +83,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     // should be safe to call replayToSql() twice, as the replay queue should be empty the second
     // time.
     replayToSql();
+    injectExtension.afterEach(context);
   }
 
   private static ImmutableSet<String> NON_REPLICATED_TYPES =

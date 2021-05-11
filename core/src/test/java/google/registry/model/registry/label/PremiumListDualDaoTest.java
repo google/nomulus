@@ -29,7 +29,6 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registry.Registry;
 import google.registry.testing.TestCacheExtension;
-import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,12 +48,12 @@ public class PremiumListDualDaoTest extends EntityTestCase {
   @BeforeEach
   void before() {
     createTld("tld");
-    fakeClock.setAutoIncrementStep(Duration.millis(1));
+    fakeClock.setAutoIncrementByOneMilli();
   }
 
   @AfterEach
   void after() {
-    fakeClock.setAutoIncrementStep(Duration.ZERO);
+    fakeClock.disableAutoIncrement();
   }
 
   @Test

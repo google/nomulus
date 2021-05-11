@@ -34,6 +34,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.poll.PollMessage;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
+import google.registry.testing.SetClockExtension;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,10 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link PollAckFlow}. */
 @DualDatabaseTest
 class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
+
+  @Order(value = Order.DEFAULT - 3)
+  @RegisterExtension
+  final SetClockExtension setClockExtension = new SetClockExtension(clock, "2011-01-02T01:01:01Z");
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
@@ -58,13 +63,9 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
   void setUp() {
     setEppInput("poll_ack.xml", ImmutableMap.of("MSGID", "1-3-EXAMPLE-4-3-2011"));
     setClientIdForFlow("NewRegistrar");
-    clock.setTo(DateTime.parse("2011-01-02T01:01:01Z"));
     createTld("example");
-    clock.advanceOneMilli();
     contact = persistActiveContact("jd1234");
-    clock.advanceOneMilli();
     domain = persistResource(newDomainBase("test.example", contact));
-    clock.advanceOneMilli();
   }
 
   private void persistOneTimePollMessage(long messageId) {
