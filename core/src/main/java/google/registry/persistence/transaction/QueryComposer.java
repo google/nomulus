@@ -152,6 +152,10 @@ public abstract class QueryComposer<T> {
     return criteriaBuilder::greaterThan;
   }
 
+  public static WhereOperator<String> like(CriteriaBuilder criteriaBuilder) {
+    return criteriaBuilder::like;
+  }
+
   /**
    * Enum used to specify comparison operations, e.g. {@code where("fieldName", Comparator.NE,
    * "someval")'}.
@@ -183,7 +187,14 @@ public abstract class QueryComposer<T> {
     GTE(" >=", QueryComposer::greaterThanOrEqualTo),
 
     /** Return only records whose field is greater than the value. */
-    GT(" >", QueryComposer::greaterThan);
+    GT(" >", QueryComposer::greaterThan),
+
+    /**
+     * Return only records whose field matches the pattern.
+     *
+     * <p>SQL ONLY.
+     */
+    LIKE(null, QueryComposer::like);
 
     private final String datastoreString;
 
