@@ -18,7 +18,7 @@ import static com.google.appengine.api.datastore.EntityTranslator.convertToPb;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.CommitLogBucket.getBucketKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -61,94 +61,96 @@ public class OfyCommitLogTest {
   @Test
   void testTransact_doesNothing_noCommitLogIsSaved() {
     tm().transact(() -> {});
-    assertThat(ofy().load().type(CommitLogManifest.class)).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogManifest.class)).isEmpty();
   }
 
   @Test
   void testTransact_savesDataAndCommitLog() {
-    tm().transact(() -> ofy().save().entity(Root.create(1, getCrossTldKey())).now());
-    assertThat(ofy().load().key(Key.create(getCrossTldKey(), Root.class, 1)).now().value)
+    tm().transact(() -> auditedOfy().save().entity(Root.create(1, getCrossTldKey())).now());
+    assertThat(auditedOfy().load().key(Key.create(getCrossTldKey(), Root.class, 1)).now().value)
         .isEqualTo("value");
-    assertThat(ofy().load().type(CommitLogManifest.class)).hasSize(1);
-    assertThat(ofy().load().type(CommitLogMutation.class)).hasSize(1);
+    assertThat(auditedOfy().load().type(CommitLogManifest.class)).hasSize(1);
+    assertThat(auditedOfy().load().type(CommitLogMutation.class)).hasSize(1);
   }
 
   @Test
   void testTransact_saveWithoutBackup_noCommitLogIsSaved() {
-    tm().transact(() -> ofy().saveWithoutBackup().entity(Root.create(1, getCrossTldKey())).now());
-    assertThat(ofy().load().key(Key.create(getCrossTldKey(), Root.class, 1)).now().value)
+    tm().transact(
+            () -> auditedOfy().saveWithoutBackup().entity(Root.create(1, getCrossTldKey())).now());
+    assertThat(auditedOfy().load().key(Key.create(getCrossTldKey(), Root.class, 1)).now().value)
         .isEqualTo("value");
-    assertThat(ofy().load().type(CommitLogManifest.class)).isEmpty();
-    assertThat(ofy().load().type(CommitLogMutation.class)).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogManifest.class)).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogMutation.class)).isEmpty();
   }
 
   @Test
   void testTransact_deleteWithoutBackup_noCommitLogIsSaved() {
-    tm().transact(() -> ofy().saveWithoutBackup().entity(Root.create(1, getCrossTldKey())).now());
-    tm().transact(() -> ofy().deleteWithoutBackup().key(Key.create(Root.class, 1)));
-    assertThat(ofy().load().key(Key.create(Root.class, 1)).now()).isNull();
-    assertThat(ofy().load().type(CommitLogManifest.class)).isEmpty();
-    assertThat(ofy().load().type(CommitLogMutation.class)).isEmpty();
+    tm().transact(
+            () -> auditedOfy().saveWithoutBackup().entity(Root.create(1, getCrossTldKey())).now());
+    tm().transact(() -> auditedOfy().deleteWithoutBackup().key(Key.create(Root.class, 1)));
+    assertThat(auditedOfy().load().key(Key.create(Root.class, 1)).now()).isNull();
+    assertThat(auditedOfy().load().type(CommitLogManifest.class)).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogMutation.class)).isEmpty();
   }
 
   @Test
   void testTransact_savesEntity_itsProtobufFormIsStoredInCommitLog() {
-    tm().transact(() -> ofy().save().entity(Root.create(1, getCrossTldKey())).now());
+    tm().transact(() -> auditedOfy().save().entity(Root.create(1, getCrossTldKey())).now());
     final byte[] entityProtoBytes =
-        ofy().load().type(CommitLogMutation.class).first().now().entityProtoBytes;
-    // This transaction is needed so that save().toEntity() can access ofy().getTransactionTime()
+        auditedOfy().load().type(CommitLogMutation.class).first().now().entityProtoBytes;
+    // This transaction is needed so that save().toEntity() can access
+    // auditedOfy().getTransactionTime()
     // when it attempts to set the update timestamp.
-    tm()
-        .transact(
+    tm().transact(
             () ->
                 assertThat(entityProtoBytes)
                     .isEqualTo(
-                        convertToPb(ofy().save().toEntity(Root.create(1, getCrossTldKey())))
+                        convertToPb(auditedOfy().save().toEntity(Root.create(1, getCrossTldKey())))
                             .toByteArray()));
   }
 
   @Test
   void testTransact_savesEntity_mutationIsChildOfManifest() {
-    tm().transact(() -> ofy().save().entity(Root.create(1, getCrossTldKey())).now());
+    tm().transact(() -> auditedOfy().save().entity(Root.create(1, getCrossTldKey())).now());
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .type(CommitLogMutation.class)
-                .ancestor(ofy().load().type(CommitLogManifest.class).first().now()))
+                .ancestor(auditedOfy().load().type(CommitLogManifest.class).first().now()))
         .hasSize(1);
   }
 
   @Test
   void testTransactNew_savesDataAndCommitLog() {
-    tm().transactNew(() -> ofy().save().entity(Root.create(1, getCrossTldKey())).now());
-    assertThat(ofy().load().key(Key.create(getCrossTldKey(), Root.class, 1)).now().value)
+    tm().transactNew(() -> auditedOfy().save().entity(Root.create(1, getCrossTldKey())).now());
+    assertThat(auditedOfy().load().key(Key.create(getCrossTldKey(), Root.class, 1)).now().value)
         .isEqualTo("value");
-    assertThat(ofy().load().type(CommitLogManifest.class)).hasSize(1);
-    assertThat(ofy().load().type(CommitLogMutation.class)).hasSize(1);
+    assertThat(auditedOfy().load().type(CommitLogManifest.class)).hasSize(1);
+    assertThat(auditedOfy().load().type(CommitLogMutation.class)).hasSize(1);
   }
 
   @Test
   void testTransact_multipleSaves_logsMultipleMutations() {
-    tm()
-        .transact(
+    tm().transact(
             () -> {
-              ofy().save().entity(Root.create(1, getCrossTldKey())).now();
-              ofy().save().entity(Root.create(2, getCrossTldKey())).now();
+              auditedOfy().save().entity(Root.create(1, getCrossTldKey())).now();
+              auditedOfy().save().entity(Root.create(2, getCrossTldKey())).now();
             });
-    assertThat(ofy().load().type(CommitLogManifest.class)).hasSize(1);
-    assertThat(ofy().load().type(CommitLogMutation.class)).hasSize(2);
+    assertThat(auditedOfy().load().type(CommitLogManifest.class)).hasSize(1);
+    assertThat(auditedOfy().load().type(CommitLogMutation.class)).hasSize(2);
   }
 
   @Test
   void testTransact_deletion_deletesAndLogsWithoutMutation() {
-    tm().transact(() -> ofy().saveWithoutBackup().entity(Root.create(1, getCrossTldKey())).now());
+    tm().transact(
+            () -> auditedOfy().saveWithoutBackup().entity(Root.create(1, getCrossTldKey())).now());
     clock.advanceOneMilli();
     final Key<Root> otherTldKey = Key.create(getCrossTldKey(), Root.class, 1);
-    tm().transact(() -> ofy().delete().key(otherTldKey));
-    assertThat(ofy().load().key(otherTldKey).now()).isNull();
-    assertThat(ofy().load().type(CommitLogManifest.class)).hasSize(1);
-    assertThat(ofy().load().type(CommitLogMutation.class)).isEmpty();
-    assertThat(ofy().load().type(CommitLogManifest.class).first().now().getDeletions())
+    tm().transact(() -> auditedOfy().delete().key(otherTldKey));
+    assertThat(auditedOfy().load().key(otherTldKey).now()).isNull();
+    assertThat(auditedOfy().load().type(CommitLogManifest.class)).hasSize(1);
+    assertThat(auditedOfy().load().type(CommitLogMutation.class)).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogManifest.class).first().now().getDeletions())
         .containsExactly(otherTldKey);
   }
 
@@ -159,7 +161,7 @@ public class OfyCommitLogTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> tm().transactNew(() -> ofy().delete().entity(backupsArentAllowedOnMe)));
+            () -> tm().transactNew(() -> auditedOfy().delete().entity(backupsArentAllowedOnMe)));
     assertThat(thrown).hasMessageThat().contains("Can't save/delete a @NotBackedUp");
   }
 
@@ -170,7 +172,7 @@ public class OfyCommitLogTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> tm().transactNew(() -> ofy().save().entity(backupsArentAllowedOnMe)));
+            () -> tm().transactNew(() -> auditedOfy().save().entity(backupsArentAllowedOnMe)));
     assertThat(thrown).hasMessageThat().contains("Can't save/delete a @NotBackedUp");
   }
 
@@ -180,7 +182,7 @@ public class OfyCommitLogTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> tm().transactNew(() -> ofy().delete().key(virtualEntityKey)));
+            () -> tm().transactNew(() -> auditedOfy().delete().key(virtualEntityKey)));
     assertThat(thrown).hasMessageThat().contains("Can't save/delete a @VirtualEntity");
   }
 
@@ -190,7 +192,7 @@ public class OfyCommitLogTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> tm().transactNew(() -> ofy().save().entity(virtualEntity)));
+            () -> tm().transactNew(() -> auditedOfy().save().entity(virtualEntity)));
     assertThat(thrown).hasMessageThat().contains("Can't save/delete a @VirtualEntity");
   }
 
@@ -200,7 +202,7 @@ public class OfyCommitLogTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> ofy().deleteWithoutBackup().key(virtualEntityKey));
+            () -> auditedOfy().deleteWithoutBackup().key(virtualEntityKey));
     assertThat(thrown).hasMessageThat().contains("Can't save/delete a @VirtualEntity");
   }
 
@@ -209,7 +211,8 @@ public class OfyCommitLogTest {
     final TestVirtualObject virtualEntity = TestVirtualObject.create("virtual");
     IllegalArgumentException thrown =
         assertThrows(
-            IllegalArgumentException.class, () -> ofy().saveWithoutBackup().entity(virtualEntity));
+            IllegalArgumentException.class,
+            () -> auditedOfy().saveWithoutBackup().entity(virtualEntity));
     assertThat(thrown).hasMessageThat().contains("Can't save/delete a @VirtualEntity");
   }
 
@@ -219,11 +222,10 @@ public class OfyCommitLogTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                tm()
-                    .transact(
+                tm().transact(
                         () -> {
-                          ofy().save().entity(Root.create(1, getCrossTldKey()));
-                          ofy().save().entity(Root.create(1, getCrossTldKey()));
+                          auditedOfy().save().entity(Root.create(1, getCrossTldKey()));
+                          auditedOfy().save().entity(Root.create(1, getCrossTldKey()));
                         }));
     assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
   }
@@ -234,21 +236,20 @@ public class OfyCommitLogTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                tm()
-                    .transact(
+                tm().transact(
                         () -> {
-                          ofy().save().entity(Root.create(1, getCrossTldKey()));
-                          ofy().delete().entity(Root.create(1, getCrossTldKey()));
+                          auditedOfy().save().entity(Root.create(1, getCrossTldKey()));
+                          auditedOfy().delete().entity(Root.create(1, getCrossTldKey()));
                         }));
     assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
   }
 
   @Test
   void testSavingRootAndChild_updatesTimestampOnBackupGroupRoot() {
-    tm().transact(() -> ofy().save().entity(Root.create(1, getCrossTldKey())));
-    ofy().clearSessionCache();
+    tm().transact(() -> auditedOfy().save().entity(Root.create(1, getCrossTldKey())));
+    auditedOfy().clearSessionCache();
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 1))
                 .now()
@@ -256,15 +257,14 @@ public class OfyCommitLogTest {
                 .getTimestamp())
         .isEqualTo(clock.nowUtc());
     clock.advanceOneMilli();
-    tm()
-        .transact(
+    tm().transact(
             () -> {
-              ofy().save().entity(Root.create(1, getCrossTldKey()));
-              ofy().save().entity(new Child());
+              auditedOfy().save().entity(Root.create(1, getCrossTldKey()));
+              auditedOfy().save().entity(new Child());
             });
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 1))
                 .now()
@@ -275,10 +275,10 @@ public class OfyCommitLogTest {
 
   @Test
   void testSavingOnlyChild_updatesTimestampOnBackupGroupRoot() {
-    tm().transact(() -> ofy().save().entity(Root.create(1, getCrossTldKey())));
-    ofy().clearSessionCache();
+    tm().transact(() -> auditedOfy().save().entity(Root.create(1, getCrossTldKey())));
+    auditedOfy().clearSessionCache();
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 1))
                 .now()
@@ -286,10 +286,10 @@ public class OfyCommitLogTest {
                 .getTimestamp())
         .isEqualTo(clock.nowUtc());
     clock.advanceOneMilli();
-    tm().transact(() -> ofy().save().entity(new Child()));
-    ofy().clearSessionCache();
+    tm().transact(() -> auditedOfy().save().entity(new Child()));
+    auditedOfy().clearSessionCache();
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 1))
                 .now()
@@ -300,10 +300,10 @@ public class OfyCommitLogTest {
 
   @Test
   void testDeletingChild_updatesTimestampOnBackupGroupRoot() {
-    tm().transact(() -> ofy().save().entity(Root.create(1, getCrossTldKey())));
-    ofy().clearSessionCache();
+    tm().transact(() -> auditedOfy().save().entity(Root.create(1, getCrossTldKey())));
+    auditedOfy().clearSessionCache();
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 1))
                 .now()
@@ -312,10 +312,10 @@ public class OfyCommitLogTest {
         .isEqualTo(clock.nowUtc());
     clock.advanceOneMilli();
     // The fact that the child was never persisted is irrelevant.
-    tm().transact(() -> ofy().delete().entity(new Child()));
-    ofy().clearSessionCache();
+    tm().transact(() -> auditedOfy().delete().entity(new Child()));
+    auditedOfy().clearSessionCache();
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 1))
                 .now()
@@ -326,10 +326,10 @@ public class OfyCommitLogTest {
 
   @Test
   void testReadingRoot_doesntUpdateTimestamp() {
-    tm().transact(() -> ofy().save().entity(Root.create(1, getCrossTldKey())));
-    ofy().clearSessionCache();
+    tm().transact(() -> auditedOfy().save().entity(Root.create(1, getCrossTldKey())));
+    auditedOfy().clearSessionCache();
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 1))
                 .now()
@@ -337,17 +337,16 @@ public class OfyCommitLogTest {
                 .getTimestamp())
         .isEqualTo(clock.nowUtc());
     clock.advanceOneMilli();
-    tm()
-        .transact(
+    tm().transact(
             () -> {
               // Don't remove this line, as without saving *something* the commit log code will
               // never be invoked and the test will trivially pass.
-              ofy().save().entity(Root.create(2, getCrossTldKey()));
-              ofy().load().entity(Root.create(1, getCrossTldKey()));
+              auditedOfy().save().entity(Root.create(2, getCrossTldKey()));
+              auditedOfy().load().entity(Root.create(1, getCrossTldKey()));
             });
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 1))
                 .now()
@@ -358,10 +357,10 @@ public class OfyCommitLogTest {
 
   @Test
   void testReadingChild_doesntUpdateTimestampOnBackupGroupRoot() {
-    tm().transact(() -> ofy().save().entity(Root.create(1, getCrossTldKey())));
-    ofy().clearSessionCache();
+    tm().transact(() -> auditedOfy().save().entity(Root.create(1, getCrossTldKey())));
+    auditedOfy().clearSessionCache();
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 1))
                 .now()
@@ -369,17 +368,16 @@ public class OfyCommitLogTest {
                 .getTimestamp())
         .isEqualTo(clock.nowUtc());
     clock.advanceOneMilli();
-    tm()
-        .transact(
+    tm().transact(
             () -> {
               // Don't remove this line, as without saving *something* the commit log code will
               // never be invoked and the test will trivially pass
-              ofy().save().entity(Root.create(2, getCrossTldKey()));
-              ofy().load().entity(new Child()); // All Child objects are under Root(1).
+              auditedOfy().save().entity(Root.create(2, getCrossTldKey()));
+              auditedOfy().load().entity(new Child()); // All Child objects are under Root(1).
             });
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 1))
                 .now()
@@ -391,17 +389,16 @@ public class OfyCommitLogTest {
   @Test
   void testSavingAcrossBackupGroupRoots_updatesCorrectTimestamps() {
     // Create three roots.
-    tm()
-        .transact(
+    tm().transact(
             () -> {
-              ofy().save().entity(Root.create(1, getCrossTldKey()));
-              ofy().save().entity(Root.create(2, getCrossTldKey()));
-              ofy().save().entity(Root.create(3, getCrossTldKey()));
+              auditedOfy().save().entity(Root.create(1, getCrossTldKey()));
+              auditedOfy().save().entity(Root.create(2, getCrossTldKey()));
+              auditedOfy().save().entity(Root.create(3, getCrossTldKey()));
             });
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     for (int i = 1; i <= 3; i++) {
       assertThat(
-              ofy()
+              auditedOfy()
                   .load()
                   .key(Key.create(getCrossTldKey(), Root.class, i))
                   .now()
@@ -411,16 +408,15 @@ public class OfyCommitLogTest {
     }
     clock.advanceOneMilli();
     // Mutate one root, and a child of a second, ignoring the third.
-    tm()
-        .transact(
+    tm().transact(
             () -> {
-              ofy().save().entity(new Child()); // All Child objects are under Root(1).
-              ofy().save().entity(Root.create(2, getCrossTldKey()));
+              auditedOfy().save().entity(new Child()); // All Child objects are under Root(1).
+              auditedOfy().save().entity(Root.create(2, getCrossTldKey()));
             });
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     // Child was touched.
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 1))
                 .now()
@@ -429,7 +425,7 @@ public class OfyCommitLogTest {
         .isEqualTo(clock.nowUtc());
     // Directly touched.
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 2))
                 .now()
@@ -438,7 +434,7 @@ public class OfyCommitLogTest {
         .isEqualTo(clock.nowUtc());
     // Wasn't touched.
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Key.create(getCrossTldKey(), Root.class, 3))
                 .now()

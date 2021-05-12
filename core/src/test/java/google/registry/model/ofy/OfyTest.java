@@ -18,7 +18,7 @@ import static com.google.appengine.api.datastore.DatastoreServiceFactory.getData
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.ofy.Ofy.getBaseEntityClassFromEntityOrKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -82,7 +82,7 @@ public class OfyTest {
 
   private void doBackupGroupRootTimestampInversionTest(Runnable runnable) {
     DateTime groupTimestamp =
-        ofy().load().key(someObject.getParent()).now().getUpdateTimestamp().getTimestamp();
+        auditedOfy().load().key(someObject.getParent()).now().getUpdateTimestamp().getTimestamp();
     // Set the clock in Ofy to the same time as the backup group root's save time.
     Ofy ofy = new Ofy(new FakeClock(groupTimestamp));
     TimestampInversionException thrown =
@@ -98,12 +98,12 @@ public class OfyTest {
 
   @Test
   void testBackupGroupRootTimestampsMustIncreaseOnSave() {
-    doBackupGroupRootTimestampInversionTest(() -> ofy().save().entity(someObject));
+    doBackupGroupRootTimestampInversionTest(() -> auditedOfy().save().entity(someObject));
   }
 
   @Test
   void testBackupGroupRootTimestampsMustIncreaseOnDelete() {
-    doBackupGroupRootTimestampInversionTest(() -> ofy().delete().entity(someObject));
+    doBackupGroupRootTimestampInversionTest(() -> auditedOfy().delete().entity(someObject));
   }
 
   @Test
@@ -114,8 +114,8 @@ public class OfyTest {
             () ->
                 tm().transact(
                         () -> {
-                          ofy().save().entity(someObject);
-                          ofy().save().entity(someObject);
+                          auditedOfy().save().entity(someObject);
+                          auditedOfy().save().entity(someObject);
                         }));
     assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
   }
@@ -128,8 +128,8 @@ public class OfyTest {
             () ->
                 tm().transact(
                         () -> {
-                          ofy().delete().entity(someObject);
-                          ofy().delete().entity(someObject);
+                          auditedOfy().delete().entity(someObject);
+                          auditedOfy().delete().entity(someObject);
                         }));
     assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
   }
@@ -142,8 +142,8 @@ public class OfyTest {
             () ->
                 tm().transact(
                         () -> {
-                          ofy().save().entity(someObject);
-                          ofy().delete().entity(someObject);
+                          auditedOfy().save().entity(someObject);
+                          auditedOfy().delete().entity(someObject);
                         }));
     assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
   }
@@ -156,8 +156,8 @@ public class OfyTest {
             () ->
                 tm().transact(
                         () -> {
-                          ofy().delete().entity(someObject);
-                          ofy().save().entity(someObject);
+                          auditedOfy().delete().entity(someObject);
+                          auditedOfy().save().entity(someObject);
                         }));
     assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
   }
@@ -166,7 +166,7 @@ public class OfyTest {
   void testSavingKeyTwiceInOneCall() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> tm().transact(() -> ofy().save().entities(someObject, someObject)));
+        () -> tm().transact(() -> auditedOfy().save().entities(someObject, someObject)));
   }
 
   /** Simple entity class with lifecycle callbacks. */
@@ -194,21 +194,21 @@ public class OfyTest {
 
   @Test
   void testLifecycleCallbacks_loadFromEntity() {
-    ofy().factory().register(LifecycleObject.class);
+    auditedOfy().factory().register(LifecycleObject.class);
     LifecycleObject object = new LifecycleObject();
-    Entity entity = ofy().save().toEntity(object);
+    Entity entity = auditedOfy().save().toEntity(object);
     assertThat(object.onSaveCalled).isTrue();
-    assertThat(ofy().load().<LifecycleObject>fromEntity(entity).onLoadCalled).isTrue();
+    assertThat(auditedOfy().load().<LifecycleObject>fromEntity(entity).onLoadCalled).isTrue();
   }
 
   @Test
   void testLifecycleCallbacks_loadFromDatastore() {
-    ofy().factory().register(LifecycleObject.class);
+    auditedOfy().factory().register(LifecycleObject.class);
     final LifecycleObject object = new LifecycleObject();
-    tm().transact(() -> ofy().save().entity(object).now());
+    tm().transact(() -> auditedOfy().save().entity(object).now());
     assertThat(object.onSaveCalled).isTrue();
-    ofy().clearSessionCache();
-    assertThat(ofy().load().entity(object).now().onLoadCalled).isTrue();
+    auditedOfy().clearSessionCache();
+    assertThat(auditedOfy().load().entity(object).now().onLoadCalled).isTrue();
   }
 
   /** Avoid regressions of b/21309102 where transaction time did not change on each retry. */
@@ -287,7 +287,7 @@ public class OfyTest {
                       public Integer get() {
                         // There will be something in the manifest now, but it won't be committed if
                         // we throw.
-                        ofy().save().entity(someObject);
+                        auditedOfy().save().entity(someObject);
                         count++;
                         if (count == 3) {
                           return count;
@@ -309,7 +309,7 @@ public class OfyTest {
           public Void get() {
             if (firstCallToVrun) {
               firstCallToVrun = false;
-              ofy().save().entity(someObject);
+              auditedOfy().save().entity(someObject);
               return null;
             }
             fail("Shouldn't have retried.");
@@ -332,7 +332,7 @@ public class OfyTest {
         };
     // Despite the DatastoreTimeoutException in the first call to getResult(), this should succeed
     // without retrying. If a retry is triggered, the test should fail due to the call to fail().
-    ofy().transactCommitLoggedWork(commitLoggedWork);
+    auditedOfy().transactCommitLoggedWork(commitLoggedWork);
   }
 
   void doReadOnlyRetryTest(final RuntimeException e) {
@@ -408,23 +408,24 @@ public class OfyTest {
 
   @Test
   void test_doWithFreshSessionCache() {
-    ofy().saveWithoutBackup().entity(someObject).now();
+    auditedOfy().saveWithoutBackup().entity(someObject).now();
     final HistoryEntry modifiedObject =
         someObject.asBuilder().setModificationTime(END_OF_TIME).build();
     // Mutate the saved objected, bypassing the Objectify session cache.
-    getDatastoreService().put(ofy().saveWithoutBackup().toEntity(modifiedObject));
+    getDatastoreService().put(auditedOfy().saveWithoutBackup().toEntity(modifiedObject));
     // Normal loading should come from the session cache and shouldn't reflect the mutation.
-    assertThat(ofy().load().entity(someObject).now()).isEqualTo(someObject);
+    assertThat(auditedOfy().load().entity(someObject).now()).isEqualTo(someObject);
     // Loading inside doWithFreshSessionCache() should reflect the mutation.
     boolean ran =
-        ofy()
+        auditedOfy()
             .doWithFreshSessionCache(
                 () -> {
-                  assertThat(ofy().load().entity(someObject).now()).isEqualTo(modifiedObject);
+                  assertThat(auditedOfy().load().entity(someObject).now())
+                      .isEqualTo(modifiedObject);
                   return true;
                 });
     assertThat(ran).isTrue();
     // Test the normal loading again to verify that we've restored the original session unchanged.
-    assertThat(ofy().load().entity(someObject).now()).isEqualTo(someObject);
+    assertThat(auditedOfy().load().entity(someObject).now()).isEqualTo(someObject);
   }
 }

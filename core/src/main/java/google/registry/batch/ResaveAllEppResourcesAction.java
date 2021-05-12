@@ -15,7 +15,7 @@
 package google.registry.batch;
 
 import static google.registry.mapreduce.MapreduceRunner.PARAM_FAST;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.tools.mapreduce.Mapper;
@@ -104,13 +104,13 @@ public class ResaveAllEppResourcesAction implements Runnable {
       boolean resaved =
           tm().transact(
                   () -> {
-                    EppResource originalResource = ofy().load().key(resourceKey).now();
+                    EppResource originalResource = auditedOfy().load().key(resourceKey).now();
                     EppResource projectedResource =
                         originalResource.cloneProjectedAtTime(tm().getTransactionTime());
                     if (isFast && originalResource.equals(projectedResource)) {
                       return false;
                     } else {
-                      ofy().save().entity(projectedResource).now();
+                      auditedOfy().save().entity(projectedResource).now();
                       return true;
                     }
                   });

@@ -17,7 +17,7 @@ package google.registry.model.registrar;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT;
 import static google.registry.testing.CertificateSamples.SAMPLE_CERT2;
@@ -569,14 +569,14 @@ class RegistrarTest extends EntityTestCase {
               assertThat(Registrar.loadByClientIdCached("registrar")).isPresent();
               // Load something as a control to make sure we are seeing loaded keys in the
               // session cache.
-              ofy().load().entity(abuseAdminContact).now();
-              assertThat(ofy().getSessionKeys()).contains(Key.create(abuseAdminContact));
-              assertThat(ofy().getSessionKeys()).doesNotContain(Key.create(registrar));
+              auditedOfy().load().entity(abuseAdminContact).now();
+              assertThat(auditedOfy().getSessionKeys()).contains(Key.create(abuseAdminContact));
+              assertThat(auditedOfy().getSessionKeys()).doesNotContain(Key.create(registrar));
             });
     tm().clearSessionCache();
     // Conversely, loads outside of a transaction should end up in the session cache.
     assertThat(Registrar.loadByClientIdCached("registrar")).isPresent();
-    assertThat(ofy().getSessionKeys()).contains(Key.create(registrar));
+    assertThat(auditedOfy().getSessionKeys()).contains(Key.create(registrar));
   }
 
   @TestOfyAndSql

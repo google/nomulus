@@ -16,7 +16,7 @@ package google.registry.model.billing;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.ofyTmOrDoNothing;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -197,21 +197,32 @@ public class BillingEventTest extends EntityTestCase {
   void testParenting() {
     // Note that these are all tested separately because BillingEvent is an abstract base class that
     // lacks the @Entity annotation, and thus we cannot call .type(BillingEvent.class)
-    assertThat(ofy().load().type(BillingEvent.OneTime.class).ancestor(domain).list())
+    assertThat(auditedOfy().load().type(BillingEvent.OneTime.class).ancestor(domain).list())
         .containsExactly(oneTime, oneTimeSynthetic);
-    assertThat(ofy().load().type(BillingEvent.Recurring.class).ancestor(domain).list())
+    assertThat(auditedOfy().load().type(BillingEvent.Recurring.class).ancestor(domain).list())
         .containsExactly(recurring);
-    assertThat(ofy().load().type(BillingEvent.Cancellation.class).ancestor(domain).list())
+    assertThat(auditedOfy().load().type(BillingEvent.Cancellation.class).ancestor(domain).list())
         .containsExactly(cancellationOneTime, cancellationRecurring);
-    assertThat(ofy().load().type(BillingEvent.Modification.class).ancestor(domain).list())
+    assertThat(auditedOfy().load().type(BillingEvent.Modification.class).ancestor(domain).list())
         .containsExactly(modification);
-    assertThat(ofy().load().type(BillingEvent.OneTime.class).ancestor(domainHistory).list())
+    assertThat(auditedOfy().load().type(BillingEvent.OneTime.class).ancestor(domainHistory).list())
         .containsExactly(oneTime, oneTimeSynthetic);
-    assertThat(ofy().load().type(BillingEvent.Recurring.class).ancestor(domainHistory).list())
+    assertThat(
+            auditedOfy().load().type(BillingEvent.Recurring.class).ancestor(domainHistory).list())
         .containsExactly(recurring);
-    assertThat(ofy().load().type(BillingEvent.Cancellation.class).ancestor(domainHistory2).list())
+    assertThat(
+            auditedOfy()
+                .load()
+                .type(BillingEvent.Cancellation.class)
+                .ancestor(domainHistory2)
+                .list())
         .containsExactly(cancellationOneTime, cancellationRecurring);
-    assertThat(ofy().load().type(BillingEvent.Modification.class).ancestor(domainHistory2).list())
+    assertThat(
+            auditedOfy()
+                .load()
+                .type(BillingEvent.Modification.class)
+                .ancestor(domainHistory2)
+                .list())
         .containsExactly(modification);
   }
 

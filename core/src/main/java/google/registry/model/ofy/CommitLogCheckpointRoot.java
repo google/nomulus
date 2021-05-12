@@ -14,7 +14,7 @@
 
 package google.registry.model.ofy;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.googlecode.objectify.Key;
@@ -49,7 +49,7 @@ public class CommitLogCheckpointRoot extends ImmutableObject implements Datastor
   }
 
   public static CommitLogCheckpointRoot loadRoot() {
-    CommitLogCheckpointRoot root = ofy().load().key(getKey()).now();
+    CommitLogCheckpointRoot root = auditedOfy().load().key(getKey()).now();
     return root == null ? new CommitLogCheckpointRoot() : root;
   }
 

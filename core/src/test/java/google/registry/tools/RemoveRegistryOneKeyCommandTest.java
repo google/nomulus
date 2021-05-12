@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -62,7 +62,7 @@ public class RemoveRegistryOneKeyCommandTest extends CommandTestCase<RemoveRegis
         "--key_paths_file",
         writeToNamedTmpFile("keypath.txt", getKeyPathLiteral(domain)));
 
-    DomainBase persisted = ofy().load().key(domain.createVKey().getOfyKey()).now();
+    DomainBase persisted = auditedOfy().load().key(domain.createVKey().getOfyKey()).now();
     assertThat(ImmutableList.of(persisted))
         .comparingElementsUsing(getDomainBaseCorrespondence())
         .containsExactly(origin);
@@ -86,7 +86,7 @@ public class RemoveRegistryOneKeyCommandTest extends CommandTestCase<RemoveRegis
         "--key_paths_file",
         writeToNamedTmpFile("keypath.txt", getKeyPathLiteral(domain)));
 
-    DomainBase persisted = ofy().load().key(domain.createVKey().getOfyKey()).now();
+    DomainBase persisted = auditedOfy().load().key(domain.createVKey().getOfyKey()).now();
     assertThat(ImmutableList.of(persisted))
         .comparingElementsUsing(getDomainBaseCorrespondence())
         .containsExactly(origin);

@@ -91,7 +91,8 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
 
   @Override
   public void run() {
-    Cursor cursor = ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
+    Cursor cursor =
+        tm().loadByKeyIfPresent(Cursor.createGlobalVKey(RECURRING_BILLING)).orElse(null);
     DateTime executeTime = clock.nowUtc();
     DateTime persistedCursorTime = (cursor == null ? START_OF_TIME : cursor.getCursorTime());
     DateTime cursorTime = cursorTimeParam.orElse(persistedCursorTime);

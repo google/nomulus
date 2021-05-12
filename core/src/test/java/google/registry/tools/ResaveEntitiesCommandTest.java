@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 
 import com.google.appengine.api.datastore.KeyFactory;
@@ -35,27 +35,27 @@ class ResaveEntitiesCommandTest extends CommandTestCase<ResaveEntitiesCommand> {
     ContactResource contact1 = persistActiveContact("contact1");
     ContactResource contact2 = persistActiveContact("contact2");
     deleteEntitiesOfTypes(CommitLogManifest.class, CommitLogMutation.class);
-    assertThat(ofy().load().type(CommitLogManifest.class).keys()).isEmpty();
-    assertThat(ofy().load().type(CommitLogMutation.class).keys()).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogManifest.class).keys()).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogMutation.class).keys()).isEmpty();
     runCommandForced(
         KeyFactory.keyToString(Key.create(contact1).getRaw()),
         KeyFactory.keyToString(Key.create(contact2).getRaw()));
 
-    assertThat(ofy().load().type(CommitLogManifest.class).keys()).hasSize(1);
+    assertThat(auditedOfy().load().type(CommitLogManifest.class).keys()).hasSize(1);
     Iterable<ImmutableObject> savedEntities =
         transform(
-            ofy().load().type(CommitLogMutation.class).list(),
-            mutation -> ofy().load().fromEntity(mutation.getEntity()));
+            auditedOfy().load().type(CommitLogMutation.class).list(),
+            mutation -> auditedOfy().load().fromEntity(mutation.getEntity()));
     // Reload the contacts before asserting, since their update times will have changed.
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertThat(savedEntities)
-        .containsExactlyElementsIn(ofy().load().entities(contact1, contact2).values());
+        .containsExactlyElementsIn(auditedOfy().load().entities(contact1, contact2).values());
   }
 
   @SafeVarargs
   private static void deleteEntitiesOfTypes(Class<? extends ImmutableObject>... types) {
     for (Class<? extends ImmutableObject> type : types) {
-      ofy().deleteWithoutBackup().keys(ofy().load().type(type).keys()).now();
+      auditedOfy().deleteWithoutBackup().keys(auditedOfy().load().type(type).keys()).now();
     }
   }
 }

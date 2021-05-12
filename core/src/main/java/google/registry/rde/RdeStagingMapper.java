@@ -17,7 +17,6 @@ package google.registry.rde;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.tools.mapreduce.Mapper;
@@ -154,7 +153,7 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
     getContext().incrementCounter("fragmenter resources found", fragmenter.resourcesFound);
 
     // Avoid running out of memory.
-    ofy().clearSessionCache();
+    tm().clearSessionCache();
   }
 
   /** Loading cache that turns a resource into XML for the various points in time and modes. */

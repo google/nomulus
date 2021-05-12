@@ -15,7 +15,7 @@
 package google.registry.model.translators;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.Duration.standardDays;
 import static org.joda.time.Duration.standardHours;
@@ -65,12 +65,12 @@ public class CommitLogRevisionsTranslatorFactoryTest {
   }
 
   private void save(final TestObject object) {
-    tm().transact(() -> ofy().save().entity(object));
+    tm().transact(() -> auditedOfy().save().entity(object));
   }
 
   private TestObject reload() {
-    ofy().clearSessionCache();
-    return ofy().load().entity(new TestObject()).now();
+    auditedOfy().clearSessionCache();
+    return auditedOfy().load().entity(new TestObject()).now();
   }
 
   @Test
@@ -87,7 +87,8 @@ public class CommitLogRevisionsTranslatorFactoryTest {
     TestObject object = reload();
     assertThat(object.revisions).hasSize(1);
     assertThat(object.revisions).containsKey(START_TIME);
-    CommitLogManifest commitLogManifest = ofy().load().key(object.revisions.get(START_TIME)).now();
+    CommitLogManifest commitLogManifest =
+        auditedOfy().load().key(object.revisions.get(START_TIME)).now();
     assertThat(commitLogManifest.getCommitTime()).isEqualTo(START_TIME);
   }
 
@@ -149,7 +150,7 @@ public class CommitLogRevisionsTranslatorFactoryTest {
     save(new TestObject());
     clock.advanceBy(standardDays(1));
     com.google.appengine.api.datastore.Entity entity =
-        tm().transactNewReadOnly(() -> ofy().save().toEntity(reload()));
+        tm().transactNewReadOnly(() -> auditedOfy().save().toEntity(reload()));
     assertThat(entity.getProperties().keySet()).containsExactly("revisions.key", "revisions.value");
     assertThat(entity.getProperties())
         .containsEntry(
@@ -162,16 +163,16 @@ public class CommitLogRevisionsTranslatorFactoryTest {
 
   @Test
   void testLoad_neverSaved_returnsNull() {
-    assertThat(ofy().load().entity(new TestObject()).now()).isNull();
+    assertThat(auditedOfy().load().entity(new TestObject()).now()).isNull();
   }
 
   @Test
   void testLoad_missingRevisionRawProperties_createsEmptyObject() {
     com.google.appengine.api.datastore.Entity entity =
-        tm().transactNewReadOnly(() -> ofy().save().toEntity(new TestObject()));
+        tm().transactNewReadOnly(() -> auditedOfy().save().toEntity(new TestObject()));
     entity.removeProperty("revisions.key");
     entity.removeProperty("revisions.value");
-    TestObject object = ofy().load().fromEntity(entity);
+    TestObject object = auditedOfy().load().fromEntity(entity);
     assertThat(object.revisions).isNotNull();
     assertThat(object.revisions).isEmpty();
   }

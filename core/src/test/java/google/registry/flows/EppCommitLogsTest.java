@@ -16,7 +16,7 @@ package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
@@ -95,64 +95,64 @@ class EppCommitLogsTest {
     clock.setTo(timeAtCreate);
     eppLoader = new EppLoader(this, "domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlow();
-    ofy().clearSessionCache();
-    Key<DomainBase> key = Key.create(ofy().load().type(DomainBase.class).first().now());
-    DomainBase domainAfterCreate = ofy().load().key(key).now();
+    auditedOfy().clearSessionCache();
+    Key<DomainBase> key = Key.create(auditedOfy().load().type(DomainBase.class).first().now());
+    DomainBase domainAfterCreate = auditedOfy().load().key(key).now();
     assertThat(domainAfterCreate.getDomainName()).isEqualTo("example.tld");
 
     clock.advanceBy(standardDays(2));
     DateTime timeAtFirstUpdate = clock.nowUtc();
     eppLoader = new EppLoader(this, "domain_update_dsdata_add.xml");
     runFlow();
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
 
-    DomainBase domainAfterFirstUpdate = ofy().load().key(key).now();
+    DomainBase domainAfterFirstUpdate = auditedOfy().load().key(key).now();
     assertThat(domainAfterCreate).isNotEqualTo(domainAfterFirstUpdate);
 
     clock.advanceOneMilli(); // same day as first update
     DateTime timeAtSecondUpdate = clock.nowUtc();
     eppLoader = new EppLoader(this, "domain_update_dsdata_rem.xml");
     runFlow();
-    ofy().clearSessionCache();
-    DomainBase domainAfterSecondUpdate = ofy().load().key(key).now();
+    auditedOfy().clearSessionCache();
+    DomainBase domainAfterSecondUpdate = auditedOfy().load().key(key).now();
 
     clock.advanceBy(standardDays(2));
     DateTime timeAtDelete = clock.nowUtc(); // before 'add' grace period ends
     eppLoader = new EppLoader(this, "domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlow();
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
 
     assertThat(domainAfterFirstUpdate).isNotEqualTo(domainAfterSecondUpdate);
 
     // Point-in-time can only rewind an object from the current version, not roll forward.
-    DomainBase latest = ofy().load().key(key).now();
+    DomainBase latest = auditedOfy().load().key(key).now();
 
     // Creation time has millisecond granularity due to isActive() check.
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertThat(loadAtPointInTime(latest, timeAtCreate.minusMillis(1)).now()).isNull();
     assertThat(loadAtPointInTime(latest, timeAtCreate).now()).isNotNull();
     assertThat(loadAtPointInTime(latest, timeAtCreate.plusMillis(1)).now()).isNotNull();
 
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertThat(loadAtPointInTime(latest, timeAtCreate.plusDays(1)).now())
         .isEqualTo(domainAfterCreate);
 
     // Both updates happened on the same day. Since the revisions field has day granularity, the
     // key to the first update should have been overwritten by the second, and its timestamp rolled
     // forward. So we have to fall back to the last revision before midnight.
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertThat(loadAtPointInTime(latest, timeAtFirstUpdate).now()).isEqualTo(domainAfterCreate);
 
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertThat(loadAtPointInTime(latest, timeAtSecondUpdate).now())
         .isEqualTo(domainAfterSecondUpdate);
 
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertThat(loadAtPointInTime(latest, timeAtSecondUpdate.plusDays(1)).now())
         .isEqualTo(domainAfterSecondUpdate);
 
     // Deletion time has millisecond granularity due to isActive() check.
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertThat(loadAtPointInTime(latest, timeAtDelete.minusMillis(1)).now()).isNotNull();
     assertThat(loadAtPointInTime(latest, timeAtDelete).now()).isNull();
     assertThat(loadAtPointInTime(latest, timeAtDelete.plusMillis(1)).now()).isNull();

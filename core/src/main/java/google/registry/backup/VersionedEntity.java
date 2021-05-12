@@ -47,7 +47,7 @@ import javax.annotation.Nullable;
  *
  * <ul>
  *   <li>Convert an Objectify entity to a Datastore {@link Entity}: {@code
- *       ofy().save().toEntity(..)}
+ *       auditedOfy().save().toEntity(..)}
  *   <li>Entity is serializable, but the more efficient approach is to convert an Entity to a
  *       ProtocolBuffer ({@link com.google.storage.onestore.v3.OnestoreEntity.EntityProto}) and then
  *       to raw bytes.

@@ -15,7 +15,7 @@
 package google.registry.tools.server;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -55,9 +55,9 @@ class ResaveAllHistoryEntriesActionTest extends MapreduceTestCase<ResaveAllHisto
     DomainBase domain = persistActiveDomain("test.tld");
     ContactResource contact = persistActiveContact("humanBeing");
     Entity domainEntry =
-        ofy().save().toEntity(new HistoryEntry.Builder().setParent(domain).build());
+        auditedOfy().save().toEntity(new HistoryEntry.Builder().setParent(domain).build());
     Entity contactEntry =
-        ofy().save().toEntity(new HistoryEntry.Builder().setParent(contact).build());
+        auditedOfy().save().toEntity(new HistoryEntry.Builder().setParent(contact).build());
 
     // Set raw properties outside the Objectify schema, which will be deleted upon re-save.
     domainEntry.setProperty("clientId", "validId");
@@ -66,7 +66,7 @@ class ResaveAllHistoryEntriesActionTest extends MapreduceTestCase<ResaveAllHisto
     contactEntry.setProperty("alsoShouldBeDeleted", "456nah");
     datastoreService.put(domainEntry);
     datastoreService.put(contactEntry);
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     runMapreduce();
 
     Entity updatedDomainEntry = datastoreService.get(domainEntry.getKey());

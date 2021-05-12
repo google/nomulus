@@ -20,6 +20,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newContactResource;
@@ -80,16 +81,18 @@ class KillAllCommitLogsActionTest extends MapreduceTestCase<KillAllCommitLogsAct
       assertWithMessage("entities of type " + clazz).that(ofy().load().type(clazz)).isNotEmpty();
     }
     ImmutableList<?> otherStuff =
-        Streams.stream(ofy().load())
+        Streams.stream(auditedOfy().load())
             .filter(obj -> !AFFECTED_TYPES.contains(obj.getClass()))
             .collect(toImmutableList());
     assertThat(otherStuff).isNotEmpty();
     runMapreduce();
     for (Class<?> clazz : AFFECTED_TYPES) {
-      assertWithMessage("entities of type " + clazz).that(ofy().load().type(clazz)).isEmpty();
+      assertWithMessage("entities of type " + clazz)
+          .that(auditedOfy().load().type(clazz))
+          .isEmpty();
     }
     // Filter out raw Entity objects created by the mapreduce.
-    assertThat(filter(ofy().load(), not(instanceOf(Entity.class))))
+    assertThat(filter(auditedOfy().load(), not(instanceOf(Entity.class))))
         .containsExactlyElementsIn(otherStuff);
   }
 }

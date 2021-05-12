@@ -21,7 +21,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registrar.Registrar.checkValidEmail;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -207,7 +207,11 @@ public class RegistrarContact extends ImmutableObject
               if (tm().isOfy()) {
                 ImmutableSet<Key<RegistrarContact>> existingKeys =
                     ImmutableSet.copyOf(
-                        ofy().load().type(RegistrarContact.class).ancestor(registrar).keys());
+                        auditedOfy()
+                            .load()
+                            .type(RegistrarContact.class)
+                            .ancestor(registrar)
+                            .keys());
                 tm().delete(
                         difference(
                                 existingKeys,

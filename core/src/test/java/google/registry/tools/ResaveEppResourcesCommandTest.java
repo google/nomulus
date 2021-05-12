@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 
 import google.registry.model.ImmutableObject;
@@ -31,23 +31,23 @@ class ResaveEppResourcesCommandTest extends CommandTestCase<ResaveEppResourceCom
   void testSuccess_createsCommitLogs() throws Exception {
     ContactResource contact = persistActiveContact("contact");
     deleteEntitiesOfTypes(CommitLogManifest.class, CommitLogMutation.class);
-    assertThat(ofy().load().type(CommitLogManifest.class).keys()).isEmpty();
-    assertThat(ofy().load().type(CommitLogMutation.class).keys()).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogManifest.class).keys()).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogMutation.class).keys()).isEmpty();
     runCommandForced("--type=CONTACT", "--id=contact");
 
-    assertThat(ofy().load().type(CommitLogManifest.class).keys()).hasSize(1);
-    assertThat(ofy().load().type(CommitLogMutation.class).keys()).hasSize(1);
-    CommitLogMutation mutation = ofy().load().type(CommitLogMutation.class).first().now();
+    assertThat(auditedOfy().load().type(CommitLogManifest.class).keys()).hasSize(1);
+    assertThat(auditedOfy().load().type(CommitLogMutation.class).keys()).hasSize(1);
+    CommitLogMutation mutation = auditedOfy().load().type(CommitLogMutation.class).first().now();
     // Reload the contact before asserting, since its update time will have changed.
-    ofy().clearSessionCache();
-    assertThat(ofy().load().<Object>fromEntity(mutation.getEntity()))
-        .isEqualTo(ofy().load().entity(contact).now());
+    auditedOfy().clearSessionCache();
+    assertThat(auditedOfy().load().<Object>fromEntity(mutation.getEntity()))
+        .isEqualTo(auditedOfy().load().entity(contact).now());
   }
 
   @SafeVarargs
   private static void deleteEntitiesOfTypes(Class<? extends ImmutableObject>... types) {
     for (Class<? extends ImmutableObject> type : types) {
-      ofy().deleteWithoutBackup().keys(ofy().load().type(type).keys()).now();
+      auditedOfy().deleteWithoutBackup().keys(auditedOfy().load().type(type).keys()).now();
     }
   }
 }

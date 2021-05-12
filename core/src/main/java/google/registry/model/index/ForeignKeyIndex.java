@@ -19,7 +19,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
@@ -220,8 +220,8 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
       Class<ForeignKeyIndex<E>> fkiClass = mapToFkiClass(clazz);
       return ImmutableMap.copyOf(
           inTransaction
-              ? ofy().load().type(fkiClass).ids(foreignKeys)
-              : tm().doTransactionless(() -> ofy().load().type(fkiClass).ids(foreignKeys)));
+              ? auditedOfy().load().type(fkiClass).ids(foreignKeys)
+              : tm().doTransactionless(() -> auditedOfy().load().type(fkiClass).ids(foreignKeys)));
     } else {
       String property = RESOURCE_CLASS_TO_FKI_PROPERTY.get(clazz);
       ImmutableList<ForeignKeyIndex<E>> indexes =
@@ -276,7 +276,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
           ImmutableSet<VKey<ForeignKeyIndex<?>>> typedKeys = ImmutableSet.copyOf(keys);
           ImmutableMap<String, ? extends ForeignKeyIndex<? extends EppResource>> existingFkis =
               loadIndexesFromStore(resourceClass, foreignKeys, false);
-          // ofy() omits keys that don't have values in Datastore, so re-add them in
+          // ofy omits keys that don't have values in Datastore, so re-add them in
           // here with Optional.empty() values.
           return Maps.asMap(
               typedKeys,

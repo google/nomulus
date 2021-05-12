@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.DiscreteDomain.integers;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getCommitLogBucketCount;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ContiguousSet;
@@ -118,7 +118,7 @@ public class CommitLogBucket extends ImmutableObject implements Buildable, Datas
 
   /** Returns the loaded bucket for the given key, or a new object if the bucket doesn't exist. */
   public static CommitLogBucket loadBucket(Key<CommitLogBucket> bucketKey) {
-    CommitLogBucket bucket = ofy().load().key(bucketKey).now();
+    CommitLogBucket bucket = auditedOfy().load().key(bucketKey).now();
     return (bucket == null)
         ? new CommitLogBucket.Builder().setBucketNum(bucketKey.getId()).build()
         : bucket;
@@ -126,7 +126,7 @@ public class CommitLogBucket extends ImmutableObject implements Buildable, Datas
 
   /** Returns the set of all loaded commit log buckets, filling in missing buckets with new ones. */
   public static ImmutableSet<CommitLogBucket> loadAllBuckets() {
-    ofy().load().keys(getAllBucketKeys());  // Load all buckets into session cache at once.
+    auditedOfy().load().keys(getAllBucketKeys()); // Load all buckets into session cache at once.
     ImmutableSet.Builder<CommitLogBucket> allBuckets = new ImmutableSet.Builder<>();
     for (Key<CommitLogBucket> key : getAllBucketKeys()) {
       allBuckets.add(loadBucket(key));

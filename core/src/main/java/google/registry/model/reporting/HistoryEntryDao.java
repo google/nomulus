@@ -15,7 +15,7 @@
 package google.registry.model.reporting;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -53,7 +53,7 @@ public class HistoryEntryDao {
       DateTime afterTime, DateTime beforeTime) {
     if (tm().isOfy()) {
       return Streams.stream(
-              ofy()
+              auditedOfy()
                   .load()
                   .type(HistoryEntry.class)
                   .order("modificationTime")
@@ -87,7 +87,7 @@ public class HistoryEntryDao {
       VKey<? extends EppResource> parentKey, DateTime afterTime, DateTime beforeTime) {
     if (tm().isOfy()) {
       return Streams.stream(
-              ofy()
+              auditedOfy()
                   .load()
                   .type(HistoryEntry.class)
                   .ancestor(parentKey.getOfyKey())
@@ -106,7 +106,7 @@ public class HistoryEntryDao {
   public static Iterable<? extends HistoryEntry> loadHistoryObjectsByRegistrars(
       ImmutableCollection<String> registrarIds) {
     if (tm().isOfy()) {
-      return ofy()
+      return auditedOfy()
           .load()
           .type(HistoryEntry.class)
           .filter("clientId in", registrarIds)

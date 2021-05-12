@@ -23,7 +23,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.filterValues;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.entriesToImmutableMap;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -60,7 +60,7 @@ public final class Registries {
                     () -> {
                       ImmutableSet<String> tlds =
                           tm().isOfy()
-                              ? ofy()
+                              ? auditedOfy()
                                   .load()
                                   .type(Registry.class)
                                   .ancestor(getCrossTldKey())

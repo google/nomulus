@@ -17,7 +17,7 @@ package google.registry.testing;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.injectTmForDualDatabaseTest;
@@ -410,7 +410,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
               TimedTransitionProperty.fromValueMap(
                   ImmutableSortedMap.of(START_OF_TIME, PrimaryDatabase.CLOUD_SQL),
                   PrimaryDatabaseTransition.class));
-      tm().transactNew(() -> ofy().saveWithoutBackup().entity(schedule).now());
+      tm().transactNew(() -> auditedOfy().saveWithoutBackup().entity(schedule).now());
       if (withCloudSql && !withJpaUnitTest && !withoutCannedData) {
         loadInitialData();
       }

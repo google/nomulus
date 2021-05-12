@@ -14,10 +14,11 @@
 
 package google.registry.model.ofy;
 
+
 import static com.google.appengine.api.datastore.EntityTranslator.convertToPb;
 import static com.google.appengine.api.datastore.EntityTranslator.createFromPbBytes;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.common.annotations.VisibleForTesting;
@@ -66,7 +67,7 @@ public class CommitLogMutation extends ImmutableObject implements DatastoreOnlyE
    * converted to a raw Datastore Entity, serialized to bytes, and stored within the mutation.
    */
   public static CommitLogMutation create(Key<CommitLogManifest> parent, Object entity) {
-    return createFromRaw(parent, ofy().save().toEntity(entity));
+    return createFromRaw(parent, auditedOfy().save().toEntity(entity));
   }
 
   /**
