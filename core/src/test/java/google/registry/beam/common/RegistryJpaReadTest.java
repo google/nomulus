@@ -30,12 +30,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.SystemPropertyExtension;
-import org.apache.beam.sdk.coders.KvCoder;
-import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.testing.PAssert;
-import org.apache.beam.sdk.transforms.Deduplicate;
-import org.apache.beam.sdk.transforms.Values;
-import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,30 +83,12 @@ public class RegistryJpaReadTest {
   }
 
   @Test
-  void nonTransactionalQuery_noDedupe() {
+  void nonTransactionalQuery() {
     Read<ContactResource, String> read =
         RegistryJpaIO.read(
             (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),
             ContactBase::getContactId);
     PCollection<String> repoIds = testPipeline.apply(read);
-
-    PAssert.that(repoIds).containsInAnyOrder("contact_0", "contact_1", "contact_2");
-    testPipeline.run();
-  }
-
-  @Test
-  void nonTransactionalQuery_dedupe() {
-    // This method only serves as an example of deduplication. Duplicates are not actually added.
-    Read<ContactResource, KV<String, String>> read =
-        RegistryJpaIO.read(
-                (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),
-                contact -> KV.of(contact.getRepoId(), contact.getContactId()))
-            .withCoder(KvCoder.of(StringUtf8Coder.of(), StringUtf8Coder.of()));
-    PCollection<String> repoIds =
-        testPipeline
-            .apply(read)
-            .apply("Deduplicate", Deduplicate.keyedValues())
-            .apply("Get values", Values.create());
 
     PAssert.that(repoIds).containsInAnyOrder("contact_0", "contact_1", "contact_2");
     testPipeline.run();
