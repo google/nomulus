@@ -236,14 +236,6 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
   }
 
   @TestOfyAndSql
-  void testFailure_failfastWhenLinkedToApplication() throws Exception {
-    createTld("tld");
-    persistResource(newDomainBase("example.tld", persistActiveContact(getUniqueIdFromCommand())));
-    EppException thrown = assertThrows(ResourceToDeleteIsReferencedException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
-  }
-
-  @TestOfyAndSql
   void testIcannActivityReportField_getsLogged() throws Exception {
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();

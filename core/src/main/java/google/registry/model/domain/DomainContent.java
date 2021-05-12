@@ -173,8 +173,9 @@ public class DomainContent extends EppResource
   @Transient Set<DelegationSignerData> dsData;
 
   /**
-   * The claims notice supplied when this application or domain was created, if there was one. It's
-   * {@literal @}XmlTransient because it's not returned in an info response.
+   * The claims notice supplied when this domain was created, if there was one.
+   *
+   * <p>It's {@literal @}XmlTransient because it's not returned in an info response.
    */
   @IgnoreSave(IfNull.class)
   @Embedded
@@ -706,7 +707,7 @@ public class DomainContent extends EppResource
     return authInfo;
   }
 
-  /** Returns all referenced contacts from this domain or application. */
+  /** Returns all referenced contacts from this domain. */
   public ImmutableSet<VKey<ContactResource>> getReferencedContacts() {
     return nullToEmptyImmutableCopy(allContacts).stream()
         .map(DesignatedContact::getContactKey)
