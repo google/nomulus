@@ -32,6 +32,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -102,8 +103,8 @@ public class DomainBaseUtilTest {
     Key<HistoryEntry> historyEntryKey =
         Key.create(
             persistResource(
-                new HistoryEntry.Builder()
-                    .setParent(domainKey)
+                new DomainHistory.Builder()
+                    .setDomainRepoId(domainKey.getName())
                     .setType(HistoryEntry.Type.DOMAIN_CREATE)
                     .setClientId("TheRegistrar")
                     .setModificationTime(fakeClock.nowUtc().minusYears(1))

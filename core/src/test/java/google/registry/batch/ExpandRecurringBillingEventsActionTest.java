@@ -45,6 +45,7 @@ import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.common.Cursor;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
@@ -93,11 +94,11 @@ public class ExpandRecurringBillingEventsActionTest
                 .build());
     historyEntry =
         persistResource(
-            new HistoryEntry.Builder()
+            new DomainHistory.Builder()
                 .setClientId(domain.getCreationClientId())
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setModificationTime(DateTime.parse("1999-01-05T00:00:00Z"))
-                .setParent(domain)
+                .setDomain(domain)
                 .build());
     recurring =
         new BillingEvent.Recurring.Builder()
@@ -188,8 +189,8 @@ public class ExpandRecurringBillingEventsActionTest
     DomainBase deletedDomain = persistDeletedDomain("deleted.tld", deletionTime);
     historyEntry =
         persistResource(
-            new HistoryEntry.Builder()
-                .setParent(deletedDomain)
+            new DomainHistory.Builder()
+                .setDomain(deletedDomain)
                 .setClientId(deletedDomain.getCreationClientId())
                 .setModificationTime(deletedDomain.getCreationTime())
                 .setType(DOMAIN_CREATE)

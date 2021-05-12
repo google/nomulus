@@ -1147,9 +1147,9 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     assertThat(generateActualJson(RequestType.NAME, "domain*.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain100.lol", "A7-LOL")
-                .addDomain("domain150.lol", "75-LOL")
-                .addDomain("domain200.lol", "43-LOL")
+                .addDomain("domain100.lol", "AC-LOL")
+                .addDomain("domain150.lol", "7A-LOL")
+                .addDomain("domain200.lol", "48-LOL")
                 .addDomain("domainunused.lol", "unused-LOL")
                 .load("rdap_incomplete_domain_result_set.json"));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -1165,10 +1165,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NAME,
         "domain*.lol",
-        "46-LOL",
-        "45-LOL",
-        "44-LOL",
-        "43-LOL",
+        "4B-LOL",
+        "4A-LOL",
+        "49-LOL",
+        "48-LOL",
         "rdap_nontruncated_domains.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(4L));
   }
@@ -1179,10 +1179,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NAME,
         "domain*.lol",
-        "47-LOL",
-        "46-LOL",
-        "45-LOL",
-        "44-LOL",
+        "4C-LOL",
+        "4B-LOL",
+        "4A-LOL",
+        "49-LOL",
         "name=domain*.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
@@ -1197,8 +1197,8 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             jsonFileBuilder()
                 .addDomain("cat.lol", "C-LOL")
                 .addDomain("cat2.lol", "17-LOL")
-                .addDomain("domain1.lol", "46-LOL")
-                .addDomain("domain2.lol", "45-LOL")
+                .addDomain("domain1.lol", "4B-LOL")
+                .addDomain("domain2.lol", "4A-LOL")
                 .setNextQuery("name=*.lol&cursor=ZG9tYWluMi5sb2w%3D")
                 .load("rdap_domains_four_truncated.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
@@ -1213,8 +1213,8 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
             jsonFileBuilder()
                 .addDomain("cat2.lol", "17-LOL")
                 .addDomain("cat.lol", "C-LOL")
-                .addDomain("domain1.lol", "46-LOL")
-                .addDomain("domain2.lol", "45-LOL")
+                .addDomain("domain1.lol", "4B-LOL")
+                .addDomain("domain2.lol", "4A-LOL")
                 .setNextQuery("name=*.lol&cursor=ZG9tYWluMi5sb2w%3D")
                 .load("rdap_domains_four_truncated.json"));
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
@@ -1228,10 +1228,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NAME,
         "domain*.lol",
-        "4B-LOL",
-        "4A-LOL",
-        "49-LOL",
-        "48-LOL",
+        "50-LOL",
+        "4F-LOL",
+        "4E-LOL",
+        "4D-LOL",
         "name=domain*.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(SearchType.BY_DOMAIN_NAME, Optional.of(5L), IncompletenessWarningType.TRUNCATED);
@@ -1244,10 +1244,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     assertThat(generateActualJson(RequestType.NAME, "domain*.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain12.lol", "55-LOL")
-                .addDomain("domain18.lol", "4F-LOL")
-                .addDomain("domain24.lol", "49-LOL")
-                .addDomain("domain30.lol", "43-LOL")
+                .addDomain("domain12.lol", "5A-LOL")
+                .addDomain("domain18.lol", "54-LOL")
+                .addDomain("domain24.lol", "4E-LOL")
+                .addDomain("domain30.lol", "48-LOL")
                 .setNextQuery("name=domain*.lol&cursor=ZG9tYWluMzAubG9s")
                 .load("rdap_domains_four_truncated.json"));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -1261,10 +1261,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     assertThat(generateActualJson(RequestType.NAME, "domain*.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain12.lol", "55-LOL")
-                .addDomain("domain18.lol", "4F-LOL")
-                .addDomain("domain24.lol", "49-LOL")
-                .addDomain("domain30.lol", "43-LOL")
+                .addDomain("domain12.lol", "5A-LOL")
+                .addDomain("domain18.lol", "54-LOL")
+                .addDomain("domain24.lol", "4E-LOL")
+                .addDomain("domain30.lol", "48-LOL")
                 .setNextQuery("name=domain*.lol&cursor=ZG9tYWluMzAubG9s")
                 .load("rdap_domains_four_truncated.json"));
     assertThat(response.getStatus()).isEqualTo(200);
@@ -1672,10 +1672,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_LDH_NAME,
         "ns1.domain1.lol",
-        "46-LOL",
-        "45-LOL",
-        "44-LOL",
-        "43-LOL",
+        "4B-LOL",
+        "4A-LOL",
+        "49-LOL",
+        "48-LOL",
         "rdap_nontruncated_domains.json");
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(4L), Optional.of(1L));
   }
@@ -1686,10 +1686,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_LDH_NAME,
         "ns1.domain1.lol",
-        "47-LOL",
-        "46-LOL",
-        "45-LOL",
-        "44-LOL",
+        "4C-LOL",
+        "4B-LOL",
+        "4A-LOL",
+        "49-LOL",
         "nsLdhName=ns1.domain1.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(
@@ -1705,10 +1705,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_LDH_NAME,
         "ns1.domain1.lol",
-        "4B-LOL",
-        "4A-LOL",
-        "49-LOL",
-        "48-LOL",
+        "50-LOL",
+        "4F-LOL",
+        "4E-LOL",
+        "4D-LOL",
         "nsLdhName=ns1.domain1.lol&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(
@@ -1727,10 +1727,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     assertThat(generateActualJson(RequestType.NS_LDH_NAME, "ns*.domain1.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain1.lol", "8A-LOL")
-                .addDomain("domain2.lol", "89-LOL")
-                .addDomain("domain3.lol", "88-LOL")
-                .addDomain("domain4.lol", "87-LOL")
+                .addDomain("domain1.lol", "8F-LOL")
+                .addDomain("domain2.lol", "8E-LOL")
+                .addDomain("domain3.lol", "8D-LOL")
+                .addDomain("domain4.lol", "8C-LOL")
                 .load("rdap_nontruncated_domains.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(SearchType.BY_NAMESERVER_NAME, Optional.of(4L), Optional.of(36L));
@@ -1743,8 +1743,8 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     assertThat(generateActualJson(RequestType.NS_LDH_NAME, "ns*.domain1.lol"))
         .isEqualTo(
             jsonFileBuilder()
-                .addDomain("domain1.lol", "92-LOL")
-                .addDomain("domain2.lol", "91-LOL")
+                .addDomain("domain1.lol", "97-LOL")
+                .addDomain("domain2.lol", "96-LOL")
                 .load("rdap_incomplete_domains.json"));
     assertThat(response.getStatus()).isEqualTo(200);
     verifyMetrics(
@@ -1909,10 +1909,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_IP,
         "5.5.5.1",
-        "46-LOL",
-        "45-LOL",
-        "44-LOL",
-        "43-LOL",
+        "4B-LOL",
+        "4A-LOL",
+        "49-LOL",
+        "48-LOL",
         "rdap_nontruncated_domains.json");
     verifyMetrics(SearchType.BY_NAMESERVER_ADDRESS, 4, 1);
   }
@@ -1923,10 +1923,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_IP,
         "5.5.5.1",
-        "47-LOL",
-        "46-LOL",
-        "45-LOL",
-        "44-LOL",
+        "4C-LOL",
+        "4B-LOL",
+        "4A-LOL",
+        "49-LOL",
         "nsIp=5.5.5.1&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(
@@ -1942,10 +1942,10 @@ class RdapDomainSearchActionTest extends RdapSearchActionTestCase<RdapDomainSear
     runSuccessfulTestWithFourDomains(
         RequestType.NS_IP,
         "5.5.5.1",
-        "4B-LOL",
-        "4A-LOL",
-        "49-LOL",
-        "48-LOL",
+        "50-LOL",
+        "4F-LOL",
+        "4E-LOL",
+        "4D-LOL",
         "nsIp=5.5.5.1&cursor=ZG9tYWluNC5sb2w%3D",
         "rdap_domains_four_truncated.json");
     verifyMetrics(

@@ -17,6 +17,7 @@ package google.registry.model.ofy;
 import static com.google.appengine.api.datastore.DatastoreServiceFactory.getDatastoreService;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.ofy.Ofy.getBaseEntityClassFromEntityOrKey;
@@ -40,6 +41,7 @@ import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
@@ -70,11 +72,11 @@ public class OfyTest {
   void beforeEach() {
     createTld("tld");
     someObject =
-        new HistoryEntry.Builder()
+        new ContactHistory.Builder()
             .setClientId("clientid")
             .setModificationTime(START_OF_TIME)
             .setType(HistoryEntry.Type.CONTACT_CREATE)
-            .setParent(persistActiveContact("parentContact"))
+            .setContact(persistActiveContact("parentContact"))
             .setTrid(Trid.create("client", "server"))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .build();
@@ -421,8 +423,9 @@ public class OfyTest {
         auditedOfy()
             .doWithFreshSessionCache(
                 () -> {
-                  assertThat(auditedOfy().load().entity(someObject).now())
-                      .isEqualTo(modifiedObject);
+                  assertAboutImmutableObjects()
+                      .that(auditedOfy().load().entity(someObject).now())
+                      .isEqualExceptFields(modifiedObject, "contactBase");
                   return true;
                 });
     assertThat(ran).isTrue();

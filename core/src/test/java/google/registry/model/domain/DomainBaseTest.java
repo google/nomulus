@@ -100,8 +100,8 @@ public class DomainBaseTest extends EntityTestCase {
     historyEntryKey =
         Key.create(
             persistResource(
-                new HistoryEntry.Builder()
-                    .setParent(domainKey.getOfyKey())
+                new DomainHistory.Builder()
+                    .setDomainRepoId(domainKey.getOfyKey().getName())
                     .setModificationTime(fakeClock.nowUtc())
                     .setType(HistoryEntry.Type.DOMAIN_CREATE)
                     .setClientId("aregistrar")
@@ -364,8 +364,8 @@ public class DomainBaseTest extends EntityTestCase {
 
   private void doExpiredTransferTest(DateTime oldExpirationTime) {
     HistoryEntry historyEntry =
-        new HistoryEntry.Builder()
-            .setParent(domain)
+        new DomainHistory.Builder()
+            .setDomain(domain)
             .setModificationTime(fakeClock.nowUtc())
             .setClientId(domain.getCurrentSponsorClientId())
             .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)

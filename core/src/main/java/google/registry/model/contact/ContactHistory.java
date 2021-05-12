@@ -18,6 +18,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
+import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.reporting.HistoryEntry;
@@ -50,6 +51,9 @@ import javax.persistence.PostLoad;
       @javax.persistence.Index(columnList = "historyType"),
       @javax.persistence.Index(columnList = "historyModificationTime")
     })
+// This class is only marked as an entity subclass and registered with Objectify so that when
+// building it its ID can be auto-populated by Objectify. It is converted to its superclass
+// HistoryEntry when persisted to Datastore.
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(ContactHistoryId.class)
@@ -57,7 +61,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
 
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
-  @Nullable ContactBase contactBase;
+  @Nullable @Ignore ContactBase contactBase;
 
   @Id
   @Access(AccessType.PROPERTY)

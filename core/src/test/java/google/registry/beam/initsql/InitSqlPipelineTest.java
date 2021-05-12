@@ -38,6 +38,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -178,8 +179,8 @@ class InitSqlPipelineTest {
               .build());
       historyEntry =
           persistResource(
-              new HistoryEntry.Builder()
-                  .setParent(domainKey)
+              new DomainHistory.Builder()
+                  .setDomainRepoId(domainKey.getName())
                   .setModificationTime(fakeClock.nowUtc())
                   .setClientId(registrar1.getClientId())
                   .setType(HistoryEntry.Type.DOMAIN_CREATE)

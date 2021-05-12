@@ -26,6 +26,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
@@ -56,8 +57,8 @@ public class PollMessageTest extends EntityTestCase {
     domain = persistResource(newDomainBase("foo.foobar", contact));
     historyEntry =
         persistResource(
-            new HistoryEntry.Builder()
-                .setParent(domain)
+            new DomainHistory.Builder()
+                .setDomain(domain)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setPeriod(Period.create(1, Period.Unit.YEARS))
                 .setXmlBytes("<xml></xml>".getBytes(UTF_8))

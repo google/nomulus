@@ -27,6 +27,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import google.registry.model.EntityTestCase;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
@@ -96,7 +97,7 @@ class HistoryEntryTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new HistoryEntry.Builder()
+                new ContactHistory.Builder()
                     .setId(5L)
                     .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
                     .setClientId("TheRegistrar")
@@ -111,7 +112,7 @@ class HistoryEntryTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new HistoryEntry.Builder()
+                new ContactHistory.Builder()
                     .setId(5L)
                     .setType(HistoryEntry.Type.CONTACT_CREATE)
                     .setClientId("TheRegistrar")
@@ -126,7 +127,7 @@ class HistoryEntryTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new HistoryEntry.Builder()
+                new ContactHistory.Builder()
                     .setId(5L)
                     .setType(HistoryEntry.Type.CONTACT_CREATE)
                     .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
@@ -141,7 +142,7 @@ class HistoryEntryTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new HistoryEntry.Builder()
+                new ContactHistory.Builder()
                     .setId(5L)
                     .setType(HistoryEntry.Type.SYNTHETIC)
                     .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))

@@ -21,7 +21,6 @@ import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.GracePeriod.GracePeriodHistory;
@@ -71,6 +70,9 @@ import javax.persistence.Table;
       @Index(columnList = "historyType"),
       @Index(columnList = "historyModificationTime")
     })
+// This class is only marked as an entity subclass and registered with Objectify so that when
+// building it its ID can be auto-populated by Objectify. It is converted to its superclass
+// HistoryEntry when persisted to Datastore.
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(DomainHistoryId.class)
@@ -97,7 +99,6 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   // We could have reused domainContent.nsHosts here, but Hibernate throws a weird exception after
   // we change to use a composite primary key.
   // TODO(b/166776754): Investigate if we can reuse domainContent.nsHosts for storing host keys.
-  @Ignore
   @ElementCollection
   @JoinTable(
       name = "DomainHistoryHost",
@@ -111,7 +112,6 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @Column(name = "host_repo_id")
   Set<VKey<HostResource>> nsHosts;
 
-  @Ignore
   @OneToMany(
       cascade = {CascadeType.ALL},
       fetch = FetchType.EAGER,
@@ -131,7 +131,6 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   // HashSet rather than ImmutableSet so that Hibernate can fill them out lazily on request
   Set<DomainDsDataHistory> dsDataHistories = new HashSet<>();
 
-  @Ignore
   @OneToMany(
       cascade = {CascadeType.ALL},
       fetch = FetchType.EAGER,

@@ -84,6 +84,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
@@ -121,7 +122,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   private DomainBase domain;
-  private HistoryEntry earlierHistoryEntry;
+  private DomainHistory earlierHistoryEntry;
 
   private static final DateTime TIME_BEFORE_FLOW = DateTime.parse("2000-06-06T22:00:00.0Z");
   private static final DateTime A_MONTH_AGO = TIME_BEFORE_FLOW.minusMonths(1);
@@ -175,9 +176,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 .build());
     earlierHistoryEntry =
         persistResource(
-            new HistoryEntry.Builder()
+            new DomainHistory.Builder()
                 .setType(DOMAIN_CREATE)
-                .setParent(domain)
+                .setDomain(domain)
                 .setModificationTime(clock.nowUtc())
                 .setClientId(domain.getCreationClientId())
                 .build());
@@ -1111,9 +1112,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         DomainTransactionRecord.create("tld", TIME_BEFORE_FLOW.plusDays(2), NET_ADDS_10_YR, 1);
     // Create a HistoryEntry with a later modification time
     persistResource(
-        new HistoryEntry.Builder()
+        new DomainHistory.Builder()
             .setType(DOMAIN_CREATE)
-            .setParent(domain)
+            .setDomain(domain)
             .setModificationTime(TIME_BEFORE_FLOW.minusDays(1))
             .setClientId("TheRegistrar")
             .setDomainTransactionRecords(ImmutableSet.of(existingRecord))

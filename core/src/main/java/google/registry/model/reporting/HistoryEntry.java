@@ -32,14 +32,17 @@ import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostHistory.HostHistoryId;
 import google.registry.model.host.HostResource;
@@ -60,7 +63,21 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
-/** A record of an EPP command that mutated a resource. */
+/**
+ * A record of an EPP command that mutated a resource.
+ *
+ * <p>Due to historical reasons this class is persisted only to Datastore. It has three subclasses
+ * that include the parent resource itself which are persisted to Cloud SQL. During migration this
+ * class cannot be made abstract in order for the class to be persisted and loaded to and from
+ * Datastore. However it should never be used directly in the Java code itself. When it is loaded
+ * from Datastore it should be converted to a subclass for handling and when a new history entry is
+ * built it should always be a subclass, which is automatically converted to HistoryEntry when
+ * persisting to Datastore.
+ *
+ * <p>Some care has been taken to make it close to impossible to use this class directly, but the
+ * user should still exercise caution. After the migration is complete this class will be made
+ * abstract.
+ */
 @ReportedOn
 @Entity
 @MappedSuperclass
@@ -203,6 +220,10 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   @ImmutableObject.EmptySetToNull
   protected Set<DomainTransactionRecord> domainTransactionRecords;
 
+  protected HistoryEntry() {
+    super();
+  }
+
   public long getId() {
     // For some reason, Hibernate throws NPE during some initialization phase if we don't deal with
     // the null case. Setting the id to 0L when it is null should be fine because 0L for primitive
@@ -285,13 +306,38 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
         domainTransactionRecords == null ? null : ImmutableSet.copyOf(domainTransactionRecords);
   }
 
+  // This method only exists to satisfy the requirement that the HistoryEntry is NOT abstract, it
+  // should never be called directly and all three of the subclass of HistoryEntry implements it.
   @Override
-  public Builder asBuilder() {
-    return new Builder(clone(this));
+  public Builder<? extends HistoryEntry, ?> asBuilder() {
+    throw new IllegalStateException(
+        "You should never attempt to build a HistoryEntry from a raw HistoryEntry. A raw "
+            + "HistoryEntry should only exist internally when persisting to datastore. If you need "
+            + "to build from a raw HistoryEntry, use "
+            + "{Contact,Host,Domain}History.Builder.copyFrom(HistoryEntry) instead.");
   }
 
+  // This is lifted from the copyFrom(HistoryEntry) code below. It is only needed during the
+  // transition so some code duplication is OK.
   public HistoryEntry asHistoryEntry() {
-    return new Builder().copyFrom(this).build();
+    HistoryEntry historyEntry = new HistoryEntry();
+    historyEntry.id = this.id;
+    historyEntry.parent = this.parent;
+    historyEntry.type = this.type;
+    historyEntry.period = this.period;
+    historyEntry.xmlBytes = this.xmlBytes;
+    historyEntry.modificationTime = this.modificationTime;
+    historyEntry.clientId = this.clientId;
+    historyEntry.otherClientId = this.otherClientId;
+    historyEntry.trid = this.trid;
+    historyEntry.bySuperuser = this.bySuperuser;
+    historyEntry.reason = this.reason;
+    historyEntry.requestedByRegistrar = this.requestedByRegistrar;
+    historyEntry.domainTransactionRecords =
+        this.domainTransactionRecords == null
+            ? null
+            : ImmutableSet.copyOf(this.domainTransactionRecords);
+    return historyEntry;
   }
 
   @SuppressWarnings("unchecked")
@@ -349,11 +395,11 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   }
 
   /** A builder for {@link HistoryEntry} since it is immutable */
-  public static class Builder<T extends HistoryEntry, B extends Builder<?, ?>>
+  public abstract static class Builder<T extends HistoryEntry, B extends Builder<?, ?>>
       extends GenericBuilder<T, B> {
-    public Builder() {}
+    protected Builder() {}
 
-    public Builder(T instance) {
+    protected Builder(T instance) {
       super(instance);
     }
 
@@ -400,13 +446,13 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
       return thisCastToDerived();
     }
 
-    public B setParent(EppResource parent) {
+    protected B setParent(EppResource parent) {
       getInstance().parent = Key.create(parent);
       return thisCastToDerived();
     }
 
     // Until we move completely to SQL, override this in subclasses (e.g. HostHistory) to set VKeys
-    public B setParent(Key<? extends EppResource> parent) {
+    protected B setParent(Key<? extends EppResource> parent) {
       getInstance().parent = parent;
       return thisCastToDerived();
     }
@@ -465,6 +511,21 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
         ImmutableSet<DomainTransactionRecord> domainTransactionRecords) {
       getInstance().domainTransactionRecords = domainTransactionRecords;
       return thisCastToDerived();
+    }
+  }
+
+  public static <E extends EppResource>
+      HistoryEntry.Builder<? extends HistoryEntry, ?> createBuilderForResource(E parent) {
+    if (parent instanceof DomainContent) {
+      return new DomainHistory.Builder().setDomain((DomainContent) parent);
+    } else if (parent instanceof ContactBase) {
+      return new ContactHistory.Builder().setContact((ContactBase) parent);
+    } else if (parent instanceof HostBase) {
+      return new HostHistory.Builder().setHost((HostBase) parent);
+    } else {
+      throw new IllegalStateException(
+          String.format(
+              "Class %s does not have an associated HistoryEntry", parent.getClass().getName()));
     }
   }
 }

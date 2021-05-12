@@ -127,7 +127,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
               try {
                 DomainHistory historyEntryDomainCreate =
                     new DomainHistory.Builder()
-                        .setParent(domain)
+                        .setDomain(domain)
                         .setType(HistoryEntry.Type.DOMAIN_CREATE)
                         .setModificationTime(clock.nowUtc())
                         .setClientId(domain.getCreationClientId())

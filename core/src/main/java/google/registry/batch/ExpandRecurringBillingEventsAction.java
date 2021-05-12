@@ -49,6 +49,7 @@ import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.common.Cursor;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
@@ -188,12 +189,14 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                       // an event persisted.
                       for (DateTime billingTime : difference(billingTimes, existingBillingTimes)) {
                         // Construct a new HistoryEntry that parents over the OneTime
-                        HistoryEntry historyEntry =
-                            new HistoryEntry.Builder()
+                        DomainHistory historyEntry =
+                            new DomainHistory.Builder()
                                 .setBySuperuser(false)
                                 .setClientId(recurring.getClientId())
                                 .setModificationTime(tm().getTransactionTime())
-                                .setParent(domainKey)
+                                // TODO: modify this to use setDomain instead when converting
+                                // this action to be SQL-aware.
+                                .setDomainRepoId(domainKey.getName())
                                 .setPeriod(Period.create(1, YEARS))
                                 .setReason(
                                     "Domain autorenewal by ExpandRecurringBillingEventsAction")

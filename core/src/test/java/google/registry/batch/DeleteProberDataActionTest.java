@@ -39,6 +39,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.poll.PollMessage;
@@ -281,8 +282,8 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
     DomainBase domain = persistDeletedDomain(fqdn, DELETION_TIME);
     HistoryEntry historyEntry =
         persistSimpleResource(
-            new HistoryEntry.Builder()
-                .setParent(domain)
+            new DomainHistory.Builder()
+                .setDomain(domain)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setClientId("TheRegistrar")
                 .setModificationTime(DELETION_TIME.minusYears(3))

@@ -113,12 +113,11 @@ public class CreateSyntheticHistoryEntriesAction implements Runnable {
               () -> {
                 EppResource eppResource = ofy().load().key(resourceKey).now();
                 tm().put(
-                        new HistoryEntry.Builder<>()
+                        HistoryEntry.createBuilderForResource(eppResource)
                             .setClientId(registryAdminRegistrarId)
                             .setBySuperuser(true)
                             .setRequestedByRegistrar(false)
                             .setModificationTime(tm().getTransactionTime())
-                            .setParent(eppResource)
                             .setReason(
                                 "Backfill EppResource history objects during Cloud SQL migration")
                             .setType(HistoryEntry.Type.SYNTHETIC)

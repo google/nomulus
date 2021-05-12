@@ -106,8 +106,7 @@ class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResource
             persistActiveHost("ns.foo.tld1"),
             persistActiveHost("ns.foo.tld2"))) {
       HistoryEntry history =
-          new HistoryEntry.Builder()
-              .setParent(resource)
+          HistoryEntry.createBuilderForResource(resource)
               .setClientId(resource.getCreationClientId())
               .setModificationTime(resource.getCreationTime())
               .setType(HISTORY_ENTRY_CREATE_TYPES.get(resource.getClass()))

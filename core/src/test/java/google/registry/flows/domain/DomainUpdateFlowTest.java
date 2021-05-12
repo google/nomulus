@@ -84,6 +84,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
@@ -153,11 +154,11 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 .setNameservers(ImmutableSet.of(host.createVKey()))
                 .build());
     persistResource(
-        new HistoryEntry.Builder()
+        new DomainHistory.Builder()
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setModificationTime(clock.nowUtc())
             .setClientId(domain.getCreationClientId())
-            .setParent(domain)
+            .setDomain(domain)
             .build());
     clock.advanceOneMilli();
     return domain;
@@ -177,11 +178,11 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 .setNameservers(ImmutableSet.of(host.createVKey()))
                 .build());
     persistResource(
-        new HistoryEntry.Builder()
+        new DomainHistory.Builder()
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setModificationTime(clock.nowUtc())
             .setClientId(domain.getCreationClientId())
-            .setParent(domain)
+            .setDomain(domain)
             .build());
     clock.advanceOneMilli();
     return domain;
