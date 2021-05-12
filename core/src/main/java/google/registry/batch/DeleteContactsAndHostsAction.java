@@ -370,11 +370,10 @@ public class DeleteContactsAndHostsAction implements Runnable {
                       : "it was transferred prior to deletion");
 
       HistoryEntry historyEntry =
-          new HistoryEntry.Builder()
+          HistoryEntry.createBuilderForResource(resource)
               .setClientId(deletionRequest.requestingClientId())
               .setModificationTime(now)
               .setType(getHistoryEntryType(resource, deleteAllowed))
-              .setParent(deletionRequest.key())
               .build();
 
       PollMessage.OneTime pollMessage =

@@ -93,7 +93,7 @@ class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResource
         persistActiveContact("foo"),
         persistActiveHost("ns.foo.tld1"),
         persistActiveHost("ns.foo.tld2"))) {
-      HistoryEntry history = new HistoryEntry.Builder().setParent(resource).build();
+      HistoryEntry history = HistoryEntry.createBuilderForResource(resource).build();
       for (ImmutableObject descendant : asList(
           history,
           new PollMessage.OneTime.Builder()

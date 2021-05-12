@@ -34,6 +34,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.reporting.HistoryEntry;
@@ -63,11 +64,11 @@ class DedupeRecurringBillingEventIdsCommandTest
     domain2 = persistActiveDomain("bar.tld");
     historyEntry1 =
         persistResource(
-            new HistoryEntry.Builder().setParent(domain1).setModificationTime(now).build());
+            new DomainHistory.Builder().setDomainContent(domain1).setModificationTime(now).build());
     historyEntry2 =
         persistResource(
-            new HistoryEntry.Builder()
-                .setParent(domain2)
+            new DomainHistory.Builder()
+                .setDomainContent(domain2)
                 .setModificationTime(now.plusDays(1))
                 .build());
     recurring1 =

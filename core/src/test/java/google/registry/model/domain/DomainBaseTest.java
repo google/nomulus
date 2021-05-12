@@ -98,7 +98,10 @@ public class DomainBaseTest extends EntityTestCase {
             .createVKey();
     historyEntryKey =
         Key.create(
-            persistResource(new HistoryEntry.Builder().setParent(domainKey.getOfyKey()).build()));
+            persistResource(
+                new DomainHistory.Builder()
+                    .setDomainRepoId(domainKey.getOfyKey().getName())
+                    .build()));
     oneTimeBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.OneTime.class, 1));
     recurringBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.Recurring.class, 2));
     VKey<PollMessage.Autorenew> autorenewPollKey =
@@ -356,7 +359,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   private void doExpiredTransferTest(DateTime oldExpirationTime) {
-    HistoryEntry historyEntry = new HistoryEntry.Builder().setParent(domain).build();
+    HistoryEntry historyEntry = new DomainHistory.Builder().setDomainContent(domain).build();
     BillingEvent.OneTime transferBillingEvent =
         persistResource(
             new BillingEvent.OneTime.Builder()

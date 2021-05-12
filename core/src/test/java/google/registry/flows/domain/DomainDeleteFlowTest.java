@@ -84,6 +84,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.ProtocolDefinition.ServiceExtension;
@@ -175,9 +176,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 .build());
     earlierHistoryEntry =
         persistResource(
-            new HistoryEntry.Builder()
+            new DomainHistory.Builder()
                 .setType(DOMAIN_CREATE)
-                .setParent(domain)
+                .setDomainContent(domain)
                 .setModificationTime(clock.nowUtc())
                 .build());
   }
@@ -1110,9 +1111,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         DomainTransactionRecord.create("tld", TIME_BEFORE_FLOW.plusDays(2), NET_ADDS_10_YR, 1);
     // Create a HistoryEntry with a later modification time
     persistResource(
-        new HistoryEntry.Builder()
+        new DomainHistory.Builder()
             .setType(DOMAIN_CREATE)
-            .setParent(domain)
+            .setDomainContent(domain)
             .setModificationTime(TIME_BEFORE_FLOW.minusDays(1))
             .setDomainTransactionRecords(ImmutableSet.of(existingRecord))
             .build());

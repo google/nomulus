@@ -441,8 +441,7 @@ public class DomainBaseSqlTest {
                       .setType(HistoryEntry.Type.DOMAIN_CREATE)
                       .setPeriod(Period.create(1, Period.Unit.YEARS))
                       .setModificationTime(DateTime.now(UTC))
-                      .setParent(Key.create(DomainBase.class, "4-COM"))
-                      .setDomainRepoId("4-COM")
+                      .setDomainContent(jpaTm().loadByKey(VKey.create(DomainBase.class, "4-COM")))
 
                       // These are non-null, but I don't think some tests set them.
                       .setReason("felt like it")
@@ -572,8 +571,7 @@ public class DomainBaseSqlTest {
                       .setType(HistoryEntry.Type.DOMAIN_CREATE)
                       .setPeriod(Period.create(1, Period.Unit.YEARS))
                       .setModificationTime(DateTime.now(UTC))
-                      .setParent(Key.create(DomainBase.class, "4-COM"))
-                      .setDomainRepoId("4-COM")
+                      .setDomainContent(jpaTm().loadByKey(VKey.create(DomainBase.class, "4-COM")))
 
                       // These are non-null, but I don't think some tests set them.
                       .setReason("felt like it")

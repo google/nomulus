@@ -40,6 +40,7 @@ import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
@@ -70,10 +71,10 @@ public class OfyTest {
   void beforeEach() {
     createTld("tld");
     someObject =
-        new HistoryEntry.Builder()
+        new ContactHistory.Builder()
             .setClientId("client id")
             .setModificationTime(START_OF_TIME)
-            .setParent(persistActiveContact("parentContact"))
+            .setContactBase(persistActiveContact("parentContact"))
             .setTrid(Trid.create("client", "server"))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .build();

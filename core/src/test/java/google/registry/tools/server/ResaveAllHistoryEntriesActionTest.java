@@ -23,9 +23,10 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.domain.DomainHistory;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,9 +56,9 @@ class ResaveAllHistoryEntriesActionTest extends MapreduceTestCase<ResaveAllHisto
     DomainBase domain = persistActiveDomain("test.tld");
     ContactResource contact = persistActiveContact("humanBeing");
     Entity domainEntry =
-        ofy().save().toEntity(new HistoryEntry.Builder().setParent(domain).build());
+        ofy().save().toEntity(new DomainHistory.Builder().setDomainContent(domain).build());
     Entity contactEntry =
-        ofy().save().toEntity(new HistoryEntry.Builder().setParent(contact).build());
+        ofy().save().toEntity(new ContactHistory.Builder().setContactBase(contact).build());
 
     // Set raw properties outside the Objectify schema, which will be deleted upon re-save.
     domainEntry.setProperty("clientId", "validId");

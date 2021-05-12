@@ -30,14 +30,17 @@ import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
+import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainContent;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostHistory.HostHistoryId;
 import google.registry.model.host.HostResource;
@@ -349,7 +352,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   /** A builder for {@link HistoryEntry} since it is immutable */
   public static class Builder<T extends HistoryEntry, B extends Builder<?, ?>>
       extends GenericBuilder<T, B> {
-    public Builder() {}
+    protected Builder() {}
 
     public Builder(T instance) {
       super(instance);
@@ -391,13 +394,13 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
       return thisCastToDerived();
     }
 
-    public B setParent(EppResource parent) {
+    protected B setParent(EppResource parent) {
       getInstance().parent = Key.create(parent);
       return thisCastToDerived();
     }
 
     // Until we move completely to SQL, override this in subclasses (e.g. HostHistory) to set VKeys
-    public B setParent(Key<? extends EppResource> parent) {
+    protected B setParent(Key<? extends EppResource> parent) {
       getInstance().parent = parent;
       return thisCastToDerived();
     }
@@ -456,6 +459,21 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
         ImmutableSet<DomainTransactionRecord> domainTransactionRecords) {
       getInstance().domainTransactionRecords = domainTransactionRecords;
       return thisCastToDerived();
+    }
+  }
+
+  public static <E extends EppResource>
+      HistoryEntry.Builder<? extends HistoryEntry, ?> createBuilderForResource(E parent) {
+    if (parent instanceof DomainContent) {
+      return new DomainHistory.Builder().setDomainContent((DomainContent) parent);
+    } else if (parent instanceof ContactBase) {
+      return new ContactHistory.Builder().setContactBase((ContactBase) parent);
+    } else if (parent instanceof HostBase) {
+      return new HostHistory.Builder().setHostBase((HostBase) parent);
+    } else {
+      throw new IllegalStateException(
+          String.format(
+              "Class %s does not have an associated HistoryEntry", parent.getClass().getName()));
     }
   }
 }

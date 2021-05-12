@@ -32,6 +32,7 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -100,7 +101,9 @@ public class DomainBaseUtilTest {
                     .build())
             .createVKey();
     Key<HistoryEntry> historyEntryKey =
-        Key.create(persistResource(new HistoryEntry.Builder().setParent(domainKey).build()));
+        Key.create(
+            persistResource(
+                new DomainHistory.Builder().setDomainRepoId(domainKey.getName()).build()));
     oneTimeBillKey = Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
     recurringBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.Recurring.class, 2));
     VKey<PollMessage.Autorenew> autorenewPollKey =

@@ -32,6 +32,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
@@ -142,9 +143,9 @@ class DeleteExpiredDomainsActionTest {
     DomainBase pendingExpirationDomain = persistActiveDomain(domainName);
     HistoryEntry createHistoryEntry =
         persistResource(
-            new HistoryEntry.Builder()
+            new DomainHistory.Builder()
                 .setType(DOMAIN_CREATE)
-                .setParent(pendingExpirationDomain)
+                .setDomainContent(pendingExpirationDomain)
                 .setModificationTime(clock.nowUtc().minusMonths(9))
                 .build());
     BillingEvent.Recurring autorenewBillingEvent =

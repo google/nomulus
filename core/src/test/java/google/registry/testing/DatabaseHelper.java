@@ -72,6 +72,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactAuthInfo;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DesignatedContact.Type;
@@ -562,9 +563,9 @@ public class DatabaseHelper {
       ContactResource contact, DateTime requestTime, DateTime expirationTime, DateTime now) {
     HistoryEntry historyEntryContactTransfer =
         persistResource(
-            new HistoryEntry.Builder()
+            new ContactHistory.Builder()
                 .setType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST)
-                .setParent(persistResource(contact))
+                .setContactBase(persistResource(contact))
                 .setModificationTime(now)
                 .build()
                 .toChildHistoryEntity());
@@ -1104,8 +1105,7 @@ public class DatabaseHelper {
             () -> {
               tm().put(resource);
               tm().put(
-                      new HistoryEntry.Builder()
-                          .setParent(resource)
+                      HistoryEntry.createBuilderForResource(resource)
                           .setClientId(resource.getPersistedCurrentSponsorClientId())
                           .setType(getHistoryEntryType(resource))
                           .setModificationTime(tm().getTransactionTime())
@@ -1177,10 +1177,9 @@ public class DatabaseHelper {
   public static <T extends EppResource> HistoryEntry createHistoryEntryForEppResource(
       T parentResource) {
     return persistResource(
-        new HistoryEntry.Builder()
+        HistoryEntry.createBuilderForResource(parentResource)
             .setType(getHistoryEntryType(parentResource))
             .setModificationTime(DateTime.now(DateTimeZone.UTC))
-            .setParent(parentResource)
             .setClientId(parentResource.getPersistedCurrentSponsorClientId())
             .build());
   }

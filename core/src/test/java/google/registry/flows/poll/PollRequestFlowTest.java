@@ -28,9 +28,11 @@ import com.google.common.collect.ImmutableList;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowTestCase;
 import google.registry.flows.poll.PollRequestFlow.UnexpectedMessageIdException;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
@@ -208,11 +210,11 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   void testSuccess_contactDelete() throws Exception {
     // Contact delete poll messages do not have any response data, so ensure that no
     // response data block is produced in the poll message.
-    HistoryEntry historyEntry = persistResource(new HistoryEntry.Builder()
+    HistoryEntry historyEntry = persistResource(new ContactHistory.Builder()
         .setClientId("NewRegistrar")
         .setModificationTime(clock.nowUtc().minusDays(1))
         .setType(HistoryEntry.Type.CONTACT_DELETE)
-        .setParent(contact)
+        .setContactBase(contact)
         .build());
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -229,11 +231,11 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   void testSuccess_hostDelete() throws Exception {
     // Host delete poll messages do not have any response data, so ensure that no
     // response data block is produced in the poll message.
-    HistoryEntry historyEntry = persistResource(new HistoryEntry.Builder()
+    HistoryEntry historyEntry = persistResource(new HostHistory.Builder()
         .setClientId("NewRegistrar")
         .setModificationTime(clock.nowUtc().minusDays(1))
         .setType(HistoryEntry.Type.HOST_DELETE)
-        .setParent(host)
+        .setHostBase(host)
         .build());
     persistResource(
         new PollMessage.OneTime.Builder()

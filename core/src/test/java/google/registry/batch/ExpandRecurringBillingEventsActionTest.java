@@ -44,6 +44,7 @@ import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.common.Cursor;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
@@ -86,7 +87,7 @@ public class ExpandRecurringBillingEventsActionTest
     createTld("tld");
     domain = persistResource(newDomainBase("example.tld").asBuilder()
         .setCreationTimeForTest(DateTime.parse("1999-01-05T00:00:00Z")).build());
-    historyEntry = persistResource(new HistoryEntry.Builder().setParent(domain).build());
+    historyEntry = persistResource(new DomainHistory.Builder().setDomainContent(domain).build());
     recurring =
         new BillingEvent.Recurring.Builder()
             .setParent(historyEntry)
@@ -174,7 +175,8 @@ public class ExpandRecurringBillingEventsActionTest
   void testSuccess_expandSingleEvent_deletedDomain() throws Exception {
     DateTime deletionTime = DateTime.parse("2000-08-01T00:00:00Z");
     DomainBase deletedDomain = persistDeletedDomain("deleted.tld", deletionTime);
-    historyEntry = persistResource(new HistoryEntry.Builder().setParent(deletedDomain).build());
+    historyEntry =
+        persistResource(new DomainHistory.Builder().setDomainContent(deletedDomain).build());
     recurring =
         persistResource(
             new BillingEvent.Recurring.Builder()

@@ -128,8 +128,7 @@ class DedupeOneTimeBillingEventIdsCommandTest
 
   private HistoryEntry persistHistoryEntry(EppResource parent) {
     return persistResource(
-        new HistoryEntry.Builder()
-            .setParent(parent)
+        HistoryEntry.createBuilderForResource(parent)
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
