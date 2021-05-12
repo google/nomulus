@@ -14,6 +14,7 @@
 
 package google.registry.model.ofy;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
@@ -401,11 +402,13 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   private static class DatastoreQueryComposerImpl<T> extends QueryComposer<T> {
+
     DatastoreQueryComposerImpl(Class<T> entityClass) {
       super(entityClass);
     }
 
     Query<T> buildQuery() {
+      checkOnlyOneInequalityField();
       Query<T> result = ofy().load().type(entityClass);
       for (WhereClause pred : predicates) {
         result = result.filter(pred.fieldName + pred.comparator.getDatastoreString(), pred.value);
@@ -420,7 +423,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
     @Override
     public Optional<T> first() {
-      return Optional.ofNullable(buildQuery().first().now());
+      return Optional.ofNullable(buildQuery().limit(1).first().now());
     }
 
     @Override
@@ -448,6 +451,21 @@ public class DatastoreTransactionManager implements TransactionManager {
     @Override
     public List<T> list() {
       return buildQuery().list();
+    }
+
+    private void checkOnlyOneInequalityField() {
+      // Datastore inequality queries are limited to one property, see
+      // https://cloud.google.com/appengine/docs/standard/go111/datastore/query-restrictions#inequality_filters_are_limited_to_at_most_one_property
+      long numInequalityFields =
+          predicates.stream()
+              .filter(pred -> !pred.comparator.equals(Comparator.EQ))
+              .map(pred -> pred.fieldName)
+              .distinct()
+              .count();
+      checkArgument(
+          numInequalityFields <= 1,
+          "Datastore cannot handle inequality queries on multiple fields, we found %s fields.",
+          numInequalityFields);
     }
   }
 }

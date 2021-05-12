@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.collect.Lists.partition;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -44,7 +44,8 @@ public final class ResaveEntitiesCommand extends MutatingCommand {
   protected void init() {
     for (List<String> batch : partition(mainParameters, BATCH_SIZE)) {
       for (String websafeKey : batch) {
-        ImmutableObject entity = ofy().load().key(Key.<ImmutableObject>create(websafeKey)).now();
+        ImmutableObject entity =
+            auditedOfy().load().key(Key.<ImmutableObject>create(websafeKey)).now();
         stageEntityChange(entity, entity);
       }
       flushTransaction();

@@ -69,7 +69,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   // The entity of classes in this set will be simply ignored when passed to modification
   // operations, i.e. insert, put, update and delete. This is to help maintain a single code path
-  // when we switch from ofy() to tm() for the database migration as we don't need have a condition
+  // when we switch from ofy to tm() for the database migration as we don't need have a condition
   // to exclude the Datastore specific entities when the underlying tm() is jpaTm().
   // TODO(b/176108270): Remove this property after database migration.
   private static final ImmutableSet<Class<? extends ImmutableObject>> IGNORED_ENTITY_CLASSES =

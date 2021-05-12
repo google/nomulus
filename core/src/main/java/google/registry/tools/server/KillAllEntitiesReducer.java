@@ -15,7 +15,7 @@
 package google.registry.tools.server;
 
 import static com.google.common.collect.Iterators.partition;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.tools.mapreduce.Reducer;
@@ -37,7 +37,7 @@ public class KillAllEntitiesReducer extends Reducer<Key<?>, Key<?>, Void> {
     while (batches.hasNext()) {
       final List<Key<?>> batch = batches.next();
       // Use a transaction to get retrying for free.
-      tm().transact(() -> ofy().deleteWithoutBackup().keys(batch));
+      tm().transact(() -> auditedOfy().deleteWithoutBackup().keys(batch));
       getContext().incrementCounter("entities deleted", batch.size());
       for (Key<?> key : batch) {
         getContext().incrementCounter(String.format("%s deleted", key.getKind()));

@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.collect.Lists.partition;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameters;
@@ -46,8 +46,9 @@ final class ResaveEnvironmentEntitiesCommand implements CommandWithRemoteApi {
   private static <T> void batchSave(Class<T> clazz) {
     System.out.printf("Re-saving %s entities.\n", clazz.getSimpleName());
     for (final Iterable<Key<T>> batch :
-        partition(ofy().load().type(clazz).ancestor(getCrossTldKey()).keys().list(), BATCH_SIZE)) {
-      tm().transact(() -> ofy().save().entities(ofy().load().keys(batch).values()));
+        partition(
+            auditedOfy().load().type(clazz).ancestor(getCrossTldKey()).keys().list(), BATCH_SIZE)) {
+      tm().transact(() -> auditedOfy().save().entities(auditedOfy().load().keys(batch).values()));
       System.out.printf("Re-saved entities batch: %s.\n", batch);
     }
   }
