@@ -110,6 +110,9 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
     if (hostBase != null && hostBase.getHostName() == null) {
       hostBase = null;
     }
+    if (hostBase != null && hostBase.getRepoId() == null) {
+      hostBase = hostBase.asBuilder().setRepoId(parent.getName()).build();
+    }
   }
 
   // In Datastore, save as a HistoryEntry object regardless of this object's type
@@ -195,7 +198,7 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
       super(instance);
     }
 
-    public Builder setHostBase(@Nullable HostBase hostBase) {
+    public Builder setHost(@Nullable HostBase hostBase) {
       // Nullable for the sake of pre-Registry-3.0 history objects
       if (hostBase == null) {
         return this;

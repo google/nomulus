@@ -86,8 +86,7 @@ public class DomainHistoryTest extends EntityTestCase {
   @TestSqlOnly
   void testLegacyPersistence_nullResource() {
     DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
-    DomainHistory domainHistory =
-        createDomainHistory(domain).asBuilder().setDomainContent(null).build();
+    DomainHistory domainHistory = createDomainHistory(domain).asBuilder().setDomain(null).build();
     jpaTm().transact(() -> jpaTm().insert(domainHistory));
 
     jpaTm()
@@ -255,7 +254,7 @@ public class DomainHistoryTest extends EntityTestCase {
         .setBySuperuser(false)
         .setReason("reason")
         .setRequestedByRegistrar(true)
-        .setDomainContent(domain)
+        .setDomain(domain)
         .setDomainRepoId(domain.getRepoId())
         .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
         .setOtherClientId("otherClient")

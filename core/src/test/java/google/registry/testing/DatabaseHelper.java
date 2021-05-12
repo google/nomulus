@@ -636,7 +636,7 @@ public class DatabaseHelper {
             new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setModificationTime(now)
-                .setDomainContent(domain)
+                .setDomain(domain)
                 .build());
     BillingEvent.Recurring autorenewEvent =
         persistResource(
@@ -677,7 +677,7 @@ public class DatabaseHelper {
             new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
                 .setModificationTime(tm().transact(() -> tm().getTransactionTime()))
-                .setDomainContent(domain)
+                .setDomain(domain)
                 .build());
     BillingEvent.OneTime transferBillingEvent =
         persistResource(

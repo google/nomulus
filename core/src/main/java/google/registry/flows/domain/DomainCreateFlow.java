@@ -502,7 +502,7 @@ public class DomainCreateFlow implements TransactionalFlow {
         .setType(HistoryEntry.Type.DOMAIN_CREATE)
         .setPeriod(period)
         .setModificationTime(now)
-        .setDomainContent(domain)
+        .setDomain(domain)
         .build();
   }
 

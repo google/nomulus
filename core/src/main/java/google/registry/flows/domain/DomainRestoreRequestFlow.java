@@ -190,7 +190,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_RESTORE)
         .setModificationTime(now)
-        .setDomainContent(newDomain)
+        .setDomain(newDomain)
         .setDomainTransactionRecords(
             ImmutableSet.of(
                 DomainTransactionRecord.create(

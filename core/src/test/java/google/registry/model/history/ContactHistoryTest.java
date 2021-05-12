@@ -69,7 +69,7 @@ public class ContactHistoryTest extends EntityTestCase {
     ContactHistory contactHistory =
         createContactHistory(contactFromDb, contact.getRepoId())
             .asBuilder()
-            .setContactBase(null)
+            .setContact(null)
             .build();
     jpaTm().transact(() -> jpaTm().insert(contactHistory));
 
@@ -116,7 +116,7 @@ public class ContactHistoryTest extends EntityTestCase {
         .setBySuperuser(false)
         .setReason("reason")
         .setRequestedByRegistrar(true)
-        .setContactBase(contact)
+        .setContact(contact)
         .setContactRepoId(contactRepoId)
         .build();
   }

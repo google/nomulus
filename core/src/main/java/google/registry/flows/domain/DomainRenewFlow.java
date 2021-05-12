@@ -233,7 +233,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
         .setType(HistoryEntry.Type.DOMAIN_RENEW)
         .setPeriod(period)
         .setModificationTime(now)
-        .setDomainContent(newDomain)
+        .setDomain(newDomain)
         .setDomainTransactionRecords(
             ImmutableSet.of(
                 DomainTransactionRecord.create(

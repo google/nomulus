@@ -221,7 +221,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_UPDATE)
         .setModificationTime(now)
-        .setDomainContent(newDomain)
+        .setDomain(newDomain)
         .build();
   }
 

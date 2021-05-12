@@ -80,10 +80,10 @@ class ChildEntityInputTest {
     domainA = persistEppResourceInFirstBucket(newDomainBase("a.tld", contact));
     domainHistoryEntryA =
         persistResource(
-            new DomainHistory.Builder().setDomainContent(domainA).setModificationTime(now).build());
+            new DomainHistory.Builder().setDomain(domainA).setModificationTime(now).build());
     contactHistoryEntry =
         persistResource(
-            new ContactHistory.Builder().setContactBase(contact).setModificationTime(now).build());
+            new ContactHistory.Builder().setContact(contact).setModificationTime(now).build());
     oneTimeA =
         persistResource(
             new BillingEvent.OneTime.Builder()
@@ -113,7 +113,7 @@ class ChildEntityInputTest {
     domainB = persistEppResourceInFirstBucket(newDomainBase("b.tld"));
     domainHistoryEntryB =
         persistResource(
-            new DomainHistory.Builder().setDomainContent(domainB).setModificationTime(now).build());
+            new DomainHistory.Builder().setDomain(domainB).setModificationTime(now).build());
     oneTimeB =
         persistResource(
             new BillingEvent.OneTime.Builder()
@@ -294,7 +294,7 @@ class ChildEntityInputTest {
       historyEntries.add(
           persistResource(
                   new DomainHistory.Builder()
-                      .setDomainContent(domain)
+                      .setDomain(domain)
                       .setModificationTime(now)
                       .setClientId(i + ".tld")
                       .build())

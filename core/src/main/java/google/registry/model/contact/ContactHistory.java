@@ -197,7 +197,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
       super(instance);
     }
 
-    public Builder setContactBase(@Nullable ContactBase contactBase) {
+    public Builder setContact(@Nullable ContactBase contactBase) {
       // Nullable for the sake of pre-Registry-3.0 history objects
       if (contactBase == null) {
         return this;

@@ -522,7 +522,7 @@ public class DomainBaseSqlTest {
                       .setTransferData(transferData)
                       .setGracePeriods(gracePeriods)
                       .build();
-              historyEntry = historyEntry.asBuilder().setDomainContent(domain).build();
+              historyEntry = historyEntry.asBuilder().setDomain(domain).build();
               jpaTm().insert(historyEntry);
               jpaTm().insert(autorenewPollMessage);
               jpaTm().insert(billEvent);
@@ -661,7 +661,7 @@ public class DomainBaseSqlTest {
                       .setTransferData(transferData)
                       .setGracePeriods(gracePeriods)
                       .build();
-              historyEntry = historyEntry.asBuilder().setDomainContent(domain).build();
+              historyEntry = historyEntry.asBuilder().setDomain(domain).build();
               jpaTm().insert(historyEntry);
               jpaTm().insert(autorenewPollMessage);
               jpaTm().insert(billEvent);

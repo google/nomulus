@@ -77,7 +77,7 @@ public class BillingEventTest extends EntityTestCase {
     domainHistory =
         persistResource(
             new DomainHistory.Builder()
-                .setDomainContent(domain)
+                .setDomain(domain)
                 .setModificationTime(now)
                 .setRequestedByRegistrar(false)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
@@ -86,7 +86,7 @@ public class BillingEventTest extends EntityTestCase {
     domainHistory2 =
         persistResource(
             new DomainHistory.Builder()
-                .setDomainContent(domain)
+                .setDomain(domain)
                 .setModificationTime(now.plusDays(1))
                 .setRequestedByRegistrar(false)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
