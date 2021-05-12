@@ -692,7 +692,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   private static class JpaQueryComposerImpl<T> extends QueryComposer<T> {
 
+    private static final int DEFAULT_FETCH_SIZE = 1000;
+
     EntityManager em;
+
+    private int fetchSize = DEFAULT_FETCH_SIZE;
 
     JpaQueryComposerImpl(Class<T> entityClass, EntityManager em) {
       super(entityClass);
@@ -717,6 +721,13 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
 
     @Override
+    public QueryComposer<T> withFetchSize(int fetchSize) {
+      checkArgument(fetchSize >= 0, "FetchSize must not be negative");
+      this.fetchSize = fetchSize;
+      return this;
+    }
+
+    @Override
     public Optional<T> first() {
       List<T> results = buildQuery().setMaxResults(1).getResultList();
       return results.size() > 0 ? Optional.of(results.get(0)) : Optional.empty();
@@ -729,7 +740,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     @Override
     public Stream<T> stream() {
-      return buildQuery().getResultStream();
+      if (fetchSize == 0) {
+        logger.atWarning().log("Query result streaming is not enabled.");
+      }
+      TypedQuery<T> query = buildQuery();
+      if (query instanceof org.hibernate.query.Query) {
+        ((org.hibernate.query.Query) query).setFetchSize(fetchSize);
+      } else {
+        logger.atWarning().log("Query implemention does not support result streaming.");
+      }
+      return query.getResultStream();
     }
 
     @Override

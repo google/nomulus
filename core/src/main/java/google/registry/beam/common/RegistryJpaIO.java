@@ -34,11 +34,11 @@ import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.metrics.Counter;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.Create;
-import org.apache.beam.sdk.transforms.Deduplicate;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.GroupIntoBatches;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.Reshuffle;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.transforms.WithKeys;
 import org.apache.beam.sdk.util.ShardedKey;
@@ -83,22 +83,6 @@ public final class RegistryJpaIO {
    * A {@link PTransform transform} that executes a JPA {@link CriteriaQuery} and adds the results
    * to the BEAM pipeline. Users have the option to transform the results before sending them to the
    * next stages.
-   *
-   * <p>The BEAM pipeline may execute this transform multiple times due to transient failures,
-   * loading duplicate results into the pipeline. Before we add dedepuplication support, the easiest
-   * workaround is to map results to {@link KV} pairs, and apply the {@link Deduplicate} transform
-   * to the output of this transform:
-   *
-   * <pre>{@code
-   * PCollection<String> contactIds =
-   *     pipeline
-   *         .apply(RegistryJpaIO.read(
-   *             (JpaTransactionManager tm) -> tm.createQueryComposer...,
-   *             contact -> KV.of(contact.getRepoId(), contact.getContactId()))
-   *         .withCoder(KvCoder.of(StringUtf8Coder.of(), StringUtf8Coder.of())))
-   *         .apply(Deduplicate.keyedValues())
-   *         .apply(Values.create());
-   * }</pre>
    */
   @AutoValue
   public abstract static class Read<R, T> extends PTransform<PBegin, PCollection<T>> {
@@ -118,13 +102,15 @@ public final class RegistryJpaIO {
     abstract Builder<R, T> toBuilder();
 
     @Override
+    @SuppressWarnings("deprecation") // Reshuffle still recommended by GCP.
     public PCollection<T> expand(PBegin input) {
       return input
           .apply("Starting " + name(), Create.of((Void) null))
           .apply(
               "Run query for " + name(),
               ParDo.of(new QueryRunner<>(queryFactory(), resultMapper())))
-          .setCoder(coder());
+          .setCoder(coder())
+          .apply("Reshuffle", Reshuffle.viaRandomKey());
     }
 
     public Read<R, T> withName(String name) {
@@ -178,15 +164,17 @@ public final class RegistryJpaIO {
 
       @ProcessElement
       public void processElement(OutputReceiver<T> outputReceiver) {
-        // TODO(b/187210388): JpaTransactionManager should support non-transactional query.
-        // TODO(weiminyu): add deduplication
-        jpaTm()
-            .transactNoRetry(
-                () ->
-                    querySupplier.apply(jpaTm()).stream()
-                        .map(resultMapper::apply)
-                        .forEach(outputReceiver::output));
-        // TODO(weiminyu): improve performance by reshuffle.
+        // AppEngineEnvironment is need for handling VKeys, which involve Ofy keys. Unlike
+        // SqlBatchWriter, it is unnecessary to initialize ObjectifyService in this class.
+        try (AppEngineEnvironment env = new AppEngineEnvironment()) {
+          // TODO(b/187210388): JpaTransactionManager should support non-transactional query.
+          jpaTm()
+              .transactNoRetry(
+                  () ->
+                      querySupplier.apply(jpaTm()).stream()
+                          .map(resultMapper::apply)
+                          .forEach(outputReceiver::output));
+        }
       }
     }
 
@@ -323,8 +311,9 @@ public final class RegistryJpaIO {
 
     @Setup
     public void setup() {
-      // Below is needed as long as Objectify keys are still involved in the handling of SQL
-      // entities (e.g., in VKeys).
+      // AppEngineEnvironment is needed as long as Objectify keys are still involved in the handling
+      // of SQL entities (e.g., in VKeys). ObjectifyService needs to be initialized when conversion
+      // between Ofy entity and Datastore entity is needed.
       try (AppEngineEnvironment env = new AppEngineEnvironment()) {
         ObjectifyService.initOfy();
       }
