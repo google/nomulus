@@ -21,10 +21,8 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
+import google.registry.schema.replay.SqlOnlyEntity;
 import java.util.Map;
-import java.util.Optional;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -48,7 +46,7 @@ import org.joda.time.DateTime;
  *     functional specifications - SMD Revocation List</a>
  */
 @Entity
-public class SignedMarkRevocationList extends ImmutableObject implements SqlEntity {
+public class SignedMarkRevocationList extends ImmutableObject implements SqlOnlyEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -103,10 +101,5 @@ public class SignedMarkRevocationList extends ImmutableObject implements SqlEnti
   public SignedMarkRevocationList save() {
     SignedMarkRevocationListDao.save(this);
     return this;
-  }
-
-  @Override
-  public Optional<DatastoreEntity> toDatastoreEntity() {
-    return Optional.empty(); // Not persisted in Datastore
   }
 }

@@ -18,30 +18,21 @@ import static google.registry.model.common.CrossTldSingleton.SINGLETON_ID;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import java.util.Optional;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
 
 @Entity
-public class SqlReplayCheckpoint implements SqlEntity {
+public class SqlReplayCheckpoint implements SqlOnlyEntity {
 
   // Hibernate doesn't allow us to have a converted DateTime as our primary key so we need this
   @Id private long revisionId = SINGLETON_ID;
 
   private DateTime lastReplayTime;
 
-  @Override
-  public Optional<DatastoreEntity> toDatastoreEntity() {
-    return Optional.empty(); // Not necessary to persist in Datastore
-  }
-
   public static DateTime get() {
     jpaTm().assertInTransaction();
-    return jpaTm()
-        .query("FROM SqlReplayCheckpoint", SqlReplayCheckpoint.class)
-        .setMaxResults(1)
-        .getResultStream()
+    return jpaTm().loadAllOf(SqlReplayCheckpoint.class).stream()
         .findFirst()
         .map(checkpoint -> checkpoint.lastReplayTime)
         .orElse(START_OF_TIME);

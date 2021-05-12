@@ -14,9 +14,7 @@
 
 package google.registry.persistence.transaction;
 
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
-import java.util.Optional;
+import google.registry.schema.replay.SqlOnlyEntity;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -30,7 +28,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "Transaction")
-public class TransactionEntity implements SqlEntity {
+public class TransactionEntity implements SqlOnlyEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,11 +40,6 @@ public class TransactionEntity implements SqlEntity {
 
   TransactionEntity(byte[] contents) {
     this.contents = contents;
-  }
-
-  @Override
-  public Optional<DatastoreEntity> toDatastoreEntity() {
-    return Optional.empty(); // Not persisted in Datastore per se
   }
 
   public long getId() {
