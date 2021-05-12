@@ -156,6 +156,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         new HistoryEntry.Builder()
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setModificationTime(clock.nowUtc())
+            .setClientId(domain.getCreationClientId())
             .setParent(domain)
             .build());
     clock.advanceOneMilli();
@@ -179,6 +180,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         new HistoryEntry.Builder()
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setModificationTime(clock.nowUtc())
+            .setClientId(domain.getCreationClientId())
             .setParent(domain)
             .build());
     clock.advanceOneMilli();

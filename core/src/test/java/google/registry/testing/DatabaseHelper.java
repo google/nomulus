@@ -566,6 +566,7 @@ public class DatabaseHelper {
                 .setType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST)
                 .setParent(persistResource(contact))
                 .setModificationTime(now)
+                .setClientId(contact.getCurrentSponsorClientId())
                 .build()
                 .toChildHistoryEntity());
     return persistResource(
