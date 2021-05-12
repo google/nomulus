@@ -15,7 +15,7 @@
 package google.registry.tools.javascrap;
 
 import static com.google.common.base.Verify.verify;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameter;
@@ -52,12 +52,12 @@ public class DeleteContactByRoidCommand extends ConfirmingCommand implements Com
   ImmutableList<Key<?>> toDelete;
 
   @Override
-  protected void init() throws Exception {
+  protected void init() {
     System.out.printf("Deleting %s, which refers to %s.\n", roid, contactId);
     tm().transact(
             () -> {
               Key<ContactResource> targetKey = Key.create(ContactResource.class, roid);
-              ContactResource targetContact = ofy().load().key(targetKey).now();
+              ContactResource targetContact = auditedOfy().load().key(targetKey).now();
               verify(
                   Objects.equals(targetContact.getContactId(), contactId),
                   "contactId does not match.");
@@ -76,7 +76,7 @@ public class DeleteContactByRoidCommand extends ConfirmingCommand implements Com
                   roid, canonicalResource);
 
               List<Object> ancestors =
-                  ofy().load().ancestor(Key.create(ContactResource.class, roid)).list();
+                  auditedOfy().load().ancestor(Key.create(ContactResource.class, roid)).list();
 
               System.out.println("Ancestor query returns: ");
               for (Object entity : ancestors) {
@@ -92,7 +92,7 @@ public class DeleteContactByRoidCommand extends ConfirmingCommand implements Com
                       .collect(ImmutableList.toImmutableList());
 
               EppResourceIndex eppResourceIndex =
-                  ofy().load().entity(EppResourceIndex.create(targetKey)).now();
+                  auditedOfy().load().entity(EppResourceIndex.create(targetKey)).now();
               verify(eppResourceIndex.getKey().equals(targetKey), "Wrong EppResource Index loaded");
               System.out.printf("\n\nEppResourceIndex found (%s).\n", Key.create(eppResourceIndex));
 
@@ -103,13 +103,13 @@ public class DeleteContactByRoidCommand extends ConfirmingCommand implements Com
                       .build();
 
               System.out.printf("\n\nAbout to delete %s entities:\n", toDelete.size());
-              toDelete.forEach(key -> System.out.println(key));
+              toDelete.forEach(System.out::println);
             });
   }
 
   @Override
   protected String execute() {
-    tm().transact(() -> ofy().delete().keys(toDelete).now());
+    tm().transact(() -> auditedOfy().delete().keys(toDelete).now());
     return "Done";
   }
 }

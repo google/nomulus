@@ -15,9 +15,8 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -25,6 +24,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
+import google.registry.persistence.transaction.QueryComposer.Comparator;
 
 /**
  * Command to delete the {@link Registry} associated with the specified TLD in Datastore.
@@ -78,19 +78,11 @@ final class DeleteTldCommand extends ConfirmingCommand implements CommandWithRem
   }
 
   private boolean tldContainsDomains(String tld) {
-    if (tm().isOfy()) {
-      return ofy().load().type(DomainBase.class).filter("tld", tld).limit(1).count() > 0;
-    } else {
-      return jpaTm()
-          .transact(
-              () ->
-                  jpaTm()
-                      .query("FROM Domain WHERE tld = :tld", DomainBase.class)
-                      .setParameter("tld", tld)
-                      .setMaxResults(1)
-                      .getResultStream()
-                      .findFirst()
-                      .isPresent());
-    }
+    return transactIfJpaTm(
+        () ->
+            tm().createQueryComposer(DomainBase.class)
+                .where("tld", Comparator.EQ, tld)
+                .first()
+                .isPresent());
   }
 }

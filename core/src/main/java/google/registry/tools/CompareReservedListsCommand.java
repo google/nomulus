@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.beust.jcommander.Parameters;
@@ -37,7 +37,7 @@ final class CompareReservedListsCommand implements CommandWithRemoteApi {
   @Override
   public void run() {
     ImmutableSet<String> datastoreLists =
-        ofy().load().type(ReservedList.class).ancestor(getCrossTldKey()).list().stream()
+        auditedOfy().load().type(ReservedList.class).ancestor(getCrossTldKey()).list().stream()
             .map(ReservedList::getName)
             .collect(toImmutableSet());
 

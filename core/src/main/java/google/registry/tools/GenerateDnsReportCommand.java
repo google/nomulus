@@ -16,9 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.io.BaseEncoding.base16;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.registry.Registries.assertTldExists;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
@@ -30,12 +28,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
+import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.tools.params.PathParameter;
 import google.registry.util.Clock;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -74,15 +74,12 @@ final class GenerateDnsReportCommand implements CommandWithRemoteApi {
     String generate() {
       result.append("[\n");
 
-      Iterable<DomainBase> domains =
-          tm().isOfy()
-              ? ofy().load().type(DomainBase.class).filter("tld", tld)
-              : tm().transact(
-                      () ->
-                          jpaTm()
-                              .query("FROM Domain WHERE tld = :tld", DomainBase.class)
-                              .setParameter("tld", tld)
-                              .getResultList());
+      List<DomainBase> domains =
+          transactIfJpaTm(
+              () ->
+                  tm().createQueryComposer(DomainBase.class)
+                      .where("tld", Comparator.EQ, tld)
+                      .list());
       for (DomainBase domain : domains) {
         // Skip deleted domains and domains that don't get published to DNS.
         if (isBeforeOrAt(domain.getDeletionTime(), now) || !domain.shouldPublishToDns()) {

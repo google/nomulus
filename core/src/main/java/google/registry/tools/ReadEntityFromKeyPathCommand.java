@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
@@ -64,7 +64,7 @@ abstract class ReadEntityFromKeyPathCommand<T> extends MutatingCommand {
             : Files.readLines(keyPathsFile, UTF_8);
     for (String keyPath : keyPaths) {
       Key<?> untypedKey = parseKeyPath(keyPath);
-      Object entity = ofy().load().key(untypedKey).now();
+      Object entity = auditedOfy().load().key(untypedKey).now();
       if (entity == null) {
         System.err.printf(
             "Entity %s read from %s doesn't exist in Datastore! Skipping.%n",

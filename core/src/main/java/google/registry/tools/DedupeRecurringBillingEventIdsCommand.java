@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableSet;
@@ -61,9 +61,9 @@ public class DedupeRecurringBillingEventIdsCommand extends ReadEntityFromKeyPath
     // Loads the associated DomainBase and BillingEvent.OneTime entities that
     // may have reference to this BillingEvent.Recurring entity.
     Key<DomainBase> domainKey = getGrandParentAsDomain(Key.create(recurring));
-    DomainBase domain = ofy().load().key(domainKey).now();
+    DomainBase domain = auditedOfy().load().key(domainKey).now();
     List<BillingEvent.OneTime> oneTimes =
-        ofy().load().type(BillingEvent.OneTime.class).ancestor(domainKey).list();
+        auditedOfy().load().type(BillingEvent.OneTime.class).ancestor(domainKey).list();
 
     VKey<Recurring> oldRecurringVKey = recurring.createVKey();
     // By setting id to 0L, Buildable.build() will assign an application wide unique id to it.

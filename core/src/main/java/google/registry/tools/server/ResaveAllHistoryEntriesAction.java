@@ -14,7 +14,7 @@
 
 package google.registry.tools.server;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.tools.mapreduce.Mapper;
@@ -69,7 +69,9 @@ public class ResaveAllHistoryEntriesAction implements Runnable {
 
     @Override
     public final void map(final HistoryEntry historyEntry) {
-      tm().transact(() -> ofy().save().entity(ofy().load().entity(historyEntry).now()).now());
+      tm().transact(
+              () ->
+                  auditedOfy().save().entity(auditedOfy().load().entity(historyEntry).now()).now());
       getContext().incrementCounter(
           String.format(
               "HistoryEntries parented under %s re-saved", historyEntry.getParent().getKind()));

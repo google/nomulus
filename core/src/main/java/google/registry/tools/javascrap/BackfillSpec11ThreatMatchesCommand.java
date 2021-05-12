@@ -17,9 +17,9 @@ package google.registry.tools.javascrap;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableListMultimap.flatteningToImmutableListMultimap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -31,6 +31,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.model.reporting.Spec11ThreatMatchDao;
+import google.registry.persistence.transaction.QueryComposer;
 import google.registry.reporting.spec11.RegistrarThreatMatches;
 import google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParser;
 import google.registry.tools.CommandWithRemoteApi;
@@ -148,21 +149,14 @@ public class BackfillSpec11ThreatMatchesCommand extends ConfirmingCommand
 
   /** Loads in all {@link DomainBase} objects for a given FQDN. */
   private List<DomainBase> loadDomainsForFqdn(String fullyQualifiedDomainName) {
-    if (tm().isOfy()) {
-      return ofy()
-          .load()
-          .type(DomainBase.class)
-          .filter("fullyQualifiedDomainName", fullyQualifiedDomainName)
-          .list();
-    } else {
-      return jpaTm()
-          .transact(
-              () ->
-                  jpaTm()
-                      .query("FROM Domain WHERE fullyQualifiedDomainName = :fqdn", DomainBase.class)
-                      .setParameter("fqdn", fullyQualifiedDomainName)
-                      .getResultList());
-    }
+    return transactIfJpaTm(
+        () ->
+            tm().createQueryComposer(DomainBase.class)
+                .where(
+                    "fullyQualifiedDomainName",
+                    QueryComposer.Comparator.EQ,
+                    fullyQualifiedDomainName)
+                .list());
   }
 
   /** Converts the previous {@link ThreatMatch} object to {@link Spec11ThreatMatch}. */
