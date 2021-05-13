@@ -21,7 +21,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static org.junit.Assert.assertThrows;
 
-import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
@@ -169,7 +168,7 @@ public class QueryComposerTest {
                         .where("name", Comparator.EQ, "alpha")
                         .stream()
                         .collect(toImmutableList())))
-        .isEqualTo(ImmutableList.of(alpha));
+        .containsExactly(alpha);
     assertThat(
             transactIfJpaTm(
                 () ->
@@ -178,7 +177,7 @@ public class QueryComposerTest {
                         .where("name", Comparator.GT, "alpha")
                         .stream()
                         .collect(toImmutableList())))
-        .isEqualTo(ImmutableList.of(bravo, charlie));
+        .containsExactly(bravo, charlie);
     assertThat(
             transactIfJpaTm(
                 () ->
@@ -187,7 +186,7 @@ public class QueryComposerTest {
                         .where("name", Comparator.GTE, "bravo")
                         .stream()
                         .collect(toImmutableList())))
-        .isEqualTo(ImmutableList.of(bravo, charlie));
+        .containsExactly(bravo, charlie);
     assertThat(
             transactIfJpaTm(
                 () ->
@@ -196,7 +195,7 @@ public class QueryComposerTest {
                         .where("name", Comparator.LT, "charlie")
                         .stream()
                         .collect(toImmutableList())))
-        .isEqualTo(ImmutableList.of(alpha, bravo));
+        .containsExactly(alpha, bravo);
     assertThat(
             transactIfJpaTm(
                 () ->
@@ -205,7 +204,7 @@ public class QueryComposerTest {
                         .where("name", Comparator.LTE, "bravo")
                         .stream()
                         .collect(toImmutableList())))
-        .isEqualTo(ImmutableList.of(alpha, bravo));
+        .containsExactly(alpha, bravo);
   }
 
   @TestOfyAndSql
@@ -216,7 +215,7 @@ public class QueryComposerTest {
                     tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.GT, "alpha")
                         .list()))
-        .isEqualTo(ImmutableList.of(bravo, charlie));
+        .containsExactly(bravo, charlie);
   }
 
   @TestOfyAndSql
@@ -242,7 +241,7 @@ public class QueryComposerTest {
                         .orderBy("val")
                         .stream()
                         .collect(toImmutableList())))
-        .isEqualTo(ImmutableList.of(bravo, alpha));
+        .containsExactly(bravo, alpha);
   }
 
   @TestOfyAndSql
@@ -262,7 +261,7 @@ public class QueryComposerTest {
                         .where("name", Comparator.GT, "foxtrot")
                         .stream()
                         .collect(toImmutableList())))
-        .isEqualTo(ImmutableList.of());
+        .isEmpty();
   }
 
   @TestOfyOnly
@@ -302,7 +301,7 @@ public class QueryComposerTest {
                         .where("name", Comparator.LIKE, "%harl%")
                         .stream()
                         .collect(toImmutableList())))
-        .isEqualTo(ImmutableList.of(charlie));
+        .containsExactly(charlie);
 
     // Verify that full matches work.
     assertThat(
@@ -313,7 +312,7 @@ public class QueryComposerTest {
                         .where("name", Comparator.LIKE, "alpha")
                         .stream()
                         .collect(toImmutableList())))
-        .isEqualTo(ImmutableList.of(alpha));
+        .containsExactly(alpha);
 
     // verify that we don't do partial matches.
     assertThat(
@@ -324,7 +323,7 @@ public class QueryComposerTest {
                         .where("name", Comparator.LIKE, "%harl")
                         .stream()
                         .collect(toImmutableList())))
-        .isEqualTo(ImmutableList.of());
+        .isEmpty();
     assertThat(
             transactIfJpaTm(
                 () ->
@@ -333,7 +332,7 @@ public class QueryComposerTest {
                         .where("name", Comparator.LIKE, "harl%")
                         .stream()
                         .collect(toImmutableList())))
-        .isEqualTo(ImmutableList.of());
+        .isEmpty();
   }
 
   @TestOfyOnly
