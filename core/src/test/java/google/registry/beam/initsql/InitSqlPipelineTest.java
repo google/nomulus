@@ -181,6 +181,7 @@ class InitSqlPipelineTest {
               new HistoryEntry.Builder()
                   .setParent(domainKey)
                   .setModificationTime(fakeClock.nowUtc())
+                  .setClientId(registrar1.getClientId())
                   .setType(HistoryEntry.Type.DOMAIN_CREATE)
                   .build());
       persistResource(

@@ -371,6 +371,7 @@ class DomainTransferRejectFlowTest
             .setType(DOMAIN_TRANSFER_REQUEST)
             .setParent(domain)
             .setModificationTime(clock.nowUtc().minusDays(4))
+            .setClientId("TheRegistrar")
             .setDomainTransactionRecords(
                 ImmutableSet.of(previousSuccessRecord, notCancellableRecord))
             .build());

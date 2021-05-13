@@ -71,7 +71,7 @@ public class OfyTest {
     createTld("tld");
     someObject =
         new HistoryEntry.Builder()
-            .setClientId("client id")
+            .setClientId("clientid")
             .setModificationTime(START_OF_TIME)
             .setParent(persistActiveContact("parentContact"))
             .setTrid(Trid.create("client", "server"))

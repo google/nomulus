@@ -116,6 +116,7 @@ class DomainRestoreRequestFlowTest
             new HistoryEntry.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_DELETE)
                 .setModificationTime(clock.nowUtc())
+                .setClientId(domain.getCurrentSponsorClientId())
                 .setParent(domain)
                 .build());
     persistResource(
