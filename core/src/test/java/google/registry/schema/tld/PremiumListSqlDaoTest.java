@@ -58,7 +58,6 @@ public class PremiumListSqlDaoTest {
   public final TestCacheExtension testCacheExtension =
       new TestCacheExtension.Builder()
           .withPremiumListsCache(standardDays(1))
-          .withPremiumListEntriesCache(standardDays(1))
           .build();
 
   private ImmutableMap<String, BigDecimal> testPrices;

@@ -14,6 +14,7 @@
 
 package google.registry.schema.tld;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
 import static google.registry.config.RegistryConfig.getSingletonCachePersistDuration;
 import static google.registry.config.RegistryConfig.getStaticPremiumListMaxCachedEntries;
@@ -25,6 +26,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Streams;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.util.NonFinalForTesting;
@@ -32,6 +34,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import org.joda.money.BigMoney;
+import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.Duration;
 
@@ -218,6 +222,29 @@ public class PremiumListSqlDao {
                     .setMaxResults(1)
                     .getResultStream()
                     .findFirst());
+  }
+
+  /**
+   * Returns all {@link PremiumListEntry PremiumListEntries} in the list with the given name.
+   *
+   * <p>This is an expensive operation and should only be used when the entire list is required.
+   */
+  public static Iterable<PremiumListEntry> loadAllPremiumListEntries(String premiumListName) {
+    PremiumList premiumList =
+        getLatestRevision(premiumListName)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        String.format("No premium list with name %s.", premiumListName)));
+    CurrencyUnit currencyUnit = premiumList.getCurrency();
+    return Streams.stream(loadPremiumListEntriesUncached(premiumList))
+        .map(
+            premiumEntry ->
+                new PremiumListEntry.Builder()
+                    .setPrice(BigMoney.of(currencyUnit, premiumEntry.getPrice()).toMoney())
+                    .setLabel(premiumEntry.getDomainLabel())
+                    .build())
+        .collect(toImmutableList());
   }
 
   @AutoValue

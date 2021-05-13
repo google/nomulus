@@ -39,8 +39,8 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.persistence.VKey;
+import google.registry.schema.tld.PremiumListSqlDao;
 import google.registry.util.CidrAddressBlock;
 import java.util.Collection;
 import java.util.Optional;
@@ -295,7 +295,7 @@ public final class OteAccountBuilder {
       boolean isEarlyAccess,
       int roidSuffix) {
     String tldNameAlphaNumerical = tldName.replaceAll("[^a-z0-9]", "");
-    Optional<PremiumList> premiumList = PremiumListDualDao.getLatestRevision(DEFAULT_PREMIUM_LIST);
+    Optional<PremiumList> premiumList = PremiumListSqlDao.getLatestRevision(DEFAULT_PREMIUM_LIST);
     checkState(premiumList.isPresent(), "Couldn't find premium list %s.", DEFAULT_PREMIUM_LIST);
     Registry.Builder builder =
         new Registry.Builder()
