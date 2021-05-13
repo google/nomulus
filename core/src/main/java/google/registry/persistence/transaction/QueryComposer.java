@@ -92,6 +92,20 @@ public abstract class QueryComposer<T> {
     return this;
   }
 
+  /**
+   * Specifies if JPA entities should be automatically detached from the persistence context after
+   * loading. Set this configuration to true when loading large data sets into data processing
+   * pipelines.
+   *
+   * <p>Entity detachment may be best effort. It does not have to happen immediately for a
+   * particular entity, or to happen at all.
+   *
+   * <p>This configuration has no effect on Datastore queries.
+   */
+  public QueryComposer<T> withAutoDetachOnLoad(boolean autoDetachOnLoad) {
+    return this;
+  }
+
   /** Returns the first result of the query or an empty optional if there is none. */
   public abstract Optional<T> first();
 

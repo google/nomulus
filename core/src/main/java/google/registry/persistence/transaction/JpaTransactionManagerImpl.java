@@ -48,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -698,6 +700,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     private int fetchSize = DEFAULT_FETCH_SIZE;
 
+    private boolean autoDetachOnLoad;
+
     JpaQueryComposerImpl(Class<T> entityClass, EntityManager em) {
       super(entityClass);
       this.em = em;
@@ -718,6 +722,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       }
 
       return em.createQuery(queryBuilder.build());
+    }
+
+    @Override
+    public QueryComposer<T> withAutoDetachOnLoad(boolean autoDetachOnLoad) {
+      this.autoDetachOnLoad = autoDetachOnLoad;
+      return this;
     }
 
     @Override
@@ -749,6 +759,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       } else {
         logger.atWarning().log("Query implemention does not support result streaming.");
       }
+      if (autoDetachOnLoad) {
+        return query.getResultStream().map(new BestEffortDetach<>(em, fetchSize));
+      }
       return query.getResultStream();
     }
 
@@ -761,6 +774,31 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     @Override
     public List<T> list() {
       return buildQuery().getResultList();
+    }
+  }
+
+  /**
+   * Detaches JPA entities by calling the {@link EntityManager#clear()} method on batches of the
+   * entities. Class is called best effort because the odd lot entities near the end of the stream
+   * may not be detached.
+   */
+  static class BestEffortDetach<T> implements Function<T, T> {
+    private final EntityManager entityManager;
+    private final int batchSize;
+    private final AtomicInteger batchCount = new AtomicInteger(0);
+
+    BestEffortDetach(EntityManager entityManager, int batchSize) {
+      this.entityManager = entityManager;
+      this.batchSize = batchSize;
+    }
+
+    @Override
+    public T apply(T entity) {
+      if (batchCount.incrementAndGet() >= batchSize) {
+        batchCount.set(0);
+        entityManager.clear();
+      }
+      return entity;
     }
   }
 }
