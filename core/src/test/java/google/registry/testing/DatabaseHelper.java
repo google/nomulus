@@ -389,7 +389,8 @@ public class DatabaseHelper {
                         toImmutableMap(
                             Map.Entry::getKey, entry -> entry.getValue().getValue().getAmount())))
             .build();
-    // Since we used to persist a PremiumList to Datastore here, it is necessary to allocate an ID here to prevent breaking some of the hard-coded flow tests.
+    // Since we used to persist a PremiumList to Datastore here, it is necessary to allocate an ID
+    // here to prevent breaking some of the hard-coded flow tests.
     allocateId();
     jpaTm().transact(() -> jpaTm().insert(premiumList));
     maybeAdvanceClock();

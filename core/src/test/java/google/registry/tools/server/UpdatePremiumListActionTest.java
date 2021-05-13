@@ -23,7 +23,6 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.common.base.Splitter;
 import com.google.common.truth.Truth8;
-import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.schema.tld.PremiumListSqlDao;
 import google.registry.testing.AppEngineExtension;
