@@ -98,13 +98,14 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
    * the Datastore size limits.
    */
   private void ackPollMessagesDatastore() {
-    QueryKeys<PollMessage> query = ofy()
-        .load()
-        .type(PollMessage.class)
-        .filter("clientId", clientId)
-        .filter("eventTime <=", clock.nowUtc())
-        .order("eventTime")
-        .keys();
+    QueryKeys<PollMessage> query =
+        ofy()
+            .load()
+            .type(PollMessage.class)
+            .filter("clientId", clientId)
+            .filter("eventTime <=", clock.nowUtc())
+            .order("eventTime")
+            .keys();
     for (List<Key<PollMessage>> keys : Iterables.partition(query, BATCH_SIZE)) {
       tm().transact(
               () ->
