@@ -16,7 +16,7 @@ package google.registry.model;
 
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Maps.transformValues;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -189,7 +189,7 @@ public abstract class ImmutableObject implements Cloneable {
   private static Object hydrate(Object value) {
     if (value instanceof Key) {
       if (tm().isOfy()) {
-        return hydrate(ofy().load().key((Key<?>) value).now());
+        return hydrate(auditedOfy().load().key((Key<?>) value).now());
       }
       return value;
     } else if (value instanceof Map) {

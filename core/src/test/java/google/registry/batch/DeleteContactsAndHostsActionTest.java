@@ -22,7 +22,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_DELETE;
 import static google.registry.batch.AsyncTaskMetrics.OperationResult.STALE;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_DELETE;
 import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_DELETE_FAILURE;
 import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_TRANSFER_REQUEST;
@@ -132,7 +132,7 @@ public class DeleteContactsAndHostsActionTest
     executeTasksUntilEmpty("mapreduce", clock);
     sleeper.sleep(millis(50));
     clock.advanceBy(standardSeconds(5));
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
   }
 
   /** Kicks off, but does not run, the mapreduce tasks. Useful for testing validation/setup. */
@@ -140,7 +140,7 @@ public class DeleteContactsAndHostsActionTest
     clock.advanceBy(standardSeconds(5));
     action.run();
     clock.advanceBy(standardSeconds(5));
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
   }
 
   @BeforeEach
@@ -258,7 +258,7 @@ public class DeleteContactsAndHostsActionTest
         false);
     runMapreduce();
     assertThat(loadByForeignKey(ContactResource.class, "jim919", clock.nowUtc())).isEmpty();
-    ContactResource contactAfterDeletion = ofy().load().entity(contact).now();
+    ContactResource contactAfterDeletion = auditedOfy().load().entity(contact).now();
     assertAboutContacts()
         .that(contactAfterDeletion)
         .isNotActiveAt(clock.nowUtc())
@@ -299,7 +299,7 @@ public class DeleteContactsAndHostsActionTest
         Trid.create("fakeClientTrid", "fakeServerTrid"),
         false);
     runMapreduce();
-    ContactResource contactAfterDeletion = ofy().load().entity(contact).now();
+    ContactResource contactAfterDeletion = auditedOfy().load().entity(contact).now();
     assertThat(contactAfterDeletion.getTransferData()).isEqualTo(ContactTransferData.EMPTY);
   }
 
@@ -444,7 +444,7 @@ public class DeleteContactsAndHostsActionTest
         true);
     runMapreduce();
     assertThat(loadByForeignKey(ContactResource.class, "nate007", clock.nowUtc())).isEmpty();
-    ContactResource contactAfterDeletion = ofy().load().entity(contact).now();
+    ContactResource contactAfterDeletion = auditedOfy().load().entity(contact).now();
     assertAboutContacts()
         .that(contactAfterDeletion)
         .isNotActiveAt(clock.nowUtc())
@@ -579,8 +579,8 @@ public class DeleteContactsAndHostsActionTest
         Trid.create("fakeClientTrid", "fakeServerTrid"),
         false);
     enqueueMapreduceOnly();
-    assertThat(ofy().load().entity(contactDeleted).now()).isEqualTo(contactDeleted);
-    assertThat(ofy().load().entity(hostDeleted).now()).isEqualTo(hostDeleted);
+    assertThat(auditedOfy().load().entity(contactDeleted).now()).isEqualTo(contactDeleted);
+    assertThat(auditedOfy().load().entity(hostDeleted).now()).isEqualTo(hostDeleted);
     assertNoTasksEnqueued(QUEUE_ASYNC_DELETE);
     assertThat(acquireLock()).isPresent();
   }
@@ -844,12 +844,12 @@ public class DeleteContactsAndHostsActionTest
     }
     runMapreduce();
     for (EppResource resource : ImmutableList.<EppResource>of(c1, c2, c3, h1, h2, h3)) {
-      EppResource loaded = ofy().load().entity(resource).now();
+      EppResource loaded = auditedOfy().load().entity(resource).now();
       assertThat(loaded.getDeletionTime()).isLessThan(DateTime.now(UTC));
       assertThat(loaded.getStatusValues()).doesNotContain(PENDING_DELETE);
     }
     for (EppResource resource : ImmutableList.<EppResource>of(c4, h4)) {
-      EppResource loaded = ofy().load().entity(resource).now();
+      EppResource loaded = auditedOfy().load().entity(resource).now();
       assertThat(loaded.getDeletionTime()).isEqualTo(END_OF_TIME);
       assertThat(loaded.getStatusValues()).doesNotContain(PENDING_DELETE);
     }

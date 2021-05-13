@@ -24,7 +24,7 @@ import static google.registry.backup.BackupUtils.serializeEntity;
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
 import static google.registry.model.ofy.CommitLogBucket.getBucketIds;
 import static google.registry.model.ofy.CommitLogBucket.getBucketKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -89,7 +89,7 @@ public class RestoreCommitLogsActionTest {
 
   @Test
   void testRestore_multipleDiffFiles() throws Exception {
-    ofy()
+    auditedOfy()
         .saveWithoutBackup()
         .entities(TestObject.create("previous to keep"), TestObject.create("previous to delete"))
         .now();
@@ -134,7 +134,7 @@ public class RestoreCommitLogsActionTest {
             CommitLogMutation.create(manifest2Key, TestObject.create("f")));
     action.fromTime = now.minusMinutes(1).minusMillis(1);
     action.run();
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertExpectedIds("previous to keep", "b", "d", "e", "f");
     assertInDatastore(file1CommitLogs);
     assertInDatastore(file2CommitLogs);
@@ -144,11 +144,11 @@ public class RestoreCommitLogsActionTest {
 
   @Test
   void testRestore_noManifests() throws Exception {
-    ofy().saveWithoutBackup().entity(TestObject.create("previous to keep")).now();
+    auditedOfy().saveWithoutBackup().entity(TestObject.create("previous to keep")).now();
     saveDiffFileNotToRestore(gcsService, now.minusMinutes(1));
     Iterable<ImmutableObject> commitLogs = saveDiffFile(gcsService, createCheckpoint(now));
     action.run();
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertExpectedIds("previous to keep");
     assertInDatastore(commitLogs);
     assertInDatastore(CommitLogCheckpointRoot.create(now));
@@ -157,7 +157,7 @@ public class RestoreCommitLogsActionTest {
 
   @Test
   void testRestore_manifestWithNoDeletions() throws Exception {
-    ofy().saveWithoutBackup().entity(TestObject.create("previous to keep")).now();
+    auditedOfy().saveWithoutBackup().entity(TestObject.create("previous to keep")).now();
     Key<CommitLogBucket> bucketKey = getBucketKey(1);
     Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(bucketKey, now);
     saveDiffFileNotToRestore(gcsService, now.minusMinutes(1));
@@ -169,7 +169,7 @@ public class RestoreCommitLogsActionTest {
             CommitLogMutation.create(manifestKey, TestObject.create("a")),
             CommitLogMutation.create(manifestKey, TestObject.create("b")));
     action.run();
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertExpectedIds("previous to keep", "a", "b");
     assertInDatastore(commitLogs);
     assertInDatastore(CommitLogCheckpointRoot.create(now));
@@ -178,7 +178,7 @@ public class RestoreCommitLogsActionTest {
 
   @Test
   void testRestore_manifestWithNoMutations() throws Exception {
-    ofy()
+    auditedOfy()
         .saveWithoutBackup()
         .entities(TestObject.create("previous to keep"), TestObject.create("previous to delete"))
         .now();
@@ -192,7 +192,7 @@ public class RestoreCommitLogsActionTest {
                 now,
                 ImmutableSet.of(Key.create(TestObject.create("previous to delete")))));
     action.run();
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertExpectedIds("previous to keep");
     assertInDatastore(commitLogs);
     assertInDatastore(CommitLogCheckpointRoot.create(now));
@@ -202,7 +202,7 @@ public class RestoreCommitLogsActionTest {
   // This is a pathological case that shouldn't be possible, but we should be robust to it.
   @Test
   void testRestore_manifestWithNoMutationsOrDeletions() throws Exception {
-    ofy().saveWithoutBackup().entities(TestObject.create("previous to keep")).now();
+    auditedOfy().saveWithoutBackup().entities(TestObject.create("previous to keep")).now();
     saveDiffFileNotToRestore(gcsService, now.minusMinutes(1));
     Iterable<ImmutableObject> commitLogs =
         saveDiffFile(
@@ -210,7 +210,7 @@ public class RestoreCommitLogsActionTest {
             createCheckpoint(now),
             CommitLogManifest.create(getBucketKey(1), now, null));
     action.run();
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertExpectedIds("previous to keep");
     assertInDatastore(commitLogs);
     assertInDatastore(CommitLogCheckpointRoot.create(now));
@@ -219,7 +219,7 @@ public class RestoreCommitLogsActionTest {
 
   @Test
   void testRestore_mutateExistingEntity() throws Exception {
-    ofy().saveWithoutBackup().entity(TestObject.create("existing", "a")).now();
+    auditedOfy().saveWithoutBackup().entity(TestObject.create("existing", "a")).now();
     Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(getBucketKey(1), now);
     saveDiffFileNotToRestore(gcsService, now.minusMinutes(1));
     Iterable<ImmutableObject> commitLogs =
@@ -229,8 +229,9 @@ public class RestoreCommitLogsActionTest {
             CommitLogManifest.create(getBucketKey(1), now, null),
             CommitLogMutation.create(manifestKey, TestObject.create("existing", "b")));
     action.run();
-    ofy().clearSessionCache();
-    assertThat(ofy().load().entity(TestObject.create("existing")).now().getField()).isEqualTo("b");
+    auditedOfy().clearSessionCache();
+    assertThat(auditedOfy().load().entity(TestObject.create("existing")).now().getField())
+        .isEqualTo("b");
     assertInDatastore(commitLogs);
     assertInDatastore(CommitLogCheckpointRoot.create(now));
     assertCommitLogBuckets(ImmutableMap.of(1, now));
@@ -239,7 +240,7 @@ public class RestoreCommitLogsActionTest {
   // This should be harmless; deletes are idempotent.
   @Test
   void testRestore_deleteMissingEntity() throws Exception {
-    ofy().saveWithoutBackup().entity(TestObject.create("previous to keep", "a")).now();
+    auditedOfy().saveWithoutBackup().entity(TestObject.create("previous to keep", "a")).now();
     saveDiffFileNotToRestore(gcsService, now.minusMinutes(1));
     Iterable<ImmutableObject> commitLogs =
         saveDiffFile(
@@ -250,7 +251,7 @@ public class RestoreCommitLogsActionTest {
                 now,
                 ImmutableSet.of(Key.create(TestObject.create("previous to delete")))));
     action.run();
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertExpectedIds("previous to keep");
     assertInDatastore(commitLogs);
     assertCommitLogBuckets(ImmutableMap.of(1, now));
@@ -290,22 +291,24 @@ public class RestoreCommitLogsActionTest {
   }
 
   private void assertExpectedIds(String... ids) {
-    assertThat(transform(ofy().load().type(TestObject.class), TestObject::getId))
+    assertThat(transform(auditedOfy().load().type(TestObject.class), TestObject::getId))
         .containsExactly((Object[]) ids);
   }
 
   private void assertInDatastore(ImmutableObject entity) {
-    assertThat(ofy().load().entity(entity).now()).isEqualTo(entity);
+    assertThat(auditedOfy().load().entity(entity).now()).isEqualTo(entity);
   }
 
   private void assertInDatastore(Iterable<? extends ImmutableObject> entities) {
-    assertThat(ofy().load().entities(entities).values()).containsExactlyElementsIn(entities);
+    assertThat(auditedOfy().load().entities(entities).values()).containsExactlyElementsIn(entities);
   }
 
   private void assertCommitLogBuckets(Map<Integer, DateTime> bucketIdsAndTimestamps) {
-    Map<Long, CommitLogBucket> buckets = ofy().load()
-        .type(CommitLogBucket.class)
-        .ids(Longs.asList(Longs.toArray(CommitLogBucket.getBucketIds())));
+    Map<Long, CommitLogBucket> buckets =
+        auditedOfy()
+            .load()
+            .type(CommitLogBucket.class)
+            .ids(Longs.asList(Longs.toArray(CommitLogBucket.getBucketIds())));
     assertThat(buckets).hasSize(bucketIdsAndTimestamps.size());
     for (Entry<Integer, DateTime> bucketIdAndTimestamp : bucketIdsAndTimestamps.entrySet()) {
       assertThat(buckets.get((long) bucketIdAndTimestamp.getKey()).getLastWrittenTime())

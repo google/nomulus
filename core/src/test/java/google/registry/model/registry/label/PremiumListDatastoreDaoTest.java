@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static com.google.monitoring.metrics.contrib.DistributionMetricSubject.assertThat;
 import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registry.label.DomainLabelMetrics.PremiumListCheckOutcome.BLOOM_FILTER_NEGATIVE;
 import static google.registry.model.registry.label.DomainLabelMetrics.PremiumListCheckOutcome.CACHED_NEGATIVE;
 import static google.registry.model.registry.label.DomainLabelMetrics.PremiumListCheckOutcome.CACHED_POSITIVE;
@@ -173,10 +173,10 @@ public class PremiumListDatastoreDaoTest {
     // Remove one of the premium list entries from behind the Bloom filter's back.
     tm().transactNew(
             () ->
-                ofy()
+                auditedOfy()
                     .delete()
                     .keys(Key.create(pl.getRevisionKey(), PremiumListEntry.class, "rich")));
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
 
     assertThat(PremiumListDatastoreDao.getPremiumPrice("tld", "rich", "tld")).isEmpty();
     assertThat(PremiumListDatastoreDao.getPremiumPrice("tld", "rich", "tld")).isEmpty();
@@ -203,7 +203,7 @@ public class PremiumListDatastoreDaoTest {
     assertThat(PremiumListDatastoreDao.getPremiumPrice("tld", "dolt", "tld"))
         .hasValue(Money.parse("JPY 1000"));
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .type(PremiumListEntry.class)
                 .parent(pl.getRevisionKey())
@@ -279,7 +279,7 @@ public class PremiumListDatastoreDaoTest {
     assertThat(entries.keySet()).containsExactly("test");
     // Save again with no changes, and clear the cache to force a re-load from Datastore.
     PremiumList resaved = PremiumListDatastoreDao.save("tld", ImmutableList.of("test,USD 1"));
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     Map<String, PremiumListEntry> entriesReloaded =
         Streams.stream(PremiumListDatastoreDao.loadPremiumListEntriesUncached(resaved))
             .collect(toImmutableMap(PremiumListEntry::getLabel, Function.identity()));
@@ -296,7 +296,7 @@ public class PremiumListDatastoreDaoTest {
     Key<PremiumListRevision> parent = gtld1.get().getRevisionKey();
     PremiumListDatastoreDao.delete(gtld1.get());
     assertThat(PremiumListDatastoreDao.getLatestRevision("gtld1")).isEmpty();
-    assertThat(ofy().load().type(PremiumListEntry.class).ancestor(parent).list()).isEmpty();
+    assertThat(auditedOfy().load().type(PremiumListEntry.class).ancestor(parent).list()).isEmpty();
   }
 
   @Test

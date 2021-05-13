@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterators.peekingIterator;
 import static google.registry.backup.BackupUtils.createDeserializingIterator;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
@@ -146,10 +146,10 @@ public class RestoreCommitLogsAction implements Runnable {
   private CommitLogManifest restoreOneTransaction(PeekingIterator<ImmutableObject> commitLogs) {
     final CommitLogManifest manifest = (CommitLogManifest) commitLogs.next();
     Result<?> deleteResult = deleteAsync(manifest.getDeletions());
-    List<Entity> entitiesToSave = Lists.newArrayList(ofy().save().toEntity(manifest));
+    List<Entity> entitiesToSave = Lists.newArrayList(auditedOfy().save().toEntity(manifest));
     while (commitLogs.hasNext() && commitLogs.peek() instanceof CommitLogMutation) {
       CommitLogMutation mutation = (CommitLogMutation) commitLogs.next();
-      entitiesToSave.add(ofy().save().toEntity(mutation));
+      entitiesToSave.add(auditedOfy().save().toEntity(mutation));
       entitiesToSave.add(EntityTranslator.createFromPbBytes(mutation.getEntityProtoBytes()));
     }
     saveRaw(entitiesToSave);
@@ -176,7 +176,8 @@ public class RestoreCommitLogsAction implements Runnable {
       return;
     }
     retrier.callWithRetry(
-        () -> ofy().saveWithoutBackup().entities(objectsToSave).now(), RuntimeException.class);
+        () -> auditedOfy().saveWithoutBackup().entities(objectsToSave).now(),
+        RuntimeException.class);
   }
 
   private Result<?> deleteAsync(Set<Key<?>> keysToDelete) {
@@ -185,7 +186,7 @@ public class RestoreCommitLogsAction implements Runnable {
     }
     return dryRun || keysToDelete.isEmpty()
         ? new ResultNow<Void>(null)
-        : ofy().deleteWithoutBackup().keys(keysToDelete);
+        : auditedOfy().deleteWithoutBackup().keys(keysToDelete);
   }
 
 }

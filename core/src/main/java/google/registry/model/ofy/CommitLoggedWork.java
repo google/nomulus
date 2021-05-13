@@ -22,7 +22,7 @@ import static com.google.common.collect.Maps.filterKeys;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.model.ofy.CommitLogBucket.loadBucket;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
 import com.google.common.collect.ImmutableMap;
@@ -134,7 +134,7 @@ class CommitLoggedWork<R> implements Runnable {
     // asynchronous save and delete operations that haven't been reaped, but that's ok because we
     // already logged all of those keys in {@link TransactionInfo} and now just need to figure out
     // what was loaded.
-    ImmutableSet<Key<?>> keysInSessionCache = ofy().getSessionKeys();
+    ImmutableSet<Key<?>> keysInSessionCache = auditedOfy().getSessionKeys();
     Map<Key<BackupGroupRoot>, BackupGroupRoot> rootsForTouchedKeys =
         getBackupGroupRoots(touchedKeys);
     Map<Key<BackupGroupRoot>, BackupGroupRoot> rootsForUntouchedKeys =
@@ -153,14 +153,16 @@ class CommitLoggedWork<R> implements Runnable {
             .stream()
             .map(entity -> (ImmutableObject) CommitLogMutation.create(manifestKey, entity))
             .collect(toImmutableSet());
-    ofy().saveWithoutBackup()
-      .entities(new ImmutableSet.Builder<>()
-          .add(manifest)
-          .add(bucket.asBuilder().setLastWrittenTime(info.transactionTime).build())
-          .addAll(mutations)
-          .addAll(untouchedRootsWithTouchedChildren)
-          .build())
-      .now();
+    auditedOfy()
+        .saveWithoutBackup()
+        .entities(
+            new ImmutableSet.Builder<>()
+                .add(manifest)
+                .add(bucket.asBuilder().setLastWrittenTime(info.transactionTime).build())
+                .addAll(mutations)
+                .addAll(untouchedRootsWithTouchedChildren)
+                .build())
+        .now();
     ReplayQueue.addInTests(info);
   }
 
@@ -185,8 +187,8 @@ class CommitLoggedWork<R> implements Runnable {
     Set<Key<BackupGroupRoot>> rootKeys = new HashSet<>();
     for (Key<?> key : keys) {
       while (key != null
-          && !BackupGroupRoot.class
-              .isAssignableFrom(ofy().factory().getMetadata(key).getEntityClass())) {
+          && !BackupGroupRoot.class.isAssignableFrom(
+              auditedOfy().factory().getMetadata(key).getEntityClass())) {
         key = key.getParent();
       }
       if (key != null) {
@@ -195,6 +197,6 @@ class CommitLoggedWork<R> implements Runnable {
         rootKeys.add(rootKey);
       }
     }
-    return ImmutableMap.copyOf(ofy().load().keys(rootKeys));
+    return ImmutableMap.copyOf(auditedOfy().load().keys(rootKeys));
   }
 }

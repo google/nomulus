@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.api.datastore.Entity;
@@ -96,7 +96,7 @@ public class LevelDbFileBuilderTest {
     LevelDbFileBuilder builder = new LevelDbFileBuilder(logFile);
 
     ContactResource contact = DatabaseHelper.newContactResource("contact");
-    builder.addEntity(tm().transact(() -> ofy().save().toEntity(contact)));
+    builder.addEntity(tm().transact(() -> auditedOfy().save().toEntity(contact)));
     builder.build();
 
     ImmutableList<byte[]> records = ImmutableList.copyOf(LevelDbLogReader.from(logFile.getPath()));
@@ -112,6 +112,6 @@ public class LevelDbFileBuilderTest {
   }
 
   private static <T> T rawRecordToOfyEntity(byte[] record, Class<T> expectedType) {
-    return expectedType.cast(ofy().load().fromEntity(rawRecordToEntity(record)));
+    return expectedType.cast(auditedOfy().load().fromEntity(rawRecordToEntity(record)));
   }
 }

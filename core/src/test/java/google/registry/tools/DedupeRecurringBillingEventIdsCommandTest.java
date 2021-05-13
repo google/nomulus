@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -176,14 +176,14 @@ class DedupeRecurringBillingEventIdsCommandTest
           if (newRecurring.getTargetId().equals("foo.tld")) {
             assertSameRecurringEntityExceptId(newRecurring, recurring1);
 
-            BillingEvent.OneTime persistedOneTime = ofy().load().entity(oneTime).now();
+            BillingEvent.OneTime persistedOneTime = auditedOfy().load().entity(oneTime).now();
             assertAboutImmutableObjects()
                 .that(persistedOneTime)
                 .isEqualExceptFields(oneTime, "cancellationMatchingBillingEvent");
             assertThat(persistedOneTime.getCancellationMatchingBillingEvent())
                 .isEqualTo(newRecurring.createVKey());
 
-            DomainBase persistedDomain = ofy().load().entity(domain1).now();
+            DomainBase persistedDomain = auditedOfy().load().entity(domain1).now();
             assertAboutImmutableObjects()
                 .that(persistedDomain)
                 .isEqualExceptFields(
@@ -219,7 +219,7 @@ class DedupeRecurringBillingEventIdsCommandTest
 
   private static void assertNotInDatastore(ImmutableObject... entities) {
     for (ImmutableObject entity : entities) {
-      assertThat(ofy().load().entity(entity).now()).isNull();
+      assertThat(auditedOfy().load().entity(entity).now()).isNull();
     }
   }
 
@@ -237,7 +237,7 @@ class DedupeRecurringBillingEventIdsCommandTest
   }
 
   private static ImmutableList<BillingEvent.Recurring> loadAllRecurrings() {
-    return ImmutableList.copyOf(ofy().load().type(BillingEvent.Recurring.class));
+    return ImmutableList.copyOf(auditedOfy().load().type(BillingEvent.Recurring.class));
   }
 
   private static String getKeyPathLiteral(Object... entities) {

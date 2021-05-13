@@ -16,7 +16,7 @@ package google.registry.backup;
 
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
 import static google.registry.model.ofy.EntityWritePriorities.getEntityPriority;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.joda.time.Duration.standardHours;
@@ -151,7 +151,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
   }
 
   private void handleEntityPut(Entity entity) {
-    Object ofyPojo = ofy().toPojo(entity);
+    Object ofyPojo = auditedOfy().toPojo(entity);
     if (ofyPojo instanceof DatastoreEntity) {
       DatastoreEntity datastoreEntity = (DatastoreEntity) ofyPojo;
       datastoreEntity

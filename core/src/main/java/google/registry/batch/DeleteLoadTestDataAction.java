@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static google.registry.mapreduce.MapreduceRunner.PARAM_DRY_RUN;
 import static google.registry.mapreduce.inputs.EppResourceInputs.createEntityInput;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 
@@ -125,12 +125,11 @@ public class DeleteLoadTestDataAction implements Runnable {
           Key.create(EppResourceIndex.create(Key.create(resource)));
       final Key<? extends ForeignKeyIndex<?>> fki = ForeignKeyIndex.createKey(resource);
       int numEntitiesDeleted =
-          tm()
-              .transact(
+          tm().transact(
                   () -> {
                     // This ancestor query selects all descendant entities.
                     List<Key<Object>> resourceAndDependentKeys =
-                        ofy().load().ancestor(resource).keys().list();
+                        auditedOfy().load().ancestor(resource).keys().list();
                     ImmutableSet<Key<?>> allKeys =
                         new ImmutableSet.Builder<Key<?>>()
                             .add(fki)
@@ -140,7 +139,7 @@ public class DeleteLoadTestDataAction implements Runnable {
                     if (isDryRun) {
                       logger.atInfo().log("Would hard-delete the following entities: %s", allKeys);
                     } else {
-                      ofy().deleteWithoutBackup().keys(allKeys);
+                      auditedOfy().deleteWithoutBackup().keys(allKeys);
                     }
                     return allKeys.size();
                   });

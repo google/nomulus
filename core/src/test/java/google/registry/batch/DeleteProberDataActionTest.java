@@ -17,7 +17,7 @@ package google.registry.batch;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -195,7 +195,8 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
     DateTime timeAfterDeletion = DateTime.now(UTC);
     assertThat(loadByForeignKey(DomainBase.class, "blah.ib-any.test", timeAfterDeletion))
         .isEmpty();
-    assertThat(ofy().load().entity(domain).now().getDeletionTime()).isLessThan(timeAfterDeletion);
+    assertThat(auditedOfy().load().entity(domain).now().getDeletionTime())
+        .isLessThan(timeAfterDeletion);
     assertDnsTasksEnqueued("blah.ib-any.test");
   }
 
@@ -212,7 +213,8 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
     runMapreduce();
     assertThat(loadByForeignKey(DomainBase.class, "blah.ib-any.test", timeAfterDeletion))
         .isEmpty();
-    assertThat(ofy().load().entity(domain).now().getDeletionTime()).isLessThan(timeAfterDeletion);
+    assertThat(auditedOfy().load().entity(domain).now().getDeletionTime())
+        .isLessThan(timeAfterDeletion);
     assertDnsTasksEnqueued("blah.ib-any.test");
   }
 
@@ -239,7 +241,7 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
             .build());
     action.isDryRun = true;
     runMapreduce();
-    assertThat(ofy().load().entity(domain).now().getDeletionTime()).isEqualTo(END_OF_TIME);
+    assertThat(auditedOfy().load().entity(domain).now().getDeletionTime()).isEqualTo(END_OF_TIME);
   }
 
   @Test
@@ -255,8 +257,8 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
                 .build(),
             DateTime.now(UTC).minusYears(1));
     runMapreduce();
-    assertThat(ofy().load().entity(domainWithSubord).now()).isNotNull();
-    assertThat(ofy().load().entity(nakedDomain).now()).isNull();
+    assertThat(auditedOfy().load().entity(domainWithSubord).now()).isNotNull();
+    assertThat(auditedOfy().load().entity(nakedDomain).now()).isNull();
   }
 
   @Test
@@ -303,7 +305,7 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
     ForeignKeyIndex<DomainBase> fki =
         ForeignKeyIndex.load(DomainBase.class, fqdn, START_OF_TIME);
     EppResourceIndex eppIndex =
-        ofy().load().entity(EppResourceIndex.create(Key.create(domain))).now();
+        auditedOfy().load().entity(EppResourceIndex.create(Key.create(domain))).now();
     return ImmutableSet.of(
         domain, historyEntry, billingEvent, pollMessage, fki, eppIndex);
   }
@@ -318,13 +320,13 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
 
   private static void assertNotDeleted(Iterable<ImmutableObject> entities) {
     for (ImmutableObject entity : entities) {
-      assertThat(ofy().load().entity(entity).now()).isNotNull();
+      assertThat(auditedOfy().load().entity(entity).now()).isNotNull();
     }
   }
 
   private static void assertDeleted(Iterable<ImmutableObject> entities) {
     for (ImmutableObject entity : entities) {
-      assertThat(ofy().load().entity(entity).now()).isNull();
+      assertThat(auditedOfy().load().entity(entity).now()).isNull();
     }
   }
 }

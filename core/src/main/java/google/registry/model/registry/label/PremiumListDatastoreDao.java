@@ -21,7 +21,7 @@ import static google.registry.config.RegistryConfig.getDomainLabelListCacheDurat
 import static google.registry.config.RegistryConfig.getSingletonCachePersistDuration;
 import static google.registry.config.RegistryConfig.getStaticPremiumListMaxCachedEntries;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registry.label.DomainLabelMetrics.PremiumListCheckOutcome.BLOOM_FILTER_NEGATIVE;
 import static google.registry.model.registry.label.DomainLabelMetrics.PremiumListCheckOutcome.CACHED_NEGATIVE;
 import static google.registry.model.registry.label.DomainLabelMetrics.PremiumListCheckOutcome.CACHED_POSITIVE;
@@ -117,7 +117,8 @@ public class PremiumListDatastoreDao {
                   new CacheLoader<Key<PremiumListRevision>, PremiumListRevision>() {
                     @Override
                     public PremiumListRevision load(final Key<PremiumListRevision> revisionKey) {
-                      return ofyTm().doTransactionless(() -> ofy().load().key(revisionKey).now());
+                      return ofyTm()
+                          .doTransactionless(() -> auditedOfy().load().key(revisionKey).now());
                     }
                   });
 
@@ -158,7 +159,8 @@ public class PremiumListDatastoreDao {
               @Override
               public Optional<PremiumListEntry> load(final Key<PremiumListEntry> entryKey) {
                 return ofyTm()
-                    .doTransactionless(() -> Optional.ofNullable(ofy().load().key(entryKey).now()));
+                    .doTransactionless(
+                        () -> Optional.ofNullable(auditedOfy().load().key(entryKey).now()));
               }
             });
   }
@@ -232,7 +234,7 @@ public class PremiumListDatastoreDao {
 
     // Save the new child entities in a series of transactions.
     for (final List<PremiumListEntry> batch : partition(parentedEntries, TRANSACTION_BATCH_SIZE)) {
-      ofyTm().transactNew(() -> ofy().save().entities(batch));
+      ofyTm().transactNew(() -> auditedOfy().save().entities(batch));
     }
 
     // Save the new PremiumList and revision itself.
@@ -254,25 +256,29 @@ public class PremiumListDatastoreDao {
                           oldPremiumList.isPresent() ? oldPremiumList.get().creationTime : now)
                       .setRevision(newRevisionKey)
                       .build();
-              ofy().save().entities(newList, newRevision);
+              auditedOfy().save().entities(newList, newRevision);
               premiumListCache.invalidate(premiumList.getName());
               return newList;
             });
   }
 
   public static void delete(PremiumList premiumList) {
-    ofyTm().transactNew(() -> ofy().delete().entity(premiumList));
+    ofyTm().transactNew(() -> auditedOfy().delete().entity(premiumList));
     if (premiumList.getRevisionKey() == null) {
       return;
     }
     for (final List<Key<PremiumListEntry>> batch :
         partition(
-            ofy().load().type(PremiumListEntry.class).ancestor(premiumList.revisionKey).keys(),
+            auditedOfy()
+                .load()
+                .type(PremiumListEntry.class)
+                .ancestor(premiumList.revisionKey)
+                .keys(),
             TRANSACTION_BATCH_SIZE)) {
-      ofyTm().transactNew(() -> ofy().delete().keys(batch));
+      ofyTm().transactNew(() -> auditedOfy().delete().keys(batch));
       batch.forEach(premiumListEntriesCache::invalidate);
     }
-    ofyTm().transactNew(() -> ofy().delete().key(premiumList.getRevisionKey()));
+    ofyTm().transactNew(() -> auditedOfy().delete().key(premiumList.getRevisionKey()));
     premiumListCache.invalidate(premiumList.getName());
     premiumListRevisionsCache.invalidate(premiumList.getRevisionKey());
   }
@@ -292,12 +298,16 @@ public class PremiumListDatastoreDao {
    * <p>This is an expensive operation and should only be used when the entire list is required.
    */
   public static Iterable<PremiumListEntry> loadPremiumListEntriesUncached(PremiumList premiumList) {
-    return ofy().load().type(PremiumListEntry.class).ancestor(premiumList.revisionKey).iterable();
+    return auditedOfy()
+        .load()
+        .type(PremiumListEntry.class)
+        .ancestor(premiumList.revisionKey)
+        .iterable();
   }
 
   private static Optional<PremiumList> getLatestRevisionUncached(String name) {
     return Optional.ofNullable(
-        ofy().load().key(Key.create(getCrossTldKey(), PremiumList.class, name)).now());
+        auditedOfy().load().key(Key.create(getCrossTldKey(), PremiumList.class, name)).now());
   }
 
   private static void checkOfyFieldsEqual(

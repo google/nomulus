@@ -18,7 +18,7 @@ import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static google.registry.backup.ExportCommitLogDiffAction.LOWER_CHECKPOINT_TIME_PARAM;
 import static google.registry.backup.ExportCommitLogDiffAction.UPPER_CHECKPOINT_TIME_PARAM;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
@@ -64,8 +64,7 @@ public final class CommitLogCheckpointAction implements Runnable {
     final CommitLogCheckpoint checkpoint = strategy.computeCheckpoint();
     logger.atInfo().log(
         "Generated candidate checkpoint for time: %s", checkpoint.getCheckpointTime());
-    tm()
-        .transact(
+    tm().transact(
             () -> {
               DateTime lastWrittenTime = CommitLogCheckpointRoot.loadRoot().getLastWrittenTime();
               if (isBeforeOrAt(checkpoint.getCheckpointTime(), lastWrittenTime)) {
@@ -73,7 +72,7 @@ public final class CommitLogCheckpointAction implements Runnable {
                     "Newer checkpoint already written at time: %s", lastWrittenTime);
                 return;
               }
-              ofy()
+              auditedOfy()
                   .saveWithoutBackup()
                   .entities(
                       checkpoint, CommitLogCheckpointRoot.create(checkpoint.getCheckpointTime()));

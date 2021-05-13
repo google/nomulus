@@ -30,7 +30,7 @@ import static com.google.common.io.BaseEncoding.base64;
 import static google.registry.config.RegistryConfig.getDefaultRegistrarWhoisServer;
 import static google.registry.model.CacheUtils.memoizeWithShortExpiration;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registry.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -648,7 +648,7 @@ public class Registrar extends ImmutableObject
 
   private Iterable<RegistrarContact> getContactsIterable() {
     if (tm().isOfy()) {
-      return ofy().load().type(RegistrarContact.class).ancestor(Registrar.this);
+      return auditedOfy().load().type(RegistrarContact.class).ancestor(Registrar.this);
     } else {
       return tm().transact(
               () ->

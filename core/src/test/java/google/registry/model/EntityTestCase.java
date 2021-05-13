@@ -16,7 +16,7 @@ package google.registry.model;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.base.Splitter;
@@ -135,7 +135,7 @@ public abstract class EntityTestCase {
       try {
         // Objectify happily filters on an unindexed field, and just returns zero results.
         // Do a query for that value and verify that the expected number of results are returned.
-        Query<?> query = ofy().load().type(obj.getClass());
+        Query<?> query = auditedOfy().load().type(obj.getClass());
         int results = query.filter(fieldPath, fieldValue).count();
         assertWithMessage(String.format("%s was %sindexed", fieldPath, indexed ? "not " : ""))
             .that(indexed)

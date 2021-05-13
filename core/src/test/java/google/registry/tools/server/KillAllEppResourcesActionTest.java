@@ -21,7 +21,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Multimaps.filterKeys;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -130,7 +130,7 @@ class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResource
     assertThat(beforeContents.keySet()).containsAtLeastElementsIn(AFFECTED_KINDS);
     assertThat(difference(beforeContents.keySet(), AFFECTED_KINDS)).isNotEmpty();
     runMapreduce();
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     ImmutableMultimap<String, Object> afterContents = getDatastoreContents();
     assertThat(afterContents.keySet()).containsNoneIn(AFFECTED_KINDS);
     assertThat(afterContents)
@@ -140,7 +140,7 @@ class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResource
   private ImmutableMultimap<String, Object> getDatastoreContents() {
     ImmutableMultimap.Builder<String, Object> contentsBuilder = new ImmutableMultimap.Builder<>();
     // Filter out raw Entity objects created by the mapreduce.
-    for (Object obj : Iterables.filter(ofy().load(), not(instanceOf(Entity.class)))) {
+    for (Object obj : Iterables.filter(auditedOfy().load(), not(instanceOf(Entity.class)))) {
       contentsBuilder.put(Key.getKind(obj.getClass()), obj);
     }
     return contentsBuilder.build();

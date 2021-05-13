@@ -16,7 +16,7 @@ package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -54,7 +54,7 @@ final class NameserverLookupByIpCommand implements WhoisCommand {
     Iterable<HostResource> hostsFromDb;
     if (tm().isOfy()) {
       hostsFromDb =
-          ofy()
+          auditedOfy()
               .load()
               .type(HostResource.class)
               .filter("inetAddresses", ipAddress)

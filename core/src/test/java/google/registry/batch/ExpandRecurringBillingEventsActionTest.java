@@ -17,7 +17,7 @@ package google.registry.batch;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.domain.Period.Unit.YEARS;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
@@ -108,11 +108,11 @@ public class ExpandRecurringBillingEventsActionTest
     action.response = new FakeResponse();
     action.run();
     executeTasksUntilEmpty("mapreduce", clock);
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
   }
 
   private void assertCursorAt(DateTime expectedCursorTime) {
-    Cursor cursor = ofy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
+    Cursor cursor = auditedOfy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
     assertThat(cursor).isNotNull();
     assertThat(cursor.getCursorTime()).isEqualTo(expectedCursorTime);
   }

@@ -15,7 +15,7 @@
 package google.registry.schema.replay;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.objectify.Key;
@@ -64,8 +64,8 @@ public class LastSqlTransaction extends ImmutableObject implements DatastoreOnly
    * <p>Creates a new instance of the singleton if it is not already present in Cloud Datastore,
    */
   static LastSqlTransaction load() {
-    ofy().assertInTransaction();
-    LastSqlTransaction result = ofy().load().key(KEY).now();
+    auditedOfy().assertInTransaction();
+    LastSqlTransaction result = auditedOfy().load().key(KEY).now();
     return result == null ? new LastSqlTransaction() : result;
   }
 }

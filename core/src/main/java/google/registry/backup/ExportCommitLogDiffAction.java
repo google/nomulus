@@ -25,7 +25,7 @@ import static google.registry.backup.BackupUtils.GcsMetadataKeys.NUM_TRANSACTION
 import static google.registry.backup.BackupUtils.GcsMetadataKeys.UPPER_BOUND_CHECKPOINT;
 import static google.registry.backup.BackupUtils.serializeEntity;
 import static google.registry.model.ofy.CommitLogBucket.getBucketKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static java.nio.channels.Channels.newOutputStream;
@@ -89,11 +89,14 @@ public final class ExportCommitLogDiffAction implements Runnable {
     checkArgument(lowerCheckpointTime.isBefore(upperCheckpointTime));
     // Load the boundary checkpoints - lower is exclusive and may not exist (on the first export,
     // when lowerCheckpointTime is START_OF_TIME), whereas the upper is inclusive and must exist.
-    CommitLogCheckpoint lowerCheckpoint = lowerCheckpointTime.isAfter(START_OF_TIME)
-        ? verifyNotNull(ofy().load().key(CommitLogCheckpoint.createKey(lowerCheckpointTime)).now())
-        : null;
+    CommitLogCheckpoint lowerCheckpoint =
+        lowerCheckpointTime.isAfter(START_OF_TIME)
+            ? verifyNotNull(
+                auditedOfy().load().key(CommitLogCheckpoint.createKey(lowerCheckpointTime)).now())
+            : null;
     CommitLogCheckpoint upperCheckpoint =
-        verifyNotNull(ofy().load().key(CommitLogCheckpoint.createKey(upperCheckpointTime)).now());
+        verifyNotNull(
+            auditedOfy().load().key(CommitLogCheckpoint.createKey(upperCheckpointTime)).now());
 
     // Load the keys of all the manifests to include in this diff.
     List<Key<CommitLogManifest>> sortedKeys = loadAllDiffKeys(lowerCheckpoint, upperCheckpoint);
@@ -117,7 +120,7 @@ public final class ExportCommitLogDiffAction implements Runnable {
       // asynchronously load the entities for the next one.
       List<List<Key<CommitLogManifest>>> keyChunks = partition(sortedKeys, batchSize);
       // Objectify's map return type is asynchronous. Calling .values() will block until it loads.
-      Map<?, CommitLogManifest> nextChunkToExport = ofy().load().keys(keyChunks.get(0));
+      Map<?, CommitLogManifest> nextChunkToExport = auditedOfy().load().keys(keyChunks.get(0));
       for (int i = 0; i < keyChunks.size(); i++) {
         // Force the async load to finish.
         Collection<CommitLogManifest> chunkValues = nextChunkToExport.values();
@@ -125,10 +128,10 @@ public final class ExportCommitLogDiffAction implements Runnable {
         // Since there is no hard bound on how much data this might be, take care not to let the
         // Objectify session cache fill up and potentially run out of memory. This is the only safe
         // point to do this since at this point there is no async load in progress.
-        ofy().clearSessionCache();
+        auditedOfy().clearSessionCache();
         // Kick off the next async load, which can happen in parallel to the current GCS export.
         if (i + 1 < keyChunks.size()) {
-          nextChunkToExport = ofy().load().keys(keyChunks.get(i + 1));
+          nextChunkToExport = auditedOfy().load().keys(keyChunks.get(i + 1));
         }
         exportChunk(gcsStream, chunkValues);
         logger.atInfo().log("Exported %d manifests", chunkValues.size());
@@ -192,7 +195,8 @@ public final class ExportCommitLogDiffAction implements Runnable {
       return ImmutableSet.of();
     }
     Key<CommitLogBucket> bucketKey = getBucketKey(bucketNum);
-    return ofy().load()
+    return auditedOfy()
+        .load()
         .type(CommitLogManifest.class)
         .ancestor(bucketKey)
         .filterKey(">=", CommitLogManifest.createKey(bucketKey, lowerBound))
@@ -208,7 +212,7 @@ public final class ExportCommitLogDiffAction implements Runnable {
         new ImmutableList.Builder<>();
     for (CommitLogManifest manifest : chunk) {
       entities.add(ImmutableList.of(manifest));
-      entities.add(ofy().load().type(CommitLogMutation.class).ancestor(manifest));
+      entities.add(auditedOfy().load().type(CommitLogMutation.class).ancestor(manifest));
     }
     for (ImmutableObject entity : concat(entities.build())) {
       serializeEntity(entity, gcsStream);

@@ -25,11 +25,8 @@ import static com.google.common.collect.Iterables.any;
 import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.intersection;
 import static com.google.common.collect.Sets.union;
-import static google.registry.model.DatabaseMigrationUtils.getPrimaryDatabase;
-import static google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase.DATASTORE;
-import static google.registry.model.common.DatabaseTransitionSchedule.TransitionId.REPLAYED_ENTITIES;
 import static google.registry.model.domain.DomainBase.MAX_REGISTRATION_YEARS;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registry.Registries.findTldForName;
 import static google.registry.model.registry.Registries.getTlds;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
@@ -1083,8 +1080,8 @@ public class DomainFlowUtils {
 
   private static List<? extends HistoryEntry> findRecentHistoryEntries(
       DomainBase domainBase, DateTime now, Duration maxSearchPeriod) {
-    if (getPrimaryDatabase(REPLAYED_ENTITIES).equals(DATASTORE)) {
-      return ofy()
+    if (tm().isOfy()) {
+      return auditedOfy()
           .load()
           .type(HistoryEntry.class)
           .ancestor(domainBase)

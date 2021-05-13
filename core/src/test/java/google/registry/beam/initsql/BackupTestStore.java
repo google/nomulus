@@ -15,7 +15,7 @@
 package google.registry.beam.initsql;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.api.datastore.DatastoreService;
@@ -76,8 +76,8 @@ public final class BackupTestStore implements AutoCloseable {
     long timestamp = fakeClock.nowUtc().getMillis();
     tm().transact(
             () -> {
-              ofy().delete().entities(deletes);
-              ofy().save().entities(newOrUpdated);
+              auditedOfy().delete().entities(deletes);
+              auditedOfy().save().entities(newOrUpdated);
             });
     fakeClock.advanceOneMilli();
     return timestamp;
@@ -90,7 +90,7 @@ public final class BackupTestStore implements AutoCloseable {
   @SafeVarargs
   public final long insertOrUpdate(Object... entities) {
     long timestamp = fakeClock.nowUtc().getMillis();
-    tm().transact(() -> ofy().save().entities(entities).now());
+    tm().transact(() -> auditedOfy().save().entities(entities).now());
     fakeClock.advanceOneMilli();
     return timestamp;
   }
@@ -99,7 +99,7 @@ public final class BackupTestStore implements AutoCloseable {
   @SafeVarargs
   public final long delete(Object... entities) {
     long timestamp = fakeClock.nowUtc().getMillis();
-    tm().transact(() -> ofy().delete().entities(entities).now());
+    tm().transact(() -> auditedOfy().delete().entities(entities).now());
     fakeClock.advanceOneMilli();
     return timestamp;
   }
@@ -126,7 +126,7 @@ public final class BackupTestStore implements AutoCloseable {
    */
   public Object loadAsOfyEntity(Object ofyEntity) {
     try {
-      return ofy().load().fromEntity(datastoreService.get(Key.create(ofyEntity).getRaw()));
+      return auditedOfy().load().fromEntity(datastoreService.get(Key.create(ofyEntity).getRaw()));
     } catch (EntityNotFoundException e) {
       throw new NoSuchElementException(e.getMessage());
     }
@@ -161,10 +161,10 @@ public final class BackupTestStore implements AutoCloseable {
   private void exportOneKind(File perKindFile, Class<?> pojoType, Set<Key<?>> excludes)
       throws IOException {
     LevelDbFileBuilder builder = new LevelDbFileBuilder(perKindFile);
-    for (Object pojo : ofy().load().type(pojoType).iterable()) {
+    for (Object pojo : auditedOfy().load().type(pojoType).iterable()) {
       if (!excludes.contains(Key.create(pojo))) {
         try {
-          // Must preserve UpdateTimestamp. Do not use ofy().save().toEntity(pojo)!
+          // Must preserve UpdateTimestamp. Do not use auditedOfy().save().toEntity(pojo)!
           builder.addEntity(datastoreService.get(Key.create(pojo).getRaw()));
         } catch (Exception e) {
           throw new RuntimeException(e);

@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 /**
- * A Deleter that forwards to {@code ofy().delete()}, but can be augmented via subclassing to
+ * A Deleter that forwards to {@code auditedOfy().delete()}, but can be augmented via subclassing to
  * do custom processing on the keys to be deleted prior to their deletion.
  */
 abstract class AugmentedDeleter implements Deleter {

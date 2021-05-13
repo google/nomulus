@@ -15,7 +15,7 @@
 package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistContactWithPendingTransfer;
 import static org.joda.time.DateTimeZone.UTC;
@@ -47,11 +47,11 @@ class ResaveAllEppResourcesActionTest extends MapreduceTestCase<ResaveAllEppReso
   void test_mapreduceSuccessfullyResavesEntity() throws Exception {
     ContactResource contact = persistActiveContact("test123");
     DateTime creationTime = contact.getUpdateTimestamp().getTimestamp();
-    assertThat(ofy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
+    assertThat(auditedOfy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
         .isEqualTo(creationTime);
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     runMapreduce();
-    assertThat(ofy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
+    assertThat(auditedOfy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
         .isGreaterThan(creationTime);
   }
 
@@ -59,12 +59,12 @@ class ResaveAllEppResourcesActionTest extends MapreduceTestCase<ResaveAllEppReso
   void test_fastMode_doesNotResaveEntityWithNoChanges() throws Exception {
     ContactResource contact = persistActiveContact("test123");
     DateTime creationTime = contact.getUpdateTimestamp().getTimestamp();
-    assertThat(ofy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
+    assertThat(auditedOfy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
         .isEqualTo(creationTime);
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     action.isFast = true;
     runMapreduce();
-    assertThat(ofy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
+    assertThat(auditedOfy().load().entity(contact).now().getUpdateTimestamp().getTimestamp())
         .isEqualTo(creationTime);
   }
 
@@ -81,10 +81,10 @@ class ResaveAllEppResourcesActionTest extends MapreduceTestCase<ResaveAllEppReso
     assertThat(contact.getTransferData().getTransferStatus()).isEqualTo(TransferStatus.PENDING);
     runMapreduce();
 
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     // The transfer should be effective after the contact is re-saved, as it should've been
     // projected to the current time.
-    ContactResource resavedContact = ofy().load().entity(contact).now();
+    ContactResource resavedContact = auditedOfy().load().entity(contact).now();
     assertThat(resavedContact.getTransferData().getTransferStatus())
         .isEqualTo(TransferStatus.SERVER_APPROVED);
   }

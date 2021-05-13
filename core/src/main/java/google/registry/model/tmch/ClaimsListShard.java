@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 import static com.google.common.base.Verify.verify;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -148,7 +148,7 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
     DateTime creationTime = START_OF_TIME;
     // Grab all of the keys for the shards that belong to the current revision.
     final List<Key<ClaimsListShard>> shardKeys =
-        ofy().load().type(ClaimsListShard.class).ancestor(revisionKey).keys().list();
+        auditedOfy().load().type(ClaimsListShard.class).ancestor(revisionKey).keys().list();
 
     List<ClaimsListShard> shards;
     try {
@@ -160,7 +160,7 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
                   ofyTm()
                       .transactNewReadOnly(
                           () -> {
-                            ClaimsListShard claimsListShard = ofy().load().key(key).now();
+                            ClaimsListShard claimsListShard = auditedOfy().load().key(key).now();
                             checkState(
                                 claimsListShard != null,
                                 "Key not found when loading claims list shards.");
@@ -251,7 +251,7 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
                       ClaimsListShard shard = create(creationTime, labelsToKeysShard);
                       shard.isShard = true;
                       shard.parent = parentKey;
-                      ofy().saveWithoutBackup().entity(shard);
+                      auditedOfy().saveWithoutBackup().entity(shard);
                       return shard;
                     }));
 
@@ -263,12 +263,17 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
                   (getCurrentRevision() == null && oldRevision == null)
                       || getCurrentRevision().equals(oldRevision),
                   "Registries' ClaimsList was updated by someone else while attempting to update.");
-              ofy().saveWithoutBackup().entity(ClaimsListSingleton.create(parentKey));
+              auditedOfy().saveWithoutBackup().entity(ClaimsListSingleton.create(parentKey));
               // Delete the old ClaimsListShard entities.
               if (oldRevision != null) {
-                ofy()
+                auditedOfy()
                     .deleteWithoutBackup()
-                    .keys(ofy().load().type(ClaimsListShard.class).ancestor(oldRevision).keys());
+                    .keys(
+                        auditedOfy()
+                            .load()
+                            .type(ClaimsListShard.class)
+                            .ancestor(oldRevision)
+                            .keys());
               }
             });
   }
@@ -345,7 +350,7 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
    */
   @Nullable
   public static Key<ClaimsListRevision> getCurrentRevision() {
-    ClaimsListSingleton singleton = ofy().load().entity(new ClaimsListSingleton()).now();
+    ClaimsListSingleton singleton = auditedOfy().load().entity(new ClaimsListSingleton()).now();
     return singleton == null ? null : singleton.activeRevision;
   }
 

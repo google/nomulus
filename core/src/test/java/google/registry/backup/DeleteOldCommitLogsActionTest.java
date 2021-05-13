@@ -15,7 +15,7 @@
 package google.registry.backup;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.contact.ContactResource;
@@ -63,18 +63,20 @@ public class DeleteOldCommitLogsActionTest
     action.maxAge = maxAge;
     action.run();
     executeTasksUntilEmpty("mapreduce");
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
   }
 
   private void mutateContact(String email) {
-    ofy().clearSessionCache();
-    ContactResource contact = ofy().load()
-        .type(ContactResource.class)
-        .first()
-        .now()
-        .asBuilder()
-        .setEmailAddress(email)
-        .build();
+    auditedOfy().clearSessionCache();
+    ContactResource contact =
+        auditedOfy()
+            .load()
+            .type(ContactResource.class)
+            .first()
+            .now()
+            .asBuilder()
+            .setEmailAddress(email)
+            .build();
     DatabaseHelper.persistResourceWithCommitLog(contact);
   }
 
@@ -85,22 +87,22 @@ public class DeleteOldCommitLogsActionTest
       String email = String.format("pumpkin_%d@cat.test", i);
       mutateContact(email);
     }
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
 
-    contact = ofy().load().type(ContactResource.class).first().now();
+    contact = auditedOfy().load().type(ContactResource.class).first().now();
 
     // The following value might change if {@link CommitLogRevisionsTranslatorFactory} changes.
     assertThat(contact.getRevisions().size()).isEqualTo(6);
 
     // Before deleting the unneeded manifests - we have 11 of them (one for the first
     // creation, and 10 more for the mutateContacts)
-    assertThat(ofy().load().type(CommitLogManifest.class).count()).isEqualTo(11);
+    assertThat(auditedOfy().load().type(CommitLogManifest.class).count()).isEqualTo(11);
     // And each DatabaseHelper.persistResourceWithCommitLog creates 3 mutations
-    assertThat(ofy().load().type(CommitLogMutation.class).count()).isEqualTo(33);
+    assertThat(auditedOfy().load().type(CommitLogMutation.class).count()).isEqualTo(33);
   }
 
   private <T> ImmutableList<T> ofyLoadType(Class<T> clazz) {
-    return ImmutableList.copyOf(ofy().load().type(clazz).iterable());
+    return ImmutableList.copyOf(auditedOfy().load().type(clazz).iterable());
   }
 
   /** Check that with very short maxAge, only the referenced elements remain. */
@@ -108,7 +110,9 @@ public class DeleteOldCommitLogsActionTest
   void test_shortMaxAge() throws Exception {
     runMapreduce(Duration.millis(1));
 
-    assertThat(ImmutableList.copyOf(ofy().load().type(CommitLogManifest.class).keys().iterable()))
+    assertThat(
+            ImmutableList.copyOf(
+                auditedOfy().load().type(CommitLogManifest.class).keys().iterable()))
         .containsExactlyElementsIn(contact.getRevisions().values());
 
     // And each DatabaseHelper.persistResourceWithCommitLog creates 3 mutations

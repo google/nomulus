@@ -20,7 +20,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryEnvironment.PRODUCTION;
 import static google.registry.mapreduce.MapreduceRunner.PARAM_DRY_RUN;
 import static google.registry.model.ResourceTransferUtils.updateForeignKeyIndexDeletionTime;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registry.Registries.getTldsOfType;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -166,7 +166,7 @@ public class DeleteProberDataAction implements Runnable {
     }
 
     private void deleteDomain(final Key<DomainBase> domainKey) {
-      final DomainBase domain = ofy().load().key(domainKey).now();
+      final DomainBase domain = auditedOfy().load().key(domainKey).now();
 
       DateTime now = DateTime.now(UTC);
 
@@ -220,14 +220,13 @@ public class DeleteProberDataAction implements Runnable {
       final Key<? extends ForeignKeyIndex<?>> fki = ForeignKeyIndex.createKey(domain);
 
       int entitiesDeleted =
-          tm()
-              .transact(
+          tm().transact(
                   () -> {
                     // This ancestor query selects all descendant HistoryEntries, BillingEvents,
                     // PollMessages,
                     // and TLD-specific entities, as well as the domain itself.
                     List<Key<Object>> domainAndDependentKeys =
-                        ofy().load().ancestor(domainKey).keys().list();
+                        auditedOfy().load().ancestor(domainKey).keys().list();
                     ImmutableSet<Key<?>> allKeys =
                         new ImmutableSet.Builder<Key<?>>()
                             .add(fki)
@@ -237,7 +236,7 @@ public class DeleteProberDataAction implements Runnable {
                     if (isDryRun) {
                       logger.atInfo().log("Would hard-delete the following entities: %s", allKeys);
                     } else {
-                      ofy().deleteWithoutBackup().keys(allKeys);
+                      auditedOfy().deleteWithoutBackup().keys(allKeys);
                     }
                     return allKeys.size();
                   });
@@ -268,7 +267,7 @@ public class DeleteProberDataAction implements Runnable {
                 // poll messages, or auto-renews because these will all be hard-deleted the next
                 // time the
                 // mapreduce runs anyway.
-                ofy().save().entities(deletedDomain, historyEntry);
+                auditedOfy().save().entities(deletedDomain, historyEntry);
                 updateForeignKeyIndexDeletionTime(deletedDomain);
                 dnsQueue.addDomainRefreshTask(deletedDomain.getDomainName());
               });
