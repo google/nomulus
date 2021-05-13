@@ -368,7 +368,6 @@ public final class EppResourceUtils {
    * @param now the logical time of the check
    * @param limit the maximum number of returned keys
    */
-  @SuppressWarnings("unchecked")
   public static ImmutableSet<VKey<DomainBase>> getLinkedDomainKeys(
       VKey<? extends EppResource> key, DateTime now, int limit) {
     checkArgument(
@@ -406,15 +405,18 @@ public final class EppResourceUtils {
                           .setParameter("fkRepoId", key.getSqlKey())
                           .setParameter("now", now.toDate());
                 }
-                return (ImmutableSet<VKey<DomainBase>>)
-                    query
-                        .setMaxResults(limit)
-                        .getResultStream()
-                        .map(
-                            repoId ->
-                                DomainBase.createVKey(
-                                    Key.create(DomainBase.class, (String) repoId)))
-                        .collect(toImmutableSet());
+                @SuppressWarnings("unchecked")
+                ImmutableSet<VKey<DomainBase>> domainBaseKeySet =
+                    (ImmutableSet<VKey<DomainBase>>)
+                        query
+                            .setMaxResults(limit)
+                            .getResultStream()
+                            .map(
+                                repoId ->
+                                    DomainBase.createVKey(
+                                        Key.create(DomainBase.class, (String) repoId)))
+                            .collect(toImmutableSet());
+                return domainBaseKeySet;
               });
     }
   }
