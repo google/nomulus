@@ -411,7 +411,12 @@ public class DatastoreTransactionManager implements TransactionManager {
       checkOnlyOneInequalityField();
       Query<T> result = auditedOfy().load().type(entityClass);
       for (WhereClause pred : predicates) {
-        result = result.filter(pred.fieldName + pred.comparator.getDatastoreString(), pred.value);
+        String comparatorString = pred.comparator.getDatastoreString();
+        if (comparatorString == null) {
+          throw new UnsupportedOperationException(
+              "The " + pred.comparator + " operation is not supported on datastore.");
+        }
+        result = result.filter(pred.fieldName + comparatorString, pred.value);
       }
 
       if (orderBy != null) {
