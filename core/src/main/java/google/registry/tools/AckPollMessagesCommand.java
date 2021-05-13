@@ -16,7 +16,6 @@ package google.registry.tools;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.flows.poll.PollFlowUtils.createPollMessageQuery;
-import static google.registry.flows.poll.PollFlowUtils.datastorePollMessageQuery;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.LIKE;
@@ -99,7 +98,13 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
    * the Datastore size limits.
    */
   private void ackPollMessagesDatastore() {
-    QueryKeys<PollMessage> query = datastorePollMessageQuery(clientId, clock.nowUtc()).keys();
+    QueryKeys<PollMessage> query = ofy()
+        .load()
+        .type(PollMessage.class)
+        .filter("clientId", clientId)
+        .filter("eventTime <=", clock.nowUtc())
+        .order("eventTime")
+        .keys();
     for (List<Key<PollMessage>> keys : Iterables.partition(query, BATCH_SIZE)) {
       tm().transact(
               () ->

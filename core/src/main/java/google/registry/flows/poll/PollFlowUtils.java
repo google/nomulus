@@ -15,14 +15,12 @@
 package google.registry.flows.poll;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.LTE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
-import com.googlecode.objectify.cmd.Query;
 import google.registry.model.poll.PollMessage;
 import google.registry.persistence.transaction.QueryComposer;
 import java.util.Optional;
@@ -78,16 +76,6 @@ public final class PollFlowUtils {
       throw new IllegalArgumentException("Unknown poll message type: " + pollMessage.getClass());
     }
     return includeAckedMessageInCount;
-  }
-
-  /** A Datastore query for poll messages from the given registrar that are not in the future. */
-  public static Query<PollMessage> datastorePollMessageQuery(String registrarId, DateTime now) {
-    return ofy()
-        .load()
-        .type(PollMessage.class)
-        .filter("clientId", registrarId)
-        .filter("eventTime <=", now.toDate())
-        .order("eventTime");
   }
 
   /**
