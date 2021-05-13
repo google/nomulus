@@ -391,6 +391,12 @@
     <url-pattern>/_dr/task/wipeOutDatastore</url-pattern>
   </servlet-mapping>
 
+  <!-- Action to create synthetic history entries during async replication to SQL -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/createSyntheticHistoryEntries</url-pattern>
+  </servlet-mapping>
+
   <!-- Security config -->
   <security-constraint>
     <web-resource-collection>
