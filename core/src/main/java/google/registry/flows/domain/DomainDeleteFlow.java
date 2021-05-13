@@ -120,6 +120,18 @@ public final class DomainDeleteFlow implements TransactionalFlow {
       StatusValue.PENDING_DELETE,
       StatusValue.SERVER_DELETE_PROHIBITED);
 
+  // This is a vicious hack to work around the problem of loading objects that we've persisted in
+  // the same transaction in SQL.  When we update the autorenew time, we resave the autorenew
+  // recurring billing event.  Then we load it again from getGracePeriodCost().  By storing it
+  // here, we can avoid having to do this reload (which violates our policy of not reloading
+  // merged/persisted objects in the transaction manager).  This works because flow objects are
+  // transient and only exist for the execution of the flow, so we can use them to store
+  // flow-specific state.
+  //
+  // This appears to be the only existing occurrence of reload-after-save in the save at the time of
+  // this writing.
+  Optional<BillingEvent.Recurring> recurringBillingEvent = Optional.empty();
+
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
   @Inject SessionMetadata sessionMetadata;
@@ -251,8 +263,9 @@ public final class DomainDeleteFlow implements TransactionalFlow {
         buildDomainHistory(newDomain, registry, now, durationUntilDelete, inAddGracePeriod);
     updateForeignKeyIndexDeletionTime(newDomain);
     handlePendingTransferOnDelete(existingDomain, newDomain, now, domainHistory);
-    // Close the autorenew billing event and poll message. This may delete the poll message.
-    updateAutorenewRecurrenceEndTime(existingDomain, now);
+    // Close the autorenew billing event and poll message. This may delete the poll message.  Store
+    // the updated recurring billing event, we'll need it later and can't reload it.
+    recurringBillingEvent = Optional.of(updateAutorenewRecurrenceEndTime(existingDomain, now));
     // If there's a pending transfer, the gaining client's autorenew billing
     // event and poll message will already have been deleted in
     // ResourceDeleteFlow since it's listed in serverApproveEntities.
@@ -400,8 +413,10 @@ public final class DomainDeleteFlow implements TransactionalFlow {
 
   private Money getGracePeriodCost(GracePeriod gracePeriod, DateTime now) {
     if (gracePeriod.getType() == GracePeriodStatus.AUTO_RENEW) {
+      // If we updated the autorenew billing event, reuse it.
       DateTime autoRenewTime =
-          tm().loadByKey(checkNotNull(gracePeriod.getRecurringBillingEvent()))
+          recurringBillingEvent
+              .orElseGet(() -> tm().loadByKey(checkNotNull(gracePeriod.getRecurringBillingEvent())))
               .getRecurrenceTimeOfYear()
               .getLastInstanceBeforeOrAt(now);
       return getDomainRenewCost(targetId, autoRenewTime, 1);

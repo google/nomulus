@@ -328,6 +328,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   @PostLoad
   void postLoad() {
     creationTime = lastUpdateTime;
+    // TODO(b/188044616): Determine why Eager loading doesn't work here.
     Hibernate.initialize(labelsToPrices);
   }
 

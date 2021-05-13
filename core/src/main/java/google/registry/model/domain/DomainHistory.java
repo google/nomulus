@@ -263,7 +263,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
       }
     }
 
-    // Eager fetch doesn't seem to work for this, so we do it explicitly.
+    // TODO(b/188044616): Determine why Eager loading doesn't work here.
     Hibernate.initialize(domainTransactionRecords);
     Hibernate.initialize(nsHosts);
     Hibernate.initialize(dsDataHistories);

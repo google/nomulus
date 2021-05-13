@@ -517,8 +517,10 @@ public class DomainFlowUtils {
    * <p>This may end up deleting the poll message (if closing the message interval) or recreating it
    * (if opening the message interval). This may cause an autorenew billing event to have an end
    * time earlier than its event time (i.e. if it's being ended before it was ever triggered).
+   *
+   * <p>Returns the new autorenew recurring billing event.
    */
-  public static void updateAutorenewRecurrenceEndTime(DomainBase domain, DateTime newEndTime) {
+  public static Recurring updateAutorenewRecurrenceEndTime(DomainBase domain, DateTime newEndTime) {
     Optional<PollMessage.Autorenew> autorenewPollMessage =
         tm().loadByKeyIfPresent(domain.getAutorenewPollMessage());
 
@@ -547,6 +549,7 @@ public class DomainFlowUtils {
 
     Recurring recurring = tm().loadByKey(domain.getAutorenewBillingEvent());
     tm().put(recurring.asBuilder().setRecurrenceEndTime(newEndTime).build());
+    return recurring;
   }
 
   /**
