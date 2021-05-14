@@ -15,105 +15,125 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.request.JsonResponse.JSON_SAFETY_PREFIX;
-import static google.registry.testing.TestDataHelper.loadFile;
+import static google.registry.testing.DatabaseHelper.createTld;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.when;
 
-import com.beust.jcommander.ParameterException;
-import com.google.common.base.VerifyException;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.net.MediaType;
-import google.registry.tools.server.CreatePremiumListAction;
+import com.google.common.io.Files;
+import google.registry.model.registry.Registry;
+import google.registry.schema.tld.PremiumListSqlDao;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 
 /** Unit tests for {@link CreatePremiumListCommand}. */
 class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
     extends CreateOrUpdatePremiumListCommandTestCase<C> {
-
-  @Mock AppEngineConnection connection;
-
-  private String premiumTermsPath;
-  String premiumTermsCsv;
-  private String servletPath;
+  Registry registry;
 
   @BeforeEach
-  void beforeEach() throws Exception {
-    command.setConnection(connection);
-    premiumTermsPath =
-        writeToNamedTmpFile(
-            "example_premium_terms.csv",
-            loadFile(CreatePremiumListCommandTest.class, "example_premium_terms.csv"));
-    servletPath = "/_dr/admin/createPremiumList";
-    when(connection.sendPostRequest(
-            eq(CreatePremiumListAction.PATH),
-            ArgumentMatchers.<String, String>anyMap(),
-            any(MediaType.class),
-            any(byte[].class)))
-        .thenReturn(JSON_SAFETY_PREFIX + "{\"status\":\"success\",\"lines\":[]}");
+  void beforeEach() {
+    registry = createRegistry(TLD_TEST, null);
   }
 
   @Test
-  void testRun() throws Exception {
-    runCommandForced("-i=" + premiumTermsPath, "-n=foo");
-    assertInStdout("Successfully");
-    verifySentParams(
-        connection,
-        servletPath,
-        ImmutableMap.of("name", "foo", "inputData", generateInputData(premiumTermsPath)));
+  void verify_registryIsSetUpCorrectly() {
+    // ensure that no premium list is created before running the command
+    // this check also implicitly verifies the TLD is successfully created;
+    assertThat(PremiumListSqlDao.getLatestRevision(TLD_TEST).isPresent()).isFalse();
   }
 
   @Test
-  void testRun_noProvidedName_usesBasenameOfInputFile() throws Exception {
-    runCommandForced("-i=" + premiumTermsPath);
-    assertInStdout("Successfully");
-    verifySentParams(
-        connection,
-        servletPath,
-        ImmutableMap.of(
-            "name", "example_premium_terms", "inputData", generateInputData(premiumTermsPath)));
+  void commandRun_successCreateList() throws Exception {
+    runCommandForced("--name=" + TLD_TEST, "--input=" + premiumTermsPath);
+    assertThat(registry.getTld().toString()).isEqualTo(TLD_TEST);
+    assertThat(PremiumListSqlDao.getLatestRevision(TLD_TEST).isPresent()).isTrue();
   }
 
   @Test
-  void testRun_errorResponse() throws Exception {
-    reset(connection);
-    command.setConnection(connection);
-    when(connection.sendPostRequest(
-            eq(CreatePremiumListAction.PATH), anyMap(), any(MediaType.class), any(byte[].class)))
-        .thenReturn(JSON_SAFETY_PREFIX + "{\"status\":\"error\",\"error\":\"foo already exists\"}");
-    VerifyException thrown =
-        assertThrows(
-            VerifyException.class, () -> runCommandForced("-i=" + premiumTermsPath, "-n=foo"));
-    assertThat(thrown).hasMessageThat().contains("Server error:");
+  // since the old entity is always null and file cannot be empty, the prompt will NOT be "No entity
+  // changes to apply."
+  void commandInit_successStageNewEntity() throws Exception {
+    CreatePremiumListCommand command = new CreatePremiumListCommand();
+    command.inputFile = Paths.get(premiumTermsPath);
+    command.init();
+    assertThat(command.prompt()).contains("Create PremiumList@");
+    assertThat(command.prompt()).contains(String.format("name=%s", TLD_TEST));
   }
 
   @Test
-  @MockitoSettings(strictness = Strictness.LENIENT)
-  void testRun_noInputFileSpecified_throwsException() {
-    ParameterException thrown = assertThrows(ParameterException.class, this::runCommand);
-    assertThat(thrown).hasMessageThat().contains("The following option is required");
+  void commandInit_successStageNewEntityWithOverride() throws Exception {
+    CreatePremiumListCommand command = new CreatePremiumListCommand();
+    String alterTld = "override";
+    command.inputFile = Paths.get(premiumTermsPath);
+    command.override = true;
+    command.name = alterTld;
+    command.init();
+    assertThat(command.prompt()).contains("Create PremiumList@");
+    assertThat(command.prompt()).contains(String.format("name=%s", alterTld));
   }
 
   @Test
-  @MockitoSettings(strictness = Strictness.LENIENT)
-  void testRun_invalidInputData() throws Exception {
-    premiumTermsPath =
-        writeToNamedTmpFile(
-            "tmp_file2",
-            loadFile(CreatePremiumListCommandTest.class, "example_invalid_premium_terms.csv"));
-    IllegalArgumentException thrown =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> runCommandForced("-i=" + premiumTermsPath, "-n=foo"));
-    assertThat(thrown).hasMessageThat().contains("Could not parse line in premium list");
+  void commandInit_failureNoInputFile() {
+    CreatePremiumListCommand command = new CreatePremiumListCommand();
+    assertThrows(NullPointerException.class, command::init);
+  }
+
+  @Test
+  void commandInit_failurePremiumListAlreadyExists() {
+    String randomStr = "random";
+    createTld(randomStr);
+    CreatePremiumListCommand command = new CreatePremiumListCommand();
+    command.name = randomStr;
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
+    assertThat(thrown).hasMessageThat().isEqualTo("A premium list already exists by this name");
+  }
+
+  @Test
+  void commandInit_failureMismatchedTldFileName_noOverride() throws Exception {
+    CreatePremiumListCommand command = new CreatePremiumListCommand();
+    String fileName = "random";
+    Path tmpPath = tmpDir.resolve(String.format("%s.txt", fileName));
+    Files.write(new byte[0], tmpPath.toFile());
+    command.inputFile = tmpPath;
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            String.format(
+                "Premium names must match the name of the TLD they are "
+                    + "intended to be used on (unless --override is specified), "
+                    + "yet TLD %s does not exist",
+                fileName));
+  }
+
+  @Test
+  void commandInit_failureMismatchedTldName_noOverride() {
+    CreatePremiumListCommand command = new CreatePremiumListCommand();
+    String fileName = "random";
+    command.name = fileName;
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains(
+            String.format(
+                "Premium names must match the name of the TLD they are "
+                    + "intended to be used on (unless --override is specified), "
+                    + "yet TLD %s does not exist",
+                fileName));
+  }
+
+  @Test
+  void commandInit_failureUseEmptyFile() throws Exception {
+    CreatePremiumListCommand command = new CreatePremiumListCommand();
+    String fileName = "empty";
+    Path tmpPath = tmpDir.resolve(String.format("%s.txt", fileName));
+    Files.write(new byte[0], tmpPath.toFile());
+    command.inputFile = tmpPath;
+    command.name = TLD_TEST;
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("The Cloud SQL schema requires exactly one currency");
   }
 }

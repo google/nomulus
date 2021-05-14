@@ -14,40 +14,29 @@
 
 package google.registry.tools;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static google.registry.security.JsonHttp.JSON_SAFETY_PREFIX;
-import static google.registry.tools.server.CreateOrUpdatePremiumListAction.INPUT_PARAM;
-import static google.registry.tools.server.CreateOrUpdatePremiumListAction.NAME_PARAM;
-import static google.registry.util.ListNamingUtils.convertFilePathToName;
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.beust.jcommander.Parameter;
-import com.google.common.base.Joiner;
-import com.google.common.base.Verify;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.net.MediaType;
-import google.registry.model.registry.label.PremiumList;
+import com.google.common.flogger.FluentLogger;
+import google.registry.schema.tld.PremiumListSqlDao;
 import google.registry.tools.params.PathParameter;
-import java.net.URLEncoder;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import javax.annotation.Nullable;
-import org.json.simple.JSONValue;
 
 /**
  * Base class for specification of command line parameters common to creating and updating premium
  * lists.
  */
-abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
-    implements CommandWithConnection, CommandWithRemoteApi {
+abstract class CreateOrUpdatePremiumListCommand extends MutatingCommand {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  protected List<String> inputData;
 
   @Nullable
   @Parameter(
       names = {"-n", "--name"},
-      description = "The name of this premium list (defaults to filename if not specified). "
-          + "This is almost always the name of the TLD this premium list will be used on.")
+      description =
+          "The name of this premium list (defaults to filename if not specified). "
+              + "This is almost always the name of the TLD this premium list will be used on.")
   String name;
 
   @Parameter(
@@ -57,78 +46,17 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
       required = true)
   Path inputFile;
 
-  protected AppEngineConnection connection;
-  protected int inputLineCount;
-
-  @Override
-  public void setConnection(AppEngineConnection connection) {
-    this.connection = connection;
-  }
-
-  abstract String getCommandPath();
-
-  ImmutableMap<String, String> getParameterMap() {
-    return ImmutableMap.of();
-  }
-
-  @Override
-  protected void init() throws Exception {
-    name = isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
-    List<String> lines = Files.readAllLines(inputFile, UTF_8);
-    // Try constructing and parsing the premium list locally to check up front for validation errors
-    new PremiumList.Builder().setName(name).build().parse(lines);
-    inputLineCount = lines.size();
-  }
-
-  @Override
-  protected String prompt() {
-    return String.format(
-        "You are about to save the premium list %s with %d items: ", name, inputLineCount);
-  }
-
   @Override
   public String execute() throws Exception {
-    ImmutableMap.Builder<String, String> params = new ImmutableMap.Builder<>();
-    params.put(NAME_PARAM, name);
-    String inputFileContents = new String(Files.readAllBytes(inputFile), UTF_8);
-    String requestBody =
-        Joiner.on('&').withKeyValueSeparator("=").join(
-            ImmutableMap.of(INPUT_PARAM, URLEncoder.encode(inputFileContents, UTF_8.toString())));
-
-    ImmutableMap<String, String> extraParams = getParameterMap();
-    if (extraParams != null) {
-      params.putAll(extraParams);
+    String message = String.format("Saved premium list %s with %d entries", name, inputData.size());
+    try {
+      logger.atInfo().log("Saving premium list for TLD %s", name);
+      PremiumListSqlDao.save(name, inputData);
+      logger.atInfo().log(message);
+    } catch (Throwable e) {
+      message = "Unexpected error saving premium list from nomulus tool command";
+      logger.atSevere().withCause(e).log(message);
     }
-
-    // Call the server and get the response data
-    String response =
-        connection.sendPostRequest(
-            getCommandPath(), params.build(), MediaType.FORM_DATA, requestBody.getBytes(UTF_8));
-
-    return extractServerResponse(response);
-  }
-
-  // TODO(user): refactor this behavior into a better general-purpose
-  // response validation that can be re-used across the new client/server commands.
-  private String extractServerResponse(String response) {
-    Map<String, Object> responseMap = toMap(JSONValue.parse(stripJsonPrefix(response)));
-
-    // TODO(user): consider using jart's FormField Framework.
-    // See: j/c/g/d/r/ui/server/RegistrarFormFields.java
-    String status = (String) responseMap.get("status");
-    Verify.verify(!status.equals("error"), "Server error: %s", responseMap.get("error"));
-    return String.format("Successfully saved premium list %s\n", name);
-  }
-
-  @SuppressWarnings("unchecked")
-  static Map<String, Object> toMap(Object obj) {
-    Verify.verify(obj instanceof Map<?, ?>, "JSON object is not a Map: %s", obj);
-    return (Map<String, Object>) obj;
-  }
-
-  // TODO(user): figure out better place to put this method to make it re-usable
-  private static String stripJsonPrefix(String json) {
-    Verify.verify(json.startsWith(JSON_SAFETY_PREFIX));
-    return json.substring(JSON_SAFETY_PREFIX.length());
+    return message;
   }
 }

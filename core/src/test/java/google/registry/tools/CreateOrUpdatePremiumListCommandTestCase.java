@@ -14,47 +14,64 @@
 
 package google.registry.tools;
 
-import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.testing.DatabaseHelper.persistPremiumList;
+import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.base.Ascii;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Files;
-import com.google.common.net.MediaType;
-import google.registry.testing.UriParameters;
+import google.registry.dns.writer.VoidDnsWriter;
+import google.registry.model.pricing.StaticPremiumListPricingEngine;
+import google.registry.model.registry.Registry;
+import google.registry.model.registry.Registry.TldType;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
+import java.io.IOException;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Base class for common testing setup for create and update commands for Premium Lists. */
 abstract class CreateOrUpdatePremiumListCommandTestCase<T extends CreateOrUpdatePremiumListCommand>
     extends CommandTestCase<T> {
 
-  @Captor
-  ArgumentCaptor<ImmutableMap<String, String>> urlParamCaptor;
+  protected static final String TLD_TEST = "prime";
+  protected String premiumTermsPath;
+  protected String initialPremiumListData;
 
-  @Captor
-  ArgumentCaptor<byte[]> requestBodyCaptor;
-
-  static String generateInputData(String premiumTermsPath) throws Exception {
-    return Files.asCharSource(new File(premiumTermsPath), StandardCharsets.UTF_8).read();
+  @BeforeEach
+  void beforeEachCreateOrUpdatePremiumListCommandTestCase() throws IOException {
+    // initial set up for both CreatePremiumListCommand and UpdatePremiumListCommand test cases;
+    initialPremiumListData = "doge,USD 9090";
+    File premiumTermsFile = tmpDir.resolve(TLD_TEST + ".txt").toFile();
+    Files.asCharSink(premiumTermsFile, UTF_8).write(initialPremiumListData);
+    premiumTermsPath = premiumTermsFile.getPath();
   }
 
-  void verifySentParams(
-      AppEngineConnection connection, String path, ImmutableMap<String, String> parameterMap)
-      throws Exception {
-    verify(connection)
-        .sendPostRequest(
-            eq(path),
-            urlParamCaptor.capture(),
-            eq(MediaType.FORM_DATA),
-            requestBodyCaptor.capture());
-    assertThat(new ImmutableMap.Builder<String, String>()
-        .putAll(urlParamCaptor.getValue())
-        .putAll(UriParameters.parse(new String(requestBodyCaptor.getValue(), UTF_8)).entries())
-        .build())
-            .containsExactlyEntriesIn(parameterMap);
+  Registry createRegistry(String tldStr, String premiumListInput) {
+    Registry registry;
+    if (premiumListInput != null) {
+      registry =
+          newRegistry(
+              tldStr,
+              Ascii.toUpperCase(tldStr),
+              ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY),
+              TldType.TEST);
+      persistPremiumList(tldStr, premiumListInput);
+      persistResource(registry);
+    } else {
+      registry =
+          new Registry.Builder()
+              .setTldStr(tldStr)
+              .setPremiumPricingEngine(StaticPremiumListPricingEngine.NAME)
+              .setDnsWriters(ImmutableSet.of(VoidDnsWriter.NAME))
+              .setPremiumList(null)
+              .build();
+      tm().transact(() -> tm().put(registry));
+    }
+    return registry;
   }
 }
