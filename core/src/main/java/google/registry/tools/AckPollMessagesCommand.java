@@ -99,7 +99,7 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
    */
   private void ackPollMessagesDatastore() {
     QueryKeys<PollMessage> query =
-        ofy()
+        auditedOfy()
             .load()
             .type(PollMessage.class)
             .filter("clientId", clientId)

@@ -347,7 +347,7 @@ public class QueryComposerTest {
                     .stream());
     assertThat(thrown)
         .hasMessageThat()
-        .contains("The LIKE operation is not supported on datastore.");
+        .contains("The LIKE operation is not supported on Datastore.");
   }
 
   @javax.persistence.Entity
