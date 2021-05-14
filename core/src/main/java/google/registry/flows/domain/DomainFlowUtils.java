@@ -547,8 +547,12 @@ public class DomainFlowUtils {
       tm().put(updatedAutorenewPollMessage);
     }
 
-    Recurring recurring = tm().loadByKey(domain.getAutorenewBillingEvent());
-    tm().put(recurring.asBuilder().setRecurrenceEndTime(newEndTime).build());
+    Recurring recurring =
+        tm().loadByKey(domain.getAutorenewBillingEvent())
+            .asBuilder()
+            .setRecurrenceEndTime(newEndTime)
+            .build();
+    tm().put(recurring);
     return recurring;
   }
 

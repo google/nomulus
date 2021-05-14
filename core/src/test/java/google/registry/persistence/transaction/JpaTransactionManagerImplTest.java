@@ -449,7 +449,7 @@ class JpaTransactionManagerImplTest {
                           ImmutableList.of(
                               theEntityKey, VKey.createSql(TestEntity.class, "does-not-exist")));
 
-              assertThat(results).isEqualTo(ImmutableMap.of(theEntityKey, theEntity));
+              assertThat(results).containsExactly(theEntityKey, theEntity);
               assertDetached(results.get(theEntityKey));
             });
   }
@@ -462,7 +462,7 @@ class JpaTransactionManagerImplTest {
             () -> {
               ImmutableMap<VKey<? extends TestEntity>, TestEntity> results =
                   jpaTm().loadByKeysIfPresent(ImmutableList.of(theEntityKey));
-              assertThat(results).isEqualTo(ImmutableMap.of(theEntityKey, theEntity));
+              assertThat(results).containsExactly(theEntityKey, theEntity);
               assertDetached(results.get(theEntityKey));
             });
   }
@@ -477,7 +477,7 @@ class JpaTransactionManagerImplTest {
                   jpaTm()
                       .loadByEntitiesIfPresent(
                           ImmutableList.of(theEntity, new TestEntity("does-not-exist", "bar")));
-              assertThat(results).isEqualTo(ImmutableList.of(theEntity));
+              assertThat(results).containsExactly(theEntity);
               assertDetached(results.get(0));
             });
   }
@@ -490,7 +490,7 @@ class JpaTransactionManagerImplTest {
             () -> {
               ImmutableList<TestEntity> results =
                   jpaTm().loadByEntities(ImmutableList.of(theEntity));
-              assertThat(results).isEqualTo(ImmutableList.of(theEntity));
+              assertThat(results).containsExactly(theEntity);
               assertDetached(results.get(0));
             });
   }
@@ -541,42 +541,51 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void loadAfterInsert_fails() {
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            jpaTm()
-                .transact(
-                    () -> {
-                      jpaTm().insert(theEntity);
-                      jpaTm().loadByKey(theEntityKey);
-                    }));
+    assertThat(
+            assertThrows(
+                IllegalStateException.class,
+                () ->
+                    jpaTm()
+                        .transact(
+                            () -> {
+                              jpaTm().insert(theEntity);
+                              jpaTm().loadByKey(theEntityKey);
+                            })))
+        .hasMessageThat()
+        .contains("Inserted/updated object reloaded: ");
   }
 
   @Test
   void loadAfterUpdate_fails() {
     jpaTm().transact(() -> jpaTm().insert(theEntity));
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            jpaTm()
-                .transact(
-                    () -> {
-                      jpaTm().update(theEntity);
-                      jpaTm().loadByKey(theEntityKey);
-                    }));
+    assertThat(
+            assertThrows(
+                IllegalStateException.class,
+                () ->
+                    jpaTm()
+                        .transact(
+                            () -> {
+                              jpaTm().update(theEntity);
+                              jpaTm().loadByKey(theEntityKey);
+                            })))
+        .hasMessageThat()
+        .contains("Inserted/updated object reloaded: ");
   }
 
   @Test
   void loadAfterPut_fails() {
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            jpaTm()
-                .transact(
-                    () -> {
-                      jpaTm().put(theEntity);
-                      jpaTm().loadByKey(theEntityKey);
-                    }));
+    assertThat(
+            assertThrows(
+                IllegalStateException.class,
+                () ->
+                    jpaTm()
+                        .transact(
+                            () -> {
+                              jpaTm().put(theEntity);
+                              jpaTm().loadByKey(theEntityKey);
+                            })))
+        .hasMessageThat()
+        .contains("Inserted/updated object reloaded: ");
   }
 
   private void insertPerson(int age) {

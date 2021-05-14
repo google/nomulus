@@ -266,7 +266,8 @@ public interface TransactionManager {
    * Deletes the given entity from the database.
    *
    * <p>This returns the deleted entity, which may not necessarily be the same as the original
-   * entity passed in.
+   * entity passed in, as it may be a) converted to a different type of object more appropriate to
+   * the database type or b) merged with an object managed by the database entity manager.
    */
   <T> T delete(T entity);
 
