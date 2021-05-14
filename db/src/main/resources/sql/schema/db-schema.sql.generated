@@ -695,9 +695,9 @@
     );
 
     create table "SqlReplayCheckpoint" (
-       revision_id int8 not null,
-        last_replay_time timestamptz,
-        primary key (revision_id)
+       id int8 not null,
+        last_replay_time timestamptz not null,
+        primary key (id)
     );
 
     create table "Tld" (
