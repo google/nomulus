@@ -475,6 +475,22 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             .getResultList());
   }
 
+  @Override
+  public <T> Optional<T> loadOnlyOf(Class<T> clazz) {
+    checkArgumentNotNull(clazz, "clazz must be specified");
+    assertInTransaction();
+    List<T> elements =
+        getEntityManager()
+            .createQuery(String.format("FROM %s", getEntityType(clazz).getName()), clazz)
+            .setMaxResults(2)
+            .getResultList();
+    checkArgument(
+        elements.size() <= 1,
+        "Expected at most one entity of type %s, found at least two",
+        clazz.getSimpleName());
+    return elements.stream().findFirst();
+  }
+
   private int internalDelete(VKey<?> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
