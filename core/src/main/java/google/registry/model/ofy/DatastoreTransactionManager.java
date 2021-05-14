@@ -272,6 +272,17 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
+  public <T> Optional<T> loadOnlyOf(Class<T> clazz) {
+    List<T> resultList = getOfy().load().type(clazz).list();
+    checkArgument(
+        resultList.size() <= 1,
+        "Expected at most one entity of type %s, found %s",
+        clazz.getSimpleName(),
+        resultList.size());
+    return resultList.stream().findFirst();
+  }
+
+  @Override
   public void delete(VKey<?> key) {
     syncIfTransactionless(getOfy().delete().key(key.getOfyKey()));
   }
