@@ -262,13 +262,17 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> ImmutableList<T> loadAllOf(Class<T> clazz) {
-    Query<T> query = getOfy().load().type(clazz);
-    // If the entity is in the cross-TLD entity group, then we can take advantage of an ancestor
-    // query to give us strong transactional consistency.
-    if (clazz.isAnnotationPresent(InCrossTld.class)) {
-      query = query.ancestor(getCrossTldKey());
-    }
-    return ImmutableList.copyOf(query);
+    return ImmutableList.copyOf(getPossibleAncestorQuery(clazz));
+  }
+
+  @Override
+  public <T> Optional<T> loadSingleton(Class<T> clazz) {
+    List<T> elements = getPossibleAncestorQuery(clazz).limit(2).list();
+    checkArgument(
+        elements.size() <= 1,
+        "Expected at most one entity of type %s, found at least two",
+        clazz.getSimpleName());
+    return elements.stream().findFirst();
   }
 
   @Override
@@ -399,6 +403,17 @@ public class DatastoreTransactionManager implements TransactionManager {
       }
     }
     return obj;
+  }
+
+  /** A query for returning any/all results of an object, with an ancestor if possible. */
+  private <T> Query<T> getPossibleAncestorQuery(Class<T> clazz) {
+    Query<T> query = getOfy().load().type(clazz);
+    // If the entity is in the cross-TLD entity group, then we can take advantage of an ancestor
+    // query to give us strong transactional consistency.
+    if (clazz.isAnnotationPresent(InCrossTld.class)) {
+      query = query.ancestor(getCrossTldKey());
+    }
+    return query;
   }
 
   private static class DatastoreQueryComposerImpl<T> extends QueryComposer<T> {

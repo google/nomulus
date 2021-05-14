@@ -998,7 +998,7 @@ ALTER SEQUENCE public."SignedMarkRevocationList_revision_id_seq" OWNED BY public
 --
 
 CREATE TABLE public."SqlReplayCheckpoint" (
-    revision_id bigint NOT NULL,
+    id bigint NOT NULL,
     last_replay_time timestamp with time zone NOT NULL
 );
 
@@ -1415,7 +1415,7 @@ ALTER TABLE ONLY public."SignedMarkRevocationList"
 --
 
 ALTER TABLE ONLY public."SqlReplayCheckpoint"
-    ADD CONSTRAINT "SqlReplayCheckpoint_pkey" PRIMARY KEY (revision_id);
+    ADD CONSTRAINT "SqlReplayCheckpoint_pkey" PRIMARY KEY (id);
 
 
 --
