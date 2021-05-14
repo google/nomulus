@@ -414,7 +414,7 @@ public class DatastoreTransactionManager implements TransactionManager {
         String comparatorString = pred.comparator.getDatastoreString();
         if (comparatorString == null) {
           throw new UnsupportedOperationException(
-              "The " + pred.comparator + " operation is not supported on datastore.");
+              "The " + pred.comparator + " operation is not supported on Datastore.");
         }
         result = result.filter(pred.fieldName + comparatorString, pred.value);
       }
