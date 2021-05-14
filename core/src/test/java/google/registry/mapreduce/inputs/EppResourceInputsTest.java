@@ -229,7 +229,7 @@ class EppResourceInputsTest {
   void testSuccess_entityReader_noFilteringWhenUsingEppResource() throws Exception {
     createTld("tld");
     ContactResource contact = persistEppResourceInFirstBucket(newContactResource("contact"));
-    // Specify the contact since persistActiveDomain{Application} creates a hidden one.
+    // Specify the contact since persistActiveDomain() creates a hidden one.
     DomainBase domain1 = persistEppResourceInFirstBucket(newDomainBase("a.tld", contact));
     DomainBase domain2 = persistEppResourceInFirstBucket(newDomainBase("b.tld", contact));
     HostResource host = persistEppResourceInFirstBucket(newHostResource("ns1.example.com"));
