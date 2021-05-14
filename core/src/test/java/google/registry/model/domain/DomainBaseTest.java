@@ -63,6 +63,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DomainBase}. */
+@SuppressWarnings("WeakerAccess") // Referred to by EppInputTest.
 public class DomainBaseTest extends EntityTestCase {
 
   private DomainBase domain;
@@ -98,7 +99,13 @@ public class DomainBaseTest extends EntityTestCase {
             .createVKey();
     historyEntryKey =
         Key.create(
-            persistResource(new HistoryEntry.Builder().setParent(domainKey.getOfyKey()).build()));
+            persistResource(
+                new HistoryEntry.Builder()
+                    .setParent(domainKey.getOfyKey())
+                    .setModificationTime(fakeClock.nowUtc())
+                    .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                    .setClientId("aregistrar")
+                    .build()));
     oneTimeBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.OneTime.class, 1));
     recurringBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.Recurring.class, 2));
     VKey<PollMessage.Autorenew> autorenewPollKey =
@@ -112,7 +119,7 @@ public class DomainBaseTest extends EntityTestCase {
                 new DomainBase.Builder()
                     .setDomainName("example.com")
                     .setRepoId("4-COM")
-                    .setCreationClientId("a registrar")
+                    .setCreationClientId("aregistrar")
                     .setLastEppUpdateTime(fakeClock.nowUtc())
                     .setLastEppUpdateClientId("AnotherRegistrar")
                     .setLastTransferTime(fakeClock.nowUtc())
@@ -356,7 +363,13 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   private void doExpiredTransferTest(DateTime oldExpirationTime) {
-    HistoryEntry historyEntry = new HistoryEntry.Builder().setParent(domain).build();
+    HistoryEntry historyEntry =
+        new HistoryEntry.Builder()
+            .setParent(domain)
+            .setModificationTime(fakeClock.nowUtc())
+            .setClientId(domain.getCurrentSponsorClientId())
+            .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
+            .build();
     BillingEvent.OneTime transferBillingEvent =
         persistResource(
             new BillingEvent.OneTime.Builder()

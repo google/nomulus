@@ -443,7 +443,7 @@ public class DomainBaseSqlTest {
                       .setModificationTime(DateTime.now(UTC))
                       .setParent(Key.create(DomainBase.class, "4-COM"))
                       .setDomainRepoId("4-COM")
-
+                      .setClientId("registrar1")
                       // These are non-null, but I don't think some tests set them.
                       .setReason("felt like it")
                       .setRequestedByRegistrar(false)
@@ -574,7 +574,7 @@ public class DomainBaseSqlTest {
                       .setModificationTime(DateTime.now(UTC))
                       .setParent(Key.create(DomainBase.class, "4-COM"))
                       .setDomainRepoId("4-COM")
-
+                      .setClientId("registrar1")
                       // These are non-null, but I don't think some tests set them.
                       .setReason("felt like it")
                       .setRequestedByRegistrar(false)

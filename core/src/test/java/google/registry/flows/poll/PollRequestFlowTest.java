@@ -208,12 +208,14 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   void testSuccess_contactDelete() throws Exception {
     // Contact delete poll messages do not have any response data, so ensure that no
     // response data block is produced in the poll message.
-    HistoryEntry historyEntry = persistResource(new HistoryEntry.Builder()
-        .setClientId("NewRegistrar")
-        .setModificationTime(clock.nowUtc().minusDays(1))
-        .setType(HistoryEntry.Type.CONTACT_DELETE)
-        .setParent(contact)
-        .build());
+    HistoryEntry historyEntry =
+        persistResource(
+            new HistoryEntry.Builder()
+                .setClientId("NewRegistrar")
+                .setModificationTime(clock.nowUtc().minusDays(1))
+                .setType(HistoryEntry.Type.CONTACT_DELETE)
+                .setParent(contact)
+                .build());
     persistResource(
         new PollMessage.OneTime.Builder()
             .setClientId("NewRegistrar")
@@ -229,12 +231,14 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   void testSuccess_hostDelete() throws Exception {
     // Host delete poll messages do not have any response data, so ensure that no
     // response data block is produced in the poll message.
-    HistoryEntry historyEntry = persistResource(new HistoryEntry.Builder()
-        .setClientId("NewRegistrar")
-        .setModificationTime(clock.nowUtc().minusDays(1))
-        .setType(HistoryEntry.Type.HOST_DELETE)
-        .setParent(host)
-        .build());
+    HistoryEntry historyEntry =
+        persistResource(
+            new HistoryEntry.Builder()
+                .setClientId("NewRegistrar")
+                .setModificationTime(clock.nowUtc().minusDays(1))
+                .setType(HistoryEntry.Type.HOST_DELETE)
+                .setParent(host)
+                .build());
     persistResource(
         new PollMessage.OneTime.Builder()
             .setClientId("NewRegistrar")

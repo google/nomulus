@@ -19,6 +19,7 @@ import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.domain.Period.Unit.YEARS;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
@@ -84,9 +85,20 @@ public class ExpandRecurringBillingEventsActionTest
     action.clock = clock;
     action.cursorTimeParam = Optional.empty();
     createTld("tld");
-    domain = persistResource(newDomainBase("example.tld").asBuilder()
-        .setCreationTimeForTest(DateTime.parse("1999-01-05T00:00:00Z")).build());
-    historyEntry = persistResource(new HistoryEntry.Builder().setParent(domain).build());
+    domain =
+        persistResource(
+            newDomainBase("example.tld")
+                .asBuilder()
+                .setCreationTimeForTest(DateTime.parse("1999-01-05T00:00:00Z"))
+                .build());
+    historyEntry =
+        persistResource(
+            new HistoryEntry.Builder()
+                .setClientId(domain.getCreationClientId())
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setModificationTime(DateTime.parse("1999-01-05T00:00:00Z"))
+                .setParent(domain)
+                .build());
     recurring =
         new BillingEvent.Recurring.Builder()
             .setParent(historyEntry)
@@ -174,7 +186,14 @@ public class ExpandRecurringBillingEventsActionTest
   void testSuccess_expandSingleEvent_deletedDomain() throws Exception {
     DateTime deletionTime = DateTime.parse("2000-08-01T00:00:00Z");
     DomainBase deletedDomain = persistDeletedDomain("deleted.tld", deletionTime);
-    historyEntry = persistResource(new HistoryEntry.Builder().setParent(deletedDomain).build());
+    historyEntry =
+        persistResource(
+            new HistoryEntry.Builder()
+                .setParent(deletedDomain)
+                .setClientId(deletedDomain.getCreationClientId())
+                .setModificationTime(deletedDomain.getCreationTime())
+                .setType(DOMAIN_CREATE)
+                .build());
     recurring =
         persistResource(
             new BillingEvent.Recurring.Builder()

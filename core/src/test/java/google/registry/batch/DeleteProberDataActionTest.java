@@ -279,11 +279,14 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
    */
   private static Set<ImmutableObject> persistDomainAndDescendants(String fqdn) {
     DomainBase domain = persistDeletedDomain(fqdn, DELETION_TIME);
-    HistoryEntry historyEntry = persistSimpleResource(
-        new HistoryEntry.Builder()
-            .setParent(domain)
-            .setType(HistoryEntry.Type.DOMAIN_CREATE)
-            .build());
+    HistoryEntry historyEntry =
+        persistSimpleResource(
+            new HistoryEntry.Builder()
+                .setParent(domain)
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setClientId("TheRegistrar")
+                .setModificationTime(DELETION_TIME.minusYears(3))
+                .build());
     BillingEvent.OneTime billingEvent = persistSimpleResource(
         new BillingEvent.OneTime.Builder()
             .setParent(historyEntry)

@@ -100,7 +100,14 @@ public class DomainBaseUtilTest {
                     .build())
             .createVKey();
     Key<HistoryEntry> historyEntryKey =
-        Key.create(persistResource(new HistoryEntry.Builder().setParent(domainKey).build()));
+        Key.create(
+            persistResource(
+                new HistoryEntry.Builder()
+                    .setParent(domainKey)
+                    .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                    .setClientId("TheRegistrar")
+                    .setModificationTime(fakeClock.nowUtc().minusYears(1))
+                    .build()));
     oneTimeBillKey = Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
     recurringBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.Recurring.class, 2));
     VKey<PollMessage.Autorenew> autorenewPollKey =

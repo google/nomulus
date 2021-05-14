@@ -80,6 +80,7 @@ public class BillingEventTest extends EntityTestCase {
                 .setDomain(domain)
                 .setModificationTime(now)
                 .setRequestedByRegistrar(false)
+                .setClientId("TheRegistrar")
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setXmlBytes(new byte[0])
                 .build());
@@ -89,6 +90,7 @@ public class BillingEventTest extends EntityTestCase {
                 .setDomain(domain)
                 .setModificationTime(now.plusDays(1))
                 .setRequestedByRegistrar(false)
+                .setClientId("TheRegistrar")
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setXmlBytes(new byte[0])
                 .build());
