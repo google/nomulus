@@ -17,6 +17,7 @@ package google.registry.persistence.transaction;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
 import google.registry.persistence.transaction.CriteriaQueryBuilder.WhereOperator;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,6 +93,16 @@ public abstract class QueryComposer<T> {
     return this;
   }
 
+  /**
+   * Specifies if JPA entities should be automatically detached from the persistence context after
+   * loading. The default behavior is auto-detach.
+   *
+   * <p>This configuration has no effect on Datastore queries.
+   */
+  public QueryComposer<T> withAutoDetachOnLoad(boolean autoDetachOnLoad) {
+    return this;
+  }
+
   /** Returns the first result of the query or an empty optional if there is none. */
   public abstract Optional<T> first();
 
@@ -110,7 +121,7 @@ public abstract class QueryComposer<T> {
   public abstract long count();
 
   /** Returns the results of the query as a list. */
-  public abstract List<T> list();
+  public abstract ImmutableList<T> list();
 
   // We have to wrap the CriteriaQueryBuilder predicate factories in our own functions because at
   // the point where we pass them to the Comparator constructor, the compiler can't determine which

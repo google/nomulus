@@ -80,9 +80,9 @@ public final class RegistryJpaIO {
       extends SerializableFunction<JpaTransactionManager, QueryComposer<T>> {}
 
   /**
-   * A {@link PTransform transform} that executes a JPA {@link CriteriaQuery} and adds the results
-   * to the BEAM pipeline. Users have the option to transform the results before sending them to the
-   * next stages.
+   * A {@link PTransform transform} that transactionally executes a JPA {@link CriteriaQuery} and
+   * adds the results to the BEAM pipeline. Users have the option to transform the results before
+   * sending them to the next stages.
    */
   @AutoValue
   public abstract static class Read<R, T> extends PTransform<PBegin, PCollection<T>> {
@@ -94,8 +94,6 @@ public final class RegistryJpaIO {
     abstract RegistryJpaIO.QueryComposerFactory<R> queryFactory();
 
     abstract SerializableFunction<R, T> resultMapper();
-
-    abstract TransactionMode transactionMode();
 
     abstract Coder<T> coder();
 
@@ -121,10 +119,6 @@ public final class RegistryJpaIO {
       return toBuilder().resultMapper(mapper).build();
     }
 
-    public Read<R, T> withTransactionMode(TransactionMode transactionMode) {
-      return toBuilder().transactionMode(transactionMode).build();
-    }
-
     public Read<R, T> withCoder(Coder<T> coder) {
       return toBuilder().coder(coder).build();
     }
@@ -133,7 +127,6 @@ public final class RegistryJpaIO {
       return new AutoValue_RegistryJpaIO_Read.Builder()
           .name(DEFAULT_NAME)
           .resultMapper(x -> x)
-          .transactionMode(TransactionMode.TRANSACTIONAL)
           .coder(SerializableCoder.of(Serializable.class));
     }
 
@@ -145,8 +138,6 @@ public final class RegistryJpaIO {
       abstract Builder<R, T> queryFactory(RegistryJpaIO.QueryComposerFactory<R> queryFactory);
 
       abstract Builder<R, T> resultMapper(SerializableFunction<R, T> mapper);
-
-      abstract Builder<R, T> transactionMode(TransactionMode transactionMode);
 
       abstract Builder<R, T> coder(Coder coder);
 
@@ -171,16 +162,11 @@ public final class RegistryJpaIO {
           jpaTm()
               .transactNoRetry(
                   () ->
-                      querySupplier.apply(jpaTm()).stream()
+                      querySupplier.apply(jpaTm()).withAutoDetachOnLoad(true).stream()
                           .map(resultMapper::apply)
                           .forEach(outputReceiver::output));
         }
       }
-    }
-
-    public enum TransactionMode {
-      NOT_TRANSACTIONAL,
-      TRANSACTIONAL;
     }
   }
 
