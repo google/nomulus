@@ -470,8 +470,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgumentNotNull(clazz, "clazz must be specified");
     assertInTransaction();
     return getEntityManager()
-        .createQuery(
-            String.format("SELECT entity FROM %s entity", getEntityType(clazz).getName()), clazz)
+        .createQuery(String.format("FROM %s", getEntityType(clazz).getName()), clazz)
         .getResultStream()
         .map(this::detach)
         .collect(toImmutableList());
@@ -649,7 +648,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     if (entity != null) {
 
       // If the entity was previously persisted or merged, we have to throw an exception.
-      if (transactionInfo.get().objectsToSave.contains(entity)) {
+      if (transactionInfo.get().willSave(entity)) {
         throw new IllegalStateException("Inserted/updated object reloaded: " + entity);
       }
 
@@ -668,8 +667,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     // The set of entity objects that have been either persisted (via insert()) or merged (via
     // put()/update()).  If the entity manager returns these as a result of a find() or query
-    // operation, we must not detach them but instead must clone them -- detaching removes them from
-    // the transaction and causes them to not be saved to the database.
+    // operation, we can not detach them -- detaching removes them from the transaction and causes
+    // them to not be saved to the database -- so we throw an exception instead.
     Set<Object> objectsToSave = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
 
     /** Start a new transaction. */
@@ -729,17 +728,20 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       objectsToSave.add(object);
       addUpdate(object);
     }
+
+    /** Returns true if the object has been persisted/merged and will be saved on commit. */
+    private boolean willSave(Object object) {
+      return objectsToSave.contains(object);
+    }
   }
 
-  private static class JpaQueryComposerImpl<T> extends QueryComposer<T> {
+  private class JpaQueryComposerImpl<T> extends QueryComposer<T> {
 
     private static final int DEFAULT_FETCH_SIZE = 1000;
 
-    EntityManager em;
-
     private int fetchSize = DEFAULT_FETCH_SIZE;
 
-    JpaQueryComposerImpl(Class<T> entityClass, EntityManager em) {
+    JpaQueryComposerImpl(Class<T> entityClass) {
       super(entityClass);
     }
 
