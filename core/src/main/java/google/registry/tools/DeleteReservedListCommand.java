@@ -21,7 +21,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.model.registry.label.ReservedListDualDatabaseDao;
+import google.registry.model.registry.label.ReservedListDao;
 
 /**
  * Command to delete a {@link ReservedList} from the database. This command will fail if the
@@ -53,7 +53,7 @@ final class DeleteReservedListCommand extends ConfirmingCommand implements Comma
   @Override
   protected String execute() {
     ReservedList existing = ReservedList.get(name).get();
-    ReservedListDualDatabaseDao.delete(existing);
+    ReservedListDao.delete(existing);
     return String.format("Deleted reserved list: %s", name);
   }
 }

@@ -255,7 +255,7 @@ public final class ReservedList
               new CacheLoader<String, ReservedList>() {
                 @Override
                 public ReservedList load(String listName) {
-                  return ReservedListDualDatabaseDao.getLatestRevision(listName).orElse(null);
+                  return ReservedListDao.getLatestRevision(listName).orElse(null);
                 }
               });
 

@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.model.registry.label.ReservedListDualDatabaseDao;
+import google.registry.model.registry.label.ReservedListDao;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,7 +41,7 @@ class DeleteReservedListCommandTest extends CommandTestCase<DeleteReservedListCo
   void testSuccess() throws Exception {
     assertThat(reservedList.getReservedListEntries()).hasSize(1);
     runCommandForced("--name=common");
-    assertThat(ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName())).isEmpty();
+    assertThat(ReservedListDao.getLatestRevision(reservedList.getName())).isEmpty();
   }
 
   @Test
@@ -63,7 +63,7 @@ class DeleteReservedListCommandTest extends CommandTestCase<DeleteReservedListCo
         assertThrows(
             IllegalArgumentException.class,
             () -> runCommandForced("--name=" + reservedList.getName()));
-    assertThat(ReservedListDualDatabaseDao.getLatestRevision(reservedList.getName())).isPresent();
+    assertThat(ReservedListDao.getLatestRevision(reservedList.getName())).isPresent();
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo("Cannot delete reserved list because it is used on these tld(s): xn--q9jyb4c");

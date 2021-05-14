@@ -28,7 +28,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
-import google.registry.model.registry.label.ReservedListSqlDao;
+import google.registry.model.registry.label.ReservedListDao;
 import java.io.File;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +55,7 @@ class UpdateReservedListCommandTest
   }
 
   private void populateInitialReservedListInCloudSql(boolean shouldPublish) {
-    ReservedListSqlDao.save(
+    ReservedListDao.save(
         createCloudSqlReservedList(
             "xn--q9jyb4c_common-reserved",
             fakeClock.nowUtc(),
@@ -128,7 +128,7 @@ class UpdateReservedListCommandTest
     // Datastore when we update it.
     runCommandForced("--name=xn--q9jyb4c_common-reserved", "--input=" + reservedTermsPath);
     verifyXnq9jyb4cInDatastore();
-    assertThat(ReservedListSqlDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
+    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
   }
 
   @Test

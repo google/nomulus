@@ -18,7 +18,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.appengine.repackaged.com.google.common.collect.Streams;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
-import google.registry.model.registry.label.ReservedListDualDatabaseDao;
+import google.registry.model.registry.label.ReservedListDao;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
@@ -34,11 +34,11 @@ public class GetReservedListCommand implements CommandWithRemoteApi {
 
   @Override
   public void run() throws Exception {
-    if (ReservedListDualDatabaseDao.getLatestRevision(reservedListName).isPresent()) {
+    if (ReservedListDao.getLatestRevision(reservedListName).isPresent()) {
       System.out.printf(
           "%s\n",
           Streams.stream(
-                  ReservedListDualDatabaseDao.getLatestRevision(reservedListName)
+                  ReservedListDao.getLatestRevision(reservedListName)
                       .get()
                       .getReservedListEntries()
                       .values())

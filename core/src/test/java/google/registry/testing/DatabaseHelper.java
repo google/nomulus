@@ -102,7 +102,7 @@ import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.model.registry.label.PremiumList.PremiumListRevision;
 import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.model.registry.label.ReservedListDualDatabaseDao;
+import google.registry.model.registry.label.ReservedListDao;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
 import google.registry.model.transfer.ContactTransferData;
@@ -348,9 +348,8 @@ public class DatabaseHelper {
   }
 
   public static ReservedList persistReservedList(ReservedList reservedList) {
-    ReservedListDualDatabaseDao.save(reservedList);
+    ReservedListDao.save(reservedList);
     maybeAdvanceClock();
-    tm().clearSessionCache();
     return reservedList;
   }
 

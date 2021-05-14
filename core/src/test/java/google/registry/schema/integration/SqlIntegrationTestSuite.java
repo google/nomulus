@@ -28,7 +28,7 @@ import google.registry.model.poll.PollMessageTest;
 import google.registry.model.rde.RdeRevisionTest;
 import google.registry.model.registry.RegistryLockDaoTest;
 import google.registry.model.registry.RegistryTest;
-import google.registry.model.registry.label.ReservedListSqlDaoTest;
+import google.registry.model.registry.label.ReservedListDaoTest;
 import google.registry.model.reporting.Spec11ThreatMatchTest;
 import google.registry.model.server.KmsSecretRevisionSqlDaoTest;
 import google.registry.model.server.LockTest;
@@ -96,7 +96,7 @@ import org.junit.runner.RunWith;
   RdeRevisionTest.class,
   RegistrarDaoTest.class,
   RegistryTest.class,
-  ReservedListSqlDaoTest.class,
+  ReservedListDaoTest.class,
   RegistryLockDaoTest.class,
   ServerSecretTest.class,
   SignedMarkRevocationListDaoTest.class,

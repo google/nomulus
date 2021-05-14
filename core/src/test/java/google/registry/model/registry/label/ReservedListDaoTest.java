@@ -28,8 +28,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link ReservedListSqlDao}. */
-public class ReservedListSqlDaoTest {
+/** Unit tests for {@link ReservedListDao}. */
+public class ReservedListDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
@@ -65,7 +65,7 @@ public class ReservedListSqlDaoTest {
 
   @Test
   void save_worksSuccessfully() {
-    ReservedListSqlDao.save(testReservedList);
+    ReservedListDao.save(testReservedList);
     jpaTm()
         .transact(
             () -> {
@@ -82,31 +82,31 @@ public class ReservedListSqlDaoTest {
 
   @Test
   void delete_worksSuccessfully() {
-    ReservedListSqlDao.save(testReservedList);
-    assertThat(ReservedListSqlDao.checkExists("testlist")).isTrue();
-    ReservedListSqlDao.delete(testReservedList);
-    assertThat(ReservedListSqlDao.checkExists("testlist")).isFalse();
+    ReservedListDao.save(testReservedList);
+    assertThat(ReservedListDao.checkExists("testlist")).isTrue();
+    ReservedListDao.delete(testReservedList);
+    assertThat(ReservedListDao.checkExists("testlist")).isFalse();
   }
 
   @Test
   void delete_listNotInDatabase() {
-    assertThat(ReservedListSqlDao.checkExists("testlist")).isFalse();
-    ReservedListSqlDao.delete(testReservedList);
-    assertThat(ReservedListSqlDao.checkExists("testlist")).isFalse();
+    assertThat(ReservedListDao.checkExists("testlist")).isFalse();
+    ReservedListDao.delete(testReservedList);
+    assertThat(ReservedListDao.checkExists("testlist")).isFalse();
   }
 
   @Test
   void checkExists_worksSuccessfully() {
-    assertThat(ReservedListSqlDao.checkExists("testlist")).isFalse();
-    ReservedListSqlDao.save(testReservedList);
-    assertThat(ReservedListSqlDao.checkExists("testlist")).isTrue();
+    assertThat(ReservedListDao.checkExists("testlist")).isFalse();
+    ReservedListDao.save(testReservedList);
+    assertThat(ReservedListDao.checkExists("testlist")).isTrue();
   }
 
   @Test
   void getLatestRevision_worksSuccessfully() {
-    assertThat(ReservedListSqlDao.getLatestRevision("testlist").isPresent()).isFalse();
-    ReservedListSqlDao.save(testReservedList);
-    ReservedList persistedList = ReservedListSqlDao.getLatestRevision("testlist").get();
+    assertThat(ReservedListDao.getLatestRevision("testlist").isPresent()).isFalse();
+    ReservedListDao.save(testReservedList);
+    ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isNotNull();
     assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
@@ -116,7 +116,7 @@ public class ReservedListSqlDaoTest {
 
   @Test
   void getLatestRevision_returnsLatestRevision() {
-    ReservedListSqlDao.save(
+    ReservedListDao.save(
         new ReservedList.Builder()
             .setName("testlist")
             .setLastUpdateTime(fakeClock.nowUtc())
@@ -127,8 +127,8 @@ public class ReservedListSqlDaoTest {
                     ReservedListEntry.create(
                         "old", ReservationType.RESERVED_FOR_SPECIFIC_USE, null)))
             .build());
-    ReservedListSqlDao.save(testReservedList);
-    ReservedList persistedList = ReservedListSqlDao.getLatestRevision("testlist").get();
+    ReservedListDao.save(testReservedList);
+    ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isNotNull();
     assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
