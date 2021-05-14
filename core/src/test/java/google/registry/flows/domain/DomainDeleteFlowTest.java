@@ -179,6 +179,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 .setType(DOMAIN_CREATE)
                 .setParent(domain)
                 .setModificationTime(clock.nowUtc())
+                .setClientId(domain.getCreationClientId())
                 .build());
   }
 
@@ -1114,6 +1115,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setType(DOMAIN_CREATE)
             .setParent(domain)
             .setModificationTime(TIME_BEFORE_FLOW.minusDays(1))
+            .setClientId("TheRegistrar")
             .setDomainTransactionRecords(ImmutableSet.of(existingRecord))
             .build());
     runFlow();

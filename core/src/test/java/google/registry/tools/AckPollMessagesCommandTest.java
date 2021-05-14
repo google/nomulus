@@ -62,6 +62,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
             new DomainHistory.Builder()
                 .setModificationTime(clock.nowUtc())
                 .setDomainRepoId(domain.getRepoId())
+                .setClientId(domain.getCreationClientId())
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setId(2406L)
                 .build());

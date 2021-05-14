@@ -14,6 +14,7 @@
 
 package google.registry.model.reporting;
 
+import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
@@ -21,6 +22,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -33,6 +35,7 @@ import google.registry.model.reporting.DomainTransactionRecord.TransactionReport
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link HistoryEntry}. */
@@ -85,6 +88,70 @@ class HistoryEntryTest extends EntityTestCase {
               .isEqualExceptFields(
                   Iterables.getOnlyElement(domainHistory.getDomainTransactionRecords()), "id");
         });
+  }
+
+  @TestOfyAndSql
+  void testBuilder_typeMustBeSpecified() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new HistoryEntry.Builder()
+                    .setId(5L)
+                    .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
+                    .setClientId("TheRegistrar")
+                    .setReason("Reason")
+                    .build());
+    assertThat(thrown).hasMessageThat().isEqualTo("History entry type must be specified");
+  }
+
+  @TestOfyAndSql
+  void testBuilder_modificationTimeMustBeSpecified() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new HistoryEntry.Builder()
+                    .setId(5L)
+                    .setType(HistoryEntry.Type.CONTACT_CREATE)
+                    .setClientId("TheRegistrar")
+                    .setReason("Reason")
+                    .build());
+    assertThat(thrown).hasMessageThat().isEqualTo("Modification time must be specified");
+  }
+
+  @TestOfyAndSql
+  void testBuilder_registrarIdMustBeSpecified() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new HistoryEntry.Builder()
+                    .setId(5L)
+                    .setType(HistoryEntry.Type.CONTACT_CREATE)
+                    .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
+                    .setReason("Reason")
+                    .build());
+    assertThat(thrown).hasMessageThat().isEqualTo("Registrar ID must be specified");
+  }
+
+  @TestOfyAndSql
+  void testBuilder_syntheticHistoryEntries_mustNotBeRequestedByRegistrar() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new HistoryEntry.Builder()
+                    .setId(5L)
+                    .setType(HistoryEntry.Type.SYNTHETIC)
+                    .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
+                    .setClientId("TheRegistrar")
+                    .setReason("Reason")
+                    .setRequestedByRegistrar(true)
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Synthetic history entries cannot be requested by a registrar");
   }
 
   @TestOfyOnly

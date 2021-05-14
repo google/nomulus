@@ -55,9 +55,25 @@ class ResaveAllHistoryEntriesActionTest extends MapreduceTestCase<ResaveAllHisto
     DomainBase domain = persistActiveDomain("test.tld");
     ContactResource contact = persistActiveContact("humanBeing");
     Entity domainEntry =
-        auditedOfy().save().toEntity(new HistoryEntry.Builder().setParent(domain).build());
+        auditedOfy()
+            .save()
+            .toEntity(
+                new HistoryEntry.Builder()
+                    .setParent(domain)
+                    .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                    .setModificationTime(domain.getCreationTime())
+                    .setClientId(domain.getCreationClientId())
+                    .build());
     Entity contactEntry =
-        auditedOfy().save().toEntity(new HistoryEntry.Builder().setParent(contact).build());
+        auditedOfy()
+            .save()
+            .toEntity(
+                new HistoryEntry.Builder()
+                    .setParent(contact)
+                    .setType(HistoryEntry.Type.CONTACT_CREATE)
+                    .setClientId(contact.getCreationClientId())
+                    .setModificationTime(contact.getCreationTime())
+                    .build());
 
     // Set raw properties outside the Objectify schema, which will be deleted upon re-save.
     domainEntry.setProperty("clientId", "validId");

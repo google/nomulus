@@ -14,8 +14,10 @@
 
 package google.registry.model.reporting;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.googlecode.objectify.Key.getKind;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
@@ -383,6 +385,13 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
 
     @Override
     public T build() {
+      // TODO(mcilwain): Add null checking for id/parent once DB migration is complete.
+      checkArgumentNotNull(getInstance().type, "History entry type must be specified");
+      checkArgumentNotNull(getInstance().modificationTime, "Modification time must be specified");
+      checkArgumentNotNull(getInstance().clientId, "Registrar ID must be specified");
+      checkArgument(
+          !getInstance().type.equals(Type.SYNTHETIC) || !getInstance().requestedByRegistrar,
+          "Synthetic history entries cannot be requested by a registrar");
       return super.build();
     }
 

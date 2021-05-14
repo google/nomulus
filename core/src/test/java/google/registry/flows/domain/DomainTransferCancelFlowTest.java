@@ -406,6 +406,7 @@ class DomainTransferCancelFlowTest
             .setType(DOMAIN_TRANSFER_REQUEST)
             .setDomain(domain)
             .setModificationTime(clock.nowUtc().minusDays(4))
+            .setClientId("TheRegistrar")
             .setDomainTransactionRecords(
                 ImmutableSet.of(previousSuccessRecord, notCancellableRecord))
             .build());

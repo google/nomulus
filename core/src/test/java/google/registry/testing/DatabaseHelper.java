@@ -545,6 +545,7 @@ public class DatabaseHelper {
                 .setType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST)
                 .setParent(persistResource(contact))
                 .setModificationTime(now)
+                .setClientId(contact.getCurrentSponsorClientId())
                 .build()
                 .toChildHistoryEntity());
     return persistResource(
@@ -616,6 +617,7 @@ public class DatabaseHelper {
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setModificationTime(now)
                 .setDomain(domain)
+                .setClientId(domain.getCreationClientId())
                 .build());
     BillingEvent.Recurring autorenewEvent =
         persistResource(
@@ -657,6 +659,7 @@ public class DatabaseHelper {
                 .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
                 .setModificationTime(tm().transact(() -> tm().getTransactionTime()))
                 .setDomain(domain)
+                .setClientId("TheRegistrar")
                 .build());
     BillingEvent.OneTime transferBillingEvent =
         persistResource(
@@ -1085,7 +1088,7 @@ public class DatabaseHelper {
               tm().put(
                       new HistoryEntry.Builder()
                           .setParent(resource)
-                          .setClientId(resource.getPersistedCurrentSponsorClientId())
+                          .setClientId(resource.getCreationClientId())
                           .setType(getHistoryEntryType(resource))
                           .setModificationTime(tm().getTransactionTime())
                           .build()

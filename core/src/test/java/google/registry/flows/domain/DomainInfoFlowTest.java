@@ -366,6 +366,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                 .setParent(domain)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setModificationTime(clock.nowUtc())
+                .setClientId(domain.getCreationClientId())
                 .build());
     BillingEvent.Recurring renewEvent =
         persistResource(

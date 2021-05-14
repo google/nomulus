@@ -80,10 +80,22 @@ class ChildEntityInputTest {
     domainA = persistEppResourceInFirstBucket(newDomainBase("a.tld", contact));
     domainHistoryEntryA =
         persistResource(
-            new DomainHistory.Builder().setDomain(domainA).setModificationTime(now).build());
+            new DomainHistory.Builder()
+                .setDomain(domainA)
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setDomain(domainA)
+                .setModificationTime(now)
+                .setClientId(domainA.getCreationClientId())
+                .build());
     contactHistoryEntry =
         persistResource(
-            new ContactHistory.Builder().setContact(contact).setModificationTime(now).build());
+            new ContactHistory.Builder()
+                .setContact(contact)
+                .setType(HistoryEntry.Type.CONTACT_CREATE)
+                .setContact(contact)
+                .setModificationTime(now)
+                .setClientId(contact.getCreationClientId())
+                .build());
     oneTimeA =
         persistResource(
             new BillingEvent.OneTime.Builder()
@@ -113,7 +125,13 @@ class ChildEntityInputTest {
     domainB = persistEppResourceInFirstBucket(newDomainBase("b.tld"));
     domainHistoryEntryB =
         persistResource(
-            new DomainHistory.Builder().setDomain(domainB).setModificationTime(now).build());
+            new DomainHistory.Builder()
+                .setDomain(domainB)
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setDomain(domainB)
+                .setModificationTime(now)
+                .setClientId(domainB.getCreationClientId())
+                .build());
     oneTimeB =
         persistResource(
             new BillingEvent.OneTime.Builder()
@@ -295,8 +313,9 @@ class ChildEntityInputTest {
           persistResource(
                   new DomainHistory.Builder()
                       .setDomain(domain)
+                      .setType(HistoryEntry.Type.DOMAIN_CREATE)
                       .setModificationTime(now)
-                      .setClientId(i + ".tld")
+                      .setClientId(domain.getCreationClientId())
                       .build())
               .asHistoryEntry());
       persistResource(EppResourceIndex.create(getBucketKey(i), Key.create(domain)));

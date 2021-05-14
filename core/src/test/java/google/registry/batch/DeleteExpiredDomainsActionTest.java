@@ -170,6 +170,7 @@ class DeleteExpiredDomainsActionTest {
                 .setType(DOMAIN_CREATE)
                 .setParent(pendingExpirationDomain)
                 .setModificationTime(clock.nowUtc().minusMonths(9))
+                .setClientId(pendingExpirationDomain.getCreationClientId())
                 .build());
     BillingEvent.Recurring autorenewBillingEvent =
         persistResource(createAutorenewBillingEvent(createHistoryEntry).build());

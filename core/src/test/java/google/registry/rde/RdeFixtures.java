@@ -66,7 +66,13 @@ final class RdeFixtures {
                     .createVKey())
             .build();
     HistoryEntry historyEntry =
-        persistResource(new HistoryEntry.Builder().setParent(domain).build());
+        persistResource(
+            new HistoryEntry.Builder()
+                .setParent(domain)
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setModificationTime(clock.nowUtc())
+                .setClientId("TheRegistrar")
+                .build());
     clock.advanceOneMilli();
     BillingEvent.OneTime billingEvent =
         persistResourceWithCommitLog(

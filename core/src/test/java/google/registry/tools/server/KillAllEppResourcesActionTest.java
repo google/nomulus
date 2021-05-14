@@ -31,6 +31,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.util.Arrays.asList;
 
 import com.google.appengine.api.datastore.Entity;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -82,47 +83,65 @@ class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResource
     executeTasksUntilEmpty("mapreduce");
   }
 
+  private static final ImmutableMap<Class<? extends EppResource>, HistoryEntry.Type>
+      HISTORY_ENTRY_CREATE_TYPES =
+          ImmutableMap.of(
+              DomainBase.class,
+              HistoryEntry.Type.DOMAIN_CREATE,
+              ContactResource.class,
+              HistoryEntry.Type.CONTACT_CREATE,
+              HostResource.class,
+              HistoryEntry.Type.HOST_CREATE);
+
   @Test
   void testKill() throws Exception {
     createTld("tld1");
     createTld("tld2");
-    for (EppResource resource : asList(
-        persistActiveDomain("foo.tld1"),
-        persistActiveDomain("foo.tld2"),
-        persistActiveContact("foo"),
-        persistActiveContact("foo"),
-        persistActiveHost("ns.foo.tld1"),
-        persistActiveHost("ns.foo.tld2"))) {
-      HistoryEntry history = new HistoryEntry.Builder().setParent(resource).build();
-      for (ImmutableObject descendant : asList(
-          history,
-          new PollMessage.OneTime.Builder()
-              .setParent(history)
-              .setClientId("")
-              .setEventTime(START_OF_TIME)
-              .build(),
-          new PollMessage.Autorenew.Builder()
-              .setParent(history)
-              .setClientId("")
-              .setEventTime(START_OF_TIME)
-              .build(),
-          new BillingEvent.OneTime.Builder()
-              .setParent(history)
-              .setBillingTime(START_OF_TIME)
-              .setEventTime(START_OF_TIME)
-              .setClientId("")
-              .setTargetId("")
-              .setReason(Reason.CREATE)
-              .setPeriodYears(1)
-              .setCost(Money.of(CurrencyUnit.USD, 1))
-              .build(),
-          new BillingEvent.Recurring.Builder()
-              .setParent(history)
-              .setEventTime(START_OF_TIME)
-              .setClientId("")
-              .setTargetId("")
-              .setReason(Reason.RENEW)
-              .build())) {
+    for (EppResource resource :
+        asList(
+            persistActiveDomain("foo.tld1"),
+            persistActiveDomain("foo.tld2"),
+            persistActiveContact("foo"),
+            persistActiveContact("foo"),
+            persistActiveHost("ns.foo.tld1"),
+            persistActiveHost("ns.foo.tld2"))) {
+      HistoryEntry history =
+          new HistoryEntry.Builder()
+              .setParent(resource)
+              .setClientId(resource.getCreationClientId())
+              .setModificationTime(resource.getCreationTime())
+              .setType(HISTORY_ENTRY_CREATE_TYPES.get(resource.getClass()))
+              .build();
+      for (ImmutableObject descendant :
+          asList(
+              history,
+              new PollMessage.OneTime.Builder()
+                  .setParent(history)
+                  .setClientId("")
+                  .setEventTime(START_OF_TIME)
+                  .build(),
+              new PollMessage.Autorenew.Builder()
+                  .setParent(history)
+                  .setClientId("")
+                  .setEventTime(START_OF_TIME)
+                  .build(),
+              new BillingEvent.OneTime.Builder()
+                  .setParent(history)
+                  .setBillingTime(START_OF_TIME)
+                  .setEventTime(START_OF_TIME)
+                  .setClientId("")
+                  .setTargetId("")
+                  .setReason(Reason.CREATE)
+                  .setPeriodYears(1)
+                  .setCost(Money.of(CurrencyUnit.USD, 1))
+                  .build(),
+              new BillingEvent.Recurring.Builder()
+                  .setParent(history)
+                  .setEventTime(START_OF_TIME)
+                  .setClientId("")
+                  .setTargetId("")
+                  .setReason(Reason.RENEW)
+                  .build())) {
         persistResource(descendant);
       }
     }
