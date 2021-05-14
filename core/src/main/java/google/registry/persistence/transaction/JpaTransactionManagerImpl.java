@@ -48,8 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -739,13 +737,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     @Override
     public Optional<T> first() {
-      List<T> results = buildQuery().setMaxResults(1).getResultList();
+      List<T> results =
+          buildQuery().setMaxResults(1).getResultList().stream()
+              .map(this::maybeDetachEntity)
+              .collect(ImmutableList.toImmutableList());
       return results.size() > 0 ? Optional.of(results.get(0)) : Optional.empty();
     }
 
     @Override
     public T getSingleResult() {
-      return buildQuery().getSingleResult();
+      return maybeDetachEntity(buildQuery().getSingleResult());
     }
 
     @Override
@@ -759,10 +760,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       } else {
         logger.atWarning().log("Query implemention does not support result streaming.");
       }
+      return query.getResultStream().map(this::maybeDetachEntity);
+    }
+
+    private T maybeDetachEntity(T entity) {
       if (autoDetachOnLoad) {
-        return query.getResultStream().map(new BestEffortDetach<>(em, fetchSize));
+        em.detach(entity);
       }
-      return query.getResultStream();
+      return entity;
     }
 
     @Override
@@ -774,31 +779,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     @Override
     public List<T> list() {
       return buildQuery().getResultList();
-    }
-  }
-
-  /**
-   * Detaches JPA entities by calling the {@link EntityManager#clear()} method on batches of the
-   * entities. Class is called best effort because the odd lot entities near the end of the stream
-   * may not be detached.
-   */
-  static class BestEffortDetach<T> implements Function<T, T> {
-    private final EntityManager entityManager;
-    private final int batchSize;
-    private final AtomicInteger batchCount = new AtomicInteger(0);
-
-    BestEffortDetach(EntityManager entityManager, int batchSize) {
-      this.entityManager = entityManager;
-      this.batchSize = batchSize;
-    }
-
-    @Override
-    public T apply(T entity) {
-      if (batchCount.incrementAndGet() >= batchSize) {
-        batchCount.set(0);
-        entityManager.clear();
-      }
-      return entity;
     }
   }
 }
