@@ -18,7 +18,7 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Streams.stream;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
@@ -321,11 +321,15 @@ public class AuthenticatedRegistrarAccessor {
     // Find all registrars that have a registrar contact with this user's ID.
     if (tm().isOfy()) {
       ImmutableList<Key<Registrar>> accessibleClientIds =
-          stream(ofy().load().type(RegistrarContact.class).filter("gaeUserId", user.getUserId()))
+          stream(
+                  auditedOfy()
+                      .load()
+                      .type(RegistrarContact.class)
+                      .filter("gaeUserId", user.getUserId()))
               .map(RegistrarContact::getParent)
               .collect(toImmutableList());
       // Filter out disabled registrars (note that pending registrars still allow console login).
-      ofy().load().keys(accessibleClientIds).values().stream()
+      auditedOfy().load().keys(accessibleClientIds).values().stream()
           .filter(registrar -> registrar.getState() != State.DISABLED)
           .forEach(registrar -> builder.put(registrar.getClientId(), Role.OWNER));
     } else {

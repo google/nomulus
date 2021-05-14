@@ -81,16 +81,18 @@ class ChildEntityInputTest {
     domainHistoryEntryA =
         persistResource(
             new DomainHistory.Builder()
+                .setDomain(domainA)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                .setDomainContent(domainA)
+                .setDomain(domainA)
                 .setModificationTime(now)
                 .setClientId(domainA.getCreationClientId())
                 .build());
     contactHistoryEntry =
         persistResource(
             new ContactHistory.Builder()
+                .setContact(contact)
                 .setType(HistoryEntry.Type.CONTACT_CREATE)
-                .setContactBase(contact)
+                .setContact(contact)
                 .setModificationTime(now)
                 .setClientId(contact.getCreationClientId())
                 .build());
@@ -124,8 +126,9 @@ class ChildEntityInputTest {
     domainHistoryEntryB =
         persistResource(
             new DomainHistory.Builder()
+                .setDomain(domainB)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                .setDomainContent(domainB)
+                .setDomain(domainB)
                 .setModificationTime(now)
                 .setClientId(domainB.getCreationClientId())
                 .build());
@@ -309,8 +312,8 @@ class ChildEntityInputTest {
       historyEntries.add(
           persistResource(
                   new DomainHistory.Builder()
+                      .setDomain(domain)
                       .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                      .setDomainContent(domain)
                       .setModificationTime(now)
                       .setClientId(domain.getCreationClientId())
                       .build())

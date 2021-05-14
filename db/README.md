@@ -58,7 +58,12 @@ Below are the steps to submit a schema change:
     following the existing scripts in that folder. Note the double underscore in
     the naming pattern.
 
-4.  Run `./nom_build :nom:generate_golden_file`. This is a pseudo-task
+4.  Run `./nom_build :db:generateFlywayIndex` to regenerate the Flyway index.
+    This is a file listing all of the current Flyway files.  Its purpose is to
+    produce a merge conflict when more than one person adds a Flyway file with
+    the same sequence number.
+
+5.  Run `./nom_build :nom:generate_golden_file`. This is a pseudo-task
     implemented in the `nom_build` script that does the following:
 
     -   Runs the `:db:test` task from the Gradle root project. The SchemaTest
@@ -71,11 +76,6 @@ Below are the steps to submit a schema change:
 
     You'll want to have a look at the diffs in the golden schema to verify that
     all changes are intentional.
-
-5.  Run `./nom_build :db:generateFlywayIndex` to regenerate the Flyway index.
-    This is a file listing all of the current Flyway files.  Its purpose is to
-    produce a merge conflict when more than one person adds a Flyway file with
-    the same sequence number.
 
 Relevant files (under `db/src/main/resources/sql/schema/`):
 

@@ -137,7 +137,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
             union(
                 cancelingRecords,
                 DomainTransactionRecord.create(newDomain.getTld(), now, TRANSFER_NACKED, 1)))
-        .setDomainContent(newDomain)
+        .setDomain(newDomain)
         .build();
   }
 }

@@ -74,6 +74,24 @@ public abstract class QueryComposer<T> {
     return this;
   }
 
+  /**
+   * Applies {@code fetchSize} to the JDBC statement (by calling {@link
+   * java.sql.Statement#setFetchSize}) if the query result is accessed by the {@link #stream}
+   * method. Calling this method is optional. Children of this class will apply a default positive
+   * fetch size if the user does not provide one.
+   *
+   * <p>With many JDBC drivers, including Postgresql, a positive fetch size is required for
+   * streaming large result sets. A zero value, often the drivers' default setting, requires that
+   * the entire result set is buffered.
+   *
+   * <p>The fetch size value, the default as well as the user-provided one, will be applied if and
+   * only if the underlying query implementor supports it. The Hibernate implementations do support
+   * this.
+   */
+  public QueryComposer<T> withFetchSize(int fetchSize) {
+    return this;
+  }
+
   /** Returns the first result of the query or an empty optional if there is none. */
   public abstract Optional<T> first();
 

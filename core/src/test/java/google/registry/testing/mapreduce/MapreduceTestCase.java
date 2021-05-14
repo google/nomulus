@@ -15,7 +15,7 @@
 package google.registry.testing.mapreduce;
 
 import static google.registry.config.RegistryConfig.getEppResourceIndexBucketCount;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -213,7 +213,7 @@ public abstract class MapreduceTestCase<T> {
     for (int numTasksDeleted = 0;
         !maxTasks.isPresent() || (numTasksDeleted < maxTasks.get());
         numTasksDeleted++) {
-      ofy().clearSessionCache();
+      auditedOfy().clearSessionCache();
       // We have to re-acquire task list every time, because local implementation returns a copy.
       List<QueueStateInfo.TaskStateInfo> taskInfo =
           taskQueue.getQueueStateInfo().get(queueName).getTaskInfo();

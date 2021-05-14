@@ -85,7 +85,7 @@ public final class ContactTransferRejectFlow implements TransactionalFlow {
         historyBuilder
             .setType(HistoryEntry.Type.CONTACT_TRANSFER_REJECT)
             .setModificationTime(now)
-            .setContactBase(newContact)
+            .setContact(newContact)
             .build();
     PollMessage gainingPollMessage =
         createGainingTransferPollMessage(

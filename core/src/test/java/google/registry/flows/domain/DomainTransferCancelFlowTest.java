@@ -404,7 +404,7 @@ class DomainTransferCancelFlowTest
     persistResource(
         new DomainHistory.Builder()
             .setType(DOMAIN_TRANSFER_REQUEST)
-            .setDomainContent(domain)
+            .setDomain(domain)
             .setModificationTime(clock.nowUtc().minusDays(4))
             .setClientId("TheRegistrar")
             .setDomainTransactionRecords(

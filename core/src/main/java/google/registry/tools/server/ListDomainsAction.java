@@ -16,7 +16,7 @@ package google.registry.tools.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registry.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -86,7 +86,7 @@ public final class ListDomainsAction extends ListObjectsAction<DomainBase> {
     // Combine the batches together by sorting all domains together with newest first, applying the
     // limit, and then reversing for display order.
     for (List<String> tldsBatch : Lists.partition(tlds.asList(), maxNumSubqueries)) {
-      ofy()
+      auditedOfy()
           .load()
           .type(DomainBase.class)
           .filter("tld in", tldsBatch)

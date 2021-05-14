@@ -15,7 +15,7 @@
 package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeMode.THIN;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -215,11 +215,15 @@ class RdeStagingReducerTest {
   }
 
   private static DateTime loadCursorTime(CursorType type) {
-    return ofy().load().key(Cursor.createKey(type, Registry.get("soy"))).now().getCursorTime();
+    return auditedOfy()
+        .load()
+        .key(Cursor.createKey(type, Registry.get("soy")))
+        .now()
+        .getCursorTime();
   }
 
   private static int loadRevision(RdeMode mode) {
-    return ofy()
+    return auditedOfy()
         .load()
         .type(RdeRevision.class)
         .id("soy_2000-01-01_" + mode.getFilenameComponent())

@@ -30,6 +30,8 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 import java.util.Optional;
 import javax.persistence.Column;
 import javax.persistence.NoResultException;
@@ -261,6 +263,33 @@ public class QueryComposerTest {
                         .stream()
                         .collect(toImmutableList())))
         .isEqualTo(ImmutableList.of());
+  }
+
+  @TestOfyOnly
+  void testMultipleInequalities_failsDatastore() {
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                    tm().createQueryComposer(TestEntity.class)
+                        .where("val", Comparator.GT, 1)
+                        .where("name", Comparator.LT, "b")
+                        .list()))
+        .hasMessageThat()
+        .isEqualTo(
+            "Datastore cannot handle inequality queries on multiple fields, we found 2 fields.");
+  }
+
+  @TestSqlOnly
+  void testMultipleInequalities_succeedsSql() {
+    assertThat(
+            transactIfJpaTm(
+                () ->
+                    tm().createQueryComposer(TestEntity.class)
+                        .where("val", Comparator.GT, 1)
+                        .where("name", Comparator.LT, "b")
+                        .list()))
+        .containsExactly(alpha);
   }
 
   @javax.persistence.Entity

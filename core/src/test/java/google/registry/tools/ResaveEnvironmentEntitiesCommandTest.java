@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 
@@ -44,25 +44,25 @@ class ResaveEnvironmentEntitiesCommandTest
         CommitLogManifest.class,
         CommitLogMutation.class);
     runCommand();
-    assertThat(ofy().load().type(CommitLogManifest.class).keys()).isEmpty();
-    assertThat(ofy().load().type(CommitLogMutation.class).keys()).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogManifest.class).keys()).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogMutation.class).keys()).isEmpty();
   }
 
   @Test
   void testSuccess_createsCommitLogs() throws Exception {
     createTld("tld");
     deleteEntitiesOfTypes(CommitLogManifest.class, CommitLogMutation.class);
-    assertThat(ofy().load().type(CommitLogManifest.class).keys()).isEmpty();
-    assertThat(ofy().load().type(CommitLogMutation.class).keys()).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogManifest.class).keys()).isEmpty();
+    assertThat(auditedOfy().load().type(CommitLogMutation.class).keys()).isEmpty();
     runCommand();
 
     // There are 5 entities that have been re-saved at this point (in 3 transactions, one for each
     // type), so expect 3 manifests and 5 mutations.
-    assertThat(ofy().load().type(CommitLogManifest.class).keys()).hasSize(3);
+    assertThat(auditedOfy().load().type(CommitLogManifest.class).keys()).hasSize(3);
     Iterable<ImmutableObject> savedEntities =
         transform(
-            ofy().load().type(CommitLogMutation.class).list(),
-            mutation -> ofy().load().fromEntity(mutation.getEntity()));
+            auditedOfy().load().type(CommitLogMutation.class).list(),
+            mutation -> auditedOfy().load().fromEntity(mutation.getEntity()));
     ImmutableSortedSet<RegistrarContact> theRegistrarContacts =
         loadRegistrar("TheRegistrar").getContacts();
     assertThat(savedEntities)
@@ -79,7 +79,7 @@ class ResaveEnvironmentEntitiesCommandTest
   @SafeVarargs
   private static void deleteEntitiesOfTypes(Class<? extends ImmutableObject>... types) {
     for (Class<? extends ImmutableObject> type : types) {
-      ofy().deleteWithoutBackup().keys(ofy().load().type(type).keys()).now();
+      auditedOfy().deleteWithoutBackup().keys(auditedOfy().load().type(type).keys()).now();
     }
   }
 }

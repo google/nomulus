@@ -45,6 +45,7 @@ import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CreateData.HostCreateData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.host.HostCommand.Create;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
@@ -85,7 +86,7 @@ public final class HostCreateFlow implements TransactionalFlow {
   @Inject ExtensionManager extensionManager;
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject HostHistory.Builder historyBuilder;
   @Inject DnsQueue dnsQueue;
   @Inject EppResponse.Builder responseBuilder;
 
@@ -128,14 +129,11 @@ public final class HostCreateFlow implements TransactionalFlow {
             .setRepoId(createRepoId(ObjectifyService.allocateId(), roidSuffix))
             .setSuperordinateDomain(superordinateDomain.map(DomainBase::createVKey).orElse(null))
             .build();
-    historyBuilder
-        .setType(HistoryEntry.Type.HOST_CREATE)
-        .setModificationTime(now)
-        .setParent(Key.create(newHost));
+    historyBuilder.setType(HistoryEntry.Type.HOST_CREATE).setModificationTime(now).setHost(newHost);
     ImmutableSet<ImmutableObject> entitiesToSave =
         ImmutableSet.of(
             newHost,
-            historyBuilder.build().toChildHistoryEntity(),
+            historyBuilder.build(),
             ForeignKeyIndex.create(newHost, newHost.getDeletionTime()),
             EppResourceIndex.create(Key.create(newHost)));
     if (superordinateDomain.isPresent()) {

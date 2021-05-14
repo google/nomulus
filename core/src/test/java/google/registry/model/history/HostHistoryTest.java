@@ -67,7 +67,7 @@ public class HostHistoryTest extends EntityTestCase {
 
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().loadByKey(host.createVKey()));
     HostHistory hostHistory =
-        createHostHistory(hostFromDb, host.getRepoId()).asBuilder().setHostBase(null).build();
+        createHostHistory(hostFromDb, host.getRepoId()).asBuilder().setHost(null).build();
     jpaTm().transact(() -> jpaTm().insert(hostHistory));
 
     jpaTm()
@@ -121,7 +121,7 @@ public class HostHistoryTest extends EntityTestCase {
         .setBySuperuser(false)
         .setReason("reason")
         .setRequestedByRegistrar(true)
-        .setHostBase(hostBase)
+        .setHost(hostBase)
         .setHostRepoId(hostRepoId)
         .build();
   }

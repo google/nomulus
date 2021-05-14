@@ -132,7 +132,7 @@ public final class DomainTransferCancelFlow implements TransactionalFlow {
     return historyBuilder
         .setType(HistoryEntry.Type.DOMAIN_TRANSFER_CANCEL)
         .setModificationTime(now)
-        .setDomainContent(newDomain)
+        .setDomain(newDomain)
         .setDomainTransactionRecords(cancelingRecords)
         .build();
   }

@@ -16,6 +16,7 @@ package google.registry.batch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
+import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -126,6 +127,29 @@ class DeleteExpiredDomainsActionTest {
     DomainBase domain1 = persistNonAutorenewingDomain("ecck1.tld");
     DomainBase domain2 = persistNonAutorenewingDomain("veee2.tld");
     DomainBase domain3 = persistNonAutorenewingDomain("tarm3.tld");
+
+    // action.run() executes an ancestor-less query which is subject to eventual consistency (it
+    // uses an index that is updated asynchronously). For a deterministic test outcome, we busy
+    // wait here to give the data time to converge.
+    int maxRetries = 5;
+    while (true) {
+      ImmutableSet<String> matchingDomains =
+          ofy()
+              .load()
+              .type(DomainBase.class)
+              .filter("autorenewEndTime <=", clock.nowUtc())
+              .list()
+              .stream()
+              .map(DomainBase::getDomainName)
+              .collect(ImmutableSet.toImmutableSet());
+      if (matchingDomains.containsAll(ImmutableSet.of("ecck1.tld", "veee2.tld", "tarm3.tld"))) {
+        break;
+      }
+      if (maxRetries-- <= 0) {
+        throw new RuntimeException("Eventual consistency does not converge in time for this test.");
+      }
+      Thread.sleep(200);
+    }
 
     // action.run does multiple write transactions. We cannot emulate the behavior by manually
     // advancing the clock. Auto-increment to avoid timestamp inversion.

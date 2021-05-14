@@ -20,7 +20,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Maps.filterValues;
 import static com.google.common.collect.Maps.toMap;
 import static google.registry.model.ofy.CommitLogBucket.getArbitraryBucketId;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -57,7 +57,7 @@ public class TransactionInfo {
 
   TransactionInfo(DateTime now) {
     this.transactionTime = now;
-    ofy().load().key(bucketKey); // Asynchronously load value into session cache.
+    auditedOfy().load().key(bucketKey); // Asynchronously load value into session cache.
   }
 
   TransactionInfo setReadOnly() {

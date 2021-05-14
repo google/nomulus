@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
@@ -47,7 +47,7 @@ final class GetResourceByKeyCommand implements CommandWithRemoteApi {
           checkNotNull(Key.create(keyString), "Could not parse key string: " + keyString);
       EppResource resource =
           checkNotNull(
-              ofy().load().key(resourceKey).now(),
+              auditedOfy().load().key(resourceKey).now(),
               "Could not load resource for key: " + resourceKey);
       System.out.println(expand ? resource.toHydratedString() : resource.toString());
     }

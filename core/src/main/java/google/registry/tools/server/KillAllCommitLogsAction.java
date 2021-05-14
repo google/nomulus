@@ -16,7 +16,7 @@ package google.registry.tools.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.appengine.tools.mapreduce.Input;
@@ -98,7 +98,7 @@ public class KillAllCommitLogsAction implements Runnable {
 
     @Override
     public void map(Key<?> bucketOrRoot) {
-      for (Key<Object> key : ofy().load().ancestor(bucketOrRoot).keys()) {
+      for (Key<Object> key : auditedOfy().load().ancestor(bucketOrRoot).keys()) {
         emit(bucketOrRoot, key);
         getContext().incrementCounter("entities emitted");
         getContext().incrementCounter(String.format("%s emitted", key.getKind()));

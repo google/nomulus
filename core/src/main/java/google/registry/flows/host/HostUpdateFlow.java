@@ -31,7 +31,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.google.common.collect.ImmutableSet;
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
@@ -55,6 +54,7 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.host.HostCommand.Update;
 import google.registry.model.host.HostCommand.Update.AddRemove;
 import google.registry.model.host.HostCommand.Update.Change;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.reporting.HistoryEntry;
@@ -116,7 +116,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
   @Inject @ClientId String clientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
-  @Inject HistoryEntry.Builder historyBuilder;
+  @Inject HostHistory.Builder historyBuilder;
   @Inject AsyncTaskEnqueuer asyncTaskEnqueuer;
   @Inject DnsQueue dnsQueue;
   @Inject EppResponse.Builder responseBuilder;
@@ -205,9 +205,8 @@ public final class HostUpdateFlow implements TransactionalFlow {
         historyBuilder
             .setType(HistoryEntry.Type.HOST_UPDATE)
             .setModificationTime(now)
-            .setParent(Key.create(existingHost))
-            .build()
-            .toChildHistoryEntity());
+            .setHost(newHost)
+            .build());
     tm().updateAll(entitiesToUpdate.build());
     tm().insertAll(entitiesToInsert.build());
     return responseBuilder.build();

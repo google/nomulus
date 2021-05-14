@@ -1586,6 +1586,13 @@ CREATE INDEX idx_registry_lock_verification_code ON public."RegistryLock" USING 
 
 
 --
+-- Name: idxa7fu0bqynfb79rr80528b4jqt; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxa7fu0bqynfb79rr80528b4jqt ON public."Domain" USING btree (registrant_contact);
+
+
+--
 -- Name: idxaro1omfuaxjwmotk3vo00trwm; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1719,6 +1726,13 @@ CREATE INDEX idxn898pb9mwcg359cdwvolb11ck ON public."BillingRecurrence" USING bt
 
 
 --
+-- Name: idxnb02m43jcx24r64n8rbg22u4q; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxnb02m43jcx24r64n8rbg22u4q ON public."Domain" USING btree (admin_contact);
+
+
+--
 -- Name: idxo1xdtpij2yryh0skxe9v91sep; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1747,10 +1761,24 @@ CREATE INDEX idxplxf9v56p0wg8ws6qsvd082hk ON public."BillingEvent" USING btree (
 
 
 --
+-- Name: idxq9gy8x2xynt9tb16yajn1gcm8; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxq9gy8x2xynt9tb16yajn1gcm8 ON public."Domain" USING btree (billing_contact);
+
+
+--
 -- Name: idxqa3g92jc17e8dtiaviy4fet4x; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idxqa3g92jc17e8dtiaviy4fet4x ON public."BillingCancellation" USING btree (billing_time);
+
+
+--
+-- Name: idxr22ciyccwi9rrqmt1ro0s59qf; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idxr22ciyccwi9rrqmt1ro0s59qf ON public."Domain" USING btree (tech_contact);
 
 
 --

@@ -92,17 +92,19 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     clock.advanceOneMilli();
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("host_create_response.xml"));
+    HostResource host = reloadResourceByForeignKey();
     // Check that the host was created and persisted with a history entry.
     assertAboutHosts()
-        .that(reloadResourceByForeignKey())
+        .that(host)
         .hasLastSuperordinateChange(null)
         .and()
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.HOST_CREATE);
     assertNoBillingEvents();
     if (tm().isOfy()) {
-      assertEppResourceIndexEntityFor(reloadResourceByForeignKey());
+      assertEppResourceIndexEntityFor(host);
     }
+    assertLastHistoryContainsResource(host);
   }
 
   private void doSuccessfulInternalTest(String tld) throws Exception {

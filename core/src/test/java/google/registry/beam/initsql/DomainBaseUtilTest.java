@@ -15,7 +15,7 @@
 package google.registry.beam.initsql;
 
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -166,7 +166,7 @@ public class DomainBaseUtilTest {
                             "registrar",
                             null))
                     .build()));
-    domainEntity = tm().transact(() -> ofy().toEntity(domain));
+    domainEntity = tm().transact(() -> auditedOfy().toEntity(domain));
   }
 
   @Test
@@ -182,7 +182,7 @@ public class DomainBaseUtilTest {
             .setGracePeriods(ImmutableSet.of())
             .build();
     DomainBase domainTransformedByUtil =
-        (DomainBase) ofy().toPojo(DomainBaseUtil.removeBillingAndPollAndHosts(domainEntity));
+        (DomainBase) auditedOfy().toPojo(DomainBaseUtil.removeBillingAndPollAndHosts(domainEntity));
     // Compensates for the missing INACTIVE status.
     domainTransformedByUtil = domainTransformedByUtil.asBuilder().build();
     assertAboutImmutableObjects()
@@ -202,9 +202,10 @@ public class DomainBaseUtilTest {
             .setTransferData(null)
             .setGracePeriods(ImmutableSet.of())
             .build();
-    Entity entityWithoutFkeys = tm().transact(() -> ofy().toEntity(domainWithoutFKeys));
+    Entity entityWithoutFkeys = tm().transact(() -> auditedOfy().toEntity(domainWithoutFKeys));
     DomainBase domainTransformedByUtil =
-        (DomainBase) ofy().toPojo(DomainBaseUtil.removeBillingAndPollAndHosts(entityWithoutFkeys));
+        (DomainBase)
+            auditedOfy().toPojo(DomainBaseUtil.removeBillingAndPollAndHosts(entityWithoutFkeys));
     // Compensates for the missing INACTIVE status.
     domainTransformedByUtil = domainTransformedByUtil.asBuilder().build();
     assertAboutImmutableObjects()
@@ -215,7 +216,7 @@ public class DomainBaseUtilTest {
   @Test
   void removeBillingAndPollAndHosts_notDomainBase() {
     Entity contactEntity =
-        tm().transact(() -> ofy().toEntity(DatabaseHelper.newContactResource("contact")));
+        tm().transact(() -> auditedOfy().toEntity(DatabaseHelper.newContactResource("contact")));
 
     assertThrows(
         IllegalArgumentException.class,

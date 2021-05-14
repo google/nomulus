@@ -18,7 +18,7 @@ import static com.google.common.base.CaseFormat.LOWER_HYPHEN;
 import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.flogger.FluentLogger;
@@ -205,9 +205,9 @@ public class KmsKeyring implements Keyring {
     String encryptedData;
     if (tm().isOfy()) {
       KmsSecret secret =
-          ofy().load().key(Key.create(getCrossTldKey(), KmsSecret.class, keyName)).now();
+          auditedOfy().load().key(Key.create(getCrossTldKey(), KmsSecret.class, keyName)).now();
       checkState(secret != null, "Requested secret '%s' does not exist.", keyName);
-      encryptedData = ofy().load().key(secret.getLatestRevision()).now().getEncryptedValue();
+      encryptedData = auditedOfy().load().key(secret.getLatestRevision()).now().getEncryptedValue();
     } else {
       Optional<KmsSecretRevision> revision =
           tm().transact(() -> KmsSecretRevisionSqlDao.getLatestRevision(keyName));

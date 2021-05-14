@@ -17,7 +17,7 @@ package google.registry.tools.server;
 import static com.google.appengine.api.datastore.DatastoreServiceFactory.getDatastoreService;
 import static com.google.common.truth.Truth.assertThat;
 import static com.googlecode.objectify.Key.create;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.appengine.api.datastore.Entity;
@@ -49,7 +49,7 @@ class DeleteEntityActionTest {
   @Test
   void test_deleteSingleRegisteredEntitySuccessfully() {
     ReservedList ofyEntity = new ReservedList.Builder().setName("foo").build();
-    ofy().saveWithoutBackup().entity(ofyEntity).now();
+    auditedOfy().saveWithoutBackup().entity(ofyEntity).now();
     new DeleteEntityAction(KeyFactory.keyToString(create(ofyEntity).getRaw()), response).run();
     assertThat(response.getPayload()).isEqualTo("Deleted 0 raw entities and 1 registered entities");
   }
@@ -69,7 +69,7 @@ class DeleteEntityActionTest {
     getDatastoreService().put(entity);
     String rawKey = KeyFactory.keyToString(entity.getKey());
     ReservedList ofyEntity = new ReservedList.Builder().setName("registered").build();
-    ofy().saveWithoutBackup().entity(ofyEntity).now();
+    auditedOfy().saveWithoutBackup().entity(ofyEntity).now();
     String ofyKey = KeyFactory.keyToString(create(ofyEntity).getRaw());
     new DeleteEntityAction(String.format("%s,%s", rawKey, ofyKey), response).run();
     assertThat(response.getPayload()).isEqualTo("Deleted 1 raw entities and 1 registered entities");
@@ -88,7 +88,7 @@ class DeleteEntityActionTest {
   @Test
   void test_deleteOneEntityAndNonExistentEntityRepliesWithError() {
     ReservedList ofyEntity = new ReservedList.Builder().setName("first_registered").build();
-    ofy().saveWithoutBackup().entity(ofyEntity).now();
+    auditedOfy().saveWithoutBackup().entity(ofyEntity).now();
     String ofyKey = KeyFactory.keyToString(create(ofyEntity).getRaw());
     String rawKey = KeyFactory.keyToString(new Entity("non", "existent").getKey());
     BadRequestException thrown =

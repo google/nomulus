@@ -14,7 +14,7 @@
 
 package google.registry.schema.replay;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.request.Action.Method.GET;
@@ -113,7 +113,7 @@ class ReplicateToDatastoreAction implements Runnable {
 
               // Write the updated last transaction id to datastore as part of this datastore
               // transaction.
-              ofy().save().entity(lastSqlTxn.cloneWithNewTransactionId(nextTxnId));
+              auditedOfy().save().entity(lastSqlTxn.cloneWithNewTransactionId(nextTxnId));
               logger.atInfo().log(
                   "Finished applying single transaction Cloud SQL -> Cloud Datastore");
               return false;

@@ -16,7 +16,7 @@ package google.registry.tools.server;
 
 import static com.google.appengine.api.datastore.DatastoreServiceFactory.getDatastoreService;
 import static com.googlecode.objectify.Key.create;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.api.datastore.Entity;
@@ -95,7 +95,7 @@ public class DeleteEntityAction implements Runnable {
     getDatastoreService().delete(rawDeletions);
     // Delete ofy entities.
     final ImmutableList<Object> ofyDeletions = ofyDeletionsBuilder.build();
-    tm().transactNew(() -> ofy().delete().entities(ofyDeletions).now());
+    tm().transactNew(() -> auditedOfy().delete().entities(ofyDeletions).now());
     String message = String.format(
         "Deleted %d raw entities and %d registered entities",
         rawDeletions.size(),
@@ -106,8 +106,9 @@ public class DeleteEntityAction implements Runnable {
 
   private Optional<Object> loadOfyEntity(Key rawKey) {
     try {
-      EntityMetadata<Object> metadata = ofy().factory().getMetadata(rawKey.getKind());
-      return Optional.ofNullable(metadata == null ? null : ofy().load().key(create(rawKey)).now());
+      EntityMetadata<Object> metadata = auditedOfy().factory().getMetadata(rawKey.getKind());
+      return Optional.ofNullable(
+          metadata == null ? null : auditedOfy().load().key(create(rawKey)).now());
     } catch (Throwable e) {
       logger.atWarning().withCause(e).log(
           "Could not load entity with key %s using Objectify; falling back to raw Datastore.",

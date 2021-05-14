@@ -15,7 +15,7 @@
 package google.registry.model.ofy;
 
 import static google.registry.model.ofy.EntityWritePriorities.getEntityPriority;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.collect.ImmutableMap;
@@ -53,7 +53,7 @@ public class ReplayQueue {
           // not been applied.  Converting the object to an entity and then back again performs
           // those transformations so that we persist the same values to SQL that we have in
           // Datastore.
-          builder.put(entry.getKey(), ofy().toPojo(ofy().toEntity(entry.getValue())));
+          builder.put(entry.getKey(), auditedOfy().toPojo(auditedOfy().toEntity(entry.getValue())));
         }
       }
       queue.add(builder.build());

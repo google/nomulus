@@ -224,7 +224,7 @@ public class DomainBaseToXjcConverterTest {
             new DomainHistory.Builder()
                 .setModificationTime(clock.nowUtc())
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                .setDomainContent(domain)
+                .setDomain(domain)
                 .setClientId(domain.getCreationClientId())
                 .build());
     BillingEvent.OneTime billingEvent =

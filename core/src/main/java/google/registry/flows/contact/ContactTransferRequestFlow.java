@@ -153,7 +153,7 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
     tm().update(newContact);
     tm().insertAll(
             ImmutableSet.of(
-                historyBuilder.setContactBase(newContact).build(),
+                historyBuilder.setContact(newContact).build(),
                 requestPollMessage,
                 serverApproveGainingPollMessage,
                 serverApproveLosingPollMessage));

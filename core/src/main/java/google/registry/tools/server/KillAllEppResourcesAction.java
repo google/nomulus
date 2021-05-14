@@ -15,7 +15,7 @@
 package google.registry.tools.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.appengine.tools.mapreduce.Mapper;
@@ -90,10 +90,10 @@ public class KillAllEppResourcesAction implements Runnable {
       Key<EppResourceIndex> eriKey = Key.create(eri);
       emitAndIncrementCounter(eriKey, eriKey);
       Key<?> resourceKey = eri.getKey();
-      for (Key<Object> key : ofy().load().ancestor(resourceKey).keys()) {
+      for (Key<Object> key : auditedOfy().load().ancestor(resourceKey).keys()) {
         emitAndIncrementCounter(resourceKey, key);
       }
-      EppResource resource = ofy().load().key(eri.getKey()).now();
+      EppResource resource = auditedOfy().load().key(eri.getKey()).now();
       // TODO(b/28247733): What about FKI's for renamed hosts?
       Key<?> indexKey = ForeignKeyIndex.createKey(resource);
       emitAndIncrementCounter(indexKey, indexKey);

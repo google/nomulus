@@ -18,7 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
@@ -137,14 +137,14 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     }
     ImmutableList<EppResourceIndex> indices =
         Streams.stream(
-                ofy()
+                auditedOfy()
                     .load()
                     .type(EppResourceIndex.class)
                     .filter("kind", Key.getKind(resource.getClass())))
             .filter(
                 index ->
                     Key.create(resource).equals(index.getKey())
-                        && ofy().load().key(index.getKey()).now().equals(resource))
+                        && auditedOfy().load().key(index.getKey()).now().equals(resource))
             .collect(toImmutableList());
     assertThat(indices).hasSize(1);
     assertThat(indices.get(0).getBucket())
@@ -196,7 +196,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
         // Don't use direct equals comparison since one might be a subclass of the other
         assertAboutImmutableObjects()
             .that(contactHistory.getContactBase().get())
-            .isEqualExceptFields(resource);
+            .hasFieldsEqualTo(resource);
       } else if (resource instanceof DomainContent) {
         DomainHistory domainHistory = (DomainHistory) historyEntry;
         assertAboutImmutableObjects()
@@ -204,7 +204,10 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
             .isEqualExceptFields(resource, "gracePeriods", "dsData", "nsHosts");
       } else if (resource instanceof HostBase) {
         HostHistory hostHistory = (HostHistory) historyEntry;
-        assertThat(hostHistory.getHostBase().get()).isEqualTo(resource);
+        // Don't use direct equals comparison since one might be a subclass of the other
+        assertAboutImmutableObjects()
+            .that(hostHistory.getHostBase().get())
+            .hasFieldsEqualTo(resource);
       }
     }
   }

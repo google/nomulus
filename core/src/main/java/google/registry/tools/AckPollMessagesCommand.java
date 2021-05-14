@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.flows.poll.PollFlowUtils.SQL_POLL_MESSAGE_QUERY;
 import static google.registry.flows.poll.PollFlowUtils.datastorePollMessageQuery;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -107,7 +107,7 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
       tm().transact(
               () ->
                   // Load poll messages and filter to just those of interest.
-                  ofy().load().keys(keys).values().stream()
+                  auditedOfy().load().keys(keys).values().stream()
                       .filter(pm -> isNullOrEmpty(message) || pm.getMsg().contains(message))
                       .forEach(this::actOnPollMessage));
     }

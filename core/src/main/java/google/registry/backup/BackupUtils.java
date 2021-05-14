@@ -14,7 +14,7 @@
 
 package google.registry.backup;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.appengine.api.datastore.EntityTranslator;
 import com.google.common.collect.AbstractIterator;
@@ -45,7 +45,7 @@ public class BackupUtils {
    * {@link OutputStream} in delimited protocol buffer format.
    */
   static void serializeEntity(ImmutableObject entity, OutputStream stream) throws IOException {
-    EntityTranslator.convertToPb(ofy().save().toEntity(entity)).writeDelimitedTo(stream);
+    EntityTranslator.convertToPb(auditedOfy().save().toEntity(entity)).writeDelimitedTo(stream);
   }
 
   /**
@@ -61,11 +61,12 @@ public class BackupUtils {
       @Override
       protected ImmutableObject computeNext() {
         EntityProto proto = new EntityProto();
-        if (proto.parseDelimitedFrom(input)) {  // False means end of stream; other errors throw.
-          return ofy().load().fromEntity(EntityTranslator.createFromPb(proto));
+        if (proto.parseDelimitedFrom(input)) { // False means end of stream; other errors throw.
+          return auditedOfy().load().fromEntity(EntityTranslator.createFromPb(proto));
         }
         return endOfData();
-      }};
+      }
+    };
   }
 
   public static ImmutableList<ImmutableObject> deserializeEntities(byte[] bytes) {

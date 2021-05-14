@@ -15,7 +15,7 @@
 package google.registry.model.common;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import google.registry.testing.AppEngineExtension;
@@ -32,7 +32,7 @@ public class GaeUserIdConverterTest {
 
   @AfterEach
   void verifyNoLingeringEntities() {
-    assertThat(ofy().load().type(GaeUserIdConverter.class).count()).isEqualTo(0);
+    assertThat(ofyTm().loadAllOf(GaeUserIdConverter.class)).hasSize(0);
   }
 
   @Test
@@ -43,8 +43,7 @@ public class GaeUserIdConverterTest {
 
   @Test
   void testSuccess_inTransaction() {
-    tm()
-        .transactNew(
+    tm().transactNew(
             () ->
                 assertThat(GaeUserIdConverter.convertEmailAddressToGaeUserId("example@example.com"))
                     .matches("[0-9]+"));

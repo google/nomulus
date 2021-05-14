@@ -34,7 +34,7 @@ import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
 import static google.registry.model.ResourceTransferUtils.handlePendingTransferOnDelete;
 import static google.registry.model.ResourceTransferUtils.updateForeignKeyIndexDeletionTime;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_DELETE;
 import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_DELETE_FAILURE;
 import static google.registry.model.reporting.HistoryEntry.Type.HOST_DELETE;
@@ -336,7 +336,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
         DeletionRequest deletionRequest, boolean hasNoActiveReferences) {
       DateTime now = tm().getTransactionTime();
       EppResource resource =
-          ofy().load().key(deletionRequest.key()).now().cloneProjectedAtTime(now);
+          auditedOfy().load().key(deletionRequest.key()).now().cloneProjectedAtTime(now);
       // Double-check transactionally that the resource is still active and in PENDING_DELETE.
       if (!doesResourceStateAllowDeletion(resource, now)) {
         return DeletionResult.create(Type.ERRORED, "");
@@ -409,7 +409,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
       } else {
         resourceToSave = resource.asBuilder().removeStatusValue(PENDING_DELETE).build();
       }
-      ofy().save().<ImmutableObject>entities(resourceToSave, historyEntry, pollMessage);
+      auditedOfy().save().<ImmutableObject>entities(resourceToSave, historyEntry, pollMessage);
       return DeletionResult.create(
           deleteAllowed ? Type.DELETED : Type.NOT_DELETED, pollMessageText);
     }
@@ -526,7 +526,8 @@ public class DeleteContactsAndHostsAction implements Runnable {
           Key.create(
               checkNotNull(params.get(PARAM_RESOURCE_KEY), "Resource to delete not specified"));
       EppResource resource =
-          checkNotNull(ofy().load().key(resourceKey).now(), "Resource to delete doesn't exist");
+          checkNotNull(
+              auditedOfy().load().key(resourceKey).now(), "Resource to delete doesn't exist");
       checkState(
           resource instanceof ContactResource || resource instanceof HostResource,
           "Cannot delete a %s via this action",

@@ -18,7 +18,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.rde.RdeFixtures.makeContactResource;
 import static google.registry.rde.RdeFixtures.makeDomainBase;
@@ -421,13 +421,18 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     action.run();
     executeTasksUntilEmpty("mapreduce", clock);
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Cursor.createKey(RDE_STAGING, Registry.get("lol")))
                 .now()
                 .getCursorTime())
         .isEqualTo(DateTime.parse("2000-01-02TZ"));
-    assertThat(ofy().load().key(Cursor.createKey(BRDA, Registry.get("lol"))).now().getCursorTime())
+    assertThat(
+            auditedOfy()
+                .load()
+                .key(Cursor.createKey(BRDA, Registry.get("lol")))
+                .now()
+                .getCursorTime())
         .isEqualTo(DateTime.parse("2000-01-04TZ"));
   }
 
@@ -442,13 +447,18 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     action.run();
     executeTasksUntilEmpty("mapreduce", clock);
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Cursor.createKey(RDE_STAGING, Registry.get("lol")))
                 .now()
                 .getCursorTime())
         .isEqualTo(DateTime.parse("2000-01-05TZ"));
-    assertThat(ofy().load().key(Cursor.createKey(BRDA, Registry.get("lol"))).now().getCursorTime())
+    assertThat(
+            auditedOfy()
+                .load()
+                .key(Cursor.createKey(BRDA, Registry.get("lol")))
+                .now()
+                .getCursorTime())
         .isEqualTo(DateTime.parse("2000-01-11TZ"));
   }
 
@@ -500,11 +510,19 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     }
 
     assertThat(
-            ofy().load().key(Cursor.createKey(RDE_STAGING, Registry.get("fop"))).now()
+            auditedOfy()
+                .load()
+                .key(Cursor.createKey(RDE_STAGING, Registry.get("fop")))
+                .now()
                 .getCursorTime())
         .isEqualTo(DateTime.parse("1971-01-02TZ"));
 
-    assertThat(ofy().load().key(Cursor.createKey(BRDA, Registry.get("fop"))).now().getCursorTime())
+    assertThat(
+            auditedOfy()
+                .load()
+                .key(Cursor.createKey(BRDA, Registry.get("fop")))
+                .now()
+                .getCursorTime())
         .isEqualTo(DateTime.parse("1971-01-12TZ"));
   }
 
@@ -702,7 +720,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     String firstDeposit = readXml("lol_1984-12-18_full_S1_R0.xml.ghostryde");
     assertThat(firstDeposit).doesNotContain("ns1.justine.lol");
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Cursor.createKey(RDE_STAGING, Registry.get("lol")))
                 .now()
@@ -719,7 +737,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     assertThat(secondDeposit).doesNotContain("dead:beef::cafe");
 
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Cursor.createKey(RDE_STAGING, Registry.get("lol")))
                 .now()
@@ -735,7 +753,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     assertThat(thirdDeposit).doesNotContain("feed::a:bee");
     assertThat(thirdDeposit).contains("dead:beef::cafe");
     assertThat(
-            ofy()
+            auditedOfy()
                 .load()
                 .key(Cursor.createKey(RDE_STAGING, Registry.get("lol")))
                 .now()
@@ -782,13 +800,18 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
               "manual/test/" + tld + "_2000-01-02_thin_S1_R" + revision + ".xml.length");
 
       assertThat(
-              ofy()
+              auditedOfy()
                   .load()
                   .key(Cursor.createKey(RDE_STAGING, Registry.get(tld)))
                   .now()
                   .getCursorTime())
           .isEqualTo(DateTime.parse("1999-01-01TZ"));
-      assertThat(ofy().load().key(Cursor.createKey(BRDA, Registry.get(tld))).now().getCursorTime())
+      assertThat(
+              auditedOfy()
+                  .load()
+                  .key(Cursor.createKey(BRDA, Registry.get(tld)))
+                  .now()
+                  .getCursorTime())
           .isEqualTo(DateTime.parse("2001-01-01TZ"));
     }
   }

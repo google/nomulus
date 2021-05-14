@@ -16,7 +16,7 @@ package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,7 +54,7 @@ public class ClaimsListShardTest {
                               tm().getTransactionTime(), ImmutableMap.of("a", "b"));
                       claimsList.id = 1; // Without an id this won't save anyways.
                       claimsList.parent = ClaimsListRevision.createKey();
-                      ofy().saveWithoutBackup().entity(claimsList).now();
+                      auditedOfy().saveWithoutBackup().entity(claimsList).now();
                     }));
   }
 
@@ -76,7 +76,7 @@ public class ClaimsListShardTest {
     unsharded.saveToDatastore(shardSize);
     assertThat(ClaimsListShard.getFromDatastore().get().labelsToKeys)
         .isEqualTo(unsharded.labelsToKeys);
-    List<ClaimsListShard> shards1 = ofy().load().type(ClaimsListShard.class).list();
+    List<ClaimsListShard> shards1 = auditedOfy().load().type(ClaimsListShard.class).list();
     assertThat(shards1).hasSize(4);
     assertThat(ClaimsListShard.getFromDatastore().get().getClaimKey("1")).hasValue("1");
     assertThat(ClaimsListShard.getFromDatastore().get().getClaimKey("a")).isEmpty();
@@ -89,12 +89,12 @@ public class ClaimsListShardTest {
     }
     unsharded = ClaimsListShard.create(now.plusDays(1), ImmutableMap.copyOf(labelsToKeys));
     unsharded.saveToDatastore(shardSize);
-    ofy().clearSessionCache();
+    auditedOfy().clearSessionCache();
     assertThat(ClaimsListShard.getFromDatastore().get().labelsToKeys)
         .hasSize(unsharded.labelsToKeys.size());
     assertThat(ClaimsListShard.getFromDatastore().get().labelsToKeys)
         .isEqualTo(unsharded.labelsToKeys);
-    List<ClaimsListShard> shards2 = ofy().load().type(ClaimsListShard.class).list();
+    List<ClaimsListShard> shards2 = auditedOfy().load().type(ClaimsListShard.class).list();
     assertThat(shards2).hasSize(2);
 
     // Expect that the old revision is deleted.

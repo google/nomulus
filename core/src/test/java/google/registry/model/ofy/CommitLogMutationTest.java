@@ -15,7 +15,7 @@
 package google.registry.model.ofy;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 
@@ -86,6 +86,6 @@ public class CommitLogMutationTest {
   }
 
   private static Entity convertToEntityInTxn(final ImmutableObject object) {
-    return tm().transact(() -> ofy().save().toEntity(object));
+    return tm().transact(() -> auditedOfy().save().toEntity(object));
   }
 }

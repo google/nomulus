@@ -30,7 +30,7 @@ import static google.registry.model.EppResourceUtils.createRepoId;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.ResourceTransferUtils.createTransferResponse;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.label.PremiumListDatastoreDao.parentPremiumListEntriesOnRevision;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
@@ -637,7 +637,7 @@ public class DatabaseHelper {
             new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setModificationTime(now)
-                .setDomainContent(domain)
+                .setDomain(domain)
                 .setClientId(domain.getCreationClientId())
                 .build());
     BillingEvent.Recurring autorenewEvent =
@@ -679,7 +679,7 @@ public class DatabaseHelper {
             new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
                 .setModificationTime(tm().transact(() -> tm().getTransactionTime()))
-                .setDomainContent(domain)
+                .setDomain(domain)
                 .setClientId("TheRegistrar")
                 .build());
     BillingEvent.OneTime transferBillingEvent =
@@ -1229,7 +1229,9 @@ public class DatabaseHelper {
   public static <R> R cloneAndSetAutoTimestamps(final R resource) {
     R result;
     if (tm().isOfy()) {
-      result = tm().transact(() -> ofy().load().fromEntity(ofy().save().toEntity(resource)));
+      result =
+          tm().transact(
+                  () -> auditedOfy().load().fromEntity(auditedOfy().save().toEntity(resource)));
     } else {
       // We have to separate the read and write operation into different transactions
       // otherwise JPA would just return the input entity instead of actually creating a
@@ -1266,7 +1268,7 @@ public class DatabaseHelper {
    */
   public static List<Object> loadAllEntities() {
     if (tm().isOfy()) {
-      return ofy().load().list();
+      return auditedOfy().load().list();
     } else {
       return jpaTm()
           .transact(
