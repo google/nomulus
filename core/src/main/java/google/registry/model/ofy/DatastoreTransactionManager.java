@@ -449,8 +449,8 @@ public class DatastoreTransactionManager implements TransactionManager {
     }
 
     @Override
-    public List<T> list() {
-      return buildQuery().list();
+    public ImmutableList<T> list() {
+      return ImmutableList.copyOf(buildQuery().list());
     }
 
     private void checkOnlyOneInequalityField() {

@@ -39,7 +39,6 @@ import google.registry.tools.ConfirmingCommand;
 import google.registry.util.Clock;
 import java.io.IOException;
 import java.util.Comparator;
-import java.util.List;
 import java.util.function.Function;
 import javax.inject.Inject;
 import org.joda.time.LocalDate;
@@ -137,18 +136,18 @@ public class BackfillSpec11ThreatMatchesCommand extends ConfirmingCommand
             flatteningToImmutableListMultimap(
                 Function.identity(),
                 (domainName) -> {
-                  List<DomainBase> domains = loadDomainsForFqdn(domainName);
-                  domains.sort(Comparator.comparing(DomainBase::getCreationTime).reversed());
+                  ImmutableList<DomainBase> domains = loadDomainsForFqdn(domainName);
                   checkState(
                       !domains.isEmpty(),
                       "Domain name %s had no associated DomainBase objects.",
                       domainName);
-                  return domains.stream();
+                  return domains.stream()
+                      .sorted(Comparator.comparing(DomainBase::getCreationTime).reversed());
                 }));
   }
 
   /** Loads in all {@link DomainBase} objects for a given FQDN. */
-  private List<DomainBase> loadDomainsForFqdn(String fullyQualifiedDomainName) {
+  private ImmutableList<DomainBase> loadDomainsForFqdn(String fullyQualifiedDomainName) {
     return transactIfJpaTm(
         () ->
             tm().createQueryComposer(DomainBase.class)

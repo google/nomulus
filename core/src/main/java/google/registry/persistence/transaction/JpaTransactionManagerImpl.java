@@ -698,7 +698,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     private int fetchSize = DEFAULT_FETCH_SIZE;
 
-    private boolean autoDetachOnLoad;
+    private boolean autoDetachOnLoad = true;
 
     JpaQueryComposerImpl(Class<T> entityClass, EntityManager em) {
       super(entityClass);
@@ -737,11 +737,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     @Override
     public Optional<T> first() {
-      List<T> results =
-          buildQuery().setMaxResults(1).getResultList().stream()
-              .map(this::maybeDetachEntity)
-              .collect(ImmutableList.toImmutableList());
-      return results.size() > 0 ? Optional.of(results.get(0)) : Optional.empty();
+      List<T> results = buildQuery().setMaxResults(1).getResultList();
+      return results.size() > 0 ? Optional.of(maybeDetachEntity(results.get(0))) : Optional.empty();
     }
 
     @Override
@@ -763,13 +760,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return query.getResultStream().map(this::maybeDetachEntity);
     }
 
-    private T maybeDetachEntity(T entity) {
-      if (autoDetachOnLoad) {
-        em.detach(entity);
-      }
-      return entity;
-    }
-
     @Override
     public long count() {
       CriteriaQueryBuilder<Long> queryBuilder = CriteriaQueryBuilder.createCount(em, entityClass);
@@ -777,8 +767,17 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
 
     @Override
-    public List<T> list() {
-      return buildQuery().getResultList();
+    public ImmutableList<T> list() {
+      return buildQuery().getResultList().stream()
+          .map(this::maybeDetachEntity)
+          .collect(ImmutableList.toImmutableList());
+    }
+
+    private T maybeDetachEntity(T entity) {
+      if (autoDetachOnLoad) {
+        em.detach(entity);
+      }
+      return entity;
     }
   }
 }
