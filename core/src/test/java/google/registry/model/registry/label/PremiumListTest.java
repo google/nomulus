@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineExtension;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,7 +69,7 @@ public class PremiumListTest {
 
   @Test
   void testBloomFilter() {
-    PremiumList pl = PremiumListDualDao.getLatestRevision("tld").get();
+    PremiumList pl = PremiumListDao.getLatestRevision("tld").get();
     BloomFilter<String> bloomFilter = pl.getBloomFilter();
     assertThat(bloomFilter.mightContain("notpremium")).isFalse();
     for (String label : ImmutableList.of("rich", "lol", "johnny-be-goode", "icann")) {
@@ -84,7 +85,7 @@ public class PremiumListTest {
         assertThrows(
             IllegalStateException.class,
             () ->
-                PremiumListDualDao.getLatestRevision("tld")
+                PremiumListDao.getLatestRevision("tld")
                     .get()
                     .parse(
                         ImmutableList.of(

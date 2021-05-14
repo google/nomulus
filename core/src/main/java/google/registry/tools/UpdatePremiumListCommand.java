@@ -29,7 +29,7 @@ import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.persistence.VKey;
 import google.registry.schema.tld.PremiumEntry;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.schema.tld.PremiumListUtils;
 import java.nio.file.Files;
 import java.util.List;
@@ -79,12 +79,12 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
     assertThat(persistedList.size()).isEqualTo(1);
   */
   protected ImmutableSet<String> getExistingPremiumListEntry(String name) {
-    Optional<PremiumList> list = PremiumListSqlDao.getLatestRevision(name);
+    Optional<PremiumList> list = PremiumListDao.getLatestRevision(name);
     checkArgument(
         list.isPresent(),
         String.format("Could not update premium list %s because it doesn't exist.", name));
     Iterable<PremiumEntry> sqlListEntries =
-        jpaTm().transact(() -> PremiumListSqlDao.loadPremiumListEntriesUncached(list.get()));
+        jpaTm().transact(() -> PremiumListDao.loadPremiumListEntries(list.get()));
     return Streams.stream(sqlListEntries)
         .map(
             premiumEntry ->

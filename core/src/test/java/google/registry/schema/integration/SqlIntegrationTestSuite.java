@@ -42,7 +42,7 @@ import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest
 import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTest;
 import google.registry.schema.registrar.RegistrarDaoTest;
 import google.registry.schema.replay.SqlReplayCheckpointTest;
-import google.registry.schema.tld.PremiumListSqlDaoTest;
+import google.registry.schema.tld.PremiumListDaoTest;
 import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -92,7 +92,7 @@ import org.junit.runner.RunWith;
   KmsSecretRevisionSqlDaoTest.class,
   LockTest.class,
   PollMessageTest.class,
-  PremiumListSqlDaoTest.class,
+  PremiumListDaoTest.class,
   RdeRevisionTest.class,
   RegistrarDaoTest.class,
   RegistryTest.class,

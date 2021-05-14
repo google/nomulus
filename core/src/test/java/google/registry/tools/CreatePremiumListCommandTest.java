@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.io.Files;
 import google.registry.model.registry.Registry;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,14 +40,14 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   void verify_registryIsSetUpCorrectly() {
     // ensure that no premium list is created before running the command
     // this check also implicitly verifies the TLD is successfully created;
-    assertThat(PremiumListSqlDao.getLatestRevision(TLD_TEST).isPresent()).isFalse();
+    assertThat(PremiumListDao.getLatestRevision(TLD_TEST).isPresent()).isFalse();
   }
 
   @Test
   void commandRun_successCreateList() throws Exception {
     runCommandForced("--name=" + TLD_TEST, "--input=" + premiumTermsPath);
     assertThat(registry.getTld().toString()).isEqualTo(TLD_TEST);
-    assertThat(PremiumListSqlDao.getLatestRevision(TLD_TEST).isPresent()).isTrue();
+    assertThat(PremiumListDao.getLatestRevision(TLD_TEST).isPresent()).isTrue();
   }
 
   @Test

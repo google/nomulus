@@ -51,8 +51,8 @@ import javax.xml.bind.annotation.XmlValue;
 public class LaunchPhase extends ImmutableObject {
 
   /**
-   * The phase during which trademark holders can submit registrations or applications with
-   * trademark information that can be validated by the server.
+   * The phase during which trademark holders can submit domain registrations with trademark
+   * information that can be validated by the server.
    */
   public static final LaunchPhase SUNRISE = create("sunrise");
 

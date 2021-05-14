@@ -698,6 +698,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     private int fetchSize = DEFAULT_FETCH_SIZE;
 
+    private boolean autoDetachOnLoad = true;
+
     JpaQueryComposerImpl(Class<T> entityClass, EntityManager em) {
       super(entityClass);
       this.em = em;
@@ -721,6 +723,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
 
     @Override
+    public QueryComposer<T> withAutoDetachOnLoad(boolean autoDetachOnLoad) {
+      this.autoDetachOnLoad = autoDetachOnLoad;
+      return this;
+    }
+
+    @Override
     public QueryComposer<T> withFetchSize(int fetchSize) {
       checkArgument(fetchSize >= 0, "FetchSize must not be negative");
       this.fetchSize = fetchSize;
@@ -730,12 +738,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     @Override
     public Optional<T> first() {
       List<T> results = buildQuery().setMaxResults(1).getResultList();
-      return results.size() > 0 ? Optional.of(results.get(0)) : Optional.empty();
+      return results.size() > 0 ? Optional.of(maybeDetachEntity(results.get(0))) : Optional.empty();
     }
 
     @Override
     public T getSingleResult() {
-      return buildQuery().getSingleResult();
+      return maybeDetachEntity(buildQuery().getSingleResult());
     }
 
     @Override
@@ -749,7 +757,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       } else {
         logger.atWarning().log("Query implemention does not support result streaming.");
       }
-      return query.getResultStream();
+      return query.getResultStream().map(this::maybeDetachEntity);
     }
 
     @Override
@@ -759,8 +767,17 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
 
     @Override
-    public List<T> list() {
-      return buildQuery().getResultList();
+    public ImmutableList<T> list() {
+      return buildQuery().getResultList().stream()
+          .map(this::maybeDetachEntity)
+          .collect(ImmutableList.toImmutableList());
+    }
+
+    private T maybeDetachEntity(T entity) {
+      if (autoDetachOnLoad) {
+        em.detach(entity);
+      }
+      return entity;
     }
   }
 }

@@ -21,10 +21,10 @@ import static google.registry.request.Action.Method.POST;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
-import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
+import google.registry.schema.tld.PremiumListDao;
 import java.util.List;
 import javax.inject.Inject;
 
@@ -51,7 +51,9 @@ public class CreatePremiumListAction extends CreateOrUpdatePremiumListAction {
   @Override
   protected void save() {
     checkArgument(
-        !PremiumListDualDao.exists(name), "A premium list of this name already exists: %s", name);
+        !PremiumListDao.getLatestRevision(name).isPresent(),
+        "A premium list of this name already exists: %s",
+        name);
     if (!override) {
       assertTldExists(
           name,
@@ -62,7 +64,7 @@ public class CreatePremiumListAction extends CreateOrUpdatePremiumListAction {
     logInputData();
     List<String> inputDataPreProcessed =
         Splitter.on('\n').omitEmptyStrings().splitToList(inputData);
-    PremiumListDualDao.save(name, inputDataPreProcessed);
+    PremiumListDao.save(name, inputDataPreProcessed);
     String message =
         String.format("Saved premium list %s with %d entries", name, inputDataPreProcessed.size());
     logger.atInfo().log(message);

@@ -83,7 +83,7 @@ public class RegistryJpaReadTest {
   }
 
   @Test
-  void nonTransactionalQuery() {
+  void jpaRead() {
     Read<ContactResource, String> read =
         RegistryJpaIO.read(
             (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),

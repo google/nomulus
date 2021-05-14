@@ -18,7 +18,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.Streams;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
-import google.registry.model.registry.label.PremiumListDualDao;
+import google.registry.schema.tld.PremiumListDao;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,11 +33,11 @@ public class GetPremiumListCommand implements CommandWithRemoteApi {
   @Override
   public void run() {
     for (String premiumListName : mainParameters) {
-      if (PremiumListDualDao.exists(premiumListName)) {
+      if (PremiumListDao.getLatestRevision(premiumListName).isPresent()) {
         System.out.printf(
             "%s:\n%s\n",
             premiumListName,
-            Streams.stream(PremiumListDualDao.loadAllPremiumListEntries(premiumListName))
+            Streams.stream(PremiumListDao.loadAllPremiumListEntries(premiumListName))
                 .sorted(Comparator.comparing(PremiumListEntry::getLabel))
                 .map(PremiumListEntry::toString)
                 .collect(Collectors.joining("\n")));

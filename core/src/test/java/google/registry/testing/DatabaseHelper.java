@@ -30,11 +30,10 @@ import static google.registry.model.EppResourceUtils.createRepoId;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.ResourceTransferUtils.createTransferResponse;
+import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
-import static google.registry.model.registry.label.PremiumListDatastoreDao.parentPremiumListEntriesOnRevision;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.ofyTmOrDoNothing;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
@@ -99,8 +98,6 @@ import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
-import google.registry.model.registry.label.PremiumList.PremiumListRevision;
-import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedListDualDatabaseDao;
 import google.registry.model.reporting.HistoryEntry;
@@ -110,6 +107,7 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.tmch.LordnTaskUtils;
 import java.lang.reflect.Field;
 import java.util.List;
@@ -391,33 +389,14 @@ public class DatabaseHelper {
                         toImmutableMap(
                             Map.Entry::getKey, entry -> entry.getValue().getValue().getAmount())))
             .build();
-    PremiumListRevision revision = PremiumListRevision.create(premiumList, entries.keySet());
-
-    ImmutableList<Object> premiumListOfyObjects =
-        ImmutableList.of(
-            premiumList.asBuilder().setRevision(Key.create(revision)).build(), revision);
-    ImmutableSet<PremiumListEntry> entriesOnRevision =
-        parentPremiumListEntriesOnRevision(entries.values(), Key.create(revision));
-    if (alwaysSaveWithBackup) {
-      ofyTm()
-          .transact(
-              () -> {
-                ofyTm().putAll(premiumListOfyObjects);
-                ofyTm().putAll(entriesOnRevision);
-              });
-    } else {
-      ofyTm().putAllWithoutBackup(premiumListOfyObjects);
-      ofyTm().putAllWithoutBackup(entriesOnRevision);
-    }
+    // Since we used to persist a PremiumList to Datastore here, it is necessary to allocate an ID
+    // here to prevent breaking some of the hard-coded flow tests. IDs in tests are allocated in a
+    // strictly increasing sequence, if we don't pad out the ID here, we would have to renumber
+    // hundreds of unit tests.
+    allocateId();
     jpaTm().transact(() -> jpaTm().insert(premiumList));
     maybeAdvanceClock();
-    // The above premiumList is in the session cache and it is different from the corresponding
-    // entity stored in Datastore because it has some @Ignore fields set dedicated for SQL. This
-    // breaks the assumption we have in our application code, see
-    // PremiumListUtils.savePremiumListAndEntries(). Clearing the session cache can help make sure
-    // we always get the same list.
-    tm().clearSessionCache();
-    return transactIfJpaTm(() -> tm().loadByEntity(premiumList));
+    return premiumList;
   }
 
   /** Creates and persists a tld. */
@@ -1246,7 +1225,7 @@ public class DatabaseHelper {
   /** Returns the entire map of {@link PremiumListEntry}s for the given {@link PremiumList}. */
   public static ImmutableMap<String, PremiumListEntry> loadPremiumListEntries(
       PremiumList premiumList) {
-    return Streams.stream(PremiumListDualDao.loadAllPremiumListEntries(premiumList.getName()))
+    return Streams.stream(PremiumListDao.loadAllPremiumListEntries(premiumList.getName()))
         .collect(toImmutableMap(PremiumListEntry::getLabel, Function.identity()));
   }
 

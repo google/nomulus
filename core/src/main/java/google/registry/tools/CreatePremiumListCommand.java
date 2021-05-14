@@ -25,7 +25,7 @@ import com.google.common.base.Strings;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.persistence.VKey;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.schema.tld.PremiumListUtils;
 import java.nio.file.Files;
 
@@ -43,7 +43,7 @@ public class CreatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
   protected void init() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
     checkArgument(
-        !PremiumListSqlDao.getLatestRevision(name).isPresent(),
+        !PremiumListDao.getLatestRevision(name).isPresent(),
         "A premium list already exists by this name");
     if (!override) {
       // refer to CreatePremiumListAction.java

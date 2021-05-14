@@ -20,9 +20,8 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadPremiumListEntries;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumListDualDao;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeJsonResponse;
 import org.joda.money.Money;
@@ -45,7 +44,7 @@ public class CreatePremiumListActionTest {
   @BeforeEach
   void beforeEach() {
     createTlds("foo", "xn--q9jyb4c", "how");
-    PremiumListDualDao.delete(PremiumListDualDao.getLatestRevision("foo").get());
+    PremiumListDao.delete(PremiumListDao.getLatestRevision("foo").get());
     action = new CreatePremiumListAction();
     response = new FakeJsonResponse();
     action.response = response;
@@ -89,7 +88,7 @@ public class CreatePremiumListActionTest {
     action.override = true;
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    assertThat(loadPremiumListEntries(PremiumListDualDao.getLatestRevision("zanzibar").get()))
+    assertThat(loadPremiumListEntries(PremiumListDao.getLatestRevision("zanzibar").get()))
         .hasSize(1);
   }
 
@@ -99,10 +98,10 @@ public class CreatePremiumListActionTest {
     action.inputData = "rich,USD 25\nricher,USD 1000\n";
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    PremiumList premiumList = PremiumListDualDao.getLatestRevision("foo").get();
+    PremiumList premiumList = PremiumListDao.getLatestRevision("foo").get();
     assertThat(loadPremiumListEntries(premiumList)).hasSize(2);
-    assertThat(PremiumListDualDao.getPremiumPrice("rich", Registry.get("foo")))
+    assertThat(PremiumListDao.getPremiumPrice(premiumList.getName(), "rich"))
         .hasValue(Money.parse("USD 25"));
-    assertThat(PremiumListDualDao.getPremiumPrice("diamond", Registry.get("foo"))).isEmpty();
+    assertThat(PremiumListDao.getPremiumPrice(premiumList.getName(), "diamond")).isEmpty();
   }
 }

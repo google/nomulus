@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.flogger.FluentLogger;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.tools.params.PathParameter;
 import java.nio.file.Path;
 import java.util.List;
@@ -51,7 +51,7 @@ abstract class CreateOrUpdatePremiumListCommand extends MutatingCommand {
     String message = String.format("Saved premium list %s with %d entries", name, inputData.size());
     try {
       logger.atInfo().log("Saving premium list for TLD %s", name);
-      PremiumListSqlDao.save(name, inputData);
+      PremiumListDao.save(name, inputData);
       logger.atInfo().log(message);
     } catch (Throwable e) {
       message = "Unexpected error saving premium list from nomulus tool command";
