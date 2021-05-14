@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 import google.registry.model.registry.Registry;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,7 +41,7 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   @Test
   void verify_registryIsSetUpCorrectly() {
     // ensure that no premium list is created before running the command
-    assertThat(PremiumListSqlDao.getLatestRevision(TLD_TEST).isPresent()).isTrue();
+    assertThat(PremiumListDao.getLatestRevision(TLD_TEST).isPresent()).isTrue();
     // ensure that there's value in existing premium list;
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     ImmutableSet<String> entries = command.getExistingPremiumListEntry(TLD_TEST);

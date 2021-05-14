@@ -21,7 +21,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumListDualDao;
+import google.registry.schema.tld.PremiumListDao;
 import javax.annotation.Nullable;
 
 /**
@@ -42,10 +42,10 @@ final class DeletePremiumListCommand extends ConfirmingCommand implements Comman
   @Override
   protected void init() {
     checkArgument(
-        PremiumListDualDao.exists(name),
+        PremiumListDao.getLatestRevision(name).isPresent(),
         "Cannot delete the premium list %s because it doesn't exist.",
         name);
-    premiumList = PremiumListDualDao.getLatestRevision(name).get();
+    premiumList = PremiumListDao.getLatestRevision(name).get();
     ImmutableSet<String> tldsUsedOn = premiumList.getReferencingTlds();
     checkArgument(
         tldsUsedOn.isEmpty(),
@@ -60,7 +60,7 @@ final class DeletePremiumListCommand extends ConfirmingCommand implements Comman
 
   @Override
   protected String execute() {
-    PremiumListDualDao.delete(premiumList);
+    PremiumListDao.delete(premiumList);
     return String.format("Deleted premium list '%s'.\n", premiumList.getName());
   }
 }

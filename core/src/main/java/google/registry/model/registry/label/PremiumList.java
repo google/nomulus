@@ -36,7 +36,7 @@ import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registry.Registry;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.schema.replay.NonReplicatedEntity;
-import google.registry.schema.tld.PremiumListSqlDao;
+import google.registry.schema.tld.PremiumListDao;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -173,7 +173,7 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
    * <p>Note that this is lazily loaded and thus will throw a {@link LazyInitializationException} if
    * used outside the transaction in which the given entity was loaded. You generally should not be
    * using this anyway as it's inefficient to load all of the PremiumEntry rows if you don't need
-   * them. To check prices, use {@link PremiumListSqlDao#getPremiumPrice} instead.
+   * them. To check prices, use {@link PremiumListDao#getPremiumPrice} instead.
    */
   @Nullable
   public ImmutableMap<String, BigDecimal> getLabelsToPrices() {

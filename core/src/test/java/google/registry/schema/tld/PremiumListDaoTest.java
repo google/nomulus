@@ -40,8 +40,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link PremiumListSqlDao}. */
-public class PremiumListSqlDaoTest {
+/** Unit tests for {@link PremiumListDao}. */
+public class PremiumListDaoTest {
 
   private final FakeClock fakeClock = new FakeClock();
 
@@ -58,7 +58,6 @@ public class PremiumListSqlDaoTest {
   public final TestCacheExtension testCacheExtension =
       new TestCacheExtension.Builder()
           .withPremiumListsCache(standardDays(1))
-          .withPremiumListEntriesCache(standardDays(1))
           .build();
 
   private ImmutableMap<String, BigDecimal> testPrices;
@@ -86,12 +85,11 @@ public class PremiumListSqlDaoTest {
 
   @Test
   void saveNew_worksSuccessfully() {
-    PremiumListSqlDao.save(testList);
+    PremiumListDao.save(testList);
     jpaTm()
         .transact(
             () -> {
-              Optional<PremiumList> persistedListOpt =
-                  PremiumListSqlDao.getLatestRevision("testname");
+              Optional<PremiumList> persistedListOpt = PremiumListDao.getLatestRevision("testname");
               assertThat(persistedListOpt).isPresent();
               PremiumList persistedList = persistedListOpt.get();
               assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(testPrices);
@@ -101,11 +99,11 @@ public class PremiumListSqlDaoTest {
 
   @Test
   void update_worksSuccessfully() {
-    PremiumListSqlDao.save(testList);
-    Optional<PremiumList> persistedList = PremiumListSqlDao.getLatestRevision("testname");
+    PremiumListDao.save(testList);
+    Optional<PremiumList> persistedList = PremiumListDao.getLatestRevision("testname");
     assertThat(persistedList).isPresent();
     long firstRevisionId = persistedList.get().getRevisionId();
-    PremiumListSqlDao.save(
+    PremiumListDao.save(
         new PremiumList.Builder()
             .setName("testname")
             .setCurrency(USD)
@@ -122,7 +120,7 @@ public class PremiumListSqlDaoTest {
     jpaTm()
         .transact(
             () -> {
-              Optional<PremiumList> savedListOpt = PremiumListSqlDao.getLatestRevision("testname");
+              Optional<PremiumList> savedListOpt = PremiumListDao.getLatestRevision("testname");
               assertThat(savedListOpt).isPresent();
               PremiumList savedList = savedListOpt.get();
               assertThat(savedList.getLabelsToPrices())
@@ -142,26 +140,26 @@ public class PremiumListSqlDaoTest {
 
   @Test
   void checkExists_worksSuccessfully() {
-    assertThat(PremiumListSqlDao.getLatestRevision("testname")).isEmpty();
-    PremiumListSqlDao.save(testList);
-    assertThat(PremiumListSqlDao.getLatestRevision("testname")).isPresent();
+    assertThat(PremiumListDao.getLatestRevision("testname")).isEmpty();
+    PremiumListDao.save(testList);
+    assertThat(PremiumListDao.getLatestRevision("testname")).isPresent();
   }
 
   @Test
   void getLatestRevision_returnsEmptyForNonexistentList() {
-    assertThat(PremiumListSqlDao.getLatestRevision("nonexistentlist")).isEmpty();
+    assertThat(PremiumListDao.getLatestRevision("nonexistentlist")).isEmpty();
   }
 
   @Test
   void getLatestRevision_worksSuccessfully() {
-    PremiumListSqlDao.save(
+    PremiumListDao.save(
         new PremiumList.Builder()
             .setName("list1")
             .setCurrency(JPY)
             .setLabelsToPrices(ImmutableMap.of("wrong", BigDecimal.valueOf(1000.50)))
             .setCreationTime(fakeClock.nowUtc())
             .build());
-    PremiumListSqlDao.save(
+    PremiumListDao.save(
         new PremiumList.Builder()
             .setName("list1")
             .setCurrency(JPY)
@@ -171,7 +169,7 @@ public class PremiumListSqlDaoTest {
     jpaTm()
         .transact(
             () -> {
-              Optional<PremiumList> persistedList = PremiumListSqlDao.getLatestRevision("list1");
+              Optional<PremiumList> persistedList = PremiumListDao.getLatestRevision("list1");
               assertThat(persistedList).isPresent();
               assertThat(persistedList.get().getName()).isEqualTo("list1");
               assertThat(persistedList.get().getCurrency()).isEqualTo(JPY);
@@ -191,18 +189,16 @@ public class PremiumListSqlDaoTest {
                     google.registry.model.registry.label.PremiumList.class,
                     "premlist"))
             .build());
-    PremiumListSqlDao.save(
+    PremiumListDao.save(
         new PremiumList.Builder()
             .setName("premlist")
             .setCurrency(USD)
             .setLabelsToPrices(testPrices)
             .setCreationTime(fakeClock.nowUtc())
             .build());
-    assertThat(PremiumListSqlDao.getPremiumPrice("premlist", "silver"))
-        .hasValue(Money.of(USD, 10.23));
-    assertThat(PremiumListSqlDao.getPremiumPrice("premlist", "gold"))
-        .hasValue(Money.of(USD, 1305.47));
-    assertThat(PremiumListSqlDao.getPremiumPrice("premlist", "zirconium")).isEmpty();
+    assertThat(PremiumListDao.getPremiumPrice("premlist", "silver")).hasValue(Money.of(USD, 10.23));
+    assertThat(PremiumListDao.getPremiumPrice("premlist", "gold")).hasValue(Money.of(USD, 1305.47));
+    assertThat(PremiumListDao.getPremiumPrice("premlist", "zirconium")).isEmpty();
   }
 
   @Test
@@ -216,7 +212,7 @@ public class PremiumListSqlDaoTest {
                     google.registry.model.registry.label.PremiumList.class,
                     "premlist"))
             .build());
-    PremiumListSqlDao.save(
+    PremiumListDao.save(
         new PremiumList.Builder()
             .setName("premlist")
             .setCurrency(JPY)
@@ -230,20 +226,20 @@ public class PremiumListSqlDaoTest {
                     BigDecimal.valueOf(15000)))
             .setCreationTime(fakeClock.nowUtc())
             .build());
-    assertThat(PremiumListSqlDao.getPremiumPrice("premlist", "silver")).hasValue(moneyOf(JPY, 10));
-    assertThat(PremiumListSqlDao.getPremiumPrice("premlist", "gold")).hasValue(moneyOf(JPY, 1000));
-    assertThat(PremiumListSqlDao.getPremiumPrice("premlist", "palladium"))
+    assertThat(PremiumListDao.getPremiumPrice("premlist", "silver")).hasValue(moneyOf(JPY, 10));
+    assertThat(PremiumListDao.getPremiumPrice("premlist", "gold")).hasValue(moneyOf(JPY, 1000));
+    assertThat(PremiumListDao.getPremiumPrice("premlist", "palladium"))
         .hasValue(moneyOf(JPY, 15000));
   }
 
   @Test
   void test_savePremiumList_clearsCache() {
-    assertThat(PremiumListSqlDao.premiumListCache.getIfPresent("testname")).isNull();
-    PremiumListSqlDao.save(testList);
-    PremiumList pl = PremiumListSqlDao.getLatestRevision("testname").get();
-    assertThat(PremiumListSqlDao.premiumListCache.getIfPresent("testname").get()).isEqualTo(pl);
-    transactIfJpaTm(() -> PremiumListSqlDao.save("testname", ImmutableList.of("test,USD 1")));
-    assertThat(PremiumListSqlDao.premiumListCache.getIfPresent("testname")).isNull();
+    assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).isNull();
+    PremiumListDao.save(testList);
+    PremiumList pl = PremiumListDao.getLatestRevision("testname").get();
+    assertThat(PremiumListDao.premiumListCache.getIfPresent("testname").get()).isEqualTo(pl);
+    transactIfJpaTm(() -> PremiumListDao.save("testname", ImmutableList.of("test,USD 1")));
+    assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).isNull();
   }
 
   private static Money moneyOf(CurrencyUnit unit, double amount) {

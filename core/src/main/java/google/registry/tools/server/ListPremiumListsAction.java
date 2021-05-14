@@ -21,9 +21,9 @@ import static google.registry.request.Action.Method.POST;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
+import google.registry.schema.tld.PremiumListDao;
 import java.util.Comparator;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -55,7 +55,7 @@ public final class ListPremiumListsAction extends ListObjectsAction<PremiumList>
             () ->
                 jpaTm().loadAllOf(PremiumList.class).stream()
                     .map(PremiumList::getName)
-                    .map(PremiumListDualDao::getLatestRevision)
+                    .map(PremiumListDao::getLatestRevision)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .peek(list -> Hibernate.initialize(list.getLabelsToPrices()))

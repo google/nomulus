@@ -19,7 +19,7 @@ import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 
 import com.google.common.net.InternetDomainName;
 import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumListDualDao;
+import google.registry.schema.tld.PremiumListDao;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.money.Money;
@@ -38,7 +38,8 @@ public final class StaticPremiumListPricingEngine implements PremiumPricingEngin
     String tld = getTldFromDomainName(fullyQualifiedDomainName);
     String label = InternetDomainName.from(fullyQualifiedDomainName).parts().get(0);
     Registry registry = Registry.get(checkNotNull(tld, "tld"));
-    Optional<Money> premiumPrice = PremiumListDualDao.getPremiumPrice(label, registry);
+    Optional<Money> premiumPrice =
+        PremiumListDao.getPremiumPrice(registry.getPremiumList().getName(), label);
     return DomainPrices.create(
         premiumPrice.isPresent(),
         premiumPrice.orElse(registry.getStandardCreateCost()),

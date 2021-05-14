@@ -37,8 +37,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.request.Response;
+import google.registry.schema.tld.PremiumListDao;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
@@ -75,7 +75,7 @@ public class ExportPremiumTermsActionTest {
   @BeforeEach
   void beforeEach() throws Exception {
     createTld("tld");
-    PremiumList pl = PremiumListDualDao.save("pl-name", PREMIUM_NAMES);
+    PremiumList pl = PremiumListDao.save("pl-name", PREMIUM_NAMES);
     persistResource(
         Registry.get("tld").asBuilder().setPremiumList(pl).setDriveFolderId("folder_id").build());
     when(driveConnection.createOrUpdateFile(
@@ -143,7 +143,7 @@ public class ExportPremiumTermsActionTest {
 
   @Test
   void test_exportPremiumTerms_failure_noPremiumList() {
-    PremiumListDualDao.delete(new PremiumList.Builder().setName("pl-name").build());
+    PremiumListDao.delete(new PremiumList.Builder().setName("pl-name").build());
     assertThrows(RuntimeException.class, () -> runAction("tld"));
 
     verifyNoInteractions(driveConnection);

@@ -21,9 +21,9 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumListDualDao;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
+import google.registry.schema.tld.PremiumListDao;
 import java.util.List;
 import javax.inject.Inject;
 
@@ -47,7 +47,7 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
   @Override
   protected void save() {
     checkArgument(
-        PremiumListDualDao.exists(name),
+        PremiumListDao.getLatestRevision(name).isPresent(),
         "Could not update premium list %s because it doesn't exist.",
         name);
 
@@ -55,7 +55,7 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
     logInputData();
     List<String> inputDataPreProcessed =
         Splitter.on('\n').omitEmptyStrings().splitToList(inputData);
-    PremiumList newPremiumList = PremiumListDualDao.save(name, inputDataPreProcessed);
+    PremiumList newPremiumList = PremiumListDao.save(name, inputDataPreProcessed);
 
     String message =
         String.format(
