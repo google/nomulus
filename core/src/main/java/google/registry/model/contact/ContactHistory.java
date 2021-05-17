@@ -18,7 +18,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
-import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.reporting.HistoryEntry;
@@ -63,7 +62,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
 
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects
-  @Nullable @Ignore ContactBase contactBase;
+  @Nullable ContactBase contactBase;
 
   @Id
   @Access(AccessType.PROPERTY)
