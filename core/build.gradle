@@ -330,7 +330,6 @@ dependencies {
   testCompile deps['org.junit.platform:junit-platform-suite-api']
   testCompile deps['org.mockito:mockito-core']
   testCompile deps['org.mockito:mockito-junit-jupiter']
-  testCompile 'org.checkerframework:checker-qual:3.9.1'
   runtime deps['org.postgresql:postgresql']
 
   // Indirect dependency found by undeclared-dependency check. Such
