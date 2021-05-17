@@ -194,8 +194,8 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                                 .setBySuperuser(false)
                                 .setClientId(recurring.getClientId())
                                 .setModificationTime(tm().getTransactionTime())
-                                // TODO: modify this to use setDomain instead when converting
-                                // this action to be SQL-aware.
+                                // TODO (jianglai): modify this to use setDomain instead when
+                                //  converting this action to be SQL-aware.
                                 .setDomainRepoId(domainKey.getName())
                                 .setPeriod(Period.create(1, YEARS))
                                 .setReason(

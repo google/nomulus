@@ -174,6 +174,11 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
+  public void updateAll(Object... entities) {
+    updateAll(ImmutableList.of(entities));
+  }
+
+  @Override
   public void updateWithoutBackup(Object entity) {
     putWithoutBackup(entity);
   }

@@ -263,11 +263,9 @@ public class DeleteProberDataAction implements Runnable {
                         .setClientId(registryAdminClientId)
                         .build();
                 // Note that we don't bother handling grace periods, billing events, pending
-                // transfers,
-                // poll messages, or auto-renews because these will all be hard-deleted the next
-                // time the
-                // mapreduce runs anyway.
-                tm().updateAll(ImmutableList.of(deletedDomain, historyEntry));
+                // transfers, poll messages, or auto-renews because these will all be hard-deleted
+                // the next time the mapreduce runs anyway.
+                tm().putAll(deletedDomain, historyEntry);
                 updateForeignKeyIndexDeletionTime(deletedDomain);
                 dnsQueue.addDomainRefreshTask(deletedDomain.getDomainName());
               });

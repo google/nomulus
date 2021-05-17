@@ -61,6 +61,11 @@ import javax.persistence.Table;
  * <p>In addition to the general history fields (e.g. action time, registrar ID) we also persist a
  * copy of the domain entity at this point in time. We persist a raw {@link DomainContent} so that
  * the foreign-keyed fields in that class can refer to this object.
+ *
+ * <p>This class is only marked as a Datastore entity subclass and registered with Objectify so that
+ * when building it its ID can be auto-populated by Objectify. It is converted to its superclass
+ * {@link HistoryEntry} when persisted to Datastore using {@link
+ * google.registry.persistence.transaction.TransactionManager}.
  */
 @Entity
 @Table(
@@ -70,9 +75,6 @@ import javax.persistence.Table;
       @Index(columnList = "historyType"),
       @Index(columnList = "historyModificationTime")
     })
-// This class is only marked as an entity subclass and registered with Objectify so that when
-// building it its ID can be auto-populated by Objectify. It is converted to its superclass
-// HistoryEntry when persisted to Datastore.
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(DomainHistoryId.class)

@@ -310,7 +310,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   // should never be called directly and all three of the subclass of HistoryEntry implements it.
   @Override
   public Builder<? extends HistoryEntry, ?> asBuilder() {
-    throw new IllegalStateException(
+    throw new UnsupportedOperationException(
         "You should never attempt to build a HistoryEntry from a raw HistoryEntry. A raw "
             + "HistoryEntry should only exist internally when persisting to datastore. If you need "
             + "to build from a raw HistoryEntry, use "

@@ -42,6 +42,11 @@ import javax.persistence.PostLoad;
  * <p>In addition to the general history fields (e.g. action time, registrar ID) we also persist a
  * copy of the host entity at this point in time. We persist a raw {@link HostBase} so that the
  * foreign-keyed fields in that class can refer to this object.
+ *
+ * <p>This class is only marked as a Datastore entity subclass and registered with Objectify so that
+ * when building it its ID can be auto-populated by Objectify. It is converted to its superclass
+ * {@link HistoryEntry} when persisted to Datastore using {@link
+ * google.registry.persistence.transaction.TransactionManager}.
  */
 @Entity
 @javax.persistence.Table(
@@ -52,9 +57,6 @@ import javax.persistence.PostLoad;
       @javax.persistence.Index(columnList = "historyType"),
       @javax.persistence.Index(columnList = "historyModificationTime")
     })
-// This class is only marked as an entity subclass and registered with Objectify so that when
-// building it its ID can be auto-populated by Objectify. It is converted to its superclass
-// HistoryEntry when persisted to Datastore.
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(HostHistoryId.class)
