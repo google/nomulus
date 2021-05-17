@@ -19,6 +19,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
+import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.UserInfo;
 import google.registry.tools.params.HostAndPortParameter;
@@ -146,6 +147,8 @@ public final class RegistryTestServerMain {
                     : UserInfo.create(loginEmail, loginUserId))
             .build();
     appEngine.setUp();
+    AppEngineExtension.loadInitialData();
+    new JpaTestRules.Builder().buildIntegrationTestRule().beforeEach(null);
     System.out.printf("%sLoading Datastore fixtures...%s\n", BLUE, RESET);
     for (Fixture fixture : fixtures) {
       fixture.load();

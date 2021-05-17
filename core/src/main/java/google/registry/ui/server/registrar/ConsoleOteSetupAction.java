@@ -61,9 +61,10 @@ public final class ConsoleOteSetupAction extends HtmlAction {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Supplier<SoyTofu> TOFU_SUPPLIER =
       SoyTemplateUtils.createTofuSupplier(
-          google.registry.ui.soy.ConsoleSoyInfo.getInstance(),
-          google.registry.ui.soy.FormsSoyInfo.getInstance(),
-          google.registry.ui.soy.AnalyticsSoyInfo.getInstance(),
+          google.registry.ui.soy.registrar.AnalyticsSoyInfo.getInstance(),
+          google.registry.ui.soy.registrar.ConsoleSoyInfo.getInstance(),
+          google.registry.ui.soy.registrar.ConsoleUtilsSoyInfo.getInstance(),
+          google.registry.ui.soy.registrar.FormsSoyInfo.getInstance(),
           google.registry.ui.soy.registrar.OteSetupConsoleSoyInfo.getInstance());
 
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;

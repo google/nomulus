@@ -203,7 +203,7 @@ public final class RegistryConfig {
      * Configuration for analytics services installed in the web console.
      *
      * @see google.registry.ui.server.registrar.ConsoleUiAction
-     * @see google.registry.ui.soy.AnalyticsSoyInfo
+     * @see google.registry.ui.soy.registrar.AnalyticsSoyInfo
      */
     @Provides
     @Config("analyticsConfig")

@@ -50,9 +50,9 @@ public final class ConsoleUiAction extends HtmlAction {
 
   private static final Supplier<SoyTofu> TOFU_SUPPLIER =
       SoyTemplateUtils.createTofuSupplier(
-          google.registry.ui.soy.ConsoleSoyInfo.getInstance(),
+          google.registry.ui.soy.registrar.AnalyticsSoyInfo.getInstance(),
           google.registry.ui.soy.registrar.ConsoleSoyInfo.getInstance(),
-          google.registry.ui.soy.AnalyticsSoyInfo.getInstance());
+          google.registry.ui.soy.registrar.ConsoleUtilsSoyInfo.getInstance());
 
   @Inject RegistrarConsoleMetrics registrarConsoleMetrics;
   @Inject AuthenticatedRegistrarAccessor registrarAccessor;
