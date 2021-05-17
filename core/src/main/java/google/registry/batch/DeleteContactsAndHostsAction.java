@@ -408,7 +408,9 @@ public class DeleteContactsAndHostsAction implements Runnable {
       } else {
         resourceToSave = resource.asBuilder().removeStatusValue(PENDING_DELETE).build();
       }
-      auditedOfy().save().<ImmutableObject>entities(resourceToSave, historyEntry, pollMessage);
+      auditedOfy()
+          .save()
+          .<ImmutableObject>entities(resourceToSave, historyEntry.asHistoryEntry(), pollMessage);
       return DeletionResult.create(
           deleteAllowed ? Type.DELETED : Type.NOT_DELETED, pollMessageText);
     }
