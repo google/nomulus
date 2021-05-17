@@ -15,14 +15,13 @@
 package google.registry.tools.server;
 
 import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registry.label.ReservedList;
-import google.registry.model.registry.label.ReservedListDualDatabaseDao;
+import google.registry.model.registry.label.ReservedListDao;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import java.util.Comparator;
@@ -48,13 +47,14 @@ public final class ListReservedListsAction extends ListObjectsAction<ReservedLis
 
   @Override
   public ImmutableSet<ReservedList> loadObjects() {
-    return transactIfJpaTm(
-        () ->
-            tm().loadAllOf(ReservedList.class).stream()
-                .map(ReservedList::getName)
-                .map(ReservedListDualDatabaseDao::getLatestRevision)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(toImmutableSortedSet(Comparator.comparing(ReservedList::getName))));
+    return jpaTm()
+        .transact(
+            () ->
+                jpaTm().loadAllOf(ReservedList.class).stream()
+                    .map(ReservedList::getName)
+                    .map(ReservedListDao::getLatestRevision)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(toImmutableSortedSet(Comparator.comparing(ReservedList::getName))));
   }
 }

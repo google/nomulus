@@ -27,7 +27,7 @@ import com.google.common.io.Files;
 import com.google.common.truth.Truth8;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
-import google.registry.model.registry.label.ReservedListSqlDao;
+import google.registry.model.registry.label.ReservedListDao;
 import java.io.File;
 import java.io.IOException;
 import org.joda.time.DateTime;
@@ -135,7 +135,7 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
   }
 
   void verifyXnq9jyb4cInCloudSql() {
-    assertThat(ReservedListSqlDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
+    assertThat(ReservedListDao.checkExists("xn--q9jyb4c_common-reserved")).isTrue();
     ReservedList persistedList = getCloudSqlReservedList("xn--q9jyb4c_common-reserved");
     assertThat(persistedList.getName()).isEqualTo("xn--q9jyb4c_common-reserved");
     assertThat(persistedList.getShouldPublish()).isTrue();

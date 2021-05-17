@@ -20,16 +20,12 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import com.google.common.flogger.FluentLogger;
 import java.util.Optional;
 
-/**
- * A {@link ReservedList} DAO for Cloud SQL.
- *
- * <p>TODO(b/177567432): Rename this class to ReservedListDao after migrating to Cloud SQL.
- */
-public class ReservedListSqlDao {
+/** A {@link ReservedList} DAO for Cloud SQL. */
+public class ReservedListDao {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private ReservedListSqlDao() {}
+  private ReservedListDao() {}
 
   /** Persist a new reserved list to Cloud SQL. */
   public static void save(ReservedList reservedList) {
