@@ -606,7 +606,6 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
     return anchorTenantAddGracePeriodLength;
   }
 
-  @Nullable
   public Optional<Key<PremiumList>> getPremiumList() {
     return Optional.ofNullable(premiumList);
   }
