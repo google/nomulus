@@ -38,6 +38,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
+import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -838,21 +839,21 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_removePremiumListWithNull() throws Exception {
     runCommandForced("--premium_list=null", "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getPremiumList()).isNull();
+    assertThat(Registry.get("xn--q9jyb4c").getPremiumList()).isEmpty();
   }
 
   @Test
   void testSuccess_removePremiumListWithBlank() throws Exception {
     runCommandForced("--premium_list=", "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getPremiumList()).isNull();
+    assertThat(Registry.get("xn--q9jyb4c").getPremiumList()).isEmpty();
   }
 
   @Test
   void testSuccess_premiumListNotRemovedWhenNotSpecified() throws Exception {
     runCommandForced("--add_reserved_lists=xn--q9jyb4c_r1,xn--q9jyb4c_r2", "xn--q9jyb4c");
-    Key<PremiumList> premiumListKey = Registry.get("xn--q9jyb4c").getPremiumList();
-    assertThat(premiumListKey).isNotNull();
-    assertThat(premiumListKey.getName()).isEqualTo("xn--q9jyb4c");
+    Optional<Key<PremiumList>> premiumListKey = Registry.get("xn--q9jyb4c").getPremiumList();
+    assertThat(premiumListKey).isPresent();
+    assertThat(premiumListKey.get().getName()).isEqualTo("xn--q9jyb4c");
   }
 
   @Test
@@ -920,7 +921,9 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   @Test
   void testSuccess_setPremiumList() throws Exception {
     runCommandForced("--premium_list=xn--q9jyb4c", "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getPremiumList().getName()).isEqualTo("xn--q9jyb4c");
+    assertThat(Registry.get("xn--q9jyb4c").getPremiumList()).isPresent();
+    assertThat(Registry.get("xn--q9jyb4c").getPremiumList().get().getName())
+        .isEqualTo("xn--q9jyb4c");
   }
 
   @Test

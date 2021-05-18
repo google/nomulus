@@ -73,7 +73,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     assertThat(registry.getTldState(DateTime.now(UTC))).isEqualTo(tldState);
     assertThat(registry.getDnsWriters()).containsExactly("VoidDnsWriter");
     assertThat(registry.getPremiumList()).isNotNull();
-    assertThat(registry.getPremiumList().getName()).isEqualTo("default_sandbox_list");
+    assertThat(registry.getPremiumList().get().getName()).isEqualTo("default_sandbox_list");
     assertThat(registry.getAddGracePeriodLength()).isEqualTo(Duration.standardMinutes(60));
     assertThat(registry.getRedemptionGracePeriodLength()).isEqualTo(Duration.standardMinutes(10));
     assertThat(registry.getPendingDeleteLength()).isEqualTo(Duration.standardMinutes(5));

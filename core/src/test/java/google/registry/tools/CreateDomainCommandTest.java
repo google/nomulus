@@ -15,12 +15,16 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
+import com.google.common.collect.ImmutableSet;
+import google.registry.dns.writer.VoidDnsWriter;
+import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registry.Registry;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.DeterministicStringGenerator;
@@ -82,6 +86,26 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
   @Test
   void testSuccess_multipleDomains() throws Exception {
     createTld("abc");
+    runCommandForced(
+        "--client=NewRegistrar",
+        "--registrant=crr-admin",
+        "--admins=crr-admin",
+        "--techs=crr-tech",
+        "example.tld",
+        "example.abc");
+    eppVerifier.verifySent("domain_create_minimal.xml").verifySent("domain_create_minimal_abc.xml");
+  }
+
+  @Test
+  void testSuccess_premiumListNull() throws Exception {
+    Registry registry =
+        new Registry.Builder()
+            .setTldStr("abc")
+            .setPremiumPricingEngine(StaticPremiumListPricingEngine.NAME)
+            .setDnsWriters(ImmutableSet.of(VoidDnsWriter.NAME))
+            .setPremiumList(null)
+            .build();
+    tm().transact(() -> tm().put(registry));
     runCommandForced(
         "--client=NewRegistrar",
         "--registrant=crr-admin",

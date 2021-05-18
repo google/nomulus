@@ -49,6 +49,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import java.math.BigDecimal;
+import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -249,9 +250,9 @@ public final class RegistryTest extends EntityTestCase {
   void testSetPremiumList() {
     PremiumList pl2 = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
-    Key<PremiumList> plKey = registry.getPremiumList();
-    assertThat(plKey).isNotNull();
-    PremiumList stored = PremiumListDao.getLatestRevision(plKey.getName()).get();
+    Optional<Key<PremiumList>> plKey = registry.getPremiumList();
+    assertThat(plKey).isPresent();
+    PremiumList stored = PremiumListDao.getLatestRevision(plKey.get().getName()).get();
     assertThat(stored.getName()).isEqualTo("tld2");
   }
 

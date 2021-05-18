@@ -607,8 +607,8 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   }
 
   @Nullable
-  public Key<PremiumList> getPremiumList() {
-    return premiumList;
+  public Optional<Key<PremiumList>> getPremiumList() {
+    return Optional.ofNullable(premiumList);
   }
 
   public CurrencyUnit getCurrency() {
