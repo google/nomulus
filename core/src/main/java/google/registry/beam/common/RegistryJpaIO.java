@@ -21,9 +21,10 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import google.registry.backup.AppEngineEnvironment;
+import google.registry.beam.common.RegistryQuery.QueryComposerFactory;
+import google.registry.beam.common.RegistryQuery.RegistryQueryFactory;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.transaction.JpaTransactionManager;
-import google.registry.persistence.transaction.QueryComposer;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import java.io.Serializable;
 import java.util.Objects;
@@ -68,16 +69,18 @@ public final class RegistryJpaIO {
     return Read.<R, T>builder().queryFactory(queryFactory).resultMapper(resultMapper).build();
   }
 
+  /**
+   * Returns a {@link Read} connector based on the given {@code jpql} query string.
+   *
+   * <p>User should take care to prevent sql-injection attacks.
+   */
+  public static <R, T> Read<R, T> read(String jpql, SerializableFunction<R, T> resultMapper) {
+    return Read.<R, T>builder().jpqlQueryFactory(jpql).resultMapper(resultMapper).build();
+  }
+
   public static <T> Write<T> write() {
     return Write.<T>builder().build();
   }
-
-  // TODO(mmuller): Consider detached JpaQueryComposer that works with any JpaTransactionManager
-  // instance, i.e., change composer.buildQuery() to composer.buildQuery(JpaTransactionManager).
-  // This way QueryComposer becomes reusable and serializable (at least with Hibernate), and this
-  // interface would no longer be necessary.
-  public interface QueryComposerFactory<T>
-      extends SerializableFunction<JpaTransactionManager, QueryComposer<T>> {}
 
   /**
    * A {@link PTransform transform} that transactionally executes a JPA {@link CriteriaQuery} and
@@ -91,7 +94,7 @@ public final class RegistryJpaIO {
 
     abstract String name();
 
-    abstract RegistryJpaIO.QueryComposerFactory<R> queryFactory();
+    abstract RegistryQueryFactory<R> queryFactory();
 
     abstract SerializableFunction<R, T> resultMapper();
 
@@ -135,21 +138,29 @@ public final class RegistryJpaIO {
 
       abstract Builder<R, T> name(String name);
 
-      abstract Builder<R, T> queryFactory(RegistryJpaIO.QueryComposerFactory<R> queryFactory);
+      abstract Builder<R, T> queryFactory(RegistryQueryFactory<R> queryFactory);
 
       abstract Builder<R, T> resultMapper(SerializableFunction<R, T> mapper);
 
       abstract Builder<R, T> coder(Coder coder);
 
       abstract Read<R, T> build();
+
+      Builder<R, T> queryFactory(QueryComposerFactory<R> queryFactory) {
+        return queryFactory(RegistryQuery.createQueryFactory(queryFactory));
+      }
+
+      Builder<R, T> jpqlQueryFactory(String jpql) {
+        return queryFactory(RegistryQuery.createQueryFactory(jpql));
+      }
     }
 
     static class QueryRunner<R, T> extends DoFn<Void, T> {
-      private final QueryComposerFactory<R> querySupplier;
+      private final RegistryQueryFactory<R> queryFactory;
       private final SerializableFunction<R, T> resultMapper;
 
-      QueryRunner(QueryComposerFactory<R> querySupplier, SerializableFunction<R, T> resultMapper) {
-        this.querySupplier = querySupplier;
+      QueryRunner(RegistryQueryFactory<R> queryFactory, SerializableFunction<R, T> resultMapper) {
+        this.queryFactory = queryFactory;
         this.resultMapper = resultMapper;
       }
 
@@ -162,7 +173,7 @@ public final class RegistryJpaIO {
           jpaTm()
               .transactNoRetry(
                   () ->
-                      querySupplier.apply(jpaTm()).withAutoDetachOnLoad(true).stream()
+                      queryFactory.apply(jpaTm()).stream()
                           .map(resultMapper::apply)
                           .forEach(outputReceiver::output));
         }

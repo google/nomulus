@@ -213,6 +213,7 @@ PRESUBMITS = {
          "RdapDomainSearchAction.java",
          "RdapNameserverSearchAction.java",
          "RdapSearchActionBase.java",
+         "RegistryQuery",
          },
     ):
         "The first String parameter to EntityManager.create(Native)Query "
