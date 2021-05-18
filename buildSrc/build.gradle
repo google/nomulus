@@ -72,6 +72,7 @@ dependencies {
   compile deps['com.google.auth:google-auth-library-credentials']
   compile deps['com.google.auth:google-auth-library-oauth2-http']
   compile deps['com.google.auto.value:auto-value-annotations']
+  compile deps['com.google.common.html.types:types']
   compile deps['com.google.cloud:google-cloud-core']
   compile deps['com.google.cloud:google-cloud-storage']
   compile deps['com.google.guava:guava']

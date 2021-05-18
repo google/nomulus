@@ -51,6 +51,7 @@ ext {
       'com.google.auto.service:auto-service:1.0-rc7',
       'com.google.auto.value:auto-value-annotations:1.7.4',
       'com.google.auto.value:auto-value:1.7.4',
+      'com.google.common.html.types:types:1.0.6',
       'com.google.closure-stylesheets:closure-stylesheets:1.5.0',
       // The two below are needed only for Datastore bulk delete pipeline.
       'com.google.cloud.bigdataoss:util:2.1.3',
