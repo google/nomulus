@@ -113,11 +113,35 @@ class google.registry.model.contact.ContactAddress {
 class google.registry.model.contact.ContactAuthInfo {
   google.registry.model.eppcommon.AuthInfo$PasswordAuth pw;
 }
+class google.registry.model.contact.ContactBase {
+  @Id java.lang.String repoId;
+  com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
+  google.registry.model.CreateAutoTimestamp creationTime;
+  google.registry.model.UpdateAutoTimestamp updateTimestamp;
+  google.registry.model.contact.ContactAuthInfo authInfo;
+  google.registry.model.contact.ContactPhoneNumber fax;
+  google.registry.model.contact.ContactPhoneNumber voice;
+  google.registry.model.contact.Disclose disclose;
+  google.registry.model.contact.PostalInfo internationalizedPostalInfo;
+  google.registry.model.contact.PostalInfo localizedPostalInfo;
+  google.registry.model.transfer.ContactTransferData transferData;
+  java.lang.String contactId;
+  java.lang.String creationClientId;
+  java.lang.String currentSponsorClientId;
+  java.lang.String email;
+  java.lang.String lastEppUpdateClientId;
+  java.lang.String searchName;
+  java.util.Set<google.registry.model.eppcommon.StatusValue> status;
+  org.joda.time.DateTime deletionTime;
+  org.joda.time.DateTime lastEppUpdateTime;
+  org.joda.time.DateTime lastTransferTime;
+}
 class google.registry.model.contact.ContactHistory {
   @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
   boolean bySuperuser;
   byte[] xmlBytes;
+  google.registry.model.contact.ContactBase contactBase;
   google.registry.model.domain.Period period;
   google.registry.model.eppcommon.Trid trid;
   google.registry.model.reporting.HistoryEntry$Type type;
@@ -385,6 +409,23 @@ class google.registry.model.eppcommon.Trid {
   java.lang.String clientTransactionId;
   java.lang.String serverTransactionId;
 }
+class google.registry.model.host.HostBase {
+  @Id java.lang.String repoId;
+  com.google.common.collect.ImmutableSortedMap<org.joda.time.DateTime, com.googlecode.objectify.Key<google.registry.model.ofy.CommitLogManifest>> revisions;
+  google.registry.model.CreateAutoTimestamp creationTime;
+  google.registry.model.UpdateAutoTimestamp updateTimestamp;
+  google.registry.persistence.VKey<google.registry.model.domain.DomainBase> superordinateDomain;
+  java.lang.String creationClientId;
+  java.lang.String currentSponsorClientId;
+  java.lang.String fullyQualifiedHostName;
+  java.lang.String lastEppUpdateClientId;
+  java.util.Set<google.registry.model.eppcommon.StatusValue> status;
+  java.util.Set<java.net.InetAddress> inetAddresses;
+  org.joda.time.DateTime deletionTime;
+  org.joda.time.DateTime lastEppUpdateTime;
+  org.joda.time.DateTime lastSuperordinateChange;
+  org.joda.time.DateTime lastTransferTime;
+}
 class google.registry.model.host.HostHistory {
   @Id java.lang.Long id;
   @Parent com.googlecode.objectify.Key<? extends google.registry.model.EppResource> parent;
@@ -392,6 +433,7 @@ class google.registry.model.host.HostHistory {
   byte[] xmlBytes;
   google.registry.model.domain.Period period;
   google.registry.model.eppcommon.Trid trid;
+  google.registry.model.host.HostBase hostBase;
   google.registry.model.reporting.HistoryEntry$Type type;
   java.lang.Boolean requestedByRegistrar;
   java.lang.String clientId;

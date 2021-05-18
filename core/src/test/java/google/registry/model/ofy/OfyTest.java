@@ -101,7 +101,8 @@ public class OfyTest {
 
   @Test
   void testBackupGroupRootTimestampsMustIncreaseOnSave() {
-    doBackupGroupRootTimestampInversionTest(() -> auditedOfy().save().entity(someObject));
+    doBackupGroupRootTimestampInversionTest(
+        () -> auditedOfy().save().entity(someObject.asHistoryEntry()));
   }
 
   @Test
@@ -117,8 +118,8 @@ public class OfyTest {
             () ->
                 tm().transact(
                         () -> {
-                          auditedOfy().save().entity(someObject);
-                          auditedOfy().save().entity(someObject);
+                          auditedOfy().save().entity(someObject.asHistoryEntry());
+                          auditedOfy().save().entity(someObject.asHistoryEntry());
                         }));
     assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
   }
@@ -145,7 +146,7 @@ public class OfyTest {
             () ->
                 tm().transact(
                         () -> {
-                          auditedOfy().save().entity(someObject);
+                          auditedOfy().save().entity(someObject.asHistoryEntry());
                           auditedOfy().delete().entity(someObject);
                         }));
     assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
@@ -160,7 +161,7 @@ public class OfyTest {
                 tm().transact(
                         () -> {
                           auditedOfy().delete().entity(someObject);
-                          auditedOfy().save().entity(someObject);
+                          auditedOfy().save().entity(someObject.asHistoryEntry());
                         }));
     assertThat(thrown).hasMessageThat().contains("Multiple entries with same key");
   }
@@ -290,7 +291,7 @@ public class OfyTest {
                       public Integer get() {
                         // There will be something in the manifest now, but it won't be committed if
                         // we throw.
-                        auditedOfy().save().entity(someObject);
+                        auditedOfy().save().entity(someObject.asHistoryEntry());
                         count++;
                         if (count == 3) {
                           return count;
@@ -312,7 +313,7 @@ public class OfyTest {
           public Void get() {
             if (firstCallToVrun) {
               firstCallToVrun = false;
-              auditedOfy().save().entity(someObject);
+              auditedOfy().save().entity(someObject.asHistoryEntry());
               return null;
             }
             fail("Shouldn't have retried.");
@@ -411,13 +412,14 @@ public class OfyTest {
 
   @Test
   void test_doWithFreshSessionCache() {
-    auditedOfy().saveWithoutBackup().entity(someObject).now();
+    auditedOfy().saveWithoutBackup().entity(someObject.asHistoryEntry()).now();
     final HistoryEntry modifiedObject =
         someObject.asBuilder().setModificationTime(END_OF_TIME).build();
     // Mutate the saved objected, bypassing the Objectify session cache.
-    getDatastoreService().put(auditedOfy().saveWithoutBackup().toEntity(modifiedObject));
+    getDatastoreService()
+        .put(auditedOfy().saveWithoutBackup().toEntity(modifiedObject.asHistoryEntry()));
     // Normal loading should come from the session cache and shouldn't reflect the mutation.
-    assertThat(auditedOfy().load().entity(someObject).now()).isEqualTo(someObject);
+    assertThat(auditedOfy().load().entity(someObject).now()).isEqualTo(someObject.asHistoryEntry());
     // Loading inside doWithFreshSessionCache() should reflect the mutation.
     boolean ran =
         auditedOfy()
@@ -430,6 +432,6 @@ public class OfyTest {
                 });
     assertThat(ran).isTrue();
     // Test the normal loading again to verify that we've restored the original session unchanged.
-    assertThat(auditedOfy().load().entity(someObject).now()).isEqualTo(someObject);
+    assertThat(auditedOfy().load().entity(someObject).now()).isEqualTo(someObject.asHistoryEntry());
   }
 }
