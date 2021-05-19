@@ -1,6 +1,7 @@
 ClaimsListShard
 ClaimsListSingleton
 Cursor
+DatabaseMigrationStateWrapper
 DatabaseTransitionSchedule
 KmsSecret
 KmsSecretRevision
