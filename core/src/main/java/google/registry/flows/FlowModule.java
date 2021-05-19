@@ -213,13 +213,14 @@ public class FlowModule {
     return Strings.nullToEmpty(((Poll) eppInput.getCommandWrapper().getCommand()).getMessageId());
   }
 
-  private static HistoryEntry.Builder<? extends HistoryEntry, ?> makeHistoryEntryBuilder(
-      HistoryEntry.Builder<? extends HistoryEntry, ?> builder,
-      Trid trid,
-      byte[] inputXmlBytes,
-      boolean isSuperuser,
-      String clientId,
-      EppInput eppInput) {
+  private static <B extends HistoryEntry.Builder<? extends HistoryEntry, ?>>
+      B makeHistoryEntryBuilder(
+          B builder,
+          Trid trid,
+          byte[] inputXmlBytes,
+          boolean isSuperuser,
+          String clientId,
+          EppInput eppInput) {
     builder
         .setTrid(trid)
         .setXmlBytes(inputXmlBytes)

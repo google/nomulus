@@ -220,6 +220,8 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
   @ImmutableObject.EmptySetToNull
   protected Set<DomainTransactionRecord> domainTransactionRecords;
 
+  // Make it impossible to instantiate a HistoryEntry explicitly. One should only instantiate a
+  // subtype of HistoryEntry.
   protected HistoryEntry() {
     super();
   }
