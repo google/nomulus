@@ -38,7 +38,7 @@ import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.smd.SignedMarkRevocationList;
-import google.registry.model.tmch.ClaimsListShard;
+import google.registry.model.tmch.ClaimsList;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import java.util.Optional;
@@ -61,7 +61,7 @@ public class DatabaseTransitionSchedule extends ImmutableObject implements Datas
 
   /** The id of the transition schedule. */
   public enum TransitionId {
-    /** The schedule for migration of {@link ClaimsListShard} entities. */
+    /** The schedule for migration of {@link ClaimsList} entities. */
     CLAIMS_LIST,
     /** The schedule for the migration of {@link PremiumList} and {@link ReservedList}. */
     DOMAIN_LABEL_LISTS,

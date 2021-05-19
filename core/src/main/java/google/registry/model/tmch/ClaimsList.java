@@ -59,15 +59,14 @@ import org.joda.time.DateTime;
  * #revisionId}. However, this is not an actual problem because we only use the claims list with
  * highest {@link #revisionId}.
  *
- * <p>TODO(b/162007765): Rename the class to ClaimsList and remove Datastore related fields and
- * methods.
+ * <p>TODO(b/162007765): Remove Datastore related fields and methods.
  */
 @Entity
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 @javax.persistence.Entity(name = "ClaimsList")
 @Table
 @InCrossTld
-public class ClaimsListShard extends ImmutableObject implements NonReplicatedEntity {
+public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
 
   @Transient @Id long id;
 
@@ -104,9 +103,6 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
   @MapKeyColumn(name = "domainLabel", nullable = false)
   @Column(name = "claimKey", nullable = false)
   Map<String, String> labelsToKeys;
-
-  /** Indicates that this is a shard rather than a "full" list. */
-  @Ignore @Transient boolean isShard = false;
 
   /** Returns the revision id of this claims list, or throws exception if it is null. */
   public Long getRevisionId() {
@@ -145,9 +141,8 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
     return labelsToKeys.size();
   }
 
-  public static ClaimsListShard create(
-      DateTime tmdbGenerationTime, Map<String, String> labelsToKeys) {
-    ClaimsListShard instance = new ClaimsListShard();
+  public static ClaimsList create(DateTime tmdbGenerationTime, Map<String, String> labelsToKeys) {
+    ClaimsList instance = new ClaimsList();
     instance.id = allocateId();
     instance.creationTime = checkNotNull(tmdbGenerationTime);
     instance.labelsToKeys = checkNotNull(labelsToKeys);
@@ -207,6 +202,6 @@ public class ClaimsListShard extends ImmutableObject implements NonReplicatedEnt
     return singleton == null ? null : singleton.activeRevision;
   }
 
-  /** Exception when trying to directly save a {@link ClaimsListShard} without sharding. */
+  /** Exception when trying to directly save a {@link ClaimsList} without sharding. */
   public static class UnshardedSaveException extends RuntimeException {}
 }

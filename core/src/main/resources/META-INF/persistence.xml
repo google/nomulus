@@ -68,7 +68,7 @@
     <class>google.registry.model.server.Lock</class>
     <class>google.registry.model.server.ServerSecret</class>
     <class>google.registry.model.smd.SignedMarkRevocationList</class>
-    <class>google.registry.model.tmch.ClaimsListShard</class>
+    <class>google.registry.model.tmch.ClaimsList</class>
     <class>google.registry.model.tmch.TmchCrl</class>
     <class>google.registry.persistence.transaction.TransactionEntity</class>
     <class>google.registry.schema.domain.RegistryLock</class>

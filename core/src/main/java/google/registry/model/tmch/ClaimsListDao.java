@@ -19,19 +19,19 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableMap;
 
-/** Data access object for {@link ClaimsListShard}. */
+/** Data access object for {@link ClaimsList}. */
 public class ClaimsListDao {
 
-  /** Saves the given {@link ClaimsListShard} to Cloud SQL. */
-  public static void save(ClaimsListShard claimsList) {
+  /** Saves the given {@link ClaimsList} to Cloud SQL. */
+  public static void save(ClaimsList claimsList) {
     jpaTm().transact(() -> jpaTm().insert(claimsList));
   }
 
   /**
-   * Returns the most recent revision of the {@link ClaimsListShard} in SQL or an empty list if it
+   * Returns the most recent revision of the {@link ClaimsList} in SQL or an empty list if it
    * doesn't exist.
    */
-  public static ClaimsListShard get() {
+  public static ClaimsList get() {
     return jpaTm()
         .transact(
             () -> {
@@ -43,12 +43,12 @@ public class ClaimsListDao {
                   .query(
                       "FROM ClaimsList cl LEFT JOIN FETCH cl.labelsToKeys WHERE cl.revisionId ="
                           + " :revisionId",
-                      ClaimsListShard.class)
+                      ClaimsList.class)
                   .setParameter("revisionId", revisionId)
                   .getResultStream()
                   .findFirst();
             })
-        .orElse(ClaimsListShard.create(START_OF_TIME, ImmutableMap.of()));
+        .orElse(ClaimsList.create(START_OF_TIME, ImmutableMap.of()));
   }
 
   private ClaimsListDao() {}

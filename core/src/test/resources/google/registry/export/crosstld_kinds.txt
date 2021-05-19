@@ -1,4 +1,4 @@
-ClaimsListShard
+ClaimsList
 ClaimsListSingleton
 Cursor
 DatabaseTransitionSchedule
