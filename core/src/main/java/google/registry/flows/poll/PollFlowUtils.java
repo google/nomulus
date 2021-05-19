@@ -15,57 +15,29 @@
 package google.registry.flows.poll;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.ofy.ObjectifyService.ofy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
+import static google.registry.persistence.transaction.QueryComposer.Comparator.LTE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
-import com.googlecode.objectify.cmd.Query;
 import google.registry.model.poll.PollMessage;
+import google.registry.persistence.transaction.QueryComposer;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
 /** Static utility functions for poll flows. */
 public final class PollFlowUtils {
 
-  public static final String SQL_POLL_MESSAGE_QUERY =
-      "FROM PollMessage WHERE clientId = :registrarId AND eventTime <= :now ORDER BY eventTime ASC";
-  private static final String SQL_POLL_MESSAGE_COUNT_QUERY =
-      "SELECT COUNT(*) FROM PollMessage WHERE clientId = :registrarId AND eventTime <= :now";
-
   /** Returns the number of poll messages for the given registrar that are not in the future. */
   public static int getPollMessageCount(String registrarId, DateTime now) {
-    if (tm().isOfy()) {
-      return datastorePollMessageQuery(registrarId, now).count();
-    } else {
-      return jpaTm()
-          .transact(
-              () ->
-                  jpaTm()
-                      .query(SQL_POLL_MESSAGE_COUNT_QUERY, Long.class)
-                      .setParameter("registrarId", registrarId)
-                      .setParameter("now", now)
-                      .getSingleResult()
-                      .intValue());
-    }
+    return transactIfJpaTm(() -> createPollMessageQuery(registrarId, now).count()).intValue();
   }
 
   /** Returns the first (by event time) poll message not in the future for this registrar. */
   public static Optional<PollMessage> getFirstPollMessage(String registrarId, DateTime now) {
-    if (tm().isOfy()) {
-      return Optional.ofNullable(datastorePollMessageQuery(registrarId, now).first().now());
-    } else {
-      return jpaTm()
-          .transact(
-              () ->
-                  jpaTm()
-                      .query(SQL_POLL_MESSAGE_QUERY, PollMessage.class)
-                      .setParameter("registrarId", registrarId)
-                      .setParameter("now", now)
-                      .setMaxResults(1)
-                      .getResultStream()
-                      .findFirst());
-    }
+    return transactIfJpaTm(
+        () -> createPollMessageQuery(registrarId, now).orderBy("eventTime").first());
   }
 
   /**
@@ -106,14 +78,15 @@ public final class PollFlowUtils {
     return includeAckedMessageInCount;
   }
 
-  /** A Datastore query for poll messages from the given registrar that are not in the future. */
-  public static Query<PollMessage> datastorePollMessageQuery(String registrarId, DateTime now) {
-    return ofy()
-        .load()
-        .type(PollMessage.class)
-        .filter("clientId", registrarId)
-        .filter("eventTime <=", now.toDate())
-        .order("eventTime");
+  /**
+   * Returns the QueryComposer for poll messages from the given registrar that are not in the
+   * future.
+   */
+  public static QueryComposer<PollMessage> createPollMessageQuery(
+      String registrarId, DateTime now) {
+    return tm().createQueryComposer(PollMessage.class)
+        .where("clientId", EQ, registrarId)
+        .where("eventTime", LTE, now);
   }
 
   private PollFlowUtils() {}

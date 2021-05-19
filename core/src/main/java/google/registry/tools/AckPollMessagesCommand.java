@@ -15,10 +15,10 @@
 package google.registry.tools;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static google.registry.flows.poll.PollFlowUtils.SQL_POLL_MESSAGE_QUERY;
-import static google.registry.flows.poll.PollFlowUtils.datastorePollMessageQuery;
+import static google.registry.flows.poll.PollFlowUtils.createPollMessageQuery;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.poll.PollMessageExternalKeyConverter.makePollMessageExternalId;
+import static google.registry.persistence.transaction.QueryComposer.Comparator.LIKE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -32,10 +32,10 @@ import google.registry.flows.poll.PollFlowUtils;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
 import google.registry.model.poll.PollMessage.OneTime;
+import google.registry.persistence.transaction.QueryComposer;
 import google.registry.util.Clock;
 import java.util.List;
 import javax.inject.Inject;
-import javax.persistence.TypedQuery;
 
 /**
  * Command to acknowledge one-time poll messages for a registrar.
@@ -60,10 +60,6 @@ import javax.persistence.TypedQuery;
  */
 @Parameters(separators = " =", commandDescription = "Acknowledge one-time poll messages.")
 final class AckPollMessagesCommand implements CommandWithRemoteApi {
-
-  private static final String SQL_POLL_MESSAGE_QUERY_BY_MESSAGE =
-      "FROM PollMessage WHERE clientId = :registrarId AND eventTime <= :now AND msg LIKE :msg"
-          + " ORDER BY eventTime ASC";
 
   @Parameter(
       names = {"-c", "--client"},
@@ -102,7 +98,14 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
    * the Datastore size limits.
    */
   private void ackPollMessagesDatastore() {
-    QueryKeys<PollMessage> query = datastorePollMessageQuery(clientId, clock.nowUtc()).keys();
+    QueryKeys<PollMessage> query =
+        auditedOfy()
+            .load()
+            .type(PollMessage.class)
+            .filter("clientId", clientId)
+            .filter("eventTime <=", clock.nowUtc())
+            .order("eventTime")
+            .keys();
     for (List<Key<PollMessage>> keys : Iterables.partition(query, BATCH_SIZE)) {
       tm().transact(
               () ->
@@ -118,21 +121,15 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
     jpaTm()
         .transact(
             () -> {
-              TypedQuery<PollMessage> typedQuery;
-              if (isNullOrEmpty(message)) {
-                typedQuery = jpaTm().query(SQL_POLL_MESSAGE_QUERY, PollMessage.class);
-              } else {
-                typedQuery =
-                    jpaTm()
-                        .query(SQL_POLL_MESSAGE_QUERY_BY_MESSAGE, PollMessage.class)
-                        .setParameter("msg", "%" + message + "%");
+              QueryComposer<PollMessage> query = createPollMessageQuery(clientId, clock.nowUtc());
+              if (!isNullOrEmpty(message)) {
+                query = query.where("msg", LIKE, "%" + message + "%");
               }
-              typedQuery
-                  .setParameter("registrarId", clientId)
-                  .setParameter("now", clock.nowUtc())
-                  .getResultStream()
+
+              query.stream()
                   // Detach it so that we can print out the old, non-acked version
                   // (for autorenews, acking changes the next event time)
+                  // TODO(mmuller): remove after PR 1116 is merged.
                   .peek(jpaTm().getEntityManager()::detach)
                   .forEach(this::actOnPollMessage);
             });
