@@ -17,6 +17,7 @@ package google.registry.model;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.Cursor;
+import google.registry.model.common.DatabaseMigrationStateWrapper;
 import google.registry.model.common.DatabaseTransitionSchedule;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.common.GaeUserIdConverter;
@@ -75,6 +76,7 @@ public final class EntityClasses {
           ContactHistory.class,
           ContactResource.class,
           Cursor.class,
+          DatabaseMigrationStateWrapper.class,
           DatabaseTransitionSchedule.class,
           DomainBase.class,
           DomainHistory.class,

@@ -2,6 +2,7 @@ AllocationToken
 Cancellation
 ContactResource
 Cursor
+DatabaseMigrationStateWrapper
 DatabaseTransitionSchedule
 DomainBase
 EntityGroupRoot
