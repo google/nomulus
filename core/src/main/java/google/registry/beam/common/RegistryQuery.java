@@ -19,7 +19,6 @@ import google.registry.persistence.transaction.QueryComposer;
 import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
-import javax.persistence.metamodel.Metamodel;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 
 /** Interface for query instances used by {@link RegistryJpaIO.Read}. */
@@ -81,9 +80,7 @@ public interface RegistryQuery<T> {
     if (objectClass.isPrimitive() || objectClass == String.class) {
       return;
     }
-    Metamodel metamodel = entityManager.getMetamodel();
     try {
-      metamodel.entity(objectClass);
       entityManager.detach(object);
     } catch (IllegalArgumentException e) {
       // Not an entity. Do nothing.
