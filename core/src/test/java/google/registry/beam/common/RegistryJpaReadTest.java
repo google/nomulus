@@ -15,13 +15,28 @@
 package google.registry.beam.common;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.AppEngineExtension.makeRegistrar1;
+import static google.registry.testing.DatabaseHelper.newRegistry;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainAuthInfo;
+import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.GracePeriod;
+import google.registry.model.domain.launch.LaunchNotice;
+import google.registry.model.domain.rgp.GracePeriodStatus;
+import google.registry.model.domain.secdns.DelegationSignerData;
+import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
+import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registry.Registry;
+import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -83,7 +98,7 @@ public class RegistryJpaReadTest {
   }
 
   @Test
-  void jpaRead() {
+  void readWithQueryComposer() {
     Read<ContactResource, String> read =
         RegistryJpaIO.read(
             (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),
@@ -92,5 +107,80 @@ public class RegistryJpaReadTest {
 
     PAssert.that(repoIds).containsInAnyOrder("contact_0", "contact_1", "contact_2");
     testPipeline.run();
+  }
+
+  @Test
+  void readWithStringQuery() {
+    setupForJoinQuery();
+    Read<Object[], String> read =
+        RegistryJpaIO.read(
+            "select d, r.emailAddress from Domain d join Registrar r on"
+                + " d.currentSponsorClientId = r.clientIdentifier where r.type = 'REAL'"
+                + " and d.deletionTime > now()",
+            RegistryJpaReadTest::parseRow);
+    PCollection<String> joinedStrings = testPipeline.apply(read);
+
+    PAssert.that(joinedStrings).containsInAnyOrder("4-COM-me@google.com");
+    testPipeline.run();
+  }
+
+  private static String parseRow(Object[] row) {
+    DomainBase domainBase = (DomainBase) row[0];
+    String emailAddress = (String) row[1];
+    return domainBase.getRepoId() + "-" + emailAddress;
+  }
+
+  private void setupForJoinQuery() {
+    Registry registry = newRegistry("com", "ABCD_APP");
+    Registrar registrar =
+        makeRegistrar1()
+            .asBuilder()
+            .setClientId("registrar1")
+            .setEmailAddress("me@google.com")
+            .build();
+    ContactResource contact =
+        new ContactResource.Builder()
+            .setRepoId("contactid_1")
+            .setCreationClientId(registrar.getClientId())
+            .setTransferData(new ContactTransferData.Builder().build())
+            .setPersistedCurrentSponsorClientId(registrar.getClientId())
+            .build();
+    DomainBase domain =
+        new DomainBase.Builder()
+            .setDomainName("example.com")
+            .setRepoId("4-COM")
+            .setCreationClientId(registrar.getClientId())
+            .setLastEppUpdateTime(fakeClock.nowUtc())
+            .setLastEppUpdateClientId(registrar.getClientId())
+            .setLastTransferTime(fakeClock.nowUtc())
+            .setStatusValues(
+                ImmutableSet.of(
+                    StatusValue.CLIENT_DELETE_PROHIBITED,
+                    StatusValue.SERVER_DELETE_PROHIBITED,
+                    StatusValue.SERVER_TRANSFER_PROHIBITED,
+                    StatusValue.SERVER_UPDATE_PROHIBITED,
+                    StatusValue.SERVER_RENEW_PROHIBITED,
+                    StatusValue.SERVER_HOLD))
+            .setRegistrant(contact.createVKey())
+            .setContacts(ImmutableSet.of())
+            .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
+            .setPersistedCurrentSponsorClientId(registrar.getClientId())
+            .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
+            .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
+            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+            .setLaunchNotice(
+                LaunchNotice.create("tcnid", "validatorId", START_OF_TIME, START_OF_TIME))
+            .setSmdId("smdid")
+            .addGracePeriod(
+                GracePeriod.create(
+                    GracePeriodStatus.ADD,
+                    "4-COM",
+                    END_OF_TIME,
+                    registrar.getClientId(),
+                    null,
+                    100L))
+            .build();
+    jpaTm()
+        .transact(() -> jpaTm().insertAll(ImmutableList.of(registry, registrar, contact, domain)));
   }
 }
