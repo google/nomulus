@@ -31,6 +31,7 @@ import google.registry.batch.RefreshDnsOnHostRenameAction;
 import google.registry.batch.RelockDomainAction;
 import google.registry.batch.ResaveAllEppResourcesAction;
 import google.registry.batch.ResaveEntityAction;
+import google.registry.batch.SendExpiringCertificateNotificationEmailAction;
 import google.registry.batch.WipeOutCloudSqlAction;
 import google.registry.batch.WipeoutDatastoreAction;
 import google.registry.cron.CommitLogFanoutAction;
@@ -192,6 +193,8 @@ interface BackendRequestComponent {
   ResaveAllEppResourcesAction resaveAllEppResourcesAction();
 
   ResaveEntityAction resaveEntityAction();
+
+  SendExpiringCertificateNotificationEmailAction sendExpiringCertificateNotificationEmailAction();
 
   SyncGroupMembersAction syncGroupMembersAction();
 
