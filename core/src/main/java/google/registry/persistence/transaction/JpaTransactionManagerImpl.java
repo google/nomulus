@@ -351,6 +351,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public void updateAll(Object... entities) {
+    updateAll(ImmutableList.of(entities));
+  }
+
+  @Override
   public void updateWithoutBackup(Object entity) {
     update(entity);
   }

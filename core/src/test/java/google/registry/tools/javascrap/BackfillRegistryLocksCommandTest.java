@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth8;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.schema.domain.RegistryLock;
@@ -127,11 +128,11 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
     DateTime ursTime = fakeClock.nowUtc();
     DomainBase ursDomain = persistLockedDomain("urs.tld");
     HistoryEntry historyEntry =
-        new HistoryEntry.Builder()
+        new DomainHistory.Builder()
             .setBySuperuser(true)
             .setClientId("adminreg")
             .setModificationTime(ursTime)
-            .setParent(ursDomain)
+            .setDomain(ursDomain)
             .setReason("Uniform Rapid Suspension")
             .setType(HistoryEntry.Type.DOMAIN_UPDATE)
             .setRequestedByRegistrar(false)

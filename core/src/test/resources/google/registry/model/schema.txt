@@ -287,13 +287,26 @@ class google.registry.model.domain.DomainHistory {
   java.lang.String clientId;
   java.lang.String otherClientId;
   java.lang.String reason;
+  java.util.Set<google.registry.model.domain.GracePeriod$GracePeriodHistory> gracePeriodHistories;
+  java.util.Set<google.registry.model.domain.secdns.DomainDsDataHistory> dsDataHistories;
   java.util.Set<google.registry.model.reporting.DomainTransactionRecord> domainTransactionRecords;
+  java.util.Set<google.registry.persistence.VKey<google.registry.model.host.HostResource>> nsHosts;
   org.joda.time.DateTime modificationTime;
 }
 class google.registry.model.domain.GracePeriod {
   google.registry.model.domain.rgp.GracePeriodStatus type;
   google.registry.persistence.BillingVKey$BillingEventVKey billingEventOneTime;
   google.registry.persistence.BillingVKey$BillingRecurrenceVKey billingEventRecurring;
+  java.lang.String clientId;
+  long gracePeriodId;
+  org.joda.time.DateTime expirationTime;
+}
+class google.registry.model.domain.GracePeriod$GracePeriodHistory {
+  google.registry.model.domain.rgp.GracePeriodStatus type;
+  google.registry.persistence.BillingVKey$BillingEventVKey billingEventOneTime;
+  google.registry.persistence.BillingVKey$BillingRecurrenceVKey billingEventRecurring;
+  java.lang.Long domainHistoryRevisionId;
+  java.lang.Long gracePeriodHistoryRevisionId;
   java.lang.String clientId;
   long gracePeriodId;
   org.joda.time.DateTime expirationTime;
@@ -329,6 +342,14 @@ class google.registry.model.domain.secdns.DelegationSignerData {
   int algorithm;
   int digestType;
   int keyTag;
+}
+class google.registry.model.domain.secdns.DomainDsDataHistory {
+  byte[] digest;
+  int algorithm;
+  int digestType;
+  int keyTag;
+  java.lang.Long domainHistoryRevisionId;
+  java.lang.Long dsDataHistoryRevisionId;
 }
 class google.registry.model.domain.token.AllocationToken {
   @Id java.lang.String token;

@@ -185,7 +185,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
         leapSafeSubtractYears(domain.getRegistrationExpirationTime(), period);
     DomainHistory domainHistory =
         new DomainHistory.Builder()
-            .setParent(domain)
+            .setDomain(domain)
             .setModificationTime(now)
             .setBySuperuser(true)
             .setType(Type.SYNTHETIC)

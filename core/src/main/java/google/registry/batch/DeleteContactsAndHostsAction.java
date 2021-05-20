@@ -370,11 +370,10 @@ public class DeleteContactsAndHostsAction implements Runnable {
                       : "it was transferred prior to deletion");
 
       HistoryEntry historyEntry =
-          new HistoryEntry.Builder()
+          HistoryEntry.createBuilderForResource(resource)
               .setClientId(deletionRequest.requestingClientId())
               .setModificationTime(now)
               .setType(getHistoryEntryType(resource, deleteAllowed))
-              .setParent(deletionRequest.key())
               .build();
 
       PollMessage.OneTime pollMessage =
@@ -409,7 +408,9 @@ public class DeleteContactsAndHostsAction implements Runnable {
       } else {
         resourceToSave = resource.asBuilder().removeStatusValue(PENDING_DELETE).build();
       }
-      auditedOfy().save().<ImmutableObject>entities(resourceToSave, historyEntry, pollMessage);
+      auditedOfy()
+          .save()
+          .<ImmutableObject>entities(resourceToSave, historyEntry.asHistoryEntry(), pollMessage);
       return DeletionResult.create(
           deleteAllowed ? Type.DELETED : Type.NOT_DELETED, pollMessageText);
     }

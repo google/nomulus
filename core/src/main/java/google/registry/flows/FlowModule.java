@@ -213,50 +213,78 @@ public class FlowModule {
     return Strings.nullToEmpty(((Poll) eppInput.getCommandWrapper().getCommand()).getMessageId());
   }
 
+  private static <B extends HistoryEntry.Builder<? extends HistoryEntry, ?>>
+      B makeHistoryEntryBuilder(
+          B builder,
+          Trid trid,
+          byte[] inputXmlBytes,
+          boolean isSuperuser,
+          String clientId,
+          EppInput eppInput) {
+    builder
+        .setTrid(trid)
+        .setXmlBytes(inputXmlBytes)
+        .setBySuperuser(isSuperuser)
+        .setClientId(clientId);
+    Optional<MetadataExtension> metadataExtension =
+        eppInput.getSingleExtension(MetadataExtension.class);
+    metadataExtension.ifPresent(
+        extension ->
+            builder
+                .setReason(extension.getReason())
+                .setRequestedByRegistrar(extension.getRequestedByRegistrar()));
+    return builder;
+  }
+
   /**
-   * Provides a partially filled in {@link HistoryEntry} builder.
+   * Provides a partially filled in {@link ContactHistory.Builder}
    *
    * <p>This is not marked with {@link FlowScope} so that each retry gets a fresh one. Otherwise,
    * the fact that the builder is one-use would cause NPEs.
    */
   @Provides
-  static HistoryEntry.Builder provideHistoryEntryBuilder(
+  static ContactHistory.Builder provideContactHistoryBuilder(
       Trid trid,
       @InputXml byte[] inputXmlBytes,
       @Superuser boolean isSuperuser,
       @ClientId String clientId,
       EppInput eppInput) {
-    HistoryEntry.Builder historyBuilder =
-        new HistoryEntry.Builder()
-            .setTrid(trid)
-            .setXmlBytes(inputXmlBytes)
-            .setBySuperuser(isSuperuser)
-            .setClientId(clientId);
-    Optional<MetadataExtension> metadataExtension =
-        eppInput.getSingleExtension(MetadataExtension.class);
-    metadataExtension.ifPresent(
-        extension ->
-            historyBuilder
-                .setReason(extension.getReason())
-                .setRequestedByRegistrar(extension.getRequestedByRegistrar()));
-    return historyBuilder;
+    return makeHistoryEntryBuilder(
+        new ContactHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
   }
 
+  /**
+   * Provides a partially filled in {@link HostHistory.Builder}
+   *
+   * <p>This is not marked with {@link FlowScope} so that each retry gets a fresh one. Otherwise,
+   * the fact that the builder is one-use would cause NPEs.
+   */
   @Provides
-  static ContactHistory.Builder provideContactHistoryBuilder(
-      HistoryEntry.Builder historyEntryBuilder) {
-    return new ContactHistory.Builder().copyFrom(historyEntryBuilder);
+  static HostHistory.Builder provideHostHistoryBuilder(
+      Trid trid,
+      @InputXml byte[] inputXmlBytes,
+      @Superuser boolean isSuperuser,
+      @ClientId String clientId,
+      EppInput eppInput) {
+    return makeHistoryEntryBuilder(
+        new HostHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
   }
 
+  /**
+   * Provides a partially filled in {@link DomainHistory.Builder}
+   *
+   * <p>This is not marked with {@link FlowScope} so that each retry gets a fresh one. Otherwise,
+   * the fact that the builder is one-use would cause NPEs.
+   */
   @Provides
   static DomainHistory.Builder provideDomainHistoryBuilder(
-      HistoryEntry.Builder historyEntryBuilder) {
-    return new DomainHistory.Builder().copyFrom(historyEntryBuilder);
-  }
-
-  @Provides
-  static HostHistory.Builder provideHostHistoryBuilder(HistoryEntry.Builder historyEntryBuilder) {
-    return new HostHistory.Builder().copyFrom(historyEntryBuilder);
+      Trid trid,
+      @InputXml byte[] inputXmlBytes,
+      @Superuser boolean isSuperuser,
+      @ClientId String clientId,
+      EppInput eppInput) {
+    return makeHistoryEntryBuilder(
+        new DomainHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
   }
 
   /**

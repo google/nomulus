@@ -61,6 +61,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.eppcommon.StatusValue;
@@ -113,11 +114,11 @@ class DomainRestoreRequestFlowTest
     DomainBase domain = persistResource(newDomainBase(getUniqueIdFromCommand()));
     HistoryEntry historyEntry =
         persistResource(
-            new HistoryEntry.Builder()
+            new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_DELETE)
                 .setModificationTime(clock.nowUtc())
                 .setClientId(domain.getCurrentSponsorClientId())
-                .setParent(domain)
+                .setDomain(domain)
                 .build());
     persistResource(
         domain

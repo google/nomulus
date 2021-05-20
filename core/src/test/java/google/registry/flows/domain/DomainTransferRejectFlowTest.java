@@ -45,6 +45,7 @@ import google.registry.flows.exceptions.NotPendingTransferException;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.Trid;
@@ -367,9 +368,9 @@ class DomainTransferRejectFlowTest
     DomainTransactionRecord notCancellableRecord =
         DomainTransactionRecord.create("tld", clock.nowUtc().plusDays(1), NET_RENEWS_3_YR, 5);
     persistResource(
-        new HistoryEntry.Builder()
+        new DomainHistory.Builder()
             .setType(DOMAIN_TRANSFER_REQUEST)
-            .setParent(domain)
+            .setDomain(domain)
             .setModificationTime(clock.nowUtc().minusDays(4))
             .setClientId("TheRegistrar")
             .setDomainTransactionRecords(

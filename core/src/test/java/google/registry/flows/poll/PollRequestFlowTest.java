@@ -28,9 +28,11 @@ import com.google.common.collect.ImmutableList;
 import google.registry.flows.EppException;
 import google.registry.flows.FlowTestCase;
 import google.registry.flows.poll.PollRequestFlow.UnexpectedMessageIdException;
+import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
@@ -210,11 +212,11 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     // response data block is produced in the poll message.
     HistoryEntry historyEntry =
         persistResource(
-            new HistoryEntry.Builder()
+            new ContactHistory.Builder()
                 .setClientId("NewRegistrar")
                 .setModificationTime(clock.nowUtc().minusDays(1))
                 .setType(HistoryEntry.Type.CONTACT_DELETE)
-                .setParent(contact)
+                .setContact(contact)
                 .build());
     persistResource(
         new PollMessage.OneTime.Builder()
@@ -233,11 +235,11 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     // response data block is produced in the poll message.
     HistoryEntry historyEntry =
         persistResource(
-            new HistoryEntry.Builder()
+            new HostHistory.Builder()
                 .setClientId("NewRegistrar")
                 .setModificationTime(clock.nowUtc().minusDays(1))
                 .setType(HistoryEntry.Type.HOST_DELETE)
-                .setParent(host)
+                .setHost(host)
                 .build());
     persistResource(
         new PollMessage.OneTime.Builder()

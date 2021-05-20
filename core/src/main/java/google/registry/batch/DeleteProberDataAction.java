@@ -44,11 +44,11 @@ import google.registry.mapreduce.MapreduceRunner;
 import google.registry.mapreduce.inputs.EppResourceInputs;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
@@ -253,9 +253,9 @@ public class DeleteProberDataAction implements Runnable {
                         .setDeletionTime(tm().getTransactionTime())
                         .setStatusValues(null)
                         .build();
-                HistoryEntry historyEntry =
-                    new HistoryEntry.Builder()
-                        .setParent(domain)
+                DomainHistory historyEntry =
+                    new DomainHistory.Builder()
+                        .setDomain(domain)
                         .setType(DOMAIN_DELETE)
                         .setModificationTime(tm().getTransactionTime())
                         .setBySuperuser(true)
@@ -263,11 +263,9 @@ public class DeleteProberDataAction implements Runnable {
                         .setClientId(registryAdminClientId)
                         .build();
                 // Note that we don't bother handling grace periods, billing events, pending
-                // transfers,
-                // poll messages, or auto-renews because these will all be hard-deleted the next
-                // time the
-                // mapreduce runs anyway.
-                auditedOfy().save().entities(deletedDomain, historyEntry);
+                // transfers, poll messages, or auto-renews because these will all be hard-deleted
+                // the next time the mapreduce runs anyway.
+                tm().putAll(deletedDomain, historyEntry);
                 updateForeignKeyIndexDeletionTime(deletedDomain);
                 dnsQueue.addDomainRefreshTask(deletedDomain.getDomainName());
               });

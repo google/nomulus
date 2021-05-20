@@ -207,9 +207,8 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
         .build();
   }
 
-  private HistoryEntry.Builder historyEntryBuilderFor(EppResource parent) {
-    return new HistoryEntry.Builder()
-        .setParent(parent)
+  private HistoryEntry.Builder<?, ?> historyEntryBuilderFor(EppResource parent) {
+    return HistoryEntry.createBuilderForResource(parent)
         .setType(HistoryEntry.Type.DOMAIN_CREATE)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
         .setModificationTime(fakeClock.nowUtc())
