@@ -1283,6 +1283,12 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("expirationWarningIntervalDays")
+    public static int provideExpiringNotificationInterval(RegistryConfigSettings config) {
+      return config.sslCertificateValidation.expirationWarningIntervalDays;
+    }
+
+    @Provides
     @Config("minimumRsaKeyLength")
     public static int provideMinimumRsaKeyLength(RegistryConfigSettings config) {
       return config.sslCertificateValidation.minimumRsaKeyLength;
