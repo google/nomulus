@@ -249,9 +249,8 @@ public class FlowModule {
       @Superuser boolean isSuperuser,
       @ClientId String clientId,
       EppInput eppInput) {
-    return (ContactHistory.Builder)
-        makeHistoryEntryBuilder(
-            new ContactHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
+    return makeHistoryEntryBuilder(
+        new ContactHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
   }
 
   /**
@@ -267,9 +266,8 @@ public class FlowModule {
       @Superuser boolean isSuperuser,
       @ClientId String clientId,
       EppInput eppInput) {
-    return (HostHistory.Builder)
-        makeHistoryEntryBuilder(
-            new HostHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
+    return makeHistoryEntryBuilder(
+        new HostHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
   }
 
   /**
@@ -285,9 +283,8 @@ public class FlowModule {
       @Superuser boolean isSuperuser,
       @ClientId String clientId,
       EppInput eppInput) {
-    return (DomainHistory.Builder)
-        makeHistoryEntryBuilder(
-            new DomainHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
+    return makeHistoryEntryBuilder(
+        new DomainHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
   }
 
   /**

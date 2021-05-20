@@ -308,8 +308,13 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
         domainTransactionRecords == null ? null : ImmutableSet.copyOf(domainTransactionRecords);
   }
 
-  // This method only exists to satisfy the requirement that the HistoryEntry is NOT abstract, it
-  // should never be called directly and all three of the subclass of HistoryEntry implements it.
+  /**
+   * Throws an error when trying to get a builder from a bare {@link HistoryEntry}.
+   *
+   * <p>This method only exists to satisfy the requirement that the {@link HistoryEntry} is NOT
+   * abstract, it should never be called directly and all three of the subclass of {@link
+   * HistoryEntry} implements it.
+   */
   @Override
   public Builder<? extends HistoryEntry, ?> asBuilder() {
     throw new UnsupportedOperationException(
@@ -319,27 +324,34 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
             + "{Contact,Host,Domain}History.Builder.copyFrom(HistoryEntry) instead.");
   }
 
-  // This is lifted from the copyFrom(HistoryEntry) code below. It is only needed during the
-  // transition so some code duplication is OK.
+  /**
+   * Clones and returns a {@code HistoryEntry} objec
+   *
+   * <p>This is useful when converting a subclass to the base class to persist to Datastore.
+   */
   public HistoryEntry asHistoryEntry() {
     HistoryEntry historyEntry = new HistoryEntry();
-    historyEntry.id = this.id;
-    historyEntry.parent = this.parent;
-    historyEntry.type = this.type;
-    historyEntry.period = this.period;
-    historyEntry.xmlBytes = this.xmlBytes;
-    historyEntry.modificationTime = this.modificationTime;
-    historyEntry.clientId = this.clientId;
-    historyEntry.otherClientId = this.otherClientId;
-    historyEntry.trid = this.trid;
-    historyEntry.bySuperuser = this.bySuperuser;
-    historyEntry.reason = this.reason;
-    historyEntry.requestedByRegistrar = this.requestedByRegistrar;
-    historyEntry.domainTransactionRecords =
-        this.domainTransactionRecords == null
-            ? null
-            : ImmutableSet.copyOf(this.domainTransactionRecords);
+    copy(this, historyEntry);
     return historyEntry;
+  }
+
+  protected static void copy(HistoryEntry src, HistoryEntry dst) {
+    dst.id = src.id;
+    dst.parent = src.parent;
+    dst.type = src.type;
+    dst.period = src.period;
+    dst.xmlBytes = src.xmlBytes;
+    dst.modificationTime = src.modificationTime;
+    dst.clientId = src.clientId;
+    dst.otherClientId = src.otherClientId;
+    dst.trid = src.trid;
+    dst.bySuperuser = src.bySuperuser;
+    dst.reason = src.reason;
+    dst.requestedByRegistrar = src.requestedByRegistrar;
+    dst.domainTransactionRecords =
+        src.domainTransactionRecords == null
+            ? null
+            : ImmutableSet.copyOf(src.domainTransactionRecords);
   }
 
   @SuppressWarnings("unchecked")
@@ -408,22 +420,7 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
     // Used to fill out the fields in this object from an object which may not be exactly the same
     // as the class T, where both classes still subclass HistoryEntry
     public B copyFrom(HistoryEntry historyEntry) {
-      setId(historyEntry.id);
-      setParent(historyEntry.parent);
-      setType(historyEntry.type);
-      setPeriod(historyEntry.period);
-      setXmlBytes(historyEntry.xmlBytes);
-      setModificationTime(historyEntry.modificationTime);
-      setClientId(historyEntry.clientId);
-      setOtherClientId(historyEntry.otherClientId);
-      setTrid(historyEntry.trid);
-      setBySuperuser(historyEntry.bySuperuser);
-      setReason(historyEntry.reason);
-      setRequestedByRegistrar(historyEntry.requestedByRegistrar);
-      setDomainTransactionRecords(
-          historyEntry.domainTransactionRecords == null
-              ? null
-              : ImmutableSet.copyOf(historyEntry.domainTransactionRecords));
+      copy(historyEntry, getInstance());
       return thisCastToDerived();
     }
 
