@@ -458,6 +458,12 @@ public class Registrar extends ImmutableObject
   /** The time that the certificate was last updated. */
   DateTime lastCertificateUpdateTime;
 
+  /** The time that an email was sent to notify expiring certificate  */
+  DateTime lastExpiringCertNotificationSentDate;
+
+  /** The time that an email was sent to notify expiring certificate  */
+  DateTime lastExpiringFailoverCertNotificationSentDate;
+
   /** Telephone support passcode (5-digit numeric) */
   String phonePasscode;
 
@@ -506,6 +512,14 @@ public class Registrar extends ImmutableObject
 
   public DateTime getLastCertificateUpdateTime() {
     return lastCertificateUpdateTime;
+  }
+
+  public DateTime getLastExpiringFailoverCertNotificationSentDate() {
+    return lastExpiringFailoverCertNotificationSentDate;
+  }
+
+  public DateTime getLastExpiringCertNotificationSentDate() {
+    return lastExpiringCertNotificationSentDate;
   }
 
   public String getRegistrarName() {
@@ -671,6 +685,9 @@ public class Registrar extends ImmutableObject
         .putString("creationTime", creationTime.getTimestamp())
         .putString("lastUpdateTime", lastUpdateTime.getTimestamp())
         .putString("lastCertificateUpdateTime", lastCertificateUpdateTime)
+        .putString("lastExpiringCertNotificationSentDate", lastExpiringCertNotificationSentDate)
+        .putString("lastExpiringFailoverCertNotificationSentDate",
+            lastExpiringFailoverCertNotificationSentDate)
         .put("registrarName", registrarName)
         .put("type", type)
         .put("state", state)
@@ -836,6 +853,16 @@ public class Registrar extends ImmutableObject
         getInstance().clientCertificateHash = clientCertificateHash;
         getInstance().lastCertificateUpdateTime = now;
       }
+      return this;
+    }
+
+    public Builder setLastExpiringCertNotificationSentDate (DateTime date) {
+      getInstance().lastExpiringCertNotificationSentDate = date;
+      return this;
+    }
+
+    public Builder setLastExpiringFailoverCertNotificationSentDate (DateTime date) {
+      getInstance().lastExpiringFailoverCertNotificationSentDate = date;
       return this;
     }
 

@@ -81,6 +81,9 @@ public class SendEmailService {
           for (InternetAddress bcc : emailMessage.bccs()) {
             msg.addRecipient(RecipientType.BCC, bcc);
           }
+          for (InternetAddress cc : emailMessage.ccs()) {
+            msg.addRecipient(RecipientType.CC, cc);
+          }
           msg.setContent(multipart);
           msg.saveChanges();
           transportEmailSender.sendMessage(msg);
