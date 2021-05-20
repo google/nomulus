@@ -14,26 +14,24 @@
 
 package google.registry.schema.replay;
 
-import static google.registry.model.common.CrossTldSingleton.SINGLETON_ID;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import google.registry.model.common.CrossTldSingleton;
+import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.Id;
 import org.joda.time.DateTime;
 
 @Entity
-public class SqlReplayCheckpoint implements SqlOnlyEntity {
+public class SqlReplayCheckpoint extends CrossTldSingleton implements SqlOnlyEntity {
 
-  // Hibernate doesn't allow us to have a converted DateTime as our primary key so we need this
-  @Id private long revisionId = SINGLETON_ID;
-
+  @Column(nullable = false)
   private DateTime lastReplayTime;
 
   public static DateTime get() {
     jpaTm().assertInTransaction();
-    return jpaTm().loadAllOf(SqlReplayCheckpoint.class).stream()
-        .findFirst()
+    return jpaTm()
+        .loadSingleton(SqlReplayCheckpoint.class)
         .map(checkpoint -> checkpoint.lastReplayTime)
         .orElse(START_OF_TIME);
   }

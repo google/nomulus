@@ -15,17 +15,14 @@
 package google.registry.model.tmch;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.persistence.VKey;
 import google.registry.schema.replay.NonReplicatedEntity;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
@@ -50,13 +47,7 @@ public final class TmchCrl extends CrossTldSingleton implements NonReplicatedEnt
 
   /** Returns the singleton instance of this entity, without memoization. */
   public static Optional<TmchCrl> get() {
-    return tm().transact(
-            () ->
-                tm().loadByKeyIfPresent(
-                        VKey.create(
-                            TmchCrl.class,
-                            SINGLETON_ID,
-                            Key.create(getCrossTldKey(), TmchCrl.class, SINGLETON_ID))));
+    return tm().transact(() -> tm().loadSingleton(TmchCrl.class));
   }
 
   /**

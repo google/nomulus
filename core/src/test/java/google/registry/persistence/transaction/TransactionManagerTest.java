@@ -17,7 +17,9 @@ package google.registry.persistence.transaction;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -370,6 +372,27 @@ public class TransactionManagerTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> tm().transact(() -> tm().loadAllOf(TestEntity.class)));
+  }
+
+  @TestOfyAndSql
+  void loadSingleton_returnsValue_orEmpty() {
+    assertEntityNotExist(theEntity);
+    assertThat(transactIfJpaTm(() -> tm().loadSingleton(TestEntity.class))).isEmpty();
+
+    tm().transact(() -> tm().insert(theEntity));
+    assertThat(transactIfJpaTm(() -> tm().loadSingleton(TestEntity.class))).hasValue(theEntity);
+  }
+
+  @TestOfyAndSql
+  void loadSingleton_exceptionOnMultiple() {
+    assertAllEntitiesNotExist(moreEntities);
+    tm().transact(() -> tm().insertAll(moreEntities));
+    assertThat(
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> transactIfJpaTm(() -> tm().loadSingleton(TestEntity.class))))
+        .hasMessageThat()
+        .isEqualTo("Expected at most one entity of type TestEntity, found at least two");
   }
 
   private static void assertEntityExists(TestEntity entity) {

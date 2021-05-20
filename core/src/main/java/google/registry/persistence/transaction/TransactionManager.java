@@ -246,6 +246,13 @@ public interface TransactionManager {
    */
   <T> ImmutableList<T> loadAllOf(Class<T> clazz);
 
+  /**
+   * Loads the only instance of this particular class, or empty if none exists.
+   *
+   * <p>Throws an exception if there is more than one element in the table.
+   */
+  <T> Optional<T> loadSingleton(Class<T> clazz);
+
   /** Deletes the entity by its id. */
   void delete(VKey<?> key);
 

@@ -14,7 +14,6 @@
 
 package google.registry.model.server;
 
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -22,7 +21,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.primitives.Longs;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.OnLoad;
@@ -30,7 +28,6 @@ import com.googlecode.objectify.annotation.Unindex;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.persistence.VKey;
 import google.registry.schema.replay.NonReplicatedEntity;
 import java.nio.ByteBuffer;
 import java.util.Optional;
@@ -65,14 +62,9 @@ public class ServerSecret extends CrossTldSingleton implements NonReplicatedEnti
               });
 
   private static ServerSecret retrieveAndSaveSecret() {
-    VKey<ServerSecret> vkey =
-        VKey.create(
-            ServerSecret.class,
-            SINGLETON_ID,
-            Key.create(getCrossTldKey(), ServerSecret.class, SINGLETON_ID));
     if (tm().isOfy()) {
       // Attempt a quick load if we're in ofy first to short-circuit sans transaction
-      Optional<ServerSecret> secretWithoutTransaction = tm().loadByKeyIfPresent(vkey);
+      Optional<ServerSecret> secretWithoutTransaction = tm().loadSingleton(ServerSecret.class);
       if (secretWithoutTransaction.isPresent()) {
         return secretWithoutTransaction.get();
       }
@@ -81,7 +73,7 @@ public class ServerSecret extends CrossTldSingleton implements NonReplicatedEnti
             () -> {
               // Make sure we're in a transaction and attempt to load any existing secret, then
               // create it if it's absent.
-              Optional<ServerSecret> secret = tm().loadByKeyIfPresent(vkey);
+              Optional<ServerSecret> secret = tm().loadSingleton(ServerSecret.class);
               if (!secret.isPresent()) {
                 secret = Optional.of(create(UUID.randomUUID()));
                 tm().insertWithoutBackup(secret.get());
