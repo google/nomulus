@@ -355,6 +355,12 @@
     <url-pattern>/_dr/task/deleteExpiredDomains</url-pattern>
   </servlet-mapping>
 
+  <!-- Background action to send notification emails to registrars with expiring certificate. -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/sendExpiringCertificateNotificationEmail</url-pattern>
+  </servlet-mapping>
+
   <!-- Mapreduce to import contacts from escrow file -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
