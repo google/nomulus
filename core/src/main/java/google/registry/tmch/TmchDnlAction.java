@@ -18,8 +18,8 @@ import static google.registry.request.Action.Method.POST;
 
 import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeyModule.Key;
-import google.registry.model.tmch.ClaimsListDualDatabaseDao;
-import google.registry.model.tmch.ClaimsListShard;
+import google.registry.model.tmch.ClaimsList;
+import google.registry.model.tmch.ClaimsListDao;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import java.io.IOException;
@@ -55,8 +55,8 @@ public final class TmchDnlAction implements Runnable {
     } catch (SignatureException | IOException | PGPException e) {
       throw new RuntimeException(e);
     }
-    ClaimsListShard claims = ClaimsListParser.parse(lines);
-    ClaimsListDualDatabaseDao.save(claims);
+    ClaimsList claims = ClaimsListParser.parse(lines);
+    ClaimsListDao.save(claims);
     logger.atInfo().log(
         "Inserted %,d claims into the DB(s), created at %s",
         claims.size(), claims.getTmdbGenerationTime());

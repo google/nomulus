@@ -20,8 +20,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import google.registry.model.tmch.ClaimsListDualDatabaseDao;
-import google.registry.model.tmch.ClaimsListShard;
+import google.registry.model.tmch.ClaimsList;
+import google.registry.model.tmch.ClaimsListDao;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ class TmchDnlActionTest extends TmchActionTestCase {
 
   @Test
   void testDnl() throws Exception {
-    assertThat(ClaimsListDualDatabaseDao.get().getClaimKey("xn----7sbejwbn3axu3d")).isEmpty();
+    assertThat(ClaimsListDao.get().getClaimKey("xn----7sbejwbn3axu3d")).isEmpty();
     when(httpResponse.getContent())
         .thenReturn(TmchTestData.loadBytes("dnl-latest.csv").read())
         .thenReturn(TmchTestData.loadBytes("dnl-latest.sig").read());
@@ -50,7 +50,7 @@ class TmchDnlActionTest extends TmchActionTestCase {
         .isEqualTo(MARKSDB_URL + "/dnl/dnl-latest.sig");
 
     // Make sure the contents of testdata/dnl-latest.csv got inserted into the database.
-    ClaimsListShard claimsList = ClaimsListDualDatabaseDao.get();
+    ClaimsList claimsList = ClaimsListDao.get();
     assertThat(claimsList.getTmdbGenerationTime())
         .isEqualTo(DateTime.parse("2013-11-24T23:15:37.4Z"));
     assertThat(claimsList.getClaimKey("xn----7sbejwbn3axu3d"))

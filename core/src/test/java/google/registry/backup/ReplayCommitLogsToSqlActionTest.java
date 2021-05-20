@@ -55,7 +55,7 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.server.Lock;
-import google.registry.model.tmch.ClaimsListShard;
+import google.registry.model.tmch.ClaimsList;
 import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -405,7 +405,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
     // Save a couple deletes that aren't propagated to SQL (the objects deleted are irrelevant)
-    Key<ClaimsListShard> claimsListKey = Key.create(ClaimsListShard.class, 1L);
+    Key<ClaimsList> claimsListKey = Key.create(ClaimsList.class, 1L);
     saveDiffFile(
         gcsService,
         createCheckpoint(now.minusMinutes(1)),

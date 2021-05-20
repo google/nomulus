@@ -847,20 +847,20 @@ class google.registry.model.server.ServerSecret {
   long leastSignificant;
   long mostSignificant;
 }
-class google.registry.model.tmch.ClaimsListShard {
+class google.registry.model.tmch.ClaimsList {
   @Id long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsListShard$ClaimsListRevision> parent;
+  @Parent com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsList$ClaimsListRevision> parent;
   java.util.Map<java.lang.String, java.lang.String> labelsToKeys;
   org.joda.time.DateTime creationTime;
 }
-class google.registry.model.tmch.ClaimsListShard$ClaimsListRevision {
+class google.registry.model.tmch.ClaimsList$ClaimsListRevision {
   @Id long versionId;
-  @Parent com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsListShard$ClaimsListSingleton> parent;
+  @Parent com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsList$ClaimsListSingleton> parent;
 }
-class google.registry.model.tmch.ClaimsListShard$ClaimsListSingleton {
+class google.registry.model.tmch.ClaimsList$ClaimsListSingleton {
   @Id long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsListShard$ClaimsListRevision> activeRevision;
+  com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsList$ClaimsListRevision> activeRevision;
 }
 class google.registry.model.tmch.TmchCrl {
   @Id long id;

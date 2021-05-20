@@ -47,9 +47,9 @@ import google.registry.model.server.KmsSecret;
 import google.registry.model.server.KmsSecretRevision;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
-import google.registry.model.tmch.ClaimsListShard;
-import google.registry.model.tmch.ClaimsListShard.ClaimsListRevision;
-import google.registry.model.tmch.ClaimsListShard.ClaimsListSingleton;
+import google.registry.model.tmch.ClaimsList;
+import google.registry.model.tmch.ClaimsList.ClaimsListRevision;
+import google.registry.model.tmch.ClaimsList.ClaimsListSingleton;
 import google.registry.model.tmch.TmchCrl;
 import google.registry.schema.replay.LastSqlTransaction;
 
@@ -64,7 +64,7 @@ public final class EntityClasses {
           BillingEvent.Modification.class,
           BillingEvent.OneTime.class,
           BillingEvent.Recurring.class,
-          ClaimsListShard.class,
+          ClaimsList.class,
           ClaimsListRevision.class,
           ClaimsListSingleton.class,
           CommitLogBucket.class,

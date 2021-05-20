@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.tmch.ClaimsListShard;
+import google.registry.model.tmch.ClaimsList;
 import java.util.List;
 import org.joda.time.DateTime;
 
@@ -34,11 +34,11 @@ import org.joda.time.DateTime;
 public class ClaimsListParser {
 
   /**
-   * Converts the lines from the DNL CSV file into a {@link ClaimsListShard} object.
+   * Converts the lines from the DNL CSV file into a {@link ClaimsList} object.
    *
    * <p>Please note that this does <b>not</b> insert the object into Datastore.
    */
-  public static ClaimsListShard parse(List<String> lines) {
+  public static ClaimsList parse(List<String> lines) {
     ImmutableMap.Builder<String, String> builder = new ImmutableMap.Builder<>();
 
     // First line: <version>,<DNL List creation datetime>
@@ -74,6 +74,6 @@ public class ClaimsListParser {
       builder.put(label, lookupKey);
     }
 
-    return ClaimsListShard.create(creationTime, builder.build());
+    return ClaimsList.create(creationTime, builder.build());
   }
 }

@@ -34,7 +34,7 @@ import google.registry.model.server.KmsSecretRevisionSqlDaoTest;
 import google.registry.model.server.LockTest;
 import google.registry.model.server.ServerSecretTest;
 import google.registry.model.smd.SignedMarkRevocationListDaoTest;
-import google.registry.model.tmch.ClaimsListSqlDaoTest;
+import google.registry.model.tmch.ClaimsListDaoTest;
 import google.registry.model.tmch.TmchCrlTest;
 import google.registry.persistence.transaction.JpaEntityCoverageExtension;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
@@ -82,7 +82,7 @@ import org.junit.runner.RunWith;
   BeforeSuiteTest.class,
   AllocationTokenTest.class,
   BillingEventTest.class,
-  ClaimsListSqlDaoTest.class,
+  ClaimsListDaoTest.class,
   ContactHistoryTest.class,
   ContactResourceTest.class,
   CursorTest.class,

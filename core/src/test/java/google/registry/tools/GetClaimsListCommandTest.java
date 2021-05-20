@@ -20,8 +20,8 @@ import static java.nio.file.Files.readAllLines;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.tmch.ClaimsListDualDatabaseDao;
-import google.registry.model.tmch.ClaimsListShard;
+import google.registry.model.tmch.ClaimsList;
+import google.registry.model.tmch.ClaimsListDao;
 import java.io.File;
 import java.nio.file.Files;
 import org.joda.time.DateTime;
@@ -32,8 +32,7 @@ class GetClaimsListCommandTest extends CommandTestCase<GetClaimsListCommand> {
 
   @Test
   void testSuccess_getWorks() throws Exception {
-    ClaimsListDualDatabaseDao.save(
-        ClaimsListShard.create(DateTime.now(UTC), ImmutableMap.of("a", "1", "b", "2")));
+    ClaimsListDao.save(ClaimsList.create(DateTime.now(UTC), ImmutableMap.of("a", "1", "b", "2")));
     File output = tmpDir.resolve("claims.txt").toFile();
     runCommand("--output=" + output.getAbsolutePath());
     assertThat(readAllLines(output.toPath(), UTF_8)).containsExactly("a,1", "b,2");
@@ -41,8 +40,7 @@ class GetClaimsListCommandTest extends CommandTestCase<GetClaimsListCommand> {
 
   @Test
   void testSuccess_endsWithNewline() throws Exception {
-    ClaimsListDualDatabaseDao.save(
-        ClaimsListShard.create(DateTime.now(UTC), ImmutableMap.of("a", "1")));
+    ClaimsListDao.save(ClaimsList.create(DateTime.now(UTC), ImmutableMap.of("a", "1")));
     File output = tmpDir.resolve("claims.txt").toFile();
     runCommand("--output=" + output.getAbsolutePath());
     assertThat(new String(Files.readAllBytes(output.toPath()), UTF_8)).endsWith("\n");

@@ -45,7 +45,7 @@ import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
-import google.registry.model.tmch.ClaimsListDualDatabaseDao;
+import google.registry.model.tmch.ClaimsListDao;
 import google.registry.util.Clock;
 import java.util.HashSet;
 import java.util.Optional;
@@ -104,8 +104,7 @@ public final class DomainClaimsCheckFlow implements Flow {
           verifyClaimsPeriodNotEnded(registry, now);
         }
       }
-      Optional<String> claimKey =
-          ClaimsListDualDatabaseDao.get().getClaimKey(parsedDomain.parts().get(0));
+      Optional<String> claimKey = ClaimsListDao.get().getClaimKey(parsedDomain.parts().get(0));
       launchChecksBuilder.add(
           LaunchCheck.create(
               LaunchCheckName.create(claimKey.isPresent(), domainName), claimKey.orElse(null)));

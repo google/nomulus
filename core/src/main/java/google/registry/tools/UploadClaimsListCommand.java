@@ -21,15 +21,15 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
-import google.registry.model.tmch.ClaimsListDualDatabaseDao;
-import google.registry.model.tmch.ClaimsListShard;
+import google.registry.model.tmch.ClaimsList;
+import google.registry.model.tmch.ClaimsListDao;
 import google.registry.tmch.ClaimsListParser;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/** A command to upload a {@link ClaimsListShard}. */
+/** A command to upload a {@link ClaimsList}. */
 @Parameters(separators = " =", commandDescription = "Manually upload a new claims list file")
 final class UploadClaimsListCommand extends ConfirmingCommand implements CommandWithRemoteApi {
 
@@ -38,7 +38,7 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
 
   private String claimsListFilename;
 
-  private ClaimsListShard claimsList;
+  private ClaimsList claimsList;
 
   @Override
   protected void init() throws IOException {
@@ -57,7 +57,7 @@ final class UploadClaimsListCommand extends ConfirmingCommand implements Command
 
   @Override
   public String execute() {
-    ClaimsListDualDatabaseDao.save(claimsList);
+    ClaimsListDao.save(claimsList);
     return String.format("Successfully uploaded claims list %s", claimsListFilename);
   }
 }

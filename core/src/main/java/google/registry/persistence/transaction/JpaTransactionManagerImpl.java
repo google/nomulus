@@ -37,7 +37,7 @@ import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.model.server.KmsSecret;
-import google.registry.model.tmch.ClaimsListShard.ClaimsListSingleton;
+import google.registry.model.tmch.ClaimsList.ClaimsListSingleton;
 import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;

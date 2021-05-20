@@ -15,22 +15,23 @@
 package google.registry.model.tmch;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
-import java.util.Optional;
+import com.google.common.collect.ImmutableMap;
 
-/** Data access object for {@link ClaimsListShard}. */
-public class ClaimsListSqlDao {
+/** Data access object for {@link ClaimsList}. */
+public class ClaimsListDao {
 
-  /** Saves the given {@link ClaimsListShard} to Cloud SQL. */
-  static void save(ClaimsListShard claimsList) {
+  /** Saves the given {@link ClaimsList} to Cloud SQL. */
+  public static void save(ClaimsList claimsList) {
     jpaTm().transact(() -> jpaTm().insert(claimsList));
   }
 
   /**
-   * Returns the most recent revision of the {@link ClaimsListShard} in SQL or an empty list if it
+   * Returns the most recent revision of the {@link ClaimsList} in SQL or an empty list if it
    * doesn't exist.
    */
-  static Optional<ClaimsListShard> get() {
+  public static ClaimsList get() {
     return jpaTm()
         .transact(
             () -> {
@@ -42,12 +43,13 @@ public class ClaimsListSqlDao {
                   .query(
                       "FROM ClaimsList cl LEFT JOIN FETCH cl.labelsToKeys WHERE cl.revisionId ="
                           + " :revisionId",
-                      ClaimsListShard.class)
+                      ClaimsList.class)
                   .setParameter("revisionId", revisionId)
                   .getResultStream()
                   .findFirst();
-            });
+            })
+        .orElse(ClaimsList.create(START_OF_TIME, ImmutableMap.of()));
   }
 
-  private ClaimsListSqlDao() {}
+  private ClaimsListDao() {}
 }
