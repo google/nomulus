@@ -32,6 +32,7 @@ public abstract class EmailMessage {
   public abstract InternetAddress from();
 
   public abstract ImmutableSet<InternetAddress> bccs();
+  public abstract ImmutableSet<InternetAddress> ccs();
 
   public abstract Optional<MediaType> contentType();
   public abstract Optional<Attachment> attachment();
@@ -60,6 +61,7 @@ public abstract class EmailMessage {
     public abstract Builder setFrom(InternetAddress from);
 
     public abstract Builder setBccs(Collection<InternetAddress> bccs);
+    public abstract Builder setCcs(Collection<InternetAddress> ccs);
 
     public abstract Builder setContentType(MediaType contentType);
     public abstract Builder setAttachment(Attachment attachment);
@@ -68,6 +70,8 @@ public abstract class EmailMessage {
 
     abstract ImmutableSet.Builder<InternetAddress> bccsBuilder();
 
+    abstract ImmutableSet.Builder<InternetAddress> ccsBuilder();
+
     public Builder addRecipient(InternetAddress value) {
       recipientsBuilder().add(value);
       return this;
@@ -75,6 +79,11 @@ public abstract class EmailMessage {
 
     public Builder addBcc(InternetAddress bcc) {
       bccsBuilder().add(bcc);
+      return this;
+    }
+
+    public Builder addCc(InternetAddress cc) {
+      ccsBuilder().add(cc);
       return this;
     }
 

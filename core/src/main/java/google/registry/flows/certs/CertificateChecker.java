@@ -24,6 +24,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
 import google.registry.util.DateTimeUtils;
 import java.io.ByteArrayInputStream;
+import java.io.StringWriter;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -32,12 +33,16 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
+import org.testcontainers.shaded.org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
+import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemObjectGenerator;
+import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemWriter;
 
 /** An utility to check that a given certificate meets our requirements */
 public class CertificateChecker {
@@ -47,6 +52,7 @@ public class CertificateChecker {
   private final int minimumRsaKeyLength;
   private final Clock clock;
   private final ImmutableSet<String> allowedEcdsaCurves;
+  private final int expirationWarningIntervalDays;
 
   /**
    * Constructs a CertificateChecker instance with the specified configuration parameters.
@@ -72,6 +78,7 @@ public class CertificateChecker {
       @Config("maxValidityDaysSchedule")
           ImmutableSortedMap<DateTime, Integer> maxValidityDaysSchedule,
       @Config("expirationWarningDays") int expirationWarningDays,
+      @Config("expirationWarningIntervalDays") int expirationWarningIntervalDays,
       @Config("minimumRsaKeyLength") int minimumRsaKeyLength,
       @Config("allowedEcdsaCurves") ImmutableSet<String> allowedEcdsaCurves,
       Clock clock) {
@@ -82,8 +89,10 @@ public class CertificateChecker {
     this.daysToExpiration = expirationWarningDays;
     this.minimumRsaKeyLength = minimumRsaKeyLength;
     this.allowedEcdsaCurves = allowedEcdsaCurves;
+    this.expirationWarningIntervalDays = expirationWarningIntervalDays;
     this.clock = clock;
   }
+
 
   /**
    * Checks the given certificate string for violations and throws an exception if any violations
@@ -156,18 +165,7 @@ public class CertificateChecker {
    * the violations the certificate has.
    */
   public ImmutableSet<CertificateViolation> checkCertificate(String certificateString) {
-    X509Certificate certificate;
-
-    try {
-      certificate =
-          (X509Certificate)
-              CertificateFactory.getInstance("X509")
-                  .generateCertificate(new ByteArrayInputStream(certificateString.getBytes(UTF_8)));
-    } catch (CertificateException e) {
-      throw new IllegalArgumentException("Unable to read given certificate.");
-    }
-
-    return checkCertificate(certificate);
+    return checkCertificate(getCertificate(certificateString));
   }
 
   /**
@@ -184,6 +182,20 @@ public class CertificateChecker {
             .minusDays(daysToExpiration)
             .toDate();
     return clock.nowUtc().toDate().after(nearingExpirationDate);
+  }
+
+  /** Converts the given string to a certificate object. */
+  public X509Certificate getCertificate(String certificateStr) {
+    X509Certificate certificate;
+    try {
+      certificate =
+          (X509Certificate)
+              CertificateFactory.getInstance("X509")
+                  .generateCertificate(new ByteArrayInputStream(certificateStr.getBytes(UTF_8)));
+    } catch (CertificateException e) {
+      throw new IllegalArgumentException("Unable to read given certificate.");
+    }
+    return certificate;
   }
 
   private static int getValidityLengthInDays(X509Certificate certificate) {
@@ -217,6 +229,45 @@ public class CertificateChecker {
                   && cParams.getCurve().equals(params.getCurve())
                   && cParams.getG().equals(params.getG());
             });
+  }
+
+  /** Serializes the certificate object to a certificate string. */
+  public String serializeCertificate(X509Certificate certificate) throws Exception {
+    StringWriter sw = new StringWriter();
+    try (PemWriter pw = new PemWriter(sw)) {
+      PemObjectGenerator generator = new JcaMiscPEMGenerator(certificate);
+      pw.writeObject(generator);
+    }
+    return sw.toString();
+  }
+
+  /** Returns {@code true} if the client should receive a notification email. */
+  public boolean shouldReceiveExpiringNotification(
+      @Nullable DateTime lastExpiringNotificationSentDate, String certificateStr) {
+    X509Certificate certificate = getCertificate(certificateStr);
+    DateTime now = clock.nowUtc();
+    Date expirationDate = certificate.getNotAfter();
+
+    if (expirationDate.before(now.toDate())) {
+      return false;
+    }
+    /*
+     * Client should receive notification email if : 1) certificate's expiration day < current date
+     * + 30 days AND 2) lastExpiringNotificationSentDate is null (client has not received their
+     * first notification) OR lastExpiringNotificationSentDate is not null but the gap between
+     * lastExpiringNotificationSentDate and currentDate is greater than 15 days.
+     *
+     * <p>daysToExpiration = 30, expiringNotificationInterval = 15;
+     */
+    return (expirationDate.before(now.plusDays(daysToExpiration).toDate())
+            || expirationDate.equals(now.plusDays(daysToExpiration).toDate()))
+        && (lastExpiringNotificationSentDate == null
+            || (lastExpiringNotificationSentDate
+                    .plusDays(expirationWarningIntervalDays)
+                    .isBefore(now)
+                || lastExpiringNotificationSentDate
+                    .plusDays(expirationWarningIntervalDays)
+                    .isEqual(now)));
   }
 
   private String getViolationDisplayMessage(CertificateViolation certificateViolation) {
