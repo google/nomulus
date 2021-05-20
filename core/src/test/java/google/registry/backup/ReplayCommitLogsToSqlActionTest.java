@@ -61,6 +61,7 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.schema.replay.SqlReplayCheckpoint;
+import google.registry.schema.tld.PremiumEntry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
@@ -98,6 +99,7 @@ public class ReplayCommitLogsToSqlActionTest {
               DomainBase.class,
               GracePeriod.class,
               PremiumList.class,
+              PremiumEntry.class,
               RegistrarContact.class,
               SqlReplayCheckpoint.class,
               TestObject.class)

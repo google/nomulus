@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.request.Action;
@@ -27,7 +28,6 @@ import google.registry.schema.tld.PremiumListDao;
 import java.util.Comparator;
 import java.util.Optional;
 import javax.inject.Inject;
-import org.hibernate.Hibernate;
 
 /**
  * An action that lists premium lists, for use by the {@code nomulus list_premium_lists} command.
@@ -58,7 +58,16 @@ public final class ListPremiumListsAction extends ListObjectsAction<PremiumList>
                     .map(PremiumListDao::getLatestRevision)
                     .filter(Optional::isPresent)
                     .map(Optional::get)
-                    .peek(list -> Hibernate.initialize(list.getLabelsToPrices()))
+                    .peek(list -> list.getLabelsToPrices())
                     .collect(toImmutableSortedSet(Comparator.comparing(PremiumList::getName))));
+  }
+
+  /**
+   * Provide a field override for labelsToPrices, since it is an {@code Insignificant} field and
+   * doesn't get returned from {@link google.registry.model.ImmutableObject#toDiffableFieldMap}.
+   */
+  @Override
+  public ImmutableMap<String, String> getFieldOverrides(PremiumList list) {
+    return ImmutableMap.of("labelsToPrices", list.getLabelsToPrices().toString());
   }
 }

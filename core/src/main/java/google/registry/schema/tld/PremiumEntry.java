@@ -52,8 +52,9 @@ public class PremiumEntry extends ImmutableObject implements Serializable, SqlOn
     return domainLabel;
   }
 
-  public static PremiumEntry create(BigDecimal price, String domainLabel) {
+  public static PremiumEntry create(long revisionId, BigDecimal price, String domainLabel) {
     PremiumEntry result = new PremiumEntry();
+    result.revisionId = revisionId;
     result.price = price;
     result.domainLabel = domainLabel;
     return result;
