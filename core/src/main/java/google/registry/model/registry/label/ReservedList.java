@@ -17,9 +17,13 @@ package google.registry.model.registry.label;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
+import static google.registry.model.ImmutableObject.Insignificant;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
+import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static org.joda.time.DateTimeZone.UTC;
 
@@ -33,26 +37,25 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.DomainLabelMetrics.MetricsReservedListMatch;
 import google.registry.schema.replay.NonReplicatedEntity;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import javax.annotation.Nullable;
-import javax.persistence.CollectionTable;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Embeddable;
+import javax.persistence.Id;
 import javax.persistence.Index;
-import javax.persistence.JoinColumn;
-import javax.persistence.MapKeyColumn;
+import javax.persistence.PostPersist;
+import javax.persistence.PreRemove;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import org.joda.time.DateTime;
 
 /**
@@ -71,25 +74,57 @@ public final class ReservedList
     extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry>
     implements NonReplicatedEntity {
 
-  @Mapify(ReservedListEntry.LabelMapper.class)
-  @ElementCollection
-  @CollectionTable(
-      name = "ReservedEntry",
-      joinColumns = @JoinColumn(name = "revisionId", referencedColumnName = "revisionId"))
-  @MapKeyColumn(name = "domain_label")
-  Map<String, ReservedListEntry> reservedListMap;
+  /**
+   * Mapping from domain name to its reserved list info.
+   *
+   * <p>This field requires special treatment since we want to lazy load it. We have to remove it
+   * from the immutability contract so we can modify it after construction and we have to handle the
+   * database processing on our own so we can detach it after load.
+   */
+  @Insignificant @Transient Map<String, ReservedListEntry> reservedListMap;
 
   @Column(nullable = false)
   boolean shouldPublish = true;
+
+  @PreRemove
+  void preRemove() {
+    jpaTm()
+        .query("DELETE FROM ReservedEntry WHERE revision_id = :revisionId")
+        .setParameter("revisionId", revisionId)
+        .executeUpdate();
+  }
+
+  /**
+   * Hibernate hook called on the insert of a new ReservedList. Stores the associated {@link
+   * ReservedEntry}'s.
+   *
+   * <p>We need to persist the list entries, but only on the initial insert (not on update) since
+   * the entries themselves never get changed, so we only annotate it with {@link PostPersist}, not
+   * {@link PostUpdate}.
+   */
+  @PostPersist
+  void postPersist() {
+    if (reservedListMap != null) {
+      reservedListMap.values().stream()
+          .forEach(
+              entry -> {
+                // We can safely change the revision id since it's "Insignificant".
+                entry.revisionId = revisionId;
+                jpaTm().insert(entry);
+              });
+    }
+  }
 
   /**
    * A reserved list entry entity, persisted to Datastore, that represents a single label and its
    * reservation type.
    */
   @Embed
-  @Embeddable
+  @javax.persistence.Entity(name = "ReservedEntry")
   public static class ReservedListEntry extends DomainLabelEntry<ReservationType, ReservedListEntry>
-      implements Buildable {
+      implements Buildable, NonReplicatedEntity, Serializable {
+
+    @Insignificant @Id Long revisionId;
 
     @Column(nullable = false)
     ReservationType reservationType;
@@ -129,6 +164,10 @@ public final class ReservedList
           "%s,%s%s", label, reservationType, isNullOrEmpty(comment) ? "" : " # " + comment);
     }
 
+    public String debug() {
+      return super.toString();
+    }
+
     /** A builder for constructing {@link ReservedListEntry} objects, since they are immutable. */
     private static class Builder
         extends DomainLabelEntry.Builder<ReservedListEntry, ReservedListEntry.Builder> {
@@ -165,7 +204,18 @@ public final class ReservedList
   }
 
   /** Returns a {@link Map} of domain labels to {@link ReservedListEntry}. */
-  public ImmutableMap<String, ReservedListEntry> getReservedListEntries() {
+  public synchronized ImmutableMap<String, ReservedListEntry> getReservedListEntries() {
+    if (reservedListMap == null) {
+      reservedListMap =
+          jpaTm()
+              .transact(
+                  () ->
+                      jpaTm()
+                          .createQueryComposer(ReservedListEntry.class)
+                          .where("revisionId", EQ, revisionId)
+                          .stream()
+                          .collect(toImmutableMap(ReservedListEntry::getLabel, e -> e)));
+    }
     return ImmutableMap.copyOf(nullToEmpty(reservedListMap));
   }
 

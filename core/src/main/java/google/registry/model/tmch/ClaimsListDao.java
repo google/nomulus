@@ -14,6 +14,7 @@
 
 package google.registry.model.tmch;
 
+import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -40,13 +41,9 @@ public class ClaimsListDao {
                       .query("SELECT MAX(revisionId) FROM ClaimsList", Long.class)
                       .getSingleResult();
               return jpaTm()
-                  .query(
-                      "FROM ClaimsList cl LEFT JOIN FETCH cl.labelsToKeys WHERE cl.revisionId ="
-                          + " :revisionId",
-                      ClaimsList.class)
-                  .setParameter("revisionId", revisionId)
-                  .getResultStream()
-                  .findFirst();
+                  .createQueryComposer(ClaimsList.class)
+                  .where("revisionId", EQ, revisionId)
+                  .first();
             })
         .orElse(ClaimsList.create(START_OF_TIME, ImmutableMap.of()));
   }

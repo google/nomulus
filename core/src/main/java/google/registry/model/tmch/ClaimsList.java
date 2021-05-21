@@ -16,13 +16,15 @@ package google.registry.model.tmch;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
+import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.EmbedMap;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
@@ -39,13 +41,11 @@ import google.registry.schema.replay.NonReplicatedEntity;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
-import javax.persistence.CollectionTable;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
-import javax.persistence.JoinColumn;
-import javax.persistence.MapKeyColumn;
+import javax.persistence.PostPersist;
+import javax.persistence.PreRemove;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import org.joda.time.DateTime;
@@ -94,15 +94,40 @@ public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
   @Column(name = "tmdb_generation_time", nullable = false)
   DateTime creationTime;
 
-  /** A map from labels to claims keys. */
-  @EmbedMap
-  @ElementCollection
-  @CollectionTable(
-      name = "ClaimsEntry",
-      joinColumns = @JoinColumn(name = "revisionId", referencedColumnName = "revisionId"))
-  @MapKeyColumn(name = "domainLabel", nullable = false)
-  @Column(name = "claimKey", nullable = false)
-  Map<String, String> labelsToKeys;
+  /**
+   * A map from labels to claims keys.
+   *
+   * <p>This field requires special treatment since we want to lazy load it. We have to remove it
+   * from the immutability contract so we can modify it after construction and we have to handle the
+   * database processing on our own so we can detach it after load.
+   */
+  @Insignificant @Transient ImmutableMap<String, String> labelsToKeys;
+
+  @PreRemove
+  void preRemove() {
+    jpaTm()
+        .query("DELETE FROM ClaimsEntry WHERE revision_id = :revisionId")
+        .setParameter("revisionId", revisionId)
+        .executeUpdate();
+  }
+
+  /**
+   * Hibernate hook called on the insert of a new ReservedList. Stores the associated {@link
+   * ReservedListEntry}'s.
+   *
+   * <p>We need to persist the list entries, but only on the initial insert (not on update) since
+   * the entries themselves never get changed, so we only annotate it with {@link PostPersist}, not
+   * {@link PostUpdate}.
+   */
+  @PostPersist
+  void postPersist() {
+    if (labelsToKeys != null) {
+      labelsToKeys.entrySet().stream()
+          .forEach(
+              entry ->
+                  jpaTm().insert(new ClaimsEntry(revisionId, entry.getKey(), entry.getValue())));
+    }
+  }
 
   /** Returns the revision id of this claims list, or throws exception if it is null. */
   public Long getRevisionId() {
@@ -128,20 +153,35 @@ public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
 
   /** Returns the claim key for a given domain if there is one, empty otherwise. */
   public Optional<String> getClaimKey(String label) {
-    return Optional.ofNullable(labelsToKeys.get(label));
+    return Optional.ofNullable(getLabelsToKeys().get(label));
   }
 
   /** Returns an {@link Map} mapping domain label to its lookup key. */
   public ImmutableMap<String, String> getLabelsToKeys() {
-    return ImmutableMap.copyOf(labelsToKeys);
+    if (labelsToKeys == null) {
+      labelsToKeys =
+          jpaTm()
+              .transact(
+                  () ->
+                      jpaTm()
+                          .createQueryComposer(ClaimsEntry.class)
+                          .where("revisionId", EQ, revisionId)
+                          .stream()
+                          .collect(
+                              toImmutableMap(
+                                  ClaimsEntry::getDomainLabel, ClaimsEntry::getClaimKey)));
+    }
+    return labelsToKeys;
   }
 
   /** Returns the number of claims. */
   public int size() {
-    return labelsToKeys.size();
+    // TODO: If labelsToKeys is null, we could get a way with a count query here.
+    return getLabelsToKeys().size();
   }
 
-  public static ClaimsList create(DateTime tmdbGenerationTime, Map<String, String> labelsToKeys) {
+  public static ClaimsList create(
+      DateTime tmdbGenerationTime, ImmutableMap<String, String> labelsToKeys) {
     ClaimsList instance = new ClaimsList();
     instance.id = allocateId();
     instance.creationTime = checkNotNull(tmdbGenerationTime);

@@ -61,6 +61,7 @@
     <class>google.registry.model.registrar.RegistrarContact</class>
     <class>google.registry.model.registry.label.PremiumList</class>
     <class>google.registry.model.registry.label.ReservedList</class>
+    <class>google.registry.model.registry.label.ReservedList$ReservedListEntry</class>
     <class>google.registry.model.registry.Registry</class>
     <class>google.registry.model.reporting.DomainTransactionRecord</class>
     <class>google.registry.model.reporting.Spec11ThreatMatch</class>
@@ -69,6 +70,7 @@
     <class>google.registry.model.server.ServerSecret</class>
     <class>google.registry.model.smd.SignedMarkRevocationList</class>
     <class>google.registry.model.tmch.ClaimsList</class>
+    <class>google.registry.model.tmch.ClaimsEntry</class>
     <class>google.registry.model.tmch.TmchCrl</class>
     <class>google.registry.persistence.transaction.TransactionEntity</class>
     <class>google.registry.schema.domain.RegistryLock</class>

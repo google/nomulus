@@ -83,8 +83,8 @@
 
     create table "ClaimsEntry" (
        revision_id int8 not null,
-        claim_key text not null,
         domain_label text not null,
+        claim_key text not null,
         primary key (revision_id, domain_label)
     );
 
@@ -650,9 +650,9 @@
 
     create table "ReservedEntry" (
        revision_id int8 not null,
-        reservation_type int4 not null,
-        comment text,
         domain_label text not null,
+        comment text,
+        reservation_type int4 not null,
         primary key (revision_id, domain_label)
     );
 
@@ -822,11 +822,6 @@ create index spec11threatmatch_registrar_id_idx on "Spec11ThreatMatch" (registra
 create index spec11threatmatch_tld_idx on "Spec11ThreatMatch" (tld);
 create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date);
 
-    alter table if exists "ClaimsEntry" 
-       add constraint FK6sc6at5hedffc0nhdcab6ivuq 
-       foreign key (revision_id) 
-       references "ClaimsList";
-
     alter table if exists "DelegationSignerData" 
        add constraint FKtr24j9v14ph2mfuw2gsmt12kq 
        foreign key (domain_repo_id) 
@@ -866,11 +861,6 @@ create index spec11threatmatch_check_date_idx on "Spec11ThreatMatch" (check_date
        add constraint FK2lhcwpxlnqijr96irylrh1707 
        foreign key (relock_revision_id) 
        references "RegistryLock";
-
-    alter table if exists "ReservedEntry" 
-       add constraint FKgq03rk0bt1hb915dnyvd3vnfc 
-       foreign key (revision_id) 
-       references "ReservedList";
 
     alter table if exists "SignedMarkRevocationEntry" 
        add constraint FK5ivlhvs3121yx2li5tqh54u4 
