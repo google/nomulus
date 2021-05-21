@@ -78,6 +78,18 @@ class google.registry.model.common.Cursor {
   google.registry.model.UpdateAutoTimestamp lastUpdateTime;
   org.joda.time.DateTime cursorTime;
 }
+class google.registry.model.common.DatabaseMigrationStateWrapper {
+  @Id long id;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  google.registry.model.common.DatabaseMigrationStateWrapper$MigrationState migrationState;
+}
+enum google.registry.model.common.DatabaseMigrationStateWrapper$MigrationState {
+  DATASTORE_ONLY;
+  DATASTORE_PRIMARY;
+  DATASTORE_PRIMARY_READ_ONLY;
+  SQL_ONLY;
+  SQL_PRIMARY;
+}
 class google.registry.model.common.DatabaseTransitionSchedule {
   @Id java.lang.String transitionId;
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
