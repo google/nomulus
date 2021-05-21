@@ -16,6 +16,7 @@ package google.registry.beam.spec11;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.beam.BeamUtils.getQueryFromFile;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
@@ -23,8 +24,10 @@ import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.beam.common.RegistryJpaIO;
+import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.util.Retrier;
@@ -96,27 +99,53 @@ public class Spec11Pipeline implements Serializable {
   }
 
   void setupPipeline(Pipeline pipeline) {
-    PCollection<Subdomain> domains =
-        pipeline.apply(
-            "Read active domains from BigQuery",
-            BigQueryIO.read(Subdomain::parseFromRecord)
-                .fromQuery(
-                    SqlTemplate.create(getQueryFromFile(Spec11Pipeline.class, "subdomains.sql"))
-                        .put("PROJECT_ID", options.getProject())
-                        .put("DATASTORE_EXPORT_DATASET", "latest_datastore_export")
-                        .put("REGISTRAR_TABLE", "Registrar")
-                        .put("DOMAIN_BASE_TABLE", "DomainBase")
-                        .build())
-                .withCoder(SerializableCoder.of(Subdomain.class))
-                .usingStandardSql()
-                .withoutValidation()
-                .withTemplateCompatibility());
+    PCollection<Subdomain> domains;
+    if (tm().isOfy()) {
+      domains =
+          pipeline.apply(
+              "Read active domains from BigQuery",
+              BigQueryIO.read(Subdomain::parseFromRecord)
+                  .fromQuery(
+                      SqlTemplate.create(getQueryFromFile(Spec11Pipeline.class, "subdomains.sql"))
+                          .put("PROJECT_ID", options.getProject())
+                          .put("DATASTORE_EXPORT_DATASET", "latest_datastore_export")
+                          .put("REGISTRAR_TABLE", "Registrar")
+                          .put("DOMAIN_BASE_TABLE", "DomainBase")
+                          .build())
+                  .withCoder(SerializableCoder.of(Subdomain.class))
+                  .usingStandardSql()
+                  .withoutValidation()
+                  .withTemplateCompatibility());
+    } else {
+      domains = readFromCloudSql(options, pipeline);
+    }
 
     PCollection<KV<Subdomain, ThreatMatch>> threatMatches =
         domains.apply("Run through SafeBrowsing API", ParDo.of(safeBrowsingFn));
 
     saveToSql(threatMatches, options);
     saveToGcs(threatMatches, options);
+  }
+
+  static PCollection<Subdomain> readFromCloudSql(Spec11PipelineOptions options, Pipeline pipeline) {
+    Read<Object[], Subdomain> read =
+        RegistryJpaIO.read(
+            "select d, r.emailAddress from Domain d join Registrar r on"
+                + " d.currentSponsorClientId = r.clientIdentifier where r.type = 'REAL'"
+                + " and d.deletionTime > now()",
+            Spec11Pipeline::parseRow);
+
+    return pipeline.apply("Read active domains from Cloud SQL", read);
+  }
+
+  private static Subdomain parseRow(Object[] row) {
+    DomainBase domainBase = (DomainBase) row[0];
+    String emailAddress = (String) row[1];
+    return Subdomain.create(
+        domainBase.getDomainName(),
+        domainBase.getRepoId(),
+        domainBase.getCurrentSponsorClientId(),
+        emailAddress);
   }
 
   static void saveToSql(
