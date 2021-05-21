@@ -18,6 +18,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.AppEngineExtension.makeRegistrar1;
+import static google.registry.testing.DatabaseHelper.newRegistry;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -25,9 +27,16 @@ import com.google.common.collect.Streams;
 import com.google.common.truth.Correspondence;
 import com.google.common.truth.Correspondence.BinaryPredicate;
 import google.registry.beam.TestPipelineExtension;
+import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainAuthInfo;
+import google.registry.model.domain.DomainBase;
+import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
+import google.registry.model.registrar.Registrar;
+import google.registry.model.registry.Registry;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.model.reporting.Spec11ThreatMatchDao;
+import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
 import google.registry.testing.DatastoreEntityExtension;
@@ -39,10 +48,12 @@ import java.nio.file.Path;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +70,9 @@ import org.junit.jupiter.api.io.TempDir;
  * assuming that date is sourcede correctly the {@code BigQueryIO}.
  */
 class Spec11PipelineTest {
+
+  private static final DateTime START_TIME = DateTime.parse("2020-01-27T00:00:00.0Z");
+  private final FakeClock fakeClock = new FakeClock(START_TIME);
 
   private static final String DATE = "2020-01-27";
   private static final String SAFE_BROWSING_API_KEY = "api-key";
@@ -186,6 +200,109 @@ class Spec11PipelineTest {
             Correspondence.from(
                 new ThreatMatchJsonPredicate(), "has fields with unordered threatTypes equal to"))
         .containsExactlyElementsIn(expectedFileContents.subList(1, expectedFileContents.size()));
+  }
+
+  @Test
+  void testSuccess_readFromCloudSql() throws Exception {
+    setupCloudSql();
+
+    PCollection<Subdomain> subdomains = Spec11Pipeline.readFromCloudSql(options, pipeline);
+    PAssert.that(subdomains).containsInAnyOrder(SUBDOMAINS);
+
+    pipeline.run().waitUntilFinish();
+  }
+
+  private void setupCloudSql() {
+    Registry registry1 = newRegistry("com", "A_APP");
+    Registry registry2 = newRegistry("net", "B_APP");
+    Registry registry3 = newRegistry("bank", "C_APP");
+    Registry registry4 = newRegistry("dev", "D_APP");
+
+    Registrar registrar1 =
+        makeRegistrar1()
+            .asBuilder()
+            .setClientId("hello-registrar")
+            .setEmailAddress("email@hello.net")
+            .build();
+    Registrar registrar2 =
+        makeRegistrar1()
+            .asBuilder()
+            .setClientId("kitty-registrar")
+            .setEmailAddress("contact@kit.ty")
+            .build();
+    Registrar registrar3 =
+        makeRegistrar1()
+            .asBuilder()
+            .setClientId("cool-registrar")
+            .setEmailAddress("cool@aid.net")
+            .build();
+
+    ContactResource contact1 =
+        new ContactResource.Builder()
+            .setRepoId("contactid_1")
+            .setCreationClientId(registrar1.getClientId())
+            .setTransferData(new ContactTransferData.Builder().build())
+            .setPersistedCurrentSponsorClientId(registrar1.getClientId())
+            .build();
+    ContactResource contact2 =
+        new ContactResource.Builder()
+            .setRepoId("contactid_2")
+            .setCreationClientId(registrar2.getClientId())
+            .setTransferData(new ContactTransferData.Builder().build())
+            .setPersistedCurrentSponsorClientId(registrar2.getClientId())
+            .build();
+    ContactResource contact3 =
+        new ContactResource.Builder()
+            .setRepoId("contactid_3")
+            .setCreationClientId(registrar3.getClientId())
+            .setTransferData(new ContactTransferData.Builder().build())
+            .setPersistedCurrentSponsorClientId(registrar3.getClientId())
+            .build();
+
+    DomainBase domain1 = createDomain("111.com", "123456789-COM", registrar1, contact1);
+    DomainBase domain2 = createDomain("party-night.net", "2244AABBC-NET", registrar2, contact2);
+    DomainBase domain3 = createDomain("bitcoin.bank", "1C3D5E7F9-BANK", registrar1, contact1);
+    DomainBase domain4 = createDomain("no-email.com", "2A4BA9BBC-COM", registrar2, contact2);
+    DomainBase domain5 =
+        createDomain("anti-anti-anti-virus.dev", "555666888-DEV", registrar3, contact3);
+
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .insertAll(
+                        ImmutableList.of(
+                            registry1,
+                            registry2,
+                            registry3,
+                            registry4,
+                            registrar1,
+                            registrar2,
+                            registrar3,
+                            contact1,
+                            contact2,
+                            contact3,
+                            domain1,
+                            domain2,
+                            domain3,
+                            domain4,
+                            domain5)));
+  }
+
+  private DomainBase createDomain(
+      String domainName, String repoId, Registrar registrar, ContactResource contact) {
+    return new DomainBase.Builder()
+        .setDomainName(domainName)
+        .setRepoId(repoId)
+        .setCreationClientId(registrar.getClientId())
+        .setLastEppUpdateTime(fakeClock.nowUtc())
+        .setLastEppUpdateClientId(registrar.getClientId())
+        .setLastTransferTime(fakeClock.nowUtc())
+        .setRegistrant(contact.createVKey())
+        .setPersistedCurrentSponsorClientId(registrar.getClientId())
+        .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
+        .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
+        .build();
   }
 
   /** Returns the text contents of a file under the beamBucket/results directory. */
