@@ -179,8 +179,9 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
               ImmutableSortedMap.of(START_OF_TIME, MigrationState.DATASTORE_ONLY),
               MigrationStateTransition.class);
 
+  @VisibleForTesting
   @Mapify(TimeMapper.class)
-  TimedTransitionProperty<MigrationState, MigrationStateTransition> migrationTransitions =
+  public TimedTransitionProperty<MigrationState, MigrationStateTransition> migrationTransitions =
       TimedTransitionProperty.forMapify(
           MigrationState.DATASTORE_ONLY, MigrationStateTransition.class);
 
