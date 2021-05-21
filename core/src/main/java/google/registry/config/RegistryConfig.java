@@ -1502,22 +1502,6 @@ public final class RegistryConfig {
     CONFIG_SETTINGS.get().cloudSql.replicateTransactions = replicateTransactions;
   }
 
-  /**
-   * Returns whether or not to replay commit logs to the SQL database after export to GCS.
-   *
-   * <p>If true, we will trigger the {@link google.registry.backup.ReplayCommitLogsToSqlAction}
-   * after the {@link google.registry.backup.ExportCommitLogDiffAction} to load the commit logs and
-   * replay them to SQL.
-   */
-  public static boolean getCloudSqlReplayCommitLogs() {
-    return CONFIG_SETTINGS.get().cloudSql.replayCommitLogs;
-  }
-
-  @VisibleForTesting
-  public static void overrideCloudSqlReplayCommitLogs(boolean replayCommitLogs) {
-    CONFIG_SETTINGS.get().cloudSql.replayCommitLogs = replayCommitLogs;
-  }
-
   /** Returns the roid suffix to be used for the roids of all contacts and hosts. */
   public static String getContactAndHostRoidSuffix() {
     return CONFIG_SETTINGS.get().registryPolicy.contactAndHostRoidSuffix;

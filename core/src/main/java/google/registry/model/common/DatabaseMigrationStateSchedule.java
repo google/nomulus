@@ -55,15 +55,17 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
    * not the phase is read-only.
    */
   public enum MigrationState {
-    DATASTORE_ONLY(PrimaryDatabase.DATASTORE, false),
-    DATASTORE_PRIMARY(PrimaryDatabase.DATASTORE, false),
-    DATASTORE_PRIMARY_READ_ONLY(PrimaryDatabase.DATASTORE, true),
-    SQL_PRIMARY_READ_ONLY(PrimaryDatabase.CLOUD_SQL, true),
-    SQL_PRIMARY(PrimaryDatabase.CLOUD_SQL, false),
-    SQL_ONLY(PrimaryDatabase.CLOUD_SQL, false);
+    DATASTORE_ONLY(PrimaryDatabase.DATASTORE, false, false, false),
+    DATASTORE_PRIMARY(PrimaryDatabase.DATASTORE, false, true, false),
+    DATASTORE_PRIMARY_READ_ONLY(PrimaryDatabase.DATASTORE, true, true, false),
+    SQL_PRIMARY_READ_ONLY(PrimaryDatabase.CLOUD_SQL, true, false, true),
+    SQL_PRIMARY(PrimaryDatabase.CLOUD_SQL, false, false, true),
+    SQL_ONLY(PrimaryDatabase.CLOUD_SQL, false, false, false);
 
     private final PrimaryDatabase primaryDatabase;
     private final boolean isReadOnly;
+    private final boolean shouldReplayToSql;
+    private final boolean shouldReplayToDatastore;
 
     public PrimaryDatabase getPrimaryDatabase() {
       return primaryDatabase;
@@ -73,9 +75,23 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
       return isReadOnly;
     }
 
-    MigrationState(PrimaryDatabase primaryDatabase, boolean isReadOnly) {
+    public boolean shouldReplayToSql() {
+      return shouldReplayToSql;
+    }
+
+    public boolean shouldReplayToDatastore() {
+      return shouldReplayToDatastore;
+    }
+
+    MigrationState(
+        PrimaryDatabase primaryDatabase,
+        boolean isReadOnly,
+        boolean shouldReplayToSql,
+        boolean shouldReplayToDatastore) {
       this.primaryDatabase = primaryDatabase;
       this.isReadOnly = isReadOnly;
+      this.shouldReplayToSql = shouldReplayToSql;
+      this.shouldReplayToDatastore = shouldReplayToDatastore;
     }
   }
 
@@ -199,6 +215,11 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
   /** Loads the currently-set migration schedule from the cache, or the default if none exists. */
   public static TimedTransitionProperty<MigrationState, MigrationStateTransition> get() {
     return CACHE.getUnchecked(DatabaseMigrationStateSchedule.class);
+  }
+
+  /** Returns the database migration status at the given time. */
+  public static MigrationState getValueAtTime(DateTime dateTime) {
+    return get().getValueAtTime(dateTime);
   }
 
   /** Loads the currently-set migration schedule from Datastore, or the default if none exists. */
