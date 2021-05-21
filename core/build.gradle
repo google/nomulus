@@ -317,6 +317,7 @@ dependencies {
   testCompile deps['com.google.monitoring-client:contrib']
   testCompile deps['com.google.truth:truth']
   testCompile deps['com.google.truth.extensions:truth-java8-extension']
+  testCompile deps['org.checkerframework:checker-qual']
   testCompile deps['org.hamcrest:hamcrest']
   testCompile deps['org.hamcrest:hamcrest-core']
   testCompile deps['org.hamcrest:hamcrest-library']

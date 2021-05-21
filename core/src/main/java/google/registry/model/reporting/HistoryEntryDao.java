@@ -14,6 +14,7 @@
 
 package google.registry.model.reporting;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
@@ -49,7 +50,7 @@ import org.joda.time.DateTime;
 public class HistoryEntryDao {
 
   /** Loads all history objects in the times specified, including all types. */
-  public static ImmutableList<? extends HistoryEntry> loadAllHistoryObjects(
+  public static ImmutableList<HistoryEntry> loadAllHistoryObjects(
       DateTime afterTime, DateTime beforeTime) {
     if (tm().isOfy()) {
       return Streams.stream(
@@ -77,13 +78,22 @@ public class HistoryEntryDao {
   }
 
   /** Loads all history objects corresponding to the given {@link EppResource}. */
-  public static ImmutableList<? extends HistoryEntry> loadHistoryObjectsForResource(
+  public static ImmutableList<HistoryEntry> loadHistoryObjectsForResource(
       VKey<? extends EppResource> parentKey) {
     return loadHistoryObjectsForResource(parentKey, START_OF_TIME, END_OF_TIME);
   }
 
+  /**
+   * Loads all history objects corresponding to the given {@link EppResource} and casted to the
+   * appropriate subclass.
+   */
+  public static <T extends HistoryEntry> ImmutableList<T> loadHistoryObjectsForResource(
+      VKey<? extends EppResource> parentKey, Class<T> subclazz) {
+    return loadHistoryObjectsForResource(parentKey, START_OF_TIME, END_OF_TIME, subclazz);
+  }
+
   /** Loads all history objects in the time period specified for the given {@link EppResource}. */
-  public static ImmutableList<? extends HistoryEntry> loadHistoryObjectsForResource(
+  public static ImmutableList<HistoryEntry> loadHistoryObjectsForResource(
       VKey<? extends EppResource> parentKey, DateTime afterTime, DateTime beforeTime) {
     if (tm().isOfy()) {
       return Streams.stream(
@@ -102,8 +112,35 @@ public class HistoryEntryDao {
     }
   }
 
+  /**
+   * Loads all history objects in the time period specified for the given {@link EppResource} and
+   * casted to the appropriate subclass.
+   *
+   * <p>Note that the subclass must be explicitly provided because we need the compile time
+   * information of T to return an {@code ImmutableList<T>}, even though at runtime we can call
+   * {@link #getHistoryClassFromParent(Class)} to obtain it, which we also did to confirm that the
+   * provided subclass is indeed correct.
+   */
+  public static <T extends HistoryEntry> ImmutableList<T> loadHistoryObjectsForResource(
+      VKey<? extends EppResource> parentKey,
+      DateTime afterTime,
+      DateTime beforeTime,
+      Class<T> subclazz) {
+    Class<? extends HistoryEntry> expectedSubclazz = getHistoryClassFromParent(parentKey.getKind());
+    checkArgument(
+        subclazz.equals(expectedSubclazz),
+        "The supplied HistoryEntry subclass %s is incompatible with the EppResource %s, "
+            + "use %s instead",
+        subclazz.getSimpleName(),
+        parentKey.getKind().getSimpleName(),
+        expectedSubclazz.getSimpleName());
+    return loadHistoryObjectsForResource(parentKey, afterTime, beforeTime).stream()
+        .map(subclazz::cast)
+        .collect(toImmutableList());
+  }
+
   /** Loads all history objects from all time from the given registrars. */
-  public static Iterable<? extends HistoryEntry> loadHistoryObjectsByRegistrars(
+  public static Iterable<HistoryEntry> loadHistoryObjectsByRegistrars(
       ImmutableCollection<String> registrarIds) {
     if (tm().isOfy()) {
       return auditedOfy()
@@ -124,8 +161,8 @@ public class HistoryEntryDao {
     }
   }
 
-  private static Stream<? extends HistoryEntry> loadHistoryObjectFromSqlByRegistrars(
-      Class<? extends HistoryEntry> historyClass, ImmutableCollection<String> registrarIds) {
+  private static <T extends HistoryEntry> Stream<T> loadHistoryObjectFromSqlByRegistrars(
+      Class<T> historyClass, ImmutableCollection<String> registrarIds) {
     return jpaTm()
         .getEntityManager()
         .createQuery(
@@ -135,7 +172,7 @@ public class HistoryEntryDao {
         .getResultStream();
   }
 
-  private static ImmutableList<? extends HistoryEntry> loadHistoryObjectsForResourceFromSql(
+  private static ImmutableList<HistoryEntry> loadHistoryObjectsForResourceFromSql(
       VKey<? extends EppResource> parentKey, DateTime afterTime, DateTime beforeTime) {
     // The class we're searching from is based on which parent type (e.g. Domain) we have
     Class<? extends HistoryEntry> historyClass = getHistoryClassFromParent(parentKey.getKind());
@@ -174,8 +211,8 @@ public class HistoryEntryDao {
         : historyClass.equals(DomainHistory.class) ? "domainRepoId" : "hostRepoId";
   }
 
-  private static List<? extends HistoryEntry> loadAllHistoryObjectsFromSql(
-      Class<? extends HistoryEntry> historyClass, DateTime afterTime, DateTime beforeTime) {
+  private static <T extends HistoryEntry> List<T> loadAllHistoryObjectsFromSql(
+      Class<T> historyClass, DateTime afterTime, DateTime beforeTime) {
     CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
     return jpaTm()
         .getEntityManager()
