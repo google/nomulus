@@ -50,20 +50,27 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
     DATASTORE
   }
 
+  public enum ReplayDirection {
+    NO_REPLAY,
+    DATASTORE_TO_SQL,
+    SQL_TO_DATASTORE
+  }
+
   /**
    * The current phase of the migration plus information about which database to use and whether or
    * not the phase is read-only.
    */
   public enum MigrationState {
-    DATASTORE_ONLY(PrimaryDatabase.DATASTORE, false),
-    DATASTORE_PRIMARY(PrimaryDatabase.DATASTORE, false),
-    DATASTORE_PRIMARY_READ_ONLY(PrimaryDatabase.DATASTORE, true),
-    SQL_PRIMARY_READ_ONLY(PrimaryDatabase.CLOUD_SQL, true),
-    SQL_PRIMARY(PrimaryDatabase.CLOUD_SQL, false),
-    SQL_ONLY(PrimaryDatabase.CLOUD_SQL, false);
+    DATASTORE_ONLY(PrimaryDatabase.DATASTORE, false, ReplayDirection.NO_REPLAY),
+    DATASTORE_PRIMARY(PrimaryDatabase.DATASTORE, false, ReplayDirection.DATASTORE_TO_SQL),
+    DATASTORE_PRIMARY_READ_ONLY(PrimaryDatabase.DATASTORE, true, ReplayDirection.DATASTORE_TO_SQL),
+    SQL_PRIMARY_READ_ONLY(PrimaryDatabase.CLOUD_SQL, true, ReplayDirection.SQL_TO_DATASTORE),
+    SQL_PRIMARY(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.SQL_TO_DATASTORE),
+    SQL_ONLY(PrimaryDatabase.CLOUD_SQL, false, ReplayDirection.NO_REPLAY);
 
     private final PrimaryDatabase primaryDatabase;
     private final boolean isReadOnly;
+    private final ReplayDirection replayDirection;
 
     public PrimaryDatabase getPrimaryDatabase() {
       return primaryDatabase;
@@ -73,9 +80,15 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
       return isReadOnly;
     }
 
-    MigrationState(PrimaryDatabase primaryDatabase, boolean isReadOnly) {
+    public ReplayDirection getReplayDirection() {
+      return replayDirection;
+    }
+
+    MigrationState(
+        PrimaryDatabase primaryDatabase, boolean isReadOnly, ReplayDirection replayDirection) {
       this.primaryDatabase = primaryDatabase;
       this.isReadOnly = isReadOnly;
+      this.replayDirection = replayDirection;
     }
   }
 
@@ -199,6 +212,11 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
   /** Loads the currently-set migration schedule from the cache, or the default if none exists. */
   public static TimedTransitionProperty<MigrationState, MigrationStateTransition> get() {
     return CACHE.getUnchecked(DatabaseMigrationStateSchedule.class);
+  }
+
+  /** Returns the database migration status at the given time. */
+  public static MigrationState getValueAtTime(DateTime dateTime) {
+    return get().getValueAtTime(dateTime);
   }
 
   /** Loads the currently-set migration schedule from Datastore, or the default if none exists. */

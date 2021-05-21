@@ -230,8 +230,6 @@ cloudSql:
   # Set this to true to replicate cloud SQL transactions to datastore in the
   # background.
   replicateTransactions: false
-  # Set this to true to enable replay of commit logs to SQL
-  replayCommitLogs: false
 
 cloudDns:
   # Set both properties to null in Production.

@@ -27,7 +27,9 @@ import com.google.appengine.tools.cloudstorage.GcsFileMetadata;
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
-import google.registry.config.RegistryConfig;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
 import google.registry.model.server.Lock;
 import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.persistence.VKey;
@@ -39,6 +41,7 @@ import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.schema.replay.NonReplicatedEntity;
 import google.registry.schema.replay.ReplaySpecializer;
 import google.registry.schema.replay.SqlReplayCheckpoint;
+import google.registry.util.Clock;
 import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,15 +72,19 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
   @Inject Response response;
   @Inject RequestStatusChecker requestStatusChecker;
   @Inject GcsDiffFileLister diffLister;
+  @Inject Clock clock;
 
   @Inject
   ReplayCommitLogsToSqlAction() {}
 
   @Override
   public void run() {
-    if (!RegistryConfig.getCloudSqlReplayCommitLogs()) {
-      String message = "ReplayCommitLogsToSqlAction was called but disabled in the config.";
-      logger.atWarning().log(message);
+    MigrationState state = DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc());
+    if (!state.getReplayDirection().equals(ReplayDirection.DATASTORE_TO_SQL)) {
+      String message =
+          String.format(
+              "Skipping ReplayCommitLogsToSqlAction because we are in migration phase %s.", state);
+      logger.atInfo().log(message);
       // App Engine will retry on any non-2xx status code, which we don't want in this case.
       response.setStatus(SC_NO_CONTENT);
       response.setPayload(message);
