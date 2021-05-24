@@ -35,6 +35,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
+import google.registry.schema.tld.PremiumEntry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
@@ -58,7 +59,11 @@ class ReservedListTest {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withClock(clock)
-          .withJpaUnitTestEntities(PremiumList.class, ReservedList.class, ReservedListEntry.class)
+          .withJpaUnitTestEntities(
+              PremiumList.class,
+              PremiumEntry.class,
+              ReservedList.class,
+              ReservedListEntry.class)
           .withDatastoreAndCloudSql()
           .build();
 

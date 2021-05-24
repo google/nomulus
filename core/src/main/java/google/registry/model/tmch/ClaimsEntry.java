@@ -24,9 +24,10 @@ import javax.persistence.Id;
 /**
  * Claims entry record, used by ClaimsList for persistence.
  *
- * It would be preferable to have this nested in {@link ClaimsList}, but for some reason hibernate
- * won't generate this into the schema in this case.  We may not care, as we only use the generated
- * schema for informational purposes and persistence against the actual schema seems to work.
+ * <p>It would be preferable to have this nested in {@link ClaimsList}, but for some reason
+ * hibernate won't generate this into the schema in this case. We may not care, as we only use the
+ * generated schema for informational purposes and persistence against the actual schema seems to
+ * work.
  */
 @Entity(name = "ClaimsEntry")
 class ClaimsEntry extends ImmutableObject implements NonReplicatedEntity, Serializable {
