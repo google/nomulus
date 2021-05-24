@@ -184,6 +184,7 @@ public class HistoryEntryDao {
             .where("modificationTime", criteriaBuilder::greaterThanOrEqualTo, afterTime)
             .where("modificationTime", criteriaBuilder::lessThanOrEqualTo, beforeTime)
             .where(repoIdFieldName, criteriaBuilder::equal, parentKey.getSqlKey().toString())
+            .orderByAsc("id")
             .build();
 
     return ImmutableList.sortedCopyOf(

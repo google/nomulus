@@ -324,12 +324,21 @@ public abstract class BillingEvent extends ImmutableObject
     DateTime syntheticCreationTime;
 
     /**
-     * For {@link Flag#SYNTHETIC} events, a {@link Key} to the {@link BillingEvent} from which this
-     * OneTime was created. This is needed in order to properly match billing events against {@link
-     * Cancellation}s.
+     * For {@link Flag#SYNTHETIC} events, a {@link Key} to the {@link Recurring} from which
+     * this {@link OneTime} was created. This is needed in order to properly match billing events
+     * against {@link Cancellation}s.
      */
     @Column(name = "cancellation_matching_billing_recurrence_id")
     VKey<Recurring> cancellationMatchingBillingEvent;
+
+    /**
+     * For {@link Flag#SYNTHETIC} events, the {@link DomainHistory} revision ID of the the {@link
+     * Recurring} from which this {@link OneTime} was created. This is needed in order to recreate
+     * the {@link VKey} when reading from SQL.
+     */
+    @Ignore
+    @Column(name = "recurrence_history_revision_id")
+    Long recurringEventHistoryRevisionId;
 
     /**
      * The {@link AllocationToken} used in the creation of this event, or null if one was not used.
@@ -354,8 +363,12 @@ public abstract class BillingEvent extends ImmutableObject
       return syntheticCreationTime;
     }
 
-    public VKey<? extends BillingEvent> getCancellationMatchingBillingEvent() {
+    public VKey<Recurring> getCancellationMatchingBillingEvent() {
       return cancellationMatchingBillingEvent;
+    }
+
+    public Long getRecurringEventHistoryRevisionId() {
+      return recurringEventHistoryRevisionId;
     }
 
     public Optional<VKey<AllocationToken>> getAllocationToken() {
@@ -374,6 +387,21 @@ public abstract class BillingEvent extends ImmutableObject
     @Override
     public Builder asBuilder() {
       return new Builder(clone(this));
+    }
+
+    @Override
+    void onLoad() {
+      super.onLoad();
+      recurringEventHistoryRevisionId =
+          cancellationMatchingBillingEvent.getOfyKey().getParent().getId();
+    }
+
+    @Override
+    void postLoad() {
+      super.postLoad();
+      cancellationMatchingBillingEvent =
+          cancellationMatchingBillingEvent.restoreOfy(
+              DomainBase.class, domainRepoId, DomainHistory.class, recurringEventHistoryRevisionId);
     }
 
     /** A builder for {@link OneTime} since it is immutable. */
@@ -410,6 +438,8 @@ public abstract class BillingEvent extends ImmutableObject
       public Builder setCancellationMatchingBillingEvent(
           VKey<Recurring> cancellationMatchingBillingEvent) {
         getInstance().cancellationMatchingBillingEvent = cancellationMatchingBillingEvent;
+        getInstance().recurringEventHistoryRevisionId =
+            cancellationMatchingBillingEvent.getOfyKey().getParent().getId();
         return this;
       }
 
@@ -444,6 +474,11 @@ public abstract class BillingEvent extends ImmutableObject
                 == (instance.cancellationMatchingBillingEvent != null),
             "Cancellation matching billing event must be set if and only if the SYNTHETIC flag "
                 + "is set.");
+        checkState(
+            instance.getFlags().contains(Flag.SYNTHETIC)
+                && instance.cancellationMatchingBillingEvent.getOfyKey().getParent().getId()
+                    == instance.recurringEventHistoryRevisionId,
+            "Cancellation matching billing event and its history revision ID does not match.");
         return super.build();
       }
     }

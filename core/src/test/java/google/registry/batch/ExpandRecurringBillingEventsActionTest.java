@@ -21,6 +21,7 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_AUTORENEW;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertBillingEventsForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -52,9 +53,13 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,17 +67,23 @@ import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ExpandRecurringBillingEventsAction}. */
+@DualDatabaseTest
 public class ExpandRecurringBillingEventsActionTest
     extends MapreduceTestCase<ExpandRecurringBillingEventsAction> {
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   private final DateTime beginningOfTest = DateTime.parse("2000-10-02T00:00:00Z");
   private final FakeClock clock = new FakeClock(beginningOfTest);
+
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+
+  /*
+  @Order(value = Order.DEFAULT - 2)
+  @RegisterExtension
+  public final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
+  */
 
   private DomainBase domain;
   private DomainHistory historyEntry;
@@ -117,7 +128,7 @@ public class ExpandRecurringBillingEventsActionTest
     tm().transact(() -> tm().put(Cursor.createGlobal(RECURRING_BILLING, cursorTime)));
   }
 
-  private void runMapreduce() throws Exception {
+  private void runAction() throws Exception {
     action.response = new FakeResponse();
     action.run();
     executeTasksUntilEmpty("mapreduce", clock);
@@ -125,7 +136,8 @@ public class ExpandRecurringBillingEventsActionTest
   }
 
   private void assertCursorAt(DateTime expectedCursorTime) {
-    Cursor cursor = auditedOfy().load().key(Cursor.createGlobalKey(RECURRING_BILLING)).now();
+    Cursor cursor =
+        transactIfJpaTm(() -> tm().loadByKey(Cursor.createGlobalVKey(RECURRING_BILLING)));
     assertThat(cursor).isNotNull();
     assertThat(cursor.getCursorTime()).isEqualTo(expectedCursorTime);
   }
@@ -168,11 +180,11 @@ public class ExpandRecurringBillingEventsActionTest
         .setTargetId(domain.getDomainName());
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -184,7 +196,7 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(beginningOfTest);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_deletedDomain() throws Exception {
     DateTime deletionTime = DateTime.parse("2000-08-01T00:00:00Z");
     DomainBase deletedDomain = persistDeletedDomain("deleted.tld", deletionTime);
@@ -209,7 +221,7 @@ public class ExpandRecurringBillingEventsActionTest
                 .setTargetId(deletedDomain.getDomainName())
                 .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(deletedDomain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -227,11 +239,11 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(beginningOfTest);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_idempotentForDuplicateRuns() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -240,19 +252,18 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(beginningOfTest);
     DateTime beginningOfSecondRun = clock.nowUtc();
     action.response = new FakeResponse();
-    runMapreduce();
+    runAction();
     assertCursorAt(beginningOfSecondRun);
     assertBillingEventsForResource(domain, expected, recurring);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_idempotentForExistingOneTime() throws Exception {
     persistResource(recurring);
-    BillingEvent.OneTime persisted = persistResource(defaultOneTimeBuilder()
-        .setParent(historyEntry)
-        .build());
+    BillingEvent.OneTime persisted =
+        persistResource(defaultOneTimeBuilder().setParent(historyEntry).build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     // No new history entries should be generated
     assertThat(getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW)).isEmpty();
     assertCursorAt(beginningOfTest);
@@ -260,33 +271,36 @@ public class ExpandRecurringBillingEventsActionTest
     assertBillingEventsForResource(domain, persisted, recurring);
   }
 
-  @Test
+  @TestSqlOnly
   void testSuccess_expandSingleEvent_notIdempotentForDifferentBillingTime() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder().setParent(persistedEntry).build();
     // Persist an otherwise identical billing event that differs only in billing time.
-    BillingEvent.OneTime persisted = persistResource(expected.asBuilder()
-        .setBillingTime(DateTime.parse("1999-02-19T00:00:00Z"))
-        .setEventTime(DateTime.parse("1999-01-05T00:00:00Z"))
-        .build());
+    BillingEvent.OneTime persisted =
+        persistResource(
+            expected
+                .asBuilder()
+                .setBillingTime(DateTime.parse("1999-02-19T00:00:00Z"))
+                .setEventTime(DateTime.parse("1999-01-05T00:00:00Z"))
+                .build());
     assertCursorAt(beginningOfTest);
     assertBillingEventsForResource(domain, persisted, expected, recurring);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_notIdempotentForDifferentRecurring() throws Exception {
     persistResource(recurring);
     BillingEvent.Recurring recurring2 = persistResource(recurring.asBuilder()
         .setId(3L)
         .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     List<DomainHistory> persistedEntries =
         getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     for (HistoryEntry persistedEntry : persistedEntries) {
@@ -308,37 +322,37 @@ public class ExpandRecurringBillingEventsActionTest
     assertBillingEventsForResource(domain, persisted, expected, recurring, recurring2);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_ignoreRecurringBeforeWindow() throws Exception {
     recurring = persistResource(recurring.asBuilder()
         .setEventTime(DateTime.parse("1997-01-05T00:00:00Z"))
         .setRecurrenceEndTime(DateTime.parse("1999-10-05T00:00:00Z"))
         .build());
     action.cursorTimeParam = Optional.of(DateTime.parse("2000-01-01T00:00:00Z"));
-    runMapreduce();
+    runAction();
     // No new history entries should be generated
     assertThat(getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW)).isEmpty();
     assertBillingEventsForResource(domain, recurring);
     assertCursorAt(beginningOfTest);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_ignoreRecurringAfterWindow() throws Exception {
     recurring = persistResource(recurring.asBuilder()
         .setEventTime(clock.nowUtc().plusYears(2))
         .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     // No new history entries should be generated
     assertThat(getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW)).isEmpty();
     assertBillingEventsForResource(domain, recurring);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_billingTimeAtCursorTime() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(DateTime.parse("2000-02-19T00:00:00Z"));
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -348,11 +362,11 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(beginningOfTest);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_cursorTimeBetweenEventAndBillingTime() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(DateTime.parse("2000-01-12T00:00:00Z"));
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -362,14 +376,14 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(beginningOfTest);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_billingTimeAtExecutionTime() throws Exception {
     DateTime testTime = DateTime.parse("2000-02-19T00:00:00Z").minusMillis(1);
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     // Clock is advanced one milli in runMapreduce()
     clock.setTo(testTime);
-    runMapreduce();
+    runAction();
     // No new history entries should be generated
     assertThat(getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW)).isEmpty();
     // A candidate billing event is set to be billed exactly on 2/19/00 @ 00:00,
@@ -379,7 +393,7 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(testTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_multipleYearCreate() throws Exception {
     DateTime testTime = beginningOfTest.plusYears(2);
     action.cursorTimeParam = Optional.of(recurring.getEventTime());
@@ -387,7 +401,7 @@ public class ExpandRecurringBillingEventsActionTest
         persistResource(
             recurring.asBuilder().setEventTime(recurring.getEventTime().plusYears(2)).build());
     clock.setTo(testTime);
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -402,11 +416,11 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(testTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_withCursor() throws Exception {
     persistResource(recurring);
     saveCursor(START_OF_TIME);
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -416,52 +430,52 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(beginningOfTest);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_withCursorPastExpected() throws Exception {
     persistResource(recurring);
     // Simulate a quick second run of the mapreduce (this should be a no-op).
     saveCursor(clock.nowUtc().minusSeconds(1));
-    runMapreduce();
+    runAction();
     // No new history entries should be generated
     assertThat(getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW)).isEmpty();
     assertBillingEventsForResource(domain, recurring);
     assertCursorAt(beginningOfTest);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_recurrenceEndBeforeEvent() throws Exception {
     // This can occur when a domain is transferred or deleted before a domain comes up for renewal.
     recurring = persistResource(recurring.asBuilder()
         .setRecurrenceEndTime(recurring.getEventTime().minusDays(5))
         .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     // No new history entries should be generated
     assertThat(getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW)).isEmpty();
     assertBillingEventsForResource(domain, recurring);
     assertCursorAt(beginningOfTest);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_dryRun() throws Exception {
     persistResource(recurring);
     action.isDryRun = true;
     saveCursor(START_OF_TIME); // Need a saved cursor to verify that it didn't move.
-    runMapreduce();
+    runAction();
     // No new history entries should be generated
     assertThat(getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW)).isEmpty();
     assertBillingEventsForResource(domain, recurring);
     assertCursorAt(START_OF_TIME); // Cursor doesn't move on a dry run.
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_multipleYears() throws Exception {
     DateTime testTime = clock.nowUtc().plusYears(5);
     clock.setTo(testTime);
     List<BillingEvent> expectedEvents = new ArrayList<>();
     expectedEvents.add(persistResource(recurring));
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     List<DomainHistory> persistedEntries =
         getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertThat(persistedEntries).hasSize(6);
@@ -485,14 +499,14 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(testTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_multipleYears_cursorInBetweenYears() throws Exception {
     DateTime testTime = clock.nowUtc().plusYears(5);
     clock.setTo(testTime);
     List<BillingEvent> expectedEvents = new ArrayList<>();
     expectedEvents.add(persistResource(recurring));
     saveCursor(DateTime.parse("2003-10-02T00:00:00Z"));
-    runMapreduce();
+    runAction();
     List<DomainHistory> persistedEntries =
         getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertThat(persistedEntries).hasSize(2);
@@ -513,20 +527,20 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(testTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_singleEvent_beforeRenewal() throws Exception {
     DateTime testTime = DateTime.parse("2000-01-04T00:00:00Z");
     clock.setTo(testTime);
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     // No new history entries should be generated
     assertThat(getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW)).isEmpty();
     assertBillingEventsForResource(domain, recurring);
     assertCursorAt(testTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_singleEvent_afterRecurrenceEnd_inAutorenewGracePeriod() throws Exception {
     // The domain creation date is 1999-01-05, and the first renewal date is thus 2000-01-05.
     DateTime testTime = DateTime.parse("2001-02-06T00:00:00Z");
@@ -538,7 +552,7 @@ public class ExpandRecurringBillingEventsActionTest
         .setEventTime(domain.getCreationTime().plusYears(1))
         .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -552,7 +566,7 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(testTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_singleEvent_afterRecurrenceEnd_outsideAutorenewGracePeriod() throws Exception {
     // The domain creation date is 1999-01-05, and the first renewal date is thus 2000-01-05.
     DateTime testTime = DateTime.parse("2001-02-06T00:00:00Z");
@@ -564,7 +578,7 @@ public class ExpandRecurringBillingEventsActionTest
         .setEventTime(domain.getCreationTime().plusYears(1))
         .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -578,13 +592,13 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(testTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_billingTimeOnLeapYear() throws Exception {
     recurring =
         persistResource(
             recurring.asBuilder().setEventTime(DateTime.parse("2000-01-15T00:00:00Z")).build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -598,7 +612,7 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(beginningOfTest);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_billingTimeNotOnLeapYear() throws Exception {
     DateTime testTime = DateTime.parse("2001-12-01T00:00:00Z");
     recurring =
@@ -606,7 +620,7 @@ public class ExpandRecurringBillingEventsActionTest
             recurring.asBuilder().setEventTime(DateTime.parse("2001-01-15T00:00:00Z")).build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     clock.setTo(testTime);
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -621,7 +635,7 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(testTime);
   }
 
-  @Test
+  @TestSqlOnly
   void testSuccess_expandMultipleEvents() throws Exception {
     persistResource(recurring);
     BillingEvent.Recurring recurring2 = persistResource(recurring.asBuilder()
@@ -629,7 +643,7 @@ public class ExpandRecurringBillingEventsActionTest
         .setId(3L)
         .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     List<DomainHistory> persistedEntries =
         getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertThat(persistedEntries).hasSize(2);
@@ -655,7 +669,7 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(beginningOfTest);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_premiumDomain() throws Exception {
     persistResource(
         Registry.get("tld")
@@ -664,7 +678,7 @@ public class ExpandRecurringBillingEventsActionTest
             .build());
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     DomainHistory persistedEntry =
         getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
@@ -677,7 +691,7 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(beginningOfTest);
   }
 
-  @Test
+  @TestOfyAndSql
   void testSuccess_varyingRenewPrices() throws Exception {
     DateTime testTime = beginningOfTest.plusYears(1);
     persistResource(
@@ -691,7 +705,7 @@ public class ExpandRecurringBillingEventsActionTest
     clock.setTo(testTime);
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
-    runMapreduce();
+    runAction();
     List<DomainHistory> persistedEntries =
         getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertThat(persistedEntries).hasSize(2);
@@ -717,33 +731,31 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(testTime);
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_cursorAfterExecutionTime() {
     action.cursorTimeParam = Optional.of(clock.nowUtc().plusYears(1));
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, this::runMapreduce);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, this::runAction);
     assertThat(thrown)
         .hasMessageThat()
         .contains("Cursor time must be earlier than execution time.");
   }
 
-  @Test
+  @TestOfyAndSql
   void testFailure_cursorAtExecutionTime() {
     // The clock advances one milli on runMapreduce.
     action.cursorTimeParam = Optional.of(clock.nowUtc().plusMillis(1));
-    IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, this::runMapreduce);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, this::runAction);
     assertThat(thrown)
         .hasMessageThat()
         .contains("Cursor time must be earlier than execution time.");
   }
 
-  @Test
+  @TestOfyOnly
   void testFailure_mapperException_doesNotMoveCursor() throws Exception {
     saveCursor(START_OF_TIME); // Need a saved cursor to verify that it didn't move.
     // Set target to a TLD that doesn't exist.
     recurring = persistResource(recurring.asBuilder().setTargetId("domain.junk").build());
-    runMapreduce();
+    runAction();
     // No new history entries should be generated
     assertThat(getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW)).isEmpty();
     assertBillingEvents(recurring); // only the bogus one in Datastore
