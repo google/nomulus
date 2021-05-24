@@ -17,7 +17,6 @@ package google.registry.model.common;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.base.Splitter;
@@ -210,12 +209,7 @@ public class Cursor extends ImmutableObject implements DatastoreAndSqlEntity {
   private static void checkValidCursorTypeForScope(
       CursorType cursorType, Key<? extends ImmutableObject> scope) {
     checkArgument(
-        cursorType
-            .getScopeClass()
-            .equals(
-                scope.equals(getCrossTldKey())
-                    ? EntityGroupRoot.class
-                    : ofy().factory().getMetadata(scope).getEntityClass()),
+        cursorType.getScopeClass().getSimpleName().equals(scope.getKind()),
         "Class required for cursor does not match scope class");
   }
 

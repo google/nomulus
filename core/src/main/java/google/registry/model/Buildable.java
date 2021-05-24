@@ -16,7 +16,7 @@ package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.util.TypeUtils.TypeInstantiator;
@@ -57,8 +57,14 @@ public interface Buildable {
         // If this object has a Long or long Objectify @Id field that is not set, set it now.
         Field idField = null;
         try {
-          idField = ModelUtils.getAllFields(instance.getClass()).get(
-              ofy().factory().getMetadata(instance.getClass()).getKeyMetadata().getIdFieldName());
+          idField =
+              ModelUtils.getAllFields(instance.getClass())
+                  .get(
+                      auditedOfy()
+                          .factory()
+                          .getMetadata(instance.getClass())
+                          .getKeyMetadata()
+                          .getIdFieldName());
         } catch (Exception e) {
           // Expected if the class is not registered with Objectify.
         }

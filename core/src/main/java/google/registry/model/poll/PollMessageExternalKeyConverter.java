@@ -14,10 +14,10 @@
 
 package google.registry.model.poll;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static com.google.common.collect.ImmutableMap.toImmutableMap;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
@@ -26,6 +26,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A converter between external key strings for {@link PollMessage}s (i.e. what registrars use to
@@ -49,24 +50,23 @@ public class PollMessageExternalKeyConverter {
   /** An exception thrown when an external key cannot be parsed. */
   public static class PollMessageExternalKeyParseException extends RuntimeException {}
 
-  /**
-   * A map of IDs used in external keys corresponding to which EppResource class the poll message
-   * belongs to.
-   */
-  public static final ImmutableBiMap<Class<? extends EppResource>, Long> EXTERNAL_KEY_CLASS_ID_MAP =
-      ImmutableBiMap.of(
-          DomainBase.class, 1L,
-          ContactResource.class, 2L,
-          HostResource.class, 3L);
+  /** Maps that detail the correspondence between EppResource classes and external IDs. */
+  private static final ImmutableMap<Long, Class<? extends EppResource>> ID_TO_CLASS_MAP =
+      ImmutableMap.of(
+          1L, DomainBase.class,
+          2L, ContactResource.class,
+          3L, HostResource.class);
+
+  private static final ImmutableMap<String, Long> KEY_KIND_TO_ID_MAP =
+      ID_TO_CLASS_MAP.entrySet().stream()
+          .collect(toImmutableMap(entry -> entry.getValue().getSimpleName(), Map.Entry::getKey));
 
   /** Returns an external poll message ID for the given poll message. */
   public static String makePollMessageExternalId(PollMessage pollMessage) {
     @SuppressWarnings("unchecked")
     Key<EppResource> ancestorResource =
         (Key<EppResource>) (Key<?>) pollMessage.getParentKey().getParent();
-    long externalKeyClassId =
-        EXTERNAL_KEY_CLASS_ID_MAP.get(
-            ofy().factory().getMetadata(ancestorResource.getKind()).getEntityClass());
+    long externalKeyClassId = KEY_KIND_TO_ID_MAP.get(ancestorResource.getKind());
     return String.format(
         "%d-%s-%d-%d-%d",
         externalKeyClassId,
@@ -92,8 +92,7 @@ public class PollMessageExternalKeyConverter {
       throw new PollMessageExternalKeyParseException();
     }
     try {
-      Class<?> resourceClazz =
-          EXTERNAL_KEY_CLASS_ID_MAP.inverse().get(Long.parseLong(idComponents.get(0)));
+      Class<?> resourceClazz = ID_TO_CLASS_MAP.get(Long.parseLong(idComponents.get(0)));
       if (resourceClazz == null) {
         throw new PollMessageExternalKeyParseException();
       }
