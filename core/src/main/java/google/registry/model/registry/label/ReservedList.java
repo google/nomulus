@@ -37,6 +37,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
+import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
 import google.registry.model.annotations.ReportedOn;
@@ -81,6 +82,7 @@ public final class ReservedList
    * from the immutability contract so we can modify it after construction and we have to handle the
    * database processing on our own so we can detach it after load.
    */
+  @Mapify(ReservedListEntry.LabelMapper.class)
   @Insignificant @Transient Map<String, ReservedListEntry> reservedListMap;
 
   @Column(nullable = false)
@@ -164,10 +166,6 @@ public final class ReservedList
           "%s,%s%s", label, reservationType, isNullOrEmpty(comment) ? "" : " # " + comment);
     }
 
-    public String debug() {
-      return super.toString();
-    }
-
     /** A builder for constructing {@link ReservedListEntry} objects, since they are immutable. */
     private static class Builder
         extends DomainLabelEntry.Builder<ReservedListEntry, ReservedListEntry.Builder> {
@@ -203,7 +201,12 @@ public final class ReservedList
     return shouldPublish;
   }
 
-  /** Returns a {@link Map} of domain labels to {@link ReservedListEntry}. */
+  /**
+   * Returns a {@link Map} of domain labels to {@link ReservedListEntry}.
+   *
+   * <p>Note that this involves a database fetch of a potentially large number of elements and
+   * should be avoided unless necessary.
+   */
   public synchronized ImmutableMap<String, ReservedListEntry> getReservedListEntries() {
     if (reservedListMap == null) {
       reservedListMap =

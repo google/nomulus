@@ -31,11 +31,11 @@ import javax.persistence.Id;
  */
 @Entity(name = "ClaimsEntry")
 class ClaimsEntry extends ImmutableObject implements NonReplicatedEntity, Serializable {
-  @Id Long revisionId;
-  @Id String domainLabel;
+  @Id private Long revisionId;
+  @Id private String domainLabel;
 
   @Column(nullable = false)
-  String claimKey;
+  private String claimKey;
 
   /** Default constructor for Hibernate. */
   ClaimsEntry() {}
@@ -46,11 +46,11 @@ class ClaimsEntry extends ImmutableObject implements NonReplicatedEntity, Serial
     this.claimKey = claimKey;
   }
 
-  String getClaimKey() {
-    return claimKey;
-  }
-
   String getDomainLabel() {
     return domainLabel;
+  }
+
+  String getClaimKey() {
+    return claimKey;
   }
 }

@@ -151,12 +151,31 @@ public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
     return creationTimestamp.getTimestamp();
   }
 
-  /** Returns the claim key for a given domain if there is one, empty otherwise. */
+  /**
+   * Returns the claim key for a given domain if there is one, empty otherwise.
+   *
+   * <p>Note that this may do a database query.  For checking multiple keys against the claims list
+   * it may be more efficient to use {@link #getLablesToKeys()} first, as this will prefetch all
+   * entries and cache them locally.
+   */
   public Optional<String> getClaimKey(String label) {
-    return Optional.ofNullable(getLabelsToKeys().get(label));
+    if (labelsToKeys != null) {
+      return Optional.ofNullable(labelsToKeys.get(label));
+    }
+    return jpaTm().transact(
+        () -> jpaTm().createQueryComposer(ClaimsEntry.class)
+            .where("revisionId", EQ, revisionId)
+            .where("domainLabel", EQ, label)
+            .first()
+            .map(ClaimsEntry::getClaimKey));
   }
 
-  /** Returns an {@link Map} mapping domain label to its lookup key. */
+  /**
+   * Returns an {@link Map} mapping domain label to its lookup key.
+   *
+   * <p>Note that this involves a database fetch of a potentially large number of elements and
+   * should be avoided unless necessary.
+   */
   public ImmutableMap<String, String> getLabelsToKeys() {
     if (labelsToKeys == null) {
       labelsToKeys =
@@ -174,9 +193,17 @@ public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
     return labelsToKeys;
   }
 
-  /** Returns the number of claims. */
-  public int size() {
-    // TODO: If labelsToKeys is null, we could get a way with a count query here.
+  /** Returns the number of claims.
+   *
+   * <p>Note that this will perform a database "count" query if the label to key map has not been
+   * previously cached by calling {@link getLabelsToKeys()}.
+   */
+  public long size() {
+    if (labelsToKeys == null) {
+      return jpaTm().createQueryComposer(ClaimsEntry.class)
+          .where("revisionId", EQ, revisionId)
+          .count();
+    }
     return getLabelsToKeys().size();
   }
 
