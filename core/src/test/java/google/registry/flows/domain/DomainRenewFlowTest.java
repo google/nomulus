@@ -201,8 +201,8 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
         CommitMode.LIVE, userPrivileges, loadFile(responseFilename, substitutions));
     DomainBase domain = reloadResourceByForeignKey();
     assertLastHistoryContainsResource(domain);
-    HistoryEntry historyEntryDomainRenew =
-        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RENEW);
+    DomainHistory historyEntryDomainRenew =
+        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RENEW, DomainHistory.class);
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(newExpiration);
     assertAboutDomains()
@@ -238,7 +238,9 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .setClientId("TheRegistrar")
             .setEventTime(expirationTime)
             .setRecurrenceEndTime(clock.nowUtc())
-            .setParent(getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_CREATE))
+            .setParent(
+                getOnlyHistoryEntryOfType(
+                    domain, HistoryEntry.Type.DOMAIN_CREATE, DomainHistory.class))
             .build(),
         new BillingEvent.Recurring.Builder()
             .setReason(Reason.RENEW)

@@ -165,7 +165,7 @@ class DeleteExpiredDomainsActionTest {
 
   private DomainBase persistNonAutorenewingDomain(String domainName) {
     DomainBase pendingExpirationDomain = persistActiveDomain(domainName);
-    HistoryEntry createHistoryEntry =
+    DomainHistory createHistoryEntry =
         persistResource(
             new DomainHistory.Builder()
                 .setType(DOMAIN_CREATE)
@@ -190,7 +190,7 @@ class DeleteExpiredDomainsActionTest {
   }
 
   private BillingEvent.Recurring.Builder createAutorenewBillingEvent(
-      HistoryEntry createHistoryEntry) {
+      DomainHistory createHistoryEntry) {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))

@@ -363,7 +363,7 @@ public class DomainBaseTest extends EntityTestCase {
   }
 
   private void doExpiredTransferTest(DateTime oldExpirationTime) {
-    HistoryEntry historyEntry =
+    DomainHistory historyEntry =
         new DomainHistory.Builder()
             .setDomain(domain)
             .setModificationTime(fakeClock.nowUtc())

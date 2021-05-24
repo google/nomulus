@@ -25,10 +25,10 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
-import google.registry.model.EppResource;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.poll.PollMessage;
@@ -49,7 +49,7 @@ class DedupeOneTimeBillingEventIdsCommandTest
     extends CommandTestCase<DedupeOneTimeBillingEventIdsCommand> {
 
   DomainBase domain;
-  HistoryEntry historyEntry;
+  DomainHistory historyEntry;
   PollMessage.Autorenew autorenewToResave;
   BillingEvent.OneTime billingEventToResave;
 
@@ -111,7 +111,7 @@ class DedupeOneTimeBillingEventIdsCommandTest
             .build());
   }
 
-  private BillingEvent.OneTime persistBillingEvent(HistoryEntry historyEntry) {
+  private BillingEvent.OneTime persistBillingEvent(DomainHistory historyEntry) {
     return persistResource(
         new BillingEvent.OneTime.Builder()
             .setClientId("a registrar")
@@ -126,9 +126,10 @@ class DedupeOneTimeBillingEventIdsCommandTest
             .build());
   }
 
-  private HistoryEntry persistHistoryEntry(EppResource parent) {
+  private DomainHistory persistHistoryEntry(DomainBase parent) {
     return persistResource(
-        HistoryEntry.createBuilderForResource(parent)
+        new DomainHistory.Builder()
+            .setDomain(parent)
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))

@@ -290,7 +290,7 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
                 .build());
     BillingEvent.OneTime billingEvent = persistSimpleResource(
         new BillingEvent.OneTime.Builder()
-            .setParent(historyEntry)
+            .setParent((DomainHistory) historyEntry.toChildHistoryEntity())
             .setBillingTime(DELETION_TIME.plusYears(1))
             .setCost(Money.parse("USD 10"))
             .setPeriodYears(1)

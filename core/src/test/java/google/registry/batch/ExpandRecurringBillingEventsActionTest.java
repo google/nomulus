@@ -75,7 +75,7 @@ public class ExpandRecurringBillingEventsActionTest
   private final FakeClock clock = new FakeClock(beginningOfTest);
 
   private DomainBase domain;
-  private HistoryEntry historyEntry;
+  private DomainHistory historyEntry;
   private BillingEvent.Recurring recurring;
 
   @BeforeEach
@@ -173,7 +173,8 @@ public class ExpandRecurringBillingEventsActionTest
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder()
@@ -209,9 +210,13 @@ public class ExpandRecurringBillingEventsActionTest
                 .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(deletedDomain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(deletedDomain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
-        deletedDomain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"),
+        deletedDomain,
+        persistedEntry,
+        "TheRegistrar",
+        DateTime.parse("2000-02-19T00:00:00Z"),
         true);
     BillingEvent.OneTime expected =
         defaultOneTimeBuilder()
@@ -227,7 +232,8 @@ public class ExpandRecurringBillingEventsActionTest
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder().setParent(persistedEntry).build();
@@ -259,7 +265,8 @@ public class ExpandRecurringBillingEventsActionTest
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder().setParent(persistedEntry).build();
@@ -280,8 +287,8 @@ public class ExpandRecurringBillingEventsActionTest
         .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    List<HistoryEntry> persistedEntries =
-        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW);
+    List<DomainHistory> persistedEntries =
+        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     for (HistoryEntry persistedEntry : persistedEntries) {
       assertHistoryEntryMatches(
           domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
@@ -332,7 +339,8 @@ public class ExpandRecurringBillingEventsActionTest
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(DateTime.parse("2000-02-19T00:00:00Z"));
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder().setParent(persistedEntry).build();
@@ -345,7 +353,8 @@ public class ExpandRecurringBillingEventsActionTest
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(DateTime.parse("2000-01-12T00:00:00Z"));
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder().setParent(persistedEntry).build();
@@ -379,7 +388,8 @@ public class ExpandRecurringBillingEventsActionTest
             recurring.asBuilder().setEventTime(recurring.getEventTime().plusYears(2)).build());
     clock.setTo(testTime);
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2002-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder()
@@ -397,7 +407,8 @@ public class ExpandRecurringBillingEventsActionTest
     persistResource(recurring);
     saveCursor(START_OF_TIME);
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder().setParent(persistedEntry).build();
@@ -451,8 +462,8 @@ public class ExpandRecurringBillingEventsActionTest
     expectedEvents.add(persistResource(recurring));
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    List<HistoryEntry> persistedEntries =
-        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW);
+    List<DomainHistory> persistedEntries =
+        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertThat(persistedEntries).hasSize(6);
     DateTime eventDate = DateTime.parse("2000-01-05T00:00:00Z");
     DateTime billingDate = DateTime.parse("2000-02-19T00:00:00Z");
@@ -482,8 +493,8 @@ public class ExpandRecurringBillingEventsActionTest
     expectedEvents.add(persistResource(recurring));
     saveCursor(DateTime.parse("2003-10-02T00:00:00Z"));
     runMapreduce();
-    List<HistoryEntry> persistedEntries =
-        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW);
+    List<DomainHistory> persistedEntries =
+        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertThat(persistedEntries).hasSize(2);
     DateTime eventDate = DateTime.parse("2004-01-05T00:00:00Z");
     DateTime billingDate = DateTime.parse("2004-02-19T00:00:00Z");
@@ -528,7 +539,8 @@ public class ExpandRecurringBillingEventsActionTest
         .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), false);
     BillingEvent.OneTime expected = defaultOneTimeBuilder()
@@ -553,7 +565,8 @@ public class ExpandRecurringBillingEventsActionTest
         .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder()
@@ -572,7 +585,8 @@ public class ExpandRecurringBillingEventsActionTest
             recurring.asBuilder().setEventTime(DateTime.parse("2000-01-15T00:00:00Z")).build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-29T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder()
@@ -593,7 +607,8 @@ public class ExpandRecurringBillingEventsActionTest
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     clock.setTo(testTime);
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2001-03-01T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder()
@@ -615,7 +630,8 @@ public class ExpandRecurringBillingEventsActionTest
         .build());
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    List<HistoryEntry> persistedEntries = getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW);
+    List<DomainHistory> persistedEntries =
+        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertThat(persistedEntries).hasSize(2);
     assertHistoryEntryMatches(
         domain, persistedEntries.get(0), "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"),
@@ -649,7 +665,8 @@ public class ExpandRecurringBillingEventsActionTest
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW);
+    DomainHistory persistedEntry =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertHistoryEntryMatches(
         domain, persistedEntry, "TheRegistrar", DateTime.parse("2000-02-19T00:00:00Z"), true);
     BillingEvent.OneTime expected = defaultOneTimeBuilder()
@@ -675,8 +692,8 @@ public class ExpandRecurringBillingEventsActionTest
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
     runMapreduce();
-    List<HistoryEntry> persistedEntries =
-        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW);
+    List<DomainHistory> persistedEntries =
+        getHistoryEntriesOfType(domain, DOMAIN_AUTORENEW, DomainHistory.class);
     assertThat(persistedEntries).hasSize(2);
     DateTime eventDate = DateTime.parse("2000-01-05T00:00:00Z");
     DateTime billingDate = DateTime.parse("2000-02-19T00:00:00Z");

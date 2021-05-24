@@ -41,6 +41,7 @@ import google.registry.batch.RelockDomainAction;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
@@ -479,7 +480,8 @@ public final class DomainLockUtilsTest {
   private void verifyProperlyLockedDomain(boolean isAdmin) {
     assertThat(loadByEntity(domain).getStatusValues())
         .containsAtLeastElementsIn(REGISTRY_LOCK_STATUSES);
-    HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
+    DomainHistory historyEntry =
+        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE, DomainHistory.class);
     assertThat(historyEntry.getRequestedByRegistrar()).isEqualTo(!isAdmin);
     assertThat(historyEntry.getBySuperuser()).isEqualTo(isAdmin);
     assertThat(historyEntry.getReason())
@@ -493,8 +495,8 @@ public final class DomainLockUtilsTest {
 
   private void verifyProperlyUnlockedDomain(boolean isAdmin) {
     assertThat(loadByEntity(domain).getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
-    ImmutableList<HistoryEntry> historyEntries =
-        getHistoryEntriesOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
+    ImmutableList<DomainHistory> historyEntries =
+        getHistoryEntriesOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE, DomainHistory.class);
     assertThat(historyEntries.size()).isEqualTo(2);
     historyEntries.forEach(
         entry -> {
@@ -514,11 +516,11 @@ public final class DomainLockUtilsTest {
     assertThat(loadByEntity(domain)).isEqualTo(domain);
   }
 
-  private void assertBillingEvent(HistoryEntry historyEntry) {
+  private void assertBillingEvent(DomainHistory historyEntry) {
     assertBillingEvents(ImmutableList.of(historyEntry));
   }
 
-  private void assertBillingEvents(ImmutableList<HistoryEntry> historyEntries) {
+  private void assertBillingEvents(ImmutableList<DomainHistory> historyEntries) {
     Set<BillingEvent> expectedEvents =
         historyEntries.stream()
             .map(

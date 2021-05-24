@@ -37,6 +37,7 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
@@ -73,7 +74,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   protected ContactResource contact;
   protected DomainBase domain;
   HostResource subordinateHost;
-  private HistoryEntry historyEntryDomainCreate;
+  private DomainHistory historyEntryDomainCreate;
 
   DomainTransferFlowTestCase() {
     checkState(!Registry.DEFAULT_TRANSFER_GRACE_PERIOD.isShorterThan(TIME_SINCE_REQUEST));
@@ -120,17 +121,16 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
     domain =
         persistResource(
             domain.asBuilder().addSubordinateHost(subordinateHost.getHostName()).build());
-    historyEntryDomainCreate = getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE);
+    historyEntryDomainCreate =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE, DomainHistory.class);
   }
 
   BillingEvent.OneTime getBillingEventForImplicitTransfer() {
-    HistoryEntry historyEntry =
-        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST);
+    DomainHistory historyEntry =
+        getOnlyHistoryEntryOfType(
+            domain, HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST, DomainHistory.class);
     return createBillingEventForTransfer(
-        domain,
-        historyEntry,
-        TRANSFER_REQUEST_TIME,
-        TRANSFER_EXPIRATION_TIME);
+        domain, historyEntry, TRANSFER_REQUEST_TIME, TRANSFER_EXPIRATION_TIME);
   }
 
   /** Get the autorenew event that the losing client will have after a SERVER_APPROVED transfer. */
@@ -155,7 +155,9 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .setClientId("NewRegistrar")
         .setEventTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)
         .setRecurrenceEndTime(END_OF_TIME)
-        .setParent(getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST))
+        .setParent(
+            getOnlyHistoryEntryOfType(
+                domain, HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST, DomainHistory.class))
         .build();
   }
 

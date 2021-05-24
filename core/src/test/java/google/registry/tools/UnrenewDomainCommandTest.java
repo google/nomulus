@@ -41,10 +41,10 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestOfyAndSql;
@@ -132,7 +132,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
         .bySuperuser(true)
         .and()
         .hasMetadataRequestedByRegistrar(false);
-    HistoryEntry synthetic = getOnlyHistoryEntryOfType(domain, SYNTHETIC);
+    DomainHistory synthetic = getOnlyHistoryEntryOfType(domain, SYNTHETIC, DomainHistory.class);
 
     assertBillingEventsEqual(
         loadByKey(domain.getAutorenewBillingEvent()),

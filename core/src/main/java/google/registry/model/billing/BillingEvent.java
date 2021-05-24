@@ -46,7 +46,6 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.domain.token.AllocationToken;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
 import google.registry.persistence.BillingVKey.BillingEventVKey;
 import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
@@ -115,7 +114,7 @@ public abstract class BillingEvent extends ImmutableObject
   /** Entity id. */
   @Id @javax.persistence.Id Long id;
 
-  @Parent @DoNotHydrate @Transient Key<? extends HistoryEntry> parent;
+  @Parent @DoNotHydrate @Transient Key<DomainHistory> parent;
 
   /** The registrar to bill. */
   @Index
@@ -154,7 +153,7 @@ public abstract class BillingEvent extends ImmutableObject
     parent =
         Key.create(
             Key.create(DomainBase.class, domainRepoId),
-            HistoryEntry.class,
+            DomainHistory.class,
             domainHistoryRevisionId);
   }
 
@@ -192,7 +191,7 @@ public abstract class BillingEvent extends ImmutableObject
     return targetId;
   }
 
-  public Key<? extends HistoryEntry> getParentKey() {
+  public Key<DomainHistory> getParentKey() {
     return parent;
   }
 
@@ -254,12 +253,12 @@ public abstract class BillingEvent extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setParent(HistoryEntry parent) {
+    public B setParent(DomainHistory parent) {
       getInstance().parent = Key.create(parent);
       return thisCastToDerived();
     }
 
-    public B setParent(Key<? extends HistoryEntry> parentKey) {
+    public B setParent(Key<DomainHistory> parentKey) {
       getInstance().parent = parentKey;
       return thisCastToDerived();
     }
@@ -735,7 +734,7 @@ public abstract class BillingEvent extends ImmutableObject
      * because it is needed by one-off scrap tools that need to make billing adjustments.
      */
     public static Modification createRefundFor(
-        OneTime billingEvent, HistoryEntry historyEntry, String description) {
+        OneTime billingEvent, DomainHistory historyEntry, String description) {
       return new Builder()
           .setClientId(billingEvent.getClientId())
           .setFlags(billingEvent.getFlags())

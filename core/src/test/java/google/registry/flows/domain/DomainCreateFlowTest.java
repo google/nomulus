@@ -145,6 +145,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.launch.LaunchNotice;
 import google.registry.model.domain.rgp.GracePeriodStatus;
@@ -266,7 +267,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             ? clock.nowUtc().plus(Registry.get(domainTld).getAnchorTenantAddGracePeriodLength())
             : clock.nowUtc().plus(Registry.get(domainTld).getAddGracePeriodLength());
     assertLastHistoryContainsResource(domain);
-    HistoryEntry historyEntry = getHistoryEntries(domain).get(0);
+    DomainHistory historyEntry = getHistoryEntries(domain, DomainHistory.class).get(0);
     assertAboutDomains()
         .that(domain)
         .hasRegistrationExpirationTime(

@@ -55,7 +55,7 @@ public class GracePeriodTest {
             .setClientId("TheRegistrar")
             .setCost(Money.of(CurrencyUnit.USD, 42))
             .setParent(
-                Key.create(Key.create(DomainBase.class, "domain"), HistoryEntry.class, 12345))
+                Key.create(Key.create(DomainBase.class, "domain"), DomainHistory.class, 12345))
             .setReason(Reason.CREATE)
             .setPeriodYears(1)
             .setTargetId("foo.google")

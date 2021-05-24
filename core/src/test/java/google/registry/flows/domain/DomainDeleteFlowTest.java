@@ -229,14 +229,14 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
   }
 
   private void assertAutorenewClosedAndCancellationCreatedFor(
-      BillingEvent.OneTime graceBillingEvent, HistoryEntry historyEntryDomainDelete) {
+      BillingEvent.OneTime graceBillingEvent, DomainHistory historyEntryDomainDelete) {
     assertAutorenewClosedAndCancellationCreatedFor(
         graceBillingEvent, historyEntryDomainDelete, clock.nowUtc());
   }
 
   private void assertAutorenewClosedAndCancellationCreatedFor(
       BillingEvent.OneTime graceBillingEvent,
-      HistoryEntry historyEntryDomainDelete,
+      DomainHistory historyEntryDomainDelete,
       DateTime eventTime) {
     assertBillingEvents(
         createAutorenewBillingEvent("TheRegistrar").setRecurrenceEndTime(eventTime).build(),
@@ -360,7 +360,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertThat(reloadResourceByForeignKey()).isNull();
     // The add grace period is for a billable action, so it should trigger a cancellation.
     assertAutorenewClosedAndCancellationCreatedFor(
-        graceBillingEvent, getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE));
+        graceBillingEvent, getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE, DomainHistory.class));
     assertDnsTasksEnqueued("example.tld");
     // There should be no poll messages. The previous autorenew poll message should now be deleted.
     assertThat(getPollMessages("TheRegistrar")).isEmpty();
@@ -461,7 +461,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     assertLastHistoryContainsResource(resource);
     // All existing grace periods that were for billable actions should cause cancellations.
     assertAutorenewClosedAndCancellationCreatedFor(
-        renewBillingEvent, getOnlyHistoryEntryOfType(resource, DOMAIN_DELETE));
+        renewBillingEvent, getOnlyHistoryEntryOfType(resource, DOMAIN_DELETE, DomainHistory.class));
     // All existing grace periods should be gone, and a new REDEMPTION one should be added.
     assertThat(resource.getGracePeriods())
         .containsExactly(
@@ -755,7 +755,9 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     assertDnsTasksEnqueued("example.tld");
     assertAutorenewClosedAndCancellationCreatedFor(
-        graceBillingEvent, getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE), eventTime);
+        graceBillingEvent,
+        getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE, DomainHistory.class),
+        eventTime);
   }
 
   @TestOfyAndSql

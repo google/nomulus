@@ -37,6 +37,7 @@ import google.registry.batch.AsyncTaskEnqueuerTest;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
@@ -102,7 +103,8 @@ final class RegistryLockVerifyActionTest {
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(reloadDomain().getStatusValues()).containsExactlyElementsIn(REGISTRY_LOCK_STATUSES);
     assertThat(response.getPayload()).contains("Success: lock has been applied to example.tld");
-    HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
+    DomainHistory historyEntry =
+        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE, DomainHistory.class);
     assertThat(historyEntry.getRequestedByRegistrar()).isTrue();
     assertThat(historyEntry.getBySuperuser()).isFalse();
     assertThat(historyEntry.getReason())
@@ -119,7 +121,8 @@ final class RegistryLockVerifyActionTest {
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload()).contains("Success: unlock has been applied to example.tld");
     assertThat(reloadDomain().getStatusValues()).containsNoneIn(REGISTRY_LOCK_STATUSES);
-    HistoryEntry historyEntry = getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE);
+    DomainHistory historyEntry =
+        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE, DomainHistory.class);
     assertThat(historyEntry.getRequestedByRegistrar()).isTrue();
     assertThat(historyEntry.getBySuperuser()).isFalse();
     assertThat(historyEntry.getReason())
@@ -308,7 +311,7 @@ final class RegistryLockVerifyActionTest {
     assertThat(reloadDomain()).isEqualTo(domain);
   }
 
-  private void assertBillingEvent(HistoryEntry historyEntry) {
+  private void assertBillingEvent(DomainHistory historyEntry) {
     DatabaseHelper.assertBillingEvents(
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.SERVER_STATUS)

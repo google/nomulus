@@ -292,7 +292,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
   private Optional<BillingEvent.OneTime> createBillingEventForStatusUpdates(
       DomainBase existingDomain,
       DomainBase newDomain,
-      HistoryEntry historyEntry,
+      DomainHistory historyEntry,
       DateTime now) {
     Optional<MetadataExtension> metadataExtension =
         eppInput.getSingleExtension(MetadataExtension.class);

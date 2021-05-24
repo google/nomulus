@@ -162,8 +162,8 @@ class DomainRestoreRequestFlowTest
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     DomainBase domain = reloadResourceByForeignKey();
-    HistoryEntry historyEntryDomainRestore =
-        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE);
+    DomainHistory historyEntryDomainRestore =
+        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE, DomainHistory.class);
     assertLastHistoryContainsResource(domain);
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(expirationTime);
@@ -231,8 +231,8 @@ class DomainRestoreRequestFlowTest
     assertThat(getPollMessages("TheRegistrar", clock.nowUtc().plusMonths(1))).hasSize(1);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     DomainBase domain = reloadResourceByForeignKey();
-    HistoryEntry historyEntryDomainRestore =
-        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE);
+    DomainHistory historyEntryDomainRestore =
+        getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RESTORE, DomainHistory.class);
     assertLastHistoryContainsResource(domain);
     assertThat(loadByKey(domain.getAutorenewBillingEvent()).getEventTime())
         .isEqualTo(newExpirationTime);
