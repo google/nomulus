@@ -120,6 +120,7 @@ ext {
       'jline:jline:1.0',
       'joda-time:joda-time:2.9.2',
       'junit:junit:4.13',
+      'org.checkerframework:checker-qual:3.9.1',
       'org.junit.jupiter:junit-jupiter-api:5.6.2',
       'org.junit.jupiter:junit-jupiter-engine:5.6.2',
       'org.junit.jupiter:junit-jupiter-migrationsupport:5.6.2',
