@@ -290,10 +290,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
 
   /** Some status updates cost money. Bill only once no matter how many of them are changed. */
   private Optional<BillingEvent.OneTime> createBillingEventForStatusUpdates(
-      DomainBase existingDomain,
-      DomainBase newDomain,
-      DomainHistory historyEntry,
-      DateTime now) {
+      DomainBase existingDomain, DomainBase newDomain, DomainHistory historyEntry, DateTime now) {
     Optional<MetadataExtension> metadataExtension =
         eppInput.getSingleExtension(MetadataExtension.class);
     if (metadataExtension.isPresent() && metadataExtension.get().getRequestedByRegistrar()) {
