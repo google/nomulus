@@ -393,6 +393,7 @@ public class TransactionManagerTest {
                 () -> transactIfJpaTm(() -> tm().loadSingleton(TestEntity.class))))
         .hasMessageThat()
         .isEqualTo("Expected at most one entity of type TestEntity, found at least two");
+  }
 
   @TestOfyAndSql
   void mutatedObjectNotPersisted() {

@@ -57,9 +57,6 @@ import javax.persistence.PostPersist;
 import javax.persistence.PreRemove;
 import javax.persistence.Table;
 import javax.persistence.Transient;
-import javax.persistence.JoinColumn;
-import javax.persistence.MapKeyColumn;
-import javax.persistence.Table;
 import org.joda.time.DateTime;
 
 /**

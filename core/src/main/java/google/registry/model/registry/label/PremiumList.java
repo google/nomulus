@@ -57,7 +57,6 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreRemove;
 import javax.persistence.Table;
 import javax.persistence.Transient;
-import org.hibernate.LazyInitializationException;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 
