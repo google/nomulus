@@ -209,7 +209,7 @@ public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
           .where("revisionId", EQ, revisionId)
           .count();
     }
-    return getLabelsToKeys().size();
+    return labelsToKeys.size();
   }
 
   public static ClaimsList create(
