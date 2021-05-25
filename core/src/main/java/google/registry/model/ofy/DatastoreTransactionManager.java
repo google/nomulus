@@ -224,7 +224,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities) {
-    return ImmutableList.copyOf(getOfy().load().entities(entities).values());
+    return Streams.stream(entities).map(this::loadByEntity).collect(toImmutableList());
   }
 
   @Override
@@ -250,6 +250,7 @@ public class DatastoreTransactionManager implements TransactionManager {
     return result;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T> T loadByEntity(T entity) {
     return (T) toSqlEntity(auditedOfy().load().entity(toDatastoreEntity(entity)).now());

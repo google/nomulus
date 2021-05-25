@@ -456,11 +456,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     assertInTransaction();
     // If the caller requested a HistoryEntry, load the corresponding *History class
     T possibleChild = toSqlEntity(entity);
-    return (T)
-        loadByKey(
-            VKey.createSql(
-                possibleChild.getClass(),
-                emf.getPersistenceUnitUtil().getIdentifier(possibleChild)));
+    @SuppressWarnings("unchecked")
+    T returnValue =
+        (T)
+            loadByKey(
+                VKey.createSql(
+                    possibleChild.getClass(),
+                    emf.getPersistenceUnitUtil().getIdentifier(possibleChild)));
+    return returnValue;
   }
 
   @Override
