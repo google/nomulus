@@ -83,7 +83,9 @@ public final class ReservedList
    * database processing on our own so we can detach it after load.
    */
   @Mapify(ReservedListEntry.LabelMapper.class)
-  @Insignificant @Transient Map<String, ReservedListEntry> reservedListMap;
+  @Insignificant
+  @Transient
+  Map<String, ReservedListEntry> reservedListMap;
 
   @Column(nullable = false)
   boolean shouldPublish = true;

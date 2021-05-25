@@ -154,7 +154,7 @@ public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
   /**
    * Returns the claim key for a given domain if there is one, empty otherwise.
    *
-   * <p>Note that this may do a database query.  For checking multiple keys against the claims list
+   * <p>Note that this may do a database query. For checking multiple keys against the claims list
    * it may be more efficient to use {@link #getLabelsToKeys()} first, as this will prefetch all
    * entries and cache them locally.
    */
@@ -162,12 +162,15 @@ public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
     if (labelsToKeys != null) {
       return Optional.ofNullable(labelsToKeys.get(label));
     }
-    return jpaTm().transact(
-        () -> jpaTm().createQueryComposer(ClaimsEntry.class)
-            .where("revisionId", EQ, revisionId)
-            .where("domainLabel", EQ, label)
-            .first()
-            .map(ClaimsEntry::getClaimKey));
+    return jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .createQueryComposer(ClaimsEntry.class)
+                    .where("revisionId", EQ, revisionId)
+                    .where("domainLabel", EQ, label)
+                    .first()
+                    .map(ClaimsEntry::getClaimKey));
   }
 
   /**
@@ -193,14 +196,16 @@ public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
     return labelsToKeys;
   }
 
-  /** Returns the number of claims.
+  /**
+   * Returns the number of claims.
    *
    * <p>Note that this will perform a database "count" query if the label to key map has not been
    * previously cached by calling {@link #getLabelsToKeys()}.
    */
   public long size() {
     if (labelsToKeys == null) {
-      return jpaTm().createQueryComposer(ClaimsEntry.class)
+      return jpaTm()
+          .createQueryComposer(ClaimsEntry.class)
           .where("revisionId", EQ, revisionId)
           .count();
     }

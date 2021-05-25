@@ -60,10 +60,7 @@ class ReservedListTest {
       AppEngineExtension.builder()
           .withClock(clock)
           .withJpaUnitTestEntities(
-              PremiumList.class,
-              PremiumEntry.class,
-              ReservedList.class,
-              ReservedListEntry.class)
+              PremiumList.class, PremiumEntry.class, ReservedList.class, ReservedListEntry.class)
           .withDatastoreAndCloudSql()
           .build();
 

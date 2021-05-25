@@ -78,19 +78,24 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
   protected String prompt() {
     return getChangedEntities().isEmpty()
         ? "No entity changes to apply."
-        : getChangedEntities().stream().map(
-              entity -> {
-                if (entity instanceof ReservedList) {
-                  // Format the entries of the reserved list as well.
-                  String entries =
-                      ((ReservedList) entity).getReservedListEntries().entrySet().stream()
-                          .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
-                          .collect(Collectors.joining(", "));
-                  return String.format("%s\nreservedListMap={%s}\n", entity, entries);
-                } else {
-                  return entity.toString();
-                }
-              }).collect(Collectors.joining("\n"));
+        : getChangedEntities().stream()
+            .map(
+                entity -> {
+                  if (entity instanceof ReservedList) {
+                    // Format the entries of the reserved list as well.
+                    String entries =
+                        ((ReservedList) entity)
+                            .getReservedListEntries().entrySet().stream()
+                                .map(
+                                    entry ->
+                                        String.format("%s=%s", entry.getKey(), entry.getValue()))
+                                .collect(Collectors.joining(", "));
+                    return String.format("%s\nreservedListMap={%s}\n", entity, entries);
+                  } else {
+                    return entity.toString();
+                  }
+                })
+            .collect(Collectors.joining("\n"));
   }
 
   private static void validateListName(String name) {
