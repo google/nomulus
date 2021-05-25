@@ -14,23 +14,23 @@
 
 package google.registry.tools.server;
 
+import static com.google.appengine.repackaged.com.google.common.collect.Sets.difference;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.instanceOf;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Multimaps.filterKeys;
-import static com.google.common.collect.Sets.difference;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
-import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.util.Arrays.asList;
 
 import com.google.appengine.api.datastore.Entity;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -42,6 +42,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
@@ -49,6 +50,7 @@ import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.util.stream.Stream;
@@ -111,38 +113,41 @@ class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResource
               .setModificationTime(resource.getCreationTime())
               .setType(HISTORY_ENTRY_CREATE_TYPES.get(resource.getClass()))
               .build();
-      for (ImmutableObject descendant :
-          asList(
-              history,
-              new PollMessage.OneTime.Builder()
-                  .setParent(history)
-                  .setClientId("")
-                  .setEventTime(START_OF_TIME)
-                  .build(),
-              new PollMessage.Autorenew.Builder()
-                  .setParent(history)
-                  .setClientId("")
-                  .setEventTime(START_OF_TIME)
-                  .build(),
-              new BillingEvent.OneTime.Builder()
-                  .setParent(history)
-                  .setBillingTime(START_OF_TIME)
-                  .setEventTime(START_OF_TIME)
-                  .setClientId("")
-                  .setTargetId("")
-                  .setReason(Reason.CREATE)
-                  .setPeriodYears(1)
-                  .setCost(Money.of(CurrencyUnit.USD, 1))
-                  .build(),
-              new BillingEvent.Recurring.Builder()
-                  .setParent(history)
-                  .setEventTime(START_OF_TIME)
-                  .setClientId("")
-                  .setTargetId("")
-                  .setReason(Reason.RENEW)
-                  .build())) {
-        persistResource(descendant);
+      ImmutableList.Builder<ImmutableObject> descendantBuilder =
+          new ImmutableList.Builder<ImmutableObject>()
+              .add(
+                  history,
+                  new PollMessage.OneTime.Builder()
+                      .setParent(history)
+                      .setClientId("")
+                      .setEventTime(START_OF_TIME)
+                      .build(),
+                  new PollMessage.Autorenew.Builder()
+                      .setParent(history)
+                      .setClientId("")
+                      .setEventTime(START_OF_TIME)
+                      .build());
+      if (history instanceof DomainHistory) {
+        descendantBuilder.add(
+            new BillingEvent.OneTime.Builder()
+                .setParent((DomainHistory) history)
+                .setBillingTime(START_OF_TIME)
+                .setEventTime(START_OF_TIME)
+                .setClientId("")
+                .setTargetId("")
+                .setReason(Reason.CREATE)
+                .setPeriodYears(1)
+                .setCost(Money.of(CurrencyUnit.USD, 1))
+                .build(),
+            new BillingEvent.Recurring.Builder()
+                .setParent((DomainHistory) history)
+                .setEventTime(START_OF_TIME)
+                .setClientId("")
+                .setTargetId("")
+                .setReason(Reason.RENEW)
+                .build());
       }
+      descendantBuilder.build().forEach(DatabaseHelper::persistResource);
     }
     ImmutableMultimap<String, Object> beforeContents = getDatastoreContents();
     assertThat(beforeContents.keySet()).containsAtLeastElementsIn(AFFECTED_KINDS);

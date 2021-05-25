@@ -222,9 +222,17 @@ public class DatastoreTransactionManager implements TransactionManager {
                 entry -> keyMap.get(entry.getKey()), entry -> toSqlEntity(entry.getValue())));
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities) {
-    return ImmutableList.copyOf(getOfy().load().entities(entities).values());
+    return getOfy()
+        .load()
+        .entities(toDatastoreEntities(ImmutableList.copyOf(entities)))
+        .values()
+        .stream()
+        .map(DatastoreTransactionManager::toSqlEntity)
+        .map(entity -> (T) entity)
+        .collect(toImmutableList());
   }
 
   @Override
@@ -250,6 +258,7 @@ public class DatastoreTransactionManager implements TransactionManager {
     return result;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T> T loadByEntity(T entity) {
     return (T) toSqlEntity(auditedOfy().load().entity(toDatastoreEntity(entity)).now());

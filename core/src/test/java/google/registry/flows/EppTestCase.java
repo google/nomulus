@@ -35,10 +35,10 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.EppXmlTransformer;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntry.Type;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.persistence.VKey;
@@ -81,8 +81,7 @@ public class EppTestCase {
    *
    * <p>When the credentials are null, the login flow still checks the EPP password from the xml,
    * which is sufficient for all tests that aren't explicitly testing a form of login credentials
-   * such as {@link EppLoginUserTest}, {@link EppLoginAdminUserTest} and {@link EppLoginTlsTest}.
-   * Therefore, only those tests should call this method.
+   * such as {@link EppLoginTlsTest}. Therefore, only those tests should call this method.
    */
   void setTransportCredentials(TransportCredentials credentials) {
     this.credentials = credentials;
@@ -326,7 +325,7 @@ public class EppTestCase {
         .setPeriodYears(2)
         .setEventTime(createTime)
         .setBillingTime(createTime.plus(Registry.get(domain.getTld()).getAddGracePeriodLength()))
-        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE))
+        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
         .build();
   }
 
@@ -340,7 +339,7 @@ public class EppTestCase {
         .setPeriodYears(3)
         .setEventTime(renewTime)
         .setBillingTime(renewTime.plus(Registry.get(domain.getTld()).getRenewGracePeriodLength()))
-        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW))
+        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class))
         .build();
   }
 
@@ -348,19 +347,25 @@ public class EppTestCase {
   static BillingEvent.Recurring makeRecurringCreateBillingEvent(
       DomainBase domain, DateTime eventTime, DateTime endTime) {
     return makeRecurringBillingEvent(
-        domain, getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE), eventTime, endTime);
+        domain,
+        getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class),
+        eventTime,
+        endTime);
   }
 
   /** Makes a recurring billing event corresponding to the given domain's renewal. */
   static BillingEvent.Recurring makeRecurringRenewBillingEvent(
       DomainBase domain, DateTime eventTime, DateTime endTime) {
     return makeRecurringBillingEvent(
-        domain, getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW), eventTime, endTime);
+        domain,
+        getOnlyHistoryEntryOfType(domain, Type.DOMAIN_RENEW, DomainHistory.class),
+        eventTime,
+        endTime);
   }
 
   /** Makes a recurring billing event corresponding to the given history entry. */
   protected static BillingEvent.Recurring makeRecurringBillingEvent(
-      DomainBase domain, HistoryEntry historyEntry, DateTime eventTime, DateTime endTime) {
+      DomainBase domain, DomainHistory historyEntry, DateTime eventTime, DateTime endTime) {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
@@ -382,7 +387,7 @@ public class EppTestCase {
         .setOneTimeEventKey(VKey.from(findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
         .setBillingTime(createTime.plus(Registry.get(domain.getTld()).getAddGracePeriodLength()))
         .setReason(Reason.CREATE)
-        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE))
+        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))
         .build();
   }
 
@@ -396,7 +401,7 @@ public class EppTestCase {
         .setOneTimeEventKey(VKey.from(findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
         .setBillingTime(renewTime.plus(Registry.get(domain.getTld()).getRenewGracePeriodLength()))
         .setReason(Reason.RENEW)
-        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE))
+        .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_DELETE, DomainHistory.class))
         .build();
   }
 

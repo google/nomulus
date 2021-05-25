@@ -361,7 +361,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
   @TestOfyAndSql
   void testSuccess_autoRenewGracePeriod() throws Exception {
     persistTestEntities(false);
-    HistoryEntry historyEntry =
+    DomainHistory historyEntry =
         persistResource(
             new DomainHistory.Builder()
                 .setDomain(domain)

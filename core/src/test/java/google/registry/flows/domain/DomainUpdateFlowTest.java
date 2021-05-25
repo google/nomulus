@@ -687,7 +687,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
               .setBillingTime(clock.nowUtc())
               .setParent(
                   getOnlyHistoryEntryOfType(
-                      reloadResourceByForeignKey(), HistoryEntry.Type.DOMAIN_UPDATE))
+                      reloadResourceByForeignKey(),
+                      HistoryEntry.Type.DOMAIN_UPDATE,
+                      DomainHistory.class))
               .build());
     } else {
       assertNoBillingEvents();

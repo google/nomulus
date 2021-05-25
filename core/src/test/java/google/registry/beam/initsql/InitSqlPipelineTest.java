@@ -129,7 +129,7 @@ class InitSqlPipelineTest {
   private transient ContactResource contact2;
   private transient HostResource hostResource;
 
-  private transient HistoryEntry historyEntry;
+  private transient DomainHistory historyEntry;
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -187,7 +187,7 @@ class InitSqlPipelineTest {
                   .build());
       persistResource(
           new AllocationToken.Builder().setToken("abc123").setTokenType(SINGLE_USE).build());
-      Key<HistoryEntry> historyEntryKey = Key.create(historyEntry);
+      Key<DomainHistory> historyEntryKey = Key.create(historyEntry);
       BillingEvent.OneTime onetimeBillEvent =
           new BillingEvent.OneTime.Builder()
               .setId(1)

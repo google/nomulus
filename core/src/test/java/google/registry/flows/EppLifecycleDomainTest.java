@@ -42,6 +42,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.reporting.HistoryEntry.Type;
@@ -549,7 +550,7 @@ class EppLifecycleDomainTest extends EppTestCase {
             .setCost(Money.parse("USD 100.00"))
             .setEventTime(createTime)
             .setBillingTime(createTime.plus(Registry.get("tld").getRenewGracePeriodLength()))
-            .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE))
+            .setParent(getOnlyHistoryEntryOfType(domain, Type.DOMAIN_CREATE, DomainHistory.class))
             .build();
 
     // The expected one-time billing event, that should have an associated Cancellation.

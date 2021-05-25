@@ -66,7 +66,7 @@ final class RdeFixtures {
                 makeContactResource(clock, "5372808-ERL", "(◕‿◕) nevermore", "prophet@evil.みんな")
                     .createVKey())
             .build();
-    HistoryEntry historyEntry =
+    DomainHistory historyEntry =
         persistResource(
             new DomainHistory.Builder()
                 .setDomain(domain)

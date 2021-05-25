@@ -42,7 +42,6 @@ import google.registry.model.domain.GracePeriod;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.ofy.Ofy;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
@@ -293,7 +292,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
 
   @TestOfyAndSql
   void testSuccess_disableAutorenew_inAutorenewGracePeriod() throws Exception {
-    HistoryEntry createHistoryEntry =
+    DomainHistory createHistoryEntry =
         persistResource(
             new DomainHistory.Builder()
                 .setModificationTime(fakeClock.nowUtc())

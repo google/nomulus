@@ -86,6 +86,7 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.GracePeriod;
 import google.registry.model.domain.Period;
 import google.registry.model.domain.Period.Unit;
@@ -250,8 +251,8 @@ class DomainTransferRequestFlowTest
       boolean expectTransferBillingEvent,
       BillingEvent.Cancellation.Builder... extraExpectedBillingEvents) {
     Registry registry = Registry.get(domain.getTld());
-    final HistoryEntry historyEntryTransferRequest =
-        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REQUEST);
+    final DomainHistory historyEntryTransferRequest =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_REQUEST, DomainHistory.class);
 
     // Construct the billing events we expect to exist, starting with the (optional) billing
     // event for the transfer itself.

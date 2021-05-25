@@ -6,7 +6,7 @@ class google.registry.model.UpdateAutoTimestamp {
 }
 class google.registry.model.billing.BillingEvent$Cancellation {
   @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<? extends google.registry.model.reporting.HistoryEntry> parent;
+  @Parent com.googlecode.objectify.Key<google.registry.model.domain.DomainHistory> parent;
   google.registry.model.billing.BillingEvent$Reason reason;
   google.registry.persistence.BillingVKey$BillingEventVKey refOneTime;
   google.registry.persistence.BillingVKey$BillingRecurrenceVKey refRecurring;
@@ -27,7 +27,7 @@ enum google.registry.model.billing.BillingEvent$Flag {
 }
 class google.registry.model.billing.BillingEvent$Modification {
   @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<? extends google.registry.model.reporting.HistoryEntry> parent;
+  @Parent com.googlecode.objectify.Key<google.registry.model.domain.DomainHistory> parent;
   com.googlecode.objectify.Key<google.registry.model.billing.BillingEvent$OneTime> eventRef;
   google.registry.model.billing.BillingEvent$Reason reason;
   java.lang.String clientId;
@@ -39,7 +39,7 @@ class google.registry.model.billing.BillingEvent$Modification {
 }
 class google.registry.model.billing.BillingEvent$OneTime {
   @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<? extends google.registry.model.reporting.HistoryEntry> parent;
+  @Parent com.googlecode.objectify.Key<google.registry.model.domain.DomainHistory> parent;
   google.registry.model.billing.BillingEvent$Reason reason;
   google.registry.persistence.VKey<google.registry.model.billing.BillingEvent$Recurring> cancellationMatchingBillingEvent;
   google.registry.persistence.VKey<google.registry.model.domain.token.AllocationToken> allocationToken;
@@ -63,7 +63,7 @@ enum google.registry.model.billing.BillingEvent$Reason {
 }
 class google.registry.model.billing.BillingEvent$Recurring {
   @Id java.lang.Long id;
-  @Parent com.googlecode.objectify.Key<? extends google.registry.model.reporting.HistoryEntry> parent;
+  @Parent com.googlecode.objectify.Key<google.registry.model.domain.DomainHistory> parent;
   google.registry.model.billing.BillingEvent$Reason reason;
   google.registry.model.common.TimeOfYear recurrenceTimeOfYear;
   java.lang.String clientId;

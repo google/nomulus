@@ -521,7 +521,7 @@ public class DatabaseHelper {
   }
 
   public static BillingEvent.OneTime createBillingEventForTransfer(
-      DomainBase domain, HistoryEntry historyEntry, DateTime costLookupTime, DateTime eventTime) {
+      DomainBase domain, DomainHistory historyEntry, DateTime costLookupTime, DateTime eventTime) {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.TRANSFER)
         .setTargetId(domain.getDomainName())

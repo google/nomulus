@@ -260,8 +260,8 @@ class DomainTransferApproveFlowTest
       throws Exception {
     Registry registry = Registry.get(tld);
     domain = reloadResourceByForeignKey();
-    final HistoryEntry historyEntryTransferApproved =
-        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE);
+    final DomainHistory historyEntryTransferApproved =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE, DomainHistory.class);
     // We expect three billing events: one for the transfer, a closed autorenew for the losing
     // client and an open autorenew for the gaining client that begins at the new expiration time.
     OneTime transferBillingEvent =
@@ -308,8 +308,8 @@ class DomainTransferApproveFlowTest
   private void assertHistoryEntriesDoNotContainTransferBillingEventsOrGracePeriods(
       BillingEvent.Cancellation.Builder... expectedCancellationBillingEvents) throws Exception {
     domain = reloadResourceByForeignKey();
-    final HistoryEntry historyEntryTransferApproved =
-        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE);
+    final DomainHistory historyEntryTransferApproved =
+        getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_APPROVE, DomainHistory.class);
     // We expect two billing events: a closed autorenew for the losing client and an open autorenew
     // for the gaining client that begins at the new expiration time.
     assertBillingEventsForResource(
