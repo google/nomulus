@@ -1,8 +1,7 @@
 ClaimsList
 ClaimsListSingleton
 Cursor
-DatabaseMigrationStateWrapper
-DatabaseTransitionSchedule
+DatabaseMigrationStateSchedule
 KmsSecret
 KmsSecretRevision
 PremiumList
