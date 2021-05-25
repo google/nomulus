@@ -52,9 +52,8 @@ public class ReservedListDao {
             () ->
                 jpaTm()
                     .query(
-                        "FROM ReservedList rl LEFT JOIN FETCH rl.reservedListMap WHERE"
-                            + " rl.revisionId IN (SELECT MAX(revisionId) FROM ReservedList subrl"
-                            + " WHERE subrl.name = :name)",
+                        "FROM ReservedList WHERE revisionId IN "
+                            + "(SELECT MAX(revisionId) FROM ReservedList WHERE name = :name)",
                         ReservedList.class)
                     .setParameter("name", reservedListName)
                     .getResultStream()

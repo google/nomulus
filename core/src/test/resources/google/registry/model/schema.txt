@@ -754,6 +754,7 @@ class google.registry.model.registry.label.ReservedList {
 class google.registry.model.registry.label.ReservedList$ReservedListEntry {
   @Id java.lang.String label;
   google.registry.model.registry.label.ReservationType reservationType;
+  java.lang.Long revisionId;
   java.lang.String comment;
 }
 class google.registry.model.reporting.DomainTransactionRecord {
@@ -862,7 +863,7 @@ class google.registry.model.server.ServerSecret {
 class google.registry.model.tmch.ClaimsList {
   @Id long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsList$ClaimsListRevision> parent;
-  java.util.Map<java.lang.String, java.lang.String> labelsToKeys;
+  com.google.common.collect.ImmutableMap<java.lang.String, java.lang.String> labelsToKeys;
   org.joda.time.DateTime creationTime;
 }
 class google.registry.model.tmch.ClaimsList$ClaimsListRevision {

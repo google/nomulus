@@ -36,7 +36,8 @@ public abstract class DomainLabelEntry<T extends Comparable<?>, D extends Domain
     extends ImmutableObject implements Comparable<D> {
 
   @Id
-  @Column(name = "domain_label", insertable = false, updatable = false)
+  @javax.persistence.Id
+  @Column(name = "domain_label", nullable = false)
   String label;
 
   String comment;

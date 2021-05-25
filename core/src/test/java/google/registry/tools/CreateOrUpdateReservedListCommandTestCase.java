@@ -125,10 +125,7 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
                       .setParameter("name", name)
                       .getSingleResult();
               return jpaTm()
-                  .query(
-                      "FROM ReservedList rl LEFT JOIN FETCH rl.reservedListMap WHERE"
-                          + " rl.revisionId = :revisionId",
-                      ReservedList.class)
+                  .query("FROM ReservedList WHERE revisionId = :revisionId", ReservedList.class)
                   .setParameter("revisionId", revisionId)
                   .getSingleResult();
             });

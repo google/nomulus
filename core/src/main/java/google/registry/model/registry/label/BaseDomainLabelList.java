@@ -38,7 +38,6 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,8 +55,8 @@ import org.joda.time.DateTime;
  * Base class for {@link ReservedList} and {@link PremiumList} objects stored in Datastore.
  *
  * @param <T> The type of the root value being listed, e.g. {@link ReservationType}.
- * @param <R> The type of domain label entry being listed, e.g. {@link ReservedListEntry} (note,
- *     must subclass {@link DomainLabelEntry}.
+ * @param <R> The type of domain label entry being listed, e.g. {@link
+ *     ReservedList.ReservedListEntry} (note, must subclass {@link DomainLabelEntry}.
  */
 @MappedSuperclass
 @InCrossTld

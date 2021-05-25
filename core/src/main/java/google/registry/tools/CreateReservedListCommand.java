@@ -30,6 +30,7 @@ import google.registry.model.registry.label.ReservedList;
 import google.registry.persistence.VKey;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.joda.time.DateTime;
 
 /** Command to create a {@link ReservedList}. */
@@ -71,6 +72,30 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
     // it's being persisted; a vkey has to be created here explicitly for ReservedList instances.
     stageEntityChange(
         null, reservedList, VKey.createOfy(ReservedList.class, Key.create(reservedList)));
+  }
+
+  @Override
+  protected String prompt() {
+    return getChangedEntities().isEmpty()
+        ? "No entity changes to apply."
+        : getChangedEntities().stream()
+            .map(
+                entity -> {
+                  if (entity instanceof ReservedList) {
+                    // Format the entries of the reserved list as well.
+                    String entries =
+                        ((ReservedList) entity)
+                            .getReservedListEntries().entrySet().stream()
+                                .map(
+                                    entry ->
+                                        String.format("%s=%s", entry.getKey(), entry.getValue()))
+                                .collect(Collectors.joining(", "));
+                    return String.format("%s\nreservedListMap={%s}\n", entity, entries);
+                  } else {
+                    return entity.toString();
+                  }
+                })
+            .collect(Collectors.joining("\n"));
   }
 
   private static void validateListName(String name) {
