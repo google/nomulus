@@ -155,7 +155,7 @@ public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
    * Returns the claim key for a given domain if there is one, empty otherwise.
    *
    * <p>Note that this may do a database query.  For checking multiple keys against the claims list
-   * it may be more efficient to use {@link #getLablesToKeys()} first, as this will prefetch all
+   * it may be more efficient to use {@link #getLabelsToKeys()} first, as this will prefetch all
    * entries and cache them locally.
    */
   public Optional<String> getClaimKey(String label) {
@@ -196,7 +196,7 @@ public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
   /** Returns the number of claims.
    *
    * <p>Note that this will perform a database "count" query if the label to key map has not been
-   * previously cached by calling {@link getLabelsToKeys()}.
+   * previously cached by calling {@link #getLabelsToKeys()}.
    */
   public long size() {
     if (labelsToKeys == null) {
