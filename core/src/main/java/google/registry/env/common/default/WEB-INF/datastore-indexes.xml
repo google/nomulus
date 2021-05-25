@@ -41,6 +41,11 @@
     <property name="nsHosts" direction="asc"/>
     <property name="deletionTime" direction="asc"/>
   </datastore-index>
+  <!-- For deleting expired not-previously-deleted domains. -->
+  <datastore-index kind="DomainBase" ancestor="false" source="manual">
+    <property name="deletionTime" direction="asc"/>
+    <property name="autorenewEndTime" direction="asc"/>
+  </datastore-index>
   <!-- For RDAP searches by linked nameserver. -->
   <datastore-index kind="DomainBase" ancestor="false" source="manual">
     <property name="nsHosts" direction="asc"/>

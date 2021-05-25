@@ -14,12 +14,14 @@
 
 package google.registry.batch;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.eppcommon.StatusValue.PENDING_DELETE;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -38,27 +40,35 @@ import google.registry.model.ofy.Ofy;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.persistence.transaction.QueryComposer.Comparator;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeLockHandler;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link DeleteExpiredDomainsAction}. */
+@DualDatabaseTest
 class DeleteExpiredDomainsActionTest {
+
+  private final FakeClock clock = new FakeClock(DateTime.parse("2016-06-13T20:21:22Z"));
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .withClock(clock)
+          .withTaskQueue()
+          .build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
-  private final FakeClock clock = new FakeClock(DateTime.parse("2016-06-13T20:21:22Z"));
   private final FakeResponse response = new FakeResponse();
   private DeleteExpiredDomainsAction action;
 
@@ -78,7 +88,7 @@ class DeleteExpiredDomainsActionTest {
             eppController, "NewRegistrar", clock, new FakeLockHandler(true), response);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_deletesOnlyExpiredDomain() {
     // A normal, active autorenewing domain that shouldn't be touched.
     DomainBase activeDomain = persistActiveDomain("foo.tld");
@@ -105,7 +115,7 @@ class DeleteExpiredDomainsActionTest {
     // to operate on.)
     DomainBase pendingExpirationDomain = persistNonAutorenewingDomain("fizz.tld");
 
-    assertThat(tm().loadByEntity(pendingExpirationDomain).getStatusValues())
+    assertThat(loadByEntity(pendingExpirationDomain).getStatusValues())
         .doesNotContain(PENDING_DELETE);
     // action.run() does not use any test helper that can advance the fake clock. We manually
     // advance the clock to emulate the actual behavior. This works because the action only has
@@ -113,17 +123,17 @@ class DeleteExpiredDomainsActionTest {
     clock.advanceOneMilli();
     action.run();
 
-    DomainBase reloadedActiveDomain = tm().loadByEntity(activeDomain);
+    DomainBase reloadedActiveDomain = loadByEntity(activeDomain);
     assertThat(reloadedActiveDomain).isEqualTo(activeDomain);
     assertThat(reloadedActiveDomain.getStatusValues()).doesNotContain(PENDING_DELETE);
-    assertThat(tm().loadByEntity(alreadyDeletedDomain)).isEqualTo(alreadyDeletedDomain);
-    assertThat(tm().loadByEntity(notYetExpiredDomain)).isEqualTo(notYetExpiredDomain);
-    DomainBase reloadedExpiredDomain = tm().loadByEntity(pendingExpirationDomain);
+    assertThat(loadByEntity(alreadyDeletedDomain)).isEqualTo(alreadyDeletedDomain);
+    assertThat(loadByEntity(notYetExpiredDomain)).isEqualTo(notYetExpiredDomain);
+    DomainBase reloadedExpiredDomain = loadByEntity(pendingExpirationDomain);
     assertThat(reloadedExpiredDomain.getStatusValues()).contains(PENDING_DELETE);
     assertThat(reloadedExpiredDomain.getDeletionTime()).isEqualTo(clock.nowUtc().plusDays(35));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_deletesThreeDomainsInOneRun() throws Exception {
     DomainBase domain1 = persistNonAutorenewingDomain("ecck1.tld");
     DomainBase domain2 = persistNonAutorenewingDomain("veee2.tld");
@@ -135,14 +145,14 @@ class DeleteExpiredDomainsActionTest {
     int maxRetries = 5;
     while (true) {
       ImmutableSet<String> matchingDomains =
-          ofy()
-              .load()
-              .type(DomainBase.class)
-              .filter("autorenewEndTime <=", clock.nowUtc())
-              .list()
-              .stream()
-              .map(DomainBase::getDomainName)
-              .collect(ImmutableSet.toImmutableSet());
+          transactIfJpaTm(
+              () ->
+                  tm()
+                      .createQueryComposer(DomainBase.class)
+                      .where("autorenewEndTime", Comparator.LTE, clock.nowUtc())
+                      .stream()
+                      .map(DomainBase::getDomainName)
+                      .collect(toImmutableSet()));
       if (matchingDomains.containsAll(ImmutableSet.of("ecck1.tld", "veee2.tld", "tarm3.tld"))) {
         break;
       }
@@ -158,9 +168,9 @@ class DeleteExpiredDomainsActionTest {
     action.run();
     clock.disableAutoIncrement();
 
-    assertThat(tm().loadByEntity(domain1).getStatusValues()).contains(PENDING_DELETE);
-    assertThat(tm().loadByEntity(domain2).getStatusValues()).contains(PENDING_DELETE);
-    assertThat(tm().loadByEntity(domain3).getStatusValues()).contains(PENDING_DELETE);
+    assertThat(loadByEntity(domain1).getStatusValues()).contains(PENDING_DELETE);
+    assertThat(loadByEntity(domain2).getStatusValues()).contains(PENDING_DELETE);
+    assertThat(loadByEntity(domain3).getStatusValues()).contains(PENDING_DELETE);
   }
 
   private DomainBase persistNonAutorenewingDomain(String domainName) {
