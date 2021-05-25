@@ -44,7 +44,6 @@ import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.SqlEntity;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -223,11 +222,16 @@ public class DatastoreTransactionManager implements TransactionManager {
                 entry -> keyMap.get(entry.getKey()), entry -> toSqlEntity(entry.getValue())));
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities) {
-    return Streams.stream(entities)
-        .map(this::loadByEntity)
-        .filter(Objects::nonNull)
+    return getOfy()
+        .load()
+        .entities(toDatastoreEntities(ImmutableList.copyOf(entities)))
+        .values()
+        .stream()
+        .map(DatastoreTransactionManager::toSqlEntity)
+        .map(entity -> (T) entity)
         .collect(toImmutableList());
   }
 
