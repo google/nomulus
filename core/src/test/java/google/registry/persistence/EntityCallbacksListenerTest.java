@@ -58,7 +58,7 @@ class EntityCallbacksListenerTest {
             .transact(
                 () -> {
                   TestEntity merged = jpaTm().getEntityManager().merge(testUpdate);
-                  merged.foo++;
+                  merged.nonTransientField++;
                   jpaTm().getEntityManager().flush();
                   return merged;
                 });
@@ -74,8 +74,7 @@ class EntityCallbacksListenerTest {
             .transact(
                 () -> {
                   TestEntity removed = jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id"));
-                  jpaTm().delete(removed);
-                  return removed;
+                  return jpaTm().delete(removed);
                 });
     checkAll(testRemove, 0, 0, 1, 1);
   }
@@ -97,6 +96,24 @@ class EntityCallbacksListenerTest {
   @Test
   void verifyHasMethodAnnotatedWithEmbedded_work() {
     assertThat(hasMethodAnnotatedWithEmbedded(ViolationEntity.class)).isTrue();
+  }
+
+  @Test
+  void verifyCallbacksNotCalledOnCommit() {
+    TestEntity testEntity = new TestEntity();
+    jpaTm().transact(() -> jpaTm().insert(testEntity));
+
+    TestEntity testLoad =
+        jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id")));
+    assertThat(testLoad.entityPreUpdate).isEqualTo(0);
+
+    testLoad = jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id")));
+
+    // Verify that post-load happened but pre-update didn't.
+    assertThat(testLoad.entityPostLoad).isEqualTo(1);
+    assertThat(testLoad.entityPreUpdate).isEqualTo(0);
+    // since we didn't save the non-transient field, should only be 1
+    assertThat(testLoad.nonTransientField).isEqualTo(1);
   }
 
   private static boolean hasMethodAnnotatedWithEmbedded(Class<?> entityType) {
@@ -152,15 +169,22 @@ class EntityCallbacksListenerTest {
   @Entity(name = "TestEntity")
   private static class TestEntity extends ParentEntity {
     @Id String name = "id";
-    int foo = 0;
+    int nonTransientField = 0;
 
     @Transient int entityPostLoad = 0;
+    @Transient int entityPreUpdate = 0;
 
     @Embedded EntityEmbedded entityEmbedded = new EntityEmbedded();
 
     @PostLoad
     void entityPostLoad() {
       entityPostLoad++;
+      nonTransientField++;
+    }
+
+    @PreUpdate
+    void entityPreUpdate() {
+      entityPreUpdate++;
     }
   }
 

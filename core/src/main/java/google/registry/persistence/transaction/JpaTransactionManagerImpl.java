@@ -44,13 +44,17 @@ import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
 import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import javax.annotation.Nullable;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
@@ -269,8 +273,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     assertInTransaction();
     // Necessary due to the changes in HistoryEntry representation during the migration to SQL
     Object toPersist = toSqlEntity(entity);
-    getEntityManager().persist(toPersist);
-    transactionInfo.get().addUpdate(toPersist);
+    transactionInfo.get().insertObject(toPersist);
   }
 
   @Override
@@ -299,8 +302,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     assertInTransaction();
     // Necessary due to the changes in HistoryEntry representation during the migration to SQL
     Object toPersist = toSqlEntity(entity);
-    getEntityManager().merge(toPersist);
-    transactionInfo.get().addUpdate(toPersist);
+    transactionInfo.get().updateObject(toPersist);
   }
 
   @Override
@@ -339,8 +341,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgument(exists(entity), "Given entity does not exist");
     // Necessary due to the changes in HistoryEntry representation during the migration to SQL
     Object toPersist = toSqlEntity(entity);
-    getEntityManager().merge(toPersist);
-    transactionInfo.get().addUpdate(toPersist);
+    transactionInfo.get().updateObject(toPersist);
   }
 
   @Override
@@ -397,7 +398,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> Optional<T> loadByKeyIfPresent(VKey<T> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
-    return Optional.ofNullable(getEntityManager().find(key.getKind(), key.getSqlKey()));
+    return Optional.ofNullable(getEntityManager().find(key.getKind(), key.getSqlKey()))
+        .map(this::detach);
   }
 
   @Override
@@ -411,7 +413,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         .map(
             key ->
                 new SimpleEntry<VKey<? extends T>, T>(
-                    key, getEntityManager().find(key.getKind(), key.getSqlKey())))
+                    key, detach(getEntityManager().find(key.getKind(), key.getSqlKey()))))
         .filter(entry -> entry.getValue() != null)
         .collect(toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
   }
@@ -433,7 +435,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     if (result == null) {
       throw new NoSuchElementException(key.toString());
     }
-    return result;
+    return detach(result);
   }
 
   @Override
@@ -472,12 +474,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   public <T> ImmutableList<T> loadAllOf(Class<T> clazz) {
     checkArgumentNotNull(clazz, "clazz must be specified");
     assertInTransaction();
-    return ImmutableList.copyOf(
-        getEntityManager()
-            .createQuery(
-                String.format("SELECT entity FROM %s entity", getEntityType(clazz).getName()),
-                clazz)
-            .getResultList());
+    return getEntityManager()
+        .createQuery(String.format("FROM %s", getEntityType(clazz).getName()), clazz)
+        .getResultStream()
+        .map(this::detach)
+        .collect(toImmutableList());
   }
 
   @Override
@@ -524,18 +525,21 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void delete(Object entity) {
+  public <T> T delete(T entity) {
     checkArgumentNotNull(entity, "entity must be specified");
     if (isEntityOfIgnoredClass(entity)) {
-      return;
+      return entity;
     }
     assertInTransaction();
     entity = toSqlEntity(entity);
-    Object managedEntity = entity;
+    T managedEntity = entity;
     if (!getEntityManager().contains(entity)) {
+      // We don't add the entity to "objectsToSave": once deleted, the object should never be
+      // returned as a result of the query or lookup.
       managedEntity = getEntityManager().merge(entity);
     }
     getEntityManager().remove(managedEntity);
+    return managedEntity;
   }
 
   @Override
@@ -555,7 +559,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
-    return new JpaQueryComposerImpl<T>(entity, getEntityManager());
+    return new JpaQueryComposerImpl<T>(entity);
   }
 
   @Override
@@ -658,6 +662,21 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
   }
 
+  /** Detach the entity, suitable for use in Optional.map(). */
+  @Nullable
+  private <T> T detach(@Nullable T entity) {
+    if (entity != null) {
+
+      // If the entity was previously persisted or merged, we have to throw an exception.
+      if (transactionInfo.get().willSave(entity)) {
+        throw new IllegalStateException("Inserted/updated object reloaded: " + entity);
+      }
+
+      getEntityManager().detach(entity);
+    }
+    return entity;
+  }
+
   private static class TransactionInfo {
     EntityManager entityManager;
     boolean inTransaction = false;
@@ -665,6 +684,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     // Serializable representation of the transaction to be persisted in the Transaction table.
     Transaction.Builder contentsBuilder;
+
+    // The set of entity objects that have been either persisted (via insert()) or merged (via
+    // put()/update()).  If the entity manager returns these as a result of a find() or query
+    // operation, we can not detach them -- detaching removes them from the transaction and causes
+    // them to not be saved to the database -- so we throw an exception instead.
+    Set<Object> objectsToSave = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
 
     /** Start a new transaction. */
     private void start(Clock clock) {
@@ -680,6 +705,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       inTransaction = false;
       transactionTime = null;
       contentsBuilder = null;
+      objectsToSave = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
       if (entityManager != null) {
         // Close this EntityManager just let the connection pool be able to reuse it, it doesn't
         // close the underlying database connection.
@@ -708,25 +734,40 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         }
       }
     }
+
+    /** Does the full "update" on an object including all internal housekeeping. */
+    private void updateObject(Object object) {
+      Object merged = entityManager.merge(object);
+      objectsToSave.add(merged);
+      addUpdate(object);
+    }
+
+    /** Does the full "insert" on a new object including all internal housekeeping. */
+    private void insertObject(Object object) {
+      entityManager.persist(object);
+      objectsToSave.add(object);
+      addUpdate(object);
+    }
+
+    /** Returns true if the object has been persisted/merged and will be saved on commit. */
+    private boolean willSave(Object object) {
+      return objectsToSave.contains(object);
+    }
   }
 
-  private static class JpaQueryComposerImpl<T> extends QueryComposer<T> {
+  private class JpaQueryComposerImpl<T> extends QueryComposer<T> {
 
     private static final int DEFAULT_FETCH_SIZE = 1000;
 
-    EntityManager em;
-
     private int fetchSize = DEFAULT_FETCH_SIZE;
 
-    private boolean autoDetachOnLoad = true;
-
-    JpaQueryComposerImpl(Class<T> entityClass, EntityManager em) {
+    JpaQueryComposerImpl(Class<T> entityClass) {
       super(entityClass);
-      this.em = em;
     }
 
     private TypedQuery<T> buildQuery() {
-      CriteriaQueryBuilder<T> queryBuilder = CriteriaQueryBuilder.create(em, entityClass);
+      CriteriaQueryBuilder<T> queryBuilder =
+          CriteriaQueryBuilder.create(getEntityManager(), entityClass);
       return addCriteria(queryBuilder);
     }
 
@@ -739,13 +780,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         queryBuilder.orderByAsc(orderBy);
       }
 
-      return em.createQuery(queryBuilder.build());
-    }
-
-    @Override
-    public QueryComposer<T> withAutoDetachOnLoad(boolean autoDetachOnLoad) {
-      this.autoDetachOnLoad = autoDetachOnLoad;
-      return this;
+      return getEntityManager().createQuery(queryBuilder.build());
     }
 
     @Override
@@ -758,12 +793,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     @Override
     public Optional<T> first() {
       List<T> results = buildQuery().setMaxResults(1).getResultList();
-      return results.size() > 0 ? Optional.of(maybeDetachEntity(results.get(0))) : Optional.empty();
+      return results.size() > 0 ? Optional.of(detach(results.get(0))) : Optional.empty();
     }
 
     @Override
     public T getSingleResult() {
-      return maybeDetachEntity(buildQuery().getSingleResult());
+      return detach(buildQuery().getSingleResult());
     }
 
     @Override
@@ -777,27 +812,21 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       } else {
         logger.atWarning().log("Query implemention does not support result streaming.");
       }
-      return query.getResultStream().map(this::maybeDetachEntity);
+      return query.getResultStream().map(JpaTransactionManagerImpl.this::detach);
     }
 
     @Override
     public long count() {
-      CriteriaQueryBuilder<Long> queryBuilder = CriteriaQueryBuilder.createCount(em, entityClass);
+      CriteriaQueryBuilder<Long> queryBuilder =
+          CriteriaQueryBuilder.createCount(getEntityManager(), entityClass);
       return addCriteria(queryBuilder).getSingleResult();
     }
 
     @Override
     public ImmutableList<T> list() {
       return buildQuery().getResultList().stream()
-          .map(this::maybeDetachEntity)
+          .map(JpaTransactionManagerImpl.this::detach)
           .collect(ImmutableList.toImmutableList());
-    }
-
-    private T maybeDetachEntity(T entity) {
-      if (autoDetachOnLoad) {
-        em.detach(entity);
-      }
-      return entity;
     }
   }
 }

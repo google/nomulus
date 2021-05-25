@@ -110,7 +110,6 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.tmch.LordnTaskUtils;
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -119,7 +118,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.Nullable;
-import org.hibernate.Hibernate;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -1065,9 +1063,6 @@ public class DatabaseHelper {
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
     tm().clearSessionCache();
-    for (R resource : resources) {
-      transactIfJpaTm(() -> tm().loadByEntity(resource));
-    }
   }
 
   /**
@@ -1284,28 +1279,11 @@ public class DatabaseHelper {
                 ImmutableList.Builder<Object> result = new ImmutableList.Builder<>();
                 for (Class<?> entityClass : entityClasses) {
                   for (Object object : jpaTm().loadAllOf(entityClass)) {
-                    // Initialize and detach the objects so they can be used for comparison later
-                    initializeHibernateObject(object);
-                    jpaTm().getEntityManager().detach(object);
                     result.add(object);
                   }
                 }
                 return result.build();
               });
-    }
-  }
-
-  /**
-   * Initializes all fields in a Hibernate proxy object so it can be used outside of a transaction.
-   */
-  private static void initializeHibernateObject(Object object) {
-    for (Field field : object.getClass().getDeclaredFields()) {
-      field.setAccessible(true);
-      try {
-        Hibernate.initialize(field.get(object));
-      } catch (IllegalAccessException e) {
-        // shouldn't happen since we set the field to be accessible
-      }
     }
   }
 
@@ -1371,6 +1349,18 @@ public class DatabaseHelper {
   public static <T> ImmutableMap<VKey<? extends T>, T> loadByKeysIfPresent(
       Iterable<? extends VKey<? extends T>> keys) {
     return transactIfJpaTm(() -> tm().loadByKeysIfPresent(keys));
+  }
+
+  /**
+   * In JPA mode, assert that the given entity is detached from the current entity manager.
+   *
+   * <p>Returns the original entity object.
+   */
+  public static <T> T assertDetached(T entity) {
+    if (!tm().isOfy()) {
+      assertThat(jpaTm().getEntityManager().contains(entity)).isFalse();
+    }
+    return entity;
   }
 
   private DatabaseHelper() {}

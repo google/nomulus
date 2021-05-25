@@ -54,6 +54,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.PostLoad;
 import javax.persistence.Table;
+import org.hibernate.Hibernate;
 
 /**
  * A persisted history entry representing an EPP modification to a domain.
@@ -261,6 +262,12 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         }
       }
     }
+
+    // TODO(b/188044616): Determine why Eager loading doesn't work here.
+    Hibernate.initialize(domainTransactionRecords);
+    Hibernate.initialize(nsHosts);
+    Hibernate.initialize(dsDataHistories);
+    Hibernate.initialize(gracePeriodHistories);
   }
 
   // In Datastore, save as a HistoryEntry object regardless of this object's type

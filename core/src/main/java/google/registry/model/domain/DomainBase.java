@@ -36,7 +36,9 @@ import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
+import javax.persistence.PostLoad;
 import javax.persistence.Table;
+import org.hibernate.Hibernate;
 import org.joda.time.DateTime;
 
 /**
@@ -78,6 +80,8 @@ public class DomainBase extends DomainContent
     return super.getRepoId();
   }
 
+  // It seems like this should be FetchType.EAGER, but for some reason when we do that we get a lazy
+  // load error during the load of a domain.
   @ElementCollection
   @JoinTable(
       name = "DomainHost",
@@ -137,6 +141,16 @@ public class DomainBase extends DomainContent
   @SuppressWarnings("UnusedMethod")
   private Set<DelegationSignerData> getInternalDelegationSignerData() {
     return dsData;
+  }
+
+  /** Post-load method to eager load the collections. */
+  @PostLoad
+  @Override
+  protected void postLoad() {
+    super.postLoad();
+    // TODO(b/188044616): Determine why Eager loading doesn't work here.
+    Hibernate.initialize(dsData);
+    Hibernate.initialize(gracePeriods);
   }
 
   @Override

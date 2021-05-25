@@ -262,8 +262,14 @@ public interface TransactionManager {
   /** Deletes the set of entities by their key id. */
   void delete(Iterable<? extends VKey<?>> keys);
 
-  /** Deletes the given entity from the database. */
-  void delete(Object entity);
+  /**
+   * Deletes the given entity from the database.
+   *
+   * <p>This returns the deleted entity, which may not necessarily be the same as the original
+   * entity passed in, as it may be a) converted to a different type of object more appropriate to
+   * the database type or b) merged with an object managed by the database entity manager.
+   */
+  <T> T delete(T entity);
 
   /**
    * Deletes the entity by its id without writing commit logs if the underlying database is
