@@ -23,6 +23,8 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.util.AbstractMap.SimpleEntry;
 import static java.util.stream.Collectors.joining;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -44,7 +46,9 @@ import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
 import java.lang.reflect.Field;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,8 +62,12 @@ import javax.annotation.Nullable;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import javax.persistence.FlushModeType;
+import javax.persistence.LockModeType;
+import javax.persistence.Parameter;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
+import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
 import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.SingularAttribute;
@@ -116,7 +124,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> TypedQuery<T> query(String sqlString, Class<T> resultClass) {
-    return getEntityManager().createQuery(sqlString, resultClass);
+    return new TransformingTypedQuery(
+        getEntityManager().createQuery(sqlString, resultClass),
+        // TODO: replace with "detach"
+        x -> x);
   }
 
   @Override
@@ -755,6 +766,206 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     /** Returns true if the object has been persisted/merged and will be saved on commit. */
     private boolean willSave(Object object) {
       return objectsToSave.contains(object);
+    }
+  }
+
+  /**
+   * Typed query wrapper that applies a transform to all result objects.
+   *
+   * <p>This is used to detach objects upon load.
+   */
+  @VisibleForTesting
+  static class TransformingTypedQuery<T> implements TypedQuery<T> {
+
+    TypedQuery<T> rep;
+    Function<T, T> detach;
+
+    public TransformingTypedQuery(TypedQuery<T> rep, Function<T, T> detach) {
+      this.rep = rep;
+      this.detach = detach;
+    }
+
+    @Override
+    public List<T> getResultList() {
+      return rep.getResultStream().map(detach).collect(toImmutableList());
+    }
+
+    @Override
+    public Stream<T> getResultStream() {
+      return rep.getResultStream().map(detach);
+    }
+
+    @Override
+    public T getSingleResult() {
+      return detach.apply(rep.getSingleResult());
+    }
+
+    @Override
+    public TypedQuery<T> setMaxResults(int maxResults) {
+      rep.setMaxResults(maxResults);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setFirstResult(int startPosition) {
+      rep.setFirstResult(startPosition);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setHint(String hintName, Object value) {
+      rep.setHint(hintName, value);
+      return this;
+    }
+
+    @Override
+    public <U> TypedQuery<T> setParameter(Parameter<U> param, U value) {
+      rep.setParameter(param, value);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setParameter(
+        Parameter<Calendar> param, Calendar value, TemporalType temporalType) {
+      rep.setParameter(param, value, temporalType);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setParameter(
+        Parameter<Date> param, Date value, TemporalType temporalType) {
+      rep.setParameter(param, value, temporalType);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setParameter(String name, Object value) {
+      rep.setParameter(name, value);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setParameter(String name, Calendar value, TemporalType temporalType) {
+      rep.setParameter(name, value, temporalType);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setParameter(String name, Date value, TemporalType temporalType) {
+      rep.setParameter(name, value, temporalType);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setParameter(int position, Object value) {
+      rep.setParameter(position, value);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setParameter(int position, Calendar value, TemporalType temporalType) {
+      rep.setParameter(position, value, temporalType);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setParameter(int position, Date value, TemporalType temporalType) {
+      rep.setParameter(position, value, temporalType);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setFlushMode(FlushModeType flushMode) {
+      rep.setFlushMode(flushMode);
+      return this;
+    }
+
+    @Override
+    public TypedQuery<T> setLockMode(LockModeType lockMode) {
+      rep.setLockMode(lockMode);
+      return this;
+    }
+
+    // Query interface
+
+    @Override
+    public int executeUpdate() {
+      return rep.executeUpdate();
+    }
+
+    @Override
+    public int getMaxResults() {
+      return rep.getMaxResults();
+    }
+
+    @Override
+    public int getFirstResult() {
+      return rep.getFirstResult();
+    }
+
+    @Override
+    public Map<String, Object> getHints() {
+      return rep.getHints();
+    }
+
+    @Override
+    public Set<Parameter<?>> getParameters() {
+      return rep.getParameters();
+    }
+
+    @Override
+    public Parameter<?> getParameter(String name) {
+      return rep.getParameter(name);
+    }
+
+    @Override
+    public <U> Parameter<U> getParameter(String name, Class<U> type) {
+      return rep.getParameter(name, type);
+    }
+
+    @Override
+    public Parameter<?> getParameter(int position) {
+      return rep.getParameter(position);
+    }
+
+    @Override
+    public <U> Parameter<U> getParameter(int position, Class<U> type) {
+      return rep.getParameter(position, type);
+    }
+
+    @Override
+    public boolean isBound(Parameter<?> param) {
+      return rep.isBound(param);
+    }
+
+    @Override
+    public <U> U getParameterValue(Parameter<U> param) {
+      return rep.getParameterValue(param);
+    }
+
+    @Override
+    public Object getParameterValue(String name) {
+      return rep.getParameterValue(name);
+    }
+
+    @Override
+    public Object getParameterValue(int position) {
+      return rep.getParameterValue(position);
+    }
+
+    @Override
+    public FlushModeType getFlushMode() {
+      return rep.getFlushMode();
+    }
+
+    @Override
+    public LockModeType getLockMode() {
+      return rep.getLockMode();
+    }
+
+    @Override
+    public <U> U unwrap(Class<U> cls) {
+      return rep.unwrap(cls);
     }
   }
 
