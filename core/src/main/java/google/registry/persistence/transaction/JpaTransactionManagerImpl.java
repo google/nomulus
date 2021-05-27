@@ -45,6 +45,7 @@ import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Calendar;
 import java.util.Collections;
@@ -125,9 +126,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public <T> TypedQuery<T> query(String sqlString, Class<T> resultClass) {
     return new TransformingTypedQuery(
-        getEntityManager().createQuery(sqlString, resultClass),
-        // TODO: replace with "detach"
-        x -> x);
+        getEntityManager().createQuery(sqlString, resultClass), this::detachIfEntity);
   }
 
   @Override
@@ -674,6 +673,31 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         throw e;
       }
     }
+  }
+
+  @Nullable
+  private <T> T detachIfEntity(@Nullable T object) {
+    if (object != null) {
+
+      // Check if the object is an array, if so we'll want to recurse through the elements.
+      if (object.getClass().isArray()) {
+        for (int i = 0; i < Array.getLength(object); ++i) {
+          detachIfEntity(Array.get(object, i));
+        }
+        return object;
+      }
+
+      // Check to see if it is an entity.
+      try {
+        getEntityManager().getMetamodel().entity(object.getClass());
+      } catch (IllegalArgumentException e) {
+        // The object is not an entity.  Return without detaching.
+        return object;
+      }
+    }
+
+    // At this point, object is either an entity or null.
+    return detach(object);
   }
 
   /** Detach the entity, suitable for use in Optional.map(). */
