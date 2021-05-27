@@ -44,19 +44,6 @@ class ListPremiumListsActionTest extends ListActionTestCase {
   }
 
   @Test
-  void testRun_withLabelsToPrices() {
-    testRunSuccess(
-        action,
-        Optional.of("labelsToPrices"),
-        Optional.empty(),
-        Optional.empty(),
-        "^name\\s+labelsToPrices\\s*$",
-        "^-+\\s+-+\\s*$",
-        "^how\\s+\\{richer=5000.00\\}$",
-        "^xn--q9jyb4c\\s+\\{rich=100\\.00\\}\\s+$");
-  }
-
-  @Test
   void testRun_withBadField_returnsError() {
     testRunError(
         action,
