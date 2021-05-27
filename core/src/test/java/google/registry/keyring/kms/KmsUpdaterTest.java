@@ -15,226 +15,185 @@
 package google.registry.keyring.kms;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.googlecode.objectify.Key;
 import google.registry.keyring.api.KeySerializer;
-import google.registry.model.server.KmsSecret;
-import google.registry.model.server.KmsSecretRevision;
-import google.registry.model.server.KmsSecretRevisionSqlDao;
-import google.registry.persistence.VKey;
 import google.registry.privileges.secretmanager.FakeSecretManagerClient;
 import google.registry.privileges.secretmanager.KeyringSecretStore;
-import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link KmsUpdater} */
-@DualDatabaseTest
+/** Unit tests for {@link KmsKeyring} and {@link KmsUpdater} */
+// TODO(2021-07-01): Rename this class along with KmsKeyring
 public class KmsUpdaterTest {
-
-  @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
 
+  private KeyringSecretStore secretStore;
   private KmsUpdater updater;
+  private KmsKeyring keyring;
 
   @BeforeEach
   void beforeEach() {
-    updater =
-        new KmsUpdater(
-            new FakeKmsConnection(), new KeyringSecretStore(new FakeSecretManagerClient()));
+    secretStore = new KeyringSecretStore(new FakeSecretManagerClient());
+    updater = new KmsUpdater(secretStore);
+    keyring = new KmsKeyring(secretStore);
   }
 
-  @TestOfyAndSql
-  void test_setMultipleSecrets() {
+  @Test
+  void setAndReadMultiple() {
+    String secretPrefix = "setAndReadMultiple_";
     updater
-        .setMarksdbDnlLoginAndPassword("value1")
-        .setIcannReportingPassword("value2")
-        .setJsonCredential("value3")
+        .setMarksdbDnlLoginAndPassword(secretPrefix + "marksdb")
+        .setIcannReportingPassword(secretPrefix + "icann")
+        .setJsonCredential(secretPrefix + "json")
         .update();
 
-    verifySecretAndSecretRevisionWritten(
-        "marksdb-dnl-login-string",
-        "marksdb-dnl-login-string/foo",
-        getCiphertext("value1"));
-    verifySecretAndSecretRevisionWritten(
-        "icann-reporting-password-string",
-        "icann-reporting-password-string/foo",
-        getCiphertext("value2"));
-    verifySecretAndSecretRevisionWritten(
-        "json-credential-string", "json-credential-string/foo", getCiphertext("value3"));
+    assertThat(keyring.getMarksdbDnlLoginAndPassword()).isEqualTo(secretPrefix + "marksdb");
+    assertThat(keyring.getIcannReportingPassword()).isEqualTo(secretPrefix + "icann");
+    assertThat(keyring.getJsonCredential()).isEqualTo(secretPrefix + "json");
+
+    verifyPersistedSecret("marksdb-dnl-login-string", secretPrefix + "marksdb");
+    verifyPersistedSecret("icann-reporting-password-string", secretPrefix + "icann");
+    verifyPersistedSecret("json-credential-string", secretPrefix + "json");
   }
 
-  @TestOfyAndSql
-  void test_setBrdaReceiverKey() throws Exception {
-    updater.setBrdaReceiverPublicKey(KmsTestHelper.getPublicKey()).update();
+  @Test
+  void brdaReceiverKey() throws Exception {
+    PGPPublicKey publicKey = KmsTestHelper.getPublicKey();
+    updater.setBrdaReceiverPublicKey(publicKey).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "brda-receiver-public",
-        "brda-receiver-public/foo",
-        getCiphertext(KmsTestHelper.getPublicKey()));
+    assertThat(keyring.getBrdaReceiverKey().getFingerprint()).isEqualTo(publicKey.getFingerprint());
+    verifyPersistedSecret("brda-receiver-public", serializePublicKey(publicKey));
   }
 
-  @TestOfyAndSql
-  void test_setBrdaSigningKey() throws Exception {
-    updater.setBrdaSigningKey(KmsTestHelper.getKeyPair()).update();
+  @Test
+  void brdaSigningKey() throws Exception {
+    PGPKeyPair keyPair = KmsTestHelper.getKeyPair();
+    updater.setBrdaSigningKey(keyPair).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "brda-signing-private",
-        "brda-signing-private/foo",
-        getCiphertext(KmsTestHelper.getKeyPair()));
-    verifySecretAndSecretRevisionWritten(
-        "brda-signing-public",
-        "brda-signing-public/foo",
-        getCiphertext(KmsTestHelper.getPublicKey()));
+    assertThat(serializeKeyPair(keyring.getBrdaSigningKey())).isEqualTo(serializeKeyPair(keyPair));
+    verifyPersistedSecret("brda-signing-private", serializeKeyPair(KmsTestHelper.getKeyPair()));
+    verifyPersistedSecret("brda-signing-public", serializePublicKey(KmsTestHelper.getPublicKey()));
   }
 
-  @TestOfyAndSql
-  void test_setIcannReportingPassword() {
-    updater.setIcannReportingPassword("value1").update();
+  @Test
+  void icannReportingPassword() {
+    String secret = "icannReportingPassword";
+    updater.setIcannReportingPassword(secret).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "icann-reporting-password-string",
-        "icann-reporting-password-string/foo",
-        getCiphertext("value1"));
+    assertThat(keyring.getIcannReportingPassword()).isEqualTo(secret);
+    verifyPersistedSecret("icann-reporting-password-string", secret);
   }
 
-  @TestOfyAndSql
-  void test_setJsonCredential() {
-    updater.setJsonCredential("value1").update();
+  @Test
+  void jsonCredential() {
+    String secret = "jsonCredential";
+    updater.setJsonCredential(secret).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "json-credential-string", "json-credential-string/foo", getCiphertext("value1"));
+    assertThat(keyring.getJsonCredential()).isEqualTo(secret);
+    verifyPersistedSecret("json-credential-string", secret);
   }
 
-  @TestOfyAndSql
-  void test_setMarksdbDnlLoginAndPassword() {
-    updater.setMarksdbDnlLoginAndPassword("value1").update();
+  @Test
+  void marksdbDnlLoginAndPassword() {
+    String secret = "marksdbDnlLoginAndPassword";
+    updater.setMarksdbDnlLoginAndPassword(secret).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "marksdb-dnl-login-string", "marksdb-dnl-login-string/foo", getCiphertext("value1"));
+    assertThat(keyring.getMarksdbDnlLoginAndPassword()).isEqualTo(secret);
+    verifyPersistedSecret("marksdb-dnl-login-string", secret);
   }
 
-  @TestOfyAndSql
-  void test_setMarksdbLordnPassword() {
-    updater.setMarksdbLordnPassword("value1").update();
+  @Test
+  void marksdbLordnPassword() {
+    String secret = "marksdbLordnPassword";
+    updater.setMarksdbLordnPassword(secret).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "marksdb-lordn-password-string",
-        "marksdb-lordn-password-string/foo",
-        getCiphertext("value1"));
+    assertThat(keyring.getMarksdbLordnPassword()).isEqualTo(secret);
+    verifyPersistedSecret("marksdb-lordn-password-string", secret);
   }
 
-  @TestOfyAndSql
-  void test_setMarksdbSmdrlLoginAndPassword() {
-    updater.setMarksdbSmdrlLoginAndPassword("value1").update();
+  @Test
+  void marksdbSmdrlLoginAndPassword() {
+    String secret = "marksdbSmdrlLoginAndPassword";
+    updater.setMarksdbSmdrlLoginAndPassword(secret).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "marksdb-smdrl-login-string", "marksdb-smdrl-login-string/foo", getCiphertext("value1"));
+    assertThat(keyring.getMarksdbSmdrlLoginAndPassword()).isEqualTo(secret);
+    verifyPersistedSecret("marksdb-smdrl-login-string", secret);
   }
 
-  @TestOfyAndSql
-  void test_setRdeReceiverKey() throws Exception {
-    updater.setRdeReceiverPublicKey(KmsTestHelper.getPublicKey()).update();
+  @Test
+  void rdeReceiverKey() throws Exception {
+    PGPPublicKey publicKey = KmsTestHelper.getPublicKey();
+    updater.setRdeReceiverPublicKey(publicKey).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "rde-receiver-public",
-        "rde-receiver-public/foo",
-        getCiphertext(
-            KeySerializer.serializePublicKey(KmsTestHelper.getPublicKey())));
+    assertThat(keyring.getRdeReceiverKey().getFingerprint()).isEqualTo(publicKey.getFingerprint());
+    verifyPersistedSecret("rde-receiver-public", serializePublicKey(KmsTestHelper.getPublicKey()));
   }
 
-  @TestOfyAndSql
-  void test_setRdeSigningKey() throws Exception {
-    updater.setRdeSigningKey(KmsTestHelper.getKeyPair()).update();
+  @Test
+  void rdeSigningKey() throws Exception {
+    PGPKeyPair keyPair = KmsTestHelper.getKeyPair();
+    updater.setRdeSigningKey(keyPair).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "rde-signing-private",
-        "rde-signing-private/foo",
-        getCiphertext(KmsTestHelper.getKeyPair()));
-    verifySecretAndSecretRevisionWritten(
-        "rde-signing-public",
-        "rde-signing-public/foo",
-        getCiphertext(KmsTestHelper.getPublicKey()));
+    assertThat(serializeKeyPair(keyring.getRdeSigningKey())).isEqualTo(serializeKeyPair(keyPair));
+
+    verifyPersistedSecret("rde-signing-private", serializeKeyPair(keyPair));
+    verifyPersistedSecret("rde-signing-public", serializePublicKey(keyPair.getPublicKey()));
   }
 
-  @TestOfyAndSql
-  void test_setRdeSshClientPrivateKey() {
-    updater.setRdeSshClientPrivateKey("value1").update();
+  @Test
+  void rdeSshClientPrivateKey() {
+    String secret = "rdeSshClientPrivateKey";
+    updater.setRdeSshClientPrivateKey(secret).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "rde-ssh-client-private-string",
-        "rde-ssh-client-private-string/foo",
-        getCiphertext("value1"));
+    assertThat(keyring.getRdeSshClientPrivateKey()).isEqualTo(secret);
+    verifyPersistedSecret("rde-ssh-client-private-string", secret);
   }
 
-  @TestOfyAndSql
-  void test_setRdeSshClientPublicKey() {
-    updater.setRdeSshClientPublicKey("value1").update();
+  @Test
+  void rdeSshClientPublicKey() {
+    String secret = "rdeSshClientPublicKey";
+    updater.setRdeSshClientPublicKey(secret).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "rde-ssh-client-public-string",
-        "rde-ssh-client-public-string/foo",
-        getCiphertext("value1"));
+    assertThat(keyring.getRdeSshClientPublicKey()).isEqualTo(secret);
+    verifyPersistedSecret("rde-ssh-client-public-string", secret);
   }
 
-  @TestOfyAndSql
-  void test_setRdeStagingKey() throws Exception {
-    updater.setRdeStagingKey(KmsTestHelper.getKeyPair()).update();
+  @Test
+  void rdeStagingKey() throws Exception {
+    PGPKeyPair keyPair = KmsTestHelper.getKeyPair();
+    updater.setRdeStagingKey(keyPair).update();
 
-    verifySecretAndSecretRevisionWritten(
-        "rde-staging-private",
-        "rde-staging-private/foo",
-        getCiphertext(KmsTestHelper.getKeyPair()));
-    verifySecretAndSecretRevisionWritten(
-        "rde-staging-public",
-        "rde-staging-public/foo",
-        getCiphertext(KmsTestHelper.getPublicKey()));
+    assertThat(serializePublicKey(keyring.getRdeStagingEncryptionKey()))
+        .isEqualTo(serializePublicKey(keyPair.getPublicKey()));
+    // Since we do not have dedicated tools to compare private keys, we leverage key-pair
+    // serialization util to compare private keys.
+    assertThat(
+            serializeKeyPair(
+                new PGPKeyPair(
+                    keyring.getRdeStagingEncryptionKey(), keyring.getRdeStagingDecryptionKey())))
+        .isEqualTo(serializeKeyPair(keyPair));
+    verifyPersistedSecret("rde-staging-private", serializeKeyPair(keyPair));
+    verifyPersistedSecret("rde-staging-public", serializePublicKey(KmsTestHelper.getPublicKey()));
   }
 
-  private static void verifySecretAndSecretRevisionWritten(
-      String secretName, String expectedCryptoKeyVersionName, String expectedEncryptedValue) {
-    KmsSecretRevision secretRevision;
-    if (tm().isOfy()) {
-      KmsSecret secret =
-          tm().loadByKey(
-                  VKey.createOfy(
-                      KmsSecret.class, Key.create(getCrossTldKey(), KmsSecret.class, secretName)));
-      assertThat(secret).isNotNull();
-      secretRevision =
-          tm().loadByKey(VKey.createOfy(KmsSecretRevision.class, secret.getLatestRevision()));
-    } else {
-      secretRevision =
-          tm().transact(() -> KmsSecretRevisionSqlDao.getLatestRevision(secretName).get());
-    }
-    assertThat(secretRevision.getKmsCryptoKeyVersionName()).isEqualTo(expectedCryptoKeyVersionName);
-    assertThat(secretRevision.getEncryptedValue()).isEqualTo(expectedEncryptedValue);
+  private void verifyPersistedSecret(String secretName, String expectedPlainTextValue) {
+    assertThat(new String(secretStore.getSecret(secretName), StandardCharsets.UTF_8))
+        .isEqualTo(expectedPlainTextValue);
   }
 
-  private static String getCiphertext(byte[] plaintext) {
-    return new FakeKmsConnection().encrypt("blah", plaintext).ciphertext();
+  private static String serializePublicKey(PGPPublicKey publicKey) throws IOException {
+    return new String(KeySerializer.serializePublicKey(publicKey), StandardCharsets.UTF_8);
   }
 
-  private static String getCiphertext(String plaintext) {
-    return getCiphertext(KeySerializer.serializeString(plaintext));
-  }
-
-  private static String getCiphertext(PGPPublicKey publicKey) throws IOException {
-    return getCiphertext(KeySerializer.serializePublicKey(publicKey));
-  }
-
-  private static String getCiphertext(PGPKeyPair keyPair) throws Exception {
-    return getCiphertext(KeySerializer.serializeKeyPair(keyPair));
+  private static String serializeKeyPair(PGPKeyPair keyPair) throws Exception {
+    return new String(KeySerializer.serializeKeyPair(keyPair), StandardCharsets.UTF_8);
   }
 }

@@ -26,7 +26,7 @@ import org.bouncycastle.openpgp.bc.BcPGPSecretKeyRing;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 
-/** Stores dummy values for test use in {@link KmsUpdaterTest} and {@link KmsKeyringTest}. */
+/** Stores dummy values for test use in {@link KmsUpdaterTest}. */
 final class KmsTestHelper {
 
   static final String DUMMY_CRYPTO_KEY_VERSION = "cheeseburger";
