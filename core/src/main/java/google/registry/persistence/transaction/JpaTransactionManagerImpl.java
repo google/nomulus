@@ -677,26 +677,28 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Nullable
   private <T> T detachIfEntity(@Nullable T object) {
-    if (object != null) {
-
-      // Check if the object is an array, if so we'll want to recurse through the elements.
-      if (object.getClass().isArray()) {
-        for (int i = 0; i < Array.getLength(object); ++i) {
-          detachIfEntity(Array.get(object, i));
-        }
-        return object;
-      }
-
-      // Check to see if it is an entity.
-      try {
-        getEntityManager().getMetamodel().entity(object.getClass());
-      } catch (IllegalArgumentException e) {
-        // The object is not an entity.  Return without detaching.
-        return object;
-      }
+    if (object == null) {
+      return null;
     }
 
-    // At this point, object is either an entity or null.
+    // Check if the object is an array, if so we'll want to recurse through the elements.
+    if (object.getClass().isArray()) {
+      for (int i = 0; i < Array.getLength(object); ++i) {
+        detachIfEntity(Array.get(object, i));
+      }
+      return object;
+    }
+
+    // Check to see if it is an entity (queries can return raw column values or counts, so this
+    // could be String, Long, ...).
+    try {
+      getEntityManager().getMetamodel().entity(object.getClass());
+    } catch (IllegalArgumentException e) {
+      // The object is not an entity.  Return without detaching.
+      return object;
+    }
+
+    // At this point, object must be an entity.
     return detach(object);
   }
 
@@ -801,112 +803,112 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @VisibleForTesting
   static class TransformingTypedQuery<T> implements TypedQuery<T> {
 
-    TypedQuery<T> rep;
+    TypedQuery<T> delegate;
     Function<T, T> detach;
 
-    public TransformingTypedQuery(TypedQuery<T> rep, Function<T, T> detach) {
-      this.rep = rep;
+    public TransformingTypedQuery(TypedQuery<T> delegate, Function<T, T> detach) {
+      this.delegate = delegate;
       this.detach = detach;
     }
 
     @Override
     public List<T> getResultList() {
-      return rep.getResultStream().map(detach).collect(toImmutableList());
+      return delegate.getResultStream().map(detach).collect(toImmutableList());
     }
 
     @Override
     public Stream<T> getResultStream() {
-      return rep.getResultStream().map(detach);
+      return delegate.getResultStream().map(detach);
     }
 
     @Override
     public T getSingleResult() {
-      return detach.apply(rep.getSingleResult());
+      return detach.apply(delegate.getSingleResult());
     }
 
     @Override
     public TypedQuery<T> setMaxResults(int maxResults) {
-      rep.setMaxResults(maxResults);
+      delegate.setMaxResults(maxResults);
       return this;
     }
 
     @Override
     public TypedQuery<T> setFirstResult(int startPosition) {
-      rep.setFirstResult(startPosition);
+      delegate.setFirstResult(startPosition);
       return this;
     }
 
     @Override
     public TypedQuery<T> setHint(String hintName, Object value) {
-      rep.setHint(hintName, value);
+      delegate.setHint(hintName, value);
       return this;
     }
 
     @Override
     public <U> TypedQuery<T> setParameter(Parameter<U> param, U value) {
-      rep.setParameter(param, value);
+      delegate.setParameter(param, value);
       return this;
     }
 
     @Override
     public TypedQuery<T> setParameter(
         Parameter<Calendar> param, Calendar value, TemporalType temporalType) {
-      rep.setParameter(param, value, temporalType);
+      delegate.setParameter(param, value, temporalType);
       return this;
     }
 
     @Override
     public TypedQuery<T> setParameter(
         Parameter<Date> param, Date value, TemporalType temporalType) {
-      rep.setParameter(param, value, temporalType);
+      delegate.setParameter(param, value, temporalType);
       return this;
     }
 
     @Override
     public TypedQuery<T> setParameter(String name, Object value) {
-      rep.setParameter(name, value);
+      delegate.setParameter(name, value);
       return this;
     }
 
     @Override
     public TypedQuery<T> setParameter(String name, Calendar value, TemporalType temporalType) {
-      rep.setParameter(name, value, temporalType);
+      delegate.setParameter(name, value, temporalType);
       return this;
     }
 
     @Override
     public TypedQuery<T> setParameter(String name, Date value, TemporalType temporalType) {
-      rep.setParameter(name, value, temporalType);
+      delegate.setParameter(name, value, temporalType);
       return this;
     }
 
     @Override
     public TypedQuery<T> setParameter(int position, Object value) {
-      rep.setParameter(position, value);
+      delegate.setParameter(position, value);
       return this;
     }
 
     @Override
     public TypedQuery<T> setParameter(int position, Calendar value, TemporalType temporalType) {
-      rep.setParameter(position, value, temporalType);
+      delegate.setParameter(position, value, temporalType);
       return this;
     }
 
     @Override
     public TypedQuery<T> setParameter(int position, Date value, TemporalType temporalType) {
-      rep.setParameter(position, value, temporalType);
+      delegate.setParameter(position, value, temporalType);
       return this;
     }
 
     @Override
     public TypedQuery<T> setFlushMode(FlushModeType flushMode) {
-      rep.setFlushMode(flushMode);
+      delegate.setFlushMode(flushMode);
       return this;
     }
 
     @Override
     public TypedQuery<T> setLockMode(LockModeType lockMode) {
-      rep.setLockMode(lockMode);
+      delegate.setLockMode(lockMode);
       return this;
     }
 
@@ -914,82 +916,82 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     @Override
     public int executeUpdate() {
-      return rep.executeUpdate();
+      return delegate.executeUpdate();
     }
 
     @Override
     public int getMaxResults() {
-      return rep.getMaxResults();
+      return delegate.getMaxResults();
     }
 
     @Override
     public int getFirstResult() {
-      return rep.getFirstResult();
+      return delegate.getFirstResult();
     }
 
     @Override
     public Map<String, Object> getHints() {
-      return rep.getHints();
+      return delegate.getHints();
     }
 
     @Override
     public Set<Parameter<?>> getParameters() {
-      return rep.getParameters();
+      return delegate.getParameters();
     }
 
     @Override
     public Parameter<?> getParameter(String name) {
-      return rep.getParameter(name);
+      return delegate.getParameter(name);
     }
 
     @Override
     public <U> Parameter<U> getParameter(String name, Class<U> type) {
-      return rep.getParameter(name, type);
+      return delegate.getParameter(name, type);
     }
 
     @Override
     public Parameter<?> getParameter(int position) {
-      return rep.getParameter(position);
+      return delegate.getParameter(position);
     }
 
     @Override
     public <U> Parameter<U> getParameter(int position, Class<U> type) {
-      return rep.getParameter(position, type);
+      return delegate.getParameter(position, type);
     }
 
     @Override
     public boolean isBound(Parameter<?> param) {
-      return rep.isBound(param);
+      return delegate.isBound(param);
     }
 
     @Override
     public <U> U getParameterValue(Parameter<U> param) {
-      return rep.getParameterValue(param);
+      return delegate.getParameterValue(param);
     }
 
     @Override
     public Object getParameterValue(String name) {
-      return rep.getParameterValue(name);
+      return delegate.getParameterValue(name);
     }
 
     @Override
     public Object getParameterValue(int position) {
-      return rep.getParameterValue(position);
+      return delegate.getParameterValue(position);
     }
 
     @Override
     public FlushModeType getFlushMode() {
-      return rep.getFlushMode();
+      return delegate.getFlushMode();
     }
 
     @Override
     public LockModeType getLockMode() {
-      return rep.getLockMode();
+      return delegate.getLockMode();
     }
 
     @Override
     public <U> U unwrap(Class<U> cls) {
-      return rep.unwrap(cls);
+      return delegate.unwrap(cls);
     }
   }
 
