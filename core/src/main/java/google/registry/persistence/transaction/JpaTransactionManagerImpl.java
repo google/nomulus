@@ -496,7 +496,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         elements.size() <= 1,
         "Expected at most one entity of type %s, found at least two",
         clazz.getSimpleName());
-    return elements.stream().findFirst();
+    return elements.stream().findFirst().map(this::detach);
   }
 
   private int internalDelete(VKey<?> key) {
