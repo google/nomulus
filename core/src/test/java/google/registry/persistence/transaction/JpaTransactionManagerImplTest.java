@@ -509,6 +509,19 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
+  void loadSingleton_detaches() {
+    jpaTm().transact(() -> jpaTm().insert(theEntity));
+    jpaTm()
+        .transact(
+            () ->
+                assertThat(
+                    jpaTm()
+                        .getEntityManager()
+                        .contains(jpaTm().loadSingleton(TestEntity.class).get())))
+        .isFalse();
+  }
+
+  @Test
   void delete_succeeds() {
     jpaTm().transact(() -> jpaTm().insert(theEntity));
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isTrue();
