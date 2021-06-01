@@ -16,24 +16,12 @@ package google.registry.keyring.kms;
 
 import static com.google.common.base.CaseFormat.LOWER_HYPHEN;
 import static com.google.common.base.CaseFormat.UPPER_UNDERSCORE;
-import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
-import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeySerializer;
 import google.registry.keyring.api.Keyring;
 import google.registry.keyring.api.KeyringException;
-import google.registry.model.server.KmsSecret;
-import google.registry.model.server.KmsSecretRevision;
-import google.registry.model.server.KmsSecretRevisionSqlDao;
 import google.registry.privileges.secretmanager.KeyringSecretStore;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Optional;
 import javax.inject.Inject;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -47,10 +35,8 @@ import org.bouncycastle.openpgp.PGPPublicKey;
  * @see <a href="https://cloud.google.com/kms/docs/">Google Cloud Key Management Service
  *     Documentation</a>
  */
-// TODO(2021-06-01): rename this class to SecretManagerKeyring and delete KmsSecretRevision
+// TODO(2021-07-01): rename this class to SecretManagerKeyring and delete KmsSecretRevision
 public class KmsKeyring implements Keyring {
-
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** Key labels for private key secrets. */
   enum PrivateKeyLabel {
@@ -92,13 +78,10 @@ public class KmsKeyring implements Keyring {
     }
   }
 
-  private final KmsConnection kmsConnection;
   private final KeyringSecretStore secretStore;
 
   @Inject
-  KmsKeyring(
-      @Config("defaultKmsConnection") KmsConnection kmsConnection, KeyringSecretStore secretStore) {
-    this.kmsConnection = kmsConnection;
+  KmsKeyring(KeyringSecretStore secretStore) {
     this.secretStore = secretStore;
   }
 
@@ -201,44 +184,11 @@ public class KmsKeyring implements Keyring {
     return getKeyPair(keyLabel).getPrivateKey();
   }
 
-  private byte[] getDecryptedDataFromDatastore(String keyName) {
-    String encryptedData;
-    if (tm().isOfy()) {
-      KmsSecret secret =
-          auditedOfy().load().key(Key.create(getCrossTldKey(), KmsSecret.class, keyName)).now();
-      checkState(secret != null, "Requested secret '%s' does not exist.", keyName);
-      encryptedData = auditedOfy().load().key(secret.getLatestRevision()).now().getEncryptedValue();
-    } else {
-      Optional<KmsSecretRevision> revision =
-          tm().transact(() -> KmsSecretRevisionSqlDao.getLatestRevision(keyName));
-      checkState(revision.isPresent(), "Requested secret '%s' does not exist.", keyName);
-      encryptedData = revision.get().getEncryptedValue();
-    }
-
-    try {
-      return kmsConnection.decrypt(keyName, encryptedData);
-    } catch (Exception e) {
-      return new byte[0];
-    }
-  }
-
-  private byte[] getDataFromSecretStore(String keyName) {
+  private byte[] getDecryptedData(String keyName) {
     try {
       return secretStore.getSecret(keyName);
     } catch (Exception e) {
       throw new KeyringException("Failed to retrieve secret for " + keyName, e);
     }
-  }
-
-  private byte[] getDecryptedData(String keyName) {
-    byte[] dsData = getDecryptedDataFromDatastore(keyName);
-    byte[] secretStoreData = getDataFromSecretStore(keyName);
-
-    if (Arrays.equals(dsData, secretStoreData)) {
-      logger.atInfo().log("Values for %s in Datastore and Secret Manager match.", keyName);
-      return secretStoreData;
-    }
-    logger.atWarning().log("Values for %s in Datastore and Secret Manager do not match.", keyName);
-    return secretStoreData;
   }
 }

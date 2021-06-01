@@ -32,18 +32,13 @@ import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.MARKSDB_SMDR
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.RDE_SSH_CLIENT_PRIVATE_STRING;
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.RDE_SSH_CLIENT_PUBLIC_STRING;
 import static google.registry.keyring.kms.KmsKeyring.StringKeyLabel.SAFE_BROWSING_API_KEY;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
-import google.registry.config.RegistryConfig.Config;
 import google.registry.keyring.api.KeySerializer;
 import google.registry.keyring.kms.KmsKeyring.PrivateKeyLabel;
 import google.registry.keyring.kms.KmsKeyring.PublicKeyLabel;
 import google.registry.keyring.kms.KmsKeyring.StringKeyLabel;
-import google.registry.model.server.KmsSecret;
-import google.registry.model.server.KmsSecretRevision;
 import google.registry.privileges.secretmanager.KeyringSecretStore;
 import java.io.IOException;
 import java.util.HashMap;
@@ -62,14 +57,11 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 public final class KmsUpdater {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  private final KmsConnection kmsConnection;
   private final KeyringSecretStore secretStore;
   private final HashMap<String, byte[]> secretValues;
 
   @Inject
-  public KmsUpdater(
-      @Config("defaultKmsConnection") KmsConnection kmsConnection, KeyringSecretStore secretStore) {
-    this.kmsConnection = kmsConnection;
+  public KmsUpdater(KeyringSecretStore secretStore) {
     this.secretStore = secretStore;
 
     // Use LinkedHashMap to preserve insertion order on update() to simplify testing and debugging
@@ -150,24 +142,6 @@ public final class KmsUpdater {
               + "Please check the status of Secret Manager and re-run the command.",
           e);
     }
-
-    // TODO(2021-06-01): remove the writes to Datastore
-    persistEncryptedValues(encryptValues(secretValues));
-  }
-
-  /**
-   * Encrypts updated secrets using KMS. If the configured {@code KeyRing} or {@code CryptoKey}
-   * associated with a secret doesn't exist, they will first be created.
-   *
-   * @see google.registry.config.RegistryConfigSettings.Kms
-   */
-  private ImmutableMap<String, EncryptResponse> encryptValues(Map<String, byte[]> keyValues) {
-    ImmutableMap.Builder<String, EncryptResponse> encryptedValues = new ImmutableMap.Builder<>();
-    for (Map.Entry<String, byte[]> entry : keyValues.entrySet()) {
-      String secretName = entry.getKey();
-      encryptedValues.put(secretName, kmsConnection.encrypt(secretName, entry.getValue()));
-    }
-    return encryptedValues.build();
   }
 
   private KmsUpdater setString(String key, StringKeyLabel stringKeyLabel) {
@@ -193,32 +167,6 @@ public final class KmsUpdater {
     setSecret(privateKeyLabel.getLabel(), KeySerializer.serializeKeyPair(keyPair));
     setSecret(publicKeyLabel.getLabel(), KeySerializer.serializePublicKey(keyPair.getPublicKey()));
     return this;
-  }
-
-  /**
-   * Persists encrypted secrets to Datastore as {@link KmsSecretRevision} entities and makes them
-   * primary. {@link KmsSecret} entities point to the latest {@link KmsSecretRevision}.
-   *
-   * <p>The changes are committed transactionally; if an error occurs, all existing {@link
-   * KmsSecretRevision} entities will remain primary.
-   */
-  private static void persistEncryptedValues(
-      final ImmutableMap<String, EncryptResponse> encryptedValues) {
-    tm().transact(
-            () -> {
-              for (Map.Entry<String, EncryptResponse> entry : encryptedValues.entrySet()) {
-                String secretName = entry.getKey();
-                EncryptResponse revisionData = entry.getValue();
-
-                KmsSecretRevision secretRevision =
-                    new KmsSecretRevision.Builder()
-                        .setEncryptedValue(revisionData.ciphertext())
-                        .setKmsCryptoKeyVersionName(revisionData.cryptoKeyVersionName())
-                        .setParent(secretName)
-                        .build();
-                tm().putAll(secretRevision, KmsSecret.create(secretName, secretRevision));
-              }
-            });
   }
 
   private void setSecret(String secretName, byte[] value) {
