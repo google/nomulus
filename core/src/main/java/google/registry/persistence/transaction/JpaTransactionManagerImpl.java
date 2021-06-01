@@ -24,7 +24,6 @@ import static java.util.AbstractMap.SimpleEntry;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -125,8 +124,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> TypedQuery<T> query(String sqlString, Class<T> resultClass) {
-    return new TransformingTypedQuery(
-        getEntityManager().createQuery(sqlString, resultClass), this::detachIfEntity);
+    return new DetachingTypedQuery(getEntityManager().createQuery(sqlString, resultClass));
   }
 
   @Override
@@ -801,29 +799,30 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
    * <p>This is used to detach objects upon load.
    */
   @VisibleForTesting
-  static class TransformingTypedQuery<T> implements TypedQuery<T> {
+  class DetachingTypedQuery<T> implements TypedQuery<T> {
 
     TypedQuery<T> delegate;
-    Function<T, T> detach;
 
-    public TransformingTypedQuery(TypedQuery<T> delegate, Function<T, T> detach) {
+    public DetachingTypedQuery(TypedQuery<T> delegate) {
       this.delegate = delegate;
-      this.detach = detach;
     }
 
     @Override
     public List<T> getResultList() {
-      return delegate.getResultStream().map(detach).collect(toImmutableList());
+      return delegate
+          .getResultStream()
+          .map(JpaTransactionManagerImpl.this::detachIfEntity)
+          .collect(toImmutableList());
     }
 
     @Override
     public Stream<T> getResultStream() {
-      return delegate.getResultStream().map(detach);
+      return delegate.getResultStream().map(JpaTransactionManagerImpl.this::detachIfEntity);
     }
 
     @Override
     public T getSingleResult() {
-      return detach.apply(delegate.getSingleResult());
+      return detachIfEntity(delegate.getSingleResult());
     }
 
     @Override

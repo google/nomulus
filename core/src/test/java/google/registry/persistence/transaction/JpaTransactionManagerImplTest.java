@@ -22,11 +22,9 @@ import static google.registry.testing.TestDataHelper.fileClassPath;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -46,7 +44,6 @@ import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.OptimisticLockException;
 import javax.persistence.RollbackException;
-import javax.persistence.TypedQuery;
 import org.hibernate.exception.JDBCConnectionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -589,15 +586,6 @@ class JpaTransactionManagerImplTest {
                             })))
         .hasMessageThat()
         .contains("Inserted/updated object reloaded: ");
-  }
-
-  @Test
-  void transformingTypedQuery() {
-    TypedQuery<Integer> mockRep = mock(TypedQuery.class);
-    when(mockRep.getResultStream()).thenReturn(ImmutableList.of(100, 200).stream());
-    TypedQuery<Integer> ttq =
-        new JpaTransactionManagerImpl.TransformingTypedQuery<>(mockRep, x -> x + 1);
-    assertThat(ttq.getResultList()).containsExactly(101, 201);
   }
 
   @Test
