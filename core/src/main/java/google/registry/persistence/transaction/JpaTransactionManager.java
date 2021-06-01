@@ -35,10 +35,14 @@ public interface JpaTransactionManager extends TransactionManager {
   <T> TypedQuery<T> query(String sqlString, Class<T> resultClass);
 
   /**
-   * Creates a JPA SQL query for the given query string (which does not return results).
+   * Creates a JPA SQL query for the given query string.
    *
    * <p>This is a convenience method for the longer <code>
    * jpaTm().getEntityManager().createQuery(...)</code>.
+   *
+   * <p>Note that while this method can legally be used for queries that return results, <u>it
+   * should not be</u>, as it does not correctly detach entities as must be done for nomulus model
+   * objects.
    */
   Query query(String sqlString);
 

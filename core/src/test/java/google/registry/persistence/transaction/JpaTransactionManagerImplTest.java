@@ -588,6 +588,36 @@ class JpaTransactionManagerImplTest {
         .contains("Inserted/updated object reloaded: ");
   }
 
+  @Test
+  void query_detachesResults() {
+    jpaTm().transact(() -> jpaTm().insertAll(moreEntities));
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm().query("FROM TestEntity", TestEntity.class).getResultList().stream()
+                    .forEach(e -> assertThat(jpaTm().getEntityManager().contains(e)).isFalse()));
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .query("FROM TestEntity", TestEntity.class)
+                    .getResultStream()
+                    .forEach(e -> assertThat(jpaTm().getEntityManager().contains(e)).isFalse()));
+
+    jpaTm()
+        .transact(
+            () ->
+                assertThat(
+                        jpaTm()
+                            .getEntityManager()
+                            .contains(
+                                jpaTm()
+                                    .query(
+                                        "FROM TestEntity WHERE name = 'entity1'", TestEntity.class)
+                                    .getSingleResult()))
+                    .isFalse());
+  }
+
   private void insertPerson(int age) {
     jpaTm()
         .getEntityManager()
