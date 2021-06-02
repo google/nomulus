@@ -164,7 +164,6 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
       serverApproveEntities = null;
       postLoad();
     }
-    hashCode = null; // reset the hash code since we may have changed the entities
   }
 
   /**

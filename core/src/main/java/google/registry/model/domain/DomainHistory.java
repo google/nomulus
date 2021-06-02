@@ -258,7 +258,10 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         domainContent = null;
       } else {
         if (domainContent.getRepoId() == null) {
-          domainContent = domainContent.asBuilder().setRepoId(parent.getName()).build();
+          // domainContent still hasn't been fully constructed yet, so it's ok to go in and mutate
+          // it.  In fact, we have to because going through the builder causes the hash codes of
+          // contained objects to be calculated prematurely.
+          domainContent.setRepoId(parent.getName());
         }
       }
     }
