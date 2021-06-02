@@ -2,8 +2,7 @@ AllocationToken
 Cancellation
 ContactResource
 Cursor
-DatabaseMigrationStateWrapper
-DatabaseTransitionSchedule
+DatabaseMigrationStateSchedule
 DomainBase
 EntityGroupRoot
 EppResourceIndex

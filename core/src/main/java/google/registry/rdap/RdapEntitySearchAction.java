@@ -262,7 +262,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
           || (cursorType == CursorType.REGISTRAR)) {
         resultSet = RdapResultSet.create(ImmutableList.of());
       } else {
-        if (isDatastore()) {
+        if (tm().isOfy()) {
           Query<ContactResource> query =
               queryItems(
                   ContactResource.class,
@@ -386,7 +386,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
       if (subtype == Subtype.REGISTRARS) {
         contactResultSet = RdapResultSet.create(ImmutableList.of());
       } else {
-        if (isDatastore()) {
+        if (tm().isOfy()) {
           contactResultSet =
               getMatchingResources(
                   queryItemsByKey(

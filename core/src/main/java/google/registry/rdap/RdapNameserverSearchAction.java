@@ -16,6 +16,7 @@ package google.registry.rdap;
 
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -220,7 +221,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
   private NameserverSearchResponse searchByNameUsingPrefix(RdapSearchPattern partialStringQuery) {
     // Add 1 so we can detect truncation.
     int querySizeLimit = getStandardQuerySizeLimit();
-    if (isDatastore()) {
+    if (tm().isOfy()) {
       Query<HostResource> query =
           queryItems(
               HostResource.class,
@@ -254,7 +255,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
     // Add 1 so we can detect truncation.
     int querySizeLimit = getStandardQuerySizeLimit();
     RdapResultSet<HostResource> rdapResultSet;
-    if (isDatastore()) {
+    if (tm().isOfy()) {
       Query<HostResource> query =
           queryItems(
               HostResource.class,

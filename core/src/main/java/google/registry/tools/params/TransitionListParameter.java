@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
-import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
+import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.registry.Registry.TldState;
 import org.joda.money.Money;

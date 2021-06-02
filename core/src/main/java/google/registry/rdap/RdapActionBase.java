@@ -17,7 +17,6 @@ package google.registry.rdap;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Actions.getPathForAction;
 import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
@@ -29,10 +28,7 @@ import com.google.common.net.MediaType;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.DatabaseMigrationUtils;
 import google.registry.model.EppResource;
-import google.registry.model.common.DatabaseTransitionSchedule.PrimaryDatabase;
-import google.registry.model.common.DatabaseTransitionSchedule.TransitionId;
 import google.registry.model.registrar.Registrar;
 import google.registry.rdap.RdapMetrics.EndpointType;
 import google.registry.rdap.RdapObjectClasses.ErrorResponse;
@@ -261,10 +257,4 @@ public abstract class RdapActionBase implements Runnable {
     return rdapJsonFormatter.getRequestTime();
   }
 
-  static boolean isDatastore() {
-    return tm().transact(
-            () ->
-                DatabaseMigrationUtils.getPrimaryDatabase(TransitionId.REPLAYED_ENTITIES)
-                    .equals(PrimaryDatabase.DATASTORE));
-  }
 }

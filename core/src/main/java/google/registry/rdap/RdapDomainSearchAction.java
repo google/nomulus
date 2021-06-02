@@ -19,6 +19,7 @@ import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.HEAD;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -204,7 +205,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // need it.
     int querySizeLimit = RESULT_SET_SIZE_SCALING_FACTOR * rdapResultSetMaxSize;
     RdapResultSet<DomainBase> resultSet;
-    if (isDatastore()) {
+    if (tm().isOfy()) {
       Query<DomainBase> query =
           auditedOfy()
               .load()
@@ -260,7 +261,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // Don't use queryItems, because it doesn't handle pending deletes.
     int querySizeLimit = RESULT_SET_SIZE_SCALING_FACTOR * rdapResultSetMaxSize;
     RdapResultSet<DomainBase> resultSet;
-    if (isDatastore()) {
+    if (tm().isOfy()) {
       Query<DomainBase> query = auditedOfy().load().type(DomainBase.class).filter("tld", tld);
       if (cursorString.isPresent()) {
         query = query.filter("fullyQualifiedDomainName >", cursorString.get());
@@ -337,7 +338,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     // incomplete result set if a search asks for something like "ns*", but we need to enforce a
     // limit in order to avoid arbitrarily long-running queries.
     Optional<String> desiredRegistrar = getDesiredRegistrar();
-    if (isDatastore()) {
+    if (tm().isOfy()) {
       Query<HostResource> query =
           queryItems(
               HostResource.class,
@@ -472,7 +473,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
   private DomainSearchResponse searchByNameserverIp(final InetAddress inetAddress) {
     Optional<String> desiredRegistrar = getDesiredRegistrar();
     ImmutableSet<VKey<HostResource>> hostKeys;
-    if (isDatastore()) {
+    if (tm().isOfy()) {
       Query<HostResource> query =
           queryItems(
               HostResource.class,
@@ -544,7 +545,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     int numHostKeysSearched = 0;
     for (List<VKey<HostResource>> chunk : Iterables.partition(hostKeys, 30)) {
       numHostKeysSearched += chunk.size();
-      if (isDatastore()) {
+      if (tm().isOfy()) {
         Query<DomainBase> query =
             auditedOfy()
                 .load()
