@@ -39,12 +39,9 @@ steps:
   - -c
   - |
     set -e
-    gsutil cp gs://$PROJECT_ID-deploy/secrets/tool-credential.json.enc - \
-      | base64 -d \
-      | gcloud kms decrypt \
-        --ciphertext-file=- \
-        --plaintext-file=/secrets/cloud_sql_credential.json \
-        --location=global --keyring=nomulus-tool-keyring --key=nomulus-tool-key
+    gcloud secrets versions access latest \
+      --secret nomulus-tool-cloudbuild-credential \
+      > /secrets/cloud_sql_credential.json
 # Fetch the Cloud SQL credential for schema_deployer
 - name: 'gcr.io/$PROJECT_ID/nomulus-tool:latest'
   volumes:
