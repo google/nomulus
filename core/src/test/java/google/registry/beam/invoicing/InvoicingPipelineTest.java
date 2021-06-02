@@ -119,7 +119,37 @@ class InvoicingPipelineTest {
               1,
               "USD",
               0,
-              "SUNRISE ANCHOR_TENANT"));
+              "SUNRISE ANCHOR_TENANT"),
+          BillingEvent.create(
+              1,
+              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              "theRegistrar",
+              "234",
+              "",
+              "test",
+              "SERVER_STATUS",
+              "locked.test",
+              "REPO-ID",
+              0,
+              "USD",
+              0,
+              ""),
+          BillingEvent.create(
+              1,
+              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
+              "theRegistrar",
+              "234",
+              "",
+              "test",
+              "SERVER_STATUS",
+              "update-prohibited.test",
+              "REPO-ID",
+              0,
+              "USD",
+              20,
+              ""));
 
   private static final ImmutableMap<String, ImmutableList<String>> EXPECTED_DETAILED_REPORT_MAP =
       ImmutableMap.of(
@@ -128,7 +158,11 @@ class InvoicingPipelineTest {
               "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
                   + "test,RENEW,mydomain2.test,REPO-ID,3,USD,20.50,",
               "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
-                  + "test,RENEW,mydomain.test,REPO-ID,3,USD,20.50,"),
+                  + "test,RENEW,mydomain.test,REPO-ID,3,USD,20.50,",
+              "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
+                  + "test,SERVER_STATUS,update-prohibited.test,REPO-ID,0,USD,20.00,",
+              "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
+                  + "test,SERVER_STATUS,locked.test,REPO-ID,0,USD,0.00,"),
           "invoice_details_2017-10_theRegistrar_hello.csv",
           ImmutableList.of(
               "1,2017-10-02 00:00:00 UTC,2017-09-29 00:00:00 UTC,theRegistrar,234,,"
@@ -148,6 +182,8 @@ class InvoicingPipelineTest {
               + "RENEW | TLD: test | TERM: 3-year,20.50,USD,",
           "2017-10-01,2022-09-30,234,70.75,JPY,10125,1,PURCHASE,theRegistrar - hello,1,"
               + "CREATE | TLD: hello | TERM: 5-year,70.75,JPY,",
+          "2017-10-01,,234,20.00,USD,10125,1,PURCHASE,theRegistrar - test,1,"
+              + "SERVER_STATUS | TLD: test | TERM: 0-year,20.00,USD,",
           "2017-10-01,2018-09-30,456,20.50,USD,10125,1,PURCHASE,bestdomains - test,1,"
               + "RENEW | TLD: test | TERM: 1-year,20.50,USD,116688");
 
