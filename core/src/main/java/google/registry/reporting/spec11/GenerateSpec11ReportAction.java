@@ -96,6 +96,7 @@ public class GenerateSpec11ReportAction implements Runnable {
   public void run() {
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
     try {
+      // TODO(sarahbot): Take in the database value as a parameter
       LaunchFlexTemplateParameter parameter =
           new LaunchFlexTemplateParameter()
               .setJobName(createJobName("spec11", clock))
@@ -105,6 +106,8 @@ public class GenerateSpec11ReportAction implements Runnable {
                   ImmutableMap.of(
                       "safeBrowsingApiKey",
                       apiKey,
+                      "database",
+                      "DATASTORE",
                       ReportingModule.PARAM_DATE,
                       date.toString(),
                       "reportingBucketUrl",
