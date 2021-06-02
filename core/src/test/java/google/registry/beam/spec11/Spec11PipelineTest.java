@@ -123,6 +123,7 @@ class Spec11PipelineTest {
     options.setDate(DATE);
     options.setSafeBrowsingApiKey(SAFE_BROWSING_API_KEY);
     options.setReportingBucketUrl(reportingBucketUrl.getAbsolutePath());
+    options.setDatabase("DATASTORE");
     threatMatches =
         pipeline.apply(
             Create.of(
@@ -136,6 +137,7 @@ class Spec11PipelineTest {
 
   @Test
   void testSuccess_saveToSql() {
+    options.setDatabase("CLOUD_SQL");
     ImmutableSet<Spec11ThreatMatch> sqlThreatMatches =
         ImmutableSet.of(
             new Spec11ThreatMatch.Builder()

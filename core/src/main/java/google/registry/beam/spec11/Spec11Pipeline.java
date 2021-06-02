@@ -16,7 +16,6 @@ package google.registry.beam.spec11;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.beam.BeamUtils.getQueryFromFile;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
@@ -100,7 +99,7 @@ public class Spec11Pipeline implements Serializable {
 
   void setupPipeline(Pipeline pipeline) {
     PCollection<Subdomain> domains;
-    if (tm().isOfy()) {
+    if (options.getDatabase().equals("DATASTORE")) {
       domains =
           pipeline.apply(
               "Read active domains from BigQuery",
@@ -116,8 +115,11 @@ public class Spec11Pipeline implements Serializable {
                   .usingStandardSql()
                   .withoutValidation()
                   .withTemplateCompatibility());
-    } else {
+    } else if (options.getDatabase().equals("CLOUD_SQL")) {
       domains = readFromCloudSql(options, pipeline);
+    } else {
+      throw new RuntimeException(
+          String.format("Unrecognized database value: %s", options.getDatabase()));
     }
 
     PCollection<KV<Subdomain, ThreatMatch>> threatMatches =
