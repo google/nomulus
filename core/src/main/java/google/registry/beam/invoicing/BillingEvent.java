@@ -251,7 +251,14 @@ public abstract class BillingEvent implements Serializable {
   InvoiceGroupingKey getInvoiceGroupingKey() {
     return new AutoValue_BillingEvent_InvoiceGroupingKey(
         billingTime().toLocalDate().withDayOfMonth(1).toString(),
-        billingTime().toLocalDate().withDayOfMonth(1).plusYears(years()).minusDays(1).toString(),
+        years() == 0
+            ? ""
+            : billingTime()
+                .toLocalDate()
+                .withDayOfMonth(1)
+                .plusYears(years())
+                .minusDays(1)
+                .toString(),
         billingId(),
         String.format("%s - %s", registrarId(), tld()),
         String.format("%s | TLD: %s | TERM: %d-year", action(), tld(), years()),

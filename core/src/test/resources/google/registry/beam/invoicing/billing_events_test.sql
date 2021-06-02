@@ -27,7 +27,7 @@ SELECT
   reason as action,
   targetId as domain,
   BillingEvent.domainRepoId as repositoryId,
-  periodYears as years,
+  IFNULL(periodYears, 0) as years,
   BillingEvent.currency AS currency,
   BillingEvent.amount as amount,
   -- We'll strip out non-useful flags downstream

@@ -186,6 +186,19 @@ class BillingEventTest {
   }
 
   @Test
+  void testConvertInvoiceGroupingKey_zeroYears_toCsv() {
+    GenericRecord record = schemaAndRecord.getRecord();
+    record.put("years", 0);
+    schemaAndRecord = new SchemaAndRecord(record, null);
+    BillingEvent event = BillingEvent.parseFromRecord(schemaAndRecord);
+    InvoiceGroupingKey invoiceKey = event.getInvoiceGroupingKey();
+    assertThat(invoiceKey.toCsv(3L))
+        .isEqualTo(
+            "2017-10-01,,12345-CRRHELLO,61.50,USD,10125,1,PURCHASE,"
+                + "myRegistrar - test,3,RENEW | TLD: test | TERM: 0-year,20.50,USD,");
+  }
+
+  @Test
   void testInvoiceGroupingKeyCoder_deterministicSerialization() throws IOException {
     InvoiceGroupingKey invoiceKey =
         BillingEvent.parseFromRecord(schemaAndRecord).getInvoiceGroupingKey();
