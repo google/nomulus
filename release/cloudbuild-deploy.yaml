@@ -21,21 +21,13 @@
 steps:
 # Pull the credential for nomulus tool.
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
-  args:
-  - gsutil
-  - cp
-  - gs://$PROJECT_ID-deploy/secrets/tool-credential.json.enc
-  - .
-# Decrypt the credential.
-- name: 'gcr.io/$PROJECT_ID/builder:latest'
   entrypoint: /bin/bash
   args:
   - -c
   - |
     set -e
-    cat tool-credential.json.enc | base64 -d | gcloud kms decrypt \
-      --ciphertext-file=- --plaintext-file=tool-credential.json \
-      --location=global --keyring=nomulus-tool-keyring --key=nomulus-tool-key
+    gcloud secrets versions access latest \
+      --secret nomulus-tool-cloudbuild-credential > tool-credential.json
 # Deploy the GAE config files.
 # First authorize the gcloud tool to use the credential json file, then
 # download and unzip the tarball that contains the relevant config files
@@ -53,8 +45,6 @@ steps:
     fi
     gsutil cp gs://$PROJECT_ID-deploy/${TAG_NAME}/${_ENV}.tar .
     tar -xvf ${_ENV}.tar
-    # Note that this currently does not work for google.com projects that
-    # we use due to b/137891685. External projects are likely to work.
     for filename in cron dispatch dos index queue; do
       gcloud -q --project $project_id app deploy \
         default/WEB-INF/appengine-generated/$filename.yaml
