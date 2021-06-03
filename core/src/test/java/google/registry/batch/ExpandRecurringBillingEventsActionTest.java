@@ -76,7 +76,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ExpandRecurringBillingEventsActionTest
     extends MapreduceTestCase<ExpandRecurringBillingEventsAction> {
 
-  private DateTime currentTestTime = DateTime.parse(("1999-01-05T00:00:00Z"));
+  private DateTime currentTestTime = DateTime.parse("1999-01-05T00:00:00Z");
   private final FakeClock clock = new FakeClock(currentTestTime);
 
   @Order(Order.DEFAULT - 1)

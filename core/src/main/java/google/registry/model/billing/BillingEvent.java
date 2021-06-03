@@ -482,7 +482,7 @@ public abstract class BillingEvent extends ImmutableObject
             "Cancellation matching billing event must be set if and only if the SYNTHETIC flag "
                 + "is set.");
         checkState(
-            (!instance.getFlags().contains(Flag.SYNTHETIC))
+            !instance.getFlags().contains(Flag.SYNTHETIC)
                 || (instance.cancellationMatchingBillingEvent.getOfyKey().getParent().getId()
                     == instance.recurringEventHistoryRevisionId),
             "Cancellation matching billing event and its history revision ID does not match.");
