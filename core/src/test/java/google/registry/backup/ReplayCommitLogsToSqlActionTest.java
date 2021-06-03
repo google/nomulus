@@ -21,13 +21,16 @@ import static google.registry.backup.RestoreCommitLogsActionTest.GCS_BUCKET;
 import static google.registry.backup.RestoreCommitLogsActionTest.createCheckpoint;
 import static google.registry.backup.RestoreCommitLogsActionTest.saveDiffFile;
 import static google.registry.backup.RestoreCommitLogsActionTest.saveDiffFileNotToRestore;
+import static google.registry.model.common.DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.CommitLogBucket.getBucketKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,9 +43,11 @@ import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth8;
 import com.googlecode.objectify.Key;
-import google.registry.config.RegistryConfig;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.GracePeriod;
@@ -122,11 +127,20 @@ public class ReplayCommitLogsToSqlActionTest {
     action.gcsService = gcsService;
     action.response = response;
     action.requestStatusChecker = requestStatusChecker;
+    action.clock = fakeClock;
     action.diffLister = new GcsDiffFileLister();
     action.diffLister.gcsService = gcsService;
     action.diffLister.gcsBucket = GCS_BUCKET;
     action.diffLister.executor = newDirectExecutorService();
-    RegistryConfig.overrideCloudSqlReplayCommitLogs(true);
+    ofyTm()
+        .transact(
+            () ->
+                DatabaseMigrationStateSchedule.set(
+                    ImmutableSortedMap.of(
+                        START_OF_TIME,
+                        MigrationState.DATASTORE_ONLY,
+                        START_OF_TIME.plusMinutes(1),
+                        MigrationState.DATASTORE_PRIMARY)));
     TestObject.beforeSqlSaveCallCount = 0;
     TestObject.beforeSqlDeleteCallCount = 0;
   }
@@ -329,7 +343,7 @@ public class ReplayCommitLogsToSqlActionTest {
     ContactResource contactWithEdit =
         contact.asBuilder().setEmailAddress("replay@example.tld").build();
     CommitLogMutation contactMutation =
-        tm().transact(() -> CommitLogMutation.create(manifestKey, contactWithEdit));
+        ofyTm().transact(() -> CommitLogMutation.create(manifestKey, contactWithEdit));
 
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
 
@@ -421,11 +435,13 @@ public class ReplayCommitLogsToSqlActionTest {
 
   @Test
   void testFailure_notEnabled() {
-    RegistryConfig.overrideCloudSqlReplayCommitLogs(false);
+    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
-        .isEqualTo("ReplayCommitLogsToSqlAction was called but disabled in the config.");
+        .isEqualTo(
+            "Skipping ReplayCommitLogsToSqlAction because we are in migration phase"
+                + " DATASTORE_ONLY.");
   }
 
   @Test
