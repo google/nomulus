@@ -366,27 +366,26 @@ public final class EppResourceUtils {
    *
    * @param key the referent key
    * @param now the logical time of the check
-   * @param limit the maximum number of returned keys
+   * @param limit the maximum number of returned keys, unlimited if null
    */
   public static ImmutableSet<VKey<DomainBase>> getLinkedDomainKeys(
-      VKey<? extends EppResource> key, DateTime now, int limit) {
+      VKey<? extends EppResource> key, DateTime now, @Nullable Integer limit) {
     checkArgument(
         key.getKind().equals(ContactResource.class) || key.getKind().equals(HostResource.class),
         "key must be either VKey<ContactResource> or VKey<HostResource>, but it is %s",
         key);
     boolean isContactKey = key.getKind().equals(ContactResource.class);
     if (tm().isOfy()) {
-      return ofy()
-          .load()
-          .type(DomainBase.class)
-          .filter(isContactKey ? "allContacts.contact" : "nsHosts", key.getOfyKey())
-          .filter("deletionTime >", now)
-          .limit(limit)
-          .keys()
-          .list()
-          .stream()
-          .map(DomainBase::createVKey)
-          .collect(toImmutableSet());
+      com.googlecode.objectify.cmd.Query<DomainBase> query =
+          ofy()
+              .load()
+              .type(DomainBase.class)
+              .filter(isContactKey ? "allContacts.contact" : "nsHosts", key.getOfyKey())
+              .filter("deletionTime >", now);
+      if (limit != null) {
+        query.limit(limit);
+      }
+      return query.keys().list().stream().map(DomainBase::createVKey).collect(toImmutableSet());
     } else {
       return tm().transact(
               () -> {
@@ -405,11 +404,13 @@ public final class EppResourceUtils {
                           .setParameter("fkRepoId", key.getSqlKey())
                           .setParameter("now", now.toDate());
                 }
+                if (limit != null) {
+                  query.setMaxResults(limit);
+                }
                 @SuppressWarnings("unchecked")
                 ImmutableSet<VKey<DomainBase>> domainBaseKeySet =
                     (ImmutableSet<VKey<DomainBase>>)
                         query
-                            .setMaxResults(limit)
                             .getResultStream()
                             .map(
                                 repoId ->

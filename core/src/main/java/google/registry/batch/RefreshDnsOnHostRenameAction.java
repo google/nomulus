@@ -23,6 +23,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.batch.AsyncTaskMetrics.OperationType.DNS_REFRESH;
 import static google.registry.mapreduce.inputs.EppResourceInputs.createEntityInput;
+import static google.registry.model.EppResourceUtils.getLinkedDomainKeys;
 import static google.registry.model.EppResourceUtils.isActive;
 import static google.registry.model.EppResourceUtils.isDeleted;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -86,6 +87,7 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
   @Inject Clock clock;
   @Inject MapreduceRunner mrRunner;
   @Inject @Named(QUEUE_ASYNC_HOST_RENAME) Queue pullQueue;
+  @Inject DnsQueue dnsQueue;
   @Inject RequestStatusChecker requestStatusChecker;
   @Inject Response response;
   @Inject Retrier retrier;
@@ -153,7 +155,34 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
     } else {
       logger.atInfo().log(
           "Processing asynchronous DNS refresh for renamed hosts: %s", hostKeys.build());
-      runMapreduce(refreshRequests, lock);
+      if (tm().isOfy()) {
+        runMapreduce(refreshRequests, lock);
+      } else {
+        try {
+          refreshRequests.stream()
+              .flatMap(
+                  request ->
+                      getLinkedDomainKeys(request.hostKey(), request.lastUpdateTime(), null)
+                          .stream())
+              .distinct()
+              .map(domainKey -> tm().transact(() -> tm().loadByKey(domainKey).getDomainName()))
+              .forEach(
+                  domainName -> {
+                    retrier.callWithRetry(
+                        () -> dnsQueue.addDomainRefreshTask(domainName),
+                        TransientFailureException.class);
+                    logger.atInfo().log("Enqueued DNS refresh for domain %s.", domainName);
+                  });
+          deleteTasksWithRetry(
+              refreshRequests,
+              getQueue(QUEUE_ASYNC_HOST_RENAME),
+              asyncTaskMetrics,
+              retrier,
+              OperationResult.SUCCESS);
+        } finally {
+          lock.get().release();
+        }
+      }
     }
   }
 
