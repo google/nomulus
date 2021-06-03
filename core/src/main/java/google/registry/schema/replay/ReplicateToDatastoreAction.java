@@ -22,12 +22,17 @@ import static google.registry.request.Action.Method.GET;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
 import google.registry.persistence.transaction.Transaction;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
+import google.registry.util.Clock;
 import java.io.IOException;
 import java.util.List;
+import javax.inject.Inject;
 import javax.persistence.NoResultException;
 
 /** Cron task to replicate from Cloud SQL to datastore. */
@@ -48,6 +53,13 @@ class ReplicateToDatastoreAction implements Runnable {
    */
   public static final int BATCH_SIZE = 200;
 
+  private final Clock clock;
+
+  @Inject
+  public ReplicateToDatastoreAction(Clock clock) {
+    this.clock = clock;
+  }
+
   @VisibleForTesting
   List<TransactionEntity> getTransactionBatch() {
     // Get the next batch of transactions that we haven't replicated.
@@ -59,7 +71,8 @@ class ReplicateToDatastoreAction implements Runnable {
                   jpaTm()
                       .query(
                           "SELECT txn FROM TransactionEntity txn WHERE id >"
-                              + " :lastId ORDER BY id")
+                              + " :lastId ORDER BY id",
+                          TransactionEntity.class)
                       .setParameter("lastId", lastSqlTxnBeforeBatch.getTransactionId())
                       .setMaxResults(BATCH_SIZE)
                       .getResultList());
@@ -69,7 +82,7 @@ class ReplicateToDatastoreAction implements Runnable {
   }
 
   /**
-   * Apply a transaction to datastore, returns true if there was a fatal error and the batch should
+   * Apply a transaction to Datastore, returns true if there was a fatal error and the batch should
    * be aborted.
    */
   @VisibleForTesting
@@ -122,6 +135,13 @@ class ReplicateToDatastoreAction implements Runnable {
 
   @Override
   public void run() {
+    MigrationState state = DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc());
+    if (!state.getReplayDirection().equals(ReplayDirection.SQL_TO_DATASTORE)) {
+      logger.atInfo().log(
+          String.format(
+              "Skipping ReplicateToDatastoreAction because we are in migration phase %s.", state));
+      return;
+    }
     // TODO(b/181758163): Deal with objects that don't exist in Cloud SQL, e.g. ForeignKeyIndex,
     // EppResourceIndex.
     logger.atInfo().log("Processing transaction replay batch Cloud SQL -> Cloud Datastore");
