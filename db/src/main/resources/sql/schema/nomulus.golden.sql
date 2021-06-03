@@ -97,7 +97,8 @@ CREATE TABLE public."BillingEvent" (
     cost_amount numeric(19,2),
     cost_currency text,
     period_years integer,
-    synthetic_creation_time timestamp with time zone
+    synthetic_creation_time timestamp with time zone,
+    recurrence_history_revision_id bigint
 );
 
 
@@ -1983,6 +1984,14 @@ ALTER TABLE ONLY public."BillingEvent"
 
 ALTER TABLE ONLY public."BillingEvent"
     ADD CONSTRAINT fk_billing_event_domain_history FOREIGN KEY (domain_repo_id, domain_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: BillingEvent fk_billing_event_recurrence_history; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."BillingEvent"
+    ADD CONSTRAINT fk_billing_event_recurrence_history FOREIGN KEY (domain_repo_id, recurrence_history_revision_id) REFERENCES public."DomainHistory"(domain_repo_id, history_revision_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

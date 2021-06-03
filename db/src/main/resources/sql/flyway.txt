@@ -94,3 +94,4 @@ V93__defer_all_fkeys.sql
 V94__rename_lock_scope.sql
 V95__add_contacts_indexes_on_domain.sql
 V96__rename_sql_checkpoint_fields.sql
+V97__add_recurrence_history_id_column_to_onetime.sql

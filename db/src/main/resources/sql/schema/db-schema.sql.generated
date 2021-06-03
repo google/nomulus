@@ -63,6 +63,7 @@
         cost_amount numeric(19, 2),
         cost_currency text,
         period_years int4,
+        recurrence_history_revision_id int8,
         synthetic_creation_time timestamptz,
         primary key (billing_event_id)
     );
