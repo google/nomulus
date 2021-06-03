@@ -324,9 +324,9 @@ public abstract class BillingEvent extends ImmutableObject
     DateTime syntheticCreationTime;
 
     /**
-     * For {@link Flag#SYNTHETIC} events, a {@link Key} to the {@link Recurring} from which
-     * this {@link OneTime} was created. This is needed in order to properly match billing events
-     * against {@link Cancellation}s.
+     * For {@link Flag#SYNTHETIC} events, a {@link Key} to the {@link Recurring} from which this
+     * {@link OneTime} was created. This is needed in order to properly match billing events against
+     * {@link Cancellation}s.
      */
     @Column(name = "cancellation_matching_billing_recurrence_id")
     VKey<Recurring> cancellationMatchingBillingEvent;
@@ -392,16 +392,23 @@ public abstract class BillingEvent extends ImmutableObject
     @Override
     void onLoad() {
       super.onLoad();
-      recurringEventHistoryRevisionId =
-          cancellationMatchingBillingEvent.getOfyKey().getParent().getId();
+      if (cancellationMatchingBillingEvent != null) {
+        recurringEventHistoryRevisionId =
+            cancellationMatchingBillingEvent.getOfyKey().getParent().getId();
+      }
     }
 
     @Override
     void postLoad() {
       super.postLoad();
-      cancellationMatchingBillingEvent =
-          cancellationMatchingBillingEvent.restoreOfy(
-              DomainBase.class, domainRepoId, DomainHistory.class, recurringEventHistoryRevisionId);
+      if (cancellationMatchingBillingEvent != null) {
+        cancellationMatchingBillingEvent =
+            cancellationMatchingBillingEvent.restoreOfy(
+                DomainBase.class,
+                domainRepoId,
+                DomainHistory.class,
+                recurringEventHistoryRevisionId);
+      }
     }
 
     /** A builder for {@link OneTime} since it is immutable. */
@@ -475,9 +482,9 @@ public abstract class BillingEvent extends ImmutableObject
             "Cancellation matching billing event must be set if and only if the SYNTHETIC flag "
                 + "is set.");
         checkState(
-            instance.getFlags().contains(Flag.SYNTHETIC)
-                && instance.cancellationMatchingBillingEvent.getOfyKey().getParent().getId()
-                    == instance.recurringEventHistoryRevisionId,
+            (!instance.getFlags().contains(Flag.SYNTHETIC))
+                || (instance.cancellationMatchingBillingEvent.getOfyKey().getParent().getId()
+                    == instance.recurringEventHistoryRevisionId),
             "Cancellation matching billing event and its history revision ID does not match.");
         return super.build();
       }
