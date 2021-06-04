@@ -98,29 +98,10 @@ public class Spec11Pipeline implements Serializable {
   }
 
   void setupPipeline(Pipeline pipeline) {
-    PCollection<Subdomain> domains;
-    if (options.getDatabase().equals("DATASTORE")) {
-      domains =
-          pipeline.apply(
-              "Read active domains from BigQuery",
-              BigQueryIO.read(Subdomain::parseFromRecord)
-                  .fromQuery(
-                      SqlTemplate.create(getQueryFromFile(Spec11Pipeline.class, "subdomains.sql"))
-                          .put("PROJECT_ID", options.getProject())
-                          .put("DATASTORE_EXPORT_DATASET", "latest_datastore_export")
-                          .put("REGISTRAR_TABLE", "Registrar")
-                          .put("DOMAIN_BASE_TABLE", "DomainBase")
-                          .build())
-                  .withCoder(SerializableCoder.of(Subdomain.class))
-                  .usingStandardSql()
-                  .withoutValidation()
-                  .withTemplateCompatibility());
-    } else if (options.getDatabase().equals("CLOUD_SQL")) {
-      domains = readFromCloudSql(options, pipeline);
-    } else {
-      throw new RuntimeException(
-          String.format("Unrecognized database value: %s", options.getDatabase()));
-    }
+    PCollection<Subdomain> domains =
+        options.getDatabase().equals("DATASTORE")
+            ? readFromBigQuery(options, pipeline)
+            : readFromCloudSql(pipeline);
 
     PCollection<KV<Subdomain, ThreatMatch>> threatMatches =
         domains.apply("Run through SafeBrowsing API", ParDo.of(safeBrowsingFn));
@@ -129,7 +110,7 @@ public class Spec11Pipeline implements Serializable {
     saveToGcs(threatMatches, options);
   }
 
-  static PCollection<Subdomain> readFromCloudSql(Spec11PipelineOptions options, Pipeline pipeline) {
+  static PCollection<Subdomain> readFromCloudSql(Pipeline pipeline) {
     Read<Object[], Subdomain> read =
         RegistryJpaIO.read(
             "select d, r.emailAddress from Domain d join Registrar r on"
@@ -140,9 +121,29 @@ public class Spec11Pipeline implements Serializable {
     return pipeline.apply("Read active domains from Cloud SQL", read);
   }
 
+  static PCollection<Subdomain> readFromBigQuery(Spec11PipelineOptions options, Pipeline pipeline) {
+    return pipeline.apply(
+        "Read active domains from BigQuery",
+        BigQueryIO.read(Subdomain::parseFromRecord)
+            .fromQuery(
+                SqlTemplate.create(getQueryFromFile(Spec11Pipeline.class, "subdomains.sql"))
+                    .put("PROJECT_ID", options.getProject())
+                    .put("DATASTORE_EXPORT_DATASET", "latest_datastore_export")
+                    .put("REGISTRAR_TABLE", "Registrar")
+                    .put("DOMAIN_BASE_TABLE", "DomainBase")
+                    .build())
+            .withCoder(SerializableCoder.of(Subdomain.class))
+            .usingStandardSql()
+            .withoutValidation()
+            .withTemplateCompatibility());
+  }
+
   private static Subdomain parseRow(Object[] row) {
     DomainBase domainBase = (DomainBase) row[0];
     String emailAddress = (String) row[1];
+    if (emailAddress.equals(null)) {
+      emailAddress = "";
+    }
     return Subdomain.create(
         domainBase.getDomainName(),
         domainBase.getRepoId(),

@@ -137,7 +137,6 @@ class Spec11PipelineTest {
 
   @Test
   void testSuccess_saveToSql() {
-    options.setDatabase("CLOUD_SQL");
     ImmutableSet<Spec11ThreatMatch> sqlThreatMatches =
         ImmutableSet.of(
             new Spec11ThreatMatch.Builder()
@@ -207,10 +206,8 @@ class Spec11PipelineTest {
   @Test
   void testSuccess_readFromCloudSql() throws Exception {
     setupCloudSql();
-
-    PCollection<Subdomain> subdomains = Spec11Pipeline.readFromCloudSql(options, pipeline);
+    PCollection<Subdomain> subdomains = Spec11Pipeline.readFromCloudSql(pipeline);
     PAssert.that(subdomains).containsInAnyOrder(SUBDOMAINS);
-
     pipeline.run().waitUntilFinish();
   }
 

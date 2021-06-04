@@ -15,6 +15,8 @@
 package google.registry.reporting.spec11;
 
 import static google.registry.beam.BeamUtils.createJobName;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.reporting.ReportingModule.DATABASE;
 import static google.registry.reporting.ReportingModule.PARAM_DATE;
 import static google.registry.reporting.ReportingUtils.enqueueBeamReportingTask;
 import static google.registry.request.Action.Method.POST;
@@ -69,6 +71,7 @@ public class GenerateSpec11ReportAction implements Runnable {
   private final Clock clock;
   private final Response response;
   private final Dataflow dataflow;
+  private final String database;
 
   @Inject
   GenerateSpec11ReportAction(
@@ -78,15 +81,20 @@ public class GenerateSpec11ReportAction implements Runnable {
       @Config("reportingBucketUrl") String reportingBucketUrl,
       @Key("safeBrowsingAPIKey") String apiKey,
       @Parameter(PARAM_DATE) LocalDate date,
+      @Parameter(DATABASE) String database,
       Clock clock,
       Response response,
       Dataflow dataflow) {
     this.projectId = projectId;
     this.jobRegion = jobRegion;
     this.stagingBucketUrl = stagingBucketUrl;
+    if (tm().isOfy() && database.equals("CLOUD_SQL")) {
+      reportingBucketUrl = reportingBucketUrl.concat("-sql");
+    }
     this.reportingBucketUrl = reportingBucketUrl;
     this.apiKey = apiKey;
     this.date = date;
+    this.database = database;
     this.clock = clock;
     this.response = response;
     this.dataflow = dataflow;
@@ -96,7 +104,6 @@ public class GenerateSpec11ReportAction implements Runnable {
   public void run() {
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
     try {
-      // TODO(sarahbot): Take in the database value as a parameter
       LaunchFlexTemplateParameter parameter =
           new LaunchFlexTemplateParameter()
               .setJobName(createJobName("spec11", clock))
@@ -107,7 +114,7 @@ public class GenerateSpec11ReportAction implements Runnable {
                       "safeBrowsingApiKey",
                       apiKey,
                       "database",
-                      "DATASTORE",
+                      database,
                       ReportingModule.PARAM_DATE,
                       date.toString(),
                       "reportingBucketUrl",

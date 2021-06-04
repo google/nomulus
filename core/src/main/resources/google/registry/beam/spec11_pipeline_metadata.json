@@ -67,7 +67,7 @@
       "label": "Database to read from.",
       "helpText": "DATASTORE or CLOUD_SQL.",
       "regexes": [
-        "^[0-9A-Z_]+$"
+        "^DATASTORE|CLOUD_SQL$"
       ]
     }
   ]
