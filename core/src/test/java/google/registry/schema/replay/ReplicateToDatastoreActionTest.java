@@ -18,19 +18,28 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.testing.TestLogHandler;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.FakeClock;
+import google.registry.testing.InjectExtension;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,25 +47,42 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class ReplicateToDatastoreActionTest {
 
+  private final FakeClock fakeClock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestEntity.class)
           .withJpaUnitTestEntities(TestEntity.class)
+          .withClock(fakeClock)
           .build();
 
-  ReplicateToDatastoreAction task = new ReplicateToDatastoreAction();
+  @RegisterExtension final InjectExtension injectExtension = new InjectExtension();
 
-  TestLogHandler logHandler;
-
-  public ReplicateToDatastoreActionTest() {}
+  private final ReplicateToDatastoreAction task = new ReplicateToDatastoreAction(fakeClock);
+  private final TestLogHandler logHandler = new TestLogHandler();
 
   @BeforeEach
   public void setUp() {
+    injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
     RegistryConfig.overrideCloudSqlReplicateTransactions(true);
-    logHandler = new TestLogHandler();
     Logger.getLogger(ReplicateToDatastoreAction.class.getCanonicalName()).addHandler(logHandler);
+    DateTime now = fakeClock.nowUtc();
+    ofyTm()
+        .transact(
+            () ->
+                DatabaseMigrationStateSchedule.set(
+                    ImmutableSortedMap.of(
+                        START_OF_TIME,
+                        MigrationState.DATASTORE_ONLY,
+                        now,
+                        MigrationState.DATASTORE_PRIMARY,
+                        now.plusHours(1),
+                        MigrationState.DATASTORE_PRIMARY_READ_ONLY,
+                        now.plusHours(2),
+                        MigrationState.SQL_PRIMARY)));
+    fakeClock.advanceBy(Duration.standardDays(1));
   }
 
   @AfterEach
@@ -168,6 +194,36 @@ public class ReplicateToDatastoreActionTest {
         .hasLogAtLevelWithMessage(
             Level.SEVERE,
             "Missing transaction: last transaction id = -1, next available transaction = 1");
+  }
+
+  @Test
+  void testNotInMigrationState_doesNothing() {
+    // set a schedule that backtracks the current status to DATASTORE_PRIMARY_READ_ONLY
+    DateTime now = fakeClock.nowUtc();
+    ofyTm()
+        .transact(
+            () ->
+                DatabaseMigrationStateSchedule.set(
+                    ImmutableSortedMap.<DateTime, MigrationState>naturalOrder()
+                        .put(START_OF_TIME, MigrationState.DATASTORE_ONLY)
+                        .put(START_OF_TIME.plusHours(1), MigrationState.DATASTORE_PRIMARY)
+                        .put(START_OF_TIME.plusHours(2), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
+                        .put(START_OF_TIME.plusHours(3), MigrationState.SQL_PRIMARY)
+                        .put(now.plusHours(1), MigrationState.SQL_PRIMARY_READ_ONLY)
+                        .put(now.plusHours(2), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
+                        .build()));
+    fakeClock.advanceBy(Duration.standardDays(1));
+
+    jpaTm().transact(() -> jpaTm().insert(new TestEntity("foo")));
+    task.run();
+    // Replication shouldn't have happened
+    assertThat(ofyTm().loadAllOf(TestEntity.class)).isEmpty();
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(
+            Level.INFO,
+            "Skipping ReplicateToDatastoreAction because we are in migration phase "
+                + "DATASTORE_PRIMARY_READ_ONLY.");
   }
 
   @Entity(name = "ReplicationTestEntity")
