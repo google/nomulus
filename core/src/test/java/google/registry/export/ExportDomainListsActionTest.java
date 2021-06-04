@@ -16,8 +16,7 @@ package google.registry.export;
 
 import static com.google.appengine.tools.cloudstorage.GcsServiceFactory.createGcsService;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.export.ExportDomainListsAction.ExportDomainListsReducer.EXPORT_MIME_TYPE;
-import static google.registry.export.ExportDomainListsAction.ExportDomainListsReducer.REGISTERED_DOMAINS_FILENAME;
+import static google.registry.export.ExportDomainListsAction.REGISTERED_DOMAINS_FILENAME;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
@@ -34,16 +33,22 @@ import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.appengine.tools.cloudstorage.ListOptions;
 import com.google.appengine.tools.cloudstorage.ListResult;
+import com.google.common.net.MediaType;
 import google.registry.export.ExportDomainListsAction.ExportDomainListsReducer;
+import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.storage.drive.DriveConnection;
+import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.io.FileNotFoundException;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link ExportDomainListsAction}. */
@@ -53,6 +58,12 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
   private DriveConnection driveConnection = mock(DriveConnection.class);
   private ArgumentCaptor<byte[]> bytesExportedToDrive = ArgumentCaptor.forClass(byte[].class);
   private final FakeResponse response = new FakeResponse();
+  private final FakeClock clock = new FakeClock();
+
+  @Order(Order.DEFAULT - 1)
+  @RegisterExtension
+  public final InjectExtension inject =
+      new InjectExtension().withStaticFieldOverride(Ofy.class, "clock", clock);
 
   @BeforeEach
   void beforeEach() {
@@ -68,10 +79,12 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     action.response = response;
     action.gcsBucket = "outputbucket";
     action.gcsBufferSize = 500;
+    action.clock = clock;
+    action.driveConnection = driveConnection;
     gcsService = createGcsService();
   }
 
-  private void runMapreduce() throws Exception {
+  private void runAction() throws Exception {
     action.run();
     executeTasksUntilEmpty("mapreduce");
   }
@@ -80,7 +93,7 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     verify(driveConnection)
         .createOrUpdateFile(
             eq(REGISTERED_DOMAINS_FILENAME),
-            eq(EXPORT_MIME_TYPE),
+            eq(MediaType.PLAIN_TEXT_UTF_8),
             eq(folderId),
             bytesExportedToDrive.capture());
     assertThat(new String(bytesExportedToDrive.getValue(), UTF_8)).isEqualTo(domains);
@@ -88,7 +101,7 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
 
   @Test
   void test_writesLinkToMapreduceConsoleToResponse() throws Exception {
-    runMapreduce();
+    runAction();
     assertThat(response.getPayload())
         .startsWith(
             "Mapreduce console: https://backend-dot-projectid.appspot.com"
@@ -100,7 +113,7 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
     persistDeletedDomain("mortuary.tld", DateTime.parse("2001-03-14T10:11:12Z"));
-    runMapreduce();
+    runAction();
     GcsFilename existingFile = new GcsFilename("outputbucket", "tld.txt");
     String tlds = new String(readGcsFile(gcsService, existingFile), UTF_8);
     // Check that it only contains the active domains, not the dead one.
@@ -114,7 +127,7 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     persistActiveDomain("onetwo.tld");
     persistActiveDomain("rudnitzky.tld");
     persistActiveDomain("wontgo.testtld");
-    runMapreduce();
+    runAction();
     GcsFilename existingFile = new GcsFilename("outputbucket", "tld.txt");
     String tlds = new String(readGcsFile(gcsService, existingFile), UTF_8).trim();
     // Check that it only contains the domains on the real TLD, and not the test one.
@@ -143,7 +156,7 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     persistActiveDomain("santa.tldtwo");
     persistActiveDomain("buddy.tldtwo");
     persistActiveDomain("cupid.tldthree");
-    runMapreduce();
+    runAction();
     GcsFilename firstTldFile = new GcsFilename("outputbucket", "tld.txt");
     String tlds = new String(readGcsFile(gcsService, firstTldFile), UTF_8).trim();
     assertThat(tlds).isEqualTo("dasher.tld\nprancer.tld");

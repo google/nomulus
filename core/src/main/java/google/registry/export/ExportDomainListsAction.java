@@ -19,9 +19,10 @@ import static com.google.common.base.Verify.verifyNotNull;
 import static google.registry.mapreduce.inputs.EppResourceInputs.createEntityInput;
 import static google.registry.model.EppResourceUtils.isActive;
 import static google.registry.model.registry.Registries.getTldsOfType;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.appengine.tools.cloudstorage.GcsFilename;
 import com.google.appengine.tools.cloudstorage.RetryParams;
@@ -32,7 +33,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
@@ -45,12 +48,14 @@ import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.storage.drive.DriveConnection;
+import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Collection;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -70,9 +75,12 @@ public class ExportDomainListsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final int MAX_NUM_REDUCE_SHARDS = 100;
+  public static final String REGISTERED_DOMAINS_FILENAME = "registered_domains.txt";
 
   @Inject MapreduceRunner mrRunner;
   @Inject Response response;
+  @Inject Clock clock;
+  @Inject DriveConnection driveConnection;
   @Inject @Config("domainListsGcsBucket") String gcsBucket;
   @Inject @Config("gcsBufferSize") int gcsBufferSize;
   @Inject ExportDomainListsAction() {}
@@ -81,15 +89,85 @@ public class ExportDomainListsAction implements Runnable {
   public void run() {
     ImmutableSet<String> realTlds = getTldsOfType(TldType.REAL);
     logger.atInfo().log("Exporting domain lists for tlds %s", realTlds);
-    mrRunner
-        .setJobName("Export domain lists")
-        .setModuleName("backend")
-        .setDefaultReduceShards(Math.min(realTlds.size(), MAX_NUM_REDUCE_SHARDS))
-        .runMapreduce(
-            new ExportDomainListsMapper(DateTime.now(UTC), realTlds),
-            new ExportDomainListsReducer(gcsBucket, gcsBufferSize),
-            ImmutableList.of(createEntityInput(DomainBase.class)))
-        .sendLinkToMapreduceConsole(response);
+    if (tm().isOfy()) {
+      mrRunner
+          .setJobName("Export domain lists")
+          .setModuleName("backend")
+          .setDefaultReduceShards(Math.min(realTlds.size(), MAX_NUM_REDUCE_SHARDS))
+          .runMapreduce(
+              new ExportDomainListsMapper(clock.nowUtc(), realTlds),
+              new ExportDomainListsReducer(gcsBucket, gcsBufferSize),
+              ImmutableList.of(createEntityInput(DomainBase.class)))
+          .sendLinkToMapreduceConsole(response);
+    } else {
+      ImmutableListMultimap.Builder<String, String> tldToDomainsMapBuilder =
+          new ImmutableListMultimap.Builder<>();
+      jpaTm()
+          .query(
+              "SELECT FROM Domain "
+                  + "WHERE tld WHERE in :tlds "
+                  + "AND d.creationTime <= :now "
+                  + "AND d.deletionTime > :now",
+              DomainBase.class)
+          .setParameter("tlds", realTlds)
+          .setParameter("now", clock.nowUtc())
+          .getResultStream()
+          .forEach(domain -> tldToDomainsMapBuilder.put(domain.getTld(), domain.getDomainName()));
+      ImmutableListMultimap<String, String> tldToDomainsMap = tldToDomainsMapBuilder
+          .orderValuesBy(Ordering.natural()).
+          build();
+      tldToDomainsMap.keySet().stream()
+          .forEach(
+              tld -> {
+                Collection<String> domains = tldToDomainsMap.get(tld);
+                String domainsList = Joiner.on("\n").join(domains);
+                logger.atInfo().log(
+                    "Exporting %d domains for TLD %s to GCS and Drive.", domains.size(), tld);
+                exportToGcs(tld, domainsList, gcsBucket, gcsBufferSize);
+                logger.atInfo().log("domain lists for TLD %s written out to GCS", tld);
+                exportToDrive(tld, domainsList, driveConnection);
+                logger.atInfo().log("domain lists for TLD %s written out to Drive", tld);
+              });
+    }
+  }
+
+  protected static void exportToDrive(String tld, String domains, DriveConnection driveConnection) {
+    verifyNotNull(driveConnection, "expecting non-null driveConnection");
+    try {
+      Registry registry = Registry.get(tld);
+      if (registry.getDriveFolderId() == null) {
+        logger.atInfo().log(
+            "Skipping registered domains export for TLD %s because Drive folder isn't specified",
+            tld);
+      } else {
+        String resultMsg =
+            driveConnection.createOrUpdateFile(
+                REGISTERED_DOMAINS_FILENAME,
+                MediaType.PLAIN_TEXT_UTF_8,
+                registry.getDriveFolderId(),
+                domains.getBytes(UTF_8));
+        logger.atInfo().log(
+            "Exporting registered domains succeeded for TLD %s, response was: %s",
+            tld, resultMsg);
+      }
+    } catch (Throwable e) {
+      logger.atSevere().withCause(e).log(
+          "Error exporting registered domains for TLD %s to Drive", tld);
+    }
+  }
+
+  protected static void exportToGcs(
+      String tld, String domains, String gcsBucket, int gcsBufferSize) {
+    GcsFilename filename = new GcsFilename(gcsBucket, tld + ".txt");
+    GcsUtils cloudStorage =
+        new GcsUtils(createGcsService(RetryParams.getDefaultInstance()), gcsBufferSize);
+    try (OutputStream gcsOutput = cloudStorage.openOutputStream(filename);
+        Writer osWriter = new OutputStreamWriter(gcsOutput, UTF_8)) {
+      osWriter.write(domains);
+    } catch (IOException e) {
+      logger.atSevere().withCause(e).log(
+          "Error exporting registered domains for TLD %s to GCS.", tld);
+    }
   }
 
   static class ExportDomainListsMapper extends Mapper<DomainBase, String, String> {
@@ -122,9 +200,6 @@ public class ExportDomainListsAction implements Runnable {
     private static Supplier<DriveConnection> driveConnectionSupplier =
         Suppliers.memoize(() -> DaggerDriveModule_DriveComponent.create().driveConnection());
 
-    static final String REGISTERED_DOMAINS_FILENAME = "registered_domains.txt";
-    static final MediaType EXPORT_MIME_TYPE = MediaType.PLAIN_TEXT_UTF_8;
-
     private final String gcsBucket;
     private final int gcsBufferSize;
 
@@ -147,53 +222,15 @@ public class ExportDomainListsAction implements Runnable {
       driveConnection = driveConnectionSupplier.get();
     }
 
-    private void exportToDrive(String tld, String domains) {
-      verifyNotNull(driveConnection, "expecting non-null driveConnection");
-      try {
-        Registry registry = Registry.get(tld);
-        if (registry.getDriveFolderId() == null) {
-          logger.atInfo().log(
-              "Skipping registered domains export for TLD %s because Drive folder isn't specified",
-              tld);
-        } else {
-          String resultMsg =
-              driveConnection.createOrUpdateFile(
-                  REGISTERED_DOMAINS_FILENAME,
-                  EXPORT_MIME_TYPE,
-                  registry.getDriveFolderId(),
-                  domains.getBytes(UTF_8));
-          logger.atInfo().log(
-              "Exporting registered domains succeeded for TLD %s, response was: %s",
-              tld, resultMsg);
-        }
-      } catch (Throwable e) {
-        logger.atSevere().withCause(e).log(
-            "Error exporting registered domains for TLD %s to Drive", tld);
-      }
-      getContext().incrementCounter("domain lists written out to Drive");
-    }
-
-    private void exportToGcs(String tld, String domains) {
-      GcsFilename filename = new GcsFilename(gcsBucket, tld + ".txt");
-      GcsUtils cloudStorage =
-          new GcsUtils(createGcsService(RetryParams.getDefaultInstance()), gcsBufferSize);
-      try (OutputStream gcsOutput = cloudStorage.openOutputStream(filename);
-          Writer osWriter = new OutputStreamWriter(gcsOutput, UTF_8)) {
-        osWriter.write(domains);
-      } catch (IOException e) {
-        logger.atSevere().withCause(e).log(
-            "Error exporting registered domains for TLD %s to GCS.", tld);
-      }
-      getContext().incrementCounter("domain lists written out to GCS");
-    }
-
     @Override
     public void reduce(String tld, ReducerInput<String> fqdns) {
       ImmutableList<String> domains = ImmutableList.sortedCopyOf(() -> fqdns);
       String domainsList = Joiner.on('\n').join(domains);
       logger.atInfo().log("Exporting %d domains for TLD %s to GCS and Drive.", domains.size(), tld);
-      exportToGcs(tld, domainsList);
-      exportToDrive(tld, domainsList);
+      exportToGcs(tld, domainsList, gcsBucket, gcsBufferSize);
+      getContext().incrementCounter("domain lists written out to GCS");
+      exportToDrive(tld, domainsList, driveConnection);
+      getContext().incrementCounter("domain lists written out to Drive");
     }
 
     @VisibleForTesting
