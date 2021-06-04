@@ -61,6 +61,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
+import org.apache.commons.lang3.BooleanUtils;
 import org.joda.time.DateTime;
 
 /**
@@ -435,7 +436,8 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
       checkArgumentNotNull(getInstance().modificationTime, "Modification time must be specified");
       checkArgumentNotNull(getInstance().clientId, "Registrar ID must be specified");
       checkArgument(
-          !getInstance().type.equals(Type.SYNTHETIC) || !getInstance().requestedByRegistrar,
+          !getInstance().type.equals(Type.SYNTHETIC)
+              || BooleanUtils.isNotTrue(getInstance().requestedByRegistrar),
           "Synthetic history entries cannot be requested by a registrar");
       return super.build();
     }
