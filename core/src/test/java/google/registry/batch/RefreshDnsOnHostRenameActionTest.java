@@ -17,6 +17,8 @@ package google.registry.batch;
 import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.batch.AsyncTaskEnqueuer.PARAM_HOST_KEY;
+import static google.registry.batch.AsyncTaskEnqueuer.PARAM_REQUESTED_TIME;
 import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.batch.AsyncTaskMetrics.OperationType.DNS_REFRESH;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -56,6 +58,7 @@ import google.registry.testing.InjectExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import google.registry.util.AppEngineServiceUtils;
 import google.registry.util.RequestStatusChecker;
@@ -63,6 +66,7 @@ import google.registry.util.Retrier;
 import google.registry.util.Sleeper;
 import google.registry.util.SystemSleeper;
 import java.util.Optional;
+import org.apache.http.HttpStatus;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -125,6 +129,31 @@ public class RefreshDnsOnHostRenameActionTest
     tm().clearSessionCache();
   }
 
+  @TestSqlOnly
+  void testFailure_dnsUpdateEnqueueFailed() throws Exception {
+    HostResource host = persistActiveHost("ns1.example.tld");
+    persistResource(newDomainBase("example.tld", host));
+    persistResource(newDomainBase("otherexample.tld", host));
+    persistResource(newDomainBase("untouched.tld", persistActiveHost("ns2.example.tld")));
+    DateTime timeEnqueued = clock.nowUtc();
+    enqueuer.enqueueAsyncDnsRefresh(host, timeEnqueued);
+    DnsQueue mockedQueue = mock(DnsQueue.class);
+    action.dnsQueue = mockedQueue;
+    when(mockedQueue.addDomainRefreshTask(anyString()))
+        .thenThrow(new RuntimeException("Cannot enqueue task."));
+    runAction();
+    assertNoDnsTasksEnqueued();
+    assertTasksEnqueued(
+        QUEUE_ASYNC_HOST_RENAME,
+        new TaskMatcher()
+            .param(PARAM_HOST_KEY, host.createVKey().getOfyKey().getString())
+            .param(PARAM_REQUESTED_TIME, timeEnqueued.toString()));
+    verify(action.asyncTaskMetrics).recordDnsRefreshBatchSize(1L);
+    verifyNoMoreInteractions(action.asyncTaskMetrics);
+    assertThat(fakeResponse.getStatus()).isEqualTo(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+    assertThat(acquireLock()).isPresent();
+  }
+
   @TestOfyAndSql
   void testSuccess_dnsUpdateEnqueued() throws Exception {
     HostResource host = persistActiveHost("ns1.example.tld");
@@ -140,6 +169,7 @@ public class RefreshDnsOnHostRenameActionTest
     verify(action.asyncTaskMetrics)
         .recordAsyncFlowResult(DNS_REFRESH, OperationResult.SUCCESS, timeEnqueued);
     verifyNoMoreInteractions(action.asyncTaskMetrics);
+    assertThat(acquireLock()).isPresent();
   }
 
   @TestOfyAndSql
@@ -164,6 +194,7 @@ public class RefreshDnsOnHostRenameActionTest
     verify(action.asyncTaskMetrics)
         .recordAsyncFlowResult(DNS_REFRESH, OperationResult.SUCCESS, laterTimeEnqueued);
     verifyNoMoreInteractions(action.asyncTaskMetrics);
+    assertThat(acquireLock()).isPresent();
   }
 
   @TestOfyAndSql
@@ -179,6 +210,7 @@ public class RefreshDnsOnHostRenameActionTest
     verify(action.asyncTaskMetrics)
         .recordAsyncFlowResult(DNS_REFRESH, OperationResult.STALE, timeEnqueued);
     verifyNoMoreInteractions(action.asyncTaskMetrics);
+    assertThat(acquireLock()).isPresent();
   }
 
   @TestOfyAndSql
@@ -193,6 +225,7 @@ public class RefreshDnsOnHostRenameActionTest
     runAction();
     assertNoDnsTasksEnqueued();
     assertNoTasksEnqueued(QUEUE_ASYNC_HOST_RENAME);
+    assertThat(acquireLock()).isPresent();
   }
 
   @TestOfyAndSql
@@ -216,6 +249,7 @@ public class RefreshDnsOnHostRenameActionTest
     enqueueMapreduceOnly();
     assertThat(fakeResponse.getPayload()).isEqualTo("Can't acquire lock; aborting.");
     assertNoDnsTasksEnqueued();
+    assertThat(acquireLock()).isEmpty();
   }
 
   @TestOfyOnly

@@ -70,6 +70,7 @@ import java.util.logging.Level;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
+import org.apache.http.HttpStatus;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -87,6 +88,7 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
   @Inject Clock clock;
   @Inject MapreduceRunner mrRunner;
   @Inject @Named(QUEUE_ASYNC_HOST_RENAME) Queue pullQueue;
+
   @Inject DnsQueue dnsQueue;
   @Inject RequestStatusChecker requestStatusChecker;
   @Inject Response response;
@@ -179,6 +181,11 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
               asyncTaskMetrics,
               retrier,
               OperationResult.SUCCESS);
+        } catch (Throwable t) {
+          String message = "Error refreshing DNS on host rename.";
+          logger.atSevere().withCause(t).log(message);
+          response.setPayload(message);
+          response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
           lock.get().release();
         }
