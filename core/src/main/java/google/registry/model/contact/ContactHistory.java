@@ -115,9 +115,9 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
       contactBase = null;
     }
     if (contactBase != null && contactBase.getRepoId() == null) {
-      // hostBase hasn't been fully constructed yet, so it's ok to go in and mutate it.  Though the
-      // use of the Builder is not necessarily problematic in this case, this is still safer as the
-      // Builder can do thing like comparisons that compute the hash code.
+      // contactBase hasn't been fully constructed yet, so it's ok to go in and mutate it.  Though
+      // the use of the Builder is not necessarily problematic in this case, this is still safer as
+      // the Builder can do things like comparisons that compute the hash code.
       contactBase.setRepoId(parent.getName());
     }
   }
