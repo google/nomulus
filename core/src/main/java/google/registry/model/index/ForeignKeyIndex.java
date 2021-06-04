@@ -228,8 +228,7 @@ public abstract class ForeignKeyIndex<E extends EppResource> extends BackupGroup
           tm().transact(
                   () ->
                       jpaTm()
-                          .getEntityManager()
-                          .createQuery(
+                          .query(
                               CriteriaQueryBuilder.create(clazz)
                                   .whereFieldIsIn(property, foreignKeys)
                                   .build())

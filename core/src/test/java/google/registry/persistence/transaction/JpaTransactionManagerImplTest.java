@@ -586,6 +586,29 @@ class JpaTransactionManagerImplTest {
   }
 
   @Test
+  void cqQuery_detaches() {
+    jpaTm().transact(() -> jpaTm().insertAll(moreEntities));
+    jpaTm()
+        .transact(
+            () ->
+                assertThat(
+                        jpaTm()
+                            .getEntityManager()
+                            .contains(
+                                jpaTm()
+                                    .query(
+                                        CriteriaQueryBuilder.create(TestEntity.class)
+                                            .where(
+                                                "name",
+                                                jpaTm().getEntityManager().getCriteriaBuilder()
+                                                    ::equal,
+                                                "entity1")
+                                            .build())
+                                    .getSingleResult()))
+                    .isFalse());
+  }
+
+  @Test
   void loadAfterPut_fails() {
     assertThat(
             assertThrows(

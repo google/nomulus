@@ -202,11 +202,7 @@ public abstract class RdapSearchActionBase extends RdapActionBase {
               desiredRegistrar.get());
     }
     List<T> queryResult =
-        jpaTm()
-            .getEntityManager()
-            .createQuery(builder.build())
-            .setMaxResults(querySizeLimit)
-            .getResultList();
+        jpaTm().query(builder.build()).setMaxResults(querySizeLimit).getResultList();
     if (checkForVisibility) {
       return filterResourcesByVisibility(queryResult, querySizeLimit);
     } else {

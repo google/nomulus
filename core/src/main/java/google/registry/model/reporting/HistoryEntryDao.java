@@ -164,8 +164,7 @@ public class HistoryEntryDao {
   private static <T extends HistoryEntry> Stream<T> loadHistoryObjectFromSqlByRegistrars(
       Class<T> historyClass, ImmutableCollection<String> registrarIds) {
     return jpaTm()
-        .getEntityManager()
-        .createQuery(
+        .query(
             CriteriaQueryBuilder.create(historyClass)
                 .whereFieldIsIn("clientId", registrarIds)
                 .build())
@@ -189,7 +188,7 @@ public class HistoryEntryDao {
 
     return ImmutableList.sortedCopyOf(
         Comparator.comparing(HistoryEntry::getModificationTime),
-        jpaTm().getEntityManager().createQuery(criteriaQuery).getResultList());
+        jpaTm().query(criteriaQuery).getResultList());
   }
 
   private static Class<? extends HistoryEntry> getHistoryClassFromParent(
@@ -216,8 +215,7 @@ public class HistoryEntryDao {
       Class<T> historyClass, DateTime afterTime, DateTime beforeTime) {
     CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
     return jpaTm()
-        .getEntityManager()
-        .createQuery(
+        .query(
             CriteriaQueryBuilder.create(historyClass)
                 .where("modificationTime", criteriaBuilder::greaterThanOrEqualTo, afterTime)
                 .where("modificationTime", criteriaBuilder::lessThanOrEqualTo, beforeTime)

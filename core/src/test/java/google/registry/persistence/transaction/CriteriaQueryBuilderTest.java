@@ -59,8 +59,7 @@ class CriteriaQueryBuilderTest {
                 .transact(
                     () ->
                         jpaTm()
-                            .getEntityManager()
-                            .createQuery(
+                            .query(
                                 CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
                                     .build())
                             .getResultList()))
@@ -77,10 +76,11 @@ class CriteriaQueryBuilderTest {
                   CriteriaQuery<CriteriaQueryBuilderTestEntity> query =
                       CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
                           .where(
-                              "data", jpaTm().getEntityManager().getCriteriaBuilder()::equal,
+                              "data",
+                              jpaTm().getEntityManager().getCriteriaBuilder()::equal,
                               "zztz")
                           .build();
-                  return jpaTm().getEntityManager().createQuery(query).getResultList();
+                  return jpaTm().query(query).getResultList();
                 });
     assertThat(result).containsExactly(entity2);
   }
@@ -96,7 +96,7 @@ class CriteriaQueryBuilderTest {
                           .where(
                               "data", jpaTm().getEntityManager().getCriteriaBuilder()::like, "a%")
                           .build();
-                  return jpaTm().getEntityManager().createQuery(query).getResultList();
+                  return jpaTm().query(query).getResultList();
                 });
     assertThat(result).containsExactly(entity3);
   }
@@ -112,7 +112,7 @@ class CriteriaQueryBuilderTest {
                           .where(
                               "data", jpaTm().getEntityManager().getCriteriaBuilder()::like, "%a%")
                           .build();
-                  return jpaTm().getEntityManager().createQuery(query).getResultList();
+                  return jpaTm().query(query).getResultList();
                 });
     assertThat(result).containsExactly(entity1, entity3).inOrder();
   }
@@ -132,7 +132,7 @@ class CriteriaQueryBuilderTest {
                           .where(
                               "data", jpaTm().getEntityManager().getCriteriaBuilder()::like, "%t%")
                           .build();
-                  return jpaTm().getEntityManager().createQuery(query).getResultList();
+                  return jpaTm().query(query).getResultList();
                 });
     assertThat(result).containsExactly(entity1);
   }
@@ -147,7 +147,7 @@ class CriteriaQueryBuilderTest {
                       CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
                           .whereFieldIsIn("data", ImmutableList.of("aaa", "bbb"))
                           .build();
-                  return jpaTm().getEntityManager().createQuery(query).getResultList();
+                  return jpaTm().query(query).getResultList();
                 });
     assertThat(result).containsExactly(entity3).inOrder();
   }
@@ -162,7 +162,7 @@ class CriteriaQueryBuilderTest {
                       CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
                           .whereFieldIsIn("data", ImmutableList.of("aaa", "bbb", "data"))
                           .build();
-                  return jpaTm().getEntityManager().createQuery(query).getResultList();
+                  return jpaTm().query(query).getResultList();
                 });
     assertThat(result).containsExactly(entity1, entity3).inOrder();
   }
@@ -179,7 +179,7 @@ class CriteriaQueryBuilderTest {
                           .where(
                               "data", jpaTm().getEntityManager().getCriteriaBuilder()::like, "%a%")
                           .build();
-                  return jpaTm().getEntityManager().createQuery(query).getResultList();
+                  return jpaTm().query(query).getResultList();
                 });
     assertThat(result).containsExactly(entity3, entity1).inOrder();
   }
@@ -194,7 +194,7 @@ class CriteriaQueryBuilderTest {
                       CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
                           .orderByDesc("data")
                           .build();
-                  return jpaTm().getEntityManager().createQuery(query).getResultList();
+                  return jpaTm().query(query).getResultList();
                 });
     assertThat(result).containsExactly(entity2, entity1, entity3).inOrder();
   }

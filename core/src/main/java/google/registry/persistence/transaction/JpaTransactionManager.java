@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaQuery;
 
 /** Sub-interface of {@link TransactionManager} which defines JPA related methods. */
 public interface JpaTransactionManager extends TransactionManager {
@@ -33,6 +34,9 @@ public interface JpaTransactionManager extends TransactionManager {
    * jpaTm().getEntityManager().createQuery(...)</code>.
    */
   <T> TypedQuery<T> query(String sqlString, Class<T> resultClass);
+
+  /** Creates a JPA SQU query for the given criteria query. */
+  <T> TypedQuery<T> query(CriteriaQuery<T> criteriaQuery);
 
   /**
    * Creates a JPA SQL query for the given query string.
