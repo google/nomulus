@@ -589,8 +589,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                               cursorString.get());
                     }
                     jpaTm()
-                        .getEntityManager()
-                        .createQuery(queryBuilder.build())
+                        .query(queryBuilder.build())
                         .getResultStream()
                         .filter(this::isAuthorized)
                         .forEach(

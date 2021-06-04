@@ -69,6 +69,7 @@ import javax.persistence.PersistenceException;
 import javax.persistence.Query;
 import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.SingularAttribute;
 import org.joda.time.DateTime;
@@ -125,6 +126,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public <T> TypedQuery<T> query(String sqlString, Class<T> resultClass) {
     return new DetachingTypedQuery(getEntityManager().createQuery(sqlString, resultClass));
+  }
+
+  @Override
+  public <T> TypedQuery<T> query(CriteriaQuery<T> criteriaQuery) {
+    return getEntityManager().createQuery(criteriaQuery);
   }
 
   @Override
