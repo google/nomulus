@@ -116,7 +116,10 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
       hostBase = null;
     }
     if (hostBase != null && hostBase.getRepoId() == null) {
-      hostBase = hostBase.asBuilder().setRepoId(parent.getName()).build();
+      // hostBase hasn't been fully constructed yet, so it's ok to go in and mutate it.  Though the
+      // use of the Builder is not necessarily problematic in this case, this is still safer as the
+      // Builder can do things like comparisons that compute the hash code.
+      hostBase.setRepoId(parent.getName());
     }
   }
 

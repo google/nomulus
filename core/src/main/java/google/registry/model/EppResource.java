@@ -155,9 +155,16 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     return repoId;
   }
 
-  /** This method exists solely to satisfy Hibernate. Use {@link Builder} instead. */
-  @SuppressWarnings("UnusedMethod")
-  private void setRepoId(String repoId) {
+  /**
+   * Sets the repository ID.
+   *
+   * <p>This should only be used for restoring the repo id of an object being loaded in a PostLoad
+   * method (effectively, when it is still under construction by Hibernate). In all other cases, the
+   * object should be regarded as immutable and changes should go through a Builder.
+   *
+   * <p>In addition to this special case use, this method must exist to satisfy Hibernate.
+   */
+  public void setRepoId(String repoId) {
     this.repoId = repoId;
   }
 
