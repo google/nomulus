@@ -81,6 +81,7 @@ public class ExportDomainListsAction implements Runnable {
   @Inject Response response;
   @Inject Clock clock;
   @Inject DriveConnection driveConnection;
+
   @Inject @Config("domainListsGcsBucket") String gcsBucket;
   @Inject @Config("gcsBufferSize") int gcsBufferSize;
   @Inject ExportDomainListsAction() {}
@@ -102,20 +103,28 @@ public class ExportDomainListsAction implements Runnable {
     } else {
       ImmutableListMultimap.Builder<String, String> tldToDomainsMapBuilder =
           new ImmutableListMultimap.Builder<>();
-      jpaTm()
-          .query(
-              "SELECT FROM Domain "
-                  + "WHERE tld WHERE in :tlds "
-                  + "AND d.creationTime <= :now "
-                  + "AND d.deletionTime > :now",
-              DomainBase.class)
-          .setParameter("tlds", realTlds)
-          .setParameter("now", clock.nowUtc())
-          .getResultStream()
-          .forEach(domain -> tldToDomainsMapBuilder.put(domain.getTld(), domain.getDomainName()));
-      ImmutableListMultimap<String, String> tldToDomainsMap = tldToDomainsMapBuilder
-          .orderValuesBy(Ordering.natural()).
-          build();
+      tm().transact(
+              () ->
+                  jpaTm()
+                      .getEntityManager()
+                      .createNativeQuery(
+                          "SELECT tld, domain_name FROM \"Domain\" "
+                              + "WHERE tld IN (:tlds) "
+                              + "AND creation_time <= :now "
+                              + "AND deletion_time > :now")
+                      .setParameter("tlds", realTlds)
+                      .setParameter("now", clock.nowUtc().toDate())
+                      .getResultStream()
+                      .forEach(
+                          row -> {
+                            @SuppressWarnings("unchecked")
+                            String tld = (String) ((Object[]) row)[0];
+                            @SuppressWarnings("unchecked")
+                            String domain = (String) ((Object[]) row)[1];
+                            tldToDomainsMapBuilder.put(tld, domain);
+                          }));
+      ImmutableListMultimap<String, String> tldToDomainsMap =
+          tldToDomainsMapBuilder.orderValuesBy(Ordering.natural()).build();
       tldToDomainsMap.keySet().stream()
           .forEach(
               tld -> {
@@ -147,8 +156,7 @@ public class ExportDomainListsAction implements Runnable {
                 registry.getDriveFolderId(),
                 domains.getBytes(UTF_8));
         logger.atInfo().log(
-            "Exporting registered domains succeeded for TLD %s, response was: %s",
-            tld, resultMsg);
+            "Exporting registered domains succeeded for TLD %s, response was: %s", tld, resultMsg);
       }
     } catch (Throwable e) {
       logger.atSevere().withCause(e).log(
