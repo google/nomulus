@@ -16,6 +16,7 @@ package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -377,7 +378,7 @@ public final class EppResourceUtils {
     boolean isContactKey = key.getKind().equals(ContactResource.class);
     if (tm().isOfy()) {
       com.googlecode.objectify.cmd.Query<DomainBase> query =
-          ofy()
+          auditedOfy()
               .load()
               .type(DomainBase.class)
               .filter(isContactKey ? "allContacts.contact" : "nsHosts", key.getOfyKey())
