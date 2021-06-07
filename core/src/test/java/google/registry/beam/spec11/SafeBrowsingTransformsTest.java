@@ -164,7 +164,7 @@ class SafeBrowsingTransformsTest {
    * A serializable {@link Answer} that returns a mock HTTP response based on the HTTP request's
    * content.
    */
-  private static class HttpResponder implements Answer<CloseableHttpResponse>, Serializable {
+  static class HttpResponder implements Answer<CloseableHttpResponse>, Serializable {
     @Override
     public CloseableHttpResponse answer(InvocationOnMock invocation) throws Throwable {
       return getMockResponse(

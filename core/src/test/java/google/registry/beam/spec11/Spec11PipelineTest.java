@@ -20,13 +20,20 @@ import static google.registry.model.ImmutableObjectSubject.immutableObjectCorres
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.newRegistry;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.truth.Correspondence;
 import com.google.common.truth.Correspondence.BinaryPredicate;
 import google.registry.beam.TestPipelineExtension;
+import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
+import google.registry.beam.spec11.SafeBrowsingTransformsTest.HttpResponder;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainAuthInfo;
 import google.registry.model.domain.DomainBase;
@@ -41,7 +48,9 @@ import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
+import google.registry.testing.FakeSleeper;
 import google.registry.util.ResourceUtils;
+import google.registry.util.Retrier;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,6 +61,8 @@ import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
@@ -77,6 +88,8 @@ class Spec11PipelineTest {
   private static final String DATE = "2020-01-27";
   private static final String SAFE_BROWSING_API_KEY = "api-key";
   private static final String REPORTING_BUCKET_URL = "reporting_bucket";
+  private final CloseableHttpClient mockHttpClient =
+      mock(CloseableHttpClient.class, withSettings().serializable());
 
   private static final ImmutableList<Subdomain> SUBDOMAINS =
       ImmutableList.of(
@@ -117,6 +130,8 @@ class Spec11PipelineTest {
   private File reportingBucketUrl;
   private PCollection<KV<Subdomain, ThreatMatch>> threatMatches;
 
+  ImmutableSet<Spec11ThreatMatch> sqlThreatMatches;
+
   @BeforeEach
   void beforeEach() throws Exception {
     reportingBucketUrl = Files.createDirectory(tmpDir.resolve(REPORTING_BUCKET_URL)).toFile();
@@ -133,11 +148,8 @@ class Spec11PipelineTest {
                     KvCoder.of(
                         SerializableCoder.of(Subdomain.class),
                         SerializableCoder.of(ThreatMatch.class))));
-  }
 
-  @Test
-  void testSuccess_saveToSql() {
-    ImmutableSet<Spec11ThreatMatch> sqlThreatMatches =
+    sqlThreatMatches =
         ImmutableSet.of(
             new Spec11ThreatMatch.Builder()
                 .setDomainName("111.com")
@@ -174,6 +186,49 @@ class Spec11PipelineTest {
                 .setCheckDate(new LocalDate(2020, 1, 27))
                 .setThreatTypes(ImmutableSet.of(ThreatType.UNWANTED_SOFTWARE))
                 .build());
+  }
+
+  @Test
+  void testSuccess_fullSqlPipeline() throws Exception {
+    setupCloudSql();
+    options.setDatabase("CLOUD_SQL");
+    EvaluateSafeBrowsingFn safeBrowsingFn =
+        new EvaluateSafeBrowsingFn(
+            SAFE_BROWSING_API_KEY,
+            new Retrier(new FakeSleeper(new FakeClock()), 1),
+            Suppliers.ofInstance(mockHttpClient));
+    when(mockHttpClient.execute(any(HttpPost.class))).thenAnswer(new HttpResponder());
+    Spec11Pipeline spec11Pipeline = new Spec11Pipeline(options, safeBrowsingFn);
+    spec11Pipeline.setupPipeline(pipeline);
+    pipeline.run(options).waitUntilFinish();
+
+    // Check correctly save to GCS
+    ImmutableList<String> expectedFileContents =
+        ImmutableList.copyOf(
+            ResourceUtils.readResourceUtf8(this.getClass(), "test_output.txt").split("\n"));
+    ImmutableList<String> resultFileContents = resultFileContents();
+    assertThat(resultFileContents.size()).isEqualTo(expectedFileContents.size());
+    assertThat(resultFileContents.get(0)).isEqualTo(expectedFileContents.get(0));
+    assertThat(resultFileContents.subList(1, resultFileContents.size()))
+        .comparingElementsUsing(
+            Correspondence.from(
+                new ThreatMatchJsonPredicate(), "has fields with unordered threatTypes equal to"))
+        .containsExactlyElementsIn(expectedFileContents.subList(1, expectedFileContents.size()));
+
+    // Check correctly save to Cloud SQL
+    jpaTm()
+        .transact(
+            () -> {
+              ImmutableList<Spec11ThreatMatch> sqlThreatMatches =
+                  Spec11ThreatMatchDao.loadEntriesByDate(jpaTm(), new LocalDate(2020, 1, 27));
+              assertThat(sqlThreatMatches)
+                  .comparingElementsUsing(immutableObjectCorrespondence("id"))
+                  .containsExactlyElementsIn(sqlThreatMatches);
+            });
+  }
+
+  @Test
+  void testSuccess_saveToSql() {
     Spec11Pipeline.saveToSql(threatMatches, options);
     pipeline.run().waitUntilFinish();
     assertThat(
