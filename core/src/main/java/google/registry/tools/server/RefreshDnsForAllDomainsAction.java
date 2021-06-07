@@ -18,6 +18,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.mapreduce.inputs.EppResourceInputs.createEntityInput;
 import static google.registry.model.EppResourceUtils.isActive;
 import static google.registry.model.registry.Registries.assertTldsExist;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
 
 import com.google.appengine.tools.mapreduce.Mapper;
@@ -32,11 +34,11 @@ import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
 import java.util.Random;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.joda.time.Duration;
 
 /**
@@ -74,6 +76,8 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   @Parameter("smearMinutes")
   int smearMinutes;
 
+  @Inject DnsQueue dnsQueue;
+  @Inject Clock clock;
   @Inject Random random;
 
   @Inject
@@ -83,14 +87,44 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
   public void run() {
     assertTldsExist(tlds);
     checkArgument(smearMinutes > 0, "Must specify a positive number of smear minutes");
-    mrRunner
-        .setJobName("Refresh DNS for all domains")
-        .setModuleName("tools")
-        .setDefaultMapShards(10)
-        .runMapOnly(
-            new RefreshDnsForAllDomainsActionMapper(tlds, smearMinutes, random),
-            ImmutableList.of(createEntityInput(DomainBase.class)))
-        .sendLinkToMapreduceConsole(response);
+    if (tm().isOfy()) {
+      mrRunner
+          .setJobName("Refresh DNS for all domains")
+          .setModuleName("tools")
+          .setDefaultMapShards(10)
+          .runMapOnly(
+              new RefreshDnsForAllDomainsActionMapper(tlds, smearMinutes, random, clock.nowUtc()),
+              ImmutableList.of(createEntityInput(DomainBase.class)))
+          .sendLinkToMapreduceConsole(response);
+    } else {
+      tm().transact(
+              () ->
+                  jpaTm()
+                      .getEntityManager()
+                      .createNativeQuery(
+                          "SELECT domain_name FROM \"Domain\" "
+                              + "WHERE tld IN (:tlds) "
+                              + "AND creation_time <= :now "
+                              + "AND deletion_time > :now")
+                      .setParameter("tlds", tlds)
+                      .setParameter("now", clock.nowUtc().toDate())
+                      .getResultStream()
+                      .forEach(
+                          row -> {
+                            @SuppressWarnings("unchecked")
+                            String domainName = (String) row;
+                            try {
+                              // Smear the task execution time over the next N minutes.
+                              dnsQueue.addDomainRefreshTask(
+                                  domainName,
+                                  Duration.standardMinutes(random.nextInt(smearMinutes)));
+                              logger.atInfo().log("active domain %s refreshed.", domainName);
+                            } catch (Throwable t) {
+                              logger.atSevere().withCause(t).log(
+                                  "Error while refreshing DNS for domain %s", domainName);
+                            }
+                          }));
+    }
   }
 
   /** Mapper to refresh DNS for all active domain resources. */
@@ -104,19 +138,21 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
     private final ImmutableSet<String> tlds;
     private final int smearMinutes;
     private final Random random;
+    private final DateTime now;
 
     RefreshDnsForAllDomainsActionMapper(
-        ImmutableSet<String> tlds, int smearMinutes, Random random) {
+        ImmutableSet<String> tlds, int smearMinutes, Random random, DateTime now) {
       this.tlds = tlds;
       this.smearMinutes = smearMinutes;
       this.random = random;
+      this.now = now;
     }
 
     @Override
     public void map(final DomainBase domain) {
       String domainName = domain.getDomainName();
       if (tlds.contains(domain.getTld())) {
-        if (isActive(domain, DateTime.now(DateTimeZone.UTC))) {
+        if (isActive(domain, now)) {
           try {
             // Smear the task execution time over the next N minutes.
             dnsQueue.addDomainRefreshTask(

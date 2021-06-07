@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
-import static org.joda.time.DateTimeZone.UTC;
 import static org.joda.time.Duration.standardMinutes;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -28,8 +27,12 @@ import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.DnsQueue;
+import google.registry.model.ofy.Ofy;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import google.registry.tools.server.RefreshDnsForAllDomainsAction.RefreshDnsForAllDomainsActionMapper;
 import java.util.Random;
@@ -37,18 +40,23 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.ArgumentCaptor;
 
 /** Unit tests for {@link RefreshDnsForAllDomainsAction}. */
+@DualDatabaseTest
 public class RefreshDnsForAllDomainsActionTest
     extends MapreduceTestCase<RefreshDnsForAllDomainsAction> {
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
+  private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T02:02:02Z"));
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
   private DnsQueue origDnsQueue;
+
+  @Order(Order.DEFAULT - 1)
+  @RegisterExtension
+  public final InjectExtension inject =
+      new InjectExtension().withStaticFieldOverride(Ofy.class, "clock", clock);
 
   @BeforeEach
   void beforeEach() {
@@ -60,6 +68,8 @@ public class RefreshDnsForAllDomainsActionTest
     action.random.setSeed(123L);
     action.mrRunner = makeDefaultRunner();
     action.response = new FakeResponse();
+    action.clock = clock;
+    action.dnsQueue = dnsQueue;
 
     createTld("bar");
   }
@@ -70,58 +80,58 @@ public class RefreshDnsForAllDomainsActionTest
         .isEqualTo(dnsQueue);
   }
 
-  private void runMapreduce() throws Exception {
+  private void runAction() throws Exception {
     action.run();
     executeTasksUntilEmpty("mapreduce");
   }
 
-  @Test
+  @TestOfyAndSql
   void test_runAction_successfullyEnqueuesDnsRefreshes() throws Exception {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
     action.tlds = ImmutableSet.of("bar");
-    runMapreduce();
+    runAction();
     verify(dnsQueue).addDomainRefreshTask("foo.bar", Duration.ZERO);
     verify(dnsQueue).addDomainRefreshTask("low.bar", Duration.ZERO);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_runAction_smearsOutDnsRefreshes() throws Exception {
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
     action.tlds = ImmutableSet.of("bar");
     action.smearMinutes = 1000;
-    runMapreduce();
+    runAction();
     ArgumentCaptor<Duration> captor = ArgumentCaptor.forClass(Duration.class);
     verify(dnsQueue).addDomainRefreshTask(eq("foo.bar"), captor.capture());
     verify(dnsQueue).addDomainRefreshTask(eq("low.bar"), captor.capture());
     assertThat(captor.getAllValues()).containsExactly(standardMinutes(450), standardMinutes(782));
   }
 
-  @Test
+  @TestOfyAndSql
   void test_runAction_doesntRefreshDeletedDomain() throws Exception {
     persistActiveDomain("foo.bar");
-    persistDeletedDomain("deleted.bar", DateTime.now(UTC).minusYears(1));
+    persistDeletedDomain("deleted.bar", clock.nowUtc().minusYears(1));
     action.tlds = ImmutableSet.of("bar");
-    runMapreduce();
+    runAction();
     verify(dnsQueue).addDomainRefreshTask("foo.bar", Duration.ZERO);
     verify(dnsQueue, never()).addDomainRefreshTask("deleted.bar", Duration.ZERO);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_runAction_ignoresDomainsOnOtherTlds() throws Exception {
     createTld("baz");
     persistActiveDomain("foo.bar");
     persistActiveDomain("low.bar");
     persistActiveDomain("ignore.baz");
     action.tlds = ImmutableSet.of("bar");
-    runMapreduce();
+    runAction();
     verify(dnsQueue).addDomainRefreshTask("foo.bar", Duration.ZERO);
     verify(dnsQueue).addDomainRefreshTask("low.bar", Duration.ZERO);
     verify(dnsQueue, never()).addDomainRefreshTask("ignore.baz", Duration.ZERO);
   }
 
-  @Test
+  @TestOfyAndSql
   void test_smearMinutesMustBeSpecified() {
     action.tlds = ImmutableSet.of("bar");
     action.smearMinutes = 0;

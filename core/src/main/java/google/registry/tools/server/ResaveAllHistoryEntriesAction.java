@@ -42,6 +42,7 @@ import javax.inject.Inject;
     service = Action.Service.TOOLS,
     path = "/_dr/task/resaveAllHistoryEntries",
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+@Deprecated
 public class ResaveAllHistoryEntriesAction implements Runnable {
 
   @Inject MapreduceRunner mrRunner;
