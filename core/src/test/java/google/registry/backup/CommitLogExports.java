@@ -22,7 +22,7 @@ import static com.google.common.collect.Iterables.concat;
 import static com.google.common.collect.Lists.partition;
 import static google.registry.backup.BackupUtils.serializeEntity;
 import static google.registry.model.ofy.CommitLogBucket.getBucketKey;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
@@ -80,7 +80,7 @@ public final class CommitLogExports {
   public static CommitLogCheckpoint computeCheckpoint(Clock clock) {
     CommitLogCheckpointStrategy strategy = new CommitLogCheckpointStrategy();
     strategy.clock = clock;
-    strategy.ofy = ofy();
+    strategy.ofy = auditedOfy();
 
     CommitLogCheckpoint checkpoint = strategy.computeCheckpoint();
     tm().transact(
@@ -90,7 +90,7 @@ public final class CommitLogExports {
                   checkpoint.getCheckpointTime().isAfter(lastWrittenTime),
                   "Newer checkpoint already written at time: %s",
                   lastWrittenTime);
-              ofy()
+              auditedOfy()
                   .saveWithoutBackup()
                   .entities(
                       checkpoint, CommitLogCheckpointRoot.create(checkpoint.getCheckpointTime()));
@@ -135,17 +135,17 @@ public final class CommitLogExports {
       // asynchronously load the entities for the next one.
       List<List<Key<CommitLogManifest>>> keyChunks = partition(sortedKeys, EXPORT_DIFF_BATCH_SIZE);
       // Objectify's map return type is asynchronous. Calling .values() will block until it loads.
-      Map<?, CommitLogManifest> nextChunkToExport = ofy().load().keys(keyChunks.get(0));
+      Map<?, CommitLogManifest> nextChunkToExport = auditedOfy().load().keys(keyChunks.get(0));
       for (int i = 0; i < keyChunks.size(); i++) {
         // Force the async load to finish.
         Collection<CommitLogManifest> chunkValues = nextChunkToExport.values();
         // Since there is no hard bound on how much data this might be, take care not to let the
         // Objectify session cache fill up and potentially run out of memory. This is the only safe
         // point to do this since at this point there is no async load in progress.
-        ofy().clearSessionCache();
+        auditedOfy().clearSessionCache();
         // Kick off the next async load, which can happen in parallel to the current GCS export.
         if (i + 1 < keyChunks.size()) {
-          nextChunkToExport = ofy().load().keys(keyChunks.get(i + 1));
+          nextChunkToExport = auditedOfy().load().keys(keyChunks.get(i + 1));
         }
         exportChunk(commitLogStream, chunkValues);
       }
@@ -205,7 +205,7 @@ public final class CommitLogExports {
       return ImmutableSet.of();
     }
     Key<CommitLogBucket> bucketKey = getBucketKey(bucketNum);
-    return ofy()
+    return auditedOfy()
         .load()
         .type(CommitLogManifest.class)
         .ancestor(bucketKey)
@@ -222,7 +222,7 @@ public final class CommitLogExports {
         new ImmutableList.Builder<>();
     for (CommitLogManifest manifest : chunk) {
       entities.add(ImmutableList.of(manifest));
-      entities.add(ofy().load().type(CommitLogMutation.class).ancestor(manifest));
+      entities.add(auditedOfy().load().type(CommitLogMutation.class).ancestor(manifest));
     }
     for (ImmutableObject entity : concat(entities.build())) {
       serializeEntity(entity, gcsStream);

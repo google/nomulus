@@ -14,7 +14,7 @@
 
 package google.registry.tools.javascrap;
 
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.tools.mapreduce.Mapper;
@@ -111,7 +111,7 @@ public class CreateSyntheticHistoryEntriesAction implements Runnable {
     public final void map(final Key<EppResource> resourceKey) {
       tm().transact(
               () -> {
-                EppResource eppResource = ofy().load().key(resourceKey).now();
+                EppResource eppResource = auditedOfy().load().key(resourceKey).now();
                 tm().put(
                         HistoryEntry.createBuilderForResource(eppResource)
                             .setClientId(registryAdminRegistrarId)
