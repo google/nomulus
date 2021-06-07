@@ -200,6 +200,15 @@
   </cron>
 
   <cron>
+    <url><![CDATA[/_dr/task/replayCommitLogsToSql]]></url>
+    <description>
+      Replays recent commit logs from Datastore to the SQL secondary backend.
+    </description>
+    <schedule>every 3 minutes</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
     <url><![CDATA[/_dr/cron/readDnsQueue?jitterSeconds=45]]></url>
     <description>
       Lease all tasks from the dns-pull queue, group by TLD, and invoke PublishDnsUpdates for each

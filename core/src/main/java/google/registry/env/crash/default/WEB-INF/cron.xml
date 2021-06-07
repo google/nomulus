@@ -200,4 +200,12 @@
     <target>backend</target>
   </cron>
 
+  <cron>
+    <url><![CDATA[/_dr/task/replayCommitLogsToSql]]></url>
+    <description>
+      Replays recent commit logs from Datastore to the SQL secondary backend.
+    </description>
+    <schedule>every 3 minutes</schedule>
+    <target>backend</target>
+  </cron>
 </cronentries>
