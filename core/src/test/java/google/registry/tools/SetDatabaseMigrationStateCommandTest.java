@@ -28,11 +28,24 @@ import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationStat
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.BeforeEach;
 
 /** Tests for {@link SetDatabaseMigrationStateCommand}. */
 @DualDatabaseTest
 public class SetDatabaseMigrationStateCommandTest
     extends CommandTestCase<SetDatabaseMigrationStateCommand> {
+
+  @BeforeEach
+  void beforeEach() {
+    // clear out any static state that may have been persisted
+    ofyTm()
+        .transact(
+            () ->
+                ofyTm()
+                    .loadSingleton(DatabaseMigrationStateSchedule.class)
+                    .ifPresent(ofyTm()::delete));
+    DatabaseMigrationStateSchedule.CACHE.invalidateAll();
+  }
 
   @TestOfyAndSql
   void testSuccess_setsBasicSchedule() throws Exception {
