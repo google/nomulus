@@ -38,6 +38,7 @@ import google.registry.util.Clock;
 import google.registry.util.NonFinalForTesting;
 import java.util.Random;
 import javax.inject.Inject;
+import org.apache.http.HttpStatus;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -120,8 +121,13 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                                   Duration.standardMinutes(random.nextInt(smearMinutes)));
                               logger.atInfo().log("active domain %s refreshed.", domainName);
                             } catch (Throwable t) {
-                              logger.atSevere().withCause(t).log(
-                                  "Error while refreshing DNS for domain %s", domainName);
+                              String message =
+                                  String.format(
+                                      "Error while refreshing DNS for domain %s", domainName);
+                              logger.atSevere().withCause(t).log(message);
+                              response.setPayload(message);
+                              response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                              throw t;
                             }
                           }));
     }

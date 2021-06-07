@@ -18,12 +18,16 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
 import static org.joda.time.Duration.standardMinutes;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.DnsQueue;
@@ -33,9 +37,11 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestSqlOnly;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import google.registry.tools.server.RefreshDnsForAllDomainsAction.RefreshDnsForAllDomainsActionMapper;
 import java.util.Random;
+import org.apache.http.HttpStatus;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
@@ -52,6 +58,7 @@ public class RefreshDnsForAllDomainsActionTest
   private final FakeClock clock = new FakeClock(DateTime.parse("2020-02-02T02:02:02Z"));
   private final DnsQueue dnsQueue = mock(DnsQueue.class);
   private DnsQueue origDnsQueue;
+  private FakeResponse response = new FakeResponse();
 
   @Order(Order.DEFAULT - 1)
   @RegisterExtension
@@ -70,6 +77,7 @@ public class RefreshDnsForAllDomainsActionTest
     action.response = new FakeResponse();
     action.clock = clock;
     action.dnsQueue = dnsQueue;
+    action.response = response;
 
     createTld("bar");
   }
@@ -83,6 +91,20 @@ public class RefreshDnsForAllDomainsActionTest
   private void runAction() throws Exception {
     action.run();
     executeTasksUntilEmpty("mapreduce");
+  }
+
+  @TestSqlOnly
+  void test_runAction_errorEnqueuingToDnsQueue() throws Exception {
+    persistActiveDomain("foo.bar");
+    persistActiveDomain("low.bar");
+    action.tlds = ImmutableSet.of("bar");
+    DnsQueue faultyQueue = mock(DnsQueue.class);
+    when(faultyQueue.addDomainRefreshTask(anyString(), any(Duration.class)))
+        .thenThrow(new RuntimeException("Error enqueuing task."));
+    action.dnsQueue = faultyQueue;
+    assertThrows(RuntimeException.class, () -> runAction());
+    assertNoDnsTasksEnqueued();
+    assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_INTERNAL_SERVER_ERROR);
   }
 
   @TestOfyAndSql
