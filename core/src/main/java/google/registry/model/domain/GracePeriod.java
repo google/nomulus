@@ -115,6 +115,17 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
         type, domainRepoId, expirationTime, clientId, billingEventOneTime, null, gracePeriodId);
   }
 
+  public static GracePeriod createFromHistory(GracePeriodHistory history) {
+    return createInternal(
+        history.type,
+        history.domainRepoId,
+        history.expirationTime,
+        history.clientId,
+        history.billingEventOneTime == null ? null : history.billingEventOneTime.createVKey(),
+        history.billingEventRecurring == null ? null : history.billingEventRecurring.createVKey(),
+        history.gracePeriodId);
+  }
+
   /** Creates a GracePeriod for a Recurring billing event. */
   public static GracePeriod createForRecurring(
       GracePeriodStatus type,
