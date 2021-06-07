@@ -101,11 +101,12 @@ public class ExportDomainListsAction implements Runnable {
               ImmutableList.of(createEntityInput(DomainBase.class)))
           .sendLinkToMapreduceConsole(response);
     } else {
-      ImmutableListMultimap.Builder<String, String> tldToDomainsMapBuilder =
+      ImmutableListMultimap.Builder<String, String> tldToDomainMapBuilder =
           new ImmutableListMultimap.Builder<>();
       tm().transact(
               () ->
                   jpaTm()
+                      .query()
                       .getEntityManager()
                       .createNativeQuery(
                           "SELECT tld, domain_name FROM \"Domain\" "
@@ -121,14 +122,14 @@ public class ExportDomainListsAction implements Runnable {
                             String tld = (String) ((Object[]) row)[0];
                             @SuppressWarnings("unchecked")
                             String domain = (String) ((Object[]) row)[1];
-                            tldToDomainsMapBuilder.put(tld, domain);
+                            tldToDomainMapBuilder.put(tld, domain);
                           }));
-      ImmutableListMultimap<String, String> tldToDomainsMap =
-          tldToDomainsMapBuilder.orderValuesBy(Ordering.natural()).build();
-      tldToDomainsMap.keySet().stream()
+      ImmutableListMultimap<String, String> tldToDomainMap =
+          tldToDomainMapBuilder.orderValuesBy(Ordering.natural()).build();
+      tldToDomainMap.keySet().stream()
           .forEach(
               tld -> {
-                Collection<String> domains = tldToDomainsMap.get(tld);
+                Collection<String> domains = tldToDomainMap.get(tld);
                 String domainsList = Joiner.on("\n").join(domains);
                 logger.atInfo().log(
                     "Exporting %d domains for TLD %s to GCS and Drive.", domains.size(), tld);
