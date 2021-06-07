@@ -60,7 +60,6 @@ import google.registry.testing.InjectExtension;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
-import google.registry.testing.TestSqlOnly;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import java.util.ArrayList;
 import java.util.List;
@@ -277,7 +276,7 @@ public class ExpandRecurringBillingEventsActionTest
     assertBillingEventsForResource(domain, persisted, recurring);
   }
 
-  @TestSqlOnly
+  @TestOfyAndSql
   void testSuccess_expandSingleEvent_notIdempotentForDifferentBillingTime() throws Exception {
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);
@@ -644,7 +643,7 @@ public class ExpandRecurringBillingEventsActionTest
     assertCursorAt(currentTestTime);
   }
 
-  @TestSqlOnly
+  @TestOfyAndSql
   void testSuccess_expandMultipleEvents() throws Exception {
     persistResource(recurring);
     BillingEvent.Recurring recurring2 =
