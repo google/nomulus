@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Suppliers.memoize;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Iterables.toArray;
 import static com.google.common.collect.MoreCollectors.onlyElement;
 import static com.google.common.truth.Truth.assertThat;
@@ -110,6 +111,7 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.tmch.LordnTaskUtils;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -182,11 +184,10 @@ public class DatabaseHelper {
         domainName, generateNewDomainRoid(getTldFromDomainName(domainName)), contact);
   }
 
-  public static DomainBase newDomainBase(String domainName, HostResource host) {
-    return newDomainBase(domainName)
-        .asBuilder()
-        .setNameservers(ImmutableSet.of(host.createVKey()))
-        .build();
+  public static DomainBase newDomainBase(String domainName, HostResource... hosts) {
+    ImmutableSet<VKey<HostResource>> hostKeys =
+        Arrays.stream(hosts).map(HostResource::createVKey).collect(toImmutableSet());
+    return newDomainBase(domainName).asBuilder().setNameservers(hostKeys).build();
   }
 
   public static DomainBase newDomainBase(
