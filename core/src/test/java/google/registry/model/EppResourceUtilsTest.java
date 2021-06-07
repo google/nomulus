@@ -41,13 +41,17 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 @DualDatabaseTest
 class EppResourceUtilsTest {
 
+  private final FakeClock clock = new FakeClock(DateTime.now(UTC));
+
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .withClock(clock)
+          .withTaskQueue()
+          .build();
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
-  private final FakeClock clock = new FakeClock(DateTime.now(UTC));
 
   @BeforeEach
   void beforeEach() {

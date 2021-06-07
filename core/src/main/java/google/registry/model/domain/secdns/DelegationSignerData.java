@@ -114,6 +114,15 @@ public class DelegationSignerData extends DomainDsDataBase {
     return create(keyTag, algorithm, digestType, DatatypeConverter.parseHexBinary(digestAsHex));
   }
 
+  public static DelegationSignerData create(DomainDsDataHistory history) {
+    return create(
+        history.keyTag,
+        history.algorithm,
+        history.digestType,
+        history.digest,
+        history.domainRepoId);
+  }
+
   /** Class to represent the composite primary key of {@link DelegationSignerData} entity. */
   static class DomainDsDataId extends ImmutableObject implements Serializable {
 

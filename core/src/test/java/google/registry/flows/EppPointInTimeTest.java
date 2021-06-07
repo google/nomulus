@@ -16,8 +16,11 @@ package google.registry.flows;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.loadAllOf;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -25,31 +28,38 @@ import static org.joda.time.DateTimeZone.UTC;
 import static org.joda.time.Duration.standardDays;
 
 import com.google.common.collect.ImmutableMap;
-import com.googlecode.objectify.Key;
+import com.google.common.collect.Iterables;
 import google.registry.flows.EppTestComponent.FakesAndMocksModule;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.monitoring.whitebox.EppMetric;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.EppLoader;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeHttpSession;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Test that domain flows create the commit logs needed to reload at points in the past. */
-class EppCommitLogsTest {
+/** Test that we can reload EPP resources as they were in the past. */
+@DualDatabaseTest
+class EppPointInTimeTest {
+
+  private final FakeClock clock = new FakeClock(DateTime.now(UTC));
 
   @RegisterExtension
   final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .withClock(clock)
+          .withTaskQueue()
+          .build();
 
   @RegisterExtension final InjectExtension inject = new InjectExtension();
 
-  private final FakeClock clock = new FakeClock(DateTime.now(UTC));
   private EppLoader eppLoader;
 
   @BeforeEach
@@ -81,7 +91,7 @@ class EppCommitLogsTest {
         .run(EppMetric.builder());
   }
 
-  @Test
+  @TestOfyAndSql
   void testLoadAtPointInTime() throws Exception {
     clock.setTo(DateTime.parse("1984-12-18T12:30Z")); // not midnight
 
@@ -95,64 +105,75 @@ class EppCommitLogsTest {
     clock.setTo(timeAtCreate);
     eppLoader = new EppLoader(this, "domain_create.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlow();
-    auditedOfy().clearSessionCache();
-    Key<DomainBase> key = Key.create(auditedOfy().load().type(DomainBase.class).first().now());
-    DomainBase domainAfterCreate = auditedOfy().load().key(key).now();
+    tm().clearSessionCache();
+    DomainBase domainAfterCreate = Iterables.getOnlyElement(loadAllOf(DomainBase.class));
     assertThat(domainAfterCreate.getDomainName()).isEqualTo("example.tld");
 
     clock.advanceBy(standardDays(2));
     DateTime timeAtFirstUpdate = clock.nowUtc();
     eppLoader = new EppLoader(this, "domain_update_dsdata_add.xml");
     runFlow();
-    auditedOfy().clearSessionCache();
+    tm().clearSessionCache();
 
-    DomainBase domainAfterFirstUpdate = auditedOfy().load().key(key).now();
+    DomainBase domainAfterFirstUpdate = loadByEntity(domainAfterCreate);
     assertThat(domainAfterCreate).isNotEqualTo(domainAfterFirstUpdate);
 
     clock.advanceOneMilli(); // same day as first update
     DateTime timeAtSecondUpdate = clock.nowUtc();
     eppLoader = new EppLoader(this, "domain_update_dsdata_rem.xml");
     runFlow();
-    auditedOfy().clearSessionCache();
-    DomainBase domainAfterSecondUpdate = auditedOfy().load().key(key).now();
+    tm().clearSessionCache();
+    DomainBase domainAfterSecondUpdate = loadByEntity(domainAfterCreate);
 
     clock.advanceBy(standardDays(2));
     DateTime timeAtDelete = clock.nowUtc(); // before 'add' grace period ends
     eppLoader = new EppLoader(this, "domain_delete.xml", ImmutableMap.of("DOMAIN", "example.tld"));
     runFlow();
-    auditedOfy().clearSessionCache();
+    tm().clearSessionCache();
 
     assertThat(domainAfterFirstUpdate).isNotEqualTo(domainAfterSecondUpdate);
 
     // Point-in-time can only rewind an object from the current version, not roll forward.
-    DomainBase latest = auditedOfy().load().key(key).now();
+    DomainBase latest = loadByEntity(domainAfterCreate);
 
     // Creation time has millisecond granularity due to isActive() check.
-    auditedOfy().clearSessionCache();
+    tm().clearSessionCache();
     assertThat(loadAtPointInTime(latest, timeAtCreate.minusMillis(1)).now()).isNull();
     assertThat(loadAtPointInTime(latest, timeAtCreate).now()).isNotNull();
     assertThat(loadAtPointInTime(latest, timeAtCreate.plusMillis(1)).now()).isNotNull();
 
-    auditedOfy().clearSessionCache();
-    assertThat(loadAtPointInTime(latest, timeAtCreate.plusDays(1)).now())
-        .isEqualTo(domainAfterCreate);
+    tm().clearSessionCache();
+    assertAboutImmutableObjects()
+        .that(loadAtPointInTime(latest, timeAtCreate.plusDays(1)).now())
+        .hasFieldsEqualTo(domainAfterCreate);
 
-    // Both updates happened on the same day. Since the revisions field has day granularity, the
-    // key to the first update should have been overwritten by the second, and its timestamp rolled
-    // forward. So we have to fall back to the last revision before midnight.
-    auditedOfy().clearSessionCache();
-    assertThat(loadAtPointInTime(latest, timeAtFirstUpdate).now()).isEqualTo(domainAfterCreate);
+    tm().clearSessionCache();
+    if (tm().isOfy()) {
+      // Both updates happened on the same day. Since the revisions field has day granularity in
+      // Datastore, the key to the first update should have been overwritten by the second, and its
+      // timestamp rolled forward. So we have to fall back to the last revision before midnight.
+      assertThat(loadAtPointInTime(latest, timeAtFirstUpdate).now()).isEqualTo(domainAfterCreate);
+    } else {
+      // In SQL, however, we are not limited by the day granularity, so when we request the object
+      // at timeAtFirstUpdate we should receive the object at that first update, even though the
+      // second update occurred one millisecond later.
+      assertAboutImmutableObjects()
+          .that(loadAtPointInTime(latest, timeAtFirstUpdate).now())
+          .hasFieldsEqualTo(domainAfterFirstUpdate);
+    }
 
-    auditedOfy().clearSessionCache();
-    assertThat(loadAtPointInTime(latest, timeAtSecondUpdate).now())
-        .isEqualTo(domainAfterSecondUpdate);
+    tm().clearSessionCache();
+    assertAboutImmutableObjects()
+        .that(loadAtPointInTime(latest, timeAtSecondUpdate).now())
+        .hasFieldsEqualTo(domainAfterSecondUpdate);
 
-    auditedOfy().clearSessionCache();
-    assertThat(loadAtPointInTime(latest, timeAtSecondUpdate.plusDays(1)).now())
-        .isEqualTo(domainAfterSecondUpdate);
+    tm().clearSessionCache();
+    assertAboutImmutableObjects()
+        .that(loadAtPointInTime(latest, timeAtSecondUpdate.plusDays(1)).now())
+        .hasFieldsEqualTo(domainAfterSecondUpdate);
 
     // Deletion time has millisecond granularity due to isActive() check.
-    auditedOfy().clearSessionCache();
+    tm().clearSessionCache();
     assertThat(loadAtPointInTime(latest, timeAtDelete.minusMillis(1)).now()).isNotNull();
     assertThat(loadAtPointInTime(latest, timeAtDelete).now()).isNull();
     assertThat(loadAtPointInTime(latest, timeAtDelete.plusMillis(1)).now()).isNull();

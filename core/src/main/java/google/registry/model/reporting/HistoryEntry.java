@@ -290,6 +290,17 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
     return nullToEmptyImmutableCopy(domainTransactionRecords);
   }
 
+  /**
+   * Throws an error when attempting to retrieve the EppResource at this point in time.
+   *
+   * <p>Subclasses must override this to return the resource; it is non-abstract for legacy reasons
+   * and objects created prior to the Registry 3.0 migration.
+   */
+  public Optional<? extends EppResource> getResourceAtPointInTime() {
+    throw new UnsupportedOperationException(
+        "Raw HistoryEntry objects do not store the resource at that point in time.");
+  }
+
   /** This method exists solely to satisfy Hibernate. Use the {@link Builder} instead. */
   @SuppressWarnings("UnusedMethod")
   private void setPeriod(Period period) {
