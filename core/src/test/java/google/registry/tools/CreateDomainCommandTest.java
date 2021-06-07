@@ -163,6 +163,20 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
   }
 
   @Test
+  void testSuccess_reasonAndRegistrarRequest() throws Exception {
+    createTld("tld");
+    runCommandForced(
+        "--client=NewRegistrar",
+        "--registrant=crr-admin",
+        "--admins=crr-admin",
+        "--techs=crr-tech",
+        "--reason=\"Creating test domain\"",
+        "--registrar_request=false",
+        "example.tld");
+    eppVerifier.verifySent("domain_create_metadata.xml");
+  }
+
+  @Test
   void testFailure_duplicateDomains() {
     IllegalArgumentException thrown =
         assertThrows(
@@ -175,7 +189,7 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
                     "--techs=crr-tech",
                     "example.tld",
                     "example.tld"));
-    assertThat(thrown).hasMessageThat().contains("Duplicate arguments found: \'example.tld\'");
+    assertThat(thrown).hasMessageThat().contains("Duplicate arguments found: 'example.tld'");
   }
 
   @Test

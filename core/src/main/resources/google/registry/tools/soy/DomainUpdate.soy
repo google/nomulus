@@ -36,6 +36,8 @@
   {@param removeDsRecords: list<[keyTag:int, alg:int, digestType:int, digest:string]>}
   {@param removeAllDsRecords: bool}
   {@param? autorenews: string}
+  {@param? reason: string}
+  {@param? requestedByRegistrar: string}
 
   <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
@@ -97,7 +99,7 @@
           {/if}
         </domain:update>
       </update>
-      {if $secdns or $autorenews}
+      {if $secdns or $autorenews or $reason or $requestedByRegistrar}
         <extension>
           {if $secdns}
             <secDNS:update xmlns:secDNS="urn:ietf:params:xml:ns:secDNS-1.1">
@@ -136,6 +138,16 @@
             <superuser:domainUpdate xmlns:superuser="urn:google:params:xml:ns:superuser-1.0">
               <superuser:autorenews>{$autorenews}</superuser:autorenews>
             </superuser:domainUpdate>
+          {/if}
+          {if $reason or $requestedByRegistrar}
+            <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
+            {if $reason}
+              <metadata:reason>{$reason}</metadata:reason>
+            {/if}
+            {if $requestedByRegistrar}
+              <metadata:requestedByRegistrar>{$requestedByRegistrar}</metadata:requestedByRegistrar>
+            {/if}
+            </metadata:metadata>
           {/if}
         </extension>
       {/if}

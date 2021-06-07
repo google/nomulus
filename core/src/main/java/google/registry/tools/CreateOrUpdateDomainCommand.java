@@ -78,6 +78,17 @@ abstract class CreateOrUpdateDomainCommand extends MutatingEppToolCommand {
       converter = DsRecord.Converter.class)
   List<DsRecord> dsRecords = new ArrayList<>();
 
+  @Parameter(
+      names = {"--reason"},
+      description = "Reason for the change.")
+  String reason;
+
+  @Parameter(
+      names = {"--registrar_request"},
+      description = "Whether the change was requested by a registrar.",
+      arity = 1)
+  Boolean requestedByRegistrar;
+
   Set<String> domains;
 
   @Override
