@@ -57,6 +57,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Collection;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -104,26 +105,28 @@ public class ExportDomainListsAction implements Runnable {
       ImmutableListMultimap.Builder<String, String> tldToDomainMapBuilder =
           new ImmutableListMultimap.Builder<>();
       tm().transact(
-              () ->
-                  jpaTm()
-                      .query()
-                      .getEntityManager()
-                      .createNativeQuery(
-                          "SELECT tld, domain_name FROM \"Domain\" "
-                              + "WHERE tld IN (:tlds) "
-                              + "AND creation_time <= :now "
-                              + "AND deletion_time > :now")
-                      .setParameter("tlds", realTlds)
-                      .setParameter("now", clock.nowUtc().toDate())
-                      .getResultStream()
-                      .forEach(
-                          row -> {
-                            @SuppressWarnings("unchecked")
-                            String tld = (String) ((Object[]) row)[0];
-                            @SuppressWarnings("unchecked")
-                            String domain = (String) ((Object[]) row)[1];
-                            tldToDomainMapBuilder.put(tld, domain);
-                          }));
+              () -> {
+                @SuppressWarnings("unchecked")
+                Stream<Object[]> stream =
+                    (Stream<Object[]>)
+                        jpaTm()
+                            .query(
+                                "SELECT tld, fullyQualifiedDomainName FROM Domain "
+                                    + "WHERE tld IN (:tlds) "
+                                    + "AND deletionTime > :now "
+                                    + "AND creationTime <= :now")
+                            .setParameter("tlds", realTlds)
+                            .setParameter("now", clock.nowUtc())
+                            .getResultStream();
+                stream.forEach(
+                    row -> {
+                      @SuppressWarnings("unchecked")
+                      String tld = (String) ((Object[]) row)[0];
+                      @SuppressWarnings("unchecked")
+                      String domain = (String) ((Object[]) row)[1];
+                      tldToDomainMapBuilder.put(tld, domain);
+                    });
+              });
       ImmutableListMultimap<String, String> tldToDomainMap =
           tldToDomainMapBuilder.orderValuesBy(Ordering.natural()).build();
       tldToDomainMap.keySet().stream()
