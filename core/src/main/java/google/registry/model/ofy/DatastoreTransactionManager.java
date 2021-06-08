@@ -480,7 +480,10 @@ public class DatastoreTransactionManager implements TransactionManager {
 
     @Override
     public long count() {
-      return buildQuery().count();
+      // Objectify provides a count() function, but unfortunately that doesn't work if there are
+      // more than 1000 (the default response page size?) entries in the database.  We use
+      // chunkAll() here as it provides a nice performance boost.
+      return Iterables.size(buildQuery().chunkAll().keys());
     }
 
     @Override
