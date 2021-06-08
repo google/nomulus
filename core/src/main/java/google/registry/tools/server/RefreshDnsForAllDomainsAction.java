@@ -101,19 +101,17 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
       tm().transact(
               () ->
                   jpaTm()
-                      .getEntityManager()
-                      .createNativeQuery(
-                          "SELECT domain_name FROM \"Domain\" "
+                      .query(
+                          "SELECT fullyQualifiedDomainName FROM Domain "
                               + "WHERE tld IN (:tlds) "
-                              + "AND creation_time <= :now "
-                              + "AND deletion_time > :now")
+                              + "AND deletionTime > :now "
+                              + "AND creationTime <= :now",
+                          String.class)
                       .setParameter("tlds", tlds)
-                      .setParameter("now", clock.nowUtc().toDate())
+                      .setParameter("now", clock.nowUtc())
                       .getResultStream()
                       .forEach(
-                          row -> {
-                            @SuppressWarnings("unchecked")
-                            String domainName = (String) row;
+                          domainName -> {
                             try {
                               // Smear the task execution time over the next N minutes.
                               dnsQueue.addDomainRefreshTask(
