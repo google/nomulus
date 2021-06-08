@@ -66,6 +66,8 @@ import org.joda.time.Duration;
     service = Action.Service.BACKEND,
     path = "/_dr/task/deleteOldCommitLogs",
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+// No longer needed in SQL. Subject to future removal.
+@Deprecated
 public final class DeleteOldCommitLogsAction implements Runnable {
 
   private static final int NUM_MAP_SHARDS = 20;

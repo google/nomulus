@@ -54,6 +54,7 @@ import javax.inject.Inject;
     service = Action.Service.BACKEND,
     path = "/_dr/task/resaveAllEppResources",
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+// No longer needed in SQL. Subject to future removal.
 @Deprecated
 public class ResaveAllEppResourcesAction implements Runnable {
 

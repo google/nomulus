@@ -49,6 +49,7 @@ import javax.inject.Inject;
     path = "/_dr/task/killAllCommitLogs",
     method = POST,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
+// No longer needed in SQL. Subject to future removal.
 @Deprecated
 public class KillAllCommitLogsAction implements Runnable {
 
