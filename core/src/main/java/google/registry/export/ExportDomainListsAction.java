@@ -106,6 +106,19 @@ public class ExportDomainListsAction implements Runnable {
           new ImmutableListMultimap.Builder<>();
       tm().transact(
               () -> {
+                // Note that the order of deletionTime and creationTime in the query is significant.
+                // When Hibernate substitutes "now" it will first validate that the **first** field
+                // that is to be compared with it (deletionTime) is assignable from the substituted
+                // Java object (click.nowUtc()). Since creationTime is a CreateAutoTimestamp, if it
+                // comes first, we will need to substitute "now" with
+                // CreateAutoTimestamp.creat(clock.nowUtc()). This might look a bit strange as the
+                // Java object type is clearly incompatible between the two fields deletionTime
+                // (DateTime) and creationTime, yet they are compared with the same "now". It is
+                // actually OK because in the end Hibernate converts everything to SQL types (and
+                // Java field names to SQL column names) to run the query. Both CreateAutoTimestamp
+                // and DateTime are persisted as timestamp_z in SQL. It is only the validation that
+                // compares the Java types, and only with the first field that compares with the
+                // substituted value.
                 @SuppressWarnings("unchecked")
                 Stream<Object[]> stream =
                     (Stream<Object[]>)
