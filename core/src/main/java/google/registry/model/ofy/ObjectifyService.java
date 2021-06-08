@@ -51,7 +51,7 @@ import google.registry.model.translators.VKeyTranslatorFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * An instance of Ofy, obtained via {@code #ofy()}, should be used to access all persistable
+ * An instance of Ofy, obtained via {@code #auditedOfy()}, should be used to access all persistable
  * objects. The class contains a static initializer to call factory().register(...) on all
  * persistable objects in this package.
  */

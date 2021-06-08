@@ -16,7 +16,7 @@ package google.registry.model.index;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.config.RegistryConfig.getEppResourceIndexBucketCount;
-import static google.registry.model.ofy.ObjectifyService.ofy;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -44,7 +44,7 @@ class EppResourceIndexTest extends EntityTestCase {
   @Test
   void testPersistence() {
     EppResourceIndex loadedIndex = Iterables.getOnlyElement(getEppResourceIndexObjects());
-    assertThat(ofy().load().key(loadedIndex.reference).now()).isEqualTo(contact);
+    assertThat(auditedOfy().load().key(loadedIndex.reference).now()).isEqualTo(contact);
   }
 
   @Test
@@ -56,7 +56,7 @@ class EppResourceIndexTest extends EntityTestCase {
   void testIdempotentOnUpdate() {
     contact = persistResource(contact.asBuilder().setEmailAddress("abc@def.fake").build());
     EppResourceIndex loadedIndex = Iterables.getOnlyElement(getEppResourceIndexObjects());
-    assertThat(ofy().load().key(loadedIndex.reference).now()).isEqualTo(contact);
+    assertThat(auditedOfy().load().key(loadedIndex.reference).now()).isEqualTo(contact);
   }
 
   /**
@@ -65,9 +65,11 @@ class EppResourceIndexTest extends EntityTestCase {
   private static ImmutableList<EppResourceIndex> getEppResourceIndexObjects() {
     ImmutableList.Builder<EppResourceIndex> indexEntities = new ImmutableList.Builder<>();
     for (int i = 0; i < getEppResourceIndexBucketCount(); i++) {
-      indexEntities.addAll(ofy().load()
-          .type(EppResourceIndex.class)
-          .ancestor(Key.create(EppResourceIndexBucket.class, i + 1)));
+      indexEntities.addAll(
+          auditedOfy()
+              .load()
+              .type(EppResourceIndex.class)
+              .ancestor(Key.create(EppResourceIndexBucket.class, i + 1)));
     }
     return indexEntities.build();
   }

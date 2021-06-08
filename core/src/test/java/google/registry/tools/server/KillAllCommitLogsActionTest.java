@@ -21,7 +21,6 @@ import static com.google.common.collect.Iterables.filter;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
-import static google.registry.model.ofy.ObjectifyService.ofy;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newContactResource;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -78,7 +77,9 @@ class KillAllCommitLogsActionTest extends MapreduceTestCase<KillAllCommitLogsAct
             START_OF_TIME.plusDays(1),
             ImmutableMap.of(1, bucketTime, 2, bucketTime, 3, bucketTime)));
     for (Class<?> clazz : AFFECTED_TYPES) {
-      assertWithMessage("entities of type " + clazz).that(ofy().load().type(clazz)).isNotEmpty();
+      assertWithMessage("entities of type " + clazz)
+          .that(auditedOfy().load().type(clazz))
+          .isNotEmpty();
     }
     ImmutableList<?> otherStuff =
         Streams.stream(auditedOfy().load())
