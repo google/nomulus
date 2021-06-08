@@ -481,8 +481,11 @@ public class DatastoreTransactionManager implements TransactionManager {
     @Override
     public long count() {
       // Objectify provides a count() function, but unfortunately that doesn't work if there are
-      // more than 1000 (the default response page size?) entries in the database.  We use
+      // more than 1000 (the default response page size?) entries in the result set.  We also use
       // chunkAll() here as it provides a nice performance boost.
+      //
+      // There is some information on this issue on SO, see:
+      // https://stackoverflow.com/questions/751124/how-does-one-get-a-count-of-rows-in-a-datastore-model-in-google-app-engine
       return Iterables.size(buildQuery().chunkAll().keys());
     }
 
