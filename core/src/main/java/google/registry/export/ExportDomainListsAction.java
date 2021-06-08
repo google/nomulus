@@ -33,9 +33,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Ordering;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
@@ -55,9 +53,8 @@ import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.Collection;
+import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -102,58 +99,45 @@ public class ExportDomainListsAction implements Runnable {
               ImmutableList.of(createEntityInput(DomainBase.class)))
           .sendLinkToMapreduceConsole(response);
     } else {
-      ImmutableListMultimap.Builder<String, String> tldToDomainMapBuilder =
-          new ImmutableListMultimap.Builder<>();
-      tm().transact(
-              () -> {
-                // Note that the order of deletionTime and creationTime in the query is significant.
-                // When Hibernate substitutes "now" it will first validate that the **first** field
-                // that is to be compared with it (deletionTime) is assignable from the substituted
-                // Java object (click.nowUtc()). Since creationTime is a CreateAutoTimestamp, if it
-                // comes first, we will need to substitute "now" with
-                // CreateAutoTimestamp.creat(clock.nowUtc()). This might look a bit strange as the
-                // Java object type is clearly incompatible between the two fields deletionTime
-                // (DateTime) and creationTime, yet they are compared with the same "now". It is
-                // actually OK because in the end Hibernate converts everything to SQL types (and
-                // Java field names to SQL column names) to run the query. Both CreateAutoTimestamp
-                // and DateTime are persisted as timestamp_z in SQL. It is only the validation that
-                // compares the Java types, and only with the first field that compares with the
-                // substituted value.
-                @SuppressWarnings("unchecked")
-                Stream<Object[]> stream =
-                    (Stream<Object[]>)
-                        jpaTm()
-                            .query(
-                                "SELECT tld, fullyQualifiedDomainName FROM Domain "
-                                    + "WHERE tld IN (:tlds) "
-                                    + "AND deletionTime > :now "
-                                    + "AND creationTime <= :now")
-                            .setParameter("tlds", realTlds)
-                            .setParameter("now", clock.nowUtc())
-                            .getResultStream();
-                stream.forEach(
-                    row -> {
-                      @SuppressWarnings("unchecked")
-                      String tld = (String) ((Object[]) row)[0];
-                      @SuppressWarnings("unchecked")
-                      String domain = (String) ((Object[]) row)[1];
-                      tldToDomainMapBuilder.put(tld, domain);
-                    });
-              });
-      ImmutableListMultimap<String, String> tldToDomainMap =
-          tldToDomainMapBuilder.orderValuesBy(Ordering.natural()).build();
-      tldToDomainMap.keySet().stream()
-          .forEach(
-              tld -> {
-                Collection<String> domains = tldToDomainMap.get(tld);
-                String domainsList = Joiner.on("\n").join(domains);
-                logger.atInfo().log(
-                    "Exporting %d domains for TLD %s to GCS and Drive.", domains.size(), tld);
-                exportToGcs(tld, domainsList, gcsBucket, gcsBufferSize);
-                logger.atInfo().log("domain lists for TLD %s written out to GCS", tld);
-                exportToDrive(tld, domainsList, driveConnection);
-                logger.atInfo().log("domain lists for TLD %s written out to Drive", tld);
-              });
+      realTlds.forEach(
+          tld -> {
+            List<String> domains =
+                tm().transact(
+                        () ->
+                            // Note that the order of deletionTime and creationTime in the query is
+                            // significant. When Hibernate substitutes "now" it will first validate
+                            // that the **first** field that is to be compared with it
+                            // (deletionTime) is assignable from the substituted Java object
+                            // (click.nowUtc()). Since creationTime is a CreateAutoTimestamp, if it
+                            // comes first, we will need to substitute "now" with
+                            // CreateAutoTimestamp.creat(clock.nowUtc()). This might look a bit
+                            // strange as the Java object type is clearly incompatible between the
+                            // two fields deletionTime (DateTime) and creationTime, yet they are
+                            // compared with the same "now". It is actually OK because in the end
+                            // Hibernate converts everything to SQL types (and Java field names to
+                            // SQL column names) to run the query. Both CreateAutoTimestamp and
+                            // DateTime are persisted as timestamp_z in SQL. It is only the
+                            // validation that compares the Java types, and only with the first
+                            // field that compares with the substituted value.
+                            jpaTm()
+                                .query(
+                                    "SELECT fullyQualifiedDomainName FROM Domain "
+                                        + "WHERE tld = :tld "
+                                        + "AND deletionTime > :now "
+                                        + "AND creationTime <= :now "
+                                        + "ORDER by fullyQualifiedDomainName ASC",
+                                    String.class)
+                                .setParameter("tld", tld)
+                                .setParameter("now", clock.nowUtc())
+                                .getResultList());
+            String domainsList = Joiner.on("\n").join(domains);
+            logger.atInfo().log(
+                "Exporting %d domains for TLD %s to GCS and Drive.", domains.size(), tld);
+            exportToGcs(tld, domainsList, gcsBucket, gcsBufferSize);
+            logger.atInfo().log("domain lists for TLD %s written out to GCS", tld);
+            exportToDrive(tld, domainsList, driveConnection);
+            logger.atInfo().log("domain lists for TLD %s written out to Drive", tld);
+          });
     }
   }
 
