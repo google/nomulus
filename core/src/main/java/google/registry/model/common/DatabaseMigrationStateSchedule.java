@@ -111,7 +111,8 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
    * Cache of the current migration schedule. The key is meaningless; this is essentially a memoized
    * Supplier that can be reset for testing purposes and after writes.
    */
-  private static final LoadingCache<
+  @VisibleForTesting
+  public static final LoadingCache<
           Class<DatabaseMigrationStateSchedule>,
           TimedTransitionProperty<MigrationState, MigrationStateTransition>>
       // Each instance should cache the migration schedule for five minutes before reloading
