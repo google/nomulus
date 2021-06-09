@@ -237,6 +237,12 @@
     <url-pattern>/_dr/task/killCommitLogs</url-pattern>
   </servlet-mapping>
 
+  <!-- Replays Datastore commit logs to SQL. -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/replayCommitLogsToSql</url-pattern>
+  </servlet-mapping>
+
   <!-- MapReduce servlet. -->
   <servlet>
     <servlet-name>mapreduce</servlet-name>

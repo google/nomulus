@@ -56,7 +56,6 @@ import org.joda.time.Duration;
 @Action(
     service = Action.Service.BACKEND,
     path = ReplayCommitLogsToSqlAction.PATH,
-    method = Action.Method.POST,
     automaticallyPrintOk = true,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class ReplayCommitLogsToSqlAction implements Runnable {
