@@ -112,7 +112,7 @@ public class ExportDomainListsAction implements Runnable {
                             // with it (deletionTime) is assignable from the substituted Java object
                             // (click.nowUtc()). Since creationTime is a CreateAutoTimestamp, if it
                             // comes first, we will need to substitute "now" with
-                            // CreateAutoTimestamp.creat(clock.nowUtc()). This might look a bit
+                            // CreateAutoTimestamp.create(clock.nowUtc()). This might look a bit
                             // strange as the Java object type is clearly incompatible between the
                             // two fields deletionTime (DateTime) and creationTime, yet they are
                             // compared with the same "now". It is actually OK because in the end
