@@ -102,7 +102,7 @@ public class RefreshDnsForAllDomainsActionTest
     when(faultyQueue.addDomainRefreshTask(anyString(), any(Duration.class)))
         .thenThrow(new RuntimeException("Error enqueuing task."));
     action.dnsQueue = faultyQueue;
-    assertThrows(RuntimeException.class, () -> runAction());
+    runAction();
     assertNoDnsTasksEnqueued();
     assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_INTERNAL_SERVER_ERROR);
   }

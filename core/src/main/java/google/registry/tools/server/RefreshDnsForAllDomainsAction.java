@@ -104,8 +104,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                       .query(
                           "SELECT fullyQualifiedDomainName FROM Domain "
                               + "WHERE tld IN (:tlds) "
-                              + "AND deletionTime > :now "
-                              + "AND creationTime <= :now",
+                              + "AND deletionTime > :now",
                           String.class)
                       .setParameter("tlds", tlds)
                       .setParameter("now", clock.nowUtc())
@@ -119,13 +118,9 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                                   Duration.standardMinutes(random.nextInt(smearMinutes)));
                               logger.atInfo().log("active domain %s refreshed.", domainName);
                             } catch (Throwable t) {
-                              String message =
-                                  String.format(
-                                      "Error while refreshing DNS for domain %s", domainName);
-                              logger.atSevere().withCause(t).log(message);
-                              response.setPayload(message);
+                              logger.atSevere().withCause(t).log(
+                                  "Error while refreshing DNS for domain %s", domainName);
                               response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                              throw t;
                             }
                           }));
     }
