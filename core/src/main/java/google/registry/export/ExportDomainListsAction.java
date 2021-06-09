@@ -104,10 +104,12 @@ public class ExportDomainListsAction implements Runnable {
             List<String> domains =
                 tm().transact(
                         () ->
-                            // Note that the order of deletionTime and creationTime in the query is
-                            // significant. When Hibernate substitutes "now" it will first validate
-                            // that the **first** field that is to be compared with it
-                            // (deletionTime) is assignable from the substituted Java object
+                            // Note that if we had "creationTime <= :now" in the condition (not
+                            // necessary as there is no pending creation, the order of deletionTime
+                            // and creationTime in the query would have been significant and it
+                            // should come after deletionTime. When Hibernate substitutes "now" it
+                            // will first validate that the **first** field that is to be compared
+                            // with it (deletionTime) is assignable from the substituted Java object
                             // (click.nowUtc()). Since creationTime is a CreateAutoTimestamp, if it
                             // comes first, we will need to substitute "now" with
                             // CreateAutoTimestamp.creat(clock.nowUtc()). This might look a bit
@@ -124,7 +126,6 @@ public class ExportDomainListsAction implements Runnable {
                                     "SELECT fullyQualifiedDomainName FROM Domain "
                                         + "WHERE tld = :tld "
                                         + "AND deletionTime > :now "
-                                        + "AND creationTime <= :now "
                                         + "ORDER by fullyQualifiedDomainName ASC",
                                     String.class)
                                 .setParameter("tld", tld)
