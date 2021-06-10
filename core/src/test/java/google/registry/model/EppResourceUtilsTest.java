@@ -67,7 +67,7 @@ class EppResourceUtilsTest {
         newHostResource("ns1.cat.tld").asBuilder()
             .setCreationTimeForTest(clock.nowUtc())
             .build());
-    assertThat(loadAtPointInTime(host, clock.nowUtc().minus(Duration.millis(1))).now()).isNull();
+    assertThat(loadAtPointInTime(host, clock.nowUtc().minus(Duration.millis(1)))).isNull();
   }
 
   @TestOfyAndSql
@@ -78,7 +78,7 @@ class EppResourceUtilsTest {
         newHostResource("ns1.cat.tld").asBuilder()
             .setCreationTimeForTest(START_OF_TIME)
             .build());
-    assertThat(loadAtPointInTime(host, clock.nowUtc()).now()).isEqualTo(host);
+    assertThat(loadAtPointInTime(host, clock.nowUtc())).isEqualTo(host);
   }
 
   @TestOfyOnly
@@ -99,8 +99,7 @@ class EppResourceUtilsTest {
             .build());
     // Load at the point in time just before the latest update; the floor entry of the revisions
     // map should point to the manifest for the first save, so we should get the old host.
-    assertThat(loadAtPointInTime(currentHost, clock.nowUtc().minusMillis(1)).now())
-        .isEqualTo(oldHost);
+    assertThat(loadAtPointInTime(currentHost, clock.nowUtc().minusMillis(1))).isEqualTo(oldHost);
   }
 
   @TestOfyOnly
@@ -120,7 +119,7 @@ class EppResourceUtilsTest {
     // Load at the point in time just before the latest update; the old host is not recoverable
     // (revisions map link is broken, and guessing using the oldest revision map entry finds the
     // same broken link), so just returns the current host.
-    assertThat(loadAtPointInTime(host, clock.nowUtc().minusMillis(1)).now()).isEqualTo(host);
+    assertThat(loadAtPointInTime(host, clock.nowUtc().minusMillis(1))).isEqualTo(host);
   }
 
   @TestOfyOnly
@@ -141,8 +140,7 @@ class EppResourceUtilsTest {
     // Load at the point in time before the first update; there will be no floor entry for the
     // revisions map, so give up and return the oldest revision entry's mutation value (the old host
     // data).
-    assertThat(loadAtPointInTime(currentHost, clock.nowUtc().minusDays(2)).now())
-        .isEqualTo(oldHost);
+    assertThat(loadAtPointInTime(currentHost, clock.nowUtc().minusDays(2))).isEqualTo(oldHost);
   }
 
   @TestOfyOnly
@@ -157,7 +155,7 @@ class EppResourceUtilsTest {
     // Load at the point in time before the first save; there will be no floor entry for the
     // revisions map.  Since the oldest revision entry is the only (i.e. current) revision, return
     // the resource.
-    assertThat(loadAtPointInTime(host, clock.nowUtc().minusMillis(1)).now()).isEqualTo(host);
+    assertThat(loadAtPointInTime(host, clock.nowUtc().minusMillis(1))).isEqualTo(host);
   }
 
   @TestOfyOnly
@@ -175,7 +173,7 @@ class EppResourceUtilsTest {
     // Even though there is no revision, make a best effort guess to use the oldest revision.
     assertThat(
             loadAtPointInTime(host, clock.nowUtc().minus(Duration.standardDays(32)))
-                .now()
+
                 .getUpdateTimestamp()
                 .getTimestamp())
         .isEqualTo(host.getRevisions().firstKey());
