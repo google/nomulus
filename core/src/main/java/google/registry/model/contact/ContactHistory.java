@@ -18,6 +18,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
+import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.reporting.HistoryEntry;
@@ -105,6 +106,11 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
   @SuppressWarnings("unchecked")
   public VKey<ContactHistory> createVKey() {
     return (VKey<ContactHistory>) createVKey(Key.create(this));
+  }
+
+  @Override
+  public Optional<? extends EppResource> getResourceAtPointInTime() {
+    return getContactBase();
   }
 
   @PostLoad
