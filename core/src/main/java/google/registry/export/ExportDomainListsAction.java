@@ -140,7 +140,8 @@ public class ExportDomainListsAction implements Runnable {
     }
   }
 
-  protected static boolean exportToDrive(String tld, String domains, DriveConnection driveConnection) {
+  protected static boolean exportToDrive(
+      String tld, String domains, DriveConnection driveConnection) {
     verifyNotNull(driveConnection, "Expecting non-null driveConnection");
     try {
       Registry registry = Registry.get(tld);
