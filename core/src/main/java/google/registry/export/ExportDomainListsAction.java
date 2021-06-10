@@ -135,15 +135,13 @@ public class ExportDomainListsAction implements Runnable {
             logger.atInfo().log(
                 "Exporting %d domains for TLD %s to GCS and Drive.", domains.size(), tld);
             exportToGcs(tld, domainsList, gcsBucket, gcsBufferSize);
-            logger.atInfo().log("domain lists for TLD %s written out to GCS", tld);
             exportToDrive(tld, domainsList, driveConnection);
-            logger.atInfo().log("domain lists for TLD %s written out to Drive", tld);
           });
     }
   }
 
-  protected static void exportToDrive(String tld, String domains, DriveConnection driveConnection) {
-    verifyNotNull(driveConnection, "expecting non-null driveConnection");
+  protected static boolean exportToDrive(String tld, String domains, DriveConnection driveConnection) {
+    verifyNotNull(driveConnection, "Expecting non-null driveConnection");
     try {
       Registry registry = Registry.get(tld);
       if (registry.getDriveFolderId() == null) {
@@ -162,11 +160,13 @@ public class ExportDomainListsAction implements Runnable {
       }
     } catch (Throwable e) {
       logger.atSevere().withCause(e).log(
-          "Error exporting registered domains for TLD %s to Drive", tld);
+          "Error exporting registered domains for TLD %s to Drive, skipping...", tld);
+      return false;
     }
+    return true;
   }
 
-  protected static void exportToGcs(
+  protected static boolean exportToGcs(
       String tld, String domains, String gcsBucket, int gcsBufferSize) {
     GcsFilename filename = new GcsFilename(gcsBucket, tld + ".txt");
     GcsUtils cloudStorage =
@@ -174,10 +174,12 @@ public class ExportDomainListsAction implements Runnable {
     try (OutputStream gcsOutput = cloudStorage.openOutputStream(filename);
         Writer osWriter = new OutputStreamWriter(gcsOutput, UTF_8)) {
       osWriter.write(domains);
-    } catch (IOException e) {
+    } catch (Throwable e) {
       logger.atSevere().withCause(e).log(
-          "Error exporting registered domains for TLD %s to GCS.", tld);
+          "Error exporting registered domains for TLD %s to GCS, skipping...", tld);
+      return false;
     }
+    return true;
   }
 
   static class ExportDomainListsMapper extends Mapper<DomainBase, String, String> {
@@ -237,10 +239,16 @@ public class ExportDomainListsAction implements Runnable {
       ImmutableList<String> domains = ImmutableList.sortedCopyOf(() -> fqdns);
       String domainsList = Joiner.on('\n').join(domains);
       logger.atInfo().log("Exporting %d domains for TLD %s to GCS and Drive.", domains.size(), tld);
-      exportToGcs(tld, domainsList, gcsBucket, gcsBufferSize);
-      getContext().incrementCounter("domain lists written out to GCS");
-      exportToDrive(tld, domainsList, driveConnection);
-      getContext().incrementCounter("domain lists written out to Drive");
+      if (exportToGcs(tld, domainsList, gcsBucket, gcsBufferSize)) {
+        getContext().incrementCounter("domain lists successful written out to GCS");
+      } else {
+        getContext().incrementCounter("domain lists failed to write out to GCS");
+      }
+      if (exportToDrive(tld, domainsList, driveConnection)) {
+        getContext().incrementCounter("domain lists successfully written out to Drive");
+      } else {
+        getContext().incrementCounter("domain lists failed to write out to Drive");
+      }
     }
 
     @VisibleForTesting
