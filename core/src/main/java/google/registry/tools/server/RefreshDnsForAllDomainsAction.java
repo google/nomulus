@@ -116,10 +116,9 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
                               dnsQueue.addDomainRefreshTask(
                                   domainName,
                                   Duration.standardMinutes(random.nextInt(smearMinutes)));
-                              logger.atInfo().log("active domain %s refreshed.", domainName);
                             } catch (Throwable t) {
                               logger.atSevere().withCause(t).log(
-                                  "Error while refreshing DNS for domain %s", domainName);
+                                  "Error while enqueuing DNS refresh for domain %s", domainName);
                               response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                             }
                           }));
@@ -159,7 +158,7 @@ public class RefreshDnsForAllDomainsAction implements Runnable {
             getContext().incrementCounter("active domains refreshed");
           } catch (Throwable t) {
             logger.atSevere().withCause(t).log(
-                "Error while refreshing DNS for domain %s", domainName);
+                "Error while enqueuing DNS refresh for domain %s", domainName);
             getContext().incrementCounter("active domains errored");
           }
         } else {

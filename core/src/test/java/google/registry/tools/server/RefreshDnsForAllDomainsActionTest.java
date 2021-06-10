@@ -18,16 +18,16 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
-import static google.registry.testing.TaskQueueHelper.assertNoDnsTasksEnqueued;
+import static google.registry.testing.TaskQueueHelper.assertDnsTasksEnqueued;
 import static org.joda.time.Duration.standardMinutes;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.dns.DnsQueue;
@@ -96,14 +96,16 @@ public class RefreshDnsForAllDomainsActionTest
   @TestSqlOnly
   void test_runAction_errorEnqueuingToDnsQueue() throws Exception {
     persistActiveDomain("foo.bar");
+    persistActiveDomain("baz.bar");
     persistActiveDomain("low.bar");
     action.tlds = ImmutableSet.of("bar");
-    DnsQueue faultyQueue = mock(DnsQueue.class);
-    when(faultyQueue.addDomainRefreshTask(anyString(), any(Duration.class)))
-        .thenThrow(new RuntimeException("Error enqueuing task."));
+    DnsQueue faultyQueue = spy(origDnsQueue);
+    doThrow(new RuntimeException("Error enqueuing task."))
+        .when(faultyQueue)
+        .addDomainRefreshTask(eq("baz.bar"), any(Duration.class));
     action.dnsQueue = faultyQueue;
     runAction();
-    assertNoDnsTasksEnqueued();
+    assertDnsTasksEnqueued("foo.bar", "low.bar");
     assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_INTERNAL_SERVER_ERROR);
   }
 
