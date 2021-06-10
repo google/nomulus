@@ -127,10 +127,11 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
                       jpaTm()
                           .query(
                               "FROM BillingRecurrence "
-                                  + "WHERE event_time <= :executeTime "
-                                  + "AND event_time < recurrence_end_time",
+                                  + "WHERE eventTime <= :executeTime "
+                                  + "AND eventTime < recurrenceEndTime "
+                                  + "ORDER BY id ASC",
                               Recurring.class)
-                          .setParameter("executeTime", executeTime.toDate())
+                          .setParameter("executeTime", executeTime)
                           // Need to get a list from the transaction and then convert it to a stream
                           // for further processing. If we get a stream directly, each elements gets
                           // processed downstream eagerly but Hibernate returns a
