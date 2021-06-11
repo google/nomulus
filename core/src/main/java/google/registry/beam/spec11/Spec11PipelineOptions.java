@@ -34,4 +34,9 @@ public interface Spec11PipelineOptions extends RegistryPipelineOptions {
   String getReportingBucketUrl();
 
   void setReportingBucketUrl(String value);
+
+  @Description("The database to read data from.")
+  String getDatabase();
+
+  void setDatabase(String value);
 }

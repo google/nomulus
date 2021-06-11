@@ -50,6 +50,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
             clock.nowUtc().toLocalDate(),
+            "DATASTORE",
             clock,
             response,
             dataflow);
@@ -71,6 +72,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
             clock.nowUtc().toLocalDate(),
+            "DATASTORE",
             clock,
             response,
             dataflow);
