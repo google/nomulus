@@ -20,6 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.testing.TestLogHandler;
 import com.googlecode.objectify.Key;
@@ -29,6 +30,7 @@ import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionEntity;
@@ -66,6 +68,10 @@ public class ReplicateToDatastoreActionTest {
   @BeforeEach
   public void setUp() {
     injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
+    // Use a single bucket to expose timestamp inversion problems.
+    injectExtension.setStaticField(
+        CommitLogBucket.class, "bucketIdSupplier", Suppliers.ofInstance(1));
+    fakeClock.setAutoIncrementByOneMilli();
     RegistryConfig.overrideCloudSqlReplicateTransactions(true);
     Logger.getLogger(ReplicateToDatastoreAction.class.getCanonicalName()).addHandler(logHandler);
     DateTime now = fakeClock.nowUtc();
@@ -87,6 +93,7 @@ public class ReplicateToDatastoreActionTest {
 
   @AfterEach
   public void tearDown() {
+    fakeClock.disableAutoIncrement();
     RegistryConfig.overrideCloudSqlReplicateTransactions(false);
   }
 
