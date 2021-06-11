@@ -27,6 +27,8 @@
   {@param? currency: string}
   {@param? price: string}
   {@param dsRecords: list<[keyTag:int, alg:int, digestType:int, digest:string]>}
+  {@param? reason: string}
+  {@param? requestedByRegistrar: string}
 
   <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
@@ -54,7 +56,7 @@
           </domain:authInfo>
         </domain:create>
       </create>
-      {if length($dsRecords) > 0 or $price != null}
+      {if length($dsRecords) > 0 or $price != null or $reason or $requestedByRegistrar}
         <extension>
           {if $price != null}
             <fee:create xmlns:fee="urn:ietf:params:xml:ns:fee-0.12">
@@ -73,6 +75,16 @@
                 </secDNS:dsData>
               {/for}
             </secDNS:create>
+          {/if}
+          {if $reason or $requestedByRegistrar}
+            <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
+            {if $reason}
+              <metadata:reason>{$reason}</metadata:reason>
+            {/if}
+            {if $requestedByRegistrar}
+              <metadata:requestedByRegistrar>{$requestedByRegistrar}</metadata:requestedByRegistrar>
+            {/if}
+            </metadata:metadata>
           {/if}
         </extension>
       {/if}

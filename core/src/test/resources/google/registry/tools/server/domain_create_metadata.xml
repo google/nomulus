@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <create>
+      <domain:create
+       xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>example.tld</domain:name>
+        <domain:period unit="y">1</domain:period>
+        <domain:registrant>crr-admin</domain:registrant>
+        <domain:contact type="admin">crr-admin</domain:contact>
+        <domain:contact type="tech">crr-tech</domain:contact>
+        <domain:authInfo>
+          <domain:pw>abcdefghijklmnop</domain:pw>
+        </domain:authInfo>
+      </domain:create>
+    </create>
+    <extension>
+      <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
+        <metadata:reason>Creating test domain</metadata:reason>
+        <metadata:requestedByRegistrar>false</metadata:requestedByRegistrar>
+      </metadata:metadata>
+    </extension>
+    <clTRID>RegistryTool</clTRID>
+  </command>
+</epp>

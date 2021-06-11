@@ -315,9 +315,13 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
               "secdns", secDns,
               "addDsRecords", DsRecord.convertToSoy(addDsRecords),
               "removeDsRecords", DsRecord.convertToSoy(removeDsRecords),
-              "removeAllDsRecords", clearDsRecords);
+              "removeAllDsRecords", clearDsRecords,
+              "reason", reason);
       if (autorenews != null) {
         soyMapData.put("autorenews", autorenews.toString());
+      }
+      if (requestedByRegistrar != null) {
+        soyMapData.put("requestedByRegistrar", requestedByRegistrar.toString());
       }
       addSoyRecord(clientId, soyMapData);
     }

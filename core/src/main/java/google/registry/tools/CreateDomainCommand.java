@@ -80,8 +80,7 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand
       }
 
       setSoyTemplate(DomainCreateSoyInfo.getInstance(), DomainCreateSoyInfo.DOMAINCREATE);
-      addSoyRecord(
-          clientId,
+      SoyMapData soyMapData =
           new SoyMapData(
               "domain", domain,
               "period", period,
@@ -92,7 +91,12 @@ final class CreateDomainCommand extends CreateOrUpdateDomainCommand
               "password", password,
               "currency", currency,
               "price", cost,
-              "dsRecords", DsRecord.convertToSoy(dsRecords)));
+              "dsRecords", DsRecord.convertToSoy(dsRecords),
+              "reason", reason);
+      if (requestedByRegistrar != null) {
+        soyMapData.put("requestedByRegistrar", requestedByRegistrar.toString());
+      }
+      addSoyRecord(clientId, soyMapData);
     }
   }
 }
