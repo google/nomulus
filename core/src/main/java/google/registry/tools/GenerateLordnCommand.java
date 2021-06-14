@@ -69,7 +69,6 @@ final class GenerateLordnCommand implements CommandWithRemoteApi {
                 .createQueryComposer(DomainBase.class)
                 .where("tld", Comparator.EQ, tld)
                 .orderBy("repoId")
-                .withAutoDetachOnLoad(false)
                 .stream()
                 .forEach(domain -> processDomain(claimsCsv, sunriseCsv, domain)));
     ImmutableList<String> claimsRows = claimsCsv.build();
