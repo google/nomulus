@@ -298,8 +298,6 @@ public final class EppResourceUtils {
    * <p>When using the SQL backend (post-Registry-3.0-migration) this restriction goes away and
    * objects can be restored to any revision.
    *
-   * <p>TODO(b/177567432): Once Datastore is completely removed, remove the Result wrapping.
-   *
    * @return the resource at {@code timestamp} or {@code null} if resource is deleted or not yet
    *     created
    */
@@ -310,9 +308,8 @@ public final class EppResourceUtils {
       return null;
     }
     // If the resource was not modified after the requested time, then use it as-is, otherwise find
-    // the most recent revision asynchronously, and return an async result that wraps that revision
-    // and returns it projected forward to exactly the desired timestamp, or null if the resource is
-    // deleted at that timestamp.
+    // the most recent revision and project it forward to exactly the desired timestamp, or null if
+    // the resource is deleted at that timestamp.
     T loadedResource =
         isAtOrAfter(timestamp, resource.getUpdateTimestamp().getTimestamp())
             ? resource
@@ -327,12 +324,14 @@ public final class EppResourceUtils {
   /**
    * Rewinds an {@link EppResource} object to a given point in time.
    *
-   * <p>This method costs nothing if {@code resource} is already current. Otherwise it needs to
-   * perform a single fetch operation asynchronously.
+   * <p>This method costs nothing if {@code resource} is already current. Otherwise it returns an
+   * async operation that performs a single fetch operation.
    *
    * @return an asynchronous operation returning resource at {@code timestamp} or {@code null} if
    *     resource is deleted or not yet created
    * @see #loadAtPointInTime(EppResource, DateTime)
+   *
+   * <p>TODO(b/177567432): Once Datastore is completely removed, remove the Result wrapping.
    */
   public static <T extends EppResource> Result<T> loadResultAtPointInTime(
       final T resource, final DateTime timestamp) {

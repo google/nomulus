@@ -16,6 +16,7 @@ package google.registry.rde;
 
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.model.EppResourceUtils.loadResultAtPointInTime;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
@@ -202,9 +203,8 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
                         host,
                         // Note that loadAtPointInTime() does cloneProjectedAtTime(watermark) for
                         // us.
-                        loadResultAtPointInTime(
-                                tm().loadByKey(host.getSuperordinateDomain()), watermark)
-                            .now())
+                        loadAtPointInTime(
+                                tm().loadByKey(host.getSuperordinateDomain()), watermark))
                     : marshaller.marshalExternalHost(host));
         cache.put(WatermarkModePair.create(watermark, RdeMode.FULL), result);
         cache.put(WatermarkModePair.create(watermark, RdeMode.THIN), result);
