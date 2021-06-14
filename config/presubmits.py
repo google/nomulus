@@ -202,6 +202,8 @@ PRESUBMITS = {
         "java",
         # ActivityReportingQueryBuilder deals with Dremel queries
         {"src/test", "ActivityReportingQueryBuilder.java",
+         # This class contains helper method to make queries in Beam.
+         "RegistryJpaIO.java",
          # TODO(b/179158393): Remove everything below, which should be done
          # using Criteria
          "ForeignKeyIndex.java",

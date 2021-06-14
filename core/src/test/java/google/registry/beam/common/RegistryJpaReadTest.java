@@ -37,9 +37,9 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registry.Registry;
 import google.registry.model.transfer.ContactTransferData;
+import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
-import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
@@ -98,10 +98,10 @@ public class RegistryJpaReadTest {
   }
 
   @Test
-  void readWithQueryComposer() {
+  void readWithCriteriaQuery() {
     Read<ContactResource, String> read =
         RegistryJpaIO.read(
-            (JpaTransactionManager jpaTm) -> jpaTm.createQueryComposer(ContactResource.class),
+            () -> CriteriaQueryBuilder.create(ContactResource.class).build(),
             ContactBase::getContactId);
     PCollection<String> repoIds = testPipeline.apply(read);
 
@@ -117,17 +117,52 @@ public class RegistryJpaReadTest {
             "select d, r.emailAddress from Domain d join Registrar r on"
                 + " d.currentSponsorClientId = r.clientIdentifier where r.type = 'REAL'"
                 + " and d.deletionTime > now()",
-            RegistryJpaReadTest::parseRow);
+            false,
+            (Object[] row) -> {
+              DomainBase domainBase = (DomainBase) row[0];
+              String emailAddress = (String) row[1];
+              return domainBase.getRepoId() + "-" + emailAddress;
+            });
     PCollection<String> joinedStrings = testPipeline.apply(read);
 
     PAssert.that(joinedStrings).containsInAnyOrder("4-COM-me@google.com");
     testPipeline.run();
   }
 
-  private static String parseRow(Object[] row) {
-    DomainBase domainBase = (DomainBase) row[0];
-    String emailAddress = (String) row[1];
-    return domainBase.getRepoId() + "-" + emailAddress;
+  @Test
+  void readWithStringNativeQuery() {
+    setupForJoinQuery();
+    Read<Object[], String> read =
+        RegistryJpaIO.read(
+            "select d.repo_id, r.email_address from \"Domain\" d join \"Registrar\" r on"
+                + " d.current_sponsor_registrar_id = r.registrar_id where r.type = 'REAL'"
+                + " and d.deletion_time > now()",
+            true,
+            (Object[] row) -> {
+              String repoId = (String) row[0];
+              String emailAddress = (String) row[1];
+              return repoId + "-" + emailAddress;
+            });
+    PCollection<String> joinedStrings = testPipeline.apply(read);
+
+    PAssert.that(joinedStrings).containsInAnyOrder("4-COM-me@google.com");
+    testPipeline.run();
+  }
+
+  @Test
+  void readWithStringTypedQuery() {
+    setupForJoinQuery();
+    Read<DomainBase, String> read =
+        RegistryJpaIO.read(
+            "select d from Domain d join Registrar r on"
+                + " d.currentSponsorClientId = r.clientIdentifier where r.type = 'REAL'"
+                + " and d.deletionTime > now()",
+            DomainBase.class,
+            DomainBase::getRepoId);
+    PCollection<String> repoIds = testPipeline.apply(read);
+
+    PAssert.that(repoIds).containsInAnyOrder("4-COM");
+    testPipeline.run();
   }
 
   private void setupForJoinQuery() {

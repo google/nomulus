@@ -116,6 +116,7 @@ public class Spec11Pipeline implements Serializable {
             "select d, r.emailAddress from Domain d join Registrar r on"
                 + " d.currentSponsorClientId = r.clientIdentifier where r.type = 'REAL'"
                 + " and d.deletionTime > now()",
+            false,
             Spec11Pipeline::parseRow);
 
     return pipeline.apply("Read active domains from Cloud SQL", read);
