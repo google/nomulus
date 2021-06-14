@@ -34,6 +34,7 @@ PATH                                    CLASS                               METH
 /_dr/task/rdeUpload                     RdeUploadAction                     POST     n  INTERNAL,API APP ADMIN
 /_dr/task/refreshDnsOnHostRename        RefreshDnsOnHostRenameAction        GET      n  INTERNAL,API APP ADMIN
 /_dr/task/relockDomain                  RelockDomainAction                  POST     y  INTERNAL,API APP ADMIN
+/_dr/task/replayCommitLogsToSql         ReplayCommitLogsToSqlAction         POST     y  INTERNAL,API APP ADMIN
 /_dr/task/resaveAllEppResources         ResaveAllEppResourcesAction         GET      n  INTERNAL,API APP ADMIN
 /_dr/task/resaveEntity                  ResaveEntityAction                  POST     n  INTERNAL,API APP ADMIN
 /_dr/task/syncGroupMembers              SyncGroupMembersAction              POST     n  INTERNAL,API APP ADMIN

@@ -34,6 +34,7 @@ import google.registry.model.server.Lock;
 import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
+import google.registry.request.Action.Method;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.schema.replay.DatastoreEntity;
@@ -56,7 +57,7 @@ import org.joda.time.Duration;
 @Action(
     service = Action.Service.BACKEND,
     path = ReplayCommitLogsToSqlAction.PATH,
-    method = Action.Method.POST,
+    method = Method.POST,
     automaticallyPrintOk = true,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class ReplayCommitLogsToSqlAction implements Runnable {

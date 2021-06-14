@@ -101,11 +101,20 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/task/replayCommitLogsToSql]]></url>
+    <url><![CDATA[/_dr/cron/fanout?queue=replay-commit-logs-to-sql&endpoint=/_dr/task/replayCommitLogsToSql&runInEmpty]]></url>
     <description>
       Replays recent commit logs from Datastore to the SQL secondary backend.
     </description>
     <schedule>every 3 minutes</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/cron/commitLogCheckpoint]]></url>
+    <description>
+      This job checkpoints the commit log buckets and exports the diff since last checkpoint to GCS.
+    </description>
+    <schedule>every 3 minutes synchronized</schedule>
     <target>backend</target>
   </cron>
 </cronentries>
