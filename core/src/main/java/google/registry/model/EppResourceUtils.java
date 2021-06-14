@@ -29,8 +29,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.Result;
-import com.googlecode.objectify.util.ResultNow;
 import google.registry.config.RegistryConfig;
 import google.registry.model.EppResource.BuilderWithTransferData;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
@@ -54,6 +52,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.persistence.Query;
 import org.joda.time.DateTime;
@@ -299,43 +298,51 @@ public final class EppResourceUtils {
    * <p>When using the SQL backend (post-Registry-3.0-migration) this restriction goes away and
    * objects can be restored to any revision.
    *
-   * <p>TODO(b/177567432): Once Datastore is completely removed, remove the Result wrapping.
-   *
-   * @return an asynchronous operation returning resource at {@code timestamp} or {@code null} if
-   *     resource is deleted or not yet created
+   * @return the resource at {@code timestamp} or {@code null} if resource is deleted or not yet
+   *     created
    */
-  public static <T extends EppResource> Result<T> loadAtPointInTime(
+  public static <T extends EppResource> T loadAtPointInTime(
       final T resource, final DateTime timestamp) {
     // If we're before the resource creation time, don't try to find a "most recent revision".
     if (timestamp.isBefore(resource.getCreationTime())) {
-      return new ResultNow<>(null);
+      return null;
     }
     // If the resource was not modified after the requested time, then use it as-is, otherwise find
-    // the most recent revision asynchronously, and return an async result that wraps that revision
-    // and returns it projected forward to exactly the desired timestamp, or null if the resource is
-    // deleted at that timestamp.
-    final Result<T> loadResult =
+    // the most recent revision and project it forward to exactly the desired timestamp, or null if
+    // the resource is deleted at that timestamp.
+    T loadedResource =
         isAtOrAfter(timestamp, resource.getUpdateTimestamp().getTimestamp())
-            ? new ResultNow<>(resource)
+            ? resource
             : loadMostRecentRevisionAtTime(resource, timestamp);
-    return () -> {
-      T loadedResource = loadResult.now();
-      return (loadedResource == null)
-          ? null
-          : (isActive(loadedResource, timestamp)
-              ? cloneProjectedAtTime(loadedResource, timestamp)
-              : null);
-    };
+    return (loadedResource == null)
+        ? null
+        : (isActive(loadedResource, timestamp)
+            ? cloneProjectedAtTime(loadedResource, timestamp)
+            : null);
   }
 
   /**
-   * Returns an asynchronous result holding the most recent revision of a given EppResource before
-   * or at the provided timestamp, falling back to using the resource as-is if there are no
-   * revisions.
+   * Rewinds an {@link EppResource} object to a given point in time.
+   *
+   * <p>This method costs nothing if {@code resource} is already current. Otherwise it returns an
+   * async operation that performs a single fetch operation.
+   *
+   * @return an asynchronous operation returning resource at {@code timestamp} or {@code null} if
+   *     resource is deleted or not yet created
+   * @see #loadAtPointInTime(EppResource, DateTime)
+   */
+  public static <T extends EppResource> Supplier<T> loadAtPointInTimeAsync(
+      final T resource, final DateTime timestamp) {
+    return () -> loadAtPointInTime(resource, timestamp);
+  }
+
+  /**
+   * Returns the most recent revision of a given EppResource before or at the provided timestamp,
+   * falling back to using the resource as-is if there are no revisions.
    *
    * @see #loadAtPointInTime(EppResource, DateTime)
    */
-  private static <T extends EppResource> Result<T> loadMostRecentRevisionAtTime(
+  private static <T extends EppResource> T loadMostRecentRevisionAtTime(
       final T resource, final DateTime timestamp) {
     if (tm().isOfy()) {
       return loadMostRecentRevisionAtTimeDatastore(resource, timestamp);
@@ -345,46 +352,42 @@ public final class EppResourceUtils {
   }
 
   /**
-   * Returns an asynchronous result holding the most recent Datastore revision of a given
-   * EppResource before or at the provided timestamp using the EppResource revisions map, falling
-   * back to using the resource as-is if there are no revisions.
+   * Returns the most recent Datastore revision of a given EppResource before or at the provided
+   * timestamp using the EppResource revisions map, falling back to using the resource as-is if
+   * there are no revisions.
    *
-   * @see #loadAtPointInTime(EppResource, DateTime)
+   * @see #loadAtPointInTimeAsync(EppResource, DateTime)
    */
-  private static <T extends EppResource> Result<T> loadMostRecentRevisionAtTimeDatastore(
+  private static <T extends EppResource> T loadMostRecentRevisionAtTimeDatastore(
       final T resource, final DateTime timestamp) {
     final Key<T> resourceKey = Key.create(resource);
     final Key<CommitLogManifest> revision =
         findMostRecentDatastoreRevisionAtTime(resource, timestamp);
     if (revision == null) {
       logger.atSevere().log("No revision found for %s, falling back to resource.", resourceKey);
-      return new ResultNow<>(resource);
-    }
-    final Result<CommitLogMutation> mutationResult =
-        auditedOfy().load().key(CommitLogMutation.createKey(revision, resourceKey));
-    return () -> {
-      CommitLogMutation mutation = mutationResult.now();
-      if (mutation != null) {
-        return auditedOfy().load().fromEntity(mutation.getEntity());
-      }
-      logger.atSevere().log(
-          "Couldn't load mutation for revision at %s for %s, falling back to resource."
-              + " Revision: %s",
-          timestamp, resourceKey, revision);
       return resource;
-    };
+    }
+    final CommitLogMutation mutation =
+        auditedOfy().load().key(CommitLogMutation.createKey(revision, resourceKey)).now();
+    if (mutation != null) {
+      return auditedOfy().load().fromEntity(mutation.getEntity());
+    }
+    logger.atSevere().log(
+        "Couldn't load mutation for revision at %s for %s, falling back to resource."
+            + " Revision: %s",
+        timestamp, resourceKey, revision);
+    return resource;
   }
 
   /**
-   * Returns an asynchronous result holding the most recent SQL revision of a given EppResource
-   * before or at the provided timestamp using *History objects, falling back to using the resource
-   * as-is if there are no revisions.
+   * Returns the most recent SQL revision of a given EppResource before or at the provided timestamp
+   * using *History objects, falling back to using the resource as-is if there are no revisions.
    *
-   * @see #loadAtPointInTime(EppResource, DateTime)
+   * @see #loadAtPointInTimeAsync(EppResource, DateTime)
    */
-  @SuppressWarnings("unchecked")
-  private static <T extends EppResource> Result<T> loadMostRecentRevisionAtTimeSql(
+  private static <T extends EppResource> T loadMostRecentRevisionAtTimeSql(
       T resource, DateTime timestamp) {
+    @SuppressWarnings("unchecked")
     T resourceAtPointInTime =
         (T)
             HistoryEntryDao.loadHistoryObjectsForResource(
@@ -397,9 +400,9 @@ public final class EppResourceUtils {
       logger.atSevere().log(
           "Couldn't load resource at % for key %s, falling back to resource %s.",
           timestamp, resource.createVKey(), resource);
-      return new ResultNow<>(resource);
+      return resource;
     }
-    return new ResultNow<>(resourceAtPointInTime);
+    return resourceAtPointInTime;
   }
 
   @Nullable

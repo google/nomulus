@@ -138,13 +138,13 @@ class EppPointInTimeTest {
 
     // Creation time has millisecond granularity due to isActive() check.
     tm().clearSessionCache();
-    assertThat(loadAtPointInTime(latest, timeAtCreate.minusMillis(1)).now()).isNull();
-    assertThat(loadAtPointInTime(latest, timeAtCreate).now()).isNotNull();
-    assertThat(loadAtPointInTime(latest, timeAtCreate.plusMillis(1)).now()).isNotNull();
+    assertThat(loadAtPointInTime(latest, timeAtCreate.minusMillis(1))).isNull();
+    assertThat(loadAtPointInTime(latest, timeAtCreate)).isNotNull();
+    assertThat(loadAtPointInTime(latest, timeAtCreate.plusMillis(1))).isNotNull();
 
     tm().clearSessionCache();
     assertAboutImmutableObjects()
-        .that(loadAtPointInTime(latest, timeAtCreate.plusDays(1)).now())
+        .that(loadAtPointInTime(latest, timeAtCreate.plusDays(1)))
         .hasFieldsEqualTo(domainAfterCreate);
 
     tm().clearSessionCache();
@@ -152,30 +152,30 @@ class EppPointInTimeTest {
       // Both updates happened on the same day. Since the revisions field has day granularity in
       // Datastore, the key to the first update should have been overwritten by the second, and its
       // timestamp rolled forward. So we have to fall back to the last revision before midnight.
-      assertThat(loadAtPointInTime(latest, timeAtFirstUpdate).now()).isEqualTo(domainAfterCreate);
+      assertThat(loadAtPointInTime(latest, timeAtFirstUpdate)).isEqualTo(domainAfterCreate);
     } else {
       // In SQL, however, we are not limited by the day granularity, so when we request the object
       // at timeAtFirstUpdate we should receive the object at that first update, even though the
       // second update occurred one millisecond later.
       assertAboutImmutableObjects()
-          .that(loadAtPointInTime(latest, timeAtFirstUpdate).now())
+          .that(loadAtPointInTime(latest, timeAtFirstUpdate))
           .hasFieldsEqualTo(domainAfterFirstUpdate);
     }
 
     tm().clearSessionCache();
     assertAboutImmutableObjects()
-        .that(loadAtPointInTime(latest, timeAtSecondUpdate).now())
+        .that(loadAtPointInTime(latest, timeAtSecondUpdate))
         .hasFieldsEqualTo(domainAfterSecondUpdate);
 
     tm().clearSessionCache();
     assertAboutImmutableObjects()
-        .that(loadAtPointInTime(latest, timeAtSecondUpdate.plusDays(1)).now())
+        .that(loadAtPointInTime(latest, timeAtSecondUpdate.plusDays(1)))
         .hasFieldsEqualTo(domainAfterSecondUpdate);
 
     // Deletion time has millisecond granularity due to isActive() check.
     tm().clearSessionCache();
-    assertThat(loadAtPointInTime(latest, timeAtDelete.minusMillis(1)).now()).isNotNull();
-    assertThat(loadAtPointInTime(latest, timeAtDelete).now()).isNull();
-    assertThat(loadAtPointInTime(latest, timeAtDelete.plusMillis(1)).now()).isNull();
+    assertThat(loadAtPointInTime(latest, timeAtDelete.minusMillis(1))).isNotNull();
+    assertThat(loadAtPointInTime(latest, timeAtDelete)).isNull();
+    assertThat(loadAtPointInTime(latest, timeAtDelete.plusMillis(1))).isNull();
   }
 }

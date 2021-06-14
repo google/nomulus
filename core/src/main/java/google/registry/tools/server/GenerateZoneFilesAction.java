@@ -198,7 +198,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
     private void mapDomain(DomainBase domain) {
       // Domains never change their tld, so we can check if it's from the wrong tld right away.
       if (tlds.contains(domain.getTld())) {
-        domain = loadAtPointInTime(domain, exportTime).now();
+        domain = loadAtPointInTime(domain, exportTime);
         // A null means the domain was deleted (or not created) at this time.
         if (domain != null && domain.shouldPublishToDns()) {
           String stanza = domainStanza(domain, exportTime, dnsDefaultNsTtl, dnsDefaultDsTtl);
@@ -215,7 +215,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
       ImmutableSet<String> subordinateHosts = domain.getSubordinateHosts();
       if (!subordinateHosts.isEmpty()) {
         for (HostResource unprojectedHost : tm().loadByKeys(domain.getNameservers()).values()) {
-          HostResource host = loadAtPointInTime(unprojectedHost, exportTime).now();
+          HostResource host = loadAtPointInTime(unprojectedHost, exportTime);
           // A null means the host was deleted (or not created) at this time.
           if ((host != null) && subordinateHosts.contains(host.getHostName())) {
             String stanza = hostStanza(host, dnsDefaultATtl, domain.getTld());
@@ -290,7 +290,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
               domainLabel,
               dnsDefaultNsTtl.getStandardSeconds(),
               // Load the nameservers at the export time in case they've been renamed or deleted.
-              loadAtPointInTime(nameserver, exportTime).now().getHostName()));
+              loadAtPointInTime(nameserver, exportTime).getHostName()));
     }
     for (DelegationSignerData dsData : domain.getDsData()) {
       result.append(

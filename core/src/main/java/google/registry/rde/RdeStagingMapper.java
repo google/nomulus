@@ -17,6 +17,7 @@ package google.registry.rde;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadAtPointInTime;
+import static google.registry.model.EppResourceUtils.loadAtPointInTimeAsync;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.tools.mapreduce.Mapper;
@@ -26,7 +27,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.googlecode.objectify.Result;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
@@ -36,7 +36,9 @@ import google.registry.model.registrar.Registrar;
 import google.registry.xml.ValidationMode;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.joda.time.DateTime;
 
 /** Mapper for {@link RdeStagingAction}. */
@@ -123,8 +125,8 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
             .collect(toImmutableSet());
 
     // Launch asynchronous fetches of point-in-time representations of resource.
-    ImmutableMap<DateTime, Result<EppResource>> resourceAtTimes =
-        ImmutableMap.copyOf(Maps.asMap(dates, input -> loadAtPointInTime(resource, input)));
+    ImmutableMap<DateTime, Supplier<EppResource>> resourceAtTimes =
+        ImmutableMap.copyOf(Maps.asMap(dates, input -> loadAtPointInTimeAsync(resource, input)));
 
     // Convert resource to an XML fragment for each watermark/mode pair lazily and cache the result.
     Fragmenter fragmenter = new Fragmenter(resourceAtTimes);
@@ -159,13 +161,13 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
   /** Loading cache that turns a resource into XML for the various points in time and modes. */
   private class Fragmenter {
     private final Map<WatermarkModePair, Optional<DepositFragment>> cache = new HashMap<>();
-    private final ImmutableMap<DateTime, Result<EppResource>> resourceAtTimes;
+    private final ImmutableMap<DateTime, Supplier<EppResource>> resourceAtTimes;
 
     long cacheHits = 0;
     long resourcesNotFound = 0;
     long resourcesFound = 0;
 
-    Fragmenter(ImmutableMap<DateTime, Result<EppResource>> resourceAtTimes) {
+    Fragmenter(ImmutableMap<DateTime, Supplier<EppResource>> resourceAtTimes) {
       this.resourceAtTimes = resourceAtTimes;
     }
 
@@ -175,7 +177,7 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
         cacheHits++;
         return result;
       }
-      EppResource resource = resourceAtTimes.get(watermark).now();
+      EppResource resource = resourceAtTimes.get(watermark).get();
       if (resource == null) {
         result = Optional.empty();
         cache.put(WatermarkModePair.create(watermark, RdeMode.FULL), result);
@@ -202,8 +204,9 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
                         host,
                         // Note that loadAtPointInTime() does cloneProjectedAtTime(watermark) for
                         // us.
-                        loadAtPointInTime(tm().loadByKey(host.getSuperordinateDomain()), watermark)
-                            .now())
+                        Objects.requireNonNull(
+                            loadAtPointInTime(
+                                tm().loadByKey(host.getSuperordinateDomain()), watermark)))
                     : marshaller.marshalExternalHost(host));
         cache.put(WatermarkModePair.create(watermark, RdeMode.FULL), result);
         cache.put(WatermarkModePair.create(watermark, RdeMode.THIN), result);
