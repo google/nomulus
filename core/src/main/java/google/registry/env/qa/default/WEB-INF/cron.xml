@@ -2,6 +2,17 @@
 <cronentries>
 
   <cron>
+    <url>/_dr/task/rdeStaging</url>
+    <description>
+      This job generates a full RDE escrow deposit as a single gigantic XML document
+      and streams it to cloud storage. When this job has finished successfully, it'll
+      launch a separate task that uploads the deposit file to Iron Mountain via SFTP.
+    </description>
+    <schedule>every day 00:07</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
     <url><![CDATA[/_dr/cron/readDnsQueue?jitterSeconds=45]]></url>
     <description>
       Lease all tasks from the dns-pull queue, group by TLD, and invoke PublishDnsUpdates for each
