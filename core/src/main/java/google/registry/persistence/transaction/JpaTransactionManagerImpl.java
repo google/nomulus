@@ -489,13 +489,17 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> ImmutableList<T> loadAllOf(Class<T> clazz) {
+    return loadAllOfStream(clazz).collect(toImmutableList());
+  }
+
+  @Override
+  public <T> Stream<T> loadAllOfStream(Class<T> clazz) {
     checkArgumentNotNull(clazz, "clazz must be specified");
     assertInTransaction();
     return getEntityManager()
         .createQuery(String.format("FROM %s", getEntityType(clazz).getName()), clazz)
         .getResultStream()
-        .map(this::detach)
-        .collect(toImmutableList());
+        .map(this::detach);
   }
 
   @Override

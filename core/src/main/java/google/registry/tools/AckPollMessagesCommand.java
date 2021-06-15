@@ -125,13 +125,7 @@ final class AckPollMessagesCommand implements CommandWithRemoteApi {
               if (!isNullOrEmpty(message)) {
                 query = query.where("msg", LIKE, "%" + message + "%");
               }
-
-              query.stream()
-                  // Detach it so that we can print out the old, non-acked version
-                  // (for autorenews, acking changes the next event time)
-                  // TODO(mmuller): remove after PR 1116 is merged.
-                  .peek(jpaTm().getEntityManager()::detach)
-                  .forEach(this::actOnPollMessage);
+              query.stream().forEach(this::actOnPollMessage);
             });
   }
 
