@@ -22,6 +22,7 @@ import google.registry.persistence.VKey;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.joda.time.DateTime;
 
 /**
@@ -241,13 +242,22 @@ public interface TransactionManager {
   <T> ImmutableList<T> loadByEntities(Iterable<T> entities);
 
   /**
+   * Returns a list of all entities of the given type that exist in the database.
+   *
+   * <p>The resulting list is empty if there are no entities of this type. In Datastore mode, if the
+   * class is a member of the cross-TLD entity group (i.e. if it has the {@link InCrossTld}
+   * annotation, then the correct ancestor query will automatically be applied.
+   */
+  <T> ImmutableList<T> loadAllOf(Class<T> clazz);
+
+  /**
    * Returns a stream of all entities of the given type that exist in the database.
    *
    * <p>The resulting stream is empty if there are no entities of this type. In Datastore mode, if
    * the class is a member of the cross-TLD entity group (i.e. if it has the {@link InCrossTld}
    * annotation, then the correct ancestor query will automatically be applied.
    */
-  <T> ImmutableList<T> loadAllOf(Class<T> clazz);
+  <T> Stream<T> loadAllOfStream(Class<T> clazz);
 
   /**
    * Loads the only instance of this particular class, or empty if none exists.

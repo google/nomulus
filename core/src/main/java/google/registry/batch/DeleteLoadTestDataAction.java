@@ -21,6 +21,7 @@ import static google.registry.mapreduce.inputs.EppResourceInputs.createEntityInp
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
+import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
 import com.google.appengine.tools.mapreduce.Mapper;
 import com.google.common.collect.ImmutableList;
@@ -28,16 +29,24 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryEnvironment;
+import google.registry.flows.poll.PollFlowUtils;
 import google.registry.mapreduce.MapreduceRunner;
 import google.registry.model.EppResource;
+import google.registry.model.EppResourceUtils;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
+import google.registry.model.poll.PollMessage;
+import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.reporting.HistoryEntryDao;
+import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.util.Clock;
 import java.util.List;
 import javax.inject.Inject;
 
@@ -46,8 +55,8 @@ import javax.inject.Inject;
  * the associated ForeignKey and EppResourceIndex entities.
  *
  * <p>This only deletes contacts and hosts, NOT domains. To delete domains, use {@link
- * DeleteLoadTestDataAction} and pass it the TLD(s) that the load test domains were created on. Note
- * that DeleteLoadTestDataAction is safe enough to run in production whereas this mapreduce is not,
+ * DeleteProberDataAction} and pass it the TLD(s) that the load test domains were created on. Note
+ * that DeleteProberDataAction is safe enough to run in production whereas this mapreduce is not,
  * but this one does not need to be runnable in production because load testing isn't run against
  * production.
  */
@@ -68,15 +77,22 @@ public class DeleteLoadTestDataAction implements Runnable {
    */
   private static final ImmutableSet<String> LOAD_TEST_REGISTRARS = ImmutableSet.of("proxy");
 
-  @Inject
-  @Parameter(PARAM_DRY_RUN)
-  boolean isDryRun;
-
-  @Inject MapreduceRunner mrRunner;
-  @Inject Response response;
+  private final boolean isDryRun;
+  private final MapreduceRunner mrRunner;
+  private final Response response;
+  private final Clock clock;
 
   @Inject
-  DeleteLoadTestDataAction() {}
+  DeleteLoadTestDataAction(
+      @Parameter(PARAM_DRY_RUN) boolean isDryRun,
+      MapreduceRunner mrRunner,
+      Response response,
+      Clock clock) {
+    this.isDryRun = isDryRun;
+    this.mrRunner = mrRunner;
+    this.response = response;
+    this.clock = clock;
+  }
 
   @Override
   public void run() {
@@ -87,14 +103,77 @@ public class DeleteLoadTestDataAction implements Runnable {
         !RegistryEnvironment.get().equals(PRODUCTION),
         "This mapreduce is not safe to run on PRODUCTION.");
 
-    mrRunner
-        .setJobName("Delete load test data")
-        .setModuleName("backend")
-        .runMapOnly(
-            new DeleteLoadTestDataMapper(isDryRun),
-            ImmutableList.of(
-                createEntityInput(ContactResource.class), createEntityInput(HostResource.class)))
-        .sendLinkToMapreduceConsole(response);
+    if (tm().isOfy()) {
+      mrRunner
+          .setJobName("Delete load test data")
+          .setModuleName("backend")
+          .runMapOnly(
+              new DeleteLoadTestDataMapper(isDryRun),
+              ImmutableList.of(
+                  createEntityInput(ContactResource.class), createEntityInput(HostResource.class)))
+          .sendLinkToMapreduceConsole(response);
+    } else {
+      tm().transact(
+              () -> {
+                LOAD_TEST_REGISTRARS.forEach(this::deletePollMessages);
+                tm().loadAllOfStream(ContactResource.class).forEach(this::deleteContact);
+                tm().loadAllOfStream(HostResource.class).forEach(this::deleteHost);
+              });
+    }
+  }
+
+  private void deletePollMessages(String registrarId) {
+    ImmutableList<PollMessage> pollMessages =
+        PollFlowUtils.createPollMessageQuery(registrarId, END_OF_TIME).list();
+    if (isDryRun) {
+      logger.atInfo().log(
+          "Would delete %d poll messages for registrar %s.", pollMessages.size(), registrarId);
+    } else {
+      pollMessages.forEach(tm()::delete);
+    }
+  }
+
+  private void deleteContact(ContactResource contact) {
+    if (!LOAD_TEST_REGISTRARS.contains(contact.getPersistedCurrentSponsorClientId())) {
+      return;
+    }
+    // We cannot remove contacts from domains in the general case, so we cannot delete contacts
+    // that are linked to domains (since it would break the foreign keys)
+    if (EppResourceUtils.isLinked(contact.createVKey(), clock.nowUtc())) {
+      logger.atWarning().log(
+          "Cannot delete contact with repo ID %s since it is referenced from a domain",
+          contact.getRepoId());
+      return;
+    }
+    deleteResource(contact);
+  }
+
+  private void deleteHost(HostResource host) {
+    if (!LOAD_TEST_REGISTRARS.contains(host.getPersistedCurrentSponsorClientId())) {
+      return;
+    }
+    // We can remove hosts from linked domains, so we should do so then delete the hosts
+    ImmutableSet<VKey<DomainBase>> linkedDomains =
+        EppResourceUtils.getLinkedDomainKeys(host.createVKey(), clock.nowUtc(), Integer.MAX_VALUE);
+    tm().loadByKeys(linkedDomains)
+        .values()
+        .forEach(domain -> tm().put(domain.asBuilder().setNameservers(ImmutableSet.of()).build()));
+    deleteResource(host);
+  }
+
+  private void deleteResource(EppResource eppResource) {
+    // In SQL, the only objects parented on the resource are poll messages (deleted above) and
+    // history objects.
+    ImmutableList<HistoryEntry> historyObjects =
+        HistoryEntryDao.loadHistoryObjectsForResource(eppResource.createVKey());
+    if (isDryRun) {
+      logger.atInfo().log(
+          "Would delete repo ID %s along with %d history objects",
+          eppResource.getRepoId(), historyObjects.size());
+    } else {
+      historyObjects.forEach(tm()::delete);
+      tm().delete(eppResource);
+    }
   }
 
   /** Provides the map method that runs for each existing contact and host entity. */

@@ -280,6 +280,11 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
+  public <T> Stream<T> loadAllOfStream(Class<T> clazz) {
+    return Streams.stream(getPossibleAncestorQuery(clazz));
+  }
+
+  @Override
   public <T> Optional<T> loadSingleton(Class<T> clazz) {
     List<T> elements = getPossibleAncestorQuery(clazz).limit(2).list();
     checkArgument(
