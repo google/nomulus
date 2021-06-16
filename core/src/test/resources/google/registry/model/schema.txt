@@ -667,6 +667,7 @@ class google.registry.model.registry.Registry {
   int numDnsPublishLocks;
   java.lang.String driveFolderId;
   java.lang.String lordnUsername;
+  java.lang.String premiumListName;
   java.lang.String pricingEngineClassName;
   java.lang.String roidSuffix;
   java.lang.String tldStr;
@@ -675,6 +676,7 @@ class google.registry.model.registry.Registry {
   java.util.Set<java.lang.String> allowedFullyQualifiedHostNames;
   java.util.Set<java.lang.String> allowedRegistrantContactIds;
   java.util.Set<java.lang.String> dnsWriters;
+  java.util.Set<java.lang.String> reservedListNames;
   org.joda.money.CurrencyUnit currency;
   org.joda.money.Money createBillingCost;
   org.joda.money.Money registryLockOrUnlockBillingCost;

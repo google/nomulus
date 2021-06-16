@@ -20,6 +20,7 @@ import google.registry.tools.javascrap.BackfillSpec11ThreatMatchesCommand;
 import google.registry.tools.javascrap.DeleteContactByRoidCommand;
 import google.registry.tools.javascrap.PopulateNullRegistrarFieldsCommand;
 import google.registry.tools.javascrap.RemoveIpAddressCommand;
+import google.registry.tools.javascrap.ResaveAllTldsCommand;
 
 /** Container class to create and run remote commands against a Datastore instance. */
 public final class RegistryTool {
@@ -106,6 +107,7 @@ public final class RegistryTool {
           .put("remove_ip_address", RemoveIpAddressCommand.class)
           .put("remove_registry_one_key", RemoveRegistryOneKeyCommand.class)
           .put("renew_domain", RenewDomainCommand.class)
+          .put("resave_all_tlds", ResaveAllTldsCommand.class)
           .put("resave_entities", ResaveEntitiesCommand.class)
           .put("resave_environment_entities", ResaveEnvironmentEntitiesCommand.class)
           .put("resave_epp_resource", ResaveEppResourceCommand.class)
