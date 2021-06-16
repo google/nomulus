@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.setTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -49,7 +50,6 @@ import google.registry.model.reporting.Spec11ThreatMatchDao;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.TransactionManager;
-import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -71,7 +71,6 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.json.JSONObject;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -113,8 +112,6 @@ class Spec11PipelineTest {
           ThreatMatch.create("THREAT_TYPE_UNSPECIFIED", "no-eamil.com"),
           ThreatMatch.create("UNWANTED_SOFTWARE", "anti-anti-anti-virus.dev"));
 
-  // This extension is only needed because Spec11ThreatMatch uses Ofy to generate the ID. Can be
-  // removed after the SQL migration.
   @RegisterExtension
   @Order(Order.DEFAULT - 1)
   final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
@@ -136,12 +133,9 @@ class Spec11PipelineTest {
   private PCollection<KV<Subdomain, ThreatMatch>> threatMatches;
 
   ImmutableSet<Spec11ThreatMatch> sqlThreatMatches;
-  TransactionManager tm;
 
   @BeforeEach
   void beforeEach() throws Exception {
-    tm = tm();
-    TransactionManagerFactory.setTm(jpaTm());
     reportingBucketUrl = Files.createDirectory(tmpDir.resolve(REPORTING_BUCKET_URL)).toFile();
     options.setDate(DATE);
     options.setSafeBrowsingApiKey(SAFE_BROWSING_API_KEY);
@@ -196,11 +190,6 @@ class Spec11PipelineTest {
                 .build());
   }
 
-  @AfterEach
-  void afterEach() {
-    TransactionManagerFactory.setTm(tm);
-  }
-
   @Test
   void testSuccess_fullSqlPipeline() throws Exception {
     setupCloudSql();
@@ -241,6 +230,8 @@ class Spec11PipelineTest {
   }
 
   private void setupCloudSql() {
+    TransactionManager originalTm = tm();
+    setTm(jpaTm());
     persistNewRegistrar("TheRegistrar");
     persistNewRegistrar("NewRegistrar");
     Registrar registrar1 =
@@ -280,6 +271,7 @@ class Spec11PipelineTest {
     persistResource(createDomain("no-email.com", "2A4BA9BBC-COM", registrar2, contact2));
     persistResource(
         createDomain("anti-anti-anti-virus.dev", "555666888-DEV", registrar3, contact3));
+    setTm(originalTm);
   }
 
   private void verifySaveToGcs() throws Exception {

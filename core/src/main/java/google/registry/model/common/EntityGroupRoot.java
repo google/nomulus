@@ -14,11 +14,13 @@
 
 package google.registry.model.common;
 
+import com.google.apphosting.api.ApiProxy;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.BackupGroupRoot;
 import google.registry.schema.replay.DatastoreOnlyEntity;
+import javax.annotation.Nullable;
 
 /**
  * The root key for the entity group which is known as the cross-tld entity group for historical
@@ -42,7 +44,13 @@ public class EntityGroupRoot extends BackupGroupRoot implements DatastoreOnlyEnt
   private String id;
 
   /** The root key for cross-tld resources such as registrars. */
-  public static Key<EntityGroupRoot> getCrossTldKey() {
-    return Key.create(EntityGroupRoot.class, "cross-tld");
+  public static @Nullable Key<EntityGroupRoot> getCrossTldKey() {
+    // If we cannot get a current environment, calling Key.create() will fail. Instead we return a
+    // null in cases where this key is not actually needed (for example when loading an entity from
+    // SQL) to initialize an object, to avoid having to register a DatastoreEntityExtension in
+    // tests.
+    return ApiProxy.getCurrentEnvironment() == null
+        ? null
+        : Key.create(EntityGroupRoot.class, "cross-tld");
   }
 }

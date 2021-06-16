@@ -21,6 +21,7 @@ import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotInPendingDelete;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
 import static google.registry.model.EppResourceUtils.createRepoId;
+import static google.registry.model.IdService.allocateId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
@@ -49,7 +50,6 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Optional;
@@ -126,7 +126,7 @@ public final class HostCreateFlow implements TransactionalFlow {
             .setPersistedCurrentSponsorClientId(clientId)
             .setHostName(targetId)
             .setInetAddresses(command.getInetAddresses())
-            .setRepoId(createRepoId(ObjectifyService.allocateId(), roidSuffix))
+            .setRepoId(createRepoId(allocateId(), roidSuffix))
             .setSuperordinateDomain(superordinateDomain.map(DomainBase::createVKey).orElse(null))
             .build();
     historyBuilder.setType(HistoryEntry.Type.HOST_CREATE).setModificationTime(now).setHost(newHost);

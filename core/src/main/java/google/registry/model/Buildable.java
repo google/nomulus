@@ -16,9 +16,10 @@ package google.registry.model;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
+import static google.registry.model.IdService.allocateId;
+import static google.registry.model.ModelUtils.getAllFields;
 
-import google.registry.model.ofy.ObjectifyService;
+import com.googlecode.objectify.annotation.Id;
 import google.registry.util.TypeUtils.TypeInstantiator;
 import java.lang.reflect.Field;
 import java.util.Optional;
@@ -54,25 +55,18 @@ public interface Buildable {
     /** Build the instance. */
     public S build() {
       try {
-        // If this object has a Long or long Objectify @Id field that is not set, set it now.
-        Field idField = null;
-        try {
-          idField =
-              ModelUtils.getAllFields(instance.getClass())
-                  .get(
-                      auditedOfy()
-                          .factory()
-                          .getMetadata(instance.getClass())
-                          .getKeyMetadata()
-                          .getIdFieldName());
-        } catch (Exception e) {
-          // Expected if the class is not registered with Objectify.
-        }
+        // If this object has a Long or long Objectify @Id field that is not set, set it now. For
+        // any entity it has one and only one @Id field in its class hierarchy.
+        Field idField =
+            getAllFields(instance.getClass()).values().stream()
+                .filter(field -> field.isAnnotationPresent(Id.class))
+                .findFirst()
+                .orElse(null);
         if (idField != null
             && !idField.getType().equals(String.class)
             && Optional.ofNullable((Long) ModelUtils.getFieldValue(instance, idField))
                 .orElse(0L) == 0) {
-          ModelUtils.setFieldValue(instance, idField, ObjectifyService.allocateId());
+          ModelUtils.setFieldValue(instance, idField, allocateId());
         }
         return instance;
       } finally {

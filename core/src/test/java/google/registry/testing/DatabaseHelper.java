@@ -28,10 +28,10 @@ import static google.registry.config.RegistryConfig.getContactAndHostRoidSuffix;
 import static google.registry.config.RegistryConfig.getContactAutomaticTransferLength;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
 import static google.registry.model.EppResourceUtils.createRepoId;
+import static google.registry.model.IdService.allocateId;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.ResourceTransferUtils.createTransferResponse;
-import static google.registry.model.ofy.ObjectifyService.allocateId;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
@@ -90,7 +90,6 @@ import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.EppResourceIndexBucket;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
 import google.registry.model.registrar.Registrar;
@@ -957,12 +956,12 @@ public class DatabaseHelper {
 
   /** Returns a newly allocated, globally unique domain repoId of the format HEX-TLD. */
   public static String generateNewDomainRoid(String tld) {
-    return createDomainRepoId(ObjectifyService.allocateId(), tld);
+    return createDomainRepoId(allocateId(), tld);
   }
 
   /** Returns a newly allocated, globally unique contact/host repoId of the format HEX_TLD-ROID. */
   public static String generateNewContactHostRoid() {
-    return createRepoId(ObjectifyService.allocateId(), getContactAndHostRoidSuffix());
+    return createRepoId(allocateId(), getContactAndHostRoidSuffix());
   }
 
   /**

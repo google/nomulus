@@ -15,6 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.model.IdService.allocateId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.xml.ValidationMode.LENIENT;
 import static google.registry.xml.ValidationMode.STRICT;
@@ -33,7 +34,6 @@ import google.registry.model.eppcommon.EppXmlTransformer;
 import google.registry.model.eppinput.EppInput.WrongProtocolVersionException;
 import google.registry.model.eppoutput.EppOutput;
 import google.registry.model.host.InetAddressAdapter.IpVersionMismatchException;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.translators.CurrencyUnitAdapter.UnknownCurrencyException;
 import google.registry.xml.XmlException;
@@ -105,7 +105,7 @@ public final class FlowUtils {
 
   public static <H extends HistoryEntry> Key<H> createHistoryKey(
       EppResource parent, Class<H> clazz) {
-    return Key.create(Key.create(parent), clazz, ObjectifyService.allocateId());
+    return Key.create(Key.create(parent), clazz, allocateId());
   }
 
   /** Registrar is not logged in. */

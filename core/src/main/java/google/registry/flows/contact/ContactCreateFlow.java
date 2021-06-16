@@ -19,6 +19,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist
 import static google.registry.flows.contact.ContactFlowUtils.validateAsciiPostalInfo;
 import static google.registry.flows.contact.ContactFlowUtils.validateContactAgainstPolicy;
 import static google.registry.model.EppResourceUtils.createRepoId;
+import static google.registry.model.IdService.allocateId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -41,7 +42,6 @@ import google.registry.model.eppoutput.CreateData.ContactCreateData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import javax.inject.Inject;
@@ -81,7 +81,7 @@ public final class ContactCreateFlow implements TransactionalFlow {
             .setAuthInfo(command.getAuthInfo())
             .setCreationClientId(clientId)
             .setPersistedCurrentSponsorClientId(clientId)
-            .setRepoId(createRepoId(ObjectifyService.allocateId(), roidSuffix))
+            .setRepoId(createRepoId(allocateId(), roidSuffix))
             .setFaxNumber(command.getFax())
             .setVoiceNumber(command.getVoice())
             .setDisclose(command.getDisclose())
