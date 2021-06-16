@@ -14,6 +14,8 @@
 
 package google.registry.testing;
 
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
+
 import com.google.apphosting.api.ApiProxy;
 import com.google.apphosting.api.ApiProxy.Environment;
 import java.util.Map;
@@ -24,7 +26,11 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 /**
  * Allows instantiation of Datastore {@code Entity entities} without the heavyweight {@code
- * AppEngineRule}.
+ * AppEngineExtension}.
+ *
+ * <p>When an Ofy key is created, by calling the various Key.create() methods, whether the current
+ * executing thread is a GAE thread is checked, which this extension masquerades. This happens
+ * frequently when an entity which has the key of another entity as a field is instantiated.
  *
  * <p>When used together with {@code JpaIntegrationWithCoverageExtension} or @{@code
  * TestPipelineExtension}, this extension must be registered first. For consistency's sake, it is
@@ -41,6 +47,10 @@ public class DatastoreEntityExtension implements BeforeEachCallback, AfterEachCa
   @Override
   public void beforeEach(ExtensionContext context) {
     ApiProxy.setEnvironmentForCurrentThread(PLACEHOLDER_ENV);
+    // In order to create keys for entities they must be registered with Ofy. Calling this method
+    // will load the ObjectifyService class, whose static initialization block registers all Ofy
+    // entities.
+    auditedOfy();
   }
 
   @Override

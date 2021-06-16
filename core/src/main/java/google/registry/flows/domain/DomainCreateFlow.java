@@ -42,6 +42,7 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyPremiumNameIsNo
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
 import static google.registry.flows.domain.DomainFlowUtils.verifyUnitIsYears;
 import static google.registry.model.EppResourceUtils.createDomainRepoId;
+import static google.registry.model.IdService.allocateId;
 import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
@@ -99,7 +100,6 @@ import google.registry.model.eppoutput.CreateData.DomainCreateData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.poll.PendingActionNotificationResponse.DomainPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.Autorenew;
@@ -302,12 +302,9 @@ public class DomainCreateFlow implements TransactionalFlow {
     Optional<SecDnsCreateExtension> secDnsCreate =
         validateSecDnsExtension(eppInput.getSingleExtension(SecDnsCreateExtension.class));
     DateTime registrationExpirationTime = leapSafeAddYears(now, years);
-    String repoId = createDomainRepoId(ObjectifyService.allocateId(), registry.getTldStr());
+    String repoId = createDomainRepoId(allocateId(), registry.getTldStr());
     Key<DomainHistory> domainHistoryKey =
-        Key.create(
-            Key.create(DomainBase.class, repoId),
-            DomainHistory.class,
-            ObjectifyService.allocateId());
+        Key.create(Key.create(DomainBase.class, repoId), DomainHistory.class, allocateId());
     historyBuilder.setId(domainHistoryKey.getId());
     // Bill for the create.
     BillingEvent.OneTime createBillingEvent =

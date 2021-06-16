@@ -15,6 +15,7 @@
 package google.registry.model.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.model.IdService.allocateId;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -22,7 +23,6 @@ import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.rgp.GracePeriodStatus;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.BillingVKey.BillingEventVKey;
 import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.persistence.VKey;
@@ -68,7 +68,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
         (billingEventRecurring != null) == GracePeriodStatus.AUTO_RENEW.equals(type),
         "Recurring billing events must be present on (and only on) autorenew grace periods");
     GracePeriod instance = new GracePeriod();
-    instance.gracePeriodId = gracePeriodId == null ? ObjectifyService.allocateId() : gracePeriodId;
+    instance.gracePeriodId = gracePeriodId == null ? allocateId() : gracePeriodId;
     instance.type = checkArgumentNotNull(type);
     instance.domainRepoId = checkArgumentNotNull(domainRepoId);
     instance.expirationTime = checkArgumentNotNull(expirationTime);
@@ -210,7 +210,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
 
     static GracePeriodHistory createFrom(long historyRevisionId, GracePeriod gracePeriod) {
       GracePeriodHistory instance = new GracePeriodHistory();
-      instance.gracePeriodHistoryRevisionId = ObjectifyService.allocateId();
+      instance.gracePeriodHistoryRevisionId = allocateId();
       instance.domainHistoryRevisionId = historyRevisionId;
       instance.gracePeriodId = gracePeriod.gracePeriodId;
       instance.type = gracePeriod.type;
