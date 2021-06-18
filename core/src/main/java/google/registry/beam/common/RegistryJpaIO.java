@@ -21,14 +21,15 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import google.registry.backup.AppEngineEnvironment;
-import google.registry.beam.common.RegistryQuery.QueryComposerFactory;
-import google.registry.beam.common.RegistryQuery.RegistryQueryFactory;
+import google.registry.beam.common.RegistryQuery.CriteriaQuerySupplier;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import java.io.Serializable;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
+import javax.annotation.Nullable;
 import javax.persistence.criteria.CriteriaQuery;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.SerializableCoder;
@@ -60,13 +61,18 @@ public final class RegistryJpaIO {
 
   private RegistryJpaIO() {}
 
-  public static <R> Read<R, R> read(QueryComposerFactory<R> queryFactory) {
-    return Read.<R, R>builder().queryFactory(queryFactory).build();
+  public static <R> Read<R, R> read(CriteriaQuerySupplier<R> query) {
+    return read(query, x -> x);
   }
 
   public static <R, T> Read<R, T> read(
-      QueryComposerFactory<R> queryFactory, SerializableFunction<R, T> resultMapper) {
-    return Read.<R, T>builder().queryFactory(queryFactory).resultMapper(resultMapper).build();
+      CriteriaQuerySupplier<R> query, SerializableFunction<R, T> resultMapper) {
+    return Read.<R, T>builder().criteriaQuery(query).resultMapper(resultMapper).build();
+  }
+
+  public static <R, T> Read<R, T> read(
+      String sql, boolean nativeQuery, SerializableFunction<R, T> resultMapper) {
+    return read(sql, null, nativeQuery, resultMapper);
   }
 
   /**
@@ -74,8 +80,39 @@ public final class RegistryJpaIO {
    *
    * <p>User should take care to prevent sql-injection attacks.
    */
-  public static <R, T> Read<R, T> read(String jpql, SerializableFunction<R, T> resultMapper) {
-    return Read.<R, T>builder().jpqlQueryFactory(jpql).resultMapper(resultMapper).build();
+  public static <R, T> Read<R, T> read(
+      String sql,
+      @Nullable Map<String, Object> parameter,
+      boolean nativeQuery,
+      SerializableFunction<R, T> resultMapper) {
+    Read.Builder<R, T> builder = Read.builder();
+    if (nativeQuery) {
+      builder.nativeQuery(sql, parameter);
+    } else {
+      builder.jpqlQuery(sql, parameter);
+    }
+    return builder.resultMapper(resultMapper).build();
+  }
+
+  public static <R, T> Read<R, T> read(
+      String jpql, Class<R> clazz, SerializableFunction<R, T> resultMapper) {
+    return read(jpql, null, clazz, resultMapper);
+  }
+
+  /**
+   * Returns a {@link Read} connector based on the given {@code jpql} typed query string.
+   *
+   * <p>User should take care to prevent sql-injection attacks.
+   */
+  public static <R, T> Read<R, T> read(
+      String jpql,
+      @Nullable Map<String, Object> parameter,
+      Class<R> clazz,
+      SerializableFunction<R, T> resultMapper) {
+    return Read.<R, T>builder()
+        .jpqlQuery(jpql, clazz, parameter)
+        .resultMapper(resultMapper)
+        .build();
   }
 
   public static <T> Write<T> write() {
@@ -94,7 +131,7 @@ public final class RegistryJpaIO {
 
     abstract String name();
 
-    abstract RegistryQueryFactory<R> queryFactory();
+    abstract RegistryQuery<R> query();
 
     abstract SerializableFunction<R, T> resultMapper();
 
@@ -107,9 +144,7 @@ public final class RegistryJpaIO {
     public PCollection<T> expand(PBegin input) {
       return input
           .apply("Starting " + name(), Create.of((Void) null))
-          .apply(
-              "Run query for " + name(),
-              ParDo.of(new QueryRunner<>(queryFactory(), resultMapper())))
+          .apply("Run query for " + name(), ParDo.of(new QueryRunner<>(query(), resultMapper())))
           .setCoder(coder())
           .apply("Reshuffle", Reshuffle.viaRandomKey());
     }
@@ -127,9 +162,8 @@ public final class RegistryJpaIO {
     }
 
     static <R, T> Builder<R, T> builder() {
-      return new AutoValue_RegistryJpaIO_Read.Builder()
+      return new AutoValue_RegistryJpaIO_Read.Builder<R, T>()
           .name(DEFAULT_NAME)
-          .resultMapper(x -> x)
           .coder(SerializableCoder.of(Serializable.class));
     }
 
@@ -138,7 +172,7 @@ public final class RegistryJpaIO {
 
       abstract Builder<R, T> name(String name);
 
-      abstract Builder<R, T> queryFactory(RegistryQueryFactory<R> queryFactory);
+      abstract Builder<R, T> query(RegistryQuery<R> query);
 
       abstract Builder<R, T> resultMapper(SerializableFunction<R, T> mapper);
 
@@ -146,21 +180,29 @@ public final class RegistryJpaIO {
 
       abstract Read<R, T> build();
 
-      Builder<R, T> queryFactory(QueryComposerFactory<R> queryFactory) {
-        return queryFactory(RegistryQuery.createQueryFactory(queryFactory));
+      Builder<R, T> criteriaQuery(CriteriaQuerySupplier<R> criteriaQuery) {
+        return query(RegistryQuery.createQuery(criteriaQuery));
       }
 
-      Builder<R, T> jpqlQueryFactory(String jpql) {
-        return queryFactory(RegistryQuery.createQueryFactory(jpql));
+      Builder<R, T> nativeQuery(String sql, Map<String, Object> parameters) {
+        return query(RegistryQuery.createQuery(sql, parameters, true));
+      }
+
+      Builder<R, T> jpqlQuery(String jpql, Map<String, Object> parameters) {
+        return query(RegistryQuery.createQuery(jpql, parameters, false));
+      }
+
+      Builder<R, T> jpqlQuery(String jpql, Class<R> clazz, Map<String, Object> parameters) {
+        return query(RegistryQuery.createQuery(jpql, parameters, clazz));
       }
     }
 
     static class QueryRunner<R, T> extends DoFn<Void, T> {
-      private final RegistryQueryFactory<R> queryFactory;
+      private final RegistryQuery<R> query;
       private final SerializableFunction<R, T> resultMapper;
 
-      QueryRunner(RegistryQueryFactory<R> queryFactory, SerializableFunction<R, T> resultMapper) {
-        this.queryFactory = queryFactory;
+      QueryRunner(RegistryQuery<R> query, SerializableFunction<R, T> resultMapper) {
+        this.query = query;
         this.resultMapper = resultMapper;
       }
 
@@ -172,10 +214,7 @@ public final class RegistryJpaIO {
           // TODO(b/187210388): JpaTransactionManager should support non-transactional query.
           jpaTm()
               .transactNoRetry(
-                  () ->
-                      queryFactory.apply(jpaTm()).stream()
-                          .map(resultMapper::apply)
-                          .forEach(outputReceiver::output));
+                  () -> query.stream().map(resultMapper::apply).forEach(outputReceiver::output));
         }
       }
     }

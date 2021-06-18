@@ -14,48 +14,75 @@
 
 package google.registry.beam.common;
 
-import google.registry.persistence.transaction.JpaTransactionManager;
-import google.registry.persistence.transaction.QueryComposer;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+
+import java.io.Serializable;
+import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
-import org.apache.beam.sdk.transforms.SerializableFunction;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaQuery;
 
 /** Interface for query instances used by {@link RegistryJpaIO.Read}. */
-public interface RegistryQuery<T> {
+public interface RegistryQuery<T> extends Serializable {
   Stream<T> stream();
 
-  /** Factory for {@link RegistryQuery}. */
-  interface RegistryQueryFactory<T>
-      extends SerializableFunction<JpaTransactionManager, RegistryQuery<T>> {}
-
-  // TODO(mmuller): Consider detached JpaQueryComposer that works with any JpaTransactionManager
-  // instance, i.e., change composer.buildQuery() to composer.buildQuery(JpaTransactionManager).
-  // This way QueryComposer becomes reusable and serializable (at least with Hibernate), and this
-  // interface would no longer be necessary.
-  interface QueryComposerFactory<T>
-      extends SerializableFunction<JpaTransactionManager, QueryComposer<T>> {}
+  interface CriteriaQuerySupplier<T> extends Supplier<CriteriaQuery<T>>, Serializable {}
 
   /**
-   * Returns a {@link RegistryQueryFactory} that creates a JPQL query from constant text.
+   * Returns a {@link RegistryQuery} that creates a string query from constant text.
    *
+   * @param nativeQuery whether the given string is to be interpreted as a native query or JPQL.
+   * @param parameters parameters to be substituted in the query.
    * @param <T> Type of each row in the result set, {@link Object} in single-select queries, and
    *     {@code Object[]} in multi-select queries.
    */
-  @SuppressWarnings("unchecked") // query.getResultStream: jpa api uses raw type
-  static <T> RegistryQueryFactory<T> createQueryFactory(String jpql) {
-    return (JpaTransactionManager jpa) ->
-        () -> {
-          EntityManager entityManager = jpa.getEntityManager();
-          Query query = entityManager.createQuery(jpql);
-          return query.getResultStream().map(e -> detach(entityManager, e));
-        };
+  static <T> RegistryQuery<T> createQuery(
+      String sql, @Nullable Map<String, Object> parameters, boolean nativeQuery) {
+    return () -> {
+      EntityManager entityManager = jpaTm().getEntityManager();
+      Query query =
+          nativeQuery ? entityManager.createNativeQuery(sql) : entityManager.createQuery(sql);
+      if (parameters != null) {
+        parameters.forEach(query::setParameter);
+      }
+      @SuppressWarnings("unchecked")
+      Stream<T> resultStream = query.getResultStream();
+      return nativeQuery ? resultStream : resultStream.map(e -> detach(entityManager, e));
+    };
   }
 
-  static <T> RegistryQueryFactory<T> createQueryFactory(
-      QueryComposerFactory<T> queryComposerFactory) {
-    return (JpaTransactionManager jpa) ->
-        () -> queryComposerFactory.apply(jpa).withAutoDetachOnLoad(true).stream();
+  /**
+   * Returns a {@link RegistryQuery} that creates a typed JPQL query from constant text.
+   *
+   * @param parameters parameters to be substituted in the query.
+   * @param <T> Type of each row in the result set.
+   */
+  static <T> RegistryQuery<T> createQuery(
+      String jpql, @Nullable Map<String, Object> parameters, Class<T> clazz) {
+    return () -> {
+      TypedQuery<T> query = jpaTm().query(jpql, clazz);
+      if (parameters != null) {
+        parameters.forEach(query::setParameter);
+      }
+      return query.getResultStream();
+    };
+  }
+
+  /**
+   * Returns a {@link RegistryQuery} from a {@link CriteriaQuery} supplier.
+   *
+   * <p>A serializable supplier is needed in because {@link CriteriaQuery} itself must be created
+   * within a transaction, and we are not in a transaction yet when this function is called to set
+   * up the pipeline.
+   *
+   * @param <T> Type of each row in the result set.
+   */
+  static <T> RegistryQuery<T> createQuery(CriteriaQuerySupplier<T> criteriaQuery) {
+    return () -> jpaTm().query(criteriaQuery.get()).getResultStream();
   }
 
   /**
