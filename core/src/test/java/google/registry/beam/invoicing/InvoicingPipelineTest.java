@@ -14,24 +14,55 @@
 
 package google.registry.beam.invoicing;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.beam.TestPipelineExtension;
+import google.registry.beam.common.RegistryJpaIO;
+import google.registry.beam.common.RegistryJpaIO.Read;
+import google.registry.model.billing.BillingEvent.Flag;
+import google.registry.model.billing.BillingEvent.OneTime;
+import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
+import google.registry.model.registrar.Registrar;
+import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.TransactionManager;
+import google.registry.persistence.transaction.TransactionManagerFactory;
+import google.registry.testing.DatastoreEntityExtension;
+import google.registry.testing.FakeClock;
 import google.registry.testing.TestDataHelper;
 import google.registry.util.ResourceUtils;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.Map.Entry;
+import java.util.Optional;
 import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.values.PCollection;
+import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
+import org.joda.time.DateTime;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -61,7 +92,7 @@ class InvoicingPipelineTest {
               20.5,
               ""),
           BillingEvent.create(
-              1,
+              2,
               ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
               ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
               "theRegistrar",
@@ -76,7 +107,7 @@ class InvoicingPipelineTest {
               20.5,
               ""),
           BillingEvent.create(
-              1,
+              3,
               ZonedDateTime.of(2017, 10, 2, 0, 0, 0, 0, ZoneId.of("UTC")),
               ZonedDateTime.of(2017, 9, 29, 0, 0, 0, 0, ZoneId.of("UTC")),
               "theRegistrar",
@@ -88,10 +119,10 @@ class InvoicingPipelineTest {
               "REPO-ID",
               5,
               "JPY",
-              70.75,
+              70.0,
               ""),
           BillingEvent.create(
-              1,
+              4,
               ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
               ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
               "bestdomains",
@@ -106,7 +137,7 @@ class InvoicingPipelineTest {
               20.5,
               ""),
           BillingEvent.create(
-              1,
+              5,
               ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
               ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
               "anotherRegistrar",
@@ -118,10 +149,10 @@ class InvoicingPipelineTest {
               "REPO-ID",
               1,
               "USD",
-              0,
+              0.0,
               "SUNRISE ANCHOR_TENANT"),
           BillingEvent.create(
-              1,
+              6,
               ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
               ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
               "theRegistrar",
@@ -133,10 +164,10 @@ class InvoicingPipelineTest {
               "REPO-ID",
               0,
               "USD",
-              0,
+              0.0,
               ""),
           BillingEvent.create(
-              1,
+              7,
               ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
               ZonedDateTime.of(2017, 10, 4, 0, 0, 0, 0, ZoneId.of("UTC")),
               "theRegistrar",
@@ -148,48 +179,56 @@ class InvoicingPipelineTest {
               "REPO-ID",
               0,
               "USD",
-              20,
+              20.0,
               ""));
 
   private static final ImmutableMap<String, ImmutableList<String>> EXPECTED_DETAILED_REPORT_MAP =
       ImmutableMap.of(
           "invoice_details_2017-10_theRegistrar_test.csv",
           ImmutableList.of(
-              "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
+              "2,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
                   + "test,RENEW,mydomain2.test,REPO-ID,3,USD,20.50,",
               "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
                   + "test,RENEW,mydomain.test,REPO-ID,3,USD,20.50,",
-              "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
+              "7,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
                   + "test,SERVER_STATUS,update-prohibited.test,REPO-ID,0,USD,20.00,",
-              "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
+              "6,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,theRegistrar,234,,"
                   + "test,SERVER_STATUS,locked.test,REPO-ID,0,USD,0.00,"),
           "invoice_details_2017-10_theRegistrar_hello.csv",
           ImmutableList.of(
-              "1,2017-10-02 00:00:00 UTC,2017-09-29 00:00:00 UTC,theRegistrar,234,,"
-                  + "hello,CREATE,mydomain3.hello,REPO-ID,5,JPY,70.75,"),
+              "3,2017-10-02 00:00:00 UTC,2017-09-29 00:00:00 UTC,theRegistrar,234,,"
+                  + "hello,CREATE,mydomain3.hello,REPO-ID,5,JPY,70.00,"),
           "invoice_details_2017-10_bestdomains_test.csv",
           ImmutableList.of(
-              "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,bestdomains,456,116688,"
+              "4,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,bestdomains,456,116688,"
                   + "test,RENEW,mydomain4.test,REPO-ID,1,USD,20.50,"),
           "invoice_details_2017-10_anotherRegistrar_test.csv",
           ImmutableList.of(
-              "1,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,anotherRegistrar,789,,"
+              "5,2017-10-04 00:00:00 UTC,2017-10-04 00:00:00 UTC,anotherRegistrar,789,,"
                   + "test,CREATE,mydomain5.test,REPO-ID,1,USD,0.00,SUNRISE ANCHOR_TENANT"));
 
   private static final ImmutableList<String> EXPECTED_INVOICE_OUTPUT =
       ImmutableList.of(
           "2017-10-01,2020-09-30,234,41.00,USD,10125,1,PURCHASE,theRegistrar - test,2,"
               + "RENEW | TLD: test | TERM: 3-year,20.50,USD,",
-          "2017-10-01,2022-09-30,234,70.75,JPY,10125,1,PURCHASE,theRegistrar - hello,1,"
-              + "CREATE | TLD: hello | TERM: 5-year,70.75,JPY,",
+          "2017-10-01,2022-09-30,234,70.00,JPY,10125,1,PURCHASE,theRegistrar - hello,1,"
+              + "CREATE | TLD: hello | TERM: 5-year,70.00,JPY,",
           "2017-10-01,,234,20.00,USD,10125,1,PURCHASE,theRegistrar - test,1,"
               + "SERVER_STATUS | TLD: test | TERM: 0-year,20.00,USD,",
           "2017-10-01,2018-09-30,456,20.50,USD,10125,1,PURCHASE,bestdomains - test,1,"
               + "RENEW | TLD: test | TERM: 1-year,20.50,USD,116688");
 
   @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
+
+  @RegisterExtension
   final TestPipelineExtension pipeline =
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
+
+  @RegisterExtension
+  final JpaIntegrationTestExtension database =
+      new JpaTestRules.Builder().withClock(new FakeClock()).buildIntegrationTestRule();
 
   @TempDir Path tmpDir;
 
@@ -198,15 +237,23 @@ class InvoicingPipelineTest {
 
   private File billingBucketUrl;
   private PCollection<BillingEvent> billingEvents;
+  TransactionManager tm;
 
   @BeforeEach
   void beforeEach() throws Exception {
+    tm = tm();
+    TransactionManagerFactory.setTm(jpaTm());
     billingBucketUrl = Files.createDirectory(tmpDir.resolve(BILLING_BUCKET_URL)).toFile();
     options.setBillingBucketUrl(billingBucketUrl.getAbsolutePath());
     options.setYearMonth(YEAR_MONTH);
     options.setInvoiceFilePrefix(INVOICE_FILE_PREFIX);
     billingEvents =
         pipeline.apply(Create.of(INPUT_EVENTS).withCoder(SerializableCoder.of(BillingEvent.class)));
+  }
+
+  @AfterEach
+  void afterEach() {
+    TransactionManagerFactory.setTm(tm);
   }
 
   @Test
@@ -216,6 +263,43 @@ class InvoicingPipelineTest {
         .isEqualTo(TestDataHelper.loadFile(this.getClass(), "billing_events_test.sql"));
     // This is necessary because the TestPipelineExtension verifies that the pipelien is run.
     pipeline.run();
+  }
+
+  @Test
+  void testSuccess_readFromCloudSql() throws Exception {
+    setupCloudSql();
+
+    Read<Object[], BillingEvent> read =
+        RegistryJpaIO.read(
+            "select b, r from"
+                + " BillingEvent b join Registrar r on b.clientId = r.clientIdentifier",
+            (Object[] row) -> {
+              google.registry.model.billing.BillingEvent.OneTime oneTime =
+                  (google.registry.model.billing.BillingEvent.OneTime) row[0];
+              Registrar registrar = (Registrar) row[1];
+              return BillingEvent.create(
+                  oneTime.getId(),
+                  ZonedDateTime.ofInstant(
+                      Instant.ofEpochMilli(oneTime.getBillingTime().getMillis()), ZoneId.of("UTC")),
+                  ZonedDateTime.ofInstant(
+                      Instant.ofEpochMilli(oneTime.getEventTime().getMillis()), ZoneId.of("UTC")),
+                  registrar.getClientId(),
+                  registrar.getBillingIdentifier().toString(),
+                  registrar.getPoNumber().orElse(""),
+                  oneTime.getTargetId().substring(oneTime.getTargetId().lastIndexOf('.') + 1),
+                  oneTime.getReason().toString(),
+                  oneTime.getTargetId(),
+                  "REPO-ID",
+                  Optional.ofNullable(oneTime.getPeriodYears()).orElse(0),
+                  oneTime.getCost().getCurrencyUnit().toString(),
+                  oneTime.getCost().getAmount().doubleValue(),
+                  String.join(
+                      " ",
+                      oneTime.getFlags().stream().map(Flag::toString).collect(toImmutableSet())));
+            });
+    PCollection<BillingEvent> billingEvents = pipeline.apply(read);
+    PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
+    pipeline.run().waitUntilFinish();
   }
 
   @Test
@@ -255,5 +339,122 @@ class InvoicingPipelineTest {
                 "%s/invoices/2017-10/%s", billingBucketUrl.getAbsolutePath().toString(), filename));
     return ImmutableList.copyOf(
         ResourceUtils.readResourceUtf8(resultFile.toURI().toURL()).split("\n"));
+  }
+
+  private void setupCloudSql() {
+    persistNewRegistrar("NewRegistrar");
+    persistNewRegistrar("TheRegistrar");
+    Registrar registrar1 = persistNewRegistrar("theRegistrar");
+    registrar1 = registrar1.asBuilder().setBillingIdentifier(234L).build();
+    persistResource(registrar1);
+    Registrar registrar2 = persistNewRegistrar("bestdomains");
+    registrar2 =
+        registrar2
+            .asBuilder()
+            .setBillingIdentifier(456L)
+            .setPoNumber(Optional.of("116688"))
+            .build();
+    persistResource(registrar2);
+    Registrar registrar3 = persistNewRegistrar("anotherRegistrar");
+    registrar3 = registrar3.asBuilder().setBillingIdentifier(789L).build();
+    persistResource(registrar3);
+
+    createTld("test");
+    createTld("hello");
+
+    DomainBase domain1 = persistActiveDomain("mydomain.test");
+    DomainBase domain2 = persistActiveDomain("mydomain2.test");
+    DomainBase domain3 = persistActiveDomain("mydomain3.hello");
+    DomainBase domain4 = persistActiveDomain("mydomain4.test");
+    DomainBase domain5 = persistActiveDomain("mydomain5.test");
+    DomainBase domain6 = persistActiveDomain("locked.test");
+    DomainBase domain7 = persistActiveDomain("update-prohibited.test");
+
+    persistOneTimeBillingEvent(
+        1, domain1, registrar1, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
+    persistOneTimeBillingEvent(
+        2, domain2, registrar1, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
+    persistOneTimeBillingEvent(
+        3,
+        domain3,
+        registrar1,
+        Reason.CREATE,
+        5,
+        Money.ofMajor(CurrencyUnit.JPY, 70),
+        DateTime.parse("2017-09-29T00:00:00.0Z"),
+        DateTime.parse("2017-10-02T00:00:00.0Z"));
+    DateTime.parse("2017-09-29T00:00:00.0Z");
+    persistOneTimeBillingEvent(
+        4, domain4, registrar2, Reason.RENEW, 1, Money.of(CurrencyUnit.USD, 20.5));
+    persistOneTimeBillingEvent(
+        5,
+        domain5,
+        registrar3,
+        Reason.CREATE,
+        1,
+        Money.of(CurrencyUnit.USD, 0),
+        DateTime.parse("2017-10-04T00:00:00.0Z"),
+        DateTime.parse("2017-10-04T00:00:00.0Z"),
+        Flag.SUNRISE,
+        Flag.ANCHOR_TENANT);
+    persistOneTimeBillingEvent(
+        6, domain6, registrar1, Reason.SERVER_STATUS, 0, Money.of(CurrencyUnit.USD, 0));
+    persistOneTimeBillingEvent(
+        7, domain7, registrar1, Reason.SERVER_STATUS, 0, Money.of(CurrencyUnit.USD, 20));
+  }
+
+  private DomainHistory persistDomainHistory(DomainBase domainBase, Registrar registrar) {
+    DomainHistory domainHistory =
+        new DomainHistory.Builder()
+            .setType(HistoryEntry.Type.DOMAIN_RENEW)
+            .setModificationTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
+            .setDomain(domainBase)
+            .setClientId(registrar.getClientId())
+            .build();
+    return persistResource(domainHistory);
+  }
+
+  private void persistOneTimeBillingEvent(
+      int id, DomainBase domainBase, Registrar registrar, Reason reason, int years, Money money) {
+    persistOneTimeBillingEvent(
+        id,
+        domainBase,
+        registrar,
+        reason,
+        years,
+        money,
+        DateTime.parse("2017-10-04T00:00:00.0Z"),
+        DateTime.parse("2017-10-04T00:00:00.0Z"));
+  }
+
+  private void persistOneTimeBillingEvent(
+      int id,
+      DomainBase domainBase,
+      Registrar registrar,
+      Reason reason,
+      int years,
+      Money money,
+      DateTime eventTime,
+      DateTime billingTime,
+      Flag... flags) {
+    google.registry.model.billing.BillingEvent.OneTime.Builder billingEventBuilder =
+        new OneTime()
+            .asBuilder()
+            .setId(id)
+            .setBillingTime(billingTime)
+            .setEventTime(eventTime)
+            .setClientId(registrar.getClientId())
+            .setReason(reason)
+            .setTargetId(domainBase.getDomainName())
+            .setDomainRepoId("REPO-ID")
+            .setCost(money)
+            .setFlags(Arrays.stream(flags).collect(toImmutableSet()))
+            .setParent(persistDomainHistory(domainBase, registrar));
+
+    if (years > 0) {
+      billingEventBuilder.setPeriodYears(years);
+    }
+
+    persistResource(billingEventBuilder.build());
   }
 }
