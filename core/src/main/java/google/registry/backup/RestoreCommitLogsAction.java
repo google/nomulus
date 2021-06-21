@@ -104,7 +104,7 @@ public class RestoreCommitLogsAction implements Runnable {
       try (InputStream input = Channels.newInputStream(
           gcsService.openPrefetchingReadChannel(metadata.getFilename(), 0, BLOCK_SIZE))) {
         PeekingIterator<ImmutableObject> commitLogs =
-            peekingIterator(createDeserializingIterator(input));
+            peekingIterator(createDeserializingIterator(input, true));
         lastCheckpoint = (CommitLogCheckpoint) commitLogs.next();
         saveOfy(ImmutableList.of(lastCheckpoint));  // Save the checkpoint itself.
         while (commitLogs.hasNext()) {

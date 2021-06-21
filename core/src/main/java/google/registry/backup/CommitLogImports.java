@@ -59,7 +59,7 @@ public final class CommitLogImports {
       InputStream inputStream) {
     try (AppEngineEnvironment appEngineEnvironment = new AppEngineEnvironment();
         InputStream input = new BufferedInputStream(inputStream)) {
-      Iterator<ImmutableObject> commitLogs = createDeserializingIterator(input);
+      Iterator<ImmutableObject> commitLogs = createDeserializingIterator(input, false);
       checkState(commitLogs.hasNext());
       checkState(commitLogs.next() instanceof CommitLogCheckpoint);
 

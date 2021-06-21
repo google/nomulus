@@ -56,12 +56,16 @@ public class BackupUtils {
    *
    * <p>The iterator reads from the stream on demand, and as such will fail if the stream is closed.
    */
-  public static Iterator<ImmutableObject> createDeserializingIterator(final InputStream input) {
+  public static Iterator<ImmutableObject> createDeserializingIterator(
+      final InputStream input, boolean withAppIdOverride) {
     return new AbstractIterator<ImmutableObject>() {
       @Override
       protected ImmutableObject computeNext() {
         EntityProto proto = new EntityProto();
         if (proto.parseDelimitedFrom(input)) { // False means end of stream; other errors throw.
+          if (withAppIdOverride) {
+            proto = EntityImports.fixEntity(proto);
+          }
           return auditedOfy().load().fromEntity(EntityTranslator.createFromPb(proto));
         }
         return endOfData();
@@ -70,6 +74,7 @@ public class BackupUtils {
   }
 
   public static ImmutableList<ImmutableObject> deserializeEntities(byte[] bytes) {
-    return ImmutableList.copyOf(createDeserializingIterator(new ByteArrayInputStream(bytes)));
+    return ImmutableList.copyOf(
+        createDeserializingIterator(new ByteArrayInputStream(bytes), false));
   }
 }

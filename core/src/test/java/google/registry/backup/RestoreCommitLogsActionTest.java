@@ -34,9 +34,11 @@ import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.io.Resources;
 import com.google.common.primitives.Longs;
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
@@ -258,8 +260,35 @@ public class RestoreCommitLogsActionTest {
     assertInDatastore(CommitLogCheckpointRoot.create(now));
   }
 
+  @Test
+  void testRestore_fromOtherProject() throws IOException {
+    // google/registry/backup/commitlog.data contains a DomainBase and a ContactResource who is
+    // the domain's registrant.
+    saveDiffFile(
+        gcsService,
+        Resources.toByteArray(Resources.getResource("google/registry/backup/commitlog.data")),
+        now);
+    action.run();
+    auditedOfy().clearSessionCache();
+    List<DomainBase> domainBases = auditedOfy().load().type(DomainBase.class).list();
+    assertThat(domainBases).hasSize(1);
+    DomainBase domainBase = domainBases.get(0);
+    // If the registrant is found, then the key instance in domainBase is fixed.
+    assertThat(auditedOfy().load().key(domainBase.getRegistrant().getOfyKey()).now()).isNotNull();
+  }
+
   static CommitLogCheckpoint createCheckpoint(DateTime now) {
     return CommitLogCheckpoint.create(now, toMap(getBucketIds(), x -> now));
+  }
+
+  static void saveDiffFile(GcsService gcsService, byte[] rawBytes, DateTime timestamp)
+      throws IOException {
+    gcsService.createOrReplace(
+        new GcsFilename(GCS_BUCKET, DIFF_FILE_PREFIX + timestamp),
+        new GcsFileOptions.Builder()
+            .addUserMetadata(LOWER_BOUND_CHECKPOINT, timestamp.minusMinutes(1).toString())
+            .build(),
+        ByteBuffer.wrap(rawBytes));
   }
 
   static Iterable<ImmutableObject> saveDiffFile(
@@ -271,12 +300,7 @@ public class RestoreCommitLogsActionTest {
     for (ImmutableObject entity : allEntities) {
       serializeEntity(entity, output);
     }
-    gcsService.createOrReplace(
-        new GcsFilename(GCS_BUCKET, DIFF_FILE_PREFIX + now),
-        new GcsFileOptions.Builder()
-            .addUserMetadata(LOWER_BOUND_CHECKPOINT, now.minusMinutes(1).toString())
-            .build(),
-        ByteBuffer.wrap(output.toByteArray()));
+    saveDiffFile(gcsService, output.toByteArray(), now);
     return allEntities;
   }
 
