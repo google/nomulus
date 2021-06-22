@@ -20,9 +20,10 @@
 # them for safe pattern matching during release.
 # See https://github.com/spinnaker/spinnaker/issues/3028 for more information.
 steps:
-# Deploy the GAE config files.
-# First authorize the gcloud tool to use the credential json file, then
-# download and unzip the tarball that contains the relevant config files
+# Delete unused GAE versions.
+# GAE has a limit of ~250 versions per-project, including unused versions. We
+# therefore need to periodically delete old versions. This GCB job finds all
+# stopped versions and delete all but the last 3 (in case we need to rollback).
 - name: 'gcr.io/$PROJECT_ID/builder:latest'
   entrypoint: /bin/bash
   args:
