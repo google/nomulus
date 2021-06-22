@@ -29,7 +29,12 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 
-/** Toy pipeline that demonstrates how to use {@link JpaTransactionManager} in BEAM pipelines. */
+/**
+ * Toy pipeline that demonstrates how to use {@link JpaTransactionManager} in BEAM pipelines.
+ *
+ * <p>This pipeline may also be used as an integration test for {@link RegistryJpaIO.Read} in a
+ * project with realistic data.
+ */
 public class JpaDemoPipeline implements Serializable {
 
   public static void main(String[] args) {
