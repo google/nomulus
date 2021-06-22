@@ -18,13 +18,14 @@ import static com.google.common.base.Verify.verify;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.backup.AppEngineEnvironment;
+import google.registry.model.contact.ContactResource;
+import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import java.io.Serializable;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.metrics.Counter;
 import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
-import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 
@@ -38,23 +39,16 @@ public class JpaDemoPipeline implements Serializable {
 
     Pipeline pipeline = Pipeline.create(options);
     pipeline
-        .apply("Start", Create.of((Void) null))
         .apply(
-            "Generate Elements",
-            ParDo.of(
-                new DoFn<Void, Void>() {
-                  @ProcessElement
-                  public void processElement(OutputReceiver<Void> output) {
-                    for (int i = 0; i < 500; i++) {
-                      output.output(null);
-                    }
-                  }
-                }))
+            "Read contacts",
+            RegistryJpaIO.read(
+                () -> CriteriaQueryBuilder.create(ContactResource.class).build(),
+                ContactResource::getRepoId))
         .apply(
-            "Make Query",
+            "Count Contacts",
             ParDo.of(
-                new DoFn<Void, Void>() {
-                  private Counter counter = Metrics.counter("Demo", "Read");
+                new DoFn<String, Void>() {
+                  private Counter counter = Metrics.counter("Contacts", "Read");
 
                   @ProcessElement
                   public void processElement() {
