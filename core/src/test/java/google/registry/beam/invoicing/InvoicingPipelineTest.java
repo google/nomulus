@@ -273,6 +273,7 @@ class InvoicingPipelineTest {
         RegistryJpaIO.read(
             "select b, r from"
                 + " BillingEvent b join Registrar r on b.clientId = r.clientIdentifier",
+            false,
             (Object[] row) -> {
               google.registry.model.billing.BillingEvent.OneTime oneTime =
                   (google.registry.model.billing.BillingEvent.OneTime) row[0];
