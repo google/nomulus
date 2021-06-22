@@ -52,8 +52,10 @@ public class EntityImportsTest {
 
   @Test
   void importCommitLogs_keysFixed() throws Exception {
-    // Input resource has several entities with appId == "AppId_1", which is different from that
-    // of the AppEngineExtension ('test').
+    // Input resource is a standard commit log file whose entities has "AppId_1" as appId. The key
+    // fixes can be verified by checking that the appId of an imported entity's key has been updated
+    // to 'test' (which is set by AppEngineExtension) and/or that after persistence the imported
+    // entity can be loaded by Objectify.
     try (InputStream commitLogInputStream =
         Resources.getResource("google/registry/backup/commitlog.data").openStream()) {
       ImmutableList<Entity> entities =

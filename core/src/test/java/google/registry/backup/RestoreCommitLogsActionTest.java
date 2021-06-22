@@ -262,8 +262,11 @@ public class RestoreCommitLogsActionTest {
 
   @Test
   void testRestore_fromOtherProject() throws IOException {
-    // google/registry/backup/commitlog.data contains a DomainBase and a ContactResource who is
-    // the domain's registrant.
+    // Input resource is a standard commit log file whose entities has "AppId_1" as appId. Among the
+    // entities are CommitLogMutations that have an embedded DomainBase and a ContactResource, both
+    // having "AppId_1" as appId. This test verifies that the embedded entities are properly
+    // imported, in particular, the domain's 'registrant' key can be used by Objectify to load the
+    // contact.
     saveDiffFile(
         gcsService,
         Resources.toByteArray(Resources.getResource("google/registry/backup/commitlog.data")),
