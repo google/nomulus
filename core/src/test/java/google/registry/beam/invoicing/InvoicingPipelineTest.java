@@ -16,15 +16,19 @@ package google.registry.beam.invoicing;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
@@ -34,6 +38,7 @@ import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.registrar.Registrar;
+import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
@@ -271,8 +276,10 @@ class InvoicingPipelineTest {
 
     Read<Object[], BillingEvent> read =
         RegistryJpaIO.read(
-            "select b, r from"
-                + " BillingEvent b join Registrar r on b.clientId = r.clientIdentifier",
+            "select b, r from BillingEvent b join Registrar r on b.clientId = r.clientIdentifier"
+                + " join Domain d on b.domainRepoId = d.repoId join Tld t on t.tldStrId = d.tld"
+                + " and r.billingIdentifier != null and r.type = 'REAL' and t.invoicingEnabled ="
+                + " true",
             false,
             (Object[] row) -> {
               google.registry.model.billing.BillingEvent.OneTime oneTime =
@@ -343,6 +350,7 @@ class InvoicingPipelineTest {
   }
 
   private void setupCloudSql() {
+    // Populate billing events in Cloud SQL to match existing test data for Datastore
     persistNewRegistrar("NewRegistrar");
     persistNewRegistrar("TheRegistrar");
     Registrar registrar1 = persistNewRegistrar("theRegistrar");
@@ -360,8 +368,18 @@ class InvoicingPipelineTest {
     registrar3 = registrar3.asBuilder().setBillingIdentifier(789L).build();
     persistResource(registrar3);
 
-    createTld("test");
-    createTld("hello");
+    Registry test =
+        newRegistry("test", "_TEST", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
+            .asBuilder()
+            .setInvoicingEnabled(true)
+            .build();
+    persistResource(test);
+    Registry hello =
+        newRegistry("hello", "_HELLO", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY))
+            .asBuilder()
+            .setInvoicingEnabled(true)
+            .build();
+    persistResource(hello);
 
     DomainBase domain1 = persistActiveDomain("mydomain.test");
     DomainBase domain2 = persistActiveDomain("mydomain2.test");
@@ -402,6 +420,34 @@ class InvoicingPipelineTest {
         6, domain6, registrar1, Reason.SERVER_STATUS, 0, Money.of(CurrencyUnit.USD, 0));
     persistOneTimeBillingEvent(
         7, domain7, registrar1, Reason.SERVER_STATUS, 0, Money.of(CurrencyUnit.USD, 20));
+
+    // Add billing event for a non-billable registrar
+    Registrar registrar4 = persistNewRegistrar("noBillRegistrar");
+    registrar4 = registrar4.asBuilder().setBillingIdentifier(null).build();
+    persistResource(registrar4);
+    DomainBase domain8 = persistActiveDomain("non-billable.test");
+    persistOneTimeBillingEvent(
+        8, domain8, registrar4, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
+
+    // Add billing event for a non-real registrar
+    Registrar registrar5 = persistNewRegistrar("notRealRegistrar");
+    registrar5 =
+        registrar5
+            .asBuilder()
+            .setIanaIdentifier(null)
+            .setBillingIdentifier(456L)
+            .setType(Registrar.Type.OTE)
+            .build();
+    persistResource(registrar5);
+    DomainBase domain9 = persistActiveDomain("not-real.test");
+    persistOneTimeBillingEvent(
+        9, domain9, registrar5, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
+
+    // Add billing event for a non-invoicing TLD
+    createTld("nobill");
+    DomainBase domain10 = persistActiveDomain("test.nobill");
+    persistOneTimeBillingEvent(
+        10, domain10, registrar1, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
   }
 
   private DomainHistory persistDomainHistory(DomainBase domainBase, Registrar registrar) {
