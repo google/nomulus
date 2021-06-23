@@ -1052,11 +1052,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         logger.atWarning().log("Query result streaming is not enabled.");
       }
       TypedQuery<T> query = buildQuery();
-      if (query instanceof org.hibernate.query.Query) {
-        ((org.hibernate.query.Query) query).setFetchSize(fetchSize);
-      } else {
-        logger.atWarning().log("Query implemention does not support result streaming.");
-      }
+      JpaTransactionManager.setQueryFetchSize(query, fetchSize);
       return query.getResultStream().map(JpaTransactionManagerImpl.this::detach);
     }
 

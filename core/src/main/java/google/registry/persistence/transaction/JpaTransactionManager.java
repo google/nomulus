@@ -65,4 +65,12 @@ public interface JpaTransactionManager extends TransactionManager {
    * <p>The errorprone check forbids injection of {@link java.io.Closeable} resources.
    */
   void teardown();
+
+  /**
+   * Sets the JDBC driver fetch size for the {@code query}. This overrides the default
+   * configuration.
+   */
+  static Query setQueryFetchSize(Query query, int fetchSize) {
+    return query.setHint("org.hibernate.fetchSize", fetchSize);
+  }
 }
