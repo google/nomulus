@@ -104,6 +104,7 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
 
   /** Creates a {@link VKey} instance for this entity. */
   @SuppressWarnings("unchecked")
+  @Override
   public VKey<ContactHistory> createVKey() {
     return (VKey<ContactHistory>) createVKey(Key.create(this));
   }

@@ -23,6 +23,7 @@ import static google.registry.model.ResourceTransferUtils.updateForeignKeyIndexD
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registry.Registries.getTldsOfType;
 import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.request.RequestParameters.PARAM_TLDS;
@@ -34,6 +35,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
@@ -42,6 +44,7 @@ import google.registry.config.RegistryEnvironment;
 import google.registry.dns.DnsQueue;
 import google.registry.mapreduce.MapreduceRunner;
 import google.registry.mapreduce.inputs.EppResourceInputs;
+import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.EppResourceUtils;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
@@ -54,15 +57,15 @@ import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.persistence.TypedQuery;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
 /**
  * Deletes all prober DomainBases and their subordinate history entries, poll messages, and
  * billing events, along with their ForeignKeyDomainIndex and EppResourceIndex entities.
- *
- * <p>See: https://www.youtube.com/watch?v=xuuv0syoHnM
  */
 @Action(
     service = Action.Service.BACKEND,
@@ -73,10 +76,54 @@ public class DeleteProberDataAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+  /**
+   * The maximum amount of time we allow a prober domain to be in use.
+   *
+   * <p>In practice, the prober's connection will time out well before this duration. This includes
+   * a decent buffer.
+   */
+  private static final Duration DOMAIN_USED_DURATION = Duration.standardHours(1);
+
+  /**
+   * The minimum amount of time we want a domain to be "soft deleted".
+   *
+   * <p>The domain has to remain soft deleted for at least enough time for the DNS task to run and
+   * remove it from DNS itself. This is probably on the order of minutes.
+   */
+  private static final Duration SOFT_DELETE_DELAY = Duration.standardHours(1);
+
+  private static final DnsQueue dnsQueue = DnsQueue.create();
+
+  // Domains to delete must:
+  // 1. Be in one of the prober TLDs
+  // 2. Not be a nic domain
+  // 3. Have no subordinate hosts
+  // 4. Not still be used (within an hour of creation time)
+  // 5. Either be active (creationTime <= now < deletionTime) or have been deleted a while ago (this
+  //    prevents accidental double-map with the same key from immediately deleting active domains)
+  private static final String BASE_DOMAIN_QUERY_STRING =
+      "FROM Domain d WHERE d.tld IN :tlds AND d.fullyQualifiedDomainName NOT LIKE 'nic.%' AND"
+          + " (d.subordinateHosts IS EMPTY OR d.subordinateHosts IS NULL) AND d.creationTime <"
+          + " :creationTimeCutoff AND ((d.creationTime <= :nowAutoTimestamp AND d.deletionTime >"
+          + " current_timestamp()) OR d.deletionTime < :nowMinusSoftDeleteDelay)";
+  private static final String DOMAIN_QUERY_STRING = BASE_DOMAIN_QUERY_STRING + " ORDER BY d.repoId";
+  private static final String DOMAIN_QUERY_STRING_WITH_CURSOR =
+      BASE_DOMAIN_QUERY_STRING + " AND d.repoId > :repoId ORDER BY d.repoId";
+
+  /** Number of domains to retrieve per SQL transaction. */
+  private static final int DOMAIN_RETRIEVAL_BATCH_SIZE = 10000;
+
+  /** Number of domains to process per SQL transaction. */
+  private static final int DOMAIN_PROCESSING_BATCH_SIZE = 200;
+
   @Inject @Parameter(PARAM_DRY_RUN) boolean isDryRun;
   /** List of TLDs to work on. If empty - will work on all TLDs that end with .test. */
   @Inject @Parameter(PARAM_TLDS) ImmutableSet<String> tlds;
-  @Inject @Config("registryAdminClientId") String registryAdminClientId;
+
+  @Inject
+  @Config("registryAdminClientId")
+  String registryAdminRegistrarId;
+
   @Inject MapreduceRunner mrRunner;
   @Inject Response response;
   @Inject DeleteProberDataAction() {}
@@ -84,18 +131,8 @@ public class DeleteProberDataAction implements Runnable {
   @Override
   public void run() {
     checkState(
-        !Strings.isNullOrEmpty(registryAdminClientId),
+        !Strings.isNullOrEmpty(registryAdminRegistrarId),
         "Registry admin client ID must be configured for prober data deletion to work");
-    mrRunner
-        .setJobName("Delete prober data")
-        .setModuleName("backend")
-        .runMapOnly(
-            new DeleteProberDataMapper(getProberRoidSuffixes(), isDryRun, registryAdminClientId),
-            ImmutableList.of(EppResourceInputs.createKeyInput(DomainBase.class)))
-        .sendLinkToMapreduceConsole(response);
-  }
-
-  private ImmutableSet<String> getProberRoidSuffixes() {
     checkArgument(
         !PRODUCTION.equals(RegistryEnvironment.get())
             || tlds.stream().allMatch(tld -> tld.endsWith(".test")),
@@ -110,10 +147,164 @@ public class DeleteProberDataAction implements Runnable {
         "If tlds are given, they must all exist and be TEST tlds. Given: %s, not found: %s",
         tlds,
         Sets.difference(tlds, deletableTlds));
-    return deletableTlds
-        .stream()
-        .map(tld -> Registry.get(tld).getRoidSuffix())
-        .collect(toImmutableSet());
+    ImmutableSet<String> proberRoidSuffixes =
+        deletableTlds.stream()
+            .map(tld -> Registry.get(tld).getRoidSuffix())
+            .collect(toImmutableSet());
+    if (tm().isOfy()) {
+      mrRunner
+          .setJobName("Delete prober data")
+          .setModuleName("backend")
+          .runMapOnly(
+              new DeleteProberDataMapper(proberRoidSuffixes, isDryRun, registryAdminRegistrarId),
+              ImmutableList.of(EppResourceInputs.createKeyInput(DomainBase.class)))
+          .sendLinkToMapreduceConsole(response);
+    } else {
+      runSqlJob(deletableTlds);
+    }
+  }
+
+  private void runSqlJob(ImmutableSet<String> deletableTlds) {
+    // There can be tens or hundreds of thousands of domains, so page through them
+    String lastSeenRepoId = null;
+    while (true) {
+      ImmutableList<DomainBase> nextBatch = nextDomainBatch(deletableTlds, lastSeenRepoId);
+      if (nextBatch.isEmpty()) {
+        break;
+      }
+      Lists.partition(nextBatch, DOMAIN_PROCESSING_BATCH_SIZE).forEach(this::processDomainBatch);
+      if (nextBatch.size() < DOMAIN_RETRIEVAL_BATCH_SIZE) {
+        // we can short-circuit if it's clear by the size that this was the last batch
+        break;
+      }
+      lastSeenRepoId = Iterables.getLast(nextBatch).getRepoId();
+    }
+  }
+
+  private ImmutableList<DomainBase> nextDomainBatch(
+      ImmutableSet<String> deletableTlds, @Nullable String lastSeenRepoId) {
+    return jpaTm()
+        .transact(
+            () -> {
+              DateTime now = tm().getTransactionTime();
+              TypedQuery<DomainBase> query =
+                  lastSeenRepoId == null
+                      ? jpaTm().query(DOMAIN_QUERY_STRING, DomainBase.class)
+                      : jpaTm().query(DOMAIN_QUERY_STRING_WITH_CURSOR, DomainBase.class);
+              query
+                  .setParameter("tlds", deletableTlds)
+                  .setParameter(
+                      "creationTimeCutoff",
+                      CreateAutoTimestamp.create(now.minus(DOMAIN_USED_DURATION)))
+                  .setParameter("nowMinusSoftDeleteDelay", now.minus(SOFT_DELETE_DELAY))
+                  .setParameter("nowAutoTimestamp", CreateAutoTimestamp.create(now))
+                  .setMaxResults(DOMAIN_RETRIEVAL_BATCH_SIZE);
+              if (lastSeenRepoId != null) {
+                query.setParameter("repoId", lastSeenRepoId);
+              }
+              return ImmutableList.copyOf(query.getResultList());
+            });
+  }
+
+  private void processDomainBatch(List<DomainBase> domains) {
+    // There can be tens of thousands of domains to process so we batch them up
+    jpaTm()
+        .transactWithoutBackup(
+            () -> {
+              domains.forEach(this::processDomain);
+              return null;
+            });
+  }
+
+  private void processDomain(DomainBase domain) {
+    // If the domain is still active, that means that the prober encountered a failure and did not
+    // successfully soft-delete the domain (thus leaving its DNS entry published). We soft-delete it
+    // now so that the DNS entry can be handled. The domain will then be hard-deleted the next time
+    // the job is run.
+    if (EppResourceUtils.isActive(domain, tm().getTransactionTime())) {
+      if (isDryRun) {
+        logger.atInfo().log(
+            "Would soft-delete the active domain: %s (%s)",
+            domain.getDomainName(), domain.getRepoId());
+      } else {
+        softDeleteDomain(domain, registryAdminRegistrarId, dnsQueue);
+      }
+    } else if (isDryRun) {
+      logger.atInfo().log(
+          "Would hard-delete the non-active domain: %s (%s) and its dependents",
+          domain.getDomainName(), domain.getRepoId());
+    } else {
+      hardDeleteDomainSql(domain);
+    }
+  }
+
+  private void hardDeleteDomainSql(DomainBase domain) {
+    String domainRepoId = domain.getRepoId();
+    // Delete billing events, history objects, poll messages, subordinate hosts, and the domain
+    hardDeleteBillingEvents(domainRepoId);
+    hardDeleteHistoryObjects(domainRepoId);
+    hardDeletePollMessages(domainRepoId);
+    hardDeleteSubordinateHosts(domain);
+    tm().deleteWithoutBackup(domain);
+  }
+
+  private void hardDeleteSubordinateHosts(DomainBase domain) {
+    jpaTm()
+        .query("DELETE FROM Host WHERE fullyQualifiedHostName IN :subordinateHosts")
+        .setParameter("subordinateHosts", domain.getSubordinateHosts())
+        .executeUpdate();
+  }
+
+  private void hardDeletePollMessages(String domainRepoId) {
+    jpaTm()
+        .query("DELETE FROM PollMessage WHERE domainRepoId = :repoId")
+        .setParameter("repoId", domainRepoId)
+        .executeUpdate();
+  }
+
+  private void hardDeleteHistoryObjects(String domainRepoId) {
+    jpaTm()
+        .query("DELETE FROM DomainHistory WHERE domainRepoId = :repoId")
+        .setParameter("repoId", domainRepoId)
+        .executeUpdate();
+  }
+
+  private void hardDeleteBillingEvents(String domainRepoId) {
+    jpaTm()
+        .query("DELETE FROM BillingEvent WHERE domainRepoId = :repoId")
+        .setParameter("repoId", domainRepoId)
+        .executeUpdate();
+    jpaTm()
+        .query("DELETE FROM BillingRecurrence WHERE domainRepoId = :repoId")
+        .setParameter("repoId", domainRepoId)
+        .executeUpdate();
+    jpaTm()
+        .query("DELETE FROM BillingCancellation WHERE domainRepoId = :repoId")
+        .setParameter("repoId", domainRepoId)
+        .executeUpdate();
+  }
+
+  // Take a DNS queue + admin registrar id as input so that it can be called from the mapper as well
+  private static void softDeleteDomain(
+      DomainBase domain, String registryAdminRegistrarId, DnsQueue localDnsQueue) {
+    DomainBase deletedDomain =
+        domain.asBuilder().setDeletionTime(tm().getTransactionTime()).setStatusValues(null).build();
+    DomainHistory historyEntry =
+        new DomainHistory.Builder()
+            .setDomain(domain)
+            .setType(DOMAIN_DELETE)
+            .setModificationTime(tm().getTransactionTime())
+            .setBySuperuser(true)
+            .setReason("Deletion of prober data")
+            .setClientId(registryAdminRegistrarId)
+            .build();
+    // Note that we don't bother handling grace periods, billing events, pending transfers, poll
+    // messages, or auto-renews because those will all be hard-deleted the next time the job runs
+    // anyway.
+    tm().putAllWithoutBackup(ImmutableList.of(deletedDomain, historyEntry));
+    // updating foreign keys is a no-op in SQL
+    updateForeignKeyIndexDeletionTime(deletedDomain);
+    localDnsQueue.addDomainRefreshTask(deletedDomain.getDomainName());
   }
 
   /** Provides the map method that runs for each existing DomainBase entity. */
@@ -122,32 +313,17 @@ public class DeleteProberDataAction implements Runnable {
     private static final DnsQueue dnsQueue = DnsQueue.create();
     private static final long serialVersionUID = -7724537393697576369L;
 
-    /**
-     * The maximum amount of time we allow a prober domain to be in use.
-     *
-     * In practice, the prober's connection will time out well before this duration. This includes a
-     * decent buffer.
-     *
-     */
-    private static final Duration DOMAIN_USED_DURATION = Duration.standardHours(1);
-
-    /**
-     * The minimum amount of time we want a domain to be "soft deleted".
-     *
-     * The domain has to remain soft deleted for at least enough time for the DNS task to run and
-     * remove it from DNS itself. This is probably on the order of minutes.
-     */
-    private static final Duration SOFT_DELETE_DELAY = Duration.standardHours(1);
-
     private final ImmutableSet<String> proberRoidSuffixes;
     private final Boolean isDryRun;
-    private final String registryAdminClientId;
+    private final String registryAdminRegistrarId;
 
     public DeleteProberDataMapper(
-        ImmutableSet<String> proberRoidSuffixes, Boolean isDryRun, String registryAdminClientId) {
+        ImmutableSet<String> proberRoidSuffixes,
+        Boolean isDryRun,
+        String registryAdminRegistrarId) {
       this.proberRoidSuffixes = proberRoidSuffixes;
       this.isDryRun = isDryRun;
-      this.registryAdminClientId = registryAdminClientId;
+      this.registryAdminRegistrarId = registryAdminRegistrarId;
     }
 
     @Override
@@ -203,7 +379,7 @@ public class DeleteProberDataAction implements Runnable {
           logger.atInfo().log(
               "Would soft-delete the active domain: %s (%s)", domainName, domainKey);
         } else {
-          softDeleteDomain(domain);
+          tm().transact(() -> softDeleteDomain(domain, registryAdminRegistrarId, dnsQueue));
         }
         getContext().incrementCounter("domains soft-deleted");
         return;
@@ -223,8 +399,7 @@ public class DeleteProberDataAction implements Runnable {
           tm().transact(
                   () -> {
                     // This ancestor query selects all descendant HistoryEntries, BillingEvents,
-                    // PollMessages,
-                    // and TLD-specific entities, as well as the domain itself.
+                    // PollMessages, and TLD-specific entities, as well as the domain itself.
                     List<Key<Object>> domainAndDependentKeys =
                         auditedOfy().load().ancestor(domainKey).keys().list();
                     ImmutableSet<Key<?>> allKeys =
@@ -242,33 +417,6 @@ public class DeleteProberDataAction implements Runnable {
                   });
       getContext().incrementCounter("domains hard-deleted");
       getContext().incrementCounter("total entities hard-deleted", entitiesDeleted);
-    }
-
-    private void softDeleteDomain(final DomainBase domain) {
-      tm().transactNew(
-              () -> {
-                DomainBase deletedDomain =
-                    domain
-                        .asBuilder()
-                        .setDeletionTime(tm().getTransactionTime())
-                        .setStatusValues(null)
-                        .build();
-                DomainHistory historyEntry =
-                    new DomainHistory.Builder()
-                        .setDomain(domain)
-                        .setType(DOMAIN_DELETE)
-                        .setModificationTime(tm().getTransactionTime())
-                        .setBySuperuser(true)
-                        .setReason("Deletion of prober data")
-                        .setClientId(registryAdminClientId)
-                        .build();
-                // Note that we don't bother handling grace periods, billing events, pending
-                // transfers, poll messages, or auto-renews because these will all be hard-deleted
-                // the next time the mapreduce runs anyway.
-                tm().putAll(deletedDomain, historyEntry);
-                updateForeignKeyIndexDeletionTime(deletedDomain);
-                dnsQueue.addDomainRefreshTask(deletedDomain.getDomainName());
-              });
     }
   }
 }
