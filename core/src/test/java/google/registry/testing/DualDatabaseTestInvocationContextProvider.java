@@ -51,15 +51,23 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
     return true;
   }
 
+  /**
+   * Returns true if "context" is an objectify unit test.
+   *
+   * <p>Provided to allow ReplayExtension to make this determination.
+   */
+  static boolean inOfyContext(ExtensionContext context) {
+    return (DatabaseType) context.getStore(NAMESPACE).get(INJECTED_TM_SUPPLIER_KEY)
+        == DatabaseType.OFY;
+  }
+
   @Override
   public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(
       ExtensionContext context) {
     TestTemplateInvocationContext ofyContext =
-        createInvocationContext(
-            context.getDisplayName() + " with Datastore", TransactionManagerFactory::ofyTm);
+        createInvocationContext(context.getDisplayName() + " with Datastore", DatabaseType.OFY);
     TestTemplateInvocationContext sqlContext =
-        createInvocationContext(
-            context.getDisplayName() + " with PostgreSQL", TransactionManagerFactory::jpaTm);
+        createInvocationContext(context.getDisplayName() + " with PostgreSQL", DatabaseType.JPA);
     Method testMethod = context.getTestMethod().orElseThrow(IllegalStateException::new);
     if (testMethod.isAnnotationPresent(TestOfyAndSql.class)) {
       return Stream.of(ofyContext, sqlContext);
@@ -74,7 +82,7 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
   }
 
   private TestTemplateInvocationContext createInvocationContext(
-      String name, Supplier<? extends TransactionManager> tmSupplier) {
+      String name, DatabaseType databaseType) {
     return new TestTemplateInvocationContext() {
       @Override
       public String getDisplayName(int invocationIndex) {
@@ -83,17 +91,17 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
 
       @Override
       public List<Extension> getAdditionalExtensions() {
-        return ImmutableList.of(new DatabaseSwitchInvocationContext(tmSupplier));
+        return ImmutableList.of(new DatabaseSwitchInvocationContext(databaseType));
       }
     };
   }
 
   private static class DatabaseSwitchInvocationContext implements TestInstancePostProcessor {
 
-    private Supplier<? extends TransactionManager> tmSupplier;
+    private DatabaseType databaseType;
 
-    private DatabaseSwitchInvocationContext(Supplier<? extends TransactionManager> tmSupplier) {
-      this.tmSupplier = tmSupplier;
+    private DatabaseSwitchInvocationContext(DatabaseType databaseType) {
+      this.databaseType = databaseType;
     }
 
     @Override
@@ -113,7 +121,7 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
         throw new IllegalStateException(
             "AppEngineExtension in @DualDatabaseTest test must set withDatastoreAndCloudSql()");
       }
-      context.getStore(NAMESPACE).put(INJECTED_TM_SUPPLIER_KEY, tmSupplier);
+      context.getStore(NAMESPACE).put(INJECTED_TM_SUPPLIER_KEY, databaseType);
     }
 
     private static ImmutableList<Field> getAppEngineExtensionFields(Class<?> clazz) {
@@ -144,10 +152,9 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
                 }
               });
       context.getStore(NAMESPACE).put(ORIGINAL_TM_KEY, tm());
-      Supplier<? extends TransactionManager> tmSupplier =
-          (Supplier<? extends TransactionManager>)
-              context.getStore(NAMESPACE).get(INJECTED_TM_SUPPLIER_KEY);
-      TransactionManagerFactory.setTm(tmSupplier.get());
+      DatabaseType databaseType =
+          (DatabaseType) context.getStore(NAMESPACE).get(INJECTED_TM_SUPPLIER_KEY);
+      TransactionManagerFactory.setTm(databaseType.getTm());
     }
   }
 
@@ -170,5 +177,21 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
             .contains(context.getTestMethod().orElseThrow(RuntimeException::new));
     return testInstance.getClass().isAnnotationPresent(DualDatabaseTest.class)
         && isDeclaredTestMethod;
+  }
+
+  private enum DatabaseType {
+    JPA(TransactionManagerFactory::jpaTm),
+    OFY(TransactionManagerFactory::ofyTm);
+
+    @SuppressWarnings("Immutable") // Supplier is immutable, but not annotated as such.
+    private final Supplier<? extends TransactionManager> supplier;
+
+    DatabaseType(Supplier<? extends TransactionManager> supplier) {
+      this.supplier = supplier;
+    }
+
+    TransactionManager getTm() {
+      return supplier.get();
+    }
   }
 }

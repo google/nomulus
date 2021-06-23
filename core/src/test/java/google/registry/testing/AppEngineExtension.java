@@ -476,7 +476,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   public void afterEach(ExtensionContext context) throws Exception {
     checkArgumentNotNull(context, "The ExtensionContext must not be null");
     try {
-      // If there is a replay extension, we'll want to call its replayToSql() method.
+      // If there is a replay extension, we'll want to call its replay() method.
       //
       // We have to provide this hook here for ReplayExtension instead of relying on
       // ReplayExtension's afterEach() method because of ordering and the conflation of environment
@@ -491,7 +491,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
           (ReplayExtension)
               context.getStore(ExtensionContext.Namespace.GLOBAL).get(ReplayExtension.class);
       if (replayer != null) {
-        replayer.replayToSql();
+        replayer.replay();
       }
 
       if (withCloudSql) {
