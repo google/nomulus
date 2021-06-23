@@ -105,6 +105,7 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
 
   /** Creates a {@link VKey} instance for this entity. */
   @SuppressWarnings("unchecked")
+  @Override
   public VKey<HostHistory> createVKey() {
     return (VKey<HostHistory>) createVKey(Key.create(this));
   }

@@ -393,6 +393,10 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
     return Optional.of((SqlEntity) toChildHistoryEntity());
   }
 
+  public VKey<? extends HistoryEntry> createVKey() {
+    return createVKey(Key.create(this));
+  }
+
   /** Creates a {@link VKey} instance from a {@link Key} instance. */
   public static VKey<? extends HistoryEntry> createVKey(Key<HistoryEntry> key) {
     String repoId = key.getParent().getName();

@@ -246,6 +246,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
 
   /** Creates a {@link VKey} instance for this entity. */
   @SuppressWarnings("unchecked")
+  @Override
   public VKey<DomainHistory> createVKey() {
     return (VKey<DomainHistory>) createVKey(Key.create(this));
   }
