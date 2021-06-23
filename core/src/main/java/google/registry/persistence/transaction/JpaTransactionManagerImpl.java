@@ -48,6 +48,8 @@ import google.registry.util.SystemSleeper;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -73,7 +75,6 @@ import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.metamodel.EntityType;
-import javax.persistence.metamodel.SingularAttribute;
 import org.joda.time.DateTime;
 
 /** Implementation of {@link JpaTransactionManager} for JPA compatible database. */
@@ -657,10 +658,22 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private static ImmutableSet<EntityId> getEntityIdsFromIdContainer(
       EntityType<?> entityType, Object idContainer) {
     return entityType.getIdClassAttributes().stream()
-        .map(SingularAttribute::getName)
         .map(
-            idName -> {
-              Object idValue = getFieldValue(idContainer, idName);
+            attribute -> {
+              String idName = attribute.getName();
+              // The object may use either Java getters or field names to represent the ID object.
+              // Attempt the Java getter, then fall back to the field name if that fails.
+              String methodName = attribute.getJavaMember().getName();
+              Object idValue;
+              try {
+                Method method = idContainer.getClass().getDeclaredMethod(methodName);
+                method.setAccessible(true);
+                idValue = method.invoke(idContainer);
+              } catch (NoSuchMethodException
+                  | IllegalAccessException
+                  | InvocationTargetException e) {
+                idValue = getFieldValue(idContainer, idName);
+              }
               return new EntityId(idName, idValue);
             })
         .collect(toImmutableSet());
