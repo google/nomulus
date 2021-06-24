@@ -79,6 +79,9 @@ def fragileTestPatterns = [
     // Changes cache timeouts and for some reason appears to have contention
     // with other tests.
     "google/registry/whois/WhoisCommandFactoryTest.*",
+    // Currently changes a global configuration parameter that for some reason
+    // results in timestamp inversions for other tests.  TODO(mmuller): fix.
+    "google/registry/flows/host/HostInfoFlowTest.*",
 ] + dockerIncompatibleTestPatterns
 
 sourceSets {
