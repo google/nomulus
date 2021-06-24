@@ -45,7 +45,6 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.SystemPropertyExtension;
 import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.values.PCollection;
 import org.joda.time.DateTime;
@@ -64,14 +63,6 @@ public class RegistryJpaReadTest {
   @RegisterExtension
   @Order(Order.DEFAULT - 1)
   final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
-
-  // The pipeline runner on Kokoro sometimes mistakes the platform as appengine, resulting in
-  // a null thread factory. The cause is unknown but it may be due to the interaction with
-  // the DatastoreEntityExtension above. To work around the problem, we explicitly unset the
-  // relevant property before test starts.
-  @RegisterExtension
-  final transient SystemPropertyExtension systemPropertyExtension =
-      new SystemPropertyExtension().setProperty("com.google.appengine.runtime.environment", null);
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension database =

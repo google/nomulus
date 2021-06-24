@@ -15,7 +15,7 @@
 package google.registry.model.common;
 
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.ofy.ObjectifyService.allocateId;
+import static google.registry.model.IdService.allocateId;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 
 import com.google.appengine.api.users.User;

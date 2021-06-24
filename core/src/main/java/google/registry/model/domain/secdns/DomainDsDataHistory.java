@@ -14,8 +14,9 @@
 
 package google.registry.model.domain.secdns;
 
+import static google.registry.model.IdService.allocateId;
+
 import google.registry.model.domain.DomainHistory;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.schema.replay.SqlOnlyEntity;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -48,7 +49,7 @@ public class DomainDsDataHistory extends DomainDsDataBase implements SqlOnlyEnti
     instance.algorithm = dsData.getAlgorithm();
     instance.digestType = dsData.getDigestType();
     instance.digest = dsData.getDigest();
-    instance.dsDataHistoryRevisionId = ObjectifyService.allocateId();
+    instance.dsDataHistoryRevisionId = allocateId();
     return instance;
   }
 
