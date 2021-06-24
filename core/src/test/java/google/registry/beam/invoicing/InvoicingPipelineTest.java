@@ -52,6 +52,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -274,12 +275,19 @@ class InvoicingPipelineTest {
   void testSuccess_readFromCloudSql() throws Exception {
     setupCloudSql();
 
+    YearMonth reportingMonth = YearMonth.parse(options.getYearMonth());
+    YearMonth endMonth = reportingMonth.plusMonths(1);
+
     Read<Object[], BillingEvent> read =
         RegistryJpaIO.read(
-            "select b, r from BillingEvent b join Registrar r on b.clientId = r.clientIdentifier"
-                + " join Domain d on b.domainRepoId = d.repoId join Tld t on t.tldStrId = d.tld"
-                + " and r.billingIdentifier != null and r.type = 'REAL' and t.invoicingEnabled ="
-                + " true",
+            String.format(
+                "select b, r from BillingEvent b join Registrar r on b.clientId ="
+                    + " r.clientIdentifier join Domain d on b.domainRepoId = d.repoId join Tld t"
+                    + " on t.tldStrId = d.tld and r.billingIdentifier != null and r.type = 'REAL'"
+                    + " and t.invoicingEnabled = true and b.billingTime between CAST('%s' AS"
+                    + " timestamp) and CAST('%s' AS timestamp)",
+                options.getYearMonth().concat("-01"),
+                String.format("%d-%d-01", endMonth.getYear(), endMonth.getMonthValue())),
             false,
             (Object[] row) -> {
               google.registry.model.billing.BillingEvent.OneTime oneTime =
@@ -305,6 +313,7 @@ class InvoicingPipelineTest {
                       " ",
                       oneTime.getFlags().stream().map(Flag::toString).collect(toImmutableSet())));
             });
+
     PCollection<BillingEvent> billingEvents = pipeline.apply(read);
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
@@ -402,7 +411,6 @@ class InvoicingPipelineTest {
         Money.ofMajor(CurrencyUnit.JPY, 70),
         DateTime.parse("2017-09-29T00:00:00.0Z"),
         DateTime.parse("2017-10-02T00:00:00.0Z"));
-    DateTime.parse("2017-09-29T00:00:00.0Z");
     persistOneTimeBillingEvent(
         4, domain4, registrar2, Reason.RENEW, 1, Money.of(CurrencyUnit.USD, 20.5));
     persistOneTimeBillingEvent(
@@ -448,6 +456,18 @@ class InvoicingPipelineTest {
     DomainBase domain10 = persistActiveDomain("test.nobill");
     persistOneTimeBillingEvent(
         10, domain10, registrar1, Reason.RENEW, 3, Money.of(CurrencyUnit.USD, 20.5));
+
+    // Add billing event before October 2017
+    DomainBase domain11 = persistActiveDomain("july.test");
+    persistOneTimeBillingEvent(
+        11,
+        domain11,
+        registrar1,
+        Reason.CREATE,
+        5,
+        Money.ofMajor(CurrencyUnit.JPY, 70),
+        DateTime.parse("2017-06-29T00:00:00.0Z"),
+        DateTime.parse("2017-07-02T00:00:00.0Z"));
   }
 
   private DomainHistory persistDomainHistory(DomainBase domainBase, Registrar registrar) {
