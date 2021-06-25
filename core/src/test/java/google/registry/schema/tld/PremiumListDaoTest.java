@@ -60,25 +60,24 @@ public class PremiumListDaoTest {
           .withPremiumListsCache(standardDays(1))
           .build();
 
-  private ImmutableMap<String, BigDecimal> testPrices;
+  private static final ImmutableMap<String, BigDecimal> TEST_PRICES =
+      ImmutableMap.of(
+          "silver",
+          BigDecimal.valueOf(10.23),
+          "gold",
+          BigDecimal.valueOf(1305.47),
+          "palladium",
+          BigDecimal.valueOf(1552.78));
 
   private PremiumList testList;
 
   @BeforeEach
   void beforeEach() {
-    testPrices =
-        ImmutableMap.of(
-            "silver",
-            BigDecimal.valueOf(10.23),
-            "gold",
-            BigDecimal.valueOf(1305.47),
-            "palladium",
-            BigDecimal.valueOf(1552.78));
     testList =
         new PremiumList.Builder()
             .setName("testname")
             .setCurrency(USD)
-            .setLabelsToPrices(testPrices)
+            .setLabelsToPrices(TEST_PRICES)
             .setCreationTime(fakeClock.nowUtc())
             .build();
   }
@@ -92,7 +91,7 @@ public class PremiumListDaoTest {
               Optional<PremiumList> persistedListOpt = PremiumListDao.getLatestRevision("testname");
               assertThat(persistedListOpt).isPresent();
               PremiumList persistedList = persistedListOpt.get();
-              assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(testPrices);
+              assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(TEST_PRICES);
               assertThat(persistedList.getCreationTime()).isEqualTo(fakeClock.nowUtc());
             });
   }
@@ -155,15 +154,15 @@ public class PremiumListDaoTest {
     PremiumListDao.save(
         new PremiumList.Builder()
             .setName("list1")
-            .setCurrency(JPY)
+            .setCurrency(USD)
             .setLabelsToPrices(ImmutableMap.of("wrong", BigDecimal.valueOf(1000.50)))
             .setCreationTime(fakeClock.nowUtc())
             .build());
     PremiumListDao.save(
         new PremiumList.Builder()
             .setName("list1")
-            .setCurrency(JPY)
-            .setLabelsToPrices(testPrices)
+            .setCurrency(USD)
+            .setLabelsToPrices(TEST_PRICES)
             .setCreationTime(fakeClock.nowUtc())
             .build());
     jpaTm()
@@ -172,9 +171,33 @@ public class PremiumListDaoTest {
               Optional<PremiumList> persistedList = PremiumListDao.getLatestRevision("list1");
               assertThat(persistedList).isPresent();
               assertThat(persistedList.get().getName()).isEqualTo("list1");
-              assertThat(persistedList.get().getCurrency()).isEqualTo(JPY);
+              assertThat(persistedList.get().getCurrency()).isEqualTo(USD);
               assertThat(persistedList.get().getLabelsToPrices())
-                  .containsExactlyEntriesIn(testPrices);
+                  .containsExactlyEntriesIn(TEST_PRICES);
+            });
+  }
+
+  @Test
+  void getLabelsToPrices_worksForJpy() {
+    PremiumListDao.save(
+        new PremiumList.Builder()
+            .setName("list1")
+            .setCurrency(JPY)
+            .setLabelsToPrices(TEST_PRICES)
+            .setCreationTime(fakeClock.nowUtc())
+            .build());
+    jpaTm()
+        .transact(
+            () -> {
+              PremiumList premiumList = PremiumListDao.getLatestRevision("list1").get();
+              assertThat(premiumList.getLabelsToPrices())
+                  .containsExactly(
+                      "silver",
+                      BigDecimal.valueOf(10),
+                      "gold",
+                      BigDecimal.valueOf(1305),
+                      "palladium",
+                      BigDecimal.valueOf(1553));
             });
   }
 
@@ -193,7 +216,7 @@ public class PremiumListDaoTest {
         new PremiumList.Builder()
             .setName("premlist")
             .setCurrency(USD)
-            .setLabelsToPrices(testPrices)
+            .setLabelsToPrices(TEST_PRICES)
             .setCreationTime(fakeClock.nowUtc())
             .build());
     assertThat(PremiumListDao.getPremiumPrice("premlist", "silver")).hasValue(Money.of(USD, 10.23));
