@@ -29,6 +29,7 @@ import static google.registry.flows.domain.DomainFlowUtils.validateFeeChallenge;
 import static google.registry.flows.domain.DomainFlowUtils.validateRegistrationPeriod;
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
 import static google.registry.flows.domain.DomainFlowUtils.verifyUnitIsYears;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RENEW;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
 
@@ -73,7 +74,6 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -230,9 +230,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
   private DomainHistory buildDomainHistory(
       DomainBase newDomain, DateTime now, Period period, Duration renewGracePeriod) {
     return historyBuilder
-        .setType(HistoryEntry.Type.DOMAIN_RENEW)
+        .setType(DOMAIN_RENEW)
         .setPeriod(period)
-        .setModificationTime(now)
         .setDomain(newDomain)
         .setDomainTransactionRecords(
             ImmutableSet.of(

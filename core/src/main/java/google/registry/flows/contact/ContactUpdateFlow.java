@@ -24,6 +24,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.contact.ContactFlowUtils.validateAsciiPostalInfo;
 import static google.registry.flows.contact.ContactFlowUtils.validateContactAgainstPolicy;
+import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -45,7 +46,6 @@ import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -146,8 +146,7 @@ public final class ContactUpdateFlow implements TransactionalFlow {
     validateAsciiPostalInfo(newContact.getInternationalizedPostalInfo());
     validateContactAgainstPolicy(newContact);
     historyBuilder
-        .setType(HistoryEntry.Type.CONTACT_UPDATE)
-        .setModificationTime(now)
+        .setType(CONTACT_UPDATE)
         .setXmlBytes(null) // We don't want to store contact details in the history entry.
         .setContact(newContact);
     tm().insert(historyBuilder.build());

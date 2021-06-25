@@ -93,7 +93,6 @@ public final class ContactCreateFlow implements TransactionalFlow {
     validateContactAgainstPolicy(newContact);
     historyBuilder
         .setType(HistoryEntry.Type.CONTACT_CREATE)
-        .setModificationTime(now)
         .setXmlBytes(null) // We don't want to store contact details in the history entry.
         .setContact(newContact);
     tm().insertAll(

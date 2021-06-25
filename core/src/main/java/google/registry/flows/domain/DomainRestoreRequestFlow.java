@@ -27,6 +27,7 @@ import static google.registry.flows.domain.DomainFlowUtils.verifyNotReserved;
 import static google.registry.flows.domain.DomainFlowUtils.verifyPremiumNameIsNotBlocked;
 import static google.registry.flows.domain.DomainFlowUtils.verifyRegistrarIsActive;
 import static google.registry.model.ResourceTransferUtils.updateForeignKeyIndexDeletionTime;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_RESTORE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 
@@ -66,7 +67,6 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -188,8 +188,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
 
   private DomainHistory buildDomainHistory(DomainBase newDomain, DateTime now) {
     return historyBuilder
-        .setType(HistoryEntry.Type.DOMAIN_RESTORE)
-        .setModificationTime(now)
+        .setType(DOMAIN_RESTORE)
         .setDomain(newDomain)
         .setDomainTransactionRecords(
             ImmutableSet.of(

@@ -22,6 +22,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.flows.contact.ContactFlowUtils.createGainingTransferPollMessage;
 import static google.registry.flows.contact.ContactFlowUtils.createTransferResponse;
 import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
+import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_TRANSFER_REJECT;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -38,7 +39,6 @@ import google.registry.model.domain.metadata.MetadataExtension;
 import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Optional;
@@ -82,11 +82,7 @@ public final class ContactTransferRejectFlow implements TransactionalFlow {
     ContactResource newContact =
         denyPendingTransfer(existingContact, TransferStatus.CLIENT_REJECTED, now, clientId);
     ContactHistory contactHistory =
-        historyBuilder
-            .setType(HistoryEntry.Type.CONTACT_TRANSFER_REJECT)
-            .setModificationTime(now)
-            .setContact(newContact)
-            .build();
+        historyBuilder.setType(CONTACT_TRANSFER_REJECT).setContact(newContact).build();
     PollMessage gainingPollMessage =
         createGainingTransferPollMessage(
             targetId, newContact.getTransferData(), now, Key.create(contactHistory));

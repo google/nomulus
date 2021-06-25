@@ -39,6 +39,7 @@ import static google.registry.flows.domain.DomainFlowUtils.validateRegistrantAll
 import static google.registry.flows.domain.DomainFlowUtils.validateRequiredContactsPresent;
 import static google.registry.flows.domain.DomainFlowUtils.verifyClientUpdateNotProhibited;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPendingDelete;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -76,7 +77,6 @@ import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.registry.Registry;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -166,7 +166,8 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     flowCustomLogic.afterValidation(
         AfterValidationParameters.newBuilder().setExistingDomain(existingDomain).build());
     DomainBase newDomain = performUpdate(command, existingDomain, now);
-    DomainHistory domainHistory = buildDomainHistory(newDomain, now);
+    DomainHistory domainHistory =
+        historyBuilder.setType(DOMAIN_UPDATE).setDomain(newDomain).build();
     validateNewState(newDomain);
     dnsQueue.addDomainRefreshTask(targetId);
     ImmutableSet.Builder<ImmutableObject> entitiesToSave = new ImmutableSet.Builder<>();
@@ -215,14 +216,6 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     validateRegistrantAllowedOnTld(tld, command.getInnerChange().getRegistrantContactId());
     validateNameserversAllowedOnTld(
         tld, add.getNameserverFullyQualifiedHostNames());
-  }
-
-  private DomainHistory buildDomainHistory(DomainBase newDomain, DateTime now) {
-    return historyBuilder
-        .setType(HistoryEntry.Type.DOMAIN_UPDATE)
-        .setModificationTime(now)
-        .setDomain(newDomain)
-        .build();
   }
 
   private DomainBase performUpdate(Update command, DomainBase domain, DateTime now)

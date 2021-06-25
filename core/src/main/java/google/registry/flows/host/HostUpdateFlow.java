@@ -27,6 +27,7 @@ import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainNotInPendingDelete;
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
 import static google.registry.model.index.ForeignKeyIndex.loadAndGetKey;
+import static google.registry.model.reporting.HistoryEntry.Type.HOST_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
@@ -57,7 +58,6 @@ import google.registry.model.host.HostCommand.Update.Change;
 import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.persistence.VKey;
 import java.util.Objects;
@@ -201,12 +201,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
       updateSuperordinateDomains(existingHost, newHost);
     }
     enqueueTasks(existingHost, newHost);
-    entitiesToInsert.add(
-        historyBuilder
-            .setType(HistoryEntry.Type.HOST_UPDATE)
-            .setModificationTime(now)
-            .setHost(newHost)
-            .build());
+    entitiesToInsert.add(historyBuilder.setType(HOST_UPDATE).setHost(newHost).build());
     tm().updateAll(entitiesToUpdate.build());
     tm().insertAll(entitiesToInsert.build());
     return responseBuilder.build();

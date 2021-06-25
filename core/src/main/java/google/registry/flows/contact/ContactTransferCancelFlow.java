@@ -22,6 +22,7 @@ import static google.registry.flows.ResourceFlowUtils.verifyTransferInitiator;
 import static google.registry.flows.contact.ContactFlowUtils.createLosingTransferPollMessage;
 import static google.registry.flows.contact.ContactFlowUtils.createTransferResponse;
 import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
+import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_TRANSFER_CANCEL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -39,7 +40,6 @@ import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Optional;
@@ -84,11 +84,7 @@ public final class ContactTransferCancelFlow implements TransactionalFlow {
     ContactResource newContact =
         denyPendingTransfer(existingContact, TransferStatus.CLIENT_CANCELLED, now, clientId);
     ContactHistory contactHistory =
-        historyBuilder
-            .setType(HistoryEntry.Type.CONTACT_TRANSFER_CANCEL)
-            .setModificationTime(now)
-            .setContact(newContact)
-            .build();
+        historyBuilder.setType(CONTACT_TRANSFER_CANCEL).setContact(newContact).build();
     // Create a poll message for the losing client.
     PollMessage losingPollMessage =
         createLosingTransferPollMessage(
