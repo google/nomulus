@@ -137,8 +137,26 @@ public class HostBase extends EppResource {
   }
 
   @Override
-  public Builder asBuilder() {
+  public Builder<? extends HostBase, ?> asBuilder() {
     return new Builder<>(clone(this));
+  }
+
+  public HostResource asHostResource() {
+    return new HostResource.Builder()
+        .setCreationClientId(getCreationClientId())
+        .setCreationTime(getCreationTime())
+        .setDeletionTime(getDeletionTime())
+        .setHostName(getHostName())
+        .setInetAddresses(getInetAddresses())
+        .setLastTransferTime(getLastTransferTime())
+        .setLastSuperordinateChange(getLastSuperordinateChange())
+        .setLastEppUpdateClientId(getLastEppUpdateClientId())
+        .setLastEppUpdateTime(getLastEppUpdateTime())
+        .setPersistedCurrentSponsorClientId(getPersistedCurrentSponsorClientId())
+        .setRepoId(getRepoId())
+        .setSuperordinateDomain(getSuperordinateDomain())
+        .setStatusValues(getStatusValues())
+        .build();
   }
 
   /**

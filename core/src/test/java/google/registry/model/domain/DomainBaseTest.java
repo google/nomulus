@@ -39,6 +39,7 @@ import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.ImmutableObject;
+import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Reason;
 import google.registry.model.contact.ContactResource;
@@ -169,6 +170,13 @@ public class DomainBaseTest extends EntityTestCase {
                             null))
                     .setAutorenewEndTime(Optional.of(fakeClock.nowUtc().plusYears(2)))
                     .build()));
+  }
+
+  @Test
+  void testDomainContentToDomainBase() {
+    ImmutableObjectSubject.assertAboutImmutableObjects()
+        .that(domain.asDomainBase())
+        .isEqualExceptFields(domain, "updateTimestamp", "revisions");
   }
 
   @Test

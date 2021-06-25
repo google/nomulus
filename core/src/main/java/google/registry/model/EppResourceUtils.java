@@ -398,7 +398,7 @@ public final class EppResourceUtils {
                 .orElse(null);
     if (resourceAtPointInTime == null) {
       logger.atSevere().log(
-          "Couldn't load resource at % for key %s, falling back to resource %s.",
+          "Couldn't load resource at %s for key %s, falling back to resource %s.",
           timestamp, resource.createVKey(), resource);
       return resource;
     }
