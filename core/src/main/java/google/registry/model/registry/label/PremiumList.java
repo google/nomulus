@@ -44,6 +44,7 @@ import google.registry.schema.tld.PremiumListDao;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -183,9 +184,20 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
               .createQueryComposer(PremiumEntry.class)
               .where("revisionId", EQ, revisionId)
               .stream()
-              .collect(toImmutableMap(PremiumEntry::getDomainLabel, PremiumEntry::getPrice));
+              .collect(
+                  toImmutableMap(
+                      PremiumEntry::getDomainLabel,
+                      // Set the correct amount of precision for the premium list's currency.
+                      entry -> convertAmountToMoney(entry.getPrice()).getAmount()));
     }
     return labelsToPrices;
+  }
+
+  /**
+   * Converts a raw {@link BigDecimal} amount to a {@link Money} by applying the list's currency.
+   */
+  public Money convertAmountToMoney(BigDecimal amount) {
+    return Money.of(currency, amount.setScale(currency.getDecimalPlaces(), RoundingMode.HALF_EVEN));
   }
 
   /**

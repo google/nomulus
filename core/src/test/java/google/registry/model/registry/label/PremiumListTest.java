@@ -20,6 +20,8 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static org.joda.money.CurrencyUnit.JPY;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -28,6 +30,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList.PremiumListEntry;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineExtension;
+import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -124,5 +127,31 @@ public class PremiumListTest {
                     .setLabel("lower.みんな")
                     .build());
     assertThat(e).hasMessageThat().contains("must be in puny-coded, lower-case form");
+  }
+
+  @Test
+  void testConvertAmountToMoney_USD() {
+    PremiumList premiumList = new PremiumList.Builder().setName("foo").setCurrency(USD).build();
+    assertThat(premiumList.convertAmountToMoney(new BigDecimal("20.000")))
+        .isEqualTo(Money.of(USD, new BigDecimal("20.00")));
+    assertThat(premiumList.convertAmountToMoney(new BigDecimal("37")))
+        .isEqualTo(Money.of(USD, new BigDecimal("37.00")));
+    assertThat(premiumList.convertAmountToMoney(new BigDecimal("42.5")))
+        .isEqualTo(Money.of(USD, new BigDecimal("42.50")));
+    assertThat(premiumList.convertAmountToMoney(new BigDecimal("15.678")))
+        .isEqualTo(Money.of(USD, new BigDecimal("15.68")));
+  }
+
+  @Test
+  void testConvertAmountToMoney_JPY() {
+    PremiumList premiumList = new PremiumList.Builder().setName("foo").setCurrency(JPY).build();
+    assertThat(premiumList.convertAmountToMoney(new BigDecimal("20.000")))
+        .isEqualTo(Money.of(JPY, new BigDecimal("20")));
+    assertThat(premiumList.convertAmountToMoney(new BigDecimal("37")))
+        .isEqualTo(Money.of(JPY, new BigDecimal("37")));
+    assertThat(premiumList.convertAmountToMoney(new BigDecimal("42.5")))
+        .isEqualTo(Money.of(JPY, new BigDecimal("42")));
+    assertThat(premiumList.convertAmountToMoney(new BigDecimal("15.678")))
+        .isEqualTo(Money.of(JPY, new BigDecimal("16")));
   }
 }
