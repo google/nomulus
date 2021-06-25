@@ -16,12 +16,10 @@ package google.registry.rde;
 
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.EppResourceUtils.loadAtPointInTime;
 import static google.registry.model.EppResourceUtils.loadAtPointInTimeAsync;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.tools.mapreduce.Mapper;
-import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
@@ -34,9 +32,6 @@ import google.registry.model.host.HostResource;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
 import google.registry.xml.ValidationMode;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.joda.time.DateTime;
@@ -129,7 +124,7 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
         ImmutableMap.copyOf(Maps.asMap(dates, input -> loadAtPointInTimeAsync(resource, input)));
 
     // Convert resource to an XML fragment for each watermark/mode pair lazily and cache the result.
-    Fragmenter fragmenter = new Fragmenter(resourceAtTimes);
+    RdeFragmenter fragmenter = new RdeFragmenter(resourceAtTimes, marshaller);
 
     // Emit resource as an XML fragment for all TLDs and modes pending deposit.
     long resourcesEmitted = 0;
@@ -156,75 +151,5 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
 
     // Avoid running out of memory.
     tm().clearSessionCache();
-  }
-
-  /** Loading cache that turns a resource into XML for the various points in time and modes. */
-  private class Fragmenter {
-    private final Map<WatermarkModePair, Optional<DepositFragment>> cache = new HashMap<>();
-    private final ImmutableMap<DateTime, Supplier<EppResource>> resourceAtTimes;
-
-    long cacheHits = 0;
-    long resourcesNotFound = 0;
-    long resourcesFound = 0;
-
-    Fragmenter(ImmutableMap<DateTime, Supplier<EppResource>> resourceAtTimes) {
-      this.resourceAtTimes = resourceAtTimes;
-    }
-
-    Optional<DepositFragment> marshal(DateTime watermark, RdeMode mode) {
-      Optional<DepositFragment> result = cache.get(WatermarkModePair.create(watermark, mode));
-      if (result != null) {
-        cacheHits++;
-        return result;
-      }
-      EppResource resource = resourceAtTimes.get(watermark).get();
-      if (resource == null) {
-        result = Optional.empty();
-        cache.put(WatermarkModePair.create(watermark, RdeMode.FULL), result);
-        cache.put(WatermarkModePair.create(watermark, RdeMode.THIN), result);
-        resourcesNotFound++;
-        return result;
-      }
-      resourcesFound++;
-      if (resource instanceof DomainBase) {
-        result = Optional.of(marshaller.marshalDomain((DomainBase) resource, mode));
-        cache.put(WatermarkModePair.create(watermark, mode), result);
-        return result;
-      } else if (resource instanceof ContactResource) {
-        result = Optional.of(marshaller.marshalContact((ContactResource) resource));
-        cache.put(WatermarkModePair.create(watermark, RdeMode.FULL), result);
-        cache.put(WatermarkModePair.create(watermark, RdeMode.THIN), result);
-        return result;
-      } else if (resource instanceof HostResource) {
-        HostResource host = (HostResource) resource;
-        result =
-            Optional.of(
-                host.isSubordinate()
-                    ? marshaller.marshalSubordinateHost(
-                        host,
-                        // Note that loadAtPointInTime() does cloneProjectedAtTime(watermark) for
-                        // us.
-                        Objects.requireNonNull(
-                            loadAtPointInTime(
-                                tm().loadByKey(host.getSuperordinateDomain()), watermark)))
-                    : marshaller.marshalExternalHost(host));
-        cache.put(WatermarkModePair.create(watermark, RdeMode.FULL), result);
-        cache.put(WatermarkModePair.create(watermark, RdeMode.THIN), result);
-        return result;
-      } else {
-        throw new AssertionError(resource.toString());
-      }
-    }
-  }
-
-  /** Map key for {@link Fragmenter} cache. */
-  @AutoValue
-  abstract static class WatermarkModePair {
-    abstract DateTime watermark();
-    abstract RdeMode mode();
-
-    static WatermarkModePair create(DateTime watermark, RdeMode mode) {
-      return new AutoValue_RdeStagingMapper_WatermarkModePair(watermark, mode);
-    }
   }
 }

@@ -1085,8 +1085,7 @@ public class DatabaseHelper {
                           .setClientId(resource.getCreationClientId())
                           .setType(getHistoryEntryType(resource))
                           .setModificationTime(tm().getTransactionTime())
-                          .build()
-                          .toChildHistoryEntity());
+                          .build());
               ofyTmOrDoNothing(
                   () -> tm().put(ForeignKeyIndex.create(resource, resource.getDeletionTime())));
             });

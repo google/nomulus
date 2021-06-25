@@ -153,6 +153,21 @@ class CriteriaQueryBuilderTest {
   }
 
   @Test
+  void testSuccess_where_not_in_twoResults() {
+    List<CriteriaQueryBuilderTestEntity> result =
+        jpaTm()
+            .transact(
+                () -> {
+                  CriteriaQuery<CriteriaQueryBuilderTestEntity> query =
+                      CriteriaQueryBuilder.create(CriteriaQueryBuilderTestEntity.class)
+                          .whereFieldIsNotIn("data", ImmutableList.of("aaa", "bbb"))
+                          .build();
+                  return jpaTm().query(query).getResultList();
+                });
+    assertThat(result).containsExactly(entity1, entity2).inOrder();
+  }
+
+  @Test
   void testSuccess_where_in_twoResults() {
     List<CriteriaQueryBuilderTestEntity> result =
         jpaTm()

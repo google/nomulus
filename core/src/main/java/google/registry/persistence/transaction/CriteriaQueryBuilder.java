@@ -63,6 +63,13 @@ public class CriteriaQueryBuilder<T> {
   }
 
   /**
+   * Adds a WHERE clause to the query specifying that a value must not be in the given collection.
+   */
+  public CriteriaQueryBuilder<T> whereFieldIsNotIn(String fieldName, Collection<?> values) {
+    return where(root.get(fieldName).in(values).not());
+  }
+
+  /**
    * Adds a WHERE clause to the query specifying that a collection field must contain a particular
    * value.
    */
