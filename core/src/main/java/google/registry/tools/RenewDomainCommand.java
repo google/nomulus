@@ -25,7 +25,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.template.soy.data.SoyMapData;
 import google.registry.model.domain.DomainBase;
-import google.registry.tools.soy.RenewDomainSoyInfo;
+import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.util.Clock;
 import java.util.List;
 import java.util.Optional;
@@ -68,7 +68,7 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
       Optional<DomainBase> domainOptional =
           loadByForeignKey(DomainBase.class, domainName, now);
       checkArgumentPresent(domainOptional, "Domain '%s' does not exist or is deleted", domainName);
-      setSoyTemplate(RenewDomainSoyInfo.getInstance(), RenewDomainSoyInfo.RENEWDOMAIN);
+      setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
       DomainBase domain = domainOptional.get();
       addSoyRecord(
           isNullOrEmpty(clientId) ? domain.getCurrentSponsorClientId() : clientId,
