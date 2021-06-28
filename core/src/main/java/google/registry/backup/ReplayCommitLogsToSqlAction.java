@@ -64,10 +64,13 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
 
   static final String PATH = "/_dr/task/replayCommitLogsToSql";
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final int BLOCK_SIZE =
       1024 * 1024; // Buffer 1mb at a time, for no particular reason.
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Duration LEASE_LENGTH = standardHours(1);
+  // Stop / pause where we are if we've been replaying for more than five minutes to avoid GAE
+  // request timeouts
+  private static final Duration REPLAY_TIMEOUT_DURATION = Duration.standardMinutes(5);
 
   @Inject GcsService gcsService;
   @Inject Response response;
@@ -113,17 +116,26 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
   }
 
   private void replayFiles() {
+    DateTime replayTimeoutTime = clock.nowUtc().plus(REPLAY_TIMEOUT_DURATION);
     // Start at the first millisecond we haven't seen yet
     DateTime fromTime = jpaTm().transact(() -> SqlReplayCheckpoint.get().plusMillis(1));
     // If there's an inconsistent file set, this will throw IllegalStateException and the job
     // will try later -- this is likely because an export hasn't finished yet.
     ImmutableList<GcsFileMetadata> commitLogFiles =
         diffLister.listDiffFiles(fromTime, /* current time */ null);
+    int processedFiles = 0;
     for (GcsFileMetadata metadata : commitLogFiles) {
       // One transaction per GCS file
       jpaTm().transact(() -> processFile(metadata));
+      processedFiles++;
+      if (clock.nowUtc().isAfter(replayTimeoutTime)) {
+        logger.atInfo().log(
+            "Reached max execution time after replaying %d files, leaving %d files for next run.",
+            processedFiles, commitLogFiles.size() - processedFiles);
+        return;
+      }
     }
-    logger.atInfo().log("Replayed %d commit log files to SQL successfully.", commitLogFiles.size());
+    logger.atInfo().log("Replayed %d commit log files to SQL successfully.", processedFiles);
   }
 
   private void processFile(GcsFileMetadata metadata) {
