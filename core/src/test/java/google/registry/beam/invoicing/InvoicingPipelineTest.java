@@ -32,8 +32,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.beam.TestPipelineExtension;
-import google.registry.beam.common.RegistryJpaIO;
-import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.model.billing.BillingEvent.Cancellation;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.OneTime;
@@ -55,8 +53,6 @@ import google.registry.util.ResourceUtils;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
-import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -279,49 +275,7 @@ class InvoicingPipelineTest {
   void testSuccess_readFromCloudSql() throws Exception {
     setupCloudSql();
 
-    YearMonth reportingMonth = YearMonth.parse(options.getYearMonth());
-    YearMonth endMonth = reportingMonth.plusMonths(1);
-
-    Read<Object[], BillingEvent> read =
-        RegistryJpaIO.read(
-            String.format(
-                "select b, r from BillingEvent b join Registrar r on b.clientId ="
-                    + " r.clientIdentifier join Domain d on b.domainRepoId = d.repoId join Tld t"
-                    + " on t.tldStrId = d.tld left join BillingCancellation c on b.id ="
-                    + " c.refOneTime.billingId left join BillingCancellation cr on"
-                    + " b.cancellationMatchingBillingEvent = cr.refRecurring.billingId where"
-                    + " r.billingIdentifier != null and r.type = 'REAL' and t.invoicingEnabled ="
-                    + " true and b.billingTime between CAST('%s' AS timestamp) and CAST('%s' AS"
-                    + " timestamp) and c.id = null and cr.id = null",
-                options.getYearMonth().concat("-01"),
-                String.format("%d-%d-01", endMonth.getYear(), endMonth.getMonthValue())),
-            false,
-            (Object[] row) -> {
-              google.registry.model.billing.BillingEvent.OneTime oneTime =
-                  (google.registry.model.billing.BillingEvent.OneTime) row[0];
-              Registrar registrar = (Registrar) row[1];
-              return BillingEvent.create(
-                  oneTime.getId(),
-                  ZonedDateTime.ofInstant(
-                      Instant.ofEpochMilli(oneTime.getBillingTime().getMillis()), ZoneId.of("UTC")),
-                  ZonedDateTime.ofInstant(
-                      Instant.ofEpochMilli(oneTime.getEventTime().getMillis()), ZoneId.of("UTC")),
-                  registrar.getClientId(),
-                  registrar.getBillingIdentifier().toString(),
-                  registrar.getPoNumber().orElse(""),
-                  oneTime.getTargetId().substring(oneTime.getTargetId().lastIndexOf('.') + 1),
-                  oneTime.getReason().toString(),
-                  oneTime.getTargetId(),
-                  "REPO-ID",
-                  Optional.ofNullable(oneTime.getPeriodYears()).orElse(0),
-                  oneTime.getCost().getCurrencyUnit().toString(),
-                  oneTime.getCost().getAmount().doubleValue(),
-                  String.join(
-                      " ",
-                      oneTime.getFlags().stream().map(Flag::toString).collect(toImmutableSet())));
-            });
-
-    PCollection<BillingEvent> billingEvents = pipeline.apply(read);
+    PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
   }
