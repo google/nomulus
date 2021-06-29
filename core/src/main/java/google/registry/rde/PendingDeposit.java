@@ -95,6 +95,12 @@ public abstract class PendingDeposit implements Serializable {
 
   PendingDeposit() {}
 
+  /**
+   * A deterministic coder for {@link PendingDeposit} used during a GroupBy transform.
+   *
+   * <p>We cannot use a {@link SerializableCoder} directly because it does not guarantee
+   * determinism, which is required by GroupBy.
+   */
   public static class PendingDepositCoder extends AtomicCoder<PendingDeposit> {
 
     private PendingDepositCoder() {

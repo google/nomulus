@@ -79,5 +79,26 @@ public class ContactResource extends ContactBase
     private Builder(ContactResource instance) {
       super(instance);
     }
+
+    public Builder copyFrom(ContactBase contactBase) {
+      return this.setAuthInfo(contactBase.getAuthInfo())
+          .setContactId(contactBase.getContactId())
+          .setCreationClientId(contactBase.getCreationClientId())
+          .setCreationTime(contactBase.getCreationTime())
+          .setDeletionTime(contactBase.getDeletionTime())
+          .setDisclose(contactBase.getDisclose())
+          .setEmailAddress(contactBase.getEmailAddress())
+          .setFaxNumber(contactBase.getFaxNumber())
+          .setInternationalizedPostalInfo(contactBase.getInternationalizedPostalInfo())
+          .setLastTransferTime(contactBase.getLastTransferTime())
+          .setLastEppUpdateClientId(contactBase.getLastEppUpdateClientId())
+          .setLastEppUpdateTime(contactBase.getLastEppUpdateTime())
+          .setLocalizedPostalInfo(contactBase.getLocalizedPostalInfo())
+          .setPersistedCurrentSponsorClientId(contactBase.getPersistedCurrentSponsorClientId())
+          .setRepoId(contactBase.getRepoId())
+          .setStatusValues(contactBase.getStatusValues())
+          .setTransferData(contactBase.getTransferData())
+          .setVoiceNumber(contactBase.getVoiceNumber());
+    }
   }
 }

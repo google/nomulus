@@ -125,7 +125,7 @@ public class ContactResourceTest extends EntityTestCase {
   @Test
   void testContactBaseToContactResource() {
     ImmutableObjectSubject.assertAboutImmutableObjects()
-        .that(contactResource.asContactResource())
+        .that(new ContactResource.Builder().copyFrom(contactResource).build())
         .isEqualExceptFields(contactResource, "updateTimestamp", "revisions");
   }
 

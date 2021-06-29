@@ -291,29 +291,6 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
     return new Builder<>(clone(this));
   }
 
-  public ContactResource asContactResource() {
-    return new ContactResource.Builder()
-        .setAuthInfo(getAuthInfo())
-        .setContactId(getContactId())
-        .setCreationClientId(getCreationClientId())
-        .setCreationTime(getCreationTime())
-        .setDeletionTime(getDeletionTime())
-        .setDisclose(getDisclose())
-        .setEmailAddress(getEmailAddress())
-        .setFaxNumber(getFaxNumber())
-        .setInternationalizedPostalInfo(getInternationalizedPostalInfo())
-        .setLastTransferTime(getLastTransferTime())
-        .setLastEppUpdateClientId(getLastEppUpdateClientId())
-        .setLastEppUpdateTime(getLastEppUpdateTime())
-        .setLocalizedPostalInfo(getLocalizedPostalInfo())
-        .setPersistedCurrentSponsorClientId(getPersistedCurrentSponsorClientId())
-        .setRepoId(getRepoId())
-        .setStatusValues(getStatusValues())
-        .setTransferData(getTransferData())
-        .setVoiceNumber(getVoiceNumber())
-        .build();
-  }
-
   /** A builder for constructing {@link ContactResource}, since it is immutable. */
   public static class Builder<T extends ContactBase, B extends Builder<T, B>>
       extends EppResource.Builder<T, B> implements BuilderWithTransferData<ContactTransferData, B> {

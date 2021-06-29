@@ -93,7 +93,7 @@ class HostResourceTest extends EntityTestCase {
   @TestOfyAndSql
   void testHostBaseToHostResource() {
     ImmutableObjectSubject.assertAboutImmutableObjects()
-        .that(host.asHostResource())
+        .that(new HostResource.Builder().copyFrom(host).build())
         .isEqualExceptFields(host, "updateTimestamp", "revisions");
   }
 

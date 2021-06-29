@@ -252,7 +252,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
 
   @Override
   public Optional<? extends EppResource> getResourceAtPointInTime() {
-    return getDomainContent().map(DomainContent::asDomainBase);
+    return getDomainContent()
+        .map(domainContent -> new DomainBase.Builder().copyFrom(domainContent).build());
   }
 
   @PostLoad

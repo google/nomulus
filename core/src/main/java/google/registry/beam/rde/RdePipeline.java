@@ -1,4 +1,4 @@
-// Copyright 2018 The Nomulus Authors. All Rights Reserved.
+// Copyright 2021 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.FlatMapElements;
 import org.apache.beam.sdk.transforms.Flatten;
+import org.apache.beam.sdk.transforms.Reshuffle;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionList;
@@ -148,11 +149,13 @@ public class RdePipeline implements Serializable {
                     }));
   }
 
+  @SuppressWarnings("deprecation") // Reshuffle is still recommended by Dataflow.
   <T extends EppResource>
       PCollection<KV<PendingDeposit, DepositFragment>> processNonRegistrarEntities(
           Pipeline pipeline, Class<T> clazz) {
     return createInputs(pipeline, clazz)
-        .apply("Marshal " + clazz.getSimpleName() + " into DepositFragment", mapToFragments(clazz));
+        .apply("Marshal " + clazz.getSimpleName() + " into DepositFragment", mapToFragments(clazz))
+        .apply("Reshuffle to prevent fusion", Reshuffle.of());
   }
 
   <T extends EppResource> PCollection<VKey<T>> createInputs(Pipeline pipeline, Class<T> clazz) {

@@ -175,7 +175,7 @@ public class DomainBaseTest extends EntityTestCase {
   @Test
   void testDomainContentToDomainBase() {
     ImmutableObjectSubject.assertAboutImmutableObjects()
-        .that(domain.asDomainBase())
+        .that(new DomainBase.Builder().copyFrom(domain).build())
         .isEqualExceptFields(domain, "updateTimestamp", "revisions");
   }
 

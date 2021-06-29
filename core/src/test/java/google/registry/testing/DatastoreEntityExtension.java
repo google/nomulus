@@ -51,15 +51,16 @@ public class DatastoreEntityExtension implements BeforeEachCallback, AfterEachCa
   /**
    * Whether all threads should be masqueraded as GAE threads.
    *
-   * <p>This is particularly useful when new threads are spawn during a test. For example when
+   * <p>This is particularly useful when new threads are spawned during a test. For example when
    * testing Beam pipelines, the test pipeline runs the transforms in separate threads than the test
    * thread. If Ofy keys are created in transforms, this value needs to be set to true.
    *
-   * <p>Warning: by setting this value to true, any thread spawn by the current JVM will be
-   * masqueraded during the execution of the current test test, including those running other tests
-   * in parallel. This may or may not cause an issue when other tests have {@link
-   * AppEngineExtension} registered, that creates a much more fully functional GAE test environment.
-   * Consider moving tests using this extension to {@code outcastTest} if necessary.
+   * <p>Warning: by setting this value to true, any thread spawned by the current JVM will be have
+   * the thread local property set to the placeholder value during the execution of the current
+   * test, including those running other tests in parallel. This may or may not cause an issue when
+   * other tests have {@link AppEngineExtension} registered, that creates a much more fully
+   * functional GAE test environment. Consider moving tests using this extension to {@code
+   * outcastTest} if necessary.
    */
   public DatastoreEntityExtension allThreads(boolean value) {
     allThreads = value;

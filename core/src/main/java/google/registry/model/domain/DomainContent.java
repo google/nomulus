@@ -783,37 +783,6 @@ public class DomainContent extends EppResource
     return new Builder<>(clone(this));
   }
 
-  public DomainBase asDomainBase() {
-    return new DomainBase.Builder()
-        .setAuthInfo(getAuthInfo())
-        .setAutorenewPollMessage(getAutorenewPollMessage())
-        .setAutorenewBillingEvent(getAutorenewBillingEvent())
-        .setAutorenewEndTime(getAutorenewEndTime())
-        .setContacts(getContacts())
-        .setCreationClientId(getCreationClientId())
-        .setCreationTime(getCreationTime())
-        .setDomainName(getDomainName())
-        .setDeletePollMessage(getDeletePollMessage())
-        .setDsData(getDsData())
-        .setDeletionTime(getDeletionTime())
-        .setGracePeriods(getGracePeriods())
-        .setIdnTableName(getIdnTableName())
-        .setLastTransferTime(getLastTransferTime())
-        .setLaunchNotice(getLaunchNotice())
-        .setLastEppUpdateClientId(getLastEppUpdateClientId())
-        .setLastEppUpdateTime(getLastEppUpdateTime())
-        .setNameservers(getNameservers())
-        .setPersistedCurrentSponsorClientId(getPersistedCurrentSponsorClientId())
-        .setRegistrant(getRegistrant())
-        .setRegistrationExpirationTime(getRegistrationExpirationTime())
-        .setRepoId(getRepoId())
-        .setSmdId(getSmdId())
-        .setSubordinateHosts(getSubordinateHosts())
-        .setStatusValues(getStatusValues())
-        .setTransferData(getTransferData())
-        .build();
-  }
-
   /** A builder for constructing {@link DomainBase}, since it is immutable. */
   public static class Builder<T extends DomainContent, B extends Builder<T, B>>
       extends EppResource.Builder<T, B> implements BuilderWithTransferData<DomainTransferData, B> {

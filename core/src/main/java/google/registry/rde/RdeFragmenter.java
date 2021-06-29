@@ -88,7 +88,10 @@ public class RdeFragmenter {
       cache.put(WatermarkModePair.create(watermark, RdeMode.THIN), result);
       return result;
     } else {
-      throw new AssertionError(resource.toString());
+      throw new IllegalStateException(
+          String.format(
+              "Resource %s of type %s cannot be converted to XML.",
+              resource, resource.getClass().getSimpleName()));
     }
   }
 

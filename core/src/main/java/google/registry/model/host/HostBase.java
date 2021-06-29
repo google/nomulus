@@ -141,24 +141,6 @@ public class HostBase extends EppResource {
     return new Builder<>(clone(this));
   }
 
-  public HostResource asHostResource() {
-    return new HostResource.Builder()
-        .setCreationClientId(getCreationClientId())
-        .setCreationTime(getCreationTime())
-        .setDeletionTime(getDeletionTime())
-        .setHostName(getHostName())
-        .setInetAddresses(getInetAddresses())
-        .setLastTransferTime(getLastTransferTime())
-        .setLastSuperordinateChange(getLastSuperordinateChange())
-        .setLastEppUpdateClientId(getLastEppUpdateClientId())
-        .setLastEppUpdateTime(getLastEppUpdateTime())
-        .setPersistedCurrentSponsorClientId(getPersistedCurrentSponsorClientId())
-        .setRepoId(getRepoId())
-        .setSuperordinateDomain(getSuperordinateDomain())
-        .setStatusValues(getStatusValues())
-        .build();
-  }
-
   /**
    * Compute the correct last transfer time for this host given its loaded superordinate domain.
    *

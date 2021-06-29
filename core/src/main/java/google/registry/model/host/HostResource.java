@@ -63,5 +63,21 @@ public class HostResource extends HostBase
     private Builder(HostResource instance) {
       super(instance);
     }
+
+    public Builder copyFrom(HostBase hostBase) {
+      return this.setCreationClientId(hostBase.getCreationClientId())
+          .setCreationTime(hostBase.getCreationTime())
+          .setDeletionTime(hostBase.getDeletionTime())
+          .setHostName(hostBase.getHostName())
+          .setInetAddresses(hostBase.getInetAddresses())
+          .setLastTransferTime(hostBase.getLastTransferTime())
+          .setLastSuperordinateChange(hostBase.getLastSuperordinateChange())
+          .setLastEppUpdateClientId(hostBase.getLastEppUpdateClientId())
+          .setLastEppUpdateTime(hostBase.getLastEppUpdateTime())
+          .setPersistedCurrentSponsorClientId(hostBase.getPersistedCurrentSponsorClientId())
+          .setRepoId(hostBase.getRepoId())
+          .setSuperordinateDomain(hostBase.getSuperordinateDomain())
+          .setStatusValues(hostBase.getStatusValues());
+    }
   }
 }

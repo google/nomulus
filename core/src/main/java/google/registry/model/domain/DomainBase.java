@@ -181,5 +181,34 @@ public class DomainBase extends DomainContent
     Builder(DomainBase instance) {
       super(instance);
     }
+
+    public Builder copyFrom(DomainContent domainContent) {
+      return this.setAuthInfo(domainContent.getAuthInfo())
+          .setAutorenewPollMessage(domainContent.getAutorenewPollMessage())
+          .setAutorenewBillingEvent(domainContent.getAutorenewBillingEvent())
+          .setAutorenewEndTime(domainContent.getAutorenewEndTime())
+          .setContacts(domainContent.getContacts())
+          .setCreationClientId(domainContent.getCreationClientId())
+          .setCreationTime(domainContent.getCreationTime())
+          .setDomainName(domainContent.getDomainName())
+          .setDeletePollMessage(domainContent.getDeletePollMessage())
+          .setDsData(domainContent.getDsData())
+          .setDeletionTime(domainContent.getDeletionTime())
+          .setGracePeriods(domainContent.getGracePeriods())
+          .setIdnTableName(domainContent.getIdnTableName())
+          .setLastTransferTime(domainContent.getLastTransferTime())
+          .setLaunchNotice(domainContent.getLaunchNotice())
+          .setLastEppUpdateClientId(domainContent.getLastEppUpdateClientId())
+          .setLastEppUpdateTime(domainContent.getLastEppUpdateTime())
+          .setNameservers(domainContent.getNameservers())
+          .setPersistedCurrentSponsorClientId(domainContent.getPersistedCurrentSponsorClientId())
+          .setRegistrant(domainContent.getRegistrant())
+          .setRegistrationExpirationTime(domainContent.getRegistrationExpirationTime())
+          .setRepoId(domainContent.getRepoId())
+          .setSmdId(domainContent.getSmdId())
+          .setSubordinateHosts(domainContent.getSubordinateHosts())
+          .setStatusValues(domainContent.getStatusValues())
+          .setTransferData(domainContent.getTransferData());
+    }
   }
 }

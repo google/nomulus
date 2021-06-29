@@ -110,7 +110,8 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
 
   @Override
   public Optional<? extends EppResource> getResourceAtPointInTime() {
-    return getContactBase().map(ContactBase::asContactResource);
+    return getContactBase()
+        .map(contactBase -> new ContactResource.Builder().copyFrom(contactBase).build());
   }
 
   @PostLoad
