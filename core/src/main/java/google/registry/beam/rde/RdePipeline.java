@@ -132,6 +132,8 @@ public class RdePipeline implements Serializable {
                 "SELECT clientIdentifier FROM Registrar WHERE type NOT IN (:types)",
                 ImmutableMap.of("types", IGNORED_REGISTRAR_TYPES),
                 String.class,
+                // TODO: consider adding coders for entities and pass them directly instead of using
+                // VKeys.
                 id -> VKey.createSql(Registrar.class, id)))
         .apply(
             "Marshal Registrar into DepositFragment",
@@ -155,7 +157,12 @@ public class RdePipeline implements Serializable {
           Pipeline pipeline, Class<T> clazz) {
     return createInputs(pipeline, clazz)
         .apply("Marshal " + clazz.getSimpleName() + " into DepositFragment", mapToFragments(clazz))
-        .apply("Reshuffle to prevent fusion", Reshuffle.of());
+        .setCoder(KvCoder.of(PendingDepositCoder.of(), SerializableCoder.of(DepositFragment.class)))
+        .apply(
+            "Reshuffle KV<PendingDeposit, DepositFragment> of "
+                + clazz.getSimpleName()
+                + " to prevent fusion",
+            Reshuffle.of());
   }
 
   <T extends EppResource> PCollection<VKey<T>> createInputs(Pipeline pipeline, Class<T> clazz) {
@@ -167,6 +174,8 @@ public class RdePipeline implements Serializable {
                 ? ImmutableMap.of("tlds", pendings.keySet())
                 : ImmutableMap.of(),
             String.class,
+            // TODO: consider adding coders for entities and pass them directly instead of using
+            // VKeys.
             x -> VKey.create(clazz, x)));
   }
 
