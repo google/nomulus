@@ -17,7 +17,6 @@ package google.registry.testing;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
@@ -53,7 +52,8 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
   FakeClock clock;
   boolean compare;
-  boolean replayed = true;
+  boolean replayed = false;
+  boolean inOfyContext;
   InjectExtension injectExtension = new InjectExtension();
   @Nullable ReplicateToDatastoreAction sqlToDsReplicator;
 
@@ -90,8 +90,8 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     // When running in JPA mode with double replay enabled, enable JPA transaction replication.
     // Note that we can't just use isOfy() here because this extension gets run before the dual-test
     // transaction manager gets injected.
-    if (sqlToDsReplicator != null
-        && !DualDatabaseTestInvocationContextProvider.inOfyContext(context)) {
+    inOfyContext = DualDatabaseTestInvocationContextProvider.inOfyContext(context);
+    if (sqlToDsReplicator != null && !inOfyContext) {
       RegistryConfig.overrideCloudSqlReplicateTransactions(true);
     }
 
@@ -129,12 +129,18 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
   public void replay() {
     if (!replayed) {
-      // Since we get called after the instance, we need make sure that the transaction manager
-      // exists.
-      if (tm() != null && tm().isOfy()) {
+      if (inOfyContext) {
         replayToSql();
       } else {
+        // Disable database backups.  For unknown reason, if we don't do this we get residual commit
+        // log entries that cause timestamp inversions in other tests.
+        DatabaseHelper.setAlwaysSaveWithBackup(false);
+
+        // Do the ofy replay.
         replayToOfy();
+
+        // Clean out anything that ends up in the replay queue.
+        ReplayQueue.clear();
       }
       replayed = true;
     }
@@ -177,6 +183,10 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   }
 
   private void replayToOfy() {
+    if (sqlToDsReplicator == null) {
+      return;
+    }
+
     // TODO(mmuller): Verify that all entities are the same across both databases.
     for (TransactionEntity txn : sqlToDsReplicator.getTransactionBatch()) {
       if (sqlToDsReplicator.applyTransaction(txn)) {
