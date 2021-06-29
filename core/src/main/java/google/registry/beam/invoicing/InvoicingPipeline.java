@@ -80,10 +80,10 @@ public class InvoicingPipeline implements Serializable {
   }
 
   void setupPipeline(Pipeline pipeline) {
-    PCollection<BillingEvent> billingEvents = readFromBigQuery(options, pipeline);
-    // options.getDatabase().equals("DATASTORE")
-    //     ? readFromBigQuery(options, pipeline)
-    //     : readFromCloudSql(options, pipeline);
+    PCollection<BillingEvent> billingEvents =
+    options.getDatabase().equals("DATASTORE")
+        ? readFromBigQuery(options, pipeline)
+        : readFromCloudSql(options, pipeline);
 
     saveInvoiceCsv(billingEvents, options);
 
