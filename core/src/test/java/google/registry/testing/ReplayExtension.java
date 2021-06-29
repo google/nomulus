@@ -22,13 +22,17 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
+import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.ReplayQueue;
 import google.registry.model.ofy.TransactionInfo;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.schema.replay.DatastoreEntity;
+import google.registry.schema.replay.ReplicateToDatastoreAction;
 import java.util.Optional;
+import javax.annotation.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -48,19 +52,27 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
   FakeClock clock;
   boolean compare;
+  boolean replayed = false;
+  boolean inOfyContext;
   InjectExtension injectExtension = new InjectExtension();
+  @Nullable ReplicateToDatastoreAction sqlToDsReplicator;
 
-  private ReplayExtension(FakeClock clock, boolean compare) {
+  private ReplayExtension(
+      FakeClock clock, boolean compare, @Nullable ReplicateToDatastoreAction sqlToDsReplicator) {
     this.clock = clock;
     this.compare = compare;
+    this.sqlToDsReplicator = sqlToDsReplicator;
   }
 
   public static ReplayExtension createWithCompare(FakeClock clock) {
-    return new ReplayExtension(clock, true);
+    return new ReplayExtension(clock, true, null);
   }
 
-  public static ReplayExtension createWithoutCompare(FakeClock clock) {
-    return new ReplayExtension(clock, false);
+  /**
+   * Create a replay extension that replays from SQL to cloud datastore when running in SQL mode.
+   */
+  public static ReplayExtension createWithDoubleReplay(FakeClock clock) {
+    return new ReplayExtension(clock, true, new ReplicateToDatastoreAction(clock));
   }
 
   @Override
@@ -74,16 +86,27 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     DatabaseHelper.setClock(clock);
     DatabaseHelper.setAlwaysSaveWithBackup(true);
     ReplayQueue.clear();
+
+    // When running in JPA mode with double replay enabled, enable JPA transaction replication.
+    // Note that we can't just use isOfy() here because this extension gets run before the dual-test
+    // transaction manager gets injected.
+    inOfyContext = DualDatabaseTestInvocationContextProvider.inOfyContext(context);
+    if (sqlToDsReplicator != null && !inOfyContext) {
+      RegistryConfig.overrideCloudSqlReplicateTransactions(true);
+    }
+
     context.getStore(ExtensionContext.Namespace.GLOBAL).put(ReplayExtension.class, this);
   }
 
   @Override
   public void afterEach(ExtensionContext context) {
     // This ensures that we do the replay even if we're not called from AppEngineExtension.  It
-    // should be safe to call replayToSql() twice, as the replay queue should be empty the second
-    // time.
-    replayToSql();
+    // is safe to call replay() twice, as the method ensures idempotence.
+    replay();
     injectExtension.afterEach(context);
+    if (sqlToDsReplicator != null) {
+      RegistryConfig.overrideCloudSqlReplicateTransactions(false);
+    }
   }
 
   private static ImmutableSet<String> NON_REPLICATED_TYPES =
@@ -104,7 +127,26 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
           "ForeignKeyContactIndex",
           "ForeignKeyDomainIndex");
 
-  public void replayToSql() {
+  public void replay() {
+    if (!replayed) {
+      if (inOfyContext) {
+        replayToSql();
+      } else {
+        // Disable database backups.  For unknown reason, if we don't do this we get residual commit
+        // log entries that cause timestamp inversions in other tests.
+        DatabaseHelper.setAlwaysSaveWithBackup(false);
+
+        // Do the ofy replay.
+        replayToOfy();
+
+        // Clean out anything that ends up in the replay queue.
+        ReplayQueue.clear();
+      }
+      replayed = true;
+    }
+  }
+
+  private void replayToSql() {
     DatabaseHelper.setAlwaysSaveWithBackup(false);
     ImmutableMap<Key<?>, Object> changes = ReplayQueue.replay();
 
@@ -137,6 +179,20 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
                   }
                 });
       }
+    }
+  }
+
+  private void replayToOfy() {
+    if (sqlToDsReplicator == null) {
+      return;
+    }
+
+    // TODO(mmuller): Verify that all entities are the same across both databases.
+    for (TransactionEntity txn : sqlToDsReplicator.getTransactionBatch()) {
+      if (sqlToDsReplicator.applyTransaction(txn)) {
+        break;
+      }
+      clock.advanceOneMilli();
     }
   }
 }

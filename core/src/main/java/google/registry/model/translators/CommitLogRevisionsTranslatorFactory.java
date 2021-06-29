@@ -17,13 +17,14 @@ package google.registry.model.translators;
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static google.registry.config.RegistryConfig.getCommitLogDatastoreRetention;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.googlecode.objectify.Key;
 import google.registry.model.ofy.CommitLogManifest;
+import google.registry.persistence.transaction.Transaction;
 import org.joda.time.DateTime;
 
 /**
@@ -58,12 +59,20 @@ public final class CommitLogRevisionsTranslatorFactory
    * <p>We store a maximum of one entry per day. It will be the last transaction that happened on
    * that day.
    *
+   * <p>In serialization mode, this method just returns "revisions" without modification.
+   *
    * @see google.registry.config.RegistryConfig#getCommitLogDatastoreRetention()
    */
   @Override
   ImmutableSortedMap<DateTime, Key<CommitLogManifest>> transformBeforeSave(
       ImmutableSortedMap<DateTime, Key<CommitLogManifest>> revisions) {
-    DateTime now = tm().getTransactionTime();
+
+    // Don't do anything if we're just doing object serialization.
+    if (Transaction.inSerializationMode()) {
+      return revisions;
+    }
+
+    DateTime now = ofyTm().getTransactionTime();
     DateTime threshold = now.minus(getCommitLogDatastoreRetention());
     DateTime preThresholdTime = firstNonNull(revisions.floorKey(threshold), START_OF_TIME);
     return new ImmutableSortedMap.Builder<DateTime, Key<CommitLogManifest>>(Ordering.natural())

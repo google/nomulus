@@ -42,7 +42,8 @@ import javax.persistence.NoResultException;
     method = GET,
     automaticallyPrintOk = true,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
-class ReplicateToDatastoreAction implements Runnable {
+@VisibleForTesting
+public class ReplicateToDatastoreAction implements Runnable {
   public static final String PATH = "/_dr/cron/replicateToDatastore";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -61,12 +62,12 @@ class ReplicateToDatastoreAction implements Runnable {
   }
 
   @VisibleForTesting
-  List<TransactionEntity> getTransactionBatch() {
+  public List<TransactionEntity> getTransactionBatch() {
     // Get the next batch of transactions that we haven't replicated.
     LastSqlTransaction lastSqlTxnBeforeBatch = ofyTm().transact(() -> LastSqlTransaction.load());
     try {
       return jpaTm()
-          .transact(
+          .transactWithoutBackup(
               () ->
                   jpaTm()
                       .query(
@@ -86,7 +87,7 @@ class ReplicateToDatastoreAction implements Runnable {
    * be aborted.
    */
   @VisibleForTesting
-  boolean applyTransaction(TransactionEntity txnEntity) {
+  public boolean applyTransaction(TransactionEntity txnEntity) {
     logger.atInfo().log("Applying a single transaction Cloud SQL -> Cloud Datastore");
     return ofyTm()
         .transact(

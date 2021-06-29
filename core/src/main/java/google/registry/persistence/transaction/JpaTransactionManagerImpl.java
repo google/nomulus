@@ -41,6 +41,8 @@ import google.registry.model.server.KmsSecret;
 import google.registry.model.tmch.ClaimsList.ClaimsListSingleton;
 import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
+import google.registry.schema.replay.NonReplicatedEntity;
+import google.registry.schema.replay.SqlOnlyEntity;
 import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
@@ -152,6 +154,15 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> T transact(Supplier<T> work) {
+    return transact(work, true);
+  }
+
+  @Override
+  public <T> T transactWithoutBackup(Supplier<T> work) {
+    return transact(work, false);
+  }
+
+  private <T> T transact(Supplier<T> work, boolean withBackup) {
     return retrier.callWithRetry(
         () -> {
           if (inTransaction()) {
@@ -162,7 +173,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
           EntityTransaction txn = txnInfo.entityManager.getTransaction();
           try {
             txn.begin();
-            txnInfo.start(clock);
+            txnInfo.start(clock, withBackup);
             T result = work.get();
             txnInfo.recordTransaction();
             txn.commit();
@@ -194,7 +205,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     EntityTransaction txn = txnInfo.entityManager.getTransaction();
     try {
       txn.begin();
-      txnInfo.start(clock);
+      txnInfo.start(clock, true);
       T result = work.get();
       txnInfo.recordTransaction();
       txn.commit();
@@ -740,11 +751,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     Set<Object> objectsToSave = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
 
     /** Start a new transaction. */
-    private void start(Clock clock) {
+    private void start(Clock clock, boolean withBackup) {
       checkArgumentNotNull(clock);
       inTransaction = true;
       transactionTime = clock.nowUtc();
-      if (RegistryConfig.getCloudSqlReplicateTransactions()) {
+      if (withBackup && RegistryConfig.getCloudSqlReplicateTransactions()) {
         contentsBuilder = new Transaction.Builder();
       }
     }
@@ -763,15 +774,21 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     }
 
     private void addUpdate(Object entity) {
-      if (contentsBuilder != null) {
+      if (contentsBuilder != null && shouldReplicate(entity.getClass())) {
         contentsBuilder.addUpdate(entity);
       }
     }
 
     private void addDelete(VKey<?> key) {
-      if (contentsBuilder != null) {
+      if (contentsBuilder != null && shouldReplicate(key.getKind())) {
         contentsBuilder.addDelete(key);
       }
+    }
+
+    /** Returns true if the entity class should be replicated from SQL to datastore. */
+    private boolean shouldReplicate(Class<?> entityClass) {
+      return !NonReplicatedEntity.class.isAssignableFrom(entityClass)
+          && !SqlOnlyEntity.class.isAssignableFrom(entityClass);
     }
 
     private void recordTransaction() {

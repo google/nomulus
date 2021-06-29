@@ -14,10 +14,11 @@
 
 package google.registry.model.translators;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static org.joda.time.DateTimeZone.UTC;
 
 import google.registry.model.UpdateAutoTimestamp;
+import google.registry.persistence.transaction.Transaction;
 import java.util.Date;
 import org.joda.time.DateTime;
 
@@ -46,8 +47,14 @@ public class UpdateAutoTimestampTranslatorFactory
       /** Save a timestamp, setting it to the current time. */
       @Override
       public Date saveValue(UpdateAutoTimestamp pojoValue) {
+
+        // Don't do this if we're in the course of transaction serialization.
+        if (Transaction.inSerializationMode()) {
+          return pojoValue.getTimestamp() == null ? null : pojoValue.getTimestamp().toDate();
+        }
+
         return UpdateAutoTimestamp.autoUpdateEnabled()
-            ? tm().getTransactionTime().toDate()
+            ? ofyTm().getTransactionTime().toDate()
             : pojoValue.getTimestamp().toDate();
       }
     };
