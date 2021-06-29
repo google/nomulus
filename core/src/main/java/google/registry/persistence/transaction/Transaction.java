@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityTranslator;
@@ -51,11 +50,17 @@ public class Transaction extends ImmutableObject implements Buildable {
   // unique and inherently informative.
   private static final int VERSION_ID = 20200604;
 
+  // Keep a per-thread flag to keep track of whether we're serializing an entity for a transaction.
+  // This is used by internal translators to avoid doing things that are dependent on being in a
+  // datastore transaction and alter the persisted representation of the entity.
+  private static ThreadLocal<Boolean> inSerializationMode = ThreadLocal.withInitial(() -> false);
+
   private transient ImmutableList<Mutation> mutations;
 
   /** Write the entire transaction to the datastore in a datastore transaction. */
   public void writeToDatastore() {
-    tm().transact(
+    ofyTm()
+        .transact(
             () -> {
               for (Mutation mutation : mutations) {
                 mutation.writeToDatastore();
@@ -75,8 +80,13 @@ public class Transaction extends ImmutableObject implements Buildable {
 
       // Write all of the mutations, preceded by their count.
       out.writeInt(mutations.size());
-      for (Mutation mutation : mutations) {
-        mutation.serializeTo(out);
+      try {
+        inSerializationMode.set(true);
+        for (Mutation mutation : mutations) {
+          mutation.serializeTo(out);
+        }
+      } finally {
+        inSerializationMode.set(false);
       }
 
       out.close();
@@ -112,6 +122,17 @@ public class Transaction extends ImmutableObject implements Buildable {
   /** Returns true if the transaction contains no mutations. */
   public boolean isEmpty() {
     return mutations.isEmpty();
+  }
+
+  /**
+   * Returns true if we are serializing a transaction in the current thread.
+   *
+   * <p>This should be checked by any Ofy translators prior to making any changes to an entity's
+   * state representation based on the assumption that we are currently pseristing the entity to
+   * datastore.
+   */
+  public static boolean inSerializationMode() {
+    return inSerializationMode.get();
   }
 
   @Override
