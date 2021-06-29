@@ -48,6 +48,7 @@ import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABIL
 import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
 import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
 import static google.registry.model.registry.label.ReservationType.NAME_COLLISION;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.leapSafeAddYears;
@@ -495,12 +496,7 @@ public class DomainCreateFlow implements TransactionalFlow {
                       TransactionReportField.netAddsFieldFromYears(period.getValue()),
                       1)));
     }
-    return historyBuilder
-        .setType(HistoryEntry.Type.DOMAIN_CREATE)
-        .setPeriod(period)
-        .setModificationTime(now)
-        .setDomain(domain)
-        .build();
+    return historyBuilder.setType(DOMAIN_CREATE).setPeriod(period).setDomain(domain).build();
   }
 
   private BillingEvent.OneTime createOneTimeBillingEvent(

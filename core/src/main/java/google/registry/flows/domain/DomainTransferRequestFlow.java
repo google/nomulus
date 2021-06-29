@@ -32,6 +32,7 @@ import static google.registry.flows.domain.DomainTransferUtils.createPendingTran
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
 import static google.registry.flows.domain.DomainTransferUtils.createTransferServerApproveEntities;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableList;
@@ -68,7 +69,6 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferData.TransferServerApproveEntity;
@@ -315,9 +315,8 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   private DomainHistory buildDomainHistory(
       DomainBase newDomain, Registry registry, DateTime now, Period period) {
     return historyBuilder
-        .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
+        .setType(DOMAIN_TRANSFER_REQUEST)
         .setPeriod(period)
-        .setModificationTime(now)
         .setDomain(newDomain)
         .setDomainTransactionRecords(
             ImmutableSet.of(

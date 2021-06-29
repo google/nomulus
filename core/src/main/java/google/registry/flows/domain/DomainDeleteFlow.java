@@ -34,6 +34,7 @@ import static google.registry.model.eppoutput.Result.Code.SUCCESS;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.ADD_FIELDS;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.RENEW_FIELDS;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_DELETE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.nullToEmpty;
@@ -88,7 +89,6 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Collections;
@@ -331,11 +331,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
                       : TransactionReportField.DELETED_DOMAINS_NOGRACE,
                   1)));
     }
-    return historyBuilder
-        .setType(HistoryEntry.Type.DOMAIN_DELETE)
-        .setModificationTime(now)
-        .setDomain(domain)
-        .build();
+    return historyBuilder.setType(DOMAIN_DELETE).setDomain(domain).build();
   }
 
   private PollMessage.OneTime createDeletePollMessage(

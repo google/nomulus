@@ -15,6 +15,7 @@
 package google.registry.flows;
 
 import static com.google.common.base.Preconditions.checkState;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.base.Strings;
 import dagger.Module;
@@ -222,6 +223,7 @@ public class FlowModule {
           String clientId,
           EppInput eppInput) {
     builder
+        .setModificationTime(tm().getTransactionTime())
         .setTrid(trid)
         .setXmlBytes(inputXmlBytes)
         .setBySuperuser(isSuperuser)

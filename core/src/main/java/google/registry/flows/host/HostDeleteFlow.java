@@ -130,7 +130,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
       historyEntryType = Type.HOST_DELETE;
       resultCode = SUCCESS;
     }
-    historyBuilder.setType(historyEntryType).setModificationTime(now).setHost(newHost);
+    historyBuilder.setType(historyEntryType).setHost(newHost);
     tm().insert(historyBuilder.build());
     tm().update(newHost);
     return responseBuilder.setResultFromCode(resultCode).build();

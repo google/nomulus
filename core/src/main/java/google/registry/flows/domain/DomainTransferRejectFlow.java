@@ -28,6 +28,7 @@ import static google.registry.flows.domain.DomainTransferUtils.createTransferRes
 import static google.registry.model.ResourceTransferUtils.denyPendingTransfer;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_NACKED;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_REJECT;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.union;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -48,7 +49,6 @@ import google.registry.model.eppcommon.AuthInfo;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.transfer.TransferStatus;
 import java.util.Optional;
@@ -131,8 +131,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
             registry.getAutomaticTransferLength().plus(registry.getTransferGracePeriodLength()),
             ImmutableSet.of(TRANSFER_SUCCESSFUL));
     return historyBuilder
-        .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REJECT)
-        .setModificationTime(now)
+        .setType(DOMAIN_TRANSFER_REJECT)
         .setDomainTransactionRecords(
             union(
                 cancelingRecords,

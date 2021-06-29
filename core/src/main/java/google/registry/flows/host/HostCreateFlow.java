@@ -22,6 +22,7 @@ import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomain
 import static google.registry.flows.host.HostFlowUtils.verifySuperordinateDomainOwnership;
 import static google.registry.model.EppResourceUtils.createRepoId;
 import static google.registry.model.IdService.allocateId;
+import static google.registry.model.reporting.HistoryEntry.Type.HOST_CREATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
@@ -50,7 +51,6 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -129,7 +129,7 @@ public final class HostCreateFlow implements TransactionalFlow {
             .setRepoId(createRepoId(allocateId(), roidSuffix))
             .setSuperordinateDomain(superordinateDomain.map(DomainBase::createVKey).orElse(null))
             .build();
-    historyBuilder.setType(HistoryEntry.Type.HOST_CREATE).setModificationTime(now).setHost(newHost);
+    historyBuilder.setType(HOST_CREATE).setHost(newHost);
     ImmutableSet<ImmutableObject> entitiesToSave =
         ImmutableSet.of(
             newHost,

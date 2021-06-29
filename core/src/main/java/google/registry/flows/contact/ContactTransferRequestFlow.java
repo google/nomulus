@@ -24,6 +24,7 @@ import static google.registry.flows.contact.ContactFlowUtils.createGainingTransf
 import static google.registry.flows.contact.ContactFlowUtils.createLosingTransferPollMessage;
 import static google.registry.flows.contact.ContactFlowUtils.createTransferResponse;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACTION_PENDING;
+import static google.registry.model.reporting.HistoryEntry.Type.CONTACT_TRANSFER_REQUEST;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
@@ -45,7 +46,6 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.PollMessage;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferStatus;
@@ -120,10 +120,7 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
             .setTransferStatus(TransferStatus.SERVER_APPROVED)
             .build();
     Key<ContactHistory> contactHistoryKey = createHistoryKey(existingContact, ContactHistory.class);
-    historyBuilder
-        .setId(contactHistoryKey.getId())
-        .setType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST)
-        .setModificationTime(now);
+    historyBuilder.setId(contactHistoryKey.getId()).setType(CONTACT_TRANSFER_REQUEST);
     // If the transfer is server approved, this message will be sent to the losing registrar. */
     PollMessage serverApproveLosingPollMessage =
         createLosingTransferPollMessage(targetId, serverApproveTransferData, contactHistoryKey);

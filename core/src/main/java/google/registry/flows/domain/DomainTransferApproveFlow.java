@@ -29,6 +29,7 @@ import static google.registry.flows.domain.DomainTransferUtils.createGainingTran
 import static google.registry.flows.domain.DomainTransferUtils.createTransferResponse;
 import static google.registry.model.ResourceTransferUtils.approvePendingTransfer;
 import static google.registry.model.reporting.DomainTransactionRecord.TransactionReportField.TRANSFER_SUCCESSFUL;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.pricing.PricingEngineProxy.getDomainRenewCost;
 import static google.registry.util.CollectionUtils.union;
@@ -58,7 +59,6 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.registry.Registry;
 import google.registry.model.reporting.DomainTransactionRecord;
-import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
@@ -240,8 +240,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             registry.getAutomaticTransferLength().plus(registry.getTransferGracePeriodLength()),
             ImmutableSet.of(TRANSFER_SUCCESSFUL));
     return historyBuilder
-        .setType(HistoryEntry.Type.DOMAIN_TRANSFER_APPROVE)
-        .setModificationTime(now)
+        .setType(DOMAIN_TRANSFER_APPROVE)
         .setOtherClientId(gainingClientId)
         .setDomain(newDomain)
         .setDomainTransactionRecords(
