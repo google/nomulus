@@ -32,7 +32,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import google.registry.backup.BackupModule.Backups;
-import google.registry.config.RegistryConfig.Config;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -47,16 +46,16 @@ class GcsDiffFileLister {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject GcsService gcsService;
-  @Inject @Config("commitLogGcsBucket") String gcsBucket;
   @Inject @Backups ListeningExecutorService executor;
   @Inject GcsDiffFileLister() {}
 
   /**
    * Traverses the sequence of diff files backwards from checkpointTime and inserts the file
-   * metadata into "sequence".  Returns true if a complete sequence was discovered, false if one or
+   * metadata into "sequence". Returns true if a complete sequence was discovered, false if one or
    * more files are missing.
    */
   private boolean constructDiffSequence(
+      String gcsBucket,
       Map<DateTime, ListenableFuture<GcsFileMetadata>> upperBoundTimesToMetadata,
       DateTime fromTime,
       DateTime lastTime,
@@ -69,7 +68,7 @@ class GcsDiffFileLister {
       } else {
         String filename = DIFF_FILE_PREFIX + checkpointTime;
         logger.atInfo().log("Patching GCS list; discovered file: %s", filename);
-        metadata = getMetadata(filename);
+        metadata = getMetadata(gcsBucket, filename);
 
         // If we hit a gap, quit.
         if (metadata == null) {
@@ -87,7 +86,8 @@ class GcsDiffFileLister {
     return true;
   }
 
-  ImmutableList<GcsFileMetadata> listDiffFiles(DateTime fromTime, @Nullable DateTime toTime) {
+  ImmutableList<GcsFileMetadata> listDiffFiles(
+      String gcsBucket, DateTime fromTime, @Nullable DateTime toTime) {
     logger.atInfo().log("Requested restore from time: %s", fromTime);
     if (toTime != null) {
       logger.atInfo().log("  Until time: %s", toTime);
@@ -111,7 +111,8 @@ class GcsDiffFileLister {
       final String filename = listItems.next().getName();
       DateTime upperBoundTime = DateTime.parse(filename.substring(DIFF_FILE_PREFIX.length()));
       if (isInRange(upperBoundTime, fromTime, toTime)) {
-        upperBoundTimesToMetadata.put(upperBoundTime, executor.submit(() -> getMetadata(filename)));
+        upperBoundTimesToMetadata.put(
+            upperBoundTime, executor.submit(() -> getMetadata(gcsBucket, filename)));
         lastUpperBoundTime = latestOf(upperBoundTime, lastUpperBoundTime);
       }
     }
@@ -130,8 +131,9 @@ class GcsDiffFileLister {
     // may be missing files at the end).
     TreeMap<DateTime, GcsFileMetadata> sequence = new TreeMap<>();
     logger.atInfo().log("Restoring until: %s", lastUpperBoundTime);
-    boolean inconsistentFileSet = !constructDiffSequence(
-        upperBoundTimesToMetadata, fromTime, lastUpperBoundTime, sequence);
+    boolean inconsistentFileSet =
+        !constructDiffSequence(
+            gcsBucket, upperBoundTimesToMetadata, fromTime, lastUpperBoundTime, sequence);
 
     // Verify that all of the elements in the original set are represented in the sequence.  If we
     // find anything that's not represented, construct a sequence for it.
@@ -143,7 +145,7 @@ class GcsDiffFileLister {
           break;
         }
         if (!sequence.containsKey(key)) {
-          constructDiffSequence(upperBoundTimesToMetadata, fromTime, key, sequence);
+          constructDiffSequence(gcsBucket, upperBoundTimesToMetadata, fromTime, key, sequence);
           checkForMoreExtraDiffs = true;
           inconsistentFileSet = true;
           break;
@@ -175,7 +177,7 @@ class GcsDiffFileLister {
     return DateTime.parse(metadata.getOptions().getUserMetadata().get(LOWER_BOUND_CHECKPOINT));
   }
 
-  private GcsFileMetadata getMetadata(String filename) {
+  private GcsFileMetadata getMetadata(String gcsBucket, String filename) {
     try {
       return gcsService.getMetadata(new GcsFilename(gcsBucket, filename));
     } catch (IOException e) {
