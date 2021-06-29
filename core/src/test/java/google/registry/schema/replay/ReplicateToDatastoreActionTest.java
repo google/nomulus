@@ -46,6 +46,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junitpioneer.jupiter.RetryingTest;
 
 public class ReplicateToDatastoreActionTest {
 
@@ -97,7 +98,7 @@ public class ReplicateToDatastoreActionTest {
     RegistryConfig.overrideCloudSqlReplicateTransactions(false);
   }
 
-  @Test
+  @RetryingTest(4)
   public void testReplication() {
     TestEntity foo = new TestEntity("foo");
     TestEntity bar = new TestEntity("bar");
@@ -127,7 +128,7 @@ public class ReplicateToDatastoreActionTest {
     assertThat(ofyTm().transact(() -> ofyTm().loadByKey(baz.key()))).isEqualTo(baz);
   }
 
-  @Test
+  @RetryingTest(4)
   public void testReplayFromLastTxn() {
     TestEntity foo = new TestEntity("foo");
     TestEntity bar = new TestEntity("bar");
@@ -149,7 +150,7 @@ public class ReplicateToDatastoreActionTest {
     assertThat(ofyTm().transact(() -> ofyTm().loadByKeyIfPresent(foo.key()).isPresent())).isFalse();
   }
 
-  @Test
+  @RetryingTest(4)
   public void testUnintentionalConcurrency() {
     TestEntity foo = new TestEntity("foo");
     TestEntity bar = new TestEntity("bar");
@@ -184,7 +185,7 @@ public class ReplicateToDatastoreActionTest {
             Level.WARNING, "Ignoring transaction 1, which appears to have already been applied.");
   }
 
-  @Test
+  @RetryingTest(4)
   public void testMissingTransactions() {
     // Write a transaction (should have a transaction id of 1).
     TestEntity foo = new TestEntity("foo");
