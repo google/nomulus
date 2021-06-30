@@ -29,4 +29,14 @@ public interface RdePipelineOptions extends RegistryPipelineOptions {
   String getValidationMode();
 
   void setValidationMode(String value);
+
+  @Description("The GCS bucket where the encrypted RDE deposits will be uploaded to.")
+  String getGcsBucket();
+
+  void setGcsBucket(String value);
+
+  @Description("The Base64-encoded PGP public key to encrypt the deposits.")
+  String getStagingKey();
+
+  void setStagingKey(String value);
 }

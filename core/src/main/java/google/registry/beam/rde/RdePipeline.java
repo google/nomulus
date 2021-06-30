@@ -18,14 +18,18 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.EppResourceUtils.loadAtPointInTimeAsync;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.BaseEncoding;
+import dagger.BindsInstance;
+import dagger.Component;
 import google.registry.beam.common.RegistryJpaIO;
+import google.registry.config.CredentialModule;
+import google.registry.config.RegistryConfig.ConfigModule;
+import google.registry.gcs.GcsUtils;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
@@ -33,6 +37,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.Type;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.VKey;
 import google.registry.rde.DepositFragment;
 import google.registry.rde.PendingDeposit;
@@ -50,6 +55,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.persistence.Entity;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
@@ -58,6 +65,7 @@ import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.FlatMapElements;
 import org.apache.beam.sdk.transforms.Flatten;
+import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.Reshuffle;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
@@ -76,10 +84,15 @@ import org.joda.time.DateTime;
  * @see <a href="https://cloud.google.com/dataflow/docs/guides/templates/using-flex-templates">Using
  *     Flex Templates</a>
  */
+@Singleton
 public class RdePipeline implements Serializable {
 
-  private final RdeMarshaller marshaller;
+  private final transient RdePipelineOptions options;
+  private final ValidationMode mode;
   private final ImmutableSetMultimap<String, PendingDeposit> pendings;
+  private final String rdeBucket;
+  private final byte[] stagingKeyBytes;
+  private final GcsUtils gcsUtils;
 
   // Registrars to be excluded from data escrow. Not including the sandbox-only OTE type so that
   // if sneaks into production we would get an extra signal.
@@ -97,31 +110,43 @@ public class RdePipeline implements Serializable {
         + (clazz.equals(DomainBase.class) ? " AND tld in (:tlds)" : "");
   }
 
-  RdePipeline(RdePipelineOptions options) throws IOException, ClassNotFoundException {
-    this.marshaller = new RdeMarshaller(ValidationMode.valueOf(options.getValidationMode()));
+  @Inject
+  RdePipeline(RdePipelineOptions options, GcsUtils gcsUtils) {
+    this.options = options;
+    this.mode = ValidationMode.valueOf(options.getValidationMode());
     this.pendings = decodePendings(options.getPendings());
-  }
-
-  @VisibleForTesting
-  PipelineResult run(Pipeline pipeline) {
-    createFragments(pipeline);
-    return pipeline.run();
+    this.rdeBucket = options.getGcsBucket();
+    this.stagingKeyBytes = BaseEncoding.base64Url().decode(options.getStagingKey());
+    this.gcsUtils = gcsUtils;
   }
 
   PipelineResult run() {
-    return run(Pipeline.create());
+    Pipeline pipeline = Pipeline.create(options);
+    PCollection<KV<PendingDeposit, Iterable<DepositFragment>>> fragments =
+        createFragments(pipeline);
+    persistData(fragments);
+    return pipeline.run();
   }
 
-  PCollection<KV<PendingDeposit, DepositFragment>> createFragments(Pipeline pipeline) {
-    PCollection<KV<PendingDeposit, DepositFragment>> fragments =
-        PCollectionList.of(processRegistrars(pipeline))
-            .and(processNonRegistrarEntities(pipeline, DomainBase.class))
-            .and(processNonRegistrarEntities(pipeline, ContactResource.class))
-            .and(processNonRegistrarEntities(pipeline, HostResource.class))
-            .apply(Flatten.pCollections())
-            .setCoder(
-                KvCoder.of(PendingDepositCoder.of(), SerializableCoder.of(DepositFragment.class)));
-    return fragments;
+  PCollection<KV<PendingDeposit, Iterable<DepositFragment>>> createFragments(Pipeline pipeline) {
+    return PCollectionList.of(processRegistrars(pipeline))
+        .and(processNonRegistrarEntities(pipeline, DomainBase.class))
+        .and(processNonRegistrarEntities(pipeline, ContactResource.class))
+        .and(processNonRegistrarEntities(pipeline, HostResource.class))
+        .apply(Flatten.pCollections())
+        .setCoder(KvCoder.of(PendingDepositCoder.of(), SerializableCoder.of(DepositFragment.class)))
+        .apply("Group by PendingDeposit", GroupByKey.create());
+  }
+
+  void persistData(PCollection<KV<PendingDeposit, Iterable<DepositFragment>>> input) {
+    input.apply(
+        "Write to GCS and update cursors",
+        RdeIO.Write.builder()
+            .setRdeBucket(rdeBucket)
+            .setGcsUtils(gcsUtils)
+            .setValidationMode(mode)
+            .setStagingKeyBytes(stagingKeyBytes)
+            .build());
   }
 
   PCollection<KV<PendingDeposit, DepositFragment>> processRegistrars(Pipeline pipeline) {
@@ -144,7 +169,8 @@ public class RdePipeline implements Serializable {
                 .via(
                     (VKey<Registrar> key) -> {
                       Registrar registrar = jpaTm().transact(() -> jpaTm().loadByKey(key));
-                      DepositFragment fragment = marshaller.marshalRegistrar(registrar);
+                      DepositFragment fragment =
+                          new RdeMarshaller(mode).marshalRegistrar(registrar);
                       return pendings.values().stream()
                           .map(pending -> KV.of(pending, fragment))
                           .collect(toImmutableSet());
@@ -205,7 +231,8 @@ public class RdePipeline implements Serializable {
                       Maps.asMap(dates, input -> loadAtPointInTimeAsync(resource, input)));
               // Convert resource to an XML fragment for each watermark/mode pair lazily and cache
               // the result.
-              RdeFragmenter fragmenter = new RdeFragmenter(resourceAtTimes, marshaller);
+              RdeFragmenter fragmenter =
+                  new RdeFragmenter(resourceAtTimes, new RdeMarshaller(mode));
               List<KV<PendingDeposit, DepositFragment>> results = new ArrayList<>();
               for (String tld : tlds) {
                 for (PendingDeposit pending : pendings.get(tld)) {
@@ -228,13 +255,14 @@ public class RdePipeline implements Serializable {
    * the original TLD to pending deposit map.
    */
   @SuppressWarnings("unchecked")
-  static ImmutableSetMultimap<String, PendingDeposit> decodePendings(String encodedPending)
-      throws IOException, ClassNotFoundException {
+  static ImmutableSetMultimap<String, PendingDeposit> decodePendings(String encodedPending) {
     try (ObjectInputStream ois =
         new ObjectInputStream(
             new ByteArrayInputStream(
                 BaseEncoding.base64Url().omitPadding().decode(encodedPending)))) {
       return (ImmutableSetMultimap<String, PendingDeposit>) ois.readObject();
+    } catch (IOException | ClassNotFoundException e) {
+      throw new IllegalArgumentException("Unable to parse encoded pending deposit map.", e);
     }
   }
 
@@ -242,7 +270,7 @@ public class RdePipeline implements Serializable {
    * Encodes the TLD to pending deposit map in an URL safe string that is sent to the pipeline
    * worker by the pipeline launcher as a pipeline option.
    */
-  public static String encodePendings(ImmutableSetMultimap<String, PendingDeposit> pendings)
+  static String encodePendings(ImmutableSetMultimap<String, PendingDeposit> pendings)
       throws IOException {
     try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
       ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -255,6 +283,21 @@ public class RdePipeline implements Serializable {
   public static void main(String[] args) throws IOException, ClassNotFoundException {
     PipelineOptionsFactory.register(RdePipelineOptions.class);
     RdePipelineOptions options = PipelineOptionsFactory.fromArgs(args).as(RdePipelineOptions.class);
-    new RdePipeline(options).run();
+    options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
+    DaggerRdePipeline_RdePipelineComponent.builder().options(options).build().rdePipeline().run();
+  }
+
+  @Singleton
+  @Component(modules = {CredentialModule.class, ConfigModule.class})
+  interface RdePipelineComponent {
+    RdePipeline rdePipeline();
+
+    @Component.Builder
+    interface Builder {
+      @BindsInstance
+      Builder options(RdePipelineOptions options);
+
+      RdePipelineComponent build();
+    }
   }
 }

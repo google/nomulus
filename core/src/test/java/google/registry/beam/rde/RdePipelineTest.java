@@ -36,33 +36,54 @@ import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.util.ResourceUtils.readResourceUtf8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.Duration.standardDays;
 
+import com.google.cloud.storage.BlobId;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
+import com.google.common.io.BaseEncoding;
 import google.registry.beam.TestPipelineExtension;
+import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
+import google.registry.keyring.api.PgpHelper;
+import google.registry.model.common.Cursor;
+import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.host.HostResource;
+import google.registry.model.rde.RdeMode;
+import google.registry.model.rde.RdeRevision;
+import google.registry.model.rde.RdeRevision.RdeRevisionId;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
+import google.registry.model.registry.Registry;
+import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.rde.DepositFragment;
+import google.registry.rde.Ghostryde;
 import google.registry.rde.PendingDeposit;
 import google.registry.rde.RdeResourceType;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
+import google.registry.testing.FakeKeyringModule;
+import java.io.IOException;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.PAssert;
-import org.apache.beam.sdk.transforms.GroupByKey;
+import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.values.KV;
+import org.apache.beam.sdk.values.PCollection;
+import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
@@ -83,20 +104,43 @@ public class RdePipelineTest {
 
   private static final String HOST_NAME_PATTERN = "<rdeHost:name>(.*)</rdeHost:name>";
 
-  private static final ImmutableSetMultimap<String, PendingDeposit> PENDINGS =
-      ImmutableSetMultimap.of(
-          "pal",
-          PendingDeposit.create(
-              "pal", DateTime.parse("2000-01-01TZ"), FULL, RDE_STAGING, standardDays(1)),
-          "pal",
-          PendingDeposit.create(
-              "pal", DateTime.parse("2000-01-01TZ"), THIN, RDE_STAGING, standardDays(1)),
-          "fun",
-          PendingDeposit.create(
-              "fun", DateTime.parse("2000-01-01TZ"), FULL, RDE_STAGING, standardDays(1)));
-
   // This is the default creation time for test data.
   private final FakeClock clock = new FakeClock(DateTime.parse("1999-12-31TZ"));
+
+  // This is teh default as-of time the RDE/BRDA job.
+  private final DateTime now = DateTime.parse("2000-01-01TZ");
+
+  private final ImmutableSetMultimap<String, PendingDeposit> pendings =
+      ImmutableSetMultimap.of(
+          "soy",
+          PendingDeposit.create("soy", now, FULL, RDE_STAGING, standardDays(1)),
+          "soy",
+          PendingDeposit.create("soy", now, THIN, RDE_STAGING, standardDays(1)),
+          "fun",
+          PendingDeposit.create("fun", now, FULL, RDE_STAGING, standardDays(1)));
+
+  private final ImmutableList<DepositFragment> brdaFragments =
+      ImmutableList.of(
+          DepositFragment.create(RdeResourceType.DOMAIN, "<rdeDomain:domain/>\n", ""),
+          DepositFragment.create(RdeResourceType.REGISTRAR, "<rdeRegistrar:registrar/>\n", ""));
+
+  private final ImmutableList<DepositFragment> rdeFragments =
+      ImmutableList.of(
+          DepositFragment.create(RdeResourceType.DOMAIN, "<rdeDomain:domain/>\n", ""),
+          DepositFragment.create(RdeResourceType.REGISTRAR, "<rdeRegistrar:registrar/>\n", ""),
+          DepositFragment.create(RdeResourceType.CONTACT, "<rdeContact:contact/>\n", ""),
+          DepositFragment.create(RdeResourceType.HOST, "<rdeHost:host/>\n", ""));
+
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
+
+  private final PGPPublicKey encryptionKey =
+      new FakeKeyringModule().get().getRdeStagingEncryptionKey();
+
+  private final PGPPrivateKey decryptionKey =
+      new FakeKeyringModule().get().getRdeStagingDecryptionKey();
+
+  private final RdePipelineOptions options =
+      PipelineOptionsFactory.create().as(RdePipelineOptions.class);
 
   // The pipeline runs in a different thread, which needs to be masqueraded as a GAE thread as well.
   @RegisterExtension
@@ -109,10 +153,7 @@ public class RdePipelineTest {
 
   @RegisterExtension
   final TestPipelineExtension pipeline =
-      TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
-
-  private final RdePipelineOptions options =
-      PipelineOptionsFactory.create().as(RdePipelineOptions.class);
+      TestPipelineExtension.fromOptions(options).enableAbandonedNodeEnforcement(true);
 
   private RdePipeline rdePipeline;
 
@@ -138,16 +179,24 @@ public class RdePipelineTest {
                             testRegistrar.asBuilder().setState(State.ACTIVE).build(),
                             monitoringRegistrar.asBuilder().setState(State.ACTIVE).build())));
 
-    createTld("pal");
+    createTld("soy");
     createTld("fun");
     createTld("cat");
 
+    tm().transact(
+            () -> {
+              tm().put(Cursor.create(CursorType.BRDA, now, Registry.get("soy")));
+              tm().put(Cursor.create(CursorType.RDE_STAGING, now, Registry.get("soy")));
+              RdeRevision.saveRevision("soy", now, THIN, 0);
+              RdeRevision.saveRevision("soy", now, FULL, 0);
+            });
+
     // Also persists a "contact1234" contact in the process.
-    persistActiveDomain("hello.pal");
+    persistActiveDomain("hello.soy");
     persistActiveDomain("kitty.fun");
     // Should not appear anywhere.
     persistActiveDomain("lol.cat");
-    persistDeletedDomain("deleted.pal", DateTime.parse("1999-12-30TZ"));
+    persistDeletedDomain("deleted.soy", DateTime.parse("1999-12-30TZ"));
 
     persistActiveContact("contact456");
 
@@ -156,11 +205,15 @@ public class RdePipelineTest {
     clock.advanceBy(Duration.standardDays(2));
     persistEppResource(host.asBuilder().setHostName("new.host.test").build());
 
-    options.setPendings(encodePendings(PENDINGS));
+    options.setPendings(encodePendings(pendings));
     // The EPP resources created in tests do not have all the fields populated, using a STRICT
     // validation mode will result in a lot of warnings during marshalling.
     options.setValidationMode("LENIENT");
-    rdePipeline = new RdePipeline(options);
+    options.setStagingKey(
+        BaseEncoding.base64Url().encode(PgpHelper.convertPublicKeyToBytes(encryptionKey)));
+    options.setGcsBucket("gcs-bucket");
+    options.setJobName("rde-job");
+    rdePipeline = new RdePipeline(options, gcsUtils);
   }
 
   @AfterEach
@@ -170,16 +223,13 @@ public class RdePipelineTest {
 
   @Test
   void testSuccess_encodeAndDecodePendingsMap() throws Exception {
-    String encodedString = encodePendings(PENDINGS);
-    assertThat(decodePendings(encodedString)).isEqualTo(PENDINGS);
+    String encodedString = encodePendings(pendings);
+    assertThat(decodePendings(encodedString)).isEqualTo(pendings);
   }
 
   @Test
   void testSuccess_createFragments() {
-    PAssert.that(
-            rdePipeline
-                .createFragments(pipeline)
-                .apply("Group by PendingDeposit", GroupByKey.create()))
+    PAssert.that(rdePipeline.createFragments(pipeline))
         .satisfies(
             kvs -> {
               kvs.forEach(
@@ -198,7 +248,7 @@ public class RdePipelineTest {
                                 .anyMatch(
                                     domain ->
                                         // Deleted domain should not be included
-                                        domain.equals("deleted.pal")
+                                        domain.equals("deleted.soy")
                                             // Only domains on the pending deposit's tld should
                                             // appear.
                                             || !kv.getKey()
@@ -236,6 +286,116 @@ public class RdePipelineTest {
               return null;
             });
     pipeline.run().waitUntilFinish();
+  }
+
+  @Test
+  void testSuccess_persistData() throws Exception {
+    PendingDeposit brdaKey =
+        PendingDeposit.create("soy", now, THIN, CursorType.BRDA, Duration.standardDays(1));
+    PendingDeposit rdeKey =
+        PendingDeposit.create("soy", now, FULL, CursorType.RDE_STAGING, Duration.standardDays(1));
+
+    verifyFiles(ImmutableMap.of(brdaKey, brdaFragments, rdeKey, rdeFragments), false);
+
+    assertThat(gcsUtils.listFolderObjects("gcs-bucket", "rde-job/"))
+        .containsExactly(
+            "soy_2000-01-01_thin_S1_R1.xml.length",
+            "soy_2000-01-01_thin_S1_R1.xml.ghostryde",
+            "soy_2000-01-01_full_S1_R1.xml.length",
+            "soy_2000-01-01_full_S1_R1.xml.ghostryde",
+            "soy_2000-01-01_full_S1_R1-report.xml.ghostryde");
+
+    assertThat(loadCursorTime(CursorType.BRDA))
+        .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
+    assertThat(loadRevision(now, THIN)).isEqualTo(1);
+
+    assertThat(loadCursorTime(CursorType.RDE_STAGING))
+        .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
+    assertThat(loadRevision(now, FULL)).isEqualTo(1);
+  }
+
+  @Test
+  void testSuccess_persistData_manual() throws Exception {
+    PendingDeposit brdaKey = PendingDeposit.createInManualOperation("soy", now, THIN, "test/", 0);
+    PendingDeposit rdeKey = PendingDeposit.createInManualOperation("soy", now, FULL, "test/", 0);
+
+    verifyFiles(ImmutableMap.of(brdaKey, brdaFragments, rdeKey, rdeFragments), true);
+
+    assertThat(gcsUtils.listFolderObjects("gcs-bucket", "rde-job/"))
+        .containsExactly(
+            "manual/test/soy_2000-01-01_thin_S1_R0.xml.length",
+            "manual/test/soy_2000-01-01_thin_S1_R0.xml.ghostryde",
+            "manual/test/soy_2000-01-01_full_S1_R0.xml.length",
+            "manual/test/soy_2000-01-01_full_S1_R0.xml.ghostryde",
+            "manual/test/soy_2000-01-01_full_S1_R0-report.xml.ghostryde");
+
+    assertThat(loadCursorTime(CursorType.BRDA)).isEquivalentAccordingToCompareTo(now);
+    assertThat(loadRevision(now, THIN)).isEqualTo(0);
+
+    assertThat(loadCursorTime(CursorType.RDE_STAGING)).isEquivalentAccordingToCompareTo(now);
+    assertThat(loadRevision(now, FULL)).isEqualTo(0);
+  }
+
+  private void verifyFiles(
+      ImmutableMap<PendingDeposit, Iterable<DepositFragment>> input, boolean manual)
+      throws Exception {
+    PCollection<KV<PendingDeposit, Iterable<DepositFragment>>> fragments =
+        pipeline.apply("Create Input", Create.of(input));
+    rdePipeline.persistData(fragments);
+    pipeline.run().waitUntilFinish();
+
+    String prefix = manual ? "rde-job/manual/test/" : "rde-job/";
+    String revision = manual ? "R0" : "R1";
+
+    // BRDA
+    String brdaOutputFile =
+        decryptGhostrydeGcsFile(prefix + "soy_2000-01-01_thin_S1_" + revision + ".xml.ghostryde");
+    assertThat(brdaOutputFile)
+        .isEqualTo(
+            readResourceUtf8(this.getClass(), "reducer_brda.xml")
+                .replace("%RESEND%", manual ? "" : " resend=\"1\""));
+    compareLength(brdaOutputFile, prefix + "soy_2000-01-01_thin_S1_" + revision + ".xml.length");
+
+    // RDE
+    String rdeOutputFile =
+        decryptGhostrydeGcsFile(prefix + "soy_2000-01-01_full_S1_" + revision + ".xml.ghostryde");
+    assertThat(rdeOutputFile)
+        .isEqualTo(
+            readResourceUtf8(RdePipelineTest.class, "reducer_rde.xml")
+                .replace("%RESEND%", manual ? "" : " resend=\"1\""));
+    compareLength(rdeOutputFile, prefix + "soy_2000-01-01_full_S1_" + revision + ".xml.length");
+    assertThat(
+            decryptGhostrydeGcsFile(
+                prefix + "soy_2000-01-01_full_S1_" + revision + "-report.xml.ghostryde"))
+        .isEqualTo(
+            readResourceUtf8(RdePipelineTest.class, "reducer_rde_report.xml")
+                .replace("%RESEND%", manual ? "0" : "1"));
+  }
+
+  private String decryptGhostrydeGcsFile(String filename) throws IOException {
+    return new String(
+        Ghostryde.decode(gcsUtils.readBytesFrom(BlobId.of("gcs-bucket", filename)), decryptionKey),
+        UTF_8);
+  }
+
+  private void compareLength(String outputFile, String lengthFilename) throws IOException {
+    assertThat(String.valueOf(outputFile.getBytes(UTF_8).length))
+        .isEqualTo(
+            new String(gcsUtils.readBytesFrom(BlobId.of("gcs-bucket", lengthFilename)), UTF_8));
+  }
+
+  private static int loadRevision(DateTime now, RdeMode mode) {
+    return tm().transact(
+            () ->
+                tm().loadByKey(
+                        VKey.createSql(
+                            RdeRevision.class,
+                            RdeRevisionId.create("soy", now.toLocalDate(), mode)))
+                    .getRevision());
+  }
+
+  private static DateTime loadCursorTime(CursorType type) {
+    return tm().transact(() -> tm().loadByKey(Cursor.createVKey(type, "soy")).getCursorTime());
   }
 
   private static Function<DepositFragment, String> getXmlElement(String pattern) {
