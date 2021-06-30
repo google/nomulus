@@ -24,18 +24,17 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
+import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.GcsTestingUtils;
 import google.registry.testing.TestObject;
 import java.util.List;
 import org.joda.time.DateTime;
@@ -53,8 +52,7 @@ public class ExportCommitLogDiffActionTest {
           .withOfyTestEntities(TestObject.class)
           .build();
 
-  /** Local GCS service available for testing. */
-  private final GcsService gcsService = GcsServiceFactory.createGcsService();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   private final DateTime now = DateTime.now(UTC);
   private final DateTime oneMinuteAgo = now.minusMinutes(1);
@@ -63,7 +61,7 @@ public class ExportCommitLogDiffActionTest {
 
   @BeforeEach
   void beforeEach() {
-    task.gcsService = gcsService;
+    task.gcsUtils = gcsUtils;
     task.gcsBucket = "gcs bucket";
     task.batchSize = 5;
   }
@@ -84,10 +82,11 @@ public class ExportCommitLogDiffActionTest {
 
     task.run();
 
-    GcsFilename expectedFilename = new GcsFilename("gcs bucket", "commit_diff_until_" + now);
+    BlobId expectedFilename = BlobId.of("gcs bucket", "commit_diff_until_" + now);
     assertWithMessage("GCS file not found: " + expectedFilename)
-        .that(gcsService.getMetadata(expectedFilename)).isNotNull();
-    assertThat(gcsService.getMetadata(expectedFilename).getOptions().getUserMetadata())
+        .that(gcsUtils.existsAndNotEmpty(expectedFilename))
+        .isTrue();
+    assertThat(gcsUtils.getMetadata(expectedFilename))
         .containsExactly(
             LOWER_BOUND_CHECKPOINT,
             oneMinuteAgo.toString(),
@@ -95,8 +94,7 @@ public class ExportCommitLogDiffActionTest {
             now.toString(),
             NUM_TRANSACTIONS,
             "0");
-    List<ImmutableObject> exported =
-        deserializeEntities(GcsTestingUtils.readGcsFile(gcsService, expectedFilename));
+    List<ImmutableObject> exported = deserializeEntities(gcsUtils.readBytesFrom(expectedFilename));
     assertThat(exported).containsExactly(upperCheckpoint);
   }
 
@@ -139,10 +137,11 @@ public class ExportCommitLogDiffActionTest {
 
     task.run();
 
-    GcsFilename expectedFilename = new GcsFilename("gcs bucket", "commit_diff_until_" + now);
+    BlobId expectedFilename = BlobId.of("gcs bucket", "commit_diff_until_" + now);
     assertWithMessage("GCS file not found: " + expectedFilename)
-        .that(gcsService.getMetadata(expectedFilename)).isNotNull();
-    assertThat(gcsService.getMetadata(expectedFilename).getOptions().getUserMetadata())
+        .that(gcsUtils.existsAndNotEmpty(expectedFilename))
+        .isTrue();
+    assertThat(gcsUtils.getMetadata(expectedFilename))
         .containsExactly(
             LOWER_BOUND_CHECKPOINT,
             oneMinuteAgo.toString(),
@@ -150,8 +149,7 @@ public class ExportCommitLogDiffActionTest {
             now.toString(),
             NUM_TRANSACTIONS,
             "4");
-    List<ImmutableObject> exported =
-        deserializeEntities(GcsTestingUtils.readGcsFile(gcsService, expectedFilename));
+    List<ImmutableObject> exported = deserializeEntities(gcsUtils.readBytesFrom(expectedFilename));
     assertThat(exported.get(0)).isEqualTo(upperCheckpoint);
     // We expect these manifests, in time order, with matching mutations.
     CommitLogManifest manifest1 = createManifest(2, now.minusDays(1).minusMillis(1));
@@ -191,10 +189,11 @@ public class ExportCommitLogDiffActionTest {
 
     task.run();
 
-    GcsFilename expectedFilename = new GcsFilename("gcs bucket", "commit_diff_until_" + now);
+    BlobId expectedFilename = BlobId.of("gcs bucket", "commit_diff_until_" + now);
     assertWithMessage("GCS file not found: " + expectedFilename)
-        .that(gcsService.getMetadata(expectedFilename)).isNotNull();
-    assertThat(gcsService.getMetadata(expectedFilename).getOptions().getUserMetadata())
+        .that(gcsUtils.existsAndNotEmpty(expectedFilename))
+        .isTrue();
+    assertThat(gcsUtils.getMetadata(expectedFilename))
         .containsExactly(
             LOWER_BOUND_CHECKPOINT,
             oneMinuteAgo.toString(),
@@ -202,8 +201,7 @@ public class ExportCommitLogDiffActionTest {
             now.toString(),
             NUM_TRANSACTIONS,
             "4");
-    List<ImmutableObject> exported =
-        deserializeEntities(GcsTestingUtils.readGcsFile(gcsService, expectedFilename));
+    List<ImmutableObject> exported = deserializeEntities(gcsUtils.readBytesFrom(expectedFilename));
     assertThat(exported.get(0)).isEqualTo(upperCheckpoint);
     // We expect these manifests, in the order below, with matching mutations.
     CommitLogManifest manifest1 = createManifest(1, oneMinuteAgo);
@@ -246,10 +244,11 @@ public class ExportCommitLogDiffActionTest {
 
     task.run();
 
-    GcsFilename expectedFilename = new GcsFilename("gcs bucket", "commit_diff_until_" + now);
+    BlobId expectedFilename = BlobId.of("gcs bucket", "commit_diff_until_" + now);
     assertWithMessage("GCS file not found: " + expectedFilename)
-        .that(gcsService.getMetadata(expectedFilename)).isNotNull();
-    assertThat(gcsService.getMetadata(expectedFilename).getOptions().getUserMetadata())
+        .that(gcsUtils.existsAndNotEmpty(expectedFilename))
+        .isTrue();
+    assertThat(gcsUtils.getMetadata(expectedFilename))
         .containsExactly(
             LOWER_BOUND_CHECKPOINT,
             oneMinuteAgo.toString(),
@@ -257,8 +256,7 @@ public class ExportCommitLogDiffActionTest {
             now.toString(),
             NUM_TRANSACTIONS,
             "6");
-    List<ImmutableObject> exported =
-        deserializeEntities(GcsTestingUtils.readGcsFile(gcsService, expectedFilename));
+    List<ImmutableObject> exported = deserializeEntities(gcsUtils.readBytesFrom(expectedFilename));
     assertThat(exported.get(0)).isEqualTo(upperCheckpoint);
     // We expect these manifests, in the order below, with matching mutations.
     CommitLogManifest manifest1 = createManifest(1, oneMinuteAgo);
@@ -301,10 +299,11 @@ public class ExportCommitLogDiffActionTest {
 
     task.run();
 
-    GcsFilename expectedFilename = new GcsFilename("gcs bucket", "commit_diff_until_" + now);
+    BlobId expectedFilename = BlobId.of("gcs bucket", "commit_diff_until_" + now);
     assertWithMessage("GCS file not found: " + expectedFilename)
-        .that(gcsService.getMetadata(expectedFilename)).isNotNull();
-    assertThat(gcsService.getMetadata(expectedFilename).getOptions().getUserMetadata())
+        .that(gcsUtils.existsAndNotEmpty(expectedFilename))
+        .isTrue();
+    assertThat(gcsUtils.getMetadata(expectedFilename))
         .containsExactly(
             LOWER_BOUND_CHECKPOINT,
             oneMinuteAgo.toString(),
@@ -312,8 +311,7 @@ public class ExportCommitLogDiffActionTest {
             now.toString(),
             NUM_TRANSACTIONS,
             "0");
-    List<ImmutableObject> exported =
-        deserializeEntities(GcsTestingUtils.readGcsFile(gcsService, expectedFilename));
+    List<ImmutableObject> exported = deserializeEntities(gcsUtils.readBytesFrom(expectedFilename));
     // We expect no manifests or mutations, only the upper checkpoint.
     assertThat(exported).containsExactly(upperCheckpoint);
   }
@@ -359,11 +357,11 @@ public class ExportCommitLogDiffActionTest {
 
     task.run();
 
-    GcsFilename expectedFilename = new GcsFilename("gcs bucket", "commit_diff_until_" + now);
+    BlobId expectedFilename = BlobId.of("gcs bucket", "commit_diff_until_" + now);
     assertWithMessage("GCS file not found: " + expectedFilename)
-        .that(gcsService.getMetadata(expectedFilename))
-        .isNotNull();
-    assertThat(gcsService.getMetadata(expectedFilename).getOptions().getUserMetadata())
+        .that(gcsUtils.existsAndNotEmpty(expectedFilename))
+        .isTrue();
+    assertThat(gcsUtils.getMetadata(expectedFilename))
         .containsExactly(
             LOWER_BOUND_CHECKPOINT,
             oneMinuteAgo.toString(),
@@ -371,8 +369,7 @@ public class ExportCommitLogDiffActionTest {
             now.toString(),
             NUM_TRANSACTIONS,
             "6");
-    List<ImmutableObject> exported =
-        deserializeEntities(GcsTestingUtils.readGcsFile(gcsService, expectedFilename));
+    List<ImmutableObject> exported = deserializeEntities(gcsUtils.readBytesFrom(expectedFilename));
     assertThat(exported.get(0)).isEqualTo(upperCheckpoint);
     // We expect these manifests, in time order, with matching mutations.
     CommitLogManifest manifest1 = createManifest(3, oneMinuteAgo.minusDays(2));
@@ -415,10 +412,11 @@ public class ExportCommitLogDiffActionTest {
 
     task.run();
 
-    GcsFilename expectedFilename = new GcsFilename("gcs bucket", "commit_diff_until_" + now);
+    BlobId expectedFilename = BlobId.of("gcs bucket", "commit_diff_until_" + now);
     assertWithMessage("GCS file not found: " + expectedFilename)
-        .that(gcsService.getMetadata(expectedFilename)).isNotNull();
-    assertThat(gcsService.getMetadata(expectedFilename).getOptions().getUserMetadata())
+        .that(gcsUtils.existsAndNotEmpty(expectedFilename))
+        .isTrue();
+    assertThat(gcsUtils.getMetadata(expectedFilename))
         .containsExactly(
             LOWER_BOUND_CHECKPOINT,
             START_OF_TIME.toString(),
@@ -426,8 +424,7 @@ public class ExportCommitLogDiffActionTest {
             now.toString(),
             NUM_TRANSACTIONS,
             "3");
-    List<ImmutableObject> exported =
-        deserializeEntities(GcsTestingUtils.readGcsFile(gcsService, expectedFilename));
+    List<ImmutableObject> exported = deserializeEntities(gcsUtils.readBytesFrom(expectedFilename));
     assertThat(exported.get(0)).isEqualTo(upperCheckpoint);
     // We expect these manifests, in the order below, with matching mutations.
     CommitLogManifest manifest1 = createManifest(1, START_OF_TIME.plusMillis(1));

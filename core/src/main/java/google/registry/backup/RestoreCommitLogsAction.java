@@ -23,8 +23,7 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityTranslator;
-import com.google.appengine.tools.cloudstorage.GcsFileMetadata;
-import com.google.appengine.tools.cloudstorage.GcsService;
+import com.google.cloud.storage.BlobInfo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -36,6 +35,7 @@ import com.googlecode.objectify.Result;
 import com.googlecode.objectify.util.ResultNow;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
+import google.registry.gcs.GcsUtils;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogCheckpoint;
@@ -48,7 +48,6 @@ import google.registry.request.auth.Auth;
 import google.registry.util.Retrier;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.Channels;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,8 +68,6 @@ public class RestoreCommitLogsAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  static final int BLOCK_SIZE = 1024 * 1024;  // Buffer 1mb at a time, for no particular reason.
-
   public static final String PATH = "/_dr/task/restoreCommitLogs";
   static final String DRY_RUN_PARAM = "dryRun";
   static final String FROM_TIME_PARAM = "fromTime";
@@ -80,7 +77,8 @@ public class RestoreCommitLogsAction implements Runnable {
   private static final ImmutableSet<RegistryEnvironment> FORBIDDEN_ENVIRONMENTS =
       ImmutableSet.of(RegistryEnvironment.PRODUCTION, RegistryEnvironment.SANDBOX);
 
-  @Inject GcsService gcsService;
+  @Inject GcsUtils gcsUtils;
+
   @Inject @Parameter(DRY_RUN_PARAM) boolean dryRun;
   @Inject @Parameter(FROM_TIME_PARAM) DateTime fromTime;
   @Inject @Parameter(TO_TIME_PARAM) DateTime toTime;
@@ -109,17 +107,16 @@ public class RestoreCommitLogsAction implements Runnable {
     }
     String gcsBucket = gcsBucketOverride.orElse(defaultGcsBucket);
     logger.atInfo().log("Restoring from %s.", gcsBucket);
-    List<GcsFileMetadata> diffFiles = diffLister.listDiffFiles(gcsBucket, fromTime, toTime);
+    List<BlobInfo> diffFiles = diffLister.listDiffFiles(gcsBucket, fromTime, toTime);
     if (diffFiles.isEmpty()) {
       logger.atInfo().log("Nothing to restore");
       return;
     }
     Map<Integer, DateTime> bucketTimestamps = new HashMap<>();
     CommitLogCheckpoint lastCheckpoint = null;
-    for (GcsFileMetadata metadata : diffFiles) {
-      logger.atInfo().log("Restoring: %s", metadata.getFilename().getObjectName());
-      try (InputStream input = Channels.newInputStream(
-          gcsService.openPrefetchingReadChannel(metadata.getFilename(), 0, BLOCK_SIZE))) {
+    for (BlobInfo metadata : diffFiles) {
+      logger.atInfo().log("Restoring: %s", metadata.getName());
+      try (InputStream input = gcsUtils.openInputStream(metadata.getBlobId())) {
         PeekingIterator<ImmutableObject> commitLogs =
             peekingIterator(createDeserializingIterator(input, true));
         lastCheckpoint = (CommitLogCheckpoint) commitLogs.next();

@@ -19,7 +19,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.GcsTestingUtils.writeGcsFile;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,11 +28,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import com.google.cloud.storage.BlobId;
 import com.google.common.testing.TestLogHandler;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
@@ -69,7 +67,7 @@ class IcannReportingUploadActionTest {
   private final IcannHttpReporter mockReporter = mock(IcannHttpReporter.class);
   private final SendEmailService emailService = mock(SendEmailService.class);
   private final FakeResponse response = new FakeResponse();
-  private final GcsService gcsService = GcsServiceFactory.createGcsService();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final TestLogHandler logHandler = new TestLogHandler();
   private final Logger loggerToIntercept =
       Logger.getLogger(IcannReportingUploadAction.class.getCanonicalName());
@@ -78,7 +76,7 @@ class IcannReportingUploadActionTest {
   private IcannReportingUploadAction createAction() throws Exception {
     IcannReportingUploadAction action = new IcannReportingUploadAction();
     action.icannReporter = mockReporter;
-    action.gcsUtils = new GcsUtils(gcsService, 1024);
+    action.gcsUtils = gcsUtils;
     action.retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
     action.reportingBucket = "basin";
     action.emailService = emailService;
@@ -93,22 +91,14 @@ class IcannReportingUploadActionTest {
   @BeforeEach
   void beforeEach() throws Exception {
     createTlds("tld", "foo");
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("basin/icann/monthly/2006-06", "tld-transactions-200606.csv"),
-        PAYLOAD_SUCCESS);
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("basin/icann/monthly/2006-06", "tld-activity-200606.csv"),
-        PAYLOAD_FAIL);
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("basin/icann/monthly/2006-06", "foo-transactions-200606.csv"),
-        PAYLOAD_SUCCESS);
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("basin/icann/monthly/2006-06", "foo-activity-200606.csv"),
-        PAYLOAD_SUCCESS);
+    gcsUtils.createFromBytes(
+        BlobId.of("basin/icann/monthly/2006-06", "tld-transactions-200606.csv"), PAYLOAD_SUCCESS);
+    gcsUtils.createFromBytes(
+        BlobId.of("basin/icann/monthly/2006-06", "tld-activity-200606.csv"), PAYLOAD_FAIL);
+    gcsUtils.createFromBytes(
+        BlobId.of("basin/icann/monthly/2006-06", "foo-transactions-200606.csv"), PAYLOAD_SUCCESS);
+    gcsUtils.createFromBytes(
+        BlobId.of("basin/icann/monthly/2006-06", "foo-activity-200606.csv"), PAYLOAD_SUCCESS);
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-transactions-200606.csv")).thenReturn(true);
     when(mockReporter.send(PAYLOAD_SUCCESS, "foo-transactions-200606.csv")).thenReturn(true);
     when(mockReporter.send(PAYLOAD_FAIL, "tld-activity-200606.csv")).thenReturn(false);
@@ -161,14 +151,10 @@ class IcannReportingUploadActionTest {
     persistResource(
         Cursor.create(
             CursorType.ICANN_UPLOAD_TX, DateTime.parse("2006-01-01TZ"), Registry.get("tld")));
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("basin/icann/monthly/2005-12", "tld-transactions-200512.csv"),
-        PAYLOAD_SUCCESS);
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("basin/icann/monthly/2005-12", "tld-activity-200512.csv"),
-        PAYLOAD_SUCCESS);
+    gcsUtils.createFromBytes(
+        BlobId.of("basin/icann/monthly/2005-12", "tld-transactions-200512.csv"), PAYLOAD_SUCCESS);
+    gcsUtils.createFromBytes(
+        BlobId.of("basin/icann/monthly/2005-12", "tld-activity-200512.csv"), PAYLOAD_SUCCESS);
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-activity-200512.csv")).thenReturn(true);
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-transactions-200512.csv")).thenReturn(true);
 
@@ -191,10 +177,8 @@ class IcannReportingUploadActionTest {
 
   @TestOfyAndSql
   void testSuccess_advancesCursor() throws Exception {
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("basin/icann/monthly/2006-06", "tld-activity-200606.csv"),
-        PAYLOAD_SUCCESS);
+    gcsUtils.createFromBytes(
+        BlobId.of("basin/icann/monthly/2006-06", "tld-activity-200606.csv"), PAYLOAD_SUCCESS);
     when(mockReporter.send(PAYLOAD_SUCCESS, "tld-activity-200606.csv")).thenReturn(true);
     IcannReportingUploadAction action = createAction();
     action.run();

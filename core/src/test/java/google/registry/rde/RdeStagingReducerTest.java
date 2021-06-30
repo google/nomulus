@@ -20,18 +20,18 @@ import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeMode.THIN;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.GcsTestingUtils.readGcsFile;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
 import com.google.appengine.tools.mapreduce.ReducerInput;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.StorageException;
 import com.google.common.collect.ImmutableList;
+import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.keyring.api.PgpHelper;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
@@ -67,7 +67,7 @@ class RdeStagingReducerTest {
       AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private static final String GCS_BUCKET = "test-rde-bucket";
-  private static final GcsService gcsService = GcsServiceFactory.createGcsService();
+  private static final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private static final PGPPrivateKey decryptionKey =
       new FakeKeyringModule().get().getRdeStagingDecryptionKey();
   private static final PGPPublicKey encryptionKey =
@@ -95,11 +95,11 @@ class RdeStagingReducerTest {
       new RdeStagingReducer(
           new TaskQueueUtils(new Retrier(new FakeSleeper(new FakeClock()), 1)),
           new FakeLockHandler(true),
-          1024,
           GCS_BUCKET,
           Duration.ZERO,
           PgpHelper.convertPublicKeyToBytes(encryptionKey),
-          ValidationMode.STRICT);
+          ValidationMode.STRICT,
+          gcsUtils);
 
   @BeforeEach
   void beforeEach() {
@@ -125,11 +125,10 @@ class RdeStagingReducerTest {
     compareLength(outputFile, "soy_2000-01-01_thin_S1_R1.xml.length");
     // BRDA doesn't write a report file.
     assertThrows(
-        IOException.class,
+        StorageException.class,
         () ->
-            readGcsFile(
-                gcsService,
-                new GcsFilename(GCS_BUCKET, "soy_2000-01-01_thin_S1_R1-report.xml.ghostryde")));
+            gcsUtils.readBytesFrom(
+                BlobId.of(GCS_BUCKET, "soy_2000-01-01_thin_S1_R1-report.xml.ghostryde")));
     assertThat(loadCursorTime(CursorType.BRDA))
         .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
     assertThat(loadRevision(THIN)).isEqualTo(1);
@@ -153,12 +152,10 @@ class RdeStagingReducerTest {
     compareLength(outputFile, "manual/soy_2000-01-01_thin_S1_R0.xml.length");
     // BRDA doesn't write a report file.
     assertThrows(
-        IOException.class,
+        StorageException.class,
         () ->
-            readGcsFile(
-                gcsService,
-                new GcsFilename(
-                    GCS_BUCKET, "manual/soy_2000-01-01_thin_S1_R0-report.xml.ghostryde")));
+            gcsUtils.readBytesFrom(
+                BlobId.of(GCS_BUCKET, "manual/soy_2000-01-01_thin_S1_R0-report.xml.ghostryde")));
     // No extra operations in manual mode.
     assertThat(loadCursorTime(CursorType.BRDA)).isEquivalentAccordingToCompareTo(now);
     assertThat(loadRevision(THIN)).isEqualTo(0);
@@ -210,8 +207,7 @@ class RdeStagingReducerTest {
   private static void compareLength(String outputFile, String lengthFilename) throws IOException {
     assertThat(String.valueOf(outputFile.getBytes(UTF_8).length))
         .isEqualTo(
-            new String(
-                readGcsFile(gcsService, new GcsFilename(GCS_BUCKET, lengthFilename)), UTF_8));
+            new String(gcsUtils.readBytesFrom(BlobId.of(GCS_BUCKET, lengthFilename)), UTF_8));
   }
 
   private static DateTime loadCursorTime(CursorType type) {
@@ -233,8 +229,7 @@ class RdeStagingReducerTest {
 
   private static String decryptGhostrydeGcsFile(String filename) throws IOException, PGPException {
     return new String(
-        Ghostryde.decode(
-            readGcsFile(gcsService, new GcsFilename(GCS_BUCKET, filename)), decryptionKey),
+        Ghostryde.decode(gcsUtils.readBytesFrom(BlobId.of(GCS_BUCKET, filename)), decryptionKey),
         UTF_8);
   }
 

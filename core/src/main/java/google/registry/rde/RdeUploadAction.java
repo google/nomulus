@@ -30,7 +30,7 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.util.Arrays.asList;
 
 import com.google.appengine.api.taskqueue.Queue;
-import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.cloud.storage.BlobId;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
@@ -165,9 +165,9 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
             .orElseThrow(
                 () -> new IllegalStateException("RdeRevision was not set on generated deposit"));
     final String name = RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
-    final GcsFilename xmlFilename = new GcsFilename(bucket, name + ".xml.ghostryde");
-    final GcsFilename xmlLengthFilename = new GcsFilename(bucket, name + ".xml.length");
-    GcsFilename reportFilename = new GcsFilename(bucket, name + "-report.xml.ghostryde");
+    final BlobId xmlFilename = BlobId.of(bucket, name + ".xml.ghostryde");
+    final BlobId xmlLengthFilename = BlobId.of(bucket, name + ".xml.length");
+    BlobId reportFilename = BlobId.of(bucket, name + "-report.xml.ghostryde");
     verifyFileExists(xmlFilename);
     verifyFileExists(xmlLengthFilename);
     verifyFileExists(reportFilename);
@@ -187,29 +187,30 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   }
 
   /**
-   * Performs a blocking upload of a cloud storage XML file to escrow provider, converting
-   * it to the RyDE format along the way by applying tar+compress+encrypt+sign, and saving the
-   * created RyDE file on GCS for future reference.
+   * Performs a blocking upload of a cloud storage XML file to escrow provider, converting it to the
+   * RyDE format along the way by applying tar+compress+encrypt+sign, and saving the created RyDE
+   * file on GCS for future reference.
    *
    * <p>This is done by layering a bunch of {@link java.io.FilterOutputStream FilterOutputStreams}
-   * on top of each other in reverse order that turn XML bytes into a RyDE file while
-   * simultaneously uploading it to the SFTP endpoint, and then using {@link ByteStreams#copy} to
-   * blocking-copy bytes from the cloud storage {@code InputStream} to the RyDE/SFTP pipeline.
+   * on top of each other in reverse order that turn XML bytes into a RyDE file while simultaneously
+   * uploading it to the SFTP endpoint, and then using {@link ByteStreams#copy} to blocking-copy
+   * bytes from the cloud storage {@code InputStream} to the RyDE/SFTP pipeline.
    *
    * <p>In pseudo-shell, the whole process looks like the following:
    *
-   * <pre>   {@code
-   *   gcs read $xmlFile \                                   # Get GhostRyDE from cloud storage.
-   *     | decrypt | decompress \                            # Convert it to XML.
-   *     | tar | file | compress | encrypt | sign /tmp/sig \ # Convert it to a RyDE file.
-   *     | tee gs://bucket/$rydeFilename.ryde \              # Save a copy of the RyDE file to GCS.
-   *     | sftp put $dstUrl/$rydeFilename.ryde \             # Upload to SFTP server.
-   *    && sftp put $dstUrl/$rydeFilename.sig </tmp/sig \    # Upload detached signature.
-   *    && cat /tmp/sig > gs://bucket/$rydeFilename.sig      # Save a copy of signature to GCS.
-   *   }</pre>
+   * <pre>{@code
+   * gcs read $xmlFile \                                   # Get GhostRyDE from cloud storage.
+   *   | decrypt | decompress \                            # Convert it to XML.
+   *   | tar | file | compress | encrypt | sign /tmp/sig \ # Convert it to a RyDE file.
+   *   | tee gs://bucket/$rydeFilename.ryde \              # Save a copy of the RyDE file to GCS.
+   *   | sftp put $dstUrl/$rydeFilename.ryde \             # Upload to SFTP server.
+   *  && sftp put $dstUrl/$rydeFilename.sig </tmp/sig \    # Upload detached signature.
+   *  && cat /tmp/sig > gs://bucket/$rydeFilename.sig      # Save a copy of signature to GCS.
+   *
+   * }</pre>
    */
   @VisibleForTesting
-  protected void upload(GcsFilename xmlFile, long xmlLength, DateTime watermark, String name)
+  protected void upload(BlobId xmlFile, long xmlLength, DateTime watermark, String name)
       throws Exception {
     logger.atInfo().log("Uploading XML file '%s' to remote path '%s'.", xmlFile, uploadUrl);
     try (InputStream gcsInput = gcsUtils.openInputStream(xmlFile);
@@ -218,7 +219,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
           JSchSftpChannel ftpChan = session.openSftpChannel()) {
         ByteArrayOutputStream sigOut = new ByteArrayOutputStream();
         String rydeFilename = name + ".ryde";
-        GcsFilename rydeGcsFilename = new GcsFilename(bucket, rydeFilename);
+        BlobId rydeGcsFilename = BlobId.of(bucket, rydeFilename);
         try (OutputStream ftpOutput =
                 ftpChan.get().put(rydeFilename, sftpProgressMonitor, OVERWRITE);
             OutputStream gcsOutput = gcsUtils.openOutputStream(rydeGcsFilename);
@@ -234,7 +235,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
           }
         String sigFilename = name + ".sig";
         byte[] signature = sigOut.toByteArray();
-        gcsUtils.createFromBytes(new GcsFilename(bucket, sigFilename), signature);
+        gcsUtils.createFromBytes(BlobId.of(bucket, sigFilename), signature);
         ftpChan.get().put(new ByteArrayInputStream(signature), sigFilename);
         logger.atInfo().log("uploaded %,d bytes: %s", signature.length, sigFilename);
       }
@@ -242,13 +243,13 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   }
 
   /** Reads the contents of a file from Cloud Storage that contains nothing but an integer. */
-  private long readXmlLength(GcsFilename xmlLengthFilename) throws IOException {
+  private long readXmlLength(BlobId xmlLengthFilename) throws IOException {
     try (InputStream input = gcsUtils.openInputStream(xmlLengthFilename)) {
       return Ghostryde.readLength(input);
     }
   }
 
-  private void verifyFileExists(GcsFilename filename) {
+  private void verifyFileExists(BlobId filename) {
     verify(gcsUtils.existsAndNotEmpty(filename), "Missing file: %s", filename);
   }
 }

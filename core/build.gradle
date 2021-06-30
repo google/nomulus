@@ -197,6 +197,7 @@ dependencies {
   compile deps['com.google.apis:google-api-services-groupssettings']
   compile deps['com.google.apis:google-api-services-monitoring']
   compile deps['com.google.apis:google-api-services-sheets']
+  compile deps['com.google.apis:google-api-services-storage']
   testCompile deps['com.google.appengine:appengine-api-stubs']
   compile deps['com.google.appengine.tools:appengine-gcs-client']
   compile deps['com.google.appengine.tools:appengine-mapreduce']
@@ -221,6 +222,8 @@ dependencies {
   gradleLint.ignore('unused-dependency') {
     compile deps['com.google.gwt:gwt-user']
   }
+  compile deps['com.google.cloud:google-cloud-core']
+  compile deps['com.google.cloud:google-cloud-storage']
   compile deps['com.google.http-client:google-http-client']
   compile deps['com.google.http-client:google-http-client-appengine']
   compile deps['com.google.http-client:google-http-client-jackson2']
@@ -315,6 +318,7 @@ dependencies {
   annotationProcessor project(':processor')
   testAnnotationProcessor project(':processor')
 
+  testCompile deps['com.google.cloud:google-cloud-nio']
   testCompile deps['com.google.appengine:appengine-testing']
   testCompile deps['com.google.guava:guava-testlib']
   testCompile deps['com.google.monitoring-client:contrib']

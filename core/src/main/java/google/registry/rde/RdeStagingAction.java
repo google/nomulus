@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.gcs.GcsUtils;
 import google.registry.mapreduce.MapreduceRunner;
 import google.registry.mapreduce.inputs.EppResourceInputs;
 import google.registry.mapreduce.inputs.NullInput;
@@ -206,6 +207,7 @@ public final class RdeStagingAction implements Runnable {
   @Inject PendingDepositChecker pendingDepositChecker;
   @Inject RdeStagingReducer.Factory reducerFactory;
   @Inject Response response;
+  @Inject GcsUtils gcsUtils;
   @Inject MapreduceRunner mrRunner;
   @Inject @Config("transactionCooldown") Duration transactionCooldown;
   @Inject @Parameter(RdeModule.PARAM_MANUAL) boolean manual;
@@ -234,7 +236,7 @@ public final class RdeStagingAction implements Runnable {
     }
     ValidationMode validationMode = lenient ? LENIENT : STRICT;
     RdeStagingMapper mapper = new RdeStagingMapper(validationMode, pendings);
-    RdeStagingReducer reducer = reducerFactory.create(validationMode);
+    RdeStagingReducer reducer = reducerFactory.create(validationMode, gcsUtils);
 
     mrRunner
         .setJobName("Stage escrow deposits for all TLDs")

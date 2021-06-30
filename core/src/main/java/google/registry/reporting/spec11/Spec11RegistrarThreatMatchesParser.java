@@ -17,7 +17,7 @@ package google.registry.reporting.spec11;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.cloud.storage.BlobId;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -62,7 +62,7 @@ public class Spec11RegistrarThreatMatchesParser {
   }
 
   /** Returns registrar:set-of-threat-match pairings from the file, or empty if it doesn't exist. */
-  public ImmutableSet<RegistrarThreatMatches> getFromFile(GcsFilename spec11ReportFilename)
+  public ImmutableSet<RegistrarThreatMatches> getFromFile(BlobId spec11ReportFilename)
       throws IOException {
     if (!gcsUtils.existsAndNotEmpty(spec11ReportFilename)) {
       return ImmutableSet.of();
@@ -81,7 +81,7 @@ public class Spec11RegistrarThreatMatchesParser {
 
   public Optional<LocalDate> getPreviousDateWithMatches(LocalDate date) {
     LocalDate yesterday = date.minusDays(1);
-    GcsFilename gcsFilename = getGcsFilename(yesterday);
+    BlobId gcsFilename = getGcsFilename(yesterday);
     if (gcsUtils.existsAndNotEmpty(gcsFilename)) {
       return Optional.of(yesterday);
     }
@@ -98,8 +98,8 @@ public class Spec11RegistrarThreatMatchesParser {
     return Optional.empty();
   }
 
-  private GcsFilename getGcsFilename(LocalDate localDate) {
-    return new GcsFilename(reportingBucket, Spec11Pipeline.getSpec11ReportFilePath(localDate));
+  private BlobId getGcsFilename(LocalDate localDate) {
+    return BlobId.of(reportingBucket, Spec11Pipeline.getSpec11ReportFilePath(localDate));
   }
 
   private RegistrarThreatMatches parseRegistrarThreatMatch(String line) throws JSONException {

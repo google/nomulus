@@ -19,29 +19,24 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static google.registry.backup.BackupUtils.GcsMetadataKeys.LOWER_BOUND_CHECKPOINT;
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
-import static java.lang.reflect.Proxy.newProxyInstance;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
-import com.google.appengine.tools.cloudstorage.GcsFileMetadata;
-import com.google.appengine.tools.cloudstorage.GcsFileOptions;
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
-import com.google.appengine.tools.cloudstorage.ListItem;
-import com.google.appengine.tools.cloudstorage.ListResult;
-import com.google.common.collect.Iterators;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
+import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.logging.LogRecord;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +50,7 @@ public class GcsDiffFileListerTest {
 
   private final DateTime now = DateTime.now(UTC);
   private final GcsDiffFileLister diffLister = new GcsDiffFileLister();
-  private final GcsService gcsService = GcsServiceFactory.createGcsService();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final TestLogHandler logHandler = new TestLogHandler();
 
   @RegisterExtension
@@ -64,25 +59,18 @@ public class GcsDiffFileListerTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    diffLister.gcsService = gcsService;
+    diffLister.gcsUtils = gcsUtils;
     diffLister.executor = newDirectExecutorService();
     for (int i = 0; i < 5; i++) {
-      gcsService.createOrReplace(
-          new GcsFilename(GCS_BUCKET, DIFF_FILE_PREFIX + now.minusMinutes(i)),
-          new GcsFileOptions.Builder()
-              .addUserMetadata(LOWER_BOUND_CHECKPOINT, now.minusMinutes(i + 1).toString())
-              .build(),
-          ByteBuffer.wrap(new byte[]{1, 2, 3}));
+      addGcsFile(i, i + 1);
     }
     LoggerConfig.getConfig(GcsDiffFileLister.class).addHandler(logHandler);
   }
 
-  private Iterable<DateTime> extractTimesFromDiffFiles(List<GcsFileMetadata> diffFiles) {
+  private Iterable<DateTime> extractTimesFromDiffFiles(ImmutableList<BlobInfo> diffFiles) {
     return transform(
         diffFiles,
-        metadata ->
-            DateTime.parse(
-                metadata.getFilename().getObjectName().substring(DIFF_FILE_PREFIX.length())));
+        blobInfo -> DateTime.parse(blobInfo.getName().substring(DIFF_FILE_PREFIX.length())));
   }
 
   private Iterable<DateTime> listDiffFiles(DateTime fromTime, DateTime toTime) {
@@ -90,12 +78,12 @@ public class GcsDiffFileListerTest {
   }
 
   private void addGcsFile(int fileAge, int prevAge) throws IOException {
-    gcsService.createOrReplace(
-        new GcsFilename(GCS_BUCKET, DIFF_FILE_PREFIX + now.minusMinutes(fileAge)),
-        new GcsFileOptions.Builder()
-            .addUserMetadata(LOWER_BOUND_CHECKPOINT, now.minusMinutes(prevAge).toString())
-            .build(),
-        ByteBuffer.wrap(new byte[]{1, 2, 3}));
+    BlobInfo blobInfo =
+        BlobInfo.newBuilder(BlobId.of(GCS_BUCKET, DIFF_FILE_PREFIX + now.minusMinutes(fileAge)))
+            .setMetadata(
+                ImmutableMap.of(LOWER_BOUND_CHECKPOINT, now.minusMinutes(prevAge).toString()))
+            .build();
+    gcsUtils.createFromBytes(blobInfo, new byte[] {1, 2, 3});
   }
 
   private void assertLogContains(String message) {
@@ -114,38 +102,11 @@ public class GcsDiffFileListerTest {
   }
 
   @Test
-  void testList_patchesHoles() {
-    // Fake out the GCS list() method to return only the first and last file.
-    // We can't use Mockito.spy() because GcsService's impl is final.
-    diffLister.gcsService = (GcsService) newProxyInstance(
-        GcsService.class.getClassLoader(),
-        new Class<?>[] {GcsService.class},
-        new InvocationHandler() {
-          @Override
-          public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            if (method.getName().equals("list")) {
-              // ListResult is an incredibly annoying thing to construct. It needs to be fed from a
-              // Callable that returns Iterators, each representing a batch of results.
-              return new ListResult(new Callable<Iterator<ListItem>>() {
-                boolean called = false;
-
-                @Override
-                public Iterator<ListItem> call() {
-                  try {
-                    return called ? null : Iterators.forArray(
-                        new ListItem.Builder()
-                            .setName(DIFF_FILE_PREFIX + now)
-                            .build(),
-                        new ListItem.Builder()
-                            .setName(DIFF_FILE_PREFIX + now.minusMinutes(4))
-                            .build());
-                  } finally {
-                    called = true;
-                  }
-                }});
-            }
-            return method.invoke(gcsService, args);
-          }});
+  void testList_patchesHoles() throws Exception {
+    GcsUtils mockGcsUtils = mock(GcsUtils.class);
+    diffLister.gcsUtils = spy(gcsUtils);
+    when(mockGcsUtils.listFolderObjects(anyString(), anyString()))
+        .thenReturn(ImmutableList.of(now.toString(), now.minusMinutes(4).toString()));
     DateTime fromTime = now.minusMinutes(4).minusSeconds(1);
     // Request all files with checkpoint > fromTime.
     assertThat(listDiffFiles(fromTime, null))

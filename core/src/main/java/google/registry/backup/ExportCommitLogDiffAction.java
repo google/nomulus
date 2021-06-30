@@ -28,18 +28,17 @@ import static google.registry.model.ofy.CommitLogBucket.getBucketKey;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
-import static java.nio.channels.Channels.newOutputStream;
 import static java.util.Comparator.comparingLong;
 
-import com.google.appengine.tools.cloudstorage.GcsFileOptions;
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
+import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.gcs.GcsUtils;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogCheckpoint;
@@ -74,7 +73,8 @@ public final class ExportCommitLogDiffAction implements Runnable {
 
   public static final String DIFF_FILE_PREFIX = "commit_diff_until_";
 
-  @Inject GcsService gcsService;
+  @Inject GcsUtils gcsUtils;
+
   @Inject @Config("commitLogGcsBucket") String gcsBucket;
   @Inject @Config("commitLogDiffExportBatchSize") int batchSize;
   @Inject @Parameter(LOWER_CHECKPOINT_TIME_PARAM) DateTime lowerCheckpointTime;
@@ -102,13 +102,13 @@ public final class ExportCommitLogDiffAction implements Runnable {
     List<Key<CommitLogManifest>> sortedKeys = loadAllDiffKeys(lowerCheckpoint, upperCheckpoint);
     logger.atInfo().log("Found %d manifests to export", sortedKeys.size());
     // Open an output channel to GCS, wrapped in a stream for convenience.
-    try (OutputStream gcsStream = newOutputStream(gcsService.createOrReplace(
-        new GcsFilename(gcsBucket, DIFF_FILE_PREFIX + upperCheckpointTime),
-        new GcsFileOptions.Builder()
-            .addUserMetadata(LOWER_BOUND_CHECKPOINT, lowerCheckpointTime.toString())
-            .addUserMetadata(UPPER_BOUND_CHECKPOINT, upperCheckpointTime.toString())
-            .addUserMetadata(NUM_TRANSACTIONS, Integer.toString(sortedKeys.size()))
-            .build()))) {
+    try (OutputStream gcsStream =
+        gcsUtils.openOutputStream(
+            BlobId.of(gcsBucket, DIFF_FILE_PREFIX + upperCheckpointTime),
+            ImmutableMap.of(
+                LOWER_BOUND_CHECKPOINT, lowerCheckpointTime.toString(),
+                UPPER_BOUND_CHECKPOINT, upperCheckpointTime.toString(),
+                NUM_TRANSACTIONS, Integer.toString(sortedKeys.size())))) {
       // Export the upper checkpoint itself.
       serializeEntity(upperCheckpoint, gcsStream);
       // If there are no manifests to export, stop early, now that we've written out the file with

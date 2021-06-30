@@ -25,12 +25,12 @@ import static org.joda.time.Duration.standardHours;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Key;
-import com.google.appengine.tools.cloudstorage.GcsFileMetadata;
-import com.google.appengine.tools.cloudstorage.GcsService;
+import com.google.cloud.storage.BlobInfo;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.gcs.GcsUtils;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
@@ -51,7 +51,6 @@ import google.registry.util.Clock;
 import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.Channels;
 import java.util.Optional;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
@@ -70,14 +69,13 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
   static final String PATH = "/_dr/task/replayCommitLogsToSql";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-  private static final int BLOCK_SIZE =
-      1024 * 1024; // Buffer 1mb at a time, for no particular reason.
+
   private static final Duration LEASE_LENGTH = standardHours(1);
   // Stop / pause where we are if we've been replaying for more than five minutes to avoid GAE
   // request timeouts
   private static final Duration REPLAY_TIMEOUT_DURATION = Duration.standardMinutes(5);
 
-  @Inject GcsService gcsService;
+  @Inject GcsUtils gcsUtils;
   @Inject Response response;
   @Inject RequestStatusChecker requestStatusChecker;
   @Inject GcsDiffFileLister diffLister;
@@ -122,13 +120,13 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     }
     try {
       logger.atInfo().log("Beginning replay of commit logs.");
-      ImmutableList<GcsFileMetadata> commitLogFiles = getFilesToReplay();
+      ImmutableList<BlobInfo> commitLogFiles = getFilesToReplay();
       if (dryRun) {
         response.setStatus(HttpServletResponse.SC_OK);
         ImmutableList<String> filenames =
             commitLogFiles.stream()
                 .limit(10)
-                .map(file -> file.getFilename().getObjectName())
+                .map(file -> file.getName())
                 .collect(toImmutableList());
         String dryRunMessage =
             "Running in dry-run mode; would have processed %d files. They are (limit 10):\n"
@@ -152,22 +150,22 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     }
   }
 
-  private ImmutableList<GcsFileMetadata> getFilesToReplay() {
+  private ImmutableList<BlobInfo> getFilesToReplay() {
     // Start at the first millisecond we haven't seen yet
     DateTime fromTime = jpaTm().transact(() -> SqlReplayCheckpoint.get().plusMillis(1));
     logger.atInfo().log("Starting replay from: %s.", fromTime);
     // If there's an inconsistent file set, this will throw IllegalStateException and the job
     // will try later -- this is likely because an export hasn't finished yet.
-    ImmutableList<GcsFileMetadata> commitLogFiles =
+    ImmutableList<BlobInfo> commitLogFiles =
         diffLister.listDiffFiles(gcsBucket, fromTime, /* current time */ null);
     logger.atInfo().log("Found %d new commit log files to process.", commitLogFiles.size());
     return commitLogFiles;
   }
 
-  private void replayFiles(ImmutableList<GcsFileMetadata> commitLogFiles) {
+  private void replayFiles(ImmutableList<BlobInfo> commitLogFiles) {
     DateTime replayTimeoutTime = clock.nowUtc().plus(REPLAY_TIMEOUT_DURATION);
     int processedFiles = 0;
-    for (GcsFileMetadata metadata : commitLogFiles) {
+    for (BlobInfo metadata : commitLogFiles) {
       // One transaction per GCS file
       jpaTm().transact(() -> processFile(metadata));
       processedFiles++;
@@ -181,31 +179,26 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     logger.atInfo().log("Replayed %d commit log files to SQL successfully.", processedFiles);
   }
 
-  private void processFile(GcsFileMetadata metadata) {
+  private void processFile(BlobInfo metadata) {
     logger.atInfo().log(
-        "Processing commit log file %s of size %d B.",
-        metadata.getFilename(), metadata.getLength());
-    try (InputStream input =
-        Channels.newInputStream(
-            gcsService.openPrefetchingReadChannel(metadata.getFilename(), 0, BLOCK_SIZE))) {
+        "Processing commit log file %s of size %d B.", metadata.getName(), metadata.getSize());
+    try (InputStream input = gcsUtils.openInputStream(metadata.getBlobId())) {
       // Load and process the Datastore transactions one at a time
       ImmutableList<ImmutableList<VersionedEntity>> allTransactions =
           CommitLogImports.loadEntitiesByTransaction(input);
       logger.atInfo().log(
           "Replaying %d transactions from commit log file %s.",
-          allTransactions.size(), metadata.getFilename());
+          allTransactions.size(), metadata.getName());
       allTransactions.forEach(this::replayTransaction);
       // if we succeeded, set the last-seen time
-      DateTime checkpoint =
-          DateTime.parse(
-              metadata.getFilename().getObjectName().substring(DIFF_FILE_PREFIX.length()));
+      DateTime checkpoint = DateTime.parse(metadata.getName().substring(DIFF_FILE_PREFIX.length()));
       SqlReplayCheckpoint.set(checkpoint);
       logger.atInfo().log(
           "Replayed %d transactions from commit log file %s.",
-          allTransactions.size(), metadata.getFilename());
+          allTransactions.size(), metadata.getName());
     } catch (IOException e) {
       throw new RuntimeException(
-          "Errored out while replaying commit log file " + metadata.getFilename(), e);
+          "Errored out while replaying commit log file " + metadata.getName(), e);
     }
   }
 

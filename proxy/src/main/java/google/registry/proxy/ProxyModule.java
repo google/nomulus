@@ -22,8 +22,12 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.google.api.services.cloudkms.v1.CloudKMS;
 import com.google.api.services.cloudkms.v1.model.DecryptRequest;
-import com.google.api.services.storage.Storage;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.http.HttpTransportOptions;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageException;
+import com.google.cloud.storage.StorageOptions;
 import com.google.common.flogger.LoggerConfig;
 import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
@@ -46,7 +50,6 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.OpenSsl;
 import io.netty.handler.ssl.SslProvider;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
@@ -245,13 +248,15 @@ public class ProxyModule {
 
   @Singleton
   @Provides
-  static Storage provideStorage(GoogleCredentialsBundle credentialsBundle, ProxyConfig config) {
-    return new Storage.Builder(
-            credentialsBundle.getHttpTransport(),
-            credentialsBundle.getJsonFactory(),
-            credentialsBundle.getHttpRequestInitializer())
-        .setApplicationName(config.projectId)
-        .build();
+  static Storage provideStorage(GoogleCredentialsBundle credentialsBundle) {
+    return StorageOptions.newBuilder()
+        .setTransportOptions(
+            HttpTransportOptions.newBuilder()
+                .setHttpTransportFactory(credentialsBundle::getHttpTransport)
+                .build())
+        .setCredentials(credentialsBundle.getGoogleCredentials())
+        .build()
+        .getService();
   }
 
   // This binding should not be used directly. Use those provided in CertificateModule instead.
@@ -259,13 +264,9 @@ public class ProxyModule {
   @Named("encryptedPemBytes")
   static byte[] provideEncryptedPemBytes(Storage storage, ProxyConfig config) {
     try {
-      ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-      storage
-          .objects()
-          .get(config.gcs.bucket, config.gcs.sslPemFilename)
-          .executeMediaAndDownloadTo(outputStream);
-      return Base64.getMimeDecoder().decode(outputStream.toByteArray());
-    } catch (IOException e) {
+      return Base64.getMimeDecoder()
+          .decode(storage.readAllBytes(BlobId.of(config.gcs.bucket, config.gcs.sslPemFilename)));
+    } catch (StorageException e) {
       throw new RuntimeException(
           String.format(
               "Error reading encrypted PEM file %s from GCS bucket %s",
