@@ -17,7 +17,7 @@ package google.registry.rde;
 import static google.registry.model.rde.RdeMode.THIN;
 import static google.registry.request.Action.Method.POST;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.cloud.storage.BlobId;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import google.registry.config.RegistryConfig.Config;
@@ -85,10 +85,10 @@ public final class BrdaCopyAction implements Runnable {
 
   private void copyAsRyde() throws IOException {
     String prefix = RdeNamingUtils.makeRydeFilename(tld, watermark, THIN, 1, 0);
-    GcsFilename xmlFilename = new GcsFilename(stagingBucket, prefix + ".xml.ghostryde");
-    GcsFilename xmlLengthFilename = new GcsFilename(stagingBucket, prefix + ".xml.length");
-    GcsFilename rydeFile = new GcsFilename(brdaBucket, prefix + ".ryde");
-    GcsFilename sigFile = new GcsFilename(brdaBucket, prefix + ".sig");
+    BlobId xmlFilename = BlobId.of(stagingBucket, prefix + ".xml.ghostryde");
+    BlobId xmlLengthFilename = BlobId.of(stagingBucket, prefix + ".xml.length");
+    BlobId rydeFile = BlobId.of(brdaBucket, prefix + ".ryde");
+    BlobId sigFile = BlobId.of(brdaBucket, prefix + ".sig");
 
     long xmlLength = readXmlLength(xmlLengthFilename);
 
@@ -107,7 +107,7 @@ public final class BrdaCopyAction implements Runnable {
   }
 
   /** Reads the contents of a file from Cloud Storage that contains nothing but an integer. */
-  private long readXmlLength(GcsFilename xmlLengthFilename) throws IOException {
+  private long readXmlLength(BlobId xmlLengthFilename) throws IOException {
     try (InputStream input = gcsUtils.openInputStream(xmlLengthFilename)) {
       return Ghostryde.readLength(input);
     }

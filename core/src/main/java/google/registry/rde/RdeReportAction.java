@@ -23,7 +23,7 @@ import static google.registry.persistence.transaction.TransactionManagerUtil.tra
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.cloud.storage.BlobId;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import google.registry.config.RegistryConfig.Config;
@@ -97,7 +97,7 @@ public final class RdeReportAction implements Runnable, EscrowTask {
             .orElseThrow(
                 () -> new IllegalStateException("RdeRevision was not set on generated deposit"));
     String prefix = RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
-    GcsFilename reportFilename = new GcsFilename(bucket, prefix + "-report.xml.ghostryde");
+    BlobId reportFilename = BlobId.of(bucket, prefix + "-report.xml.ghostryde");
     verify(gcsUtils.existsAndNotEmpty(reportFilename), "Missing file: %s", reportFilename);
     reporter.send(readReportFromGcs(reportFilename));
     response.setContentType(PLAIN_TEXT_UTF_8);
@@ -106,7 +106,7 @@ public final class RdeReportAction implements Runnable, EscrowTask {
   }
 
   /** Reads and decrypts the XML file from cloud storage. */
-  private byte[] readReportFromGcs(GcsFilename reportFilename) throws IOException {
+  private byte[] readReportFromGcs(BlobId reportFilename) throws IOException {
     try (InputStream gcsInput = gcsUtils.openInputStream(reportFilename);
         InputStream ghostrydeDecoder = Ghostryde.decoder(gcsInput, stagingDecryptionKey)) {
       return ByteStreams.toByteArray(ghostrydeDecoder);

@@ -19,7 +19,7 @@ import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.cloud.storage.BlobId;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -120,7 +120,7 @@ public final class CopyDetailReportsAction implements Runnable {
             () -> {
               try (InputStream input =
                   gcsUtils.openInputStream(
-                      new GcsFilename(billingBucket, invoiceDirectoryPrefix + detailReportName))) {
+                      BlobId.of(billingBucket, invoiceDirectoryPrefix + detailReportName))) {
                 driveConnection.createOrUpdateFile(
                     detailReportName,
                     MediaType.CSV_UTF_8,

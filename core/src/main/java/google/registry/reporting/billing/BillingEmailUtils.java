@@ -17,7 +17,7 @@ package google.registry.reporting.billing;
 import static com.google.common.base.Throwables.getRootCause;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
@@ -72,8 +72,7 @@ public class BillingEmailUtils {
   void emailOverallInvoice() {
     try {
       String invoiceFile = String.format("%s-%s.csv", invoiceFilePrefix, yearMonth);
-      GcsFilename invoiceFilename =
-          new GcsFilename(billingBucket, invoiceDirectoryPrefix + invoiceFile);
+      BlobId invoiceFilename = BlobId.of(billingBucket, invoiceDirectoryPrefix + invoiceFile);
       try (InputStream in = gcsUtils.openInputStream(invoiceFilename)) {
         emailService.sendEmail(
             EmailMessage.newBuilder()

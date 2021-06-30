@@ -22,7 +22,6 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.export.DriveModule;
 import google.registry.flows.ServerTridProviderModule;
 import google.registry.flows.custom.CustomLogicFactoryModule;
-import google.registry.gcs.GcsServiceModule;
 import google.registry.groups.DirectoryModule;
 import google.registry.groups.GroupsModule;
 import google.registry.groups.GroupssettingsModule;
@@ -54,7 +53,6 @@ import javax.inject.Singleton;
       DirectoryModule.class,
       DummyKeyringModule.class,
       DriveModule.class,
-      GcsServiceModule.class,
       GroupsModule.class,
       GroupssettingsModule.class,
       Jackson2Module.class,

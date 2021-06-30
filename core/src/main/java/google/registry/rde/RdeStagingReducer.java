@@ -16,7 +16,6 @@ package google.registry.rde;
 
 import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
-import static com.google.appengine.tools.cloudstorage.GcsServiceFactory.createGcsService;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.base.Verify.verify;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
@@ -24,10 +23,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.appengine.tools.mapreduce.Reducer;
 import com.google.appengine.tools.mapreduce.ReducerInput;
+import com.google.cloud.storage.BlobId;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
@@ -69,27 +67,27 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
 
   private final TaskQueueUtils taskQueueUtils;
   private final LockHandler lockHandler;
-  private final int gcsBufferSize;
   private final String bucket;
   private final Duration lockTimeout;
   private final byte[] stagingKeyBytes;
   private final RdeMarshaller marshaller;
+  private final GcsUtils gcsUtils;
 
   RdeStagingReducer(
       TaskQueueUtils taskQueueUtils,
       LockHandler lockHandler,
-      int gcsBufferSize,
       String bucket,
       Duration lockTimeout,
       byte[] stagingKeyBytes,
-      ValidationMode validationMode) {
+      ValidationMode validationMode,
+      GcsUtils gcsUtils) {
     this.taskQueueUtils = taskQueueUtils;
     this.lockHandler = lockHandler;
-    this.gcsBufferSize = gcsBufferSize;
     this.bucket = bucket;
     this.lockTimeout = lockTimeout;
     this.stagingKeyBytes = stagingKeyBytes;
     this.marshaller = new RdeMarshaller(validationMode);
+    this.gcsUtils = gcsUtils;
   }
 
   @Override
@@ -113,8 +111,6 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
 
     // Construct things that Dagger would inject if this wasn't serialized.
     PGPPublicKey stagingKey = PgpHelper.loadPublicKeyBytes(stagingKeyBytes);
-    GcsUtils cloudStorage =
-        new GcsUtils(createGcsService(RetryParams.getDefaultInstance()), gcsBufferSize);
     RdeCounter counter = new RdeCounter();
 
     // Determine some basic things about the deposit.
@@ -130,14 +126,14 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
       checkState(key.directoryWithTrailingSlash() != null, "Manual subdirectory not specified");
       prefix = "manual/" + key.directoryWithTrailingSlash() + prefix;
     }
-    GcsFilename xmlFilename = new GcsFilename(bucket, prefix + ".xml.ghostryde");
+    BlobId xmlFilename = BlobId.of(bucket, prefix + ".xml.ghostryde");
     // This file will contain the byte length (ASCII) of the raw unencrypted XML.
     //
     // This is necessary because RdeUploadAction creates a tar file which requires that the length
     // be outputted. We don't want to have to decrypt the entire ghostryde file to determine the
     // length, so we just save it separately.
-    GcsFilename xmlLengthFilename = new GcsFilename(bucket, prefix + ".xml.length");
-    GcsFilename reportFilename = new GcsFilename(bucket, prefix + "-report.xml.ghostryde");
+    BlobId xmlLengthFilename = BlobId.of(bucket, prefix + ".xml.length");
+    BlobId reportFilename = BlobId.of(bucket, prefix + "-report.xml.ghostryde");
 
     // These variables will be populated as we write the deposit XML and used for other files.
     boolean failed = false;
@@ -146,8 +142,8 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
     // Write a gigantic XML file to GCS. We'll start by opening encrypted out/err file handles.
 
     logger.atInfo().log("Writing %s and %s", xmlFilename, xmlLengthFilename);
-    try (OutputStream gcsOutput = cloudStorage.openOutputStream(xmlFilename);
-        OutputStream lengthOutput = cloudStorage.openOutputStream(xmlLengthFilename);
+    try (OutputStream gcsOutput = gcsUtils.openOutputStream(xmlFilename);
+        OutputStream lengthOutput = gcsUtils.openOutputStream(xmlLengthFilename);
         OutputStream ghostrydeEncoder = Ghostryde.encoder(gcsOutput, stagingKey, lengthOutput);
         Writer output = new OutputStreamWriter(ghostrydeEncoder, UTF_8)) {
 
@@ -194,7 +190,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
     // This will be sent to ICANN once we're done uploading the big XML to the escrow provider.
     if (mode == RdeMode.FULL) {
       logger.atInfo().log("Writing %s", reportFilename);
-      try (OutputStream gcsOutput = cloudStorage.openOutputStream(reportFilename);
+      try (OutputStream gcsOutput = gcsUtils.openOutputStream(reportFilename);
           OutputStream ghostrydeEncoder = Ghostryde.encoder(gcsOutput, stagingKey)) {
         counter.makeReport(id, watermark, header, revision).marshal(ghostrydeEncoder, UTF_8);
       } catch (IOException | XmlException e) {
@@ -249,22 +245,21 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
   static class Factory {
     @Inject TaskQueueUtils taskQueueUtils;
     @Inject LockHandler lockHandler;
-    @Inject @Config("gcsBufferSize") int gcsBufferSize;
     @Inject @Config("rdeBucket") String bucket;
     @Inject @Config("rdeStagingLockTimeout") Duration lockTimeout;
     @Inject @KeyModule.Key("rdeStagingEncryptionKey") byte[] stagingKeyBytes;
 
     @Inject Factory() {}
 
-    RdeStagingReducer create(ValidationMode validationMode) {
+    RdeStagingReducer create(ValidationMode validationMode, GcsUtils gcsUtils) {
       return new RdeStagingReducer(
           taskQueueUtils,
           lockHandler,
-          gcsBufferSize,
           bucket,
           lockTimeout,
           stagingKeyBytes,
-          validationMode);
+          validationMode,
+          gcsUtils);
     }
   }
 }

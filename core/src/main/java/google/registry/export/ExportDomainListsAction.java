@@ -14,7 +14,6 @@
 
 package google.registry.export;
 
-import static com.google.appengine.tools.cloudstorage.GcsServiceFactory.createGcsService;
 import static com.google.common.base.Verify.verifyNotNull;
 import static google.registry.mapreduce.inputs.EppResourceInputs.createEntityInput;
 import static google.registry.model.EppResourceUtils.isActive;
@@ -24,11 +23,10 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.appengine.tools.mapreduce.Mapper;
 import com.google.appengine.tools.mapreduce.Reducer;
 import com.google.appengine.tools.mapreduce.ReducerInput;
+import com.google.cloud.storage.BlobId;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Suppliers;
@@ -79,9 +77,9 @@ public class ExportDomainListsAction implements Runnable {
   @Inject Response response;
   @Inject Clock clock;
   @Inject DriveConnection driveConnection;
+  @Inject GcsUtils gcsUtils;
 
   @Inject @Config("domainListsGcsBucket") String gcsBucket;
-  @Inject @Config("gcsBufferSize") int gcsBufferSize;
   @Inject ExportDomainListsAction() {}
 
   @Override
@@ -95,7 +93,7 @@ public class ExportDomainListsAction implements Runnable {
           .setDefaultReduceShards(Math.min(realTlds.size(), MAX_NUM_REDUCE_SHARDS))
           .runMapreduce(
               new ExportDomainListsMapper(clock.nowUtc(), realTlds),
-              new ExportDomainListsReducer(gcsBucket, gcsBufferSize),
+              new ExportDomainListsReducer(gcsBucket, gcsUtils),
               ImmutableList.of(createEntityInput(DomainBase.class)))
           .sendLinkToMapreduceConsole(response);
     } else {
@@ -134,7 +132,7 @@ public class ExportDomainListsAction implements Runnable {
             String domainsList = Joiner.on("\n").join(domains);
             logger.atInfo().log(
                 "Exporting %d domains for TLD %s to GCS and Drive.", domains.size(), tld);
-            exportToGcs(tld, domainsList, gcsBucket, gcsBufferSize);
+            exportToGcs(tld, domainsList, gcsBucket, gcsUtils);
             exportToDrive(tld, domainsList, driveConnection);
           });
     }
@@ -168,11 +166,9 @@ public class ExportDomainListsAction implements Runnable {
   }
 
   protected static boolean exportToGcs(
-      String tld, String domains, String gcsBucket, int gcsBufferSize) {
-    GcsFilename filename = new GcsFilename(gcsBucket, tld + ".txt");
-    GcsUtils cloudStorage =
-        new GcsUtils(createGcsService(RetryParams.getDefaultInstance()), gcsBufferSize);
-    try (OutputStream gcsOutput = cloudStorage.openOutputStream(filename);
+      String tld, String domains, String gcsBucket, GcsUtils gcsUtils) {
+    BlobId blobId = BlobId.of(gcsBucket, tld + ".txt");
+    try (OutputStream gcsOutput = gcsUtils.openOutputStream(blobId);
         Writer osWriter = new OutputStreamWriter(gcsOutput, UTF_8)) {
       osWriter.write(domains);
     } catch (Throwable e) {
@@ -214,7 +210,7 @@ public class ExportDomainListsAction implements Runnable {
         Suppliers.memoize(() -> DaggerDriveModule_DriveComponent.create().driveConnection());
 
     private final String gcsBucket;
-    private final int gcsBufferSize;
+    private final GcsUtils gcsUtils;
 
     /**
      * Non-serializable {@link DriveConnection} that will be created when an instance of {@link
@@ -224,9 +220,9 @@ public class ExportDomainListsAction implements Runnable {
      */
     private transient DriveConnection driveConnection;
 
-    public ExportDomainListsReducer(String gcsBucket, int gcsBufferSize) {
+    public ExportDomainListsReducer(String gcsBucket, GcsUtils gcsUtils) {
       this.gcsBucket = gcsBucket;
-      this.gcsBufferSize = gcsBufferSize;
+      this.gcsUtils = gcsUtils;
     }
 
     @SuppressWarnings("unused")
@@ -240,7 +236,7 @@ public class ExportDomainListsAction implements Runnable {
       ImmutableList<String> domains = ImmutableList.sortedCopyOf(() -> fqdns);
       String domainsList = Joiner.on('\n').join(domains);
       logger.atInfo().log("Exporting %d domains for TLD %s to GCS and Drive.", domains.size(), tld);
-      if (exportToGcs(tld, domainsList, gcsBucket, gcsBufferSize)) {
+      if (exportToGcs(tld, domainsList, gcsBucket, gcsUtils)) {
         getContext().incrementCounter("domain lists successful written out to GCS");
       } else {
         getContext().incrementCounter("domain lists failed to write out to GCS");
