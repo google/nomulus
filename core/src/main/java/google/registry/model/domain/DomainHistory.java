@@ -252,11 +252,18 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
 
   @Override
   public Optional<? extends EppResource> getResourceAtPointInTime() {
-    return getDomainContent();
+    return getDomainContent()
+        .map(domainContent -> new DomainBase.Builder().copyFrom(domainContent).build());
   }
 
   @PostLoad
   void postLoad() {
+    // TODO(b/188044616): Determine why Eager loading doesn't work here.
+    Hibernate.initialize(domainTransactionRecords);
+    Hibernate.initialize(nsHosts);
+    Hibernate.initialize(dsDataHistories);
+    Hibernate.initialize(gracePeriodHistories);
+
     if (domainContent != null) {
       domainContent.nsHosts = nullToEmptyImmutableCopy(nsHosts);
       domainContent.gracePeriods =
@@ -278,12 +285,6 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
         }
       }
     }
-
-    // TODO(b/188044616): Determine why Eager loading doesn't work here.
-    Hibernate.initialize(domainTransactionRecords);
-    Hibernate.initialize(nsHosts);
-    Hibernate.initialize(dsDataHistories);
-    Hibernate.initialize(gracePeriodHistories);
   }
 
   // In Datastore, save as a HistoryEntry object regardless of this object's type

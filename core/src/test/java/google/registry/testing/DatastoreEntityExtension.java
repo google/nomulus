@@ -18,6 +18,8 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.apphosting.api.ApiProxy;
 import com.google.apphosting.api.ApiProxy.Environment;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Map;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -25,7 +27,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 /**
- * Allows instantiation of Datastore {@code Entity entities} without the heavyweight {@code
+ * Allows instantiation of Datastore {@code Entity}s without the heavyweight {@link
  * AppEngineExtension}.
  *
  * <p>When an Ofy key is created, by calling the various Key.create() methods, whether the current
@@ -44,6 +46,27 @@ public class DatastoreEntityExtension implements BeforeEachCallback, AfterEachCa
 
   private static final Environment PLACEHOLDER_ENV = new PlaceholderEnvironment();
 
+  private boolean allThreads = false;
+
+  /**
+   * Whether all threads should be masqueraded as GAE threads.
+   *
+   * <p>This is particularly useful when new threads are spawned during a test. For example when
+   * testing Beam pipelines, the test pipeline runs the transforms in separate threads than the test
+   * thread. If Ofy keys are created in transforms, this value needs to be set to true.
+   *
+   * <p>Warning: by setting this value to true, any thread spawned by the current JVM will be have
+   * the thread local property set to the placeholder value during the execution of the current
+   * test, including those running other tests in parallel. This may or may not cause an issue when
+   * other tests have {@link AppEngineExtension} registered, that creates a much more fully
+   * functional GAE test environment. Consider moving tests using this extension to {@code
+   * outcastTest} if necessary.
+   */
+  public DatastoreEntityExtension allThreads(boolean value) {
+    allThreads = value;
+    return this;
+  }
+
   @Override
   public void beforeEach(ExtensionContext context) {
     ApiProxy.setEnvironmentForCurrentThread(PLACEHOLDER_ENV);
@@ -51,12 +74,21 @@ public class DatastoreEntityExtension implements BeforeEachCallback, AfterEachCa
     // will load the ObjectifyService class, whose static initialization block registers all Ofy
     // entities.
     auditedOfy();
+    if (allThreads) {
+      ApiProxy.setEnvironmentFactory(() -> PLACEHOLDER_ENV);
+    }
   }
 
   @Override
-  public void afterEach(ExtensionContext context) {
+  public void afterEach(ExtensionContext context)
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     // Clear the cached instance.
-    ApiProxy.setEnvironmentForCurrentThread(null);
+    ApiProxy.clearEnvironmentForCurrentThread();
+    if (allThreads) {
+      Method method = ApiProxy.class.getDeclaredMethod("clearEnvironmentFactory");
+      method.setAccessible(true);
+      method.invoke(null);
+    }
   }
 
   private static final class PlaceholderEnvironment implements Environment {

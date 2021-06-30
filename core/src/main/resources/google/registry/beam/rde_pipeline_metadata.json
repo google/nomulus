@@ -1,0 +1,23 @@
+{
+  "name": "RDE/BRDA Deposit Generation",
+  "description": "An Apache Beam pipeline generates RDE or BRDA deposits and deposits them to GCS with GhostRyde encryption.",
+  "parameters": [
+    {
+      "name": "pendings",
+      "label": "The pendings deposits to generate.",
+      "helpText": "A TLD to PendingDeposit map that is serialized and Base64 URL-safe encoded.",
+      "regexes": [
+        "A-Za-z0-9\\-_"
+      ]
+    },
+    {
+      "name": "validationMode",
+      "label": "How strict the marshaller validates the given EPP resources.",
+      "helpText": "If set to LENIENT the marshaller will not warn about missing data on the EPP resources.",
+      "is_optional": true,
+      "regexes": [
+        "^STRICT|LENIENT$"
+      ]
+    }
+  ]
+}

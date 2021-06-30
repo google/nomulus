@@ -31,6 +31,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.model.EntityTestCase;
+import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -87,6 +88,13 @@ class HostResourceTest extends EntityTestCase {
                     .setStatusValues(ImmutableSet.of(StatusValue.OK))
                     .setSuperordinateDomain(domain.createVKey())
                     .build()));
+  }
+
+  @TestOfyAndSql
+  void testHostBaseToHostResource() {
+    ImmutableObjectSubject.assertAboutImmutableObjects()
+        .that(new HostResource.Builder().copyFrom(host).build())
+        .isEqualExceptFields(host, "updateTimestamp", "revisions");
   }
 
   @TestOfyAndSql

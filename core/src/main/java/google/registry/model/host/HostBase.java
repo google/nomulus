@@ -137,7 +137,7 @@ public class HostBase extends EppResource {
   }
 
   @Override
-  public Builder asBuilder() {
+  public Builder<? extends HostBase, ?> asBuilder() {
     return new Builder<>(clone(this));
   }
 

@@ -17,8 +17,17 @@ package google.registry.rde;
 import com.google.auto.value.AutoValue;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.rde.RdeMode;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import javax.annotation.Nullable;
+import org.apache.beam.sdk.coders.AtomicCoder;
+import org.apache.beam.sdk.coders.BooleanCoder;
+import org.apache.beam.sdk.coders.NullableCoder;
+import org.apache.beam.sdk.coders.SerializableCoder;
+import org.apache.beam.sdk.coders.StringUtf8Coder;
+import org.apache.beam.sdk.coders.VarIntCoder;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
@@ -69,17 +78,9 @@ public abstract class PendingDeposit implements Serializable {
   @Nullable
   public abstract Integer revision();
 
-  static PendingDeposit create(
+  public static PendingDeposit create(
       String tld, DateTime watermark, RdeMode mode, CursorType cursor, Duration interval) {
-    return new AutoValue_PendingDeposit(
-        false,
-        tld,
-        watermark,
-        mode,
-        cursor,
-        interval,
-        null,
-        null);
+    return new AutoValue_PendingDeposit(false, tld, watermark, mode, cursor, interval, null, null);
   }
 
   static PendingDeposit createInManualOperation(
@@ -89,15 +90,52 @@ public abstract class PendingDeposit implements Serializable {
       String directoryWithTrailingSlash,
       @Nullable Integer revision) {
     return new AutoValue_PendingDeposit(
-        true,
-        tld,
-        watermark,
-        mode,
-        null,
-        null,
-        directoryWithTrailingSlash,
-        revision);
+        true, tld, watermark, mode, null, null, directoryWithTrailingSlash, revision);
   }
 
   PendingDeposit() {}
+
+  /**
+   * A deterministic coder for {@link PendingDeposit} used during a GroupBy transform.
+   *
+   * <p>We cannot use a {@link SerializableCoder} directly because it does not guarantee
+   * determinism, which is required by GroupBy.
+   */
+  public static class PendingDepositCoder extends AtomicCoder<PendingDeposit> {
+
+    private PendingDepositCoder() {
+      super();
+    }
+
+    private static final PendingDepositCoder INSTANCE = new PendingDepositCoder();
+
+    public static PendingDepositCoder of() {
+      return INSTANCE;
+    }
+
+    @Override
+    public void encode(PendingDeposit value, OutputStream outStream) throws IOException {
+      BooleanCoder.of().encode(value.manual(), outStream);
+      StringUtf8Coder.of().encode(value.tld(), outStream);
+      SerializableCoder.of(DateTime.class).encode(value.watermark(), outStream);
+      SerializableCoder.of(RdeMode.class).encode(value.mode(), outStream);
+      NullableCoder.of(SerializableCoder.of(CursorType.class)).encode(value.cursor(), outStream);
+      NullableCoder.of(SerializableCoder.of(Duration.class)).encode(value.interval(), outStream);
+      NullableCoder.of(StringUtf8Coder.of()).encode(value.directoryWithTrailingSlash(), outStream);
+      NullableCoder.of(VarIntCoder.of()).encode(value.revision(), outStream);
+    }
+
+    @Override
+    public PendingDeposit decode(InputStream inStream) throws IOException {
+      return new AutoValue_PendingDeposit(
+          BooleanCoder.of().decode(inStream),
+          StringUtf8Coder.of().decode(inStream),
+          SerializableCoder.of(DateTime.class).decode(inStream),
+          SerializableCoder.of(RdeMode.class).decode(inStream),
+          NullableCoder.of(SerializableCoder.of(CursorType.class)).decode(inStream),
+          NullableCoder.of(SerializableCoder.of(Duration.class)).decode(inStream),
+          NullableCoder.of(StringUtf8Coder.of()).decode(inStream),
+          NullableCoder.of(VarIntCoder.of()).decode(inStream));
+    }
+  }
 }

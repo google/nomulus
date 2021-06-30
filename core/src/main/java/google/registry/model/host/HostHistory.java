@@ -111,7 +111,7 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
 
   @Override
   public Optional<? extends EppResource> getResourceAtPointInTime() {
-    return getHostBase();
+    return getHostBase().map(hostBase -> new HostResource.Builder().copyFrom(hostBase).build());
   }
 
   @PostLoad

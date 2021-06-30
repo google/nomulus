@@ -145,7 +145,7 @@ class EppPointInTimeTest {
     tm().clearSessionCache();
     assertAboutImmutableObjects()
         .that(loadAtPointInTime(latest, timeAtCreate.plusDays(1)))
-        .hasFieldsEqualTo(domainAfterCreate);
+        .isEqualExceptFields(domainAfterCreate, "updateTimestamp");
 
     tm().clearSessionCache();
     if (tm().isOfy()) {
@@ -159,18 +159,18 @@ class EppPointInTimeTest {
       // second update occurred one millisecond later.
       assertAboutImmutableObjects()
           .that(loadAtPointInTime(latest, timeAtFirstUpdate))
-          .hasFieldsEqualTo(domainAfterFirstUpdate);
+          .isEqualExceptFields(domainAfterFirstUpdate, "updateTimestamp");
     }
 
     tm().clearSessionCache();
     assertAboutImmutableObjects()
         .that(loadAtPointInTime(latest, timeAtSecondUpdate))
-        .hasFieldsEqualTo(domainAfterSecondUpdate);
+        .isEqualExceptFields(domainAfterSecondUpdate, "updateTimestamp");
 
     tm().clearSessionCache();
     assertAboutImmutableObjects()
         .that(loadAtPointInTime(latest, timeAtSecondUpdate.plusDays(1)))
-        .hasFieldsEqualTo(domainAfterSecondUpdate);
+        .isEqualExceptFields(domainAfterSecondUpdate, "updateTimestamp");
 
     // Deletion time has millisecond granularity due to isActive() check.
     tm().clearSessionCache();

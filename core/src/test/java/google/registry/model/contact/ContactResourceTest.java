@@ -123,6 +123,13 @@ public class ContactResourceTest extends EntityTestCase {
   }
 
   @Test
+  void testContactBaseToContactResource() {
+    ImmutableObjectSubject.assertAboutImmutableObjects()
+        .that(new ContactResource.Builder().copyFrom(contactResource).build())
+        .isEqualExceptFields(contactResource, "updateTimestamp", "revisions");
+  }
+
+  @Test
   void testCloudSqlPersistence_failWhenViolateForeignKeyConstraint() {
     assertThrowForeignKeyViolation(() -> jpaTm().transact(() -> jpaTm().insert(originalContact)));
   }
