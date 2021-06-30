@@ -16,23 +16,20 @@ package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
-import static google.registry.testing.GcsTestingUtils.readGcsFile;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import com.google.cloud.storage.BlobId;
 import com.google.common.io.ByteSource;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.keyring.api.Keyring;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
 import google.registry.testing.FakeKeyringModule;
-import google.registry.testing.GcsTestingUtils;
 import google.registry.testing.GpgSystemCommandExtension;
 import java.io.File;
 import java.io.IOException;
@@ -52,14 +49,12 @@ public class BrdaCopyActionTest {
 
   private static final ByteSource DEPOSIT_XML = RdeTestData.loadBytes("deposit_full.xml");
 
-  private static final GcsFilename STAGE_FILE =
-      new GcsFilename("keg", "lol_2010-10-17_thin_S1_R0.xml.ghostryde");
-  private static final GcsFilename STAGE_LENGTH_FILE =
-      new GcsFilename("keg", "lol_2010-10-17_thin_S1_R0.xml.length");
-  private static final GcsFilename RYDE_FILE =
-      new GcsFilename("tub", "lol_2010-10-17_thin_S1_R0.ryde");
-  private static final GcsFilename SIG_FILE =
-      new GcsFilename("tub", "lol_2010-10-17_thin_S1_R0.sig");
+  private static final BlobId STAGE_FILE =
+      BlobId.of("keg", "lol_2010-10-17_thin_S1_R0.xml.ghostryde");
+  private static final BlobId STAGE_LENGTH_FILE =
+      BlobId.of("keg", "lol_2010-10-17_thin_S1_R0.xml.length");
+  private static final BlobId RYDE_FILE = BlobId.of("tub", "lol_2010-10-17_thin_S1_R0.ryde");
+  private static final BlobId SIG_FILE = BlobId.of("tub", "lol_2010-10-17_thin_S1_R0.sig");
 
   @RegisterExtension
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
@@ -89,8 +84,7 @@ public class BrdaCopyActionTest {
     }
   }
 
-  private final GcsService gcsService = GcsServiceFactory.createGcsService();
-  private final GcsUtils gcsUtils = new GcsUtils(gcsService, 1024);
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final BrdaCopyAction action = new BrdaCopyAction();
 
   @BeforeEach
@@ -105,9 +99,8 @@ public class BrdaCopyActionTest {
     action.stagingDecryptionKey = decryptKey;
 
     byte[] xml = DEPOSIT_XML.read();
-    GcsTestingUtils.writeGcsFile(gcsService, STAGE_FILE, Ghostryde.encode(xml, encryptKey));
-    GcsTestingUtils.writeGcsFile(gcsService, STAGE_LENGTH_FILE,
-        Long.toString(xml.length).getBytes(UTF_8));
+    gcsUtils.createFromBytes(STAGE_FILE, Ghostryde.encode(xml, encryptKey));
+    gcsUtils.createFromBytes(STAGE_LENGTH_FILE, Long.toString(xml.length).getBytes(UTF_8));
   }
 
   @Test
@@ -124,7 +117,7 @@ public class BrdaCopyActionTest {
     action.run();
 
     File rydeTmp = new File(gpg.getCwd(), "ryde");
-    Files.write(readGcsFile(gcsService, RYDE_FILE), rydeTmp);
+    Files.write(gcsUtils.readBytesFrom(RYDE_FILE), rydeTmp);
     Process pid =
         gpg.exec(
             "gpg",
@@ -172,8 +165,8 @@ public class BrdaCopyActionTest {
 
     File rydeTmp = new File(gpg.getCwd(), "ryde");
     File sigTmp = new File(gpg.getCwd(), "ryde.sig");
-    Files.write(readGcsFile(gcsService, RYDE_FILE), rydeTmp);
-    Files.write(readGcsFile(gcsService, SIG_FILE), sigTmp);
+    Files.write(gcsUtils.readBytesFrom(RYDE_FILE), rydeTmp);
+    Files.write(gcsUtils.readBytesFrom(SIG_FILE), sigTmp);
 
     Process pid = gpg.exec("gpg", "--verify", sigTmp.toString(), rydeTmp.toString());
     String stderr = slurp(pid.getErrorStream());

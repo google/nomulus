@@ -15,16 +15,13 @@
 package google.registry.reporting.icann;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.GcsTestingUtils.readGcsFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.api.services.bigquery.model.TableFieldSchema;
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -32,6 +29,7 @@ import google.registry.bigquery.BigqueryConnection;
 import google.registry.bigquery.BigqueryConnection.DestinationTable;
 import google.registry.bigquery.BigqueryUtils.TableType;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
@@ -46,9 +44,9 @@ class IcannReportingStagerTest {
 
   private BigqueryConnection bigquery = mock(BigqueryConnection.class);
   FakeResponse response = new FakeResponse();
-  private GcsService gcsService = GcsServiceFactory.createGcsService();
   private YearMonth yearMonth = new YearMonth(2017, 6);
   private String subdir = "icann/monthly/2017-06";
+  private GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   @RegisterExtension
   final AppEngineExtension appEngine =
@@ -65,7 +63,7 @@ class IcannReportingStagerTest {
     action.transactionsQueryBuilder = transactionsBuilder;
     action.reportingBucket = "test-bucket";
     action.bigquery = bigquery;
-    action.gcsUtils = new GcsUtils(gcsService, 1024);
+    action.gcsUtils = gcsUtils;
     return action;
   }
 
@@ -100,14 +98,12 @@ class IcannReportingStagerTest {
     String expectedReport1 = "fooField,barField\r\n12,34";
     String expectedReport2 = "fooField,barField\r\n56,78";
     byte[] generatedFile1 =
-        readGcsFile(
-            gcsService,
-            new GcsFilename("test-bucket/icann/monthly/2017-06", "fooTld-activity-201706.csv"));
+        gcsUtils.readBytesFrom(
+            BlobId.of("test-bucket/icann/monthly/2017-06", "fooTld-activity-201706.csv"));
     assertThat(new String(generatedFile1, UTF_8)).isEqualTo(expectedReport1);
     byte[] generatedFile2 =
-        readGcsFile(
-            gcsService,
-            new GcsFilename("test-bucket/icann/monthly/2017-06", "barTld-activity-201706.csv"));
+        gcsUtils.readBytesFrom(
+            BlobId.of("test-bucket/icann/monthly/2017-06", "barTld-activity-201706.csv"));
     assertThat(new String(generatedFile2, UTF_8)).isEqualTo(expectedReport2);
   }
 
@@ -144,14 +140,12 @@ class IcannReportingStagerTest {
         "registrar,iana,field\r\n\"reg1\",123,10\r\n\"reg2\",456,20\r\nTotals,,30";
     String expectedReport2 = "registrar,iana,field\r\n\"reg1\",123,30\r\nTotals,,30";
     byte[] generatedFile1 =
-        readGcsFile(
-            gcsService,
-            new GcsFilename("test-bucket/icann/monthly/2017-06", "fooTld-transactions-201706.csv"));
+        gcsUtils.readBytesFrom(
+            BlobId.of("test-bucket/icann/monthly/2017-06", "fooTld-transactions-201706.csv"));
     assertThat(new String(generatedFile1, UTF_8)).isEqualTo(expectedReport1);
     byte[] generatedFile2 =
-        readGcsFile(
-            gcsService,
-            new GcsFilename("test-bucket/icann/monthly/2017-06", "barTld-transactions-201706.csv"));
+        gcsUtils.readBytesFrom(
+            BlobId.of("test-bucket/icann/monthly/2017-06", "barTld-transactions-201706.csv"));
     assertThat(new String(generatedFile2, UTF_8)).isEqualTo(expectedReport2);
   }
 
@@ -164,8 +158,7 @@ class IcannReportingStagerTest {
 
     String expectedManifest = "fooTld-transactions-201706.csv\nbarTld-activity-201706.csv\n";
     byte[] generatedManifest =
-        readGcsFile(
-            gcsService, new GcsFilename("test-bucket/icann/monthly/2017-06", "MANIFEST.txt"));
+        gcsUtils.readBytesFrom(BlobId.of("test-bucket/icann/monthly/2017-06", "MANIFEST.txt"));
     assertThat(new String(generatedManifest, UTF_8)).isEqualTo(expectedManifest);
   }
 

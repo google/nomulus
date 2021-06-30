@@ -17,7 +17,6 @@ package google.registry.reporting.billing;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.GcsTestingUtils.writeGcsFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,11 +28,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import com.google.cloud.storage.BlobId;
 import com.google.common.net.MediaType;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
@@ -52,8 +50,7 @@ class CopyDetailReportsActionTest {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  private final GcsService gcsService = GcsServiceFactory.createGcsService();
-  private final GcsUtils gcsUtils = new GcsUtils(gcsService, 1024);
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   private FakeResponse response;
   private DriveConnection driveConnection;
@@ -80,14 +77,12 @@ class CopyDetailReportsActionTest {
 
   @Test
   void testSuccess() throws IOException {
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_test.csv"),
+    gcsUtils.createFromBytes(
+        BlobId.of("test-bucket", "results/invoice_details_2017-10_TheRegistrar_test.csv"),
         "hello,world\n1,2".getBytes(UTF_8));
 
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
+    gcsUtils.createFromBytes(
+        BlobId.of("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
         "hola,mundo\n3,4".getBytes(UTF_8));
 
     action.run();
@@ -111,14 +106,12 @@ class CopyDetailReportsActionTest {
 
   @Test
   void testSuccess_nonDetailReportFiles_notSent() throws IOException {
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
+    gcsUtils.createFromBytes(
+        BlobId.of("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
         "hola,mundo\n3,4".getBytes(UTF_8));
 
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("test-bucket", "results/not_a_detail_report_2017-10_TheRegistrar_test.csv"),
+    gcsUtils.createFromBytes(
+        BlobId.of("test-bucket", "results/not_a_detail_report_2017-10_TheRegistrar_test.csv"),
         "hello,world\n1,2".getBytes(UTF_8));
     action.run();
     verify(driveConnection)
@@ -136,9 +129,8 @@ class CopyDetailReportsActionTest {
 
   @Test
   void testSuccess_transientIOException_retries() throws IOException {
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
+    gcsUtils.createFromBytes(
+        BlobId.of("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
         "hola,mundo\n3,4".getBytes(UTF_8));
     when(driveConnection.createOrUpdateFile(any(), any(), any(), any()))
         .thenThrow(new IOException("expected"))
@@ -158,13 +150,12 @@ class CopyDetailReportsActionTest {
 
   @Test
   void testFail_tooManyFailures_sendsAlertEmail_continues() throws IOException {
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
+    gcsUtils.createFromBytes(
+        BlobId.of("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
         "hola,mundo\n3,4".getBytes(UTF_8));
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("test-bucket", "results/invoice_details_2017-10_NewRegistrar_test.csv"),
+
+    gcsUtils.createFromBytes(
+        BlobId.of("test-bucket", "results/invoice_details_2017-10_NewRegistrar_test.csv"),
         "hello,world\n1,2".getBytes(UTF_8));
     when(driveConnection.createOrUpdateFile(
             eq("invoice_details_2017-10_TheRegistrar_hello.csv"), any(), any(), any()))
@@ -201,9 +192,8 @@ class CopyDetailReportsActionTest {
 
   @Test
   void testFail_registrarDoesntExist_doesntCopy() throws IOException {
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("test-bucket", "results/invoice_details_2017-10_notExistent_hello.csv"),
+    gcsUtils.createFromBytes(
+        BlobId.of("test-bucket", "results/invoice_details_2017-10_notExistent_hello.csv"),
         "hola,mundo\n3,4".getBytes(UTF_8));
     action.run();
     verifyNoInteractions(driveConnection);
@@ -212,9 +202,8 @@ class CopyDetailReportsActionTest {
   @Test
   void testFail_noRegistrarFolderId_doesntCopy() throws IOException {
     persistResource(loadRegistrar("TheRegistrar").asBuilder().setDriveFolderId(null).build());
-    writeGcsFile(
-        gcsService,
-        new GcsFilename("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
+    gcsUtils.createFromBytes(
+        BlobId.of("test-bucket", "results/invoice_details_2017-10_TheRegistrar_hello.csv"),
         "hola,mundo\n3,4".getBytes(UTF_8));
     action.run();
     verifyNoInteractions(driveConnection);

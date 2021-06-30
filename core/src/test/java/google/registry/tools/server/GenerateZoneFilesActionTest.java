@@ -14,7 +14,6 @@
 
 package google.registry.tools.server;
 
-import static com.google.appengine.tools.cloudstorage.GcsServiceFactory.createGcsService;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
@@ -23,17 +22,17 @@ import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.GcsTestingUtils.readGcsFile;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.Duration.standardDays;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
+import com.google.cloud.storage.BlobId;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
@@ -50,7 +49,7 @@ import org.junit.jupiter.api.Test;
 /** Tests for {@link GenerateZoneFilesAction}. */
 class GenerateZoneFilesActionTest extends MapreduceTestCase<GenerateZoneFilesAction> {
 
-  private final GcsService gcsService = createGcsService();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   @Test
   void testGenerate() throws Exception {
@@ -114,7 +113,7 @@ class GenerateZoneFilesActionTest extends MapreduceTestCase<GenerateZoneFilesAct
     GenerateZoneFilesAction action = new GenerateZoneFilesAction();
     action.mrRunner = makeDefaultRunner();
     action.bucket = "zonefiles-bucket";
-    action.gcsBufferSize = 123;
+    action.gcsUtils = gcsUtils;
     action.datastoreRetention = standardDays(29);
     action.dnsDefaultATtl = Duration.standardSeconds(11);
     action.dnsDefaultNsTtl = Duration.standardSeconds(222);
@@ -134,9 +133,8 @@ class GenerateZoneFilesActionTest extends MapreduceTestCase<GenerateZoneFilesAct
 
     executeTasksUntilEmpty("mapreduce");
 
-    GcsFilename gcsFilename =
-        new GcsFilename("zonefiles-bucket", String.format("tld-%s.zone", now));
-    String generatedFile = new String(readGcsFile(gcsService, gcsFilename), UTF_8);
+    BlobId gcsFilename = BlobId.of("zonefiles-bucket", String.format("tld-%s.zone", now));
+    String generatedFile = new String(gcsUtils.readBytesFrom(gcsFilename), UTF_8);
     // The generated file contains spaces and tabs, but the golden file contains only spaces, as
     // files with literal tabs irritate our build tools.
     Splitter splitter = Splitter.on('\n').omitEmptyStrings();

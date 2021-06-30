@@ -14,7 +14,6 @@
 
 package google.registry.rde;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
@@ -26,7 +25,6 @@ import static google.registry.rde.RdeFixtures.makeHostResource;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistResourceWithCommitLog;
-import static google.registry.testing.GcsTestingUtils.readGcsFile;
 import static google.registry.testing.TaskQueueHelper.assertAtLeastOneTaskIsEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
@@ -36,16 +34,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
-import com.google.appengine.tools.cloudstorage.ListItem;
-import com.google.appengine.tools.cloudstorage.ListOptions;
-import com.google.appengine.tools.cloudstorage.ListResult;
+import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
+import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.keyring.api.Keyring;
 import google.registry.keyring.api.PgpHelper;
 import google.registry.model.common.Cursor;
@@ -98,16 +93,16 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link RdeStagingAction}. */
 public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
 
-  private static final GcsFilename XML_FILE =
-      new GcsFilename("rde-bucket", "lol_2000-01-01_full_S1_R0.xml.ghostryde");
-  private static final GcsFilename LENGTH_FILE =
-      new GcsFilename("rde-bucket", "lol_2000-01-01_full_S1_R0.xml.length");
+  private static final BlobId XML_FILE =
+      BlobId.of("rde-bucket", "lol_2000-01-01_full_S1_R0.xml.ghostryde");
+  private static final BlobId LENGTH_FILE =
+      BlobId.of("rde-bucket", "lol_2000-01-01_full_S1_R0.xml.length");
 
   @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private final FakeClock clock = new FakeClock();
   private final FakeResponse response = new FakeResponse();
-  private final GcsService gcsService = GcsServiceFactory.createGcsService();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final List<? super XjcRdeContentType> alreadyExtracted = new ArrayList<>();
 
   private static PGPPublicKey encryptKey;
@@ -131,7 +126,6 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     action.reducerFactory = new RdeStagingReducer.Factory();
     action.reducerFactory.taskQueueUtils = new TaskQueueUtils(new Retrier(new SystemSleeper(), 1));
     action.reducerFactory.lockHandler = new FakeLockHandler(true);
-    action.reducerFactory.gcsBufferSize = 0;
     action.reducerFactory.bucket = "rde-bucket";
     action.reducerFactory.lockTimeout = Duration.standardHours(1);
     action.reducerFactory.stagingKeyBytes = PgpHelper.convertPublicKeyToBytes(encryptKey);
@@ -140,6 +134,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     action.pendingDepositChecker.brdaInterval = Duration.standardDays(7);
     action.pendingDepositChecker.clock = clock;
     action.pendingDepositChecker.rdeInterval = Duration.standardDays(1);
+    action.gcsUtils = gcsUtils;
     action.response = response;
     action.transactionCooldown = Duration.ZERO;
     action.directory = Optional.empty();
@@ -327,7 +322,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
 
     XjcRdeDeposit deposit =
         unmarshal(
-            XjcRdeDeposit.class, Ghostryde.decode(readGcsFile(gcsService, XML_FILE), decryptKey));
+            XjcRdeDeposit.class, Ghostryde.decode(gcsUtils.readBytesFrom(XML_FILE), decryptKey));
     XjcRdeHeader header = extractAndRemoveContentWithType(XjcRdeHeader.class, deposit);
 
     assertThat(header.getTld()).isEqualTo("lol");
@@ -358,7 +353,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
 
     XjcRdeDeposit deposit =
         unmarshal(
-            XjcRdeDeposit.class, Ghostryde.decode(readGcsFile(gcsService, XML_FILE), decryptKey));
+            XjcRdeDeposit.class, Ghostryde.decode(gcsUtils.readBytesFrom(XML_FILE), decryptKey));
     assertThat(deposit.getType()).isEqualTo(XjcRdeDepositTypeType.FULL);
     assertThat(deposit.getId()).isEqualTo(RdeUtil.timestampToId(DateTime.parse("2000-01-01TZ")));
     assertThat(deposit.getWatermark()).isEqualTo(DateTime.parse("2000-01-01TZ"));
@@ -400,7 +395,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
 
     XjcRdeDeposit deposit =
         unmarshal(
-            XjcRdeDeposit.class, Ghostryde.decode(readGcsFile(gcsService, XML_FILE), decryptKey));
+            XjcRdeDeposit.class, Ghostryde.decode(gcsUtils.readBytesFrom(XML_FILE), decryptKey));
     XjcRdeRegistrar registrar1 = extractAndRemoveContentWithType(XjcRdeRegistrar.class, deposit);
     XjcRdeRegistrar registrar2 = extractAndRemoveContentWithType(XjcRdeRegistrar.class, deposit);
     XjcRdeHeader header = extractAndRemoveContentWithType(XjcRdeHeader.class, deposit);
@@ -494,12 +489,13 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     action.run();
     executeTasksUntilEmpty("mapreduce", clock);
 
-    for (GcsFilename filename : asList(
-        new GcsFilename("rde-bucket", "fop_1971-01-01_full_S1_R0.xml.ghostryde"),
-        new GcsFilename("rde-bucket", "fop_1971-01-05_thin_S1_R0.xml.ghostryde"))) {
+    for (BlobId filename :
+        asList(
+            BlobId.of("rde-bucket", "fop_1971-01-01_full_S1_R0.xml.ghostryde"),
+            BlobId.of("rde-bucket", "fop_1971-01-05_thin_S1_R0.xml.ghostryde"))) {
       XjcRdeDeposit deposit =
           unmarshal(
-              XjcRdeDeposit.class, Ghostryde.decode(readGcsFile(gcsService, filename), decryptKey));
+              XjcRdeDeposit.class, Ghostryde.decode(gcsUtils.readBytesFrom(filename), decryptKey));
       XjcRdeRegistrar registrar1 = extractAndRemoveContentWithType(XjcRdeRegistrar.class, deposit);
       XjcRdeRegistrar registrar2 = extractAndRemoveContentWithType(XjcRdeRegistrar.class, deposit);
       XjcRdeHeader header = extractAndRemoveContentWithType(XjcRdeHeader.class, deposit);
@@ -536,10 +532,10 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     action.run();
     executeTasksUntilEmpty("mapreduce", clock);
 
-    GcsFilename filename = new GcsFilename("rde-bucket", "fop_2000-01-01_full_S1_R0.xml.ghostryde");
+    BlobId filename = BlobId.of("rde-bucket", "fop_2000-01-01_full_S1_R0.xml.ghostryde");
     XjcRdeDeposit deposit =
         unmarshal(
-            XjcRdeDeposit.class, Ghostryde.decode(readGcsFile(gcsService, filename), decryptKey));
+            XjcRdeDeposit.class, Ghostryde.decode(gcsUtils.readBytesFrom(filename), decryptKey));
     XjcRdeDomain domain = extractAndRemoveContentWithType(XjcRdeDomain.class, deposit);
     XjcRdeIdn firstIdn = extractAndRemoveContentWithType(XjcRdeIdn.class, deposit);
     XjcRdeHeader header = extractAndRemoveContentWithType(XjcRdeHeader.class, deposit);
@@ -579,8 +575,8 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     action.run();
     executeTasksUntilEmpty("mapreduce", clock);
 
-    byte[] deposit = Ghostryde.decode(readGcsFile(gcsService, XML_FILE), decryptKey);
-    assertThat(Integer.parseInt(new String(readGcsFile(gcsService, LENGTH_FILE), UTF_8)))
+    byte[] deposit = Ghostryde.decode(gcsUtils.readBytesFrom(XML_FILE), decryptKey);
+    assertThat(Integer.parseInt(new String(gcsUtils.readBytesFrom(LENGTH_FILE), UTF_8)))
         .isEqualTo(deposit.length);
   }
 
@@ -781,23 +777,20 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
     action.run();
     executeTasksUntilEmpty("mapreduce", clock);
 
-    ListResult listResult =
-        gcsService.list("rde-bucket", new ListOptions.Builder().setPrefix("manual/test").build());
-    ImmutableSet<String> filenames =
-        ImmutableList.copyOf(listResult).stream().map(ListItem::getName).collect(toImmutableSet());
+    ImmutableList<String> filenames = gcsUtils.listFolderObjects("rde-bucket", "manual/test/");
     for (String tld : tlds) {
       assertThat(filenames)
           .containsAtLeast(
-              "manual/test/" + tld + "_2000-01-01_full_S1_R" + revision + "-report.xml.ghostryde",
-              "manual/test/" + tld + "_2000-01-01_full_S1_R" + revision + ".xml.ghostryde",
-              "manual/test/" + tld + "_2000-01-01_full_S1_R" + revision + ".xml.length",
-              "manual/test/" + tld + "_2000-01-01_thin_S1_R" + revision + ".xml.ghostryde",
-              "manual/test/" + tld + "_2000-01-01_thin_S1_R" + revision + ".xml.length",
-              "manual/test/" + tld + "_2000-01-02_full_S1_R" + revision + "-report.xml.ghostryde",
-              "manual/test/" + tld + "_2000-01-02_full_S1_R" + revision + ".xml.ghostryde",
-              "manual/test/" + tld + "_2000-01-02_full_S1_R" + revision + ".xml.length",
-              "manual/test/" + tld + "_2000-01-02_thin_S1_R" + revision + ".xml.ghostryde",
-              "manual/test/" + tld + "_2000-01-02_thin_S1_R" + revision + ".xml.length");
+              tld + "_2000-01-01_full_S1_R" + revision + "-report.xml.ghostryde",
+              tld + "_2000-01-01_full_S1_R" + revision + ".xml.ghostryde",
+              tld + "_2000-01-01_full_S1_R" + revision + ".xml.length",
+              tld + "_2000-01-01_thin_S1_R" + revision + ".xml.ghostryde",
+              tld + "_2000-01-01_thin_S1_R" + revision + ".xml.length",
+              tld + "_2000-01-02_full_S1_R" + revision + "-report.xml.ghostryde",
+              tld + "_2000-01-02_full_S1_R" + revision + ".xml.ghostryde",
+              tld + "_2000-01-02_full_S1_R" + revision + ".xml.length",
+              tld + "_2000-01-02_thin_S1_R" + revision + ".xml.ghostryde",
+              tld + "_2000-01-02_thin_S1_R" + revision + ".xml.length");
 
       assertThat(
               auditedOfy()
@@ -837,8 +830,8 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
   }
 
   private String readXml(String objectName) throws IOException, PGPException {
-    GcsFilename file = new GcsFilename("rde-bucket", objectName);
-    return new String(Ghostryde.decode(readGcsFile(gcsService, file), decryptKey), UTF_8);
+    BlobId file = BlobId.of("rde-bucket", objectName);
+    return new String(Ghostryde.decode(gcsUtils.readBytesFrom(file), decryptKey), UTF_8);
   }
 
   private <T extends XjcRdeContentType>

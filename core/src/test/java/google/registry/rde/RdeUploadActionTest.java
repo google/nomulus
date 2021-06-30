@@ -24,8 +24,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
-import static google.registry.testing.GcsTestingUtils.readGcsFile;
-import static google.registry.testing.GcsTestingUtils.writeGcsFile;
 import static google.registry.testing.SystemInfo.hasCommand;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
@@ -45,9 +43,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.utils.SystemProperty;
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import com.google.cloud.storage.BlobId;
 import com.google.common.io.ByteSource;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
@@ -55,6 +51,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.keyring.api.Keyring;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
@@ -94,23 +91,24 @@ import org.mockito.stubbing.OngoingStubbing;
 @DualDatabaseTest
 public class RdeUploadActionTest {
 
-  private static final int BUFFER_SIZE = 64 * 1024;
   private static final ByteSource REPORT_XML = RdeTestData.loadBytes("report.xml");
   private static final ByteSource DEPOSIT_XML = RdeTestData.loadBytes("deposit_full.xml");
 
-  private static final GcsFilename GHOSTRYDE_FILE =
-      new GcsFilename("bucket", "tld_2010-10-17_full_S1_R0.xml.ghostryde");
-  private static final GcsFilename LENGTH_FILE =
-      new GcsFilename("bucket", "tld_2010-10-17_full_S1_R0.xml.length");
-  private static final GcsFilename REPORT_FILE =
-      new GcsFilename("bucket", "tld_2010-10-17_full_S1_R0-report.xml.ghostryde");
+  private static final BlobId GHOSTRYDE_FILE =
+      BlobId.of("bucket", "tld_2010-10-17_full_S1_R0.xml.ghostryde");
+  private static final BlobId LENGTH_FILE =
+      BlobId.of("bucket", "tld_2010-10-17_full_S1_R0.xml.length");
+  private static final BlobId REPORT_FILE =
+      BlobId.of("bucket", "tld_2010-10-17_full_S1_R0-report.xml.ghostryde");
 
-  private static final GcsFilename GHOSTRYDE_R1_FILE =
-      new GcsFilename("bucket", "tld_2010-10-17_full_S1_R1.xml.ghostryde");
-  private static final GcsFilename LENGTH_R1_FILE =
-      new GcsFilename("bucket", "tld_2010-10-17_full_S1_R1.xml.length");
-  private static final GcsFilename REPORT_R1_FILE =
-      new GcsFilename("bucket", "tld_2010-10-17_full_S1_R1-report.xml.ghostryde");
+  private static final BlobId GHOSTRYDE_R1_FILE =
+      BlobId.of("bucket", "tld_2010-10-17_full_S1_R1.xml.ghostryde");
+  private static final BlobId LENGTH_R1_FILE =
+      BlobId.of("bucket", "tld_2010-10-17_full_S1_R1.xml.length");
+  private static final BlobId REPORT_R1_FILE =
+      BlobId.of("bucket", "tld_2010-10-17_full_S1_R1-report.xml.ghostryde");
+
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   @RegisterExtension final SftpServerExtension sftpd = new SftpServerExtension();
 
@@ -139,7 +137,7 @@ public class RdeUploadActionTest {
     try (Keyring keyring = new FakeKeyringModule().get()) {
       RdeUploadAction action = new RdeUploadAction();
       action.clock = clock;
-      action.gcsUtils = new GcsUtils(gcsService, BUFFER_SIZE);
+      action.gcsUtils = gcsUtils;
       action.lazyJsch =
           () ->
               JSchModule.provideJSch(
@@ -176,22 +174,20 @@ public class RdeUploadActionTest {
     return jschSpy;
   }
 
-  private GcsService gcsService;
 
   @BeforeEach
   void beforeEach() throws Exception {
     // Force "development" mode so we don't try to really connect to GCS.
     SystemProperty.environment.set(SystemProperty.Environment.Value.Development);
-    gcsService = GcsServiceFactory.createGcsService();
 
     createTld("tld");
     PGPPublicKey encryptKey = new FakeKeyringModule().get().getRdeStagingEncryptionKey();
-    writeGcsFile(gcsService, GHOSTRYDE_FILE, Ghostryde.encode(DEPOSIT_XML.read(), encryptKey));
-    writeGcsFile(gcsService, GHOSTRYDE_R1_FILE, Ghostryde.encode(DEPOSIT_XML.read(), encryptKey));
-    writeGcsFile(gcsService, LENGTH_FILE, Long.toString(DEPOSIT_XML.size()).getBytes(UTF_8));
-    writeGcsFile(gcsService, LENGTH_R1_FILE, Long.toString(DEPOSIT_XML.size()).getBytes(UTF_8));
-    writeGcsFile(gcsService, REPORT_FILE, Ghostryde.encode(REPORT_XML.read(), encryptKey));
-    writeGcsFile(gcsService, REPORT_R1_FILE, Ghostryde.encode(REPORT_XML.read(), encryptKey));
+    gcsUtils.createFromBytes(GHOSTRYDE_FILE, Ghostryde.encode(DEPOSIT_XML.read(), encryptKey));
+    gcsUtils.createFromBytes(GHOSTRYDE_R1_FILE, Ghostryde.encode(DEPOSIT_XML.read(), encryptKey));
+    gcsUtils.createFromBytes(LENGTH_FILE, Long.toString(DEPOSIT_XML.size()).getBytes(UTF_8));
+    gcsUtils.createFromBytes(LENGTH_R1_FILE, Long.toString(DEPOSIT_XML.size()).getBytes(UTF_8));
+    gcsUtils.createFromBytes(REPORT_FILE, Ghostryde.encode(REPORT_XML.read(), encryptKey));
+    gcsUtils.createFromBytes(REPORT_R1_FILE, Ghostryde.encode(REPORT_XML.read(), encryptKey));
     tm()
         .transact(
             () -> {
@@ -271,9 +267,9 @@ public class RdeUploadActionTest {
     String rydeFilename = "tld_2010-10-17_full_S1_R0.ryde";
     String sigFilename = "tld_2010-10-17_full_S1_R0.sig";
     assertThat(folder.list()).asList().containsExactly(rydeFilename, sigFilename);
-    assertThat(readGcsFile(gcsService, new GcsFilename("bucket", rydeFilename)))
+    assertThat(gcsUtils.readBytesFrom(BlobId.of("bucket", rydeFilename)))
         .isEqualTo(Files.toByteArray(new File(folder, rydeFilename)));
-    assertThat(readGcsFile(gcsService, new GcsFilename("bucket", sigFilename)))
+    assertThat(gcsUtils.readBytesFrom(BlobId.of("bucket", sigFilename)))
         .isEqualTo(Files.toByteArray(new File(folder, sigFilename)));
   }
 

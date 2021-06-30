@@ -14,30 +14,39 @@
 
 package google.registry.gcs;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterables.getLast;
 
-import com.google.appengine.tools.cloudstorage.GcsFileMetadata;
-import com.google.appengine.tools.cloudstorage.GcsFileOptions;
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.ListOptions;
-import com.google.appengine.tools.cloudstorage.ListResult;
+import com.google.cloud.storage.Blob;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.Storage.BlobListOption;
+import com.google.cloud.storage.StorageException;
+import com.google.cloud.storage.StorageOptions;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
-import google.registry.config.RegistryConfig.Config;
+import google.registry.config.CredentialModule.DefaultCredential;
+import google.registry.util.GoogleCredentialsBundle;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
+import java.io.Serializable;
 import java.nio.channels.Channels;
 import javax.annotation.CheckReturnValue;
 import javax.inject.Inject;
 
-/** Utilities for working with Google Cloud Storage. */
-public class GcsUtils {
+/**
+ * Utilities for working with Google Cloud Storage.
+ *
+ * <p>It is {@link Serializable} so that it can be used in MapReduce or Beam.
+ */
+public class GcsUtils implements Serializable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -48,30 +57,65 @@ public class GcsUtils {
           .put("json", MediaType.JSON_UTF_8)
           .build();
 
-  private final GcsService gcsService;
-  private final int bufferSize;
+  private final StorageOptions storageOptions;
 
-  @Inject
-  public GcsUtils(GcsService gcsService, @Config("gcsBufferSize") int bufferSize) {
-    this.gcsService = gcsService;
-    this.bufferSize = bufferSize;
+  private Storage storage() {
+    return storageOptions.getService();
   }
 
-  /** Opens a GCS file for reading as an {@link InputStream} with prefetching. */
+  @Inject
+  public GcsUtils(@DefaultCredential GoogleCredentialsBundle credentialsBundle) {
+    this(
+        StorageOptions.newBuilder()
+            .setCredentials(credentialsBundle.getGoogleCredentials())
+            .build());
+  }
+
+  @VisibleForTesting
+  public GcsUtils(StorageOptions storageOptions) {
+    this.storageOptions = storageOptions;
+  }
+
+  /** Opens a GCS file for reading as an {@link InputStream}. */
   @CheckReturnValue
-  public InputStream openInputStream(GcsFilename filename) {
-    return Channels.newInputStream(gcsService.openPrefetchingReadChannel(filename, 0, bufferSize));
+  public InputStream openInputStream(BlobId blobId) {
+    return Channels.newInputStream(storage().reader(blobId));
   }
 
   /** Opens a GCS file for writing as an {@link OutputStream}, overwriting existing files. */
   @CheckReturnValue
-  public OutputStream openOutputStream(GcsFilename filename) throws IOException {
-    return Channels.newOutputStream(gcsService.createOrReplace(filename, getOptions(filename)));
+  public OutputStream openOutputStream(BlobId blobId) {
+    return Channels.newOutputStream(storage().writer(createBlobInfo(blobId)));
+  }
+
+  /**
+   * Opens a GCS file for writing as an {@link OutputStream}, overwriting existing files and setting
+   * the given metadata.
+   */
+  @CheckReturnValue
+  public OutputStream openOutputStream(BlobId blobId, ImmutableMap<String, String> metadata) {
+    return Channels.newOutputStream(
+        storage().writer(BlobInfo.newBuilder(blobId).setMetadata(metadata).build()));
   }
 
   /** Creates a GCS file with the given byte contents, overwriting existing files. */
-  public void createFromBytes(GcsFilename filename, byte[] bytes) throws IOException {
-    gcsService.createOrReplace(filename, getOptions(filename), ByteBuffer.wrap(bytes));
+  public void createFromBytes(BlobId blobId, byte[] bytes) throws StorageException {
+    createFromBytes(createBlobInfo(blobId), bytes);
+  }
+
+  /** Creates a GCS file with the given byte contents and metadata, overwriting existing files. */
+  public void createFromBytes(BlobInfo blobInfo, byte[] bytes) throws StorageException {
+    storage().create(blobInfo, bytes);
+  }
+
+  /** Read the content of the given GCS file and return it in a byte array. */
+  public byte[] readBytesFrom(BlobId blobId) throws StorageException {
+    return storage().readAllBytes(blobId);
+  }
+
+  /** Delete the given GCS file. */
+  public void delete(BlobId blobId) throws StorageException {
+    storage().delete(blobId);
   }
 
   /**
@@ -86,37 +130,55 @@ public class GcsUtils {
    */
   public ImmutableList<String> listFolderObjects(String bucketName, String prefix)
       throws IOException {
-    ListResult result =
-        gcsService.list(bucketName, new ListOptions.Builder().setPrefix(prefix).build());
-    final ImmutableList.Builder<String> builder = new ImmutableList.Builder<>();
-    result.forEachRemaining(
-        listItem -> {
-          if (!listItem.isDirectory()) {
-            builder.add(listItem.getName().replaceFirst(prefix, ""));
-          }
-        });
-    return builder.build();
+    return Streams.stream(storage().list(bucketName, BlobListOption.prefix(prefix)).iterateAll())
+        .map(blob -> blob.getName().substring(prefix.length()))
+        .collect(toImmutableList());
   }
 
   /** Returns {@code true} if a file exists and is non-empty on Google Cloud Storage. */
-  public boolean existsAndNotEmpty(GcsFilename file) {
-    GcsFileMetadata metadata;
+  public boolean existsAndNotEmpty(BlobId blobId) {
     try {
-      metadata = gcsService.getMetadata(file);
-    } catch (IOException e) {
+      Blob blob = storage().get(blobId);
+      return blob != null && blob.getSize() > 0;
+    } catch (StorageException e) {
       logger.atWarning().withCause(e).log("Failed to check if GCS file exists");
       return false;
     }
-    return metadata != null && metadata.getLength() > 0;
   }
 
-  /** Determines most appropriate {@link GcsFileOptions} based on filename extension. */
-  private static GcsFileOptions getOptions(GcsFilename filename) {
-    GcsFileOptions.Builder builder = new GcsFileOptions.Builder().cacheControl("no-cache");
-    MediaType mediaType = EXTENSIONS.get(getLast(Splitter.on('.').split(filename.getObjectName())));
+  /** Returns the user defined metadata of a GCS file if the file exists, or an empty map. */
+  public ImmutableMap<String, String> getMetadata(BlobId blobId) throws StorageException {
+    Blob blob = storage().get(blobId);
+    return blob == null ? ImmutableMap.of() : ImmutableMap.copyOf(blob.getMetadata());
+  }
+
+  /**
+   * Returns the {@link BlobInfo} of the given GCS file.
+   *
+   * <p>Note that a {@link Blob} is returned, but on the {@link BlobInfo} part of it is usable.
+   */
+  public BlobInfo getBlobInfo(BlobId blobId) throws StorageException {
+    return storage().get(blobId);
+  }
+
+  /** Determines most appropriate {@link BlobInfo} based on filename extension. */
+  private static BlobInfo createBlobInfo(BlobId blobId) {
+    BlobInfo.Builder builder = BlobInfo.newBuilder(blobId).setCacheControl("no-cache");
+    MediaType mediaType = EXTENSIONS.get(getLast(Splitter.on('.').split(blobId.getName())));
     if (mediaType != null) {
-      builder = builder.mimeType(mediaType.type());
+      builder = builder.setContentType(mediaType.toString());
     }
     return builder.build();
+  }
+
+  // These two methods are needed to check whether serialization is done correctly in tests.
+  @Override
+  public boolean equals(Object obj) {
+    return obj instanceof GcsUtils && ((GcsUtils) obj).storageOptions.equals(storageOptions);
+  }
+
+  @Override
+  public int hashCode() {
+    return storageOptions.hashCode();
   }
 }

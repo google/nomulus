@@ -24,8 +24,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.GcsTestingUtils.deleteGcsFile;
-import static google.registry.testing.GcsTestingUtils.writeGcsFile;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.joda.time.Duration.standardDays;
@@ -41,13 +39,12 @@ import com.google.appengine.api.urlfetch.HTTPHeader;
 import com.google.appengine.api.urlfetch.HTTPRequest;
 import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.GcsServiceFactory;
+import com.google.cloud.storage.BlobId;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registry.Registry;
@@ -95,9 +92,9 @@ public class RdeReportActionTest {
   private final ArgumentCaptor<HTTPRequest> request = ArgumentCaptor.forClass(HTTPRequest.class);
   private final HTTPResponse httpResponse = mock(HTTPResponse.class);
 
-  private final GcsService gcsService = GcsServiceFactory.createGcsService();
-  private final GcsFilename reportFile =
-      new GcsFilename("tub", "test_2006-06-06_full_S1_R0-report.xml.ghostryde");
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
+  private final BlobId reportFile =
+      BlobId.of("tub", "test_2006-06-06_full_S1_R0-report.xml.ghostryde");
 
   private RdeReportAction createAction() {
     RdeReporter reporter = new RdeReporter();
@@ -106,7 +103,7 @@ public class RdeReportActionTest {
     reporter.password = "foo";
     reporter.retrier = new Retrier(new FakeSleeper(new FakeClock()), 3);
     RdeReportAction action = new RdeReportAction();
-    action.gcsUtils = new GcsUtils(gcsService, 1024);
+    action.gcsUtils = gcsUtils;
     action.response = response;
     action.bucket = "tub";
     action.tld = "test";
@@ -126,7 +123,7 @@ public class RdeReportActionTest {
         Cursor.create(RDE_REPORT, DateTime.parse("2006-06-06TZ"), Registry.get("test")));
     persistResource(
         Cursor.create(RDE_UPLOAD, DateTime.parse("2006-06-07TZ"), Registry.get("test")));
-    writeGcsFile(gcsService, reportFile, Ghostryde.encode(REPORT_XML.read(), encryptKey));
+    gcsUtils.createFromBytes(reportFile, Ghostryde.encode(REPORT_XML.read(), encryptKey));
     tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 0));
   }
 
@@ -169,11 +166,10 @@ public class RdeReportActionTest {
 
   @TestOfyAndSql
   void testRunWithLock_regeneratedReport() throws Exception {
-    deleteGcsFile(gcsService, reportFile);
-    GcsFilename newReport =
-        new GcsFilename("tub", "test_2006-06-06_full_S1_R1-report.xml.ghostryde");
+    gcsUtils.delete(reportFile);
+    BlobId newReport = BlobId.of("tub", "test_2006-06-06_full_S1_R1-report.xml.ghostryde");
     PGPPublicKey encryptKey = new FakeKeyringModule().get().getRdeStagingEncryptionKey();
-    writeGcsFile(gcsService, newReport, Ghostryde.encode(REPORT_XML.read(), encryptKey));
+    gcsUtils.createFromBytes(newReport, Ghostryde.encode(REPORT_XML.read(), encryptKey));
     tm().transact(() -> RdeRevision.saveRevision("test", DateTime.parse("2006-06-06TZ"), FULL, 1));
     when(httpResponse.getResponseCode()).thenReturn(SC_OK);
     when(httpResponse.getContent()).thenReturn(IIRDEA_GOOD_XML.read());
