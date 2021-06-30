@@ -18,6 +18,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.setTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newRegistry;
@@ -45,7 +46,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.TransactionManager;
-import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestDataHelper;
@@ -66,7 +66,6 @@ import org.apache.beam.sdk.values.PCollection;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -243,23 +242,15 @@ class InvoicingPipelineTest {
 
   private File billingBucketUrl;
   private PCollection<BillingEvent> billingEvents;
-  TransactionManager tm;
 
   @BeforeEach
   void beforeEach() throws Exception {
-    tm = tm();
-    TransactionManagerFactory.setTm(jpaTm());
     billingBucketUrl = Files.createDirectory(tmpDir.resolve(BILLING_BUCKET_URL)).toFile();
     options.setBillingBucketUrl(billingBucketUrl.getAbsolutePath());
     options.setYearMonth(YEAR_MONTH);
     options.setInvoiceFilePrefix(INVOICE_FILE_PREFIX);
     billingEvents =
         pipeline.apply(Create.of(INPUT_EVENTS).withCoder(SerializableCoder.of(BillingEvent.class)));
-  }
-
-  @AfterEach
-  void afterEach() {
-    TransactionManagerFactory.setTm(tm);
   }
 
   @Test
@@ -272,12 +263,45 @@ class InvoicingPipelineTest {
   }
 
   @Test
-  void testSuccess_readFromCloudSql() throws Exception {
+  void testSuccess_fullSqlPipeline() throws Exception {
+    TransactionManager originalTm = tm();
+    setTm(jpaTm());
     setupCloudSql();
+    options.setDatabase("CLOUD_SQL");
+    InvoicingPipeline invoicingPipeline = new InvoicingPipeline(options);
+    invoicingPipeline.setupPipeline(pipeline);
+    pipeline.run(options).waitUntilFinish();
+    // Verify invoice CSV
+    ImmutableList<String> overallInvoice = resultFileContents("REG-INV-2017-10.csv");
+    assertThat(overallInvoice.get(0))
+        .isEqualTo(
+            "StartDate,EndDate,ProductAccountKey,Amount,AmountCurrency,BillingProductCode,"
+                + "SalesChannel,LineItemType,UsageGroupingKey,Quantity,Description,UnitPrice,"
+                + "UnitPriceCurrency,PONumber");
+    assertThat(overallInvoice.subList(1, overallInvoice.size()))
+        .containsExactlyElementsIn(EXPECTED_INVOICE_OUTPUT);
+    // Verify detailed CSV
+    for (Entry<String, ImmutableList<String>> entry : EXPECTED_DETAILED_REPORT_MAP.entrySet()) {
+      ImmutableList<String> detailReport = resultFileContents(entry.getKey());
+      assertThat(detailReport.get(0))
+          .isEqualTo(
+              "id,billingTime,eventTime,registrarId,billingId,poNumber,tld,action,"
+                  + "domain,repositoryId,years,currency,amount,flags");
+      assertThat(detailReport.subList(1, detailReport.size()))
+          .containsExactlyElementsIn(entry.getValue());
+    }
+    setTm(originalTm);
+  }
 
+  @Test
+  void testSuccess_readFromCloudSql() throws Exception {
+    TransactionManager originalTm = tm();
+    setTm(jpaTm());
+    setupCloudSql();
     PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
+    setTm(originalTm);
   }
 
   @Test
