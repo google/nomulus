@@ -142,7 +142,7 @@ public class InvoicingPipeline implements Serializable {
         oneTime.getTargetId().substring(oneTime.getTargetId().lastIndexOf('.') + 1),
         oneTime.getReason().toString(),
         oneTime.getTargetId(),
-        "REPO-ID",
+        oneTime.getDomainRepoId(),
         Optional.ofNullable(oneTime.getPeriodYears()).orElse(0),
         oneTime.getCost().getCurrencyUnit().toString(),
         oneTime.getCost().getAmount().doubleValue(),
