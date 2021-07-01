@@ -109,7 +109,14 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     try {
       replayFiles();
       response.setStatus(HttpServletResponse.SC_OK);
-      logger.atInfo().log("ReplayCommitLogsToSqlAction completed successfully.");
+      String message = "ReplayCommitLogsToSqlAction completed successfully.";
+      response.setPayload(message);
+      logger.atInfo().log(message);
+    } catch (Throwable t) {
+      String message = "Errored out replaying files.";
+      logger.atSevere().withCause(t).log(message);
+      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+      response.setPayload(message);
     } finally {
       lock.ifPresent(Lock::release);
     }
@@ -139,21 +146,30 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
   }
 
   private void processFile(GcsFileMetadata metadata) {
+    logger.atInfo().log(
+        "Processing commit log file %s of size %d B.",
+        metadata.getFilename(), metadata.getLength());
     try (InputStream input =
         Channels.newInputStream(
             gcsService.openPrefetchingReadChannel(metadata.getFilename(), 0, BLOCK_SIZE))) {
       // Load and process the Datastore transactions one at a time
       ImmutableList<ImmutableList<VersionedEntity>> allTransactions =
           CommitLogImports.loadEntitiesByTransaction(input);
+      logger.atInfo().log(
+          "Replaying %d transactions from commit log file %s.",
+          allTransactions.size(), metadata.getFilename());
       allTransactions.forEach(this::replayTransaction);
       // if we succeeded, set the last-seen time
       DateTime checkpoint =
           DateTime.parse(
               metadata.getFilename().getObjectName().substring(DIFF_FILE_PREFIX.length()));
       SqlReplayCheckpoint.set(checkpoint);
-      logger.atInfo().log("Replayed %d transactions from commit log file.", allTransactions.size());
+      logger.atInfo().log(
+          "Replayed %d transactions from commit log file %s.",
+          allTransactions.size(), metadata.getFilename());
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException(
+          "Errored out while replaying commit log file " + metadata.getFilename(), e);
     }
   }
 
