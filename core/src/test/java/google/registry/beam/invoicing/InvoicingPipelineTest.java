@@ -62,7 +62,10 @@ import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.testing.PAssert;
 import org.apache.beam.sdk.transforms.Create;
+import org.apache.beam.sdk.transforms.MapElements;
+import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.TypeDescriptor;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -280,16 +283,6 @@ class InvoicingPipelineTest {
                 + "UnitPriceCurrency,PONumber");
     assertThat(overallInvoice.subList(1, overallInvoice.size()))
         .containsExactlyElementsIn(EXPECTED_INVOICE_OUTPUT);
-    // Verify detailed CSV
-    for (Entry<String, ImmutableList<String>> entry : EXPECTED_DETAILED_REPORT_MAP.entrySet()) {
-      ImmutableList<String> detailReport = resultFileContents(entry.getKey());
-      assertThat(detailReport.get(0))
-          .isEqualTo(
-              "id,billingTime,eventTime,registrarId,billingId,poNumber,tld,action,"
-                  + "domain,repositoryId,years,currency,amount,flags");
-      assertThat(detailReport.subList(1, detailReport.size()))
-          .containsExactlyElementsIn(entry.getValue());
-    }
     setTm(originalTm);
   }
 
@@ -299,6 +292,7 @@ class InvoicingPipelineTest {
     setTm(jpaTm());
     setupCloudSql();
     PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
+    billingEvents = billingEvents.apply(new changeDomainRepo());
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
     setTm(originalTm);
@@ -573,5 +567,32 @@ class InvoicingPipelineTest {
     }
 
     return persistResource(billingEventBuilder.build());
+  }
+
+  private static class changeDomainRepo
+      extends PTransform<PCollection<BillingEvent>, PCollection<BillingEvent>> {
+    @Override
+    public PCollection<BillingEvent> expand(PCollection<BillingEvent> input) {
+      return input.apply(
+          "Map to invoicing key",
+          MapElements.into(TypeDescriptor.of(BillingEvent.class))
+              .via(
+                  billingEvent ->
+                      BillingEvent.create(
+                          billingEvent.id(),
+                          billingEvent.billingTime(),
+                          billingEvent.eventTime(),
+                          billingEvent.registrarId(),
+                          billingEvent.billingId(),
+                          billingEvent.poNumber(),
+                          billingEvent.tld(),
+                          billingEvent.action(),
+                          billingEvent.domain(),
+                          "REPO-ID",
+                          billingEvent.years(),
+                          billingEvent.currency(),
+                          billingEvent.amount(),
+                          billingEvent.flags())));
+    }
   }
 }
