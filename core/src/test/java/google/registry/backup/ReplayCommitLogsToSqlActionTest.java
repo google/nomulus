@@ -494,6 +494,8 @@ public class ReplayCommitLogsToSqlActionTest {
   private void runAndAssertSuccess(DateTime expectedCheckpointTime) {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo("ReplayCommitLogsToSqlAction completed successfully.");
     assertThat(jpaTm().transact(SqlReplayCheckpoint::get)).isEqualTo(expectedCheckpointTime);
   }
 
