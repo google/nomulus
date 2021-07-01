@@ -16,17 +16,22 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import google.registry.config.RegistryEnvironment;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
 import google.registry.tools.RegistryToolEnvironment;
 import google.registry.util.NonFinalForTesting;
+import java.util.Optional;
 import java.util.function.Supplier;
+import org.joda.time.DateTime;
 
 /** Factory class to create {@link TransactionManager} instance. */
 // TODO: Rename this to PersistenceFactory and move to persistence package.
@@ -34,7 +39,8 @@ public class TransactionManagerFactory {
 
   private static final DatastoreTransactionManager ofyTm = createTransactionManager();
 
-  @NonFinalForTesting private static TransactionManager tm = ofyTm;
+  /** Optional override to manually set the transaction manager per-test. */
+  private static Optional<TransactionManager> tmForTest = Optional.empty();
 
   /** Supplier for jpaTm so that it is initialized only once, upon first usage. */
   @NonFinalForTesting
@@ -70,9 +76,19 @@ public class TransactionManagerFactory {
     return SystemProperty.environment.value() == Value.Production;
   }
 
-  /** Returns {@link TransactionManager} instance. */
+  /**
+   * Returns the {@link TransactionManager} instance.
+   *
+   * <p>Returns the {@link JpaTransactionManager} or {@link DatastoreTransactionManager} based on
+   * the migration schedule or the manually specified per-test transaction manager.
+   */
   public static TransactionManager tm() {
-    return tm;
+    if (tmForTest.isPresent()) {
+      return tmForTest.get();
+    }
+    PrimaryDatabase primaryDatabase =
+        DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC)).getPrimaryDatabase();
+    return primaryDatabase.equals(PrimaryDatabase.DATASTORE) ? ofyTm() : jpaTm();
   }
 
   /**
@@ -111,9 +127,18 @@ public class TransactionManagerFactory {
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
   }
 
-  /** Sets the return of {@link #tm()} to the given instance of {@link TransactionManager}. */
+  /**
+   * Sets the return of {@link #tm()} to the given instance of {@link TransactionManager}.
+   *
+   * <p>Used when overriding the per-test transaction manager for dual-database tests.
+   */
   @VisibleForTesting
-  public static void setTm(TransactionManager newTm) {
-    tm = newTm;
+  public static void setTmForTest(TransactionManager newTm) {
+    tmForTest = Optional.of(newTm);
+  }
+
+  /** Resets the overridden transaction manager post-test. */
+  public static void removeTmOverrideForTest() {
+    tmForTest = Optional.empty();
   }
 }

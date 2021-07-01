@@ -154,15 +154,13 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
       context.getStore(NAMESPACE).put(ORIGINAL_TM_KEY, tm());
       DatabaseType databaseType =
           (DatabaseType) context.getStore(NAMESPACE).get(INJECTED_TM_SUPPLIER_KEY);
-      TransactionManagerFactory.setTm(databaseType.getTm());
+      TransactionManagerFactory.setTmForTest(databaseType.getTm());
     }
   }
 
   static void restoreTmAfterDualDatabaseTest(ExtensionContext context) {
     if (isDualDatabaseTest(context)) {
-      TransactionManager original =
-          (TransactionManager) context.getStore(NAMESPACE).get(ORIGINAL_TM_KEY);
-      TransactionManagerFactory.setTm(original);
+      TransactionManagerFactory.removeTmOverrideForTest();
     }
   }
 

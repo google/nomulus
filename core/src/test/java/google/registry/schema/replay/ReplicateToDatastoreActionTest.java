@@ -96,6 +96,13 @@ public class ReplicateToDatastoreActionTest {
   public void tearDown() {
     fakeClock.disableAutoIncrement();
     RegistryConfig.overrideCloudSqlReplicateTransactions(false);
+    ofyTm()
+        .transact(
+            () ->
+                ofyTm()
+                    .loadSingleton(DatabaseMigrationStateSchedule.class)
+                    .ifPresent(ofyTm()::delete));
+    DatabaseMigrationStateSchedule.CACHE.invalidateAll();
   }
 
   @RetryingTest(4)

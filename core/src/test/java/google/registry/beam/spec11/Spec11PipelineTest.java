@@ -18,7 +18,7 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.setTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.setTmForTest;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -231,7 +231,7 @@ class Spec11PipelineTest {
 
   private void setupCloudSql() {
     TransactionManager originalTm = tm();
-    setTm(jpaTm());
+    setTmForTest(jpaTm());
     persistNewRegistrar("TheRegistrar");
     persistNewRegistrar("NewRegistrar");
     Registrar registrar1 =
@@ -271,7 +271,7 @@ class Spec11PipelineTest {
     persistResource(createDomain("no-email.com", "2A4BA9BBC-COM", registrar2, contact2));
     persistResource(
         createDomain("anti-anti-anti-virus.dev", "555666888-DEV", registrar3, contact3));
-    setTm(originalTm);
+    setTmForTest(originalTm);
   }
 
   private void verifySaveToGcs() throws Exception {

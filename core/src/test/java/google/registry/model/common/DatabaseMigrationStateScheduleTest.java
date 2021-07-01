@@ -15,6 +15,7 @@
 package google.registry.model.common;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.common.DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_ONLY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_PRIMARY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_PRIMARY_READ_ONLY;
@@ -22,6 +23,7 @@ import static google.registry.model.common.DatabaseMigrationStateSchedule.Migrat
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.SQL_PRIMARY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.SQL_PRIMARY_READ_ONLY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.Assert.assertThrows;
 
@@ -30,6 +32,7 @@ import google.registry.model.EntityTestCase;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +41,11 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
   @BeforeEach
   void beforeEach() {
     fakeClock.setAutoIncrementByOneMilli();
+  }
+
+  @AfterEach
+  void afterEach() {
+    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
   }
 
   @Test
@@ -132,6 +140,15 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
                         DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP.toValueMap())))
         .hasMessageThat()
         .isEqualTo("Must be called in a transaction");
+  }
+
+  @Test
+  void testSuccess_factoryUsesSchedule() {
+    assertThat(tm().isOfy()).isTrue();
+    // set the schedule to have converted to SQL_PRIMARY in the past
+    fakeClock.setTo(START_OF_TIME.plusDays(1));
+    runValidTransition(DATASTORE_PRIMARY_READ_ONLY, SQL_PRIMARY);
+    assertThat(tm().isOfy()).isFalse();
   }
 
   private void runValidTransition(MigrationState from, MigrationState to) {

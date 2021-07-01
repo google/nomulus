@@ -74,6 +74,7 @@ import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -142,6 +143,11 @@ public class ReplayCommitLogsToSqlActionTest {
                         MigrationState.DATASTORE_PRIMARY)));
     TestObject.beforeSqlSaveCallCount = 0;
     TestObject.beforeSqlDeleteCallCount = 0;
+  }
+
+  @AfterEach
+  void afterEach() {
+    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
   }
 
   @Test
