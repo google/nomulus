@@ -107,6 +107,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
       return;
     }
     try {
+      logger.atInfo().log("Beginning replay of commit logs.");
       replayFiles();
       response.setStatus(HttpServletResponse.SC_OK);
       String message = "ReplayCommitLogsToSqlAction completed successfully.";
@@ -126,10 +127,12 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     DateTime replayTimeoutTime = clock.nowUtc().plus(REPLAY_TIMEOUT_DURATION);
     // Start at the first millisecond we haven't seen yet
     DateTime fromTime = jpaTm().transact(() -> SqlReplayCheckpoint.get().plusMillis(1));
+    logger.atInfo().log("Starting replay from: %s.", fromTime);
     // If there's an inconsistent file set, this will throw IllegalStateException and the job
     // will try later -- this is likely because an export hasn't finished yet.
     ImmutableList<GcsFileMetadata> commitLogFiles =
         diffLister.listDiffFiles(fromTime, /* current time */ null);
+    logger.atInfo().log("Found %d new commit log files to process.", commitLogFiles.size());
     int processedFiles = 0;
     for (GcsFileMetadata metadata : commitLogFiles) {
       // One transaction per GCS file
