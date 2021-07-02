@@ -187,7 +187,7 @@ public final class ReservedList
 
   @Override
   protected boolean refersToKey(Registry registry, Key<? extends BaseDomainLabelList<?, ?>> key) {
-    return registry.getReservedLists().contains(key);
+    return registry.getReservedLists().contains(key.getName());
   }
 
   /** Determines whether the ReservedList is in use on any Registry */
@@ -285,17 +285,15 @@ public final class ReservedList
   }
 
   private static ImmutableSet<ReservedList> loadReservedLists(
-      ImmutableSet<Key<ReservedList>> reservedListKeys) {
-    return reservedListKeys
-        .stream()
+      ImmutableSet<String> reservedListNames) {
+    return reservedListNames.stream()
         .map(
-            (listKey) -> {
+            (listName) -> {
               try {
-                return cache.get(listKey.getName());
+                return cache.get(listName);
               } catch (ExecutionException e) {
                 throw new UncheckedExecutionException(
-                    String.format(
-                        "Could not load the reserved list '%s' from the cache", listKey.getName()),
+                    String.format("Could not load the reserved list '%s' from the cache", listName),
                     e);
               }
             })

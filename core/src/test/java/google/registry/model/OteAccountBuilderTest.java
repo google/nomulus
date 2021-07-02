@@ -71,7 +71,7 @@ public final class OteAccountBuilderTest {
     Registry registry = Registry.get(tld);
     assertThat(registry).isNotNull();
     assertThat(registry.getPremiumList()).isPresent();
-    assertThat(registry.getPremiumList().get().getName()).isEqualTo("default_sandbox_list");
+    assertThat(registry.getPremiumList().get()).isEqualTo("default_sandbox_list");
     assertThat(registry.getTldStateTransitions()).containsExactly(START_OF_TIME, tldState);
     assertThat(registry.getDnsWriters()).containsExactly("VoidDnsWriter");
     assertThat(registry.getAddGracePeriodLength()).isEqualTo(Duration.standardHours(1));
