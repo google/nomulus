@@ -209,6 +209,28 @@ public class ReplayCommitLogsToSqlActionTest {
   }
 
   @Test
+  void testReplay_dryRun() throws Exception {
+    action.dryRun = true;
+    DateTime now = fakeClock.nowUtc();
+    jpaTm().transact(() -> jpaTm().insertWithoutBackup(TestObject.create("previous to keep")));
+    Key<CommitLogBucket> bucketKey = getBucketKey(1);
+    Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(bucketKey, now);
+    saveDiffFileNotToRestore(gcsService, now.minusMinutes(2));
+    jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
+    saveDiffFile(
+        gcsService,
+        createCheckpoint(now.minusMinutes(1)),
+        CommitLogManifest.create(bucketKey, now, null),
+        CommitLogMutation.create(manifestKey, TestObject.create("a")),
+        CommitLogMutation.create(manifestKey, TestObject.create("b")));
+
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo("Running in dry-run mode, would have processed 1 file(s).");
+  }
+
+  @Test
   void testReplay_manifestWithNoDeletions() throws Exception {
     DateTime now = fakeClock.nowUtc();
     jpaTm().transact(() -> jpaTm().insertWithoutBackup(TestObject.create("previous to keep")));

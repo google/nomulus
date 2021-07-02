@@ -230,7 +230,7 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/cron/fanout?queue=replay-commit-logs-to-sql&endpoint=/_dr/task/replayCommitLogsToSql&runInEmpty]]></url>
+    <url><![CDATA[/_dr/cron/fanout?queue=replay-commit-logs-to-sql&endpoint=/_dr/task/replayCommitLogsToSql&runInEmpty&dryRun=true]]></url>
     <description>
       Replays recent commit logs from Datastore to the SQL secondary backend.
     </description>
