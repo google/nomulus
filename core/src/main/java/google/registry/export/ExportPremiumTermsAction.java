@@ -138,7 +138,7 @@ public class ExportPremiumTermsAction implements Runnable {
 
   private String getFormattedPremiumTerms(Registry registry) {
     checkState(registry.getPremiumList().isPresent(), "%s does not have a premium list", tld);
-    String premiumListName = registry.getPremiumList().get().getName();
+    String premiumListName = registry.getPremiumList().get();
     checkState(
         PremiumListDao.getLatestRevision(premiumListName).isPresent(),
         "Could not load premium list for " + tld);

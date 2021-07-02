@@ -36,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
-import com.googlecode.objectify.Key;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.EntityTestCase;
 import google.registry.model.registry.Registry.RegistryNotFoundException;
@@ -211,8 +210,7 @@ public final class RegistryTest extends EntityTestCase {
                 .build());
     Registry r =
         Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
-    assertThat(r.getReservedLists().stream().map(Key::getName))
-        .containsExactly("tld-reserved5", "tld-reserved6");
+    assertThat(r.getReservedLists()).containsExactly("tld-reserved5", "tld-reserved6");
     r = Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of()).build();
     assertThat(r.getReservedLists()).isEmpty();
   }
@@ -240,8 +238,7 @@ public final class RegistryTest extends EntityTestCase {
             .asBuilder()
             .setReservedListsByName(ImmutableSet.of("tld-reserved15", "tld-reserved16"))
             .build();
-    assertThat(r.getReservedLists().stream().map(Key::getName))
-        .containsExactly("tld-reserved15", "tld-reserved16");
+    assertThat(r.getReservedLists()).containsExactly("tld-reserved15", "tld-reserved16");
     r = Registry.get("tld").asBuilder().setReservedListsByName(ImmutableSet.of()).build();
     assertThat(r.getReservedLists()).isEmpty();
   }
@@ -250,9 +247,9 @@ public final class RegistryTest extends EntityTestCase {
   void testSetPremiumList() {
     PremiumList pl2 = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
-    Optional<Key<PremiumList>> plKey = registry.getPremiumList();
-    assertThat(plKey).isPresent();
-    PremiumList stored = PremiumListDao.getLatestRevision(plKey.get().getName()).get();
+    Optional<String> pl = registry.getPremiumList();
+    assertThat(pl).isPresent();
+    PremiumList stored = PremiumListDao.getLatestRevision(pl.get()).get();
     assertThat(stored.getName()).isEqualTo("tld2");
   }
 
