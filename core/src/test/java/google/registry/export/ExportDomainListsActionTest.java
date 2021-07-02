@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import google.registry.export.ExportDomainListsAction.ExportDomainListsReducer;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
@@ -54,7 +55,7 @@ import org.mockito.ArgumentCaptor;
 @DualDatabaseTest
 class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAction> {
 
-  private GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private DriveConnection driveConnection = mock(DriveConnection.class);
   private ArgumentCaptor<byte[]> bytesExportedToDrive = ArgumentCaptor.forClass(byte[].class);
   private final FakeResponse response = new FakeResponse();

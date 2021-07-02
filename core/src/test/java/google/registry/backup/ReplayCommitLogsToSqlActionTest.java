@@ -45,6 +45,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth8;
 import com.googlecode.objectify.Key;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.contact.ContactResource;
@@ -110,7 +111,7 @@ public class ReplayCommitLogsToSqlActionTest {
           .build();
 
   /** Local GCS service. */
-  private final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   private final ReplayCommitLogsToSqlAction action = new ReplayCommitLogsToSqlAction();
   private final FakeResponse response = new FakeResponse();

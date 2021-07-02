@@ -24,6 +24,7 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.Storage.BlobListOption;
 import com.google.cloud.storage.StorageException;
 import com.google.cloud.storage.StorageOptions;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -31,7 +32,6 @@ import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.CredentialModule.DefaultCredential;
-import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.util.GoogleCredentialsBundle;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +41,11 @@ import java.nio.channels.Channels;
 import javax.annotation.CheckReturnValue;
 import javax.inject.Inject;
 
-/** Utilities for working with Google Cloud Storage. */
+/**
+ * Utilities for working with Google Cloud Storage.
+ *
+ * <p>It is {@link Serializable} so that it can be used in MapReduce or Beam.
+ */
 public class GcsUtils implements Serializable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -67,7 +71,8 @@ public class GcsUtils implements Serializable {
             .build());
   }
 
-  GcsUtils(StorageOptions storageOptions) {
+  @VisibleForTesting
+  public GcsUtils(StorageOptions storageOptions) {
     this.storageOptions = storageOptions;
   }
 
@@ -132,14 +137,13 @@ public class GcsUtils implements Serializable {
 
   /** Returns {@code true} if a file exists and is non-empty on Google Cloud Storage. */
   public boolean existsAndNotEmpty(BlobId blobId) {
-    Blob blob;
     try {
-      blob = storage().get(blobId);
+      Blob blob = storage().get(blobId);
+      return blob != null && blob.getSize() > 0;
     } catch (StorageException e) {
       logger.atWarning().withCause(e).log("Failed to check if GCS file exists");
       return false;
     }
-    return blob != null && blob.getSize() > 0;
   }
 
   /** Returns the user defined metadata of a GCS file if the file exists, or an empty map. */
@@ -176,11 +180,5 @@ public class GcsUtils implements Serializable {
   @Override
   public int hashCode() {
     return storageOptions.hashCode();
-  }
-
-  // TODO (jianglai): switch to the non-backported version of LocalStorageHelper once
-  // https://github.com/googleapis/java-storage-nio/pull/606 is released.
-  public static GcsUtils createForTesting() {
-    return new GcsUtils(LocalStorageHelper.getOptions());
   }
 }

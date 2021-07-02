@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.common.net.MediaType;
+import google.registry.gcs.backport.LocalStorageHelper;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,7 +36,7 @@ import org.junit.jupiter.api.Test;
 /** Unit tests for {@link GcsUtilsTest}. */
 class GcsUtilsTest {
 
-  private GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   private String bucket = "my-bucket";
   private String filename = "my-file";

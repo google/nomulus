@@ -32,6 +32,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
@@ -48,7 +49,7 @@ import org.junit.jupiter.api.Test;
 /** Tests for {@link GenerateZoneFilesAction}. */
 class GenerateZoneFilesActionTest extends MapreduceTestCase<GenerateZoneFilesAction> {
 
-  private final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   @Test
   void testGenerate() throws Exception {

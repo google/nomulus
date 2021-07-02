@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import com.google.cloud.storage.BlobId;
 import com.google.common.testing.TestLogHandler;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;
@@ -66,7 +67,7 @@ class IcannReportingUploadActionTest {
   private final IcannHttpReporter mockReporter = mock(IcannHttpReporter.class);
   private final SendEmailService emailService = mock(SendEmailService.class);
   private final FakeResponse response = new FakeResponse();
-  private final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final TestLogHandler logHandler = new TestLogHandler();
   private final Logger loggerToIntercept =
       Logger.getLogger(IcannReportingUploadAction.class.getCanonicalName());

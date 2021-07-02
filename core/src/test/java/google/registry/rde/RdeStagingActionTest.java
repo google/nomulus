@@ -40,6 +40,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.keyring.api.Keyring;
 import google.registry.keyring.api.PgpHelper;
 import google.registry.model.common.Cursor;
@@ -101,7 +102,7 @@ public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
 
   private final FakeClock clock = new FakeClock();
   private final FakeResponse response = new FakeResponse();
-  private final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final List<? super XjcRdeContentType> alreadyExtracted = new ArrayList<>();
 
   private static PGPPublicKey encryptKey;

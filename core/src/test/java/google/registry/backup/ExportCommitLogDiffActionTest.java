@@ -28,6 +28,7 @@ import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogCheckpoint;
@@ -51,7 +52,7 @@ public class ExportCommitLogDiffActionTest {
           .withOfyTestEntities(TestObject.class)
           .build();
 
-  private final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   private final DateTime now = DateTime.now(UTC);
   private final DateTime oneMinuteAgo = now.minusMinutes(1);

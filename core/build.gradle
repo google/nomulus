@@ -205,7 +205,6 @@ dependencies {
   compile deps['com.google.appengine:appengine-remote-api']
   compile deps['com.google.auth:google-auth-library-credentials']
   compile deps['com.google.auth:google-auth-library-oauth2-http']
-  compile deps['com.google.cloud:google-cloud-nio']
   compile deps['com.google.cloud.bigdataoss:util']
   compile deps['com.google.cloud.datastore:datastore-v1-proto-client']
   compile deps['com.google.cloud.sql:jdbc-socket-factory-core']
@@ -319,6 +318,7 @@ dependencies {
   annotationProcessor project(':processor')
   testAnnotationProcessor project(':processor')
 
+  testCompile deps['com.google.cloud:google-cloud-nio']
   testCompile deps['com.google.appengine:appengine-testing']
   testCompile deps['com.google.guava:guava-testlib']
   testCompile deps['com.google.monitoring-client:contrib']

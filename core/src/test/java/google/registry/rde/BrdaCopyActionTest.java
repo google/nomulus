@@ -25,6 +25,7 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.keyring.api.Keyring;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.BouncyCastleProviderExtension;
@@ -83,7 +84,7 @@ public class BrdaCopyActionTest {
     }
   }
 
-  private final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final BrdaCopyAction action = new BrdaCopyAction();
 
   @BeforeEach

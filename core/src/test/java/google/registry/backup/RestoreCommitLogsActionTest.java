@@ -36,6 +36,7 @@ import com.google.common.io.Resources;
 import com.google.common.primitives.Longs;
 import com.googlecode.objectify.Key;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.CommitLogBucket;
@@ -65,7 +66,7 @@ public class RestoreCommitLogsActionTest {
 
   private final DateTime now = DateTime.now(UTC);
   private final RestoreCommitLogsAction action = new RestoreCommitLogsAction();
-  private final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

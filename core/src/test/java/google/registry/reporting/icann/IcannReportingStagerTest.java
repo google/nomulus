@@ -29,6 +29,7 @@ import google.registry.bigquery.BigqueryConnection;
 import google.registry.bigquery.BigqueryConnection.DestinationTable;
 import google.registry.bigquery.BigqueryUtils.TableType;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
@@ -45,7 +46,7 @@ class IcannReportingStagerTest {
   FakeResponse response = new FakeResponse();
   private YearMonth yearMonth = new YearMonth(2017, 6);
   private String subdir = "icann/monthly/2017-06";
-  private GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   @RegisterExtension
   final AppEngineExtension appEngine =

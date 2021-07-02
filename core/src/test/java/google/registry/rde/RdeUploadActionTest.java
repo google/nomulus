@@ -51,6 +51,7 @@ import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.keyring.api.Keyring;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
@@ -107,7 +108,7 @@ public class RdeUploadActionTest {
   private static final BlobId REPORT_R1_FILE =
       BlobId.of("bucket", "tld_2010-10-17_full_S1_R1-report.xml.ghostryde");
 
-  private final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   @RegisterExtension final SftpServerExtension sftpd = new SftpServerExtension();
 

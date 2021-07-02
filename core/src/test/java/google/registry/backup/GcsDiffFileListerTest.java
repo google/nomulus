@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
 import java.util.logging.LogRecord;
@@ -49,7 +50,7 @@ public class GcsDiffFileListerTest {
 
   private final DateTime now = DateTime.now(UTC);
   private final GcsDiffFileLister diffLister = new GcsDiffFileLister();
-  private final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final TestLogHandler logHandler = new TestLogHandler();
 
   @RegisterExtension

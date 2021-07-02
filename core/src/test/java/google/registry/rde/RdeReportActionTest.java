@@ -44,6 +44,7 @@ import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteSource;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registry.Registry;
@@ -91,7 +92,7 @@ public class RdeReportActionTest {
   private final ArgumentCaptor<HTTPRequest> request = ArgumentCaptor.forClass(HTTPRequest.class);
   private final HTTPResponse httpResponse = mock(HTTPResponse.class);
 
-  private final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final BlobId reportFile =
       BlobId.of("tub", "test_2006-06-06_full_S1_R0-report.xml.ghostryde");
 

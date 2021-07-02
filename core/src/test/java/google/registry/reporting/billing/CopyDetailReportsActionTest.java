@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import com.google.cloud.storage.BlobId;
 import com.google.common.net.MediaType;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
@@ -49,7 +50,7 @@ class CopyDetailReportsActionTest {
   final AppEngineExtension appEngine =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
-  private final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   private FakeResponse response;
   private DriveConnection driveConnection;

@@ -31,6 +31,7 @@ import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.StorageException;
 import com.google.common.collect.ImmutableList;
 import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.keyring.api.PgpHelper;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
@@ -66,7 +67,7 @@ class RdeStagingReducerTest {
       AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private static final String GCS_BUCKET = "test-rde-bucket";
-  private static final GcsUtils gcsUtils = GcsUtils.createForTesting();
+  private static final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private static final PGPPrivateKey decryptionKey =
       new FakeKeyringModule().get().getRdeStagingDecryptionKey();
   private static final PGPPublicKey encryptionKey =
