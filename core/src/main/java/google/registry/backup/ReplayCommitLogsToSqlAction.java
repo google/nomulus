@@ -14,7 +14,9 @@
 
 package google.registry.backup;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
+import static google.registry.backup.RestoreCommitLogsAction.DRY_RUN_PARAM;
 import static google.registry.model.ofy.EntityWritePriorities.getEntityPriority;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
@@ -25,6 +27,7 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.cloudstorage.GcsFileMetadata;
 import com.google.appengine.tools.cloudstorage.GcsService;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
@@ -35,6 +38,7 @@ import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.persistence.VKey;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
+import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.schema.replay.DatastoreEntity;
@@ -78,6 +82,11 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
   @Inject GcsDiffFileLister diffLister;
   @Inject Clock clock;
 
+  /** If true, will exit after logging the commit log files that would otherwise be replayed. */
+  @Inject
+  @Parameter(DRY_RUN_PARAM)
+  boolean dryRun;
+
   @Inject
   ReplayCommitLogsToSqlAction() {}
 
@@ -108,11 +117,26 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     }
     try {
       logger.atInfo().log("Beginning replay of commit logs.");
-      replayFiles();
-      response.setStatus(HttpServletResponse.SC_OK);
-      String message = "ReplayCommitLogsToSqlAction completed successfully.";
-      response.setPayload(message);
-      logger.atInfo().log(message);
+      ImmutableList<GcsFileMetadata> commitLogFiles = getFilesToReplay();
+      if (dryRun) {
+        response.setStatus(HttpServletResponse.SC_OK);
+        ImmutableList<String> filenames =
+            commitLogFiles.stream()
+                .limit(10)
+                .map(file -> file.getFilename().getObjectName())
+                .collect(toImmutableList());
+        String dryRunMessage =
+            "Running in dry-run mode; would have processed %d files. They are (limit 10):\n"
+                + Joiner.on('\n').join(filenames);
+        response.setPayload(dryRunMessage);
+        logger.atInfo().log(dryRunMessage);
+      } else {
+        replayFiles(commitLogFiles);
+        response.setStatus(HttpServletResponse.SC_OK);
+        String message = "ReplayCommitLogsToSqlAction completed successfully.";
+        response.setPayload(message);
+        logger.atInfo().log(message);
+      }
     } catch (Throwable t) {
       String message = "Errored out replaying files.";
       logger.atSevere().withCause(t).log(message);
@@ -123,8 +147,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     }
   }
 
-  private void replayFiles() {
-    DateTime replayTimeoutTime = clock.nowUtc().plus(REPLAY_TIMEOUT_DURATION);
+  private ImmutableList<GcsFileMetadata> getFilesToReplay() {
     // Start at the first millisecond we haven't seen yet
     DateTime fromTime = jpaTm().transact(() -> SqlReplayCheckpoint.get().plusMillis(1));
     logger.atInfo().log("Starting replay from: %s.", fromTime);
@@ -133,6 +156,11 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     ImmutableList<GcsFileMetadata> commitLogFiles =
         diffLister.listDiffFiles(fromTime, /* current time */ null);
     logger.atInfo().log("Found %d new commit log files to process.", commitLogFiles.size());
+    return commitLogFiles;
+  }
+
+  private void replayFiles(ImmutableList<GcsFileMetadata> commitLogFiles) {
+    DateTime replayTimeoutTime = clock.nowUtc().plus(REPLAY_TIMEOUT_DURATION);
     int processedFiles = 0;
     for (GcsFileMetadata metadata : commitLogFiles) {
       // One transaction per GCS file
