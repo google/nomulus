@@ -111,7 +111,7 @@ class UpdateTldCommand extends CreateOrUpdateTldCommand {
   ImmutableSet<String> getReservedLists(Registry oldRegistry) {
     return formUpdatedList(
         "reserved lists",
-        oldRegistry.getReservedLists(),
+        oldRegistry.getReservedListNames(),
         reservedListNames,
         reservedListsAdd,
         reservedListsRemove);

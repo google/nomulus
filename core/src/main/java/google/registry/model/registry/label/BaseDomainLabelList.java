@@ -171,6 +171,7 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
         .collect(toImmutableSet());
   }
 
+  // TODO(b/193043636): Refactor this class to no longer use key references
   protected abstract boolean refersToKey(
       Registry registry, Key<? extends BaseDomainLabelList<?, ?>> key);
 

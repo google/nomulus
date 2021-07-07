@@ -278,7 +278,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
         "--roid_suffix=Q9JYB4C",
         "--dns_writers=VoidDnsWriter",
         "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getReservedLists())
+    assertThat(Registry.get("xn--q9jyb4c").getReservedListNames())
         .containsExactly("xn--q9jyb4c_abuse", "common_abuse");
   }
 

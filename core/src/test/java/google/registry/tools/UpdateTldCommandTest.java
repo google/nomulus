@@ -252,7 +252,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   void testSuccess_setReservedLists() throws Exception {
     runCommandForced("--reserved_lists=xn--q9jyb4c_r1,xn--q9jyb4c_r2", "xn--q9jyb4c");
 
-    assertThat(Registry.get("xn--q9jyb4c").getReservedLists())
+    assertThat(Registry.get("xn--q9jyb4c").getReservedListNames())
         .containsExactly("xn--q9jyb4c_r1", "xn--q9jyb4c_r2");
   }
 
@@ -262,7 +262,8 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
         .setReservedListsByName(ImmutableSet.of("xn--q9jyb4c_r1", "xn--q9jyb4c_r2"))
         .build());
     runCommandForced("--reserved_lists=xn--q9jyb4c_r2", "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getReservedLists()).containsExactly("xn--q9jyb4c_r2");
+    assertThat(Registry.get("xn--q9jyb4c").getReservedListNames())
+        .containsExactly("xn--q9jyb4c_r2");
   }
 
   @Test
@@ -271,7 +272,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
         .setReservedListsByName(ImmutableSet.of("xn--q9jyb4c_r1"))
         .build());
     runCommandForced("--add_reserved_lists=xn--q9jyb4c_r2", "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getReservedLists())
+    assertThat(Registry.get("xn--q9jyb4c").getReservedListNames())
         .containsExactly("xn--q9jyb4c_r1", "xn--q9jyb4c_r2");
   }
 
@@ -281,7 +282,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
         .setReservedListsByName(ImmutableSet.of("xn--q9jyb4c_r1", "xn--q9jyb4c_r2"))
         .build());
     runCommandForced("--remove_reserved_lists=xn--q9jyb4c_r1,xn--q9jyb4c_r2", "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getReservedLists()).isEmpty();
+    assertThat(Registry.get("xn--q9jyb4c").getReservedListNames()).isEmpty();
   }
 
   @Test
@@ -290,7 +291,8 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
         .setReservedListsByName(ImmutableSet.of("xn--q9jyb4c_r1", "xn--q9jyb4c_r2"))
         .build());
     runCommandForced("--remove_reserved_lists=xn--q9jyb4c_r1", "xn--q9jyb4c");
-    assertThat(Registry.get("xn--q9jyb4c").getReservedLists()).containsExactly("xn--q9jyb4c_r2");
+    assertThat(Registry.get("xn--q9jyb4c").getReservedListNames())
+        .containsExactly("xn--q9jyb4c_r2");
   }
 
   @Test

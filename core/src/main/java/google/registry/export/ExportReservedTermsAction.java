@@ -63,7 +63,7 @@ public class ExportReservedTermsAction implements Runnable {
     try {
       Registry registry = Registry.get(tld);
       String resultMsg;
-      if (registry.getReservedLists().isEmpty() && isNullOrEmpty(registry.getDriveFolderId())) {
+      if (registry.getReservedListNames().isEmpty() && isNullOrEmpty(registry.getDriveFolderId())) {
         resultMsg = "No reserved lists configured";
         logger.atInfo().log("No reserved terms to export for TLD %s", tld);
       } else if (registry.getDriveFolderId() == null) {

@@ -161,18 +161,18 @@ public final class RegistryTest extends EntityTestCase {
             .asBuilder()
             .setReservedLists(ImmutableSet.of(rl15))
             .build();
-    assertThat(registry1.getReservedLists()).hasSize(1);
+    assertThat(registry1.getReservedListNames()).hasSize(1);
     Registry registry2 =
         registry1.asBuilder().setReservedLists(ImmutableSet.of(rl15, rl16)).build();
-    assertThat(registry1.getReservedLists()).hasSize(1);
-    assertThat(registry2.getReservedLists()).hasSize(2);
+    assertThat(registry1.getReservedListNames()).hasSize(1);
+    assertThat(registry2.getReservedListNames()).hasSize(2);
   }
 
   @TestOfyAndSql
   void testGetReservedLists_doesntReturnNullWhenUninitialized() {
     Registry registry = newRegistry("foo", "FOO");
-    assertThat(registry.getReservedLists()).isNotNull();
-    assertThat(registry.getReservedLists()).isEmpty();
+    assertThat(registry.getReservedListNames()).isNotNull();
+    assertThat(registry.getReservedListNames()).isEmpty();
   }
 
   @TestOfyAndSql
@@ -210,9 +210,9 @@ public final class RegistryTest extends EntityTestCase {
                 .build());
     Registry r =
         Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
-    assertThat(r.getReservedLists()).containsExactly("tld-reserved5", "tld-reserved6");
+    assertThat(r.getReservedListNames()).containsExactly("tld-reserved5", "tld-reserved6");
     r = Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of()).build();
-    assertThat(r.getReservedLists()).isEmpty();
+    assertThat(r.getReservedListNames()).isEmpty();
   }
 
   @TestOfyAndSql
@@ -238,9 +238,9 @@ public final class RegistryTest extends EntityTestCase {
             .asBuilder()
             .setReservedListsByName(ImmutableSet.of("tld-reserved15", "tld-reserved16"))
             .build();
-    assertThat(r.getReservedLists()).containsExactly("tld-reserved15", "tld-reserved16");
+    assertThat(r.getReservedListNames()).containsExactly("tld-reserved15", "tld-reserved16");
     r = Registry.get("tld").asBuilder().setReservedListsByName(ImmutableSet.of()).build();
-    assertThat(r.getReservedLists()).isEmpty();
+    assertThat(r.getReservedListNames()).isEmpty();
   }
 
   @TestOfyAndSql

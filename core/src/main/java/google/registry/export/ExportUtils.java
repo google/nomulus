@@ -20,7 +20,6 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
 import google.registry.model.registry.label.ReservedListDao;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.inject.Inject;
@@ -40,13 +39,15 @@ public final class ExportUtils {
   public String exportReservedTerms(Registry registry) {
     StringBuilder termsBuilder = new StringBuilder(reservedTermsExportDisclaimer).append("\n");
     Set<String> reservedTerms = new TreeSet<>();
-    for (String rlName : registry.getReservedLists()) {
-      Optional<ReservedList> reservedList = ReservedListDao.getLatestRevision(rlName);
-      if (!reservedList.isPresent()) {
-        throw new IllegalStateException(String.format("Reserved list %s does not exist", rlName));
-      }
-      if (reservedList.get().getShouldPublish()) {
-        for (ReservedListEntry entry : reservedList.get().getReservedListEntries().values()) {
+    for (String rlName : registry.getReservedListNames()) {
+      ReservedList reservedList =
+          ReservedListDao.getLatestRevision(rlName)
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          String.format("Reserved list %s does not exist", rlName)));
+      if (reservedList.getShouldPublish()) {
+        for (ReservedListEntry entry : reservedList.getReservedListEntries().values()) {
           reservedTerms.add(entry.getLabel());
         }
       }

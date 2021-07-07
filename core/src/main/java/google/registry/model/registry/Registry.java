@@ -399,7 +399,7 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
    * for a registry, the database should be queried for the entity with this name that has the
    * largest revision ID.
    */
-  public ImmutableSet<String> getReservedLists() {
+  public ImmutableSet<String> getReservedListNames() {
     return nullToEmptyImmutableCopy(reservedListNames);
   }
 
