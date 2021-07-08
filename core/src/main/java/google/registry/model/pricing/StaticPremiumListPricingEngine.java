@@ -39,9 +39,7 @@ public final class StaticPremiumListPricingEngine implements PremiumPricingEngin
     String label = InternetDomainName.from(fullyQualifiedDomainName).parts().get(0);
     Registry registry = Registry.get(checkNotNull(tld, "tld"));
     Optional<Money> premiumPrice =
-        registry
-            .getPremiumList()
-            .flatMap(listKey -> PremiumListDao.getPremiumPrice(listKey.getName(), label));
+        registry.getPremiumListName().flatMap(pl -> PremiumListDao.getPremiumPrice(pl, label));
     return DomainPrices.create(
         premiumPrice.isPresent(),
         premiumPrice.orElse(registry.getStandardCreateCost()),

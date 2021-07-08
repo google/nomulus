@@ -658,7 +658,6 @@ class google.registry.model.registry.Registry {
   boolean dnsPaused;
   boolean escrowEnabled;
   boolean invoicingEnabled;
-  com.googlecode.objectify.Key<google.registry.model.registry.label.PremiumList> premiumList;
   google.registry.model.CreateAutoTimestamp creationTime;
   google.registry.model.common.TimedTransitionProperty<google.registry.model.registry.Registry$TldState, google.registry.model.registry.Registry$TldStateTransition> tldStateTransitions;
   google.registry.model.common.TimedTransitionProperty<org.joda.money.Money, google.registry.model.registry.Registry$BillingCostTransition> eapFeeSchedule;
@@ -672,7 +671,6 @@ class google.registry.model.registry.Registry {
   java.lang.String roidSuffix;
   java.lang.String tldStr;
   java.lang.String tldUnicode;
-  java.util.Set<com.googlecode.objectify.Key<google.registry.model.registry.label.ReservedList>> reservedLists;
   java.util.Set<java.lang.String> allowedFullyQualifiedHostNames;
   java.util.Set<java.lang.String> allowedRegistrantContactIds;
   java.util.Set<java.lang.String> dnsWriters;

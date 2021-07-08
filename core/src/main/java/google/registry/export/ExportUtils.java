@@ -15,11 +15,11 @@
 package google.registry.export;
 
 import com.google.common.base.Joiner;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedList.ReservedListEntry;
+import google.registry.model.registry.label.ReservedListDao;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.inject.Inject;
@@ -39,8 +39,13 @@ public final class ExportUtils {
   public String exportReservedTerms(Registry registry) {
     StringBuilder termsBuilder = new StringBuilder(reservedTermsExportDisclaimer).append("\n");
     Set<String> reservedTerms = new TreeSet<>();
-    for (Key<ReservedList> key : registry.getReservedLists()) {
-      ReservedList reservedList = ReservedList.load(key).get();
+    for (String reservedListName : registry.getReservedListNames()) {
+      ReservedList reservedList =
+          ReservedListDao.getLatestRevision(reservedListName)
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          String.format("Reserved list %s does not exist", reservedListName)));
       if (reservedList.getShouldPublish()) {
         for (ReservedListEntry entry : reservedList.getReservedListEntries().values()) {
           reservedTerms.add(entry.getLabel());

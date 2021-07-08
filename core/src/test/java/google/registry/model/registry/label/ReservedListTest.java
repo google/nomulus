@@ -86,7 +86,7 @@ class ReservedListTest {
 
   @Test
   void testGetReservationTypes_allLabelsAreUnreserved_withNoReservedLists() {
-    assertThat(Registry.get("tld").getReservedLists()).isEmpty();
+    assertThat(Registry.get("tld").getReservedListNames()).isEmpty();
     assertThat(getReservationTypes("doodle", "tld")).isEmpty();
     assertThat(getReservationTypes("access", "tld")).isEmpty();
     assertThat(getReservationTypes("rich", "tld")).isEmpty();

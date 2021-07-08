@@ -16,7 +16,6 @@ package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.newRegistry;
@@ -27,7 +26,6 @@ import static org.joda.time.Duration.standardDays;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.googlecode.objectify.Key;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
@@ -203,22 +201,16 @@ public class PremiumListDaoTest {
 
   @Test
   void getPremiumPrice_worksSuccessfully() {
+    PremiumList premiumList =
+        PremiumListDao.save(
+            new PremiumList.Builder()
+                .setName("premlist")
+                .setCurrency(USD)
+                .setLabelsToPrices(TEST_PRICES)
+                .setCreationTime(fakeClock.nowUtc())
+                .build());
     persistResource(
-        newRegistry("foobar", "FOOBAR")
-            .asBuilder()
-            .setPremiumListKey(
-                Key.create(
-                    getCrossTldKey(),
-                    google.registry.model.registry.label.PremiumList.class,
-                    "premlist"))
-            .build());
-    PremiumListDao.save(
-        new PremiumList.Builder()
-            .setName("premlist")
-            .setCurrency(USD)
-            .setLabelsToPrices(TEST_PRICES)
-            .setCreationTime(fakeClock.nowUtc())
-            .build());
+        newRegistry("foobar", "FOOBAR").asBuilder().setPremiumList(premiumList).build());
     assertThat(PremiumListDao.getPremiumPrice("premlist", "silver")).hasValue(Money.of(USD, 10.23));
     assertThat(PremiumListDao.getPremiumPrice("premlist", "gold")).hasValue(Money.of(USD, 1305.47));
     assertThat(PremiumListDao.getPremiumPrice("premlist", "zirconium")).isEmpty();
@@ -226,29 +218,23 @@ public class PremiumListDaoTest {
 
   @Test
   void testGetPremiumPrice_worksForJPY() {
+    PremiumList premiumList =
+        PremiumListDao.save(
+            new PremiumList.Builder()
+                .setName("premlist")
+                .setCurrency(JPY)
+                .setLabelsToPrices(
+                    ImmutableMap.of(
+                        "silver",
+                        BigDecimal.valueOf(10.00),
+                        "gold",
+                        BigDecimal.valueOf(1000.0),
+                        "palladium",
+                        BigDecimal.valueOf(15000)))
+                .setCreationTime(fakeClock.nowUtc())
+                .build());
     persistResource(
-        newRegistry("foobar", "FOOBAR")
-            .asBuilder()
-            .setPremiumListKey(
-                Key.create(
-                    getCrossTldKey(),
-                    google.registry.model.registry.label.PremiumList.class,
-                    "premlist"))
-            .build());
-    PremiumListDao.save(
-        new PremiumList.Builder()
-            .setName("premlist")
-            .setCurrency(JPY)
-            .setLabelsToPrices(
-                ImmutableMap.of(
-                    "silver",
-                    BigDecimal.valueOf(10.00),
-                    "gold",
-                    BigDecimal.valueOf(1000.0),
-                    "palladium",
-                    BigDecimal.valueOf(15000)))
-            .setCreationTime(fakeClock.nowUtc())
-            .build());
+        newRegistry("foobar", "FOOBAR").asBuilder().setPremiumList(premiumList).build());
     assertThat(PremiumListDao.getPremiumPrice("premlist", "silver")).hasValue(moneyOf(JPY, 10));
     assertThat(PremiumListDao.getPremiumPrice("premlist", "gold")).hasValue(moneyOf(JPY, 1000));
     assertThat(PremiumListDao.getPremiumPrice("premlist", "palladium"))

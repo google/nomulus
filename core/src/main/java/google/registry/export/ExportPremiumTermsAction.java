@@ -113,7 +113,7 @@ public class ExportPremiumTermsAction implements Runnable {
           "Skipping premium terms export for TLD %s because Drive folder isn't specified", tld);
       return Optional.of("Skipping export because no Drive folder is associated with this TLD");
     }
-    if (!registry.getPremiumList().isPresent()) {
+    if (!registry.getPremiumListName().isPresent()) {
       logger.atInfo().log("No premium terms to export for TLD %s", tld);
       return Optional.of("No premium lists configured");
     }
@@ -137,8 +137,8 @@ public class ExportPremiumTermsAction implements Runnable {
   }
 
   private String getFormattedPremiumTerms(Registry registry) {
-    checkState(registry.getPremiumList().isPresent(), "%s does not have a premium list", tld);
-    String premiumListName = registry.getPremiumList().get().getName();
+    checkState(registry.getPremiumListName().isPresent(), "%s does not have a premium list", tld);
+    String premiumListName = registry.getPremiumListName().get();
     checkState(
         PremiumListDao.getLatestRevision(premiumListName).isPresent(),
         "Could not load premium list for " + tld);

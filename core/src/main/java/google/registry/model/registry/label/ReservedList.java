@@ -20,7 +20,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
-import static google.registry.model.ImmutableObject.Insignificant;
 import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
@@ -187,7 +186,7 @@ public final class ReservedList
 
   @Override
   protected boolean refersToKey(Registry registry, Key<? extends BaseDomainLabelList<?, ?>> key) {
-    return registry.getReservedLists().contains(key);
+    return registry.getReservedListNames().contains(key.getName());
   }
 
   /** Determines whether the ReservedList is in use on any Registry */
@@ -236,11 +235,6 @@ public final class ReservedList
     return getFromCache(listName, cache);
   }
 
-  /** Loads a ReservedList from its Objectify key. */
-  public static Optional<ReservedList> load(Key<ReservedList> key) {
-    return get(key.getName());
-  }
-
   /**
    * Queries the set of all reserved lists associated with the specified TLD and returns the
    * reservation types of the label.
@@ -270,7 +264,7 @@ public final class ReservedList
         new ImmutableSet.Builder<>();
 
     // Loop through all reservation lists and add each of them.
-    for (ReservedList rl : loadReservedLists(registry.getReservedLists())) {
+    for (ReservedList rl : loadReservedLists(registry.getReservedListNames())) {
       if (rl.getReservedListEntries().containsKey(label)) {
         ReservedListEntry entry = rl.getReservedListEntries().get(label);
         entriesBuilder.add(entry);
@@ -285,17 +279,15 @@ public final class ReservedList
   }
 
   private static ImmutableSet<ReservedList> loadReservedLists(
-      ImmutableSet<Key<ReservedList>> reservedListKeys) {
-    return reservedListKeys
-        .stream()
+      ImmutableSet<String> reservedListNames) {
+    return reservedListNames.stream()
         .map(
-            (listKey) -> {
+            (listName) -> {
               try {
-                return cache.get(listKey.getName());
+                return cache.get(listName);
               } catch (ExecutionException e) {
                 throw new UncheckedExecutionException(
-                    String.format(
-                        "Could not load the reserved list '%s' from the cache", listKey.getName()),
+                    String.format("Could not load the reserved list '%s' from the cache", listName),
                     e);
               }
             })

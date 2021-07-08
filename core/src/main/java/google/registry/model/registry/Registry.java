@@ -47,7 +47,6 @@ import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Mapify;
-import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.OnSave;
 import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
@@ -112,26 +111,6 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   @PostLoad
   void postLoad() {
     tldStr = tldStrId;
-    // TODO(sarahbot@): Remove the rest of this method after this data migration is complete
-    if (premiumListName != null) {
-      premiumList = Key.create(getCrossTldKey(), PremiumList.class, premiumListName);
-    }
-    if (reservedListNames != null) {
-      reservedLists =
-          reservedListNames.stream()
-              .map(name -> Key.create(getCrossTldKey(), ReservedList.class, name))
-              .collect(toImmutableSet());
-    }
-  }
-
-  // TODO(sarahbot@): Remove this method after this data migration is complete
-  @OnLoad
-  void onLoad() {
-    if (reservedLists != null) {
-      reservedListNames =
-          reservedLists.stream().map(key -> key.getName()).collect(toImmutableSet());
-    }
-    premiumListName = premiumList == null ? null : premiumList.getName();
   }
 
   /** The suffix that identifies roids as belonging to this specific tld, e.g. -HOW for .how. */
@@ -408,9 +387,6 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
   @Column(nullable = false)
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
-  /** The set of reserved lists that are applicable to this registry. */
-  @Transient Set<Key<ReservedList>> reservedLists;
-
   /** The set of reserved list names that are applicable to this registry. */
   @Column(name = "reserved_list_names")
   Set<String> reservedListNames;
@@ -423,12 +399,9 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
    * for a registry, the database should be queried for the entity with this name that has the
    * largest revision ID.
    */
-  public ImmutableSet<Key<ReservedList>> getReservedLists() {
-    return nullToEmptyImmutableCopy(reservedLists);
+  public ImmutableSet<String> getReservedListNames() {
+    return nullToEmptyImmutableCopy(reservedListNames);
   }
-
-  /** The static {@link PremiumList} for this TLD, if there is one. */
-  @Transient Key<PremiumList> premiumList;
 
   /**
    * The name of the {@link PremiumList} for this TLD, if there is one.
@@ -647,8 +620,8 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
     return anchorTenantAddGracePeriodLength;
   }
 
-  public Optional<Key<PremiumList>> getPremiumList() {
-    return Optional.ofNullable(premiumList);
+  public Optional<String> getPremiumListName() {
+    return Optional.ofNullable(premiumListName);
   }
 
   public CurrencyUnit getCurrency() {
@@ -919,26 +892,15 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
 
     public Builder setReservedLists(Set<ReservedList> reservedLists) {
       checkArgumentNotNull(reservedLists, "reservedLists must not be null");
-      ImmutableSet.Builder<Key<ReservedList>> builder = new ImmutableSet.Builder<>();
       ImmutableSet.Builder<String> nameBuilder = new ImmutableSet.Builder<>();
       for (ReservedList reservedList : reservedLists) {
-        builder.add(Key.create(reservedList));
         nameBuilder.add(reservedList.getName());
       }
-      getInstance().reservedLists = builder.build();
       getInstance().reservedListNames = nameBuilder.build();
       return this;
     }
 
     public Builder setPremiumList(@Nullable PremiumList premiumList) {
-      getInstance().premiumList = (premiumList == null) ? null : Key.create(premiumList);
-      getInstance().premiumListName = (premiumList == null) ? null : premiumList.getName();
-      return this;
-    }
-
-    @VisibleForTesting
-    public Builder setPremiumListKey(@Nullable Key<PremiumList> premiumList) {
-      getInstance().premiumList = premiumList;
       getInstance().premiumListName = (premiumList == null) ? null : premiumList.getName();
       return this;
     }
