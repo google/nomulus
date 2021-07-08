@@ -490,7 +490,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             loadByKey(
                 VKey.createSql(
                     possibleChild.getClass(),
-                    // Casting to Serializable is safe according to JPA 2.x spec.
+                    // Casting to Serializable is safe according to JPA (JSR 338 sec. 2.4).
                     (Serializable) emf.getPersistenceUnitUtil().getIdentifier(possibleChild)));
     return returnValue;
   }
