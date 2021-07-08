@@ -517,13 +517,10 @@ public class Registrar extends ImmutableObject
     return lastCertificateUpdateTime;
   }
 
-<<<<<<< HEAD
   public DateTime getLastExpiringCertNotificationSentDate() {
     return lastExpiringCertNotificationSentDate;
   }
 
-=======
->>>>>>> 0bf5de7ba (Resolve merge conflict)
   public DateTime getLastExpiringFailoverCertNotificationSentDate() {
     return lastExpiringFailoverCertNotificationSentDate;
   }

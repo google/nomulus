@@ -44,9 +44,6 @@ import org.bouncycastle.util.io.pem.PemObjectGenerator;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
-import org.testcontainers.shaded.org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
-import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemObjectGenerator;
-import org.testcontainers.shaded.org.bouncycastle.util.io.pem.PemWriter;
 
 /** An utility to check that a given certificate meets our requirements */
 public class CertificateChecker {
@@ -252,45 +249,6 @@ public class CertificateChecker {
                 .plusDays(expirationWarningIntervalDays)
                 .toDate()
                 .after(now.toDate()));
-  }
-
-  /** Serializes the certificate object to a certificate string. */
-  public String serializeCertificate(X509Certificate certificate) throws Exception {
-    StringWriter sw = new StringWriter();
-    try (PemWriter pw = new PemWriter(sw)) {
-      PemObjectGenerator generator = new JcaMiscPEMGenerator(certificate);
-      pw.writeObject(generator);
-    }
-    return sw.toString();
-  }
-
-  /** Returns {@code true} if the client should receive a notification email. */
-  public boolean shouldReceiveExpiringNotification(
-      @Nullable DateTime lastExpiringNotificationSentDate, String certificateStr) {
-    X509Certificate certificate = getCertificate(certificateStr);
-    DateTime now = clock.nowUtc();
-    Date expirationDate = certificate.getNotAfter();
-
-    if (expirationDate.before(now.toDate())) {
-      return false;
-    }
-    /*
-     * Client should receive notification email if : 1) certificate's expiration day < current date
-     * + 30 days AND 2) lastExpiringNotificationSentDate is null (client has not received their
-     * first notification) OR lastExpiringNotificationSentDate is not null but the gap between
-     * lastExpiringNotificationSentDate and currentDate is greater than 15 days.
-     *
-     * <p>daysToExpiration = 30, expiringNotificationInterval = 15;
-     */
-    return (expirationDate.before(now.plusDays(daysToExpiration).toDate())
-            || expirationDate.equals(now.plusDays(daysToExpiration).toDate()))
-        && (lastExpiringNotificationSentDate == null
-            || (lastExpiringNotificationSentDate
-                    .plusDays(expirationWarningIntervalDays)
-                    .isBefore(now)
-                || lastExpiringNotificationSentDate
-                    .plusDays(expirationWarningIntervalDays)
-                    .isEqual(now)));
   }
 
   private String getViolationDisplayMessage(CertificateViolation certificateViolation) {
