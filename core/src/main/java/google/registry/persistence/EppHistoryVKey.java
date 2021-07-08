@@ -101,7 +101,7 @@ public abstract class EppHistoryVKey<K, E extends EppResource> extends Immutable
     return VKey.create(vKeyType, createSqlKey(), createOfyKey());
   }
 
-  public abstract Object createSqlKey();
+  public abstract Serializable createSqlKey();
 
   public abstract Key<K> createOfyKey();
 }

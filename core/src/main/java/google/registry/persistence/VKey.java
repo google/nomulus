@@ -37,7 +37,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   private static final long serialVersionUID = -5291472863840231240L;
 
   // The SQL key for the referenced entity.
-  Object sqlKey;
+  Serializable sqlKey;
 
   // The objectify key for the referenced entity.
   Key<T> ofyKey;
@@ -46,7 +46,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
 
   VKey() {}
 
-  VKey(Class<? extends T> kind, Key<T> ofyKey, Object sqlKey) {
+  VKey(Class<? extends T> kind, Key<T> ofyKey, Serializable sqlKey) {
     this.kind = kind;
     this.ofyKey = ofyKey;
     this.sqlKey = sqlKey;
@@ -57,7 +57,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    *
    * <p>Deprecated. Create symmetric keys with create() instead.
    */
-  public static <T> VKey<T> createSql(Class<T> kind, Object sqlKey) {
+  public static <T> VKey<T> createSql(Class<T> kind, Serializable sqlKey) {
     checkArgumentNotNull(kind, "kind must not be null");
     checkArgumentNotNull(sqlKey, "sqlKey must not be null");
     return new VKey<T>(kind, null, sqlKey);
@@ -71,7 +71,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   }
 
   /** Creates a {@link VKey} which only contains both sql and ofy primary key. */
-  public static <T> VKey<T> create(Class<T> kind, Object sqlKey, Key<T> ofyKey) {
+  public static <T> VKey<T> create(Class<T> kind, Serializable sqlKey, Key<T> ofyKey) {
     checkArgumentNotNull(kind, "kind must not be null");
     checkArgumentNotNull(sqlKey, "sqlKey must not be null");
     checkArgumentNotNull(ofyKey, "ofyKey must not be null");
@@ -84,8 +84,8 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    * <p>IMPORTANT USAGE NOTE: Datastore entities that are not roots of entity groups (i.e. those
    * that do not have a null parent in their Objectify keys) require the full entity group
    * inheritance chain to be specified and thus cannot use this create method. You need to use
-   * {@link #create(Class, Object, Key)} instead and pass in the full, valid parent field in the
-   * Datastore key.
+   * {@link #create(Class, Serializable, Key)} instead and pass in the full, valid parent field in
+   * the Datastore key.
    */
   public static <T> VKey<T> create(Class<T> kind, long id) {
     checkArgument(
@@ -102,8 +102,8 @@ public class VKey<T> extends ImmutableObject implements Serializable {
    * <p>IMPORTANT USAGE NOTE: Datastore entities that are not roots of entity groups (i.e. those
    * that do not have a null parent in their Objectify keys) require the full entity group
    * inheritance chain to be specified and thus cannot use this create method. You need to use
-   * {@link #create(Class, Object, Key)} instead and pass in the full, valid parent field in the
-   * Datastore key.
+   * {@link #create(Class, Serializable, Key)} instead and pass in the full, valid parent field in
+   * the Datastore key.
    */
   public static <T> VKey<T> create(Class<T> kind, String name) {
     checkArgument(
@@ -172,7 +172,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
       throw new IllegalArgumentException("Missing value for last key of type " + lastClass);
     }
 
-    Object sqlKey = getSqlKey();
+    Serializable sqlKey = getSqlKey();
     Key<T> ofyKey =
         sqlKey instanceof Long
             ? Key.create(lastKey, getKind(), (Long) sqlKey)
@@ -197,7 +197,7 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   }
 
   /** Returns the SQL primary key. */
-  public Object getSqlKey() {
+  public Serializable getSqlKey() {
     checkState(sqlKey != null, "Attempting obtain a null SQL key.");
     return this.sqlKey;
   }

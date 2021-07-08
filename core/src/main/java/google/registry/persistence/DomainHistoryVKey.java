@@ -21,6 +21,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.reporting.HistoryEntry;
+import java.io.Serializable;
 import javax.persistence.Embeddable;
 
 /** {@link VKey} for {@link HistoryEntry} which parent is {@link DomainBase}. */
@@ -35,7 +36,7 @@ public class DomainHistoryVKey extends EppHistoryVKey<HistoryEntry, DomainBase> 
   }
 
   @Override
-  public Object createSqlKey() {
+  public Serializable createSqlKey() {
     return new DomainHistoryId(repoId, historyRevisionId);
   }
 
