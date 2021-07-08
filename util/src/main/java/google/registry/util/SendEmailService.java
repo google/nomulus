@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Properties;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.mail.Address;
 import javax.mail.BodyPart;
 import javax.mail.Message;
 import javax.mail.Message.RecipientType;
@@ -50,8 +51,8 @@ public class SendEmailService {
   }
 
   /**
-   * Converts the provided message content into a {@link javax.mail.Message} and sends it with
-   * retry on transient failures.
+   * Converts the provided message content into a {@link javax.mail.Message} and sends it with retry
+   * on transient failures.
    */
   public void sendEmail(EmailMessage emailMessage) {
     retrier.callWithRetry(
@@ -78,9 +79,8 @@ public class SendEmailService {
             attachmentPart.setFileName(attachment.filename());
             multipart.addBodyPart(attachmentPart);
           }
-          for (InternetAddress bcc : emailMessage.bccs()) {
-            msg.addRecipient(RecipientType.BCC, bcc);
-          }
+          msg.addRecipients(RecipientType.BCC, toArray(emailMessage.bccs(), Address.class));
+          msg.addRecipients(RecipientType.CC, toArray(emailMessage.ccs(), Address.class));
           msg.setContent(multipart);
           msg.saveChanges();
           transportEmailSender.sendMessage(msg);

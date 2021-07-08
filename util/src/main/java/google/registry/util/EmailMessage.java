@@ -26,16 +26,6 @@ import javax.mail.internet.InternetAddress;
 @AutoValue
 public abstract class EmailMessage {
 
-  public abstract String subject();
-  public abstract String body();
-  public abstract ImmutableSet<InternetAddress> recipients();
-  public abstract InternetAddress from();
-
-  public abstract ImmutableSet<InternetAddress> bccs();
-
-  public abstract Optional<MediaType> contentType();
-  public abstract Optional<Attachment> attachment();
-
   public static Builder newBuilder() {
     return new AutoValue_EmailMessage.Builder();
   }
@@ -50,23 +40,47 @@ public abstract class EmailMessage {
         .build();
   }
 
+  public abstract String subject();
+
+  public abstract String body();
+
+  public abstract ImmutableSet<InternetAddress> recipients();
+
+  public abstract InternetAddress from();
+
+  public abstract ImmutableSet<InternetAddress> ccs();
+
+  public abstract ImmutableSet<InternetAddress> bccs();
+
+  public abstract Optional<MediaType> contentType();
+
+  public abstract Optional<Attachment> attachment();
+
   /** Builder for {@link EmailMessage}. */
   @AutoValue.Builder
   public abstract static class Builder {
 
     public abstract Builder setSubject(String subject);
+
     public abstract Builder setBody(String body);
+
     public abstract Builder setRecipients(Collection<InternetAddress> recipients);
+
     public abstract Builder setFrom(InternetAddress from);
 
     public abstract Builder setBccs(Collection<InternetAddress> bccs);
 
+    public abstract Builder setCcs(Collection<InternetAddress> ccs);
+
     public abstract Builder setContentType(MediaType contentType);
+
     public abstract Builder setAttachment(Attachment attachment);
 
     abstract ImmutableSet.Builder<InternetAddress> recipientsBuilder();
 
     abstract ImmutableSet.Builder<InternetAddress> bccsBuilder();
+
+    abstract ImmutableSet.Builder<InternetAddress> ccsBuilder();
 
     public Builder addRecipient(InternetAddress value) {
       recipientsBuilder().add(value);
@@ -78,28 +92,36 @@ public abstract class EmailMessage {
       return this;
     }
 
+    public Builder addCc(InternetAddress cc) {
+      ccsBuilder().add(cc);
+      return this;
+    }
+
     public abstract EmailMessage build();
   }
 
   /** An attachment to the email, if one exists. */
   @AutoValue
   public abstract static class Attachment {
-
-    public abstract MediaType contentType();
-    public abstract String filename();
-    public abstract String content();
-
     public static Builder newBuilder() {
       return new AutoValue_EmailMessage_Attachment.Builder();
     }
 
+    public abstract MediaType contentType();
+
+    public abstract String filename();
+
+    public abstract String content();
+
     /** Builder for {@link Attachment}. */
     @AutoValue.Builder
     public abstract static class Builder {
-
       public abstract Builder setContentType(MediaType contentType);
+
       public abstract Builder setFilename(String filename);
+
       public abstract Builder setContent(String content);
+
       public abstract Attachment build();
     }
   }

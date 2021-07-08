@@ -68,7 +68,28 @@ class SendEmailServiceTest {
   }
 
   @Test
-  void testSuccess_bcc() throws Exception {
+  void testSuccess_addBccs() throws Exception {
+    EmailMessage.Builder contentBuilder =
+        EmailMessage.newBuilder()
+            .setFrom(new InternetAddress("test@example.com"))
+            .setSubject("test subject")
+            .setBody("test body");
+    for (String email :
+        ImmutableList.of("bcc@example.com", "bcc1@example.com", "bcc2@example.com")) {
+      contentBuilder.addBcc(new InternetAddress(email));
+    }
+
+    sendEmailService.sendEmail(contentBuilder.build());
+    assertThat(getMessage().getRecipients(RecipientType.BCC))
+        .asList()
+        .containsExactly(
+            new InternetAddress("bcc@example.com"),
+            new InternetAddress("bcc1@example.com"),
+            new InternetAddress("bcc2@example.com"));
+  }
+
+  @Test
+  void testSuccess_setBccs() throws Exception {
     EmailMessage content =
         createBuilder()
             .setBccs(
@@ -77,19 +98,63 @@ class SendEmailServiceTest {
                     new InternetAddress("bcc2@example.com")))
             .build();
     sendEmailService.sendEmail(content);
-    Message message = getMessage();
-    assertThat(message.getRecipients(RecipientType.BCC))
+    assertThat(getMessage().getRecipients(RecipientType.BCC))
         .asList()
         .containsExactly(
             new InternetAddress("bcc@example.com"), new InternetAddress("bcc2@example.com"));
   }
 
   @Test
-  void testSuccess_contentType() throws Exception {
-    EmailMessage content = createBuilder().setContentType(MediaType.HTML_UTF_8).build();
+  void testSuccess_emptyBcc() throws Exception {
+    sendEmailService.sendEmail(createBuilder().setBccs(ImmutableList.of()).build());
+    assertThat(getMessage().getRecipients(RecipientType.BCC)).isNull();
+  }
+
+  @Test
+  void testSuccess_addCcs() throws Exception {
+    EmailMessage.Builder contentBuilder = EmailMessage.newBuilder();
+    contentBuilder
+        .setFrom(new InternetAddress("test@example.com"))
+        .setSubject("test subject")
+        .setBody("test body");
+    for (String email : ImmutableList.of("cc@example.com", "cc1@example.com", "cc2@example.com")) {
+      contentBuilder.addCc(new InternetAddress(email));
+    }
+    sendEmailService.sendEmail(contentBuilder.build());
+    assertThat(getMessage().getRecipients(RecipientType.CC))
+        .asList()
+        .containsExactly(
+            new InternetAddress("cc@example.com"),
+            new InternetAddress("cc1@example.com"),
+            new InternetAddress("cc2@example.com"));
+  }
+
+  @Test
+  void testSuccess_setCcs() throws Exception {
+    EmailMessage content =
+        createBuilder()
+            .setCcs(
+                ImmutableList.of(
+                    new InternetAddress("cc@example.com"), new InternetAddress("cc2@example.com")))
+            .build();
     sendEmailService.sendEmail(content);
-    Message message = getMessage();
-    assertThat(getInternalContent(message).getContentType()).isEqualTo("text/html; charset=utf-8");
+    assertThat(getMessage().getRecipients(RecipientType.CC))
+        .asList()
+        .containsExactly(
+            new InternetAddress("cc@example.com"), new InternetAddress("cc2@example.com"));
+  }
+
+  @Test
+  void testSuccess_emptyCC() throws Exception {
+    sendEmailService.sendEmail(createBuilder().setCcs(ImmutableList.of()).build());
+    assertThat(getMessage().getRecipients(RecipientType.CC)).isNull();
+  }
+
+  @Test
+  void testSuccess_contentType() throws Exception {
+    sendEmailService.sendEmail(createBuilder().setContentType(MediaType.HTML_UTF_8).build());
+    assertThat(getInternalContent(getMessage()).getContentType())
+        .isEqualTo("text/html; charset=utf-8");
   }
 
   @Test
@@ -117,17 +182,16 @@ class SendEmailServiceTest {
         .doNothing()
         .when(wrapper)
         .sendMessage(messageCaptor.capture());
-    EmailMessage content = createBuilder().build();
-    sendEmailService.sendEmail(content);
+    sendEmailService.sendEmail(createBuilder().build());
     assertThat(messageCaptor.getValue().getSubject()).isEqualTo("Subject");
   }
 
   @Test
   void testFailure_wrongExceptionType() throws Exception {
     doThrow(new RuntimeException("this is a runtime exception")).when(wrapper).sendMessage(any());
-    EmailMessage content = createBuilder().build();
     RuntimeException thrown =
-        assertThrows(RuntimeException.class, () -> sendEmailService.sendEmail(content));
+        assertThrows(
+            RuntimeException.class, () -> sendEmailService.sendEmail(createBuilder().build()));
     assertThat(thrown).hasMessageThat().isEqualTo("this is a runtime exception");
   }
 
@@ -137,9 +201,9 @@ class SendEmailServiceTest {
         .doThrow(new MessagingException("second"))
         .when(wrapper)
         .sendMessage(any());
-    EmailMessage content = createBuilder().build();
     RuntimeException thrown =
-        assertThrows(RuntimeException.class, () -> sendEmailService.sendEmail(content));
+        assertThrows(
+            RuntimeException.class, () -> sendEmailService.sendEmail(createBuilder().build()));
     assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("second");
     assertThat(thrown).hasCauseThat().isInstanceOf(MessagingException.class);
   }
