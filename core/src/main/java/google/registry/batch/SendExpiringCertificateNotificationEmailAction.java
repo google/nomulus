@@ -16,10 +16,10 @@ package google.registry.batch;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static org.joda.time.DateTimeZone.UTC;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -35,7 +35,6 @@ import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.util.EmailMessage;
 import google.registry.util.SendEmailService;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -52,37 +51,38 @@ import org.joda.time.format.DateTimeFormatter;
     path = SendExpiringCertificateNotificationEmailAction.PATH,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class SendExpiringCertificateNotificationEmailAction implements Runnable {
-  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   public static final String PATH = "/_dr/task/sendExpiringCertificateNotificationEmail";
-  /**
-   * Uses as an offset when storing the last notification email sent date. This is used to handle
-   * edges cases when the update happens in between the day switch. For instance,if the job starts
-   * at 2:00 am every day and it finishes at 2:03 of the same day, then next day at 2am, the date
-   * difference will be less than a day, which will lead to the date difference between two
-   * successive email sent date being the expected email interval days + 1;
+  /*
+   * The offset used when storing the last notification email sent date.
+   *
+   * <p>This is used to handle edges cases when the update happens in between the day switch. For
+   * instance,if the job starts at 2:00 am every day and it finishes at 2:03 of the same day, then
+   * next day at 2am, the date difference will be less than a day, which will lead to the date
+   * difference between two successive email sent date being the expected email interval days + 1;
    */
-  private static final Duration UPDATE_TIME_OFFSET = Duration.standardMinutes(10);
+  protected static final Duration UPDATE_TIME_OFFSET = Duration.standardMinutes(10);
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd");
 
-  private final SendEmailService sendEmailService;
-  private final InternetAddress gSuiteOutgoingEmailAddress;
   private final CertificateChecker certificateChecker;
   private final String expirationWarningEmailBodyText;
+  private final SendEmailService sendEmailService;
   private final String expirationWarningEmailSubjectText;
+  private final InternetAddress gSuiteOutgoingEmailAddress;
 
   @Inject
   public SendExpiringCertificateNotificationEmailAction(
-      @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress,
       @Config("expirationWarningEmailBodyText") String expirationWarningEmailBodyText,
       @Config("expirationWarningEmailSubjectText") String expirationWarningEmailSubjectText,
+      @Config("gSuiteOutgoingEmailAddress") InternetAddress gSuiteOutgoingEmailAddress,
       SendEmailService sendEmailService,
       CertificateChecker certificateChecker) {
 
-    this.sendEmailService = sendEmailService;
-    this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
     this.certificateChecker = certificateChecker;
     this.expirationWarningEmailSubjectText = expirationWarningEmailSubjectText;
+    this.sendEmailService = sendEmailService;
+    this.gSuiteOutgoingEmailAddress = gSuiteOutgoingEmailAddress;
     this.expirationWarningEmailBodyText = expirationWarningEmailBodyText;
   }
 
@@ -93,32 +93,36 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
 
   /**
    * Returns a list of registrars that should receive expiring notification emails. There are two
-   * certificates that should be considered (main certificate and failover certificate). The
+   * certificates that should be considered (the main certificate and failOver certificate). The
    * registrars should receive notifications if one of the certificate checks returns true.
    */
   @VisibleForTesting
-  ImmutableList<Registrar> getRegistrarsWithExpiringCertificates() {
+  ImmutableList<RegistrarInfo> getRegistrarsWithExpiringCertificates() {
     return Streams.stream(Registrar.loadAllCached())
-        .sorted(Comparator.comparing(Registrar::getRegistrarName, String.CASE_INSENSITIVE_ORDER))
-        .filter(
+        .map(
             registrar ->
-                (registrar.getClientCertificate().isPresent()
+                RegistrarInfo.create(
+                    registrar,
+                    registrar.getClientCertificate().isPresent()
                         && certificateChecker.shouldReceiveExpiringNotification(
                             registrar.getLastExpiringCertNotificationSentDate(),
-                            registrar.getClientCertificate().get()))
-                    || (registrar.getFailoverClientCertificate().isPresent()
+                            registrar.getClientCertificate().get()),
+                    registrar.getFailoverClientCertificate().isPresent()
                         && certificateChecker.shouldReceiveExpiringNotification(
                             registrar.getLastExpiringFailoverCertNotificationSentDate(),
                             registrar.getFailoverClientCertificate().get())))
+        .filter(
+            registrarInfo ->
+                registrarInfo.isCertExpiring() || registrarInfo.isFailOverCertExpiring())
         .collect(toImmutableList());
   }
 
   /**
-   * Sends a notification email to the registrar regarding the expiring certificate and returns the
-   * date and time when a notification email is sent.
+   * Sends a notification email to the registrar regarding the expiring certificate and returns true
+   * if it's sent successfully.
    */
   @VisibleForTesting
-  DateTime sendNotificationEmail(
+  boolean sendNotificationEmail(
       Registrar registrar,
       DateTime lastExpiringCertNotificationSentDate,
       CertificateType certificateType,
@@ -127,6 +131,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
         && certificateChecker.shouldReceiveExpiringNotification(
             lastExpiringCertNotificationSentDate, certificate.get())) {
       try {
+
         ImmutableSet<InternetAddress> recipients = getEmailAddresses(registrar, Type.TECH);
         if (!recipients.isEmpty()) {
           sendEmailService.sendEmail(
@@ -141,10 +146,12 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                   .setRecipients(recipients)
                   .setCcs(getEmailAddresses(registrar, Type.ADMIN))
                   .build());
+
           updateLastNotificationSentDate(
               registrar,
               DateTime.now(UTC).minusMinutes((int) UPDATE_TIME_OFFSET.getStandardMinutes()),
               certificateType);
+          return true;
         } else {
           logger.atWarning().log(
               "Registrar %s contains no email addresses to receive notification email.",
@@ -152,11 +159,11 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
         }
       } catch (Exception e) {
         logger.atWarning().withCause(e).log(
-            "Failed to send expiring certificate notification email to registrar %s",
+            "Failed to send expiring certificate notification email to registrar %s.",
             registrar.getRegistrarName());
       }
     }
-    return START_OF_TIME;
+    return false;
   }
 
   /** Updates the last notification sent date in database. */
@@ -183,7 +190,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                 }
               });
       logger.atInfo().log(
-          "Updated Last Notification Email Sent Date for %s Certificate of Registrar %.",
+          "Updated Last Notification Email Sent Date for %s Certificate of Registrar %s.",
           certificateType.displayName, registrar.getRegistrarName());
     } catch (Exception e) {
       logger.atWarning().withCause(e).log(
@@ -195,27 +202,34 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
 
   /** Sends notification emails to registrars with expiring certificates. */
   @VisibleForTesting
-  void sendNotificationEmails() {
-    for (Registrar registrar : getRegistrarsWithExpiringCertificates()) {
-      sendNotificationEmail(
-          registrar,
-          registrar.getLastExpiringCertNotificationSentDate(),
-          CertificateType.PRIMARY,
-          registrar.getClientCertificate());
-      sendNotificationEmail(
-          registrar,
-          registrar.getLastExpiringFailoverCertNotificationSentDate(),
-          CertificateType.FAILOVER,
-          registrar.getFailoverClientCertificate());
+  int sendNotificationEmails() {
+    int emailSent = 0;
+    for (RegistrarInfo registrarInfo : getRegistrarsWithExpiringCertificates()) {
+      Registrar registrar = registrarInfo.registrar();
+      if (registrarInfo.isCertExpiring()) {
+        sendNotificationEmail(
+            registrar,
+            registrar.getLastExpiringCertNotificationSentDate(),
+            CertificateType.PRIMARY,
+            registrar.getClientCertificate());
+        emailSent++;
+      }
+      if (registrarInfo.isFailOverCertExpiring()) {
+        sendNotificationEmail(
+            registrar,
+            registrar.getLastExpiringFailoverCertNotificationSentDate(),
+            CertificateType.FAILOVER,
+            registrar.getFailoverClientCertificate());
+        emailSent++;
+      }
     }
     logger.atInfo().log(
         "Notification Emails have been attempted to send to all registrars that contain "
             + "expiring certificate(s).");
+    return emailSent;
   }
 
-  /**
-   * Returns a list of email addresses of the registrar that should receive the notification email
-   */
+  /** Returns a list of email addresses of the registrar that should receive a notification email */
   @VisibleForTesting
   ImmutableSet<InternetAddress> getEmailAddresses(Registrar registrar, Type contactType) {
     ImmutableSortedSet<RegistrarContact> contacts = registrar.getContactsOfType(contactType);
@@ -238,8 +252,8 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
    */
   @VisibleForTesting
   String getEmailBody(String registrarName, CertificateType type, Date expirationDate) {
-    checkArgumentNotNull(expirationDate);
-    checkArgumentNotNull(type);
+    checkArgumentNotNull(expirationDate, "Expiration Date cannot be null");
+    checkArgumentNotNull(type, "Certificate Type cannot be null");
     return String.format(
         expirationWarningEmailBodyText,
         registrarName,
@@ -255,7 +269,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
    */
   public enum CertificateType {
     PRIMARY("Primary"),
-    FAILOVER("Failover");
+    FAILOVER("FailOver");
 
     private final String displayName;
 
@@ -266,5 +280,20 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
     public String getDisplayName() {
       return displayName;
     }
+  }
+
+  @AutoValue
+  public abstract static class RegistrarInfo {
+    static RegistrarInfo create(
+        Registrar registrar, boolean isCertExpiring, boolean isFailOverCertExpiring) {
+      return new AutoValue_SendExpiringCertificateNotificationEmailAction_RegistrarInfo(
+          registrar, isCertExpiring, isFailOverCertExpiring);
+    }
+
+    public abstract Registrar registrar();
+
+    public abstract boolean isCertExpiring();
+
+    public abstract boolean isFailOverCertExpiring();
   }
 }
