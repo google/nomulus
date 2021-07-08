@@ -456,8 +456,8 @@ sslCertificateValidation:
   expirationWarningIntervalDays: 15
   # Text for expiring certificate notification email subject.
   expirationWarningEmailSubjectText: Certificate Expring Within 30 Days.
-  # Text for expiring certificate notification email body that accepts 3 parameters: registrar name,
-  # certificate type and expiration date, respectively.
+  # Text for expiring certificate notification email body that accepts 3 parameters:
+  # registrar name, certificate type, and expiration date, respectively.
   expirationWarningEmailBodyText: |
     Hello Registrar %s,
        The %s certificate is expiring on %s.

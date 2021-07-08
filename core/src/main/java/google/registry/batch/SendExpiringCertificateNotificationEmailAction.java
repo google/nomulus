@@ -214,7 +214,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
   }
 
   /**
-   * Returns a list of email addresses of the registrar that should receive the notification email
+   * Returns a list of email addresses of the registrar that should receive a notification email
    */
   @VisibleForTesting
   ImmutableSet<InternetAddress> getEmailAddresses(Registrar registrar, Type contactType) {
@@ -238,8 +238,8 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
    */
   @VisibleForTesting
   String getEmailBody(String registrarName, CertificateType type, Date expirationDate) {
-    checkArgumentNotNull(expirationDate);
-    checkArgumentNotNull(type);
+    checkArgumentNotNull(expirationDate, "Expiration Date cannot be null");
+    checkArgumentNotNull(type, "Certificate Type cannot be null");
     return String.format(
         expirationWarningEmailBodyText,
         registrarName,

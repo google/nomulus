@@ -278,9 +278,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
 
   @Test
   void getRegistrarsWithExpiringCertificates_noRegistrarsInDatabase() {
-    ImmutableList<Registrar> results = action.getRegistrarsWithExpiringCertificates();
-    int numOfRegistrars = 0;
-    assertThat(results.size()).isEqualTo(numOfRegistrars);
+    assertThat(action.getRegistrarsWithExpiringCertificates()).isEmpty();
   }
 
   @Test
