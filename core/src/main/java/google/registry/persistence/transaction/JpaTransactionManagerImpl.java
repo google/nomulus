@@ -46,6 +46,7 @@ import google.registry.schema.replay.SqlOnlyEntity;
 import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Calendar;
@@ -489,7 +490,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             loadByKey(
                 VKey.createSql(
                     possibleChild.getClass(),
-                    emf.getPersistenceUnitUtil().getIdentifier(possibleChild)));
+                    // Casting to Serializable is safe according to JPA (JSR 338 sec. 2.4).
+                    (Serializable) emf.getPersistenceUnitUtil().getIdentifier(possibleChild)));
     return returnValue;
   }
 

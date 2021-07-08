@@ -21,6 +21,7 @@ import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.HistoryEntry;
+import java.io.Serializable;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
@@ -46,7 +47,7 @@ public abstract class BillingVKey<K> extends EppHistoryVKey<K, DomainBase> {
   }
 
   @Override
-  public Object createSqlKey() {
+  public Serializable createSqlKey() {
     return billingId;
   }
 

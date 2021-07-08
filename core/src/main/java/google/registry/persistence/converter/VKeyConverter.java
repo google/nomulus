@@ -16,11 +16,13 @@ package google.registry.persistence.converter;
 
 import com.googlecode.objectify.Key;
 import google.registry.persistence.VKey;
+import java.io.Serializable;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
 
 /** Converts VKey to a string column. */
-public abstract class VKeyConverter<T, C> implements AttributeConverter<VKey<? extends T>, C> {
+public abstract class VKeyConverter<T, C extends Serializable>
+    implements AttributeConverter<VKey<? extends T>, C> {
   @Override
   @Nullable
   public C convertToDatabaseColumn(@Nullable VKey<? extends T> attribute) {
