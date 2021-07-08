@@ -69,7 +69,6 @@ public abstract class EmailMessage {
     public abstract Builder setFrom(InternetAddress from);
 
     public abstract Builder setBccs(Collection<InternetAddress> bccs);
-    public abstract Builder setCcs(Collection<InternetAddress> ccs);
 
     public abstract Builder setCcs(Collection<InternetAddress> ccs);
 
