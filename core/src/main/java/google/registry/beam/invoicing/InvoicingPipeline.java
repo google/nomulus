@@ -92,11 +92,10 @@ public class InvoicingPipeline implements Serializable {
 
   static PCollection<BillingEvent> readFromBigQuery(
       InvoicingPipelineOptions options, Pipeline pipeline) {
-    String query = makeQuery(options.getYearMonth(), options.getProject());
     return pipeline.apply(
         "Read BillingEvents from Bigquery",
         BigQueryIO.read(BillingEvent::parseFromRecord)
-            .fromQuery(query)
+            .fromQuery(makeQuery(options.getYearMonth(), options.getProject()))
             .withCoder(SerializableCoder.of(BillingEvent.class))
             .usingStandardSql()
             .withoutValidation()
