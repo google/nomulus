@@ -284,9 +284,10 @@ public class CloudDnsWriter extends BaseDnsWriter {
         .filter(hostName -> hostName.endsWith("." + domainName) && !hostName.equals(domainName));
   }
 
-  /** Mutate the zone with the provided {@code desiredRecords}. */
+  /** Mutate the zone with the provided map of hostnames to desired DNS records. */
   @VisibleForTesting
   void mutateZone(ImmutableMap<String, ImmutableSet<ResourceRecordSet>> desiredRecords) {
+    logger.atInfo().log("Updating DNS records for hostname(s) %s.", desiredRecords.keySet());
     // Fetch all existing records for names that this writer is trying to modify
     ImmutableSet.Builder<ResourceRecordSet> flattenedExistingRecords = new ImmutableSet.Builder<>();
 
@@ -313,7 +314,12 @@ public class CloudDnsWriter extends BaseDnsWriter {
     desiredRecords.values().forEach(flattenedDesiredRecords::addAll);
 
     // Delete all existing records and add back the desired records
-    updateResourceRecords(flattenedDesiredRecords.build(), flattenedExistingRecords.build());
+    try {
+      updateResourceRecords(flattenedDesiredRecords.build(), flattenedExistingRecords.build());
+    } catch (IOException e) {
+      throw new RuntimeException(
+          "Error updating DNS records for hostname(s) " + desiredRecords.keySet(), e);
+    }
   }
 
   /**
@@ -363,10 +369,12 @@ public class CloudDnsWriter extends BaseDnsWriter {
    *
    * @throws ZoneStateException if the operation could not be completely successfully because the
    *     records to delete do not exist, already exist or have been modified with different
-   *     attributes since being queried.
+   *     attributes since being queried. These errors will be retried.
+   * @throws IOException on non-retryable API errors, e.g. invalid request.
    */
   private void updateResourceRecords(
-      ImmutableSet<ResourceRecordSet> additions, ImmutableSet<ResourceRecordSet> deletions) {
+      ImmutableSet<ResourceRecordSet> additions, ImmutableSet<ResourceRecordSet> deletions)
+      throws IOException {
     // Find records that are both in additions and deletions, so we can remove them from both before
     // requesting the change. This is mostly for optimization reasons - not doing so doesn't affect
     // the result.
@@ -392,17 +400,15 @@ public class CloudDnsWriter extends BaseDnsWriter {
       GoogleJsonError err = e.getDetails();
       // We did something really wrong here, just give up and re-throw
       if (err == null || err.getErrors().size() > 1) {
-        throw new RuntimeException(e);
+        throw e;
       }
       String errorReason = err.getErrors().get(0).getReason();
 
       if (RETRYABLE_EXCEPTION_REASONS.contains(errorReason)) {
         throw new ZoneStateException(errorReason);
       } else {
-        throw new RuntimeException(e);
+        throw e;
       }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
     }
   }
 
