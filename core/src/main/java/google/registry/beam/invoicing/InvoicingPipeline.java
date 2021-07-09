@@ -105,22 +105,8 @@ public class InvoicingPipeline implements Serializable {
 
   static PCollection<BillingEvent> readFromCloudSql(
       InvoicingPipelineOptions options, Pipeline pipeline) {
-    YearMonth reportingMonth = YearMonth.parse(options.getYearMonth());
-    YearMonth endMonth = reportingMonth.plusMonths(1);
-
     Read<Object[], BillingEvent> read =
         RegistryJpaIO.read(
-            // String.format(
-            //     "select b, r from BillingEvent b join Registrar r on b.clientId ="
-            //         + " r.clientIdentifier join Domain d on b.domainRepoId = d.repoId join Tld t"
-            //         + " on t.tldStrId = d.tld left join BillingCancellation c on b.id ="
-            //         + " c.refOneTime.billingId left join BillingCancellation cr on"
-            //         + " b.cancellationMatchingBillingEvent = cr.refRecurring.billingId where"
-            //         + " r.billingIdentifier != null and r.type = 'REAL' and t.invoicingEnabled ="
-            //         + " true and b.billingTime between CAST('%s' AS timestamp) and CAST('%s' AS"
-            //         + " timestamp) and c.id = null and cr.id = null",
-            //     options.getYearMonth().concat("-01"),
-            //     String.format("%d-%d-01", endMonth.getYear(), endMonth.getMonthValue())),
             makeCloudSqlQuery(options.getYearMonth()), false, InvoicingPipeline::parseRow);
 
     return pipeline.apply("Read BillingEvents from Cloud SQL", read);
