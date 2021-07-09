@@ -92,10 +92,11 @@ public class InvoicingPipeline implements Serializable {
 
   static PCollection<BillingEvent> readFromBigQuery(
       InvoicingPipelineOptions options, Pipeline pipeline) {
+    String query = makeQuery(options.getYearMonth(), options.getProject());
     return pipeline.apply(
         "Read BillingEvents from Bigquery",
         BigQueryIO.read(BillingEvent::parseFromRecord)
-            .fromQuery(makeQuery(options.getYearMonth(), options.getProject()))
+            .fromQuery(query)
             .withCoder(SerializableCoder.of(BillingEvent.class))
             .usingStandardSql()
             .withoutValidation()
@@ -109,19 +110,18 @@ public class InvoicingPipeline implements Serializable {
 
     Read<Object[], BillingEvent> read =
         RegistryJpaIO.read(
-            String.format(
-                "select b, r from BillingEvent b join Registrar r on b.clientId ="
-                    + " r.clientIdentifier join Domain d on b.domainRepoId = d.repoId join Tld t"
-                    + " on t.tldStrId = d.tld left join BillingCancellation c on b.id ="
-                    + " c.refOneTime.billingId left join BillingCancellation cr on"
-                    + " b.cancellationMatchingBillingEvent = cr.refRecurring.billingId where"
-                    + " r.billingIdentifier != null and r.type = 'REAL' and t.invoicingEnabled ="
-                    + " true and b.billingTime between CAST('%s' AS timestamp) and CAST('%s' AS"
-                    + " timestamp) and c.id = null and cr.id = null",
-                options.getYearMonth().concat("-01"),
-                String.format("%d-%d-01", endMonth.getYear(), endMonth.getMonthValue())),
-            false,
-            InvoicingPipeline::parseRow);
+            // String.format(
+            //     "select b, r from BillingEvent b join Registrar r on b.clientId ="
+            //         + " r.clientIdentifier join Domain d on b.domainRepoId = d.repoId join Tld t"
+            //         + " on t.tldStrId = d.tld left join BillingCancellation c on b.id ="
+            //         + " c.refOneTime.billingId left join BillingCancellation cr on"
+            //         + " b.cancellationMatchingBillingEvent = cr.refRecurring.billingId where"
+            //         + " r.billingIdentifier != null and r.type = 'REAL' and t.invoicingEnabled ="
+            //         + " true and b.billingTime between CAST('%s' AS timestamp) and CAST('%s' AS"
+            //         + " timestamp) and c.id = null and cr.id = null",
+            //     options.getYearMonth().concat("-01"),
+            //     String.format("%d-%d-01", endMonth.getYear(), endMonth.getMonthValue())),
+            makeCloudSqlQuery(options.getYearMonth()), false, InvoicingPipeline::parseRow);
 
     return pipeline.apply("Read BillingEvents from Cloud SQL", read);
   }
@@ -233,6 +233,25 @@ public class InvoicingPipeline implements Serializable {
         .put("REGISTRAR_TABLE", "Registrar")
         .put("CANCELLATION_TABLE", "Cancellation")
         .build();
+  }
+
+  /** Create the Cloud SQL query for a given yearMonth at runtime. */
+  static String makeCloudSqlQuery(String yearMonth) {
+    YearMonth endMonth = YearMonth.parse(yearMonth).plusMonths(1);
+    String queryWithComments =
+        SqlTemplate.create(
+                getQueryFromFile(InvoicingPipeline.class, "cloud_sql_billing_events.sql"))
+            .put("FIRST_TIMESTAMP_OF_MONTH", yearMonth.concat("-01"))
+            .put(
+                "LAST_TIMESTAMP_OF_MONTH",
+                String.format("%d-%d-01", endMonth.getYear(), endMonth.getMonthValue()))
+            .build();
+    // Remove the comments from the query string
+    StringBuilder query = new StringBuilder();
+    for (String line : queryWithComments.split("\n")) {
+      query.append(line.split("--", -1)[0]).append("\n");
+    }
+    return query.toString();
   }
 
   public static void main(String[] args) {
