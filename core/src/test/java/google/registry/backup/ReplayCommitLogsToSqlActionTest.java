@@ -17,7 +17,6 @@ package google.registry.backup;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
-import static google.registry.backup.RestoreCommitLogsActionTest.GCS_BUCKET;
 import static google.registry.backup.RestoreCommitLogsActionTest.createCheckpoint;
 import static google.registry.backup.RestoreCommitLogsActionTest.saveDiffFile;
 import static google.registry.backup.RestoreCommitLogsActionTest.saveDiffFileNotToRestore;
@@ -128,9 +127,9 @@ public class ReplayCommitLogsToSqlActionTest {
     action.response = response;
     action.requestStatusChecker = requestStatusChecker;
     action.clock = fakeClock;
+    action.gcsBucket = "gcs bucket";
     action.diffLister = new GcsDiffFileLister();
     action.diffLister.gcsService = gcsService;
-    action.diffLister.gcsBucket = GCS_BUCKET;
     action.diffLister.executor = newDirectExecutorService();
     ofyTm()
         .transact(

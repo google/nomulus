@@ -55,6 +55,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,9 +84,10 @@ public class RestoreCommitLogsActionTest {
     action.datastoreService = DatastoreServiceFactory.getDatastoreService();
     action.fromTime = now.minusMillis(1);
     action.retrier = new Retrier(new FakeSleeper(new FakeClock()), 1);
+    action.defaultGcsBucket = GCS_BUCKET;
+    action.gcsBucketOverride = Optional.empty();
     action.diffLister = new GcsDiffFileLister();
     action.diffLister.gcsService = gcsService;
-    action.diffLister.gcsBucket = GCS_BUCKET;
     action.diffLister.executor = newDirectExecutorService();
   }
 

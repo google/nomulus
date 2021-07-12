@@ -30,6 +30,7 @@ import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
@@ -81,6 +82,10 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
   @Inject RequestStatusChecker requestStatusChecker;
   @Inject GcsDiffFileLister diffLister;
   @Inject Clock clock;
+
+  @Inject
+  @Config("commitLogGcsBucket")
+  String gcsBucket;
 
   /** If true, will exit after logging the commit log files that would otherwise be replayed. */
   @Inject
@@ -154,7 +159,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     // If there's an inconsistent file set, this will throw IllegalStateException and the job
     // will try later -- this is likely because an export hasn't finished yet.
     ImmutableList<GcsFileMetadata> commitLogFiles =
-        diffLister.listDiffFiles(fromTime, /* current time */ null);
+        diffLister.listDiffFiles(gcsBucket, fromTime, /* current time */ null);
     logger.atInfo().log("Found %d new commit log files to process.", commitLogFiles.size());
     return commitLogFiles;
   }

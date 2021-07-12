@@ -26,6 +26,7 @@ import com.google.appengine.api.datastore.EntityTranslator;
 import com.google.appengine.tools.cloudstorage.GcsFileMetadata;
 import com.google.appengine.tools.cloudstorage.GcsService;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Streams;
@@ -33,6 +34,7 @@ import com.google.common.flogger.FluentLogger;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Result;
 import com.googlecode.objectify.util.ResultNow;
+import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.CommitLogBucket;
@@ -50,6 +52,7 @@ import java.nio.channels.Channels;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -72,27 +75,41 @@ public class RestoreCommitLogsAction implements Runnable {
   static final String DRY_RUN_PARAM = "dryRun";
   static final String FROM_TIME_PARAM = "fromTime";
   static final String TO_TIME_PARAM = "toTime";
+  static final String BUCKET_OVERRIDE_PARAM = "gcsBucket";
+
+  private static final ImmutableSet<RegistryEnvironment> FORBIDDEN_ENVIRONMENTS =
+      ImmutableSet.of(RegistryEnvironment.PRODUCTION, RegistryEnvironment.SANDBOX);
 
   @Inject GcsService gcsService;
   @Inject @Parameter(DRY_RUN_PARAM) boolean dryRun;
   @Inject @Parameter(FROM_TIME_PARAM) DateTime fromTime;
   @Inject @Parameter(TO_TIME_PARAM) DateTime toTime;
+
+  @Inject
+  @Parameter(BUCKET_OVERRIDE_PARAM)
+  Optional<String> gcsBucketOverride;
+
   @Inject DatastoreService datastoreService;
   @Inject GcsDiffFileLister diffLister;
+
+  @Inject
+  @Config("commitLogGcsBucket")
+  String defaultGcsBucket;
+
   @Inject Retrier retrier;
   @Inject RestoreCommitLogsAction() {}
 
   @Override
   public void run() {
     checkArgument(
-        RegistryEnvironment.get() == RegistryEnvironment.ALPHA
-            || RegistryEnvironment.get() == RegistryEnvironment.CRASH
-            || RegistryEnvironment.get() == RegistryEnvironment.UNITTEST,
-        "DO NOT RUN ANYWHERE ELSE EXCEPT ALPHA, CRASH OR TESTS.");
+        !FORBIDDEN_ENVIRONMENTS.contains(RegistryEnvironment.get()),
+        "DO NOT RUN IN PRODUCTION OR SANDBOX.");
     if (dryRun) {
       logger.atInfo().log("Running in dryRun mode");
     }
-    List<GcsFileMetadata> diffFiles = diffLister.listDiffFiles(fromTime, toTime);
+    String gcsBucket = gcsBucketOverride.orElse(defaultGcsBucket);
+    logger.atInfo().log("Restoring from %s.", gcsBucket);
+    List<GcsFileMetadata> diffFiles = diffLister.listDiffFiles(gcsBucket, fromTime, toTime);
     if (diffFiles.isEmpty()) {
       logger.atInfo().log("Nothing to restore");
       return;

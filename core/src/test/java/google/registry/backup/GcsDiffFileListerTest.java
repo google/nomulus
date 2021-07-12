@@ -65,7 +65,6 @@ public class GcsDiffFileListerTest {
   @BeforeEach
   void beforeEach() throws Exception {
     diffLister.gcsService = gcsService;
-    diffLister.gcsBucket = GCS_BUCKET;
     diffLister.executor = newDirectExecutorService();
     for (int i = 0; i < 5; i++) {
       gcsService.createOrReplace(
@@ -87,7 +86,7 @@ public class GcsDiffFileListerTest {
   }
 
   private Iterable<DateTime> listDiffFiles(DateTime fromTime, DateTime toTime) {
-    return extractTimesFromDiffFiles(diffLister.listDiffFiles(fromTime, toTime));
+    return extractTimesFromDiffFiles(diffLister.listDiffFiles(GCS_BUCKET, fromTime, toTime));
   }
 
   private void addGcsFile(int fileAge, int prevAge) throws IOException {
