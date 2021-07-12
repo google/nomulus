@@ -77,13 +77,8 @@ public class RestoreCommitLogsAction implements Runnable {
   static final String TO_TIME_PARAM = "toTime";
   static final String BUCKET_OVERRIDE_PARAM = "gcsBucket";
 
-  private static final ImmutableSet<RegistryEnvironment> ALLOWED_ENVIRONMENTS =
-      ImmutableSet.of(
-          RegistryEnvironment.ALPHA,
-          RegistryEnvironment.CRASH,
-          RegistryEnvironment.QA,
-          RegistryEnvironment.LOCAL,
-          RegistryEnvironment.UNITTEST);
+  private static final ImmutableSet<RegistryEnvironment> FORBIDDEN_ENVIRONMENTS =
+      ImmutableSet.of(RegistryEnvironment.PRODUCTION, RegistryEnvironment.SANDBOX);
 
   @Inject GcsService gcsService;
   @Inject @Parameter(DRY_RUN_PARAM) boolean dryRun;
@@ -107,7 +102,7 @@ public class RestoreCommitLogsAction implements Runnable {
   @Override
   public void run() {
     checkArgument(
-        ALLOWED_ENVIRONMENTS.contains(RegistryEnvironment.get()),
+        !FORBIDDEN_ENVIRONMENTS.contains(RegistryEnvironment.get()),
         "DO NOT RUN IN PRODUCTION OR SANDBOX.");
     if (dryRun) {
       logger.atInfo().log("Running in dryRun mode");
