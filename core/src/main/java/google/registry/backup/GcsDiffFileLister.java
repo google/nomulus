@@ -15,6 +15,7 @@
 package google.registry.backup;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.backup.BackupUtils.GcsMetadataKeys.LOWER_BOUND_CHECKPOINT;
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -23,13 +24,13 @@ import static google.registry.util.DateTimeUtils.latestOf;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import dagger.Lazy;
 import google.registry.backup.BackupModule.Backups;
 import google.registry.gcs.GcsUtils;
 import java.io.IOException;
@@ -39,6 +40,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import org.joda.time.DateTime;
 
 /** Utility class to list commit logs diff files stored on GCS. */
@@ -51,7 +53,7 @@ class GcsDiffFileLister {
 
   @Inject GcsUtils gcsUtils;
 
-  @Inject @Backups Lazy<ListeningExecutorService> lazyExecutor;
+  @Inject @Backups Provider<ListeningExecutorService> executorProvider;
   @Inject ScheduledExecutorService scheduledExecutorService;
 
   @Inject
@@ -113,22 +115,27 @@ class GcsDiffFileLister {
     // (extracted from the filename) to its asynchronously-loaded metadata, keeping only files with
     // an upper checkpoint time > fromTime.
     TreeMap<DateTime, ListenableFuture<BlobInfo>> upperBoundTimesToBlobInfo = new TreeMap<>();
-    ImmutableList<String> strippedFilenames;
+    String commitLogDiffPrefix = getCommitLogDiffPrefix(fromTime, toTime);
+    ImmutableList<String> filenames;
     try {
-      strippedFilenames = gcsUtils.listFolderObjects(gcsBucket, DIFF_FILE_PREFIX);
+      filenames =
+          gcsUtils.listFolderObjects(gcsBucket, commitLogDiffPrefix).stream()
+              .map(s -> commitLogDiffPrefix + s)
+              .collect(toImmutableList());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
     DateTime lastUpperBoundTime = START_OF_TIME;
 
     TreeMap<DateTime, BlobInfo> sequence = new TreeMap<>();
+    ListeningExecutorService executor = executorProvider.get();
     try {
-      for (String strippedFilename : strippedFilenames) {
-        final String filename = DIFF_FILE_PREFIX + strippedFilename;
+      for (String filename : filenames) {
+        String strippedFilename = filename.replaceFirst(DIFF_FILE_PREFIX, "");
         DateTime upperBoundTime = DateTime.parse(strippedFilename);
         if (isInRange(upperBoundTime, fromTime, toTime)) {
           upperBoundTimesToBlobInfo.put(
-              upperBoundTime, lazyExecutor.get().submit(() -> getBlobInfo(gcsBucket, filename)));
+              upperBoundTime, executor.submit(() -> getBlobInfo(gcsBucket, filename)));
           lastUpperBoundTime = latestOf(upperBoundTime, lastUpperBoundTime);
         }
       }
@@ -173,7 +180,7 @@ class GcsDiffFileLister {
           "Unable to compute commit diff history, there are either gaps or forks in the history "
               + "file set.  Check log for details.");
     } finally {
-      lazyExecutor.get().shutdown();
+      executor.shutdown();
     }
 
     logger.atInfo().log(
@@ -197,5 +204,37 @@ class GcsDiffFileLister {
 
   private BlobInfo getBlobInfo(String gcsBucket, String filename) {
     return gcsUtils.getBlobInfo(BlobId.of(gcsBucket, filename));
+  }
+
+  /**
+   * Returns a prefix guaranteed to cover all commit log diff files in the given range.
+   *
+   * <p>The listObjects call can be fairly slow if we search over many thousands or tens of
+   * thousands of files, so we restrict the search space. The commit logs have a file format of
+   * "commit_diff_until_2021-05-11T06:48:00.070Z" so we can often filter down as far as the hour.
+   *
+   * <p>Here, we get the longest prefix possible based on which fields (year, month, day, hour) the
+   * times in question have in common.
+   */
+  @VisibleForTesting
+  static String getCommitLogDiffPrefix(DateTime from, @Nullable DateTime to) {
+    StringBuilder result = new StringBuilder(DIFF_FILE_PREFIX);
+    if (to == null || from.getYear() != to.getYear()) {
+      return result.toString();
+    }
+    result.append(from.getYear()).append('-');
+    if (from.getMonthOfYear() != to.getMonthOfYear()) {
+      return result.toString();
+    }
+    result.append(String.format("%02d-", from.getMonthOfYear()));
+    if (from.getDayOfMonth() != to.getDayOfMonth()) {
+      return result.toString();
+    }
+    result.append(String.format("%02dT", from.getDayOfMonth()));
+    if (from.getHourOfDay() != to.getHourOfDay()) {
+      return result.toString();
+    }
+    result.append(String.format("%02d:", from.getHourOfDay()));
+    return result.toString();
   }
 }
