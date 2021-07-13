@@ -124,10 +124,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
       if (dryRun) {
         response.setStatus(HttpServletResponse.SC_OK);
         ImmutableList<String> filenames =
-            commitLogFiles.stream()
-                .limit(10)
-                .map(file -> file.getName())
-                .collect(toImmutableList());
+            commitLogFiles.stream().limit(10).map(BlobInfo::getName).collect(toImmutableList());
         String dryRunMessage =
             "Running in dry-run mode; would have processed %d files. They are (limit 10):\n"
                 + Joiner.on('\n').join(filenames);
@@ -154,12 +151,11 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     // Start at the first millisecond we haven't seen yet
     DateTime fromTime = jpaTm().transact(() -> SqlReplayCheckpoint.get().plusMillis(1));
     logger.atInfo().log("Starting replay from: %s.", fromTime);
+    // Limit search space to 30 minutes after the last checkpoint so that the action runs quickly
+    DateTime toTime = fromTime.plusMinutes(30);
     // If there's an inconsistent file set, this will throw IllegalStateException and the job
     // will try later -- this is likely because an export hasn't finished yet.
-    ImmutableList<BlobInfo> commitLogFiles =
-        diffLister.listDiffFiles(gcsBucket, fromTime, /* current time */ null);
-    logger.atInfo().log("Found %d new commit log files to process.", commitLogFiles.size());
-    return commitLogFiles;
+    return diffLister.listDiffFiles(gcsBucket, fromTime, toTime);
   }
 
   private void replayFiles(ImmutableList<BlobInfo> commitLogFiles) {
@@ -180,15 +176,10 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
   }
 
   private void processFile(BlobInfo metadata) {
-    logger.atInfo().log(
-        "Processing commit log file %s of size %d B.", metadata.getName(), metadata.getSize());
     try (InputStream input = gcsUtils.openInputStream(metadata.getBlobId())) {
       // Load and process the Datastore transactions one at a time
       ImmutableList<ImmutableList<VersionedEntity>> allTransactions =
           CommitLogImports.loadEntitiesByTransaction(input);
-      logger.atInfo().log(
-          "Replaying %d transactions from commit log file %s.",
-          allTransactions.size(), metadata.getName());
       allTransactions.forEach(this::replayTransaction);
       // if we succeeded, set the last-seen time
       DateTime checkpoint = DateTime.parse(metadata.getName().substring(DIFF_FILE_PREFIX.length()));

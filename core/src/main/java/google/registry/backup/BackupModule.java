@@ -14,7 +14,6 @@
 
 package google.registry.backup;
 
-import static com.google.appengine.api.ThreadManager.currentRequestThreadFactory;
 import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 import static google.registry.backup.ExportCommitLogDiffAction.LOWER_CHECKPOINT_TIME_PARAM;
 import static google.registry.backup.ExportCommitLogDiffAction.UPPER_CHECKPOINT_TIME_PARAM;
@@ -99,6 +98,6 @@ public final class BackupModule {
   @Provides
   @Backups
   static ListeningExecutorService provideListeningExecutorService() {
-    return listeningDecorator(newFixedThreadPool(NUM_THREADS, currentRequestThreadFactory()));
+    return listeningDecorator(newFixedThreadPool(NUM_THREADS));
   }
 }
