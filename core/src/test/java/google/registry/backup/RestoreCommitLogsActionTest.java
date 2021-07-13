@@ -14,7 +14,6 @@
 
 package google.registry.backup;
 
-import static com.google.appengine.tools.cloudstorage.GcsServiceFactory.createGcsService;
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Maps.toMap;
 import static com.google.common.truth.Truth.assertThat;
@@ -28,15 +27,16 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.tools.cloudstorage.GcsFileOptions;
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.google.common.primitives.Longs;
 import com.googlecode.objectify.Key;
+import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.ImmutableObject;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.CommitLogBucket;
@@ -51,7 +51,6 @@ import google.registry.testing.TestObject;
 import google.registry.util.Retrier;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -68,7 +67,7 @@ public class RestoreCommitLogsActionTest {
 
   private final DateTime now = DateTime.now(UTC);
   private final RestoreCommitLogsAction action = new RestoreCommitLogsAction();
-  private final GcsService gcsService = createGcsService();
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
@@ -79,7 +78,7 @@ public class RestoreCommitLogsActionTest {
 
   @BeforeEach
   void beforeEach() {
-    action.gcsService = gcsService;
+    action.gcsUtils = gcsUtils;
     action.dryRun = false;
     action.datastoreService = DatastoreServiceFactory.getDatastoreService();
     action.fromTime = now.minusMillis(1);
@@ -87,7 +86,7 @@ public class RestoreCommitLogsActionTest {
     action.defaultGcsBucket = GCS_BUCKET;
     action.gcsBucketOverride = Optional.empty();
     action.diffLister = new GcsDiffFileLister();
-    action.diffLister.gcsService = gcsService;
+    action.diffLister.gcsUtils = gcsUtils;
     action.diffLister.executor = newDirectExecutorService();
   }
 
@@ -109,10 +108,10 @@ public class RestoreCommitLogsActionTest {
         CommitLogManifest.createKey(getBucketKey(2), now.minusMinutes(2));
     Key<CommitLogManifest> manifest2Key =
         CommitLogManifest.createKey(getBucketKey(1), now.minusMinutes(1));
-    saveDiffFileNotToRestore(gcsService, now.minusMinutes(2));
+    saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(2));
     Iterable<ImmutableObject> file1CommitLogs =
         saveDiffFile(
-            gcsService,
+            gcsUtils,
             createCheckpoint(now.minusMinutes(1)),
             CommitLogManifest.create(
                 getBucketKey(1),
@@ -128,7 +127,7 @@ public class RestoreCommitLogsActionTest {
             CommitLogMutation.create(manifest1bKey, TestObject.create("d")));
     Iterable<ImmutableObject> file2CommitLogs =
         saveDiffFile(
-            gcsService,
+            gcsUtils,
             createCheckpoint(now),
             CommitLogManifest.create(
                 getBucketKey(1),
@@ -149,8 +148,8 @@ public class RestoreCommitLogsActionTest {
   @Test
   void testRestore_noManifests() throws Exception {
     auditedOfy().saveWithoutBackup().entity(TestObject.create("previous to keep")).now();
-    saveDiffFileNotToRestore(gcsService, now.minusMinutes(1));
-    Iterable<ImmutableObject> commitLogs = saveDiffFile(gcsService, createCheckpoint(now));
+    saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(1));
+    Iterable<ImmutableObject> commitLogs = saveDiffFile(gcsUtils, createCheckpoint(now));
     action.run();
     auditedOfy().clearSessionCache();
     assertExpectedIds("previous to keep");
@@ -164,10 +163,10 @@ public class RestoreCommitLogsActionTest {
     auditedOfy().saveWithoutBackup().entity(TestObject.create("previous to keep")).now();
     Key<CommitLogBucket> bucketKey = getBucketKey(1);
     Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(bucketKey, now);
-    saveDiffFileNotToRestore(gcsService, now.minusMinutes(1));
+    saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(1));
     Iterable<ImmutableObject> commitLogs =
         saveDiffFile(
-            gcsService,
+            gcsUtils,
             createCheckpoint(now),
             CommitLogManifest.create(bucketKey, now, null),
             CommitLogMutation.create(manifestKey, TestObject.create("a")),
@@ -186,10 +185,10 @@ public class RestoreCommitLogsActionTest {
         .saveWithoutBackup()
         .entities(TestObject.create("previous to keep"), TestObject.create("previous to delete"))
         .now();
-    saveDiffFileNotToRestore(gcsService, now.minusMinutes(1));
+    saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(1));
     Iterable<ImmutableObject> commitLogs =
         saveDiffFile(
-            gcsService,
+            gcsUtils,
             createCheckpoint(now),
             CommitLogManifest.create(
                 getBucketKey(1),
@@ -207,12 +206,10 @@ public class RestoreCommitLogsActionTest {
   @Test
   void testRestore_manifestWithNoMutationsOrDeletions() throws Exception {
     auditedOfy().saveWithoutBackup().entities(TestObject.create("previous to keep")).now();
-    saveDiffFileNotToRestore(gcsService, now.minusMinutes(1));
+    saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(1));
     Iterable<ImmutableObject> commitLogs =
         saveDiffFile(
-            gcsService,
-            createCheckpoint(now),
-            CommitLogManifest.create(getBucketKey(1), now, null));
+            gcsUtils, createCheckpoint(now), CommitLogManifest.create(getBucketKey(1), now, null));
     action.run();
     auditedOfy().clearSessionCache();
     assertExpectedIds("previous to keep");
@@ -225,10 +222,10 @@ public class RestoreCommitLogsActionTest {
   void testRestore_mutateExistingEntity() throws Exception {
     auditedOfy().saveWithoutBackup().entity(TestObject.create("existing", "a")).now();
     Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(getBucketKey(1), now);
-    saveDiffFileNotToRestore(gcsService, now.minusMinutes(1));
+    saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(1));
     Iterable<ImmutableObject> commitLogs =
         saveDiffFile(
-            gcsService,
+            gcsUtils,
             createCheckpoint(now),
             CommitLogManifest.create(getBucketKey(1), now, null),
             CommitLogMutation.create(manifestKey, TestObject.create("existing", "b")));
@@ -245,10 +242,10 @@ public class RestoreCommitLogsActionTest {
   @Test
   void testRestore_deleteMissingEntity() throws Exception {
     auditedOfy().saveWithoutBackup().entity(TestObject.create("previous to keep", "a")).now();
-    saveDiffFileNotToRestore(gcsService, now.minusMinutes(1));
+    saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(1));
     Iterable<ImmutableObject> commitLogs =
         saveDiffFile(
-            gcsService,
+            gcsUtils,
             createCheckpoint(now),
             CommitLogManifest.create(
                 getBucketKey(1),
@@ -270,7 +267,7 @@ public class RestoreCommitLogsActionTest {
     // imported, in particular, the domain's 'registrant' key can be used by Objectify to load the
     // contact.
     saveDiffFile(
-        gcsService,
+        gcsUtils,
         Resources.toByteArray(Resources.getResource("google/registry/backup/commitlog.data")),
         now);
     action.run();
@@ -286,18 +283,18 @@ public class RestoreCommitLogsActionTest {
     return CommitLogCheckpoint.create(now, toMap(getBucketIds(), x -> now));
   }
 
-  static void saveDiffFile(GcsService gcsService, byte[] rawBytes, DateTime timestamp)
+  static void saveDiffFile(GcsUtils gcsUtils, byte[] rawBytes, DateTime timestamp)
       throws IOException {
-    gcsService.createOrReplace(
-        new GcsFilename(GCS_BUCKET, DIFF_FILE_PREFIX + timestamp),
-        new GcsFileOptions.Builder()
-            .addUserMetadata(LOWER_BOUND_CHECKPOINT, timestamp.minusMinutes(1).toString())
-            .build(),
-        ByteBuffer.wrap(rawBytes));
+    BlobInfo blobInfo =
+        BlobInfo.newBuilder(BlobId.of(GCS_BUCKET, DIFF_FILE_PREFIX + timestamp))
+            .setMetadata(
+                ImmutableMap.of(LOWER_BOUND_CHECKPOINT, timestamp.minusMinutes(1).toString()))
+            .build();
+    gcsUtils.createFromBytes(blobInfo, rawBytes);
   }
 
   static Iterable<ImmutableObject> saveDiffFile(
-      GcsService gcsService, CommitLogCheckpoint checkpoint, ImmutableObject... entities)
+      GcsUtils gcsUtils, CommitLogCheckpoint checkpoint, ImmutableObject... entities)
       throws IOException {
     DateTime now = checkpoint.getCheckpointTime();
     List<ImmutableObject> allEntities = Lists.asList(checkpoint, entities);
@@ -305,13 +302,13 @@ public class RestoreCommitLogsActionTest {
     for (ImmutableObject entity : allEntities) {
       serializeEntity(entity, output);
     }
-    saveDiffFile(gcsService, output.toByteArray(), now);
+    saveDiffFile(gcsUtils, output.toByteArray(), now);
     return allEntities;
   }
 
-  static void saveDiffFileNotToRestore(GcsService gcsService, DateTime now) throws Exception {
+  static void saveDiffFileNotToRestore(GcsUtils gcsUtils, DateTime now) throws Exception {
     saveDiffFile(
-        gcsService,
+        gcsUtils,
         createCheckpoint(now),
         CommitLogManifest.create(getBucketKey(1), now, null),
         CommitLogMutation.create(

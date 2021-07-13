@@ -20,7 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -147,7 +147,7 @@ public final class IcannReportingUploadAction implements Runnable {
             cursorTimeMinusMonth.getYear(), cursorTimeMinusMonth.getMonthOfYear());
     String reportBucketname = String.format("%s/%s", reportingBucket, reportSubdir);
     String filename = getFileName(cursorType, cursorTime, tldStr);
-    final GcsFilename gcsFilename = new GcsFilename(reportBucketname, filename);
+    final BlobId gcsFilename = BlobId.of(reportBucketname, filename);
     logger.atInfo().log("Reading ICANN report %s from bucket %s", filename, reportBucketname);
     // Check that the report exists
     try {
@@ -298,18 +298,18 @@ public final class IcannReportingUploadAction implements Runnable {
     emailService.sendEmail(EmailMessage.create(subject, body, recipient, sender));
   }
 
-  private byte[] readBytesFromGcs(GcsFilename reportFilename) throws IOException {
+  private byte[] readBytesFromGcs(BlobId reportFilename) throws IOException {
     try (InputStream gcsInput = gcsUtils.openInputStream(reportFilename)) {
       return ByteStreams.toByteArray(gcsInput);
     }
   }
 
-  private void verifyFileExists(GcsFilename gcsFilename) {
+  private void verifyFileExists(BlobId gcsFilename) {
     checkArgument(
         gcsUtils.existsAndNotEmpty(gcsFilename),
         "Object %s in bucket %s not found",
-        gcsFilename.getObjectName(),
-        gcsFilename.getBucketName());
+        gcsFilename.getName(),
+        gcsFilename.getBucket());
   }
 
 }

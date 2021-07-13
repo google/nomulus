@@ -14,7 +14,6 @@
 
 package google.registry.tools.server;
 
-import static com.google.appengine.tools.cloudstorage.GcsServiceFactory.createGcsService;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Iterators.filter;
 import static com.google.common.io.BaseEncoding.base16;
@@ -25,11 +24,10 @@ import static google.registry.request.Action.Method.POST;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.appengine.tools.mapreduce.Mapper;
 import com.google.appengine.tools.mapreduce.Reducer;
 import com.google.appengine.tools.mapreduce.ReducerInput;
+import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -98,13 +96,14 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
   @Inject MapreduceRunner mrRunner;
   @Inject JsonActionRunner jsonActionRunner;
   @Inject @Config("zoneFilesBucket") String bucket;
-  @Inject @Config("gcsBufferSize") int gcsBufferSize;
   @Inject @Config("commitLogDatastoreRetention") Duration datastoreRetention;
   @Inject @Config("dnsDefaultATtl") Duration dnsDefaultATtl;
   @SuppressWarnings("DurationVariableWithUnits") // false-positive Error Prone check
   @Inject @Config("dnsDefaultNsTtl") Duration dnsDefaultNsTtl;
   @Inject @Config("dnsDefaultDsTtl") Duration dnsDefaultDsTtl;
   @Inject Clock clock;
+  @Inject GcsUtils gcsUtils;
+
   @Inject GenerateZoneFilesAction() {}
 
   @Override
@@ -140,7 +139,7 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
             .runMapreduce(
                 new GenerateBindFileMapper(
                     tlds, exportTime, dnsDefaultATtl, dnsDefaultNsTtl, dnsDefaultDsTtl),
-                new GenerateBindFileReducer(bucket, exportTime, gcsBufferSize),
+                new GenerateBindFileReducer(bucket, exportTime, gcsUtils),
                 ImmutableList.of(new NullInput<>(), createEntityInput(DomainBase.class)))
             .getLinkToMapreduceConsole();
     ImmutableList<String> filenames =
@@ -236,22 +235,19 @@ public class GenerateZoneFilesAction implements Runnable, JsonActionRunner.JsonA
 
     private final String bucket;
     private final DateTime exportTime;
-    private final int gcsBufferSize;
+    private final GcsUtils gcsUtils;
 
-    GenerateBindFileReducer(String bucket, DateTime exportTime, int gcsBufferSize) {
+    GenerateBindFileReducer(String bucket, DateTime exportTime, GcsUtils gcsUtils) {
       this.bucket = bucket;
       this.exportTime = exportTime;
-      this.gcsBufferSize = gcsBufferSize;
+      this.gcsUtils = gcsUtils;
     }
 
     @Override
     public void reduce(String tld, ReducerInput<String> stanzas) {
       String stanzaCounter = tld + " stanzas";
-      GcsFilename filename =
-          new GcsFilename(bucket, String.format(FILENAME_FORMAT, tld, exportTime));
-      GcsUtils cloudStorage =
-          new GcsUtils(createGcsService(RetryParams.getDefaultInstance()), gcsBufferSize);
-      try (OutputStream gcsOutput = cloudStorage.openOutputStream(filename);
+      BlobId filename = BlobId.of(bucket, String.format(FILENAME_FORMAT, tld, exportTime));
+      try (OutputStream gcsOutput = gcsUtils.openOutputStream(filename);
           Writer osWriter = new OutputStreamWriter(gcsOutput, UTF_8);
           PrintWriter writer = new PrintWriter(osWriter)) {
         writer.printf(HEADER_FORMAT, tld);

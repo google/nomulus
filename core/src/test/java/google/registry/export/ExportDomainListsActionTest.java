@@ -14,14 +14,12 @@
 
 package google.registry.export;
 
-import static com.google.appengine.tools.cloudstorage.GcsServiceFactory.createGcsService;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.export.ExportDomainListsAction.REGISTERED_DOMAINS_FILENAME;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.GcsTestingUtils.readGcsFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
@@ -29,12 +27,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
-import com.google.appengine.tools.cloudstorage.GcsService;
-import com.google.appengine.tools.cloudstorage.ListOptions;
-import com.google.appengine.tools.cloudstorage.ListResult;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.StorageException;
+import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import google.registry.export.ExportDomainListsAction.ExportDomainListsReducer;
+import google.registry.gcs.GcsUtils;
+import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
@@ -46,7 +45,6 @@ import google.registry.testing.InjectExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.mapreduce.MapreduceTestCase;
-import java.io.FileNotFoundException;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -57,7 +55,7 @@ import org.mockito.ArgumentCaptor;
 @DualDatabaseTest
 class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAction> {
 
-  private GcsService gcsService;
+  private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private DriveConnection driveConnection = mock(DriveConnection.class);
   private ArgumentCaptor<byte[]> bytesExportedToDrive = ArgumentCaptor.forClass(byte[].class);
   private final FakeResponse response = new FakeResponse();
@@ -81,10 +79,9 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     action.mrRunner = makeDefaultRunner();
     action.response = response;
     action.gcsBucket = "outputbucket";
-    action.gcsBufferSize = 500;
+    action.gcsUtils = gcsUtils;
     action.clock = clock;
     action.driveConnection = driveConnection;
-    gcsService = createGcsService();
   }
 
   private void runAction() throws Exception {
@@ -117,8 +114,8 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     persistActiveDomain("rudnitzky.tld");
     persistDeletedDomain("mortuary.tld", DateTime.parse("2001-03-14T10:11:12Z"));
     runAction();
-    GcsFilename existingFile = new GcsFilename("outputbucket", "tld.txt");
-    String tlds = new String(readGcsFile(gcsService, existingFile), UTF_8);
+    BlobId existingFile = BlobId.of("outputbucket", "tld.txt");
+    String tlds = new String(gcsUtils.readBytesFrom(existingFile), UTF_8);
     // Check that it only contains the active domains, not the dead one.
     assertThat(tlds).isEqualTo("onetwo.tld\nrudnitzky.tld");
     verifyExportedToDrive("brouhaha", "onetwo.tld\nrudnitzky.tld");
@@ -131,17 +128,15 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     persistActiveDomain("rudnitzky.tld");
     persistActiveDomain("wontgo.testtld");
     runAction();
-    GcsFilename existingFile = new GcsFilename("outputbucket", "tld.txt");
-    String tlds = new String(readGcsFile(gcsService, existingFile), UTF_8).trim();
+    BlobId existingFile = BlobId.of("outputbucket", "tld.txt");
+    String tlds = new String(gcsUtils.readBytesFrom(existingFile), UTF_8).trim();
     // Check that it only contains the domains on the real TLD, and not the test one.
     assertThat(tlds).isEqualTo("onetwo.tld\nrudnitzky.tld");
     // Make sure that the test TLD file wasn't written out.
-    GcsFilename nonexistentFile = new GcsFilename("outputbucket", "testtld.txt");
-    assertThrows(FileNotFoundException.class, () -> readGcsFile(gcsService, nonexistentFile));
-    ListResult ls = gcsService.list("outputbucket", ListOptions.DEFAULT);
-    assertThat(ls.next().getName()).isEqualTo("tld.txt");
-    // Make sure that no other files were written out.
-    assertThat(ls.hasNext()).isFalse();
+    BlobId nonexistentFile = BlobId.of("outputbucket", "testtld.txt");
+    assertThrows(StorageException.class, () -> gcsUtils.readBytesFrom(nonexistentFile));
+    ImmutableList<String> ls = gcsUtils.listFolderObjects("outputbucket", "");
+    assertThat(ls).containsExactly("tld.txt");
     verifyExportedToDrive("brouhaha", "onetwo.tld\nrudnitzky.tld");
     verifyNoMoreInteractions(driveConnection);
   }
@@ -160,14 +155,14 @@ class ExportDomainListsActionTest extends MapreduceTestCase<ExportDomainListsAct
     persistActiveDomain("buddy.tldtwo");
     persistActiveDomain("cupid.tldthree");
     runAction();
-    GcsFilename firstTldFile = new GcsFilename("outputbucket", "tld.txt");
-    String tlds = new String(readGcsFile(gcsService, firstTldFile), UTF_8).trim();
+    BlobId firstTldFile = BlobId.of("outputbucket", "tld.txt");
+    String tlds = new String(gcsUtils.readBytesFrom(firstTldFile), UTF_8).trim();
     assertThat(tlds).isEqualTo("dasher.tld\nprancer.tld");
-    GcsFilename secondTldFile = new GcsFilename("outputbucket", "tldtwo.txt");
-    String moreTlds = new String(readGcsFile(gcsService, secondTldFile), UTF_8).trim();
+    BlobId secondTldFile = BlobId.of("outputbucket", "tldtwo.txt");
+    String moreTlds = new String(gcsUtils.readBytesFrom(secondTldFile), UTF_8).trim();
     assertThat(moreTlds).isEqualTo("buddy.tldtwo\nrudolph.tldtwo\nsanta.tldtwo");
-    GcsFilename thirdTldFile = new GcsFilename("outputbucket", "tldthree.txt");
-    String evenMoreTlds = new String(readGcsFile(gcsService, thirdTldFile), UTF_8).trim();
+    BlobId thirdTldFile = BlobId.of("outputbucket", "tldthree.txt");
+    String evenMoreTlds = new String(gcsUtils.readBytesFrom(thirdTldFile), UTF_8).trim();
     assertThat(evenMoreTlds).isEqualTo("cupid.tldthree");
     verifyExportedToDrive("brouhaha", "dasher.tld\nprancer.tld");
     verifyExportedToDrive("hooray", "buddy.tldtwo\nrudolph.tldtwo\nsanta.tldtwo");

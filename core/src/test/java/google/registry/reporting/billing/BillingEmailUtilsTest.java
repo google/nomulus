@@ -23,7 +23,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import google.registry.gcs.GcsUtils;
@@ -51,7 +51,7 @@ class BillingEmailUtilsTest {
   void beforeEach() throws Exception {
     emailService = mock(SendEmailService.class);
     gcsUtils = mock(GcsUtils.class);
-    when(gcsUtils.openInputStream(new GcsFilename("test-bucket", "results/REG-INV-2017-10.csv")))
+    when(gcsUtils.openInputStream(BlobId.of("test-bucket", "results/REG-INV-2017-10.csv")))
         .thenReturn(
             new ByteArrayInputStream("test,data\nhello,world".getBytes(StandardCharsets.UTF_8)));
     contentCaptor = ArgumentCaptor.forClass(EmailMessage.class);

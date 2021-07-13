@@ -19,7 +19,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.cloud.storage.BlobId;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -133,8 +133,8 @@ public class Spec11RegistrarThreatMatchesParserTest {
   }
 
   private void setupFile(String fileWithContent, String fileDate) {
-    GcsFilename gcsFilename =
-        new GcsFilename(
+    BlobId gcsFilename =
+        BlobId.of(
             "test-bucket",
             String.format("icann/spec11/2018-07/SPEC11_MONTHLY_REPORT_%s", fileDate));
     when(gcsUtils.existsAndNotEmpty(gcsFilename)).thenReturn(true);

@@ -11,11 +11,11 @@ com.google.auto.value:auto-value:1.7.4
 com.google.code.findbugs:jsr305:3.0.2
 com.google.code.gson:gson:2.8.6
 com.google.dagger:dagger:2.33
-com.google.errorprone:error_prone_annotations:2.3.4
+com.google.errorprone:error_prone_annotations:2.5.1
 com.google.flogger:flogger-system-backend:0.5.1
 com.google.flogger:flogger:0.5.1
 com.google.guava:failureaccess:1.0.1
-com.google.guava:guava:30.1-jre
+com.google.guava:guava:30.1.1-jre
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava
 com.google.http-client:google-http-client-apache-v2:1.39.0
 com.google.http-client:google-http-client-gson:1.39.0
@@ -47,5 +47,5 @@ org.apache.httpcomponents:httpcore:4.4.14
 org.bouncycastle:bcpkix-jdk15on:1.61
 org.bouncycastle:bcprov-jdk15on:1.61
 org.checkerframework:checker-compat-qual:2.5.3
-org.checkerframework:checker-qual:3.5.0
+org.checkerframework:checker-qual:3.8.0
 org.yaml:snakeyaml:1.17

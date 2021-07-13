@@ -21,7 +21,7 @@ import static google.registry.reporting.icann.IcannReportingModule.MANIFEST_FILE
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.api.services.bigquery.model.TableFieldSchema;
-import com.google.appengine.tools.cloudstorage.GcsFilename;
+import com.google.cloud.storage.BlobId;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableCollection;
@@ -260,7 +260,7 @@ public class IcannReportingStager {
             Ascii.toLowerCase(reportType.toString()),
             DateTimeFormat.forPattern("yyyyMM").print(yearMonth));
     String reportBucketname = String.format("%s/%s", reportingBucket, subdir);
-    final GcsFilename gcsFilename = new GcsFilename(reportBucketname, reportFilename);
+    final BlobId gcsFilename = BlobId.of(reportBucketname, reportFilename);
     gcsUtils.createFromBytes(gcsFilename, reportBytes);
     logger.atInfo().log("Wrote %d bytes to file location %s", reportBytes.length, gcsFilename);
     return reportFilename;
@@ -269,7 +269,7 @@ public class IcannReportingStager {
   /** Creates and stores a manifest file on GCS, indicating which reports were generated. */
   void createAndUploadManifest(String subdir, ImmutableList<String> filenames) throws IOException {
     String reportBucketname = String.format("%s/%s", reportingBucket, subdir);
-    final GcsFilename gcsFilename = new GcsFilename(reportBucketname, MANIFEST_FILE_NAME);
+    final BlobId gcsFilename = BlobId.of(reportBucketname, MANIFEST_FILE_NAME);
     StringBuilder manifestString = new StringBuilder();
     filenames.forEach((filename) -> manifestString.append(filename).append("\n"));
     gcsUtils.createFromBytes(gcsFilename, manifestString.toString().getBytes(UTF_8));
