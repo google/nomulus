@@ -20,13 +20,15 @@ import static google.registry.backup.RestoreCommitLogsAction.DRY_RUN_PARAM;
 import static google.registry.model.ofy.EntityWritePriorities.getEntityPriority;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.util.DateTimeUtils.isAtOrAfter;
+import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.joda.time.Duration.standardHours;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Key;
 import com.google.cloud.storage.BlobInfo;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
@@ -120,26 +122,15 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     }
     try {
       logger.atInfo().log("Beginning replay of commit logs.");
-      ImmutableList<BlobInfo> commitLogFiles = getFilesToReplay();
+      String resultMessage;
       if (dryRun) {
-        response.setStatus(HttpServletResponse.SC_OK);
-        ImmutableList<String> filenames =
-            commitLogFiles.stream()
-                .limit(10)
-                .map(file -> file.getName())
-                .collect(toImmutableList());
-        String dryRunMessage =
-            "Running in dry-run mode; would have processed %d files. They are (limit 10):\n"
-                + Joiner.on('\n').join(filenames);
-        response.setPayload(dryRunMessage);
-        logger.atInfo().log(dryRunMessage);
+        resultMessage = executeDryRun();
       } else {
-        replayFiles(commitLogFiles);
-        response.setStatus(HttpServletResponse.SC_OK);
-        String message = "ReplayCommitLogsToSqlAction completed successfully.";
-        response.setPayload(message);
-        logger.atInfo().log(message);
+        resultMessage = replayFiles();
       }
+      response.setStatus(SC_OK);
+      response.setPayload(resultMessage);
+      logger.atInfo().log(resultMessage);
     } catch (Throwable t) {
       String message = "Errored out replaying files.";
       logger.atSevere().withCause(t).log(message);
@@ -150,52 +141,77 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     }
   }
 
-  private ImmutableList<BlobInfo> getFilesToReplay() {
+  private String executeDryRun() {
     // Start at the first millisecond we haven't seen yet
-    DateTime fromTime = jpaTm().transact(() -> SqlReplayCheckpoint.get().plusMillis(1));
-    logger.atInfo().log("Starting replay from: %s.", fromTime);
-    // If there's an inconsistent file set, this will throw IllegalStateException and the job
-    // will try later -- this is likely because an export hasn't finished yet.
-    ImmutableList<BlobInfo> commitLogFiles =
-        diffLister.listDiffFiles(gcsBucket, fromTime, /* current time */ null);
-    logger.atInfo().log("Found %d new commit log files to process.", commitLogFiles.size());
-    return commitLogFiles;
+    DateTime searchStartTime = jpaTm().transact(() -> SqlReplayCheckpoint.get().plusMillis(1));
+    // Search through the end of the hour
+    DateTime searchEndTime =
+        searchStartTime.withMinuteOfHour(59).withSecondOfMinute(59).withMillisOfSecond(999);
+    ImmutableList<String> fileBatch =
+        diffLister.listDiffFiles(gcsBucket, searchStartTime, searchEndTime).stream()
+            .map(BlobInfo::getName)
+            .collect(toImmutableList());
+    return String.format(
+        "Running in dry-run mode, the first set of commit log files processed would be from "
+            + "searching from %s to %s and would contain %d file(s). They are (limit 10): \n%s",
+        searchStartTime,
+        searchEndTime,
+        fileBatch.size(),
+        fileBatch.stream().limit(10).collect(toImmutableList()));
   }
 
-  private void replayFiles(ImmutableList<BlobInfo> commitLogFiles) {
+  private String replayFiles() {
     DateTime replayTimeoutTime = clock.nowUtc().plus(REPLAY_TIMEOUT_DURATION);
-    int processedFiles = 0;
-    for (BlobInfo metadata : commitLogFiles) {
-      // One transaction per GCS file
-      jpaTm().transact(() -> processFile(metadata));
-      processedFiles++;
-      if (clock.nowUtc().isAfter(replayTimeoutTime)) {
-        logger.atInfo().log(
-            "Reached max execution time after replaying %d files, leaving %d files for next run.",
-            processedFiles, commitLogFiles.size() - processedFiles);
-        return;
+    DateTime searchStartTime = jpaTm().transact(() -> SqlReplayCheckpoint.get().plusMillis(1));
+    int filesProcessed = 0;
+    // Starting from one millisecond after the last file we processed, search for and import files
+    // one hour at a time until we catch up to the current time or we hit the replay timeout (in
+    // which case the next run will pick up from where we leave off).
+    //
+    // We use hour-long batches because GCS supports filename prefix-based searches.
+    while (true) {
+      if (isAtOrAfter(clock.nowUtc(), replayTimeoutTime)) {
+        return String.format(
+            "Reached max execution time after replaying %d file(s).", filesProcessed);
       }
+      if (isBeforeOrAt(clock.nowUtc(), searchStartTime)) {
+        return String.format(
+            "Caught up to current time after replaying %d file(s).", filesProcessed);
+      }
+      // Search through the end of the hour
+      DateTime searchEndTime =
+          searchStartTime.withMinuteOfHour(59).withSecondOfMinute(59).withMillisOfSecond(999);
+      ImmutableList<BlobInfo> fileBatch =
+          diffLister.listDiffFiles(gcsBucket, searchStartTime, searchEndTime);
+      if (fileBatch.isEmpty()) {
+        logger.atInfo().log(
+            "No remaining files found in hour %s, continuing search in the next hour.",
+            searchStartTime.toString("yyyy-MM-dd HH"));
+      }
+      for (BlobInfo file : fileBatch) {
+        jpaTm().transact(() -> processFile(file));
+        filesProcessed++;
+        if (clock.nowUtc().isAfter(replayTimeoutTime)) {
+          return String.format(
+              "Reached max execution time after replaying %d file(s).", filesProcessed);
+        }
+      }
+      searchStartTime = searchEndTime.plusMillis(1);
     }
-    logger.atInfo().log("Replayed %d commit log files to SQL successfully.", processedFiles);
   }
 
   private void processFile(BlobInfo metadata) {
-    logger.atInfo().log(
-        "Processing commit log file %s of size %d B.", metadata.getName(), metadata.getSize());
     try (InputStream input = gcsUtils.openInputStream(metadata.getBlobId())) {
       // Load and process the Datastore transactions one at a time
       ImmutableList<ImmutableList<VersionedEntity>> allTransactions =
           CommitLogImports.loadEntitiesByTransaction(input);
-      logger.atInfo().log(
-          "Replaying %d transactions from commit log file %s.",
-          allTransactions.size(), metadata.getName());
       allTransactions.forEach(this::replayTransaction);
       // if we succeeded, set the last-seen time
       DateTime checkpoint = DateTime.parse(metadata.getName().substring(DIFF_FILE_PREFIX.length()));
       SqlReplayCheckpoint.set(checkpoint);
       logger.atInfo().log(
-          "Replayed %d transactions from commit log file %s.",
-          allTransactions.size(), metadata.getName());
+          "Replayed %d transactions from commit log file %s with size %d B.",
+          allTransactions.size(), metadata.getName(), metadata.getSize());
     } catch (IOException e) {
       throw new RuntimeException(
           "Errored out while replaying commit log file " + metadata.getName(), e);
