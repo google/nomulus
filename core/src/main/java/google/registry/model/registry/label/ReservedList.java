@@ -33,7 +33,6 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Mapify;
@@ -185,8 +184,8 @@ public final class ReservedList
   }
 
   @Override
-  protected boolean refersToKey(Registry registry, Key<? extends BaseDomainLabelList<?, ?>> key) {
-    return registry.getReservedListNames().contains(key.getName());
+  protected boolean refersToList(Registry registry, String name) {
+    return registry.getReservedListNames().contains(name);
   }
 
   /** Determines whether the ReservedList is in use on any Registry */

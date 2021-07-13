@@ -164,16 +164,12 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
 
   /** Gets the names of the tlds that reference this list. */
   public final ImmutableSet<String> getReferencingTlds() {
-    Key<? extends BaseDomainLabelList<?, ?>> key = Key.create(this);
-    return getTlds()
-        .stream()
-        .filter((tld) -> refersToKey(Registry.get(tld), key))
+    return getTlds().stream()
+        .filter((tld) -> refersToList(Registry.get(tld), name))
         .collect(toImmutableSet());
   }
 
-  // TODO(b/193043636): Refactor this class to no longer use key references
-  protected abstract boolean refersToKey(
-      Registry registry, Key<? extends BaseDomainLabelList<?, ?>> key);
+  protected abstract boolean refersToList(Registry registry, String name);
 
   protected static <R> Optional<R> getFromCache(String listName, LoadingCache<String, R> cache) {
     try {

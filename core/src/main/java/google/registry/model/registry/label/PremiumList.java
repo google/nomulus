@@ -282,8 +282,8 @@ public final class PremiumList extends BaseDomainLabelList<Money, PremiumList.Pr
   }
 
   @Override
-  public boolean refersToKey(Registry registry, Key<? extends BaseDomainLabelList<?, ?>> key) {
-    return Objects.equals(registry.getPremiumListName().orElse(null), key.getName());
+  public boolean refersToList(Registry registry, String name) {
+    return Objects.equals(registry.getPremiumListName().orElse(null), name);
   }
 
   @Override
