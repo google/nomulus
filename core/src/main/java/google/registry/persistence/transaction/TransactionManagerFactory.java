@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.persistence.DaggerPersistenceComponent;
@@ -38,6 +39,8 @@ import org.joda.time.DateTime;
 public class TransactionManagerFactory {
 
   private static final DatastoreTransactionManager ofyTm = createTransactionManager();
+  private static final ReadOnlyTransactionManager readOnlyOfyTm =
+      new ReadOnlyTransactionManager(ofyTm);
 
   /** Optional override to manually set the transaction manager per-test. */
   private static Optional<TransactionManager> tmForTest = Optional.empty();
@@ -46,6 +49,10 @@ public class TransactionManagerFactory {
   @NonFinalForTesting
   private static Supplier<JpaTransactionManager> jpaTm =
       Suppliers.memoize(TransactionManagerFactory::createJpaTransactionManager);
+
+  /** Supplier for the read-only jpaTm so that it is initialized only once on request. */
+  private static Supplier<ReadOnlyJpaTransactionManager> readOnlyJpaTm =
+      Suppliers.memoize(() -> new ReadOnlyJpaTransactionManager(jpaTm.get()));
 
   private TransactionManagerFactory() {}
 
@@ -86,9 +93,19 @@ public class TransactionManagerFactory {
     if (tmForTest.isPresent()) {
       return tmForTest.get();
     }
-    PrimaryDatabase primaryDatabase =
-        DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC)).getPrimaryDatabase();
-    return primaryDatabase.equals(PrimaryDatabase.DATASTORE) ? ofyTm() : jpaTm();
+    MigrationState migrationState =
+        DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC));
+    if (migrationState.getPrimaryDatabase().equals(PrimaryDatabase.DATASTORE)) {
+      if (migrationState.isReadOnly()) {
+        return readOnlyOfyTm;
+      } else {
+        return ofyTm();
+      }
+    } else if (migrationState.isReadOnly()) {
+      return readOnlyJpaTm.get();
+    } else {
+      return jpaTm();
+    }
   }
 
   /**
@@ -98,12 +115,17 @@ public class TransactionManagerFactory {
    * returns the same instance.
    */
   public static JpaTransactionManager jpaTm() {
-    return jpaTm.get();
+    if (RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
+        || !DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC)).isReadOnly()) {
+      return jpaTm.get();
+    } else {
+      return readOnlyJpaTm.get();
+    }
   }
 
   /** Returns {@link DatastoreTransactionManager} instance. */
   @VisibleForTesting
-  public static DatastoreTransactionManager ofyTm() {
+  public static TransactionManager ofyTm() {
     return ofyTm;
   }
 

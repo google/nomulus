@@ -213,7 +213,7 @@ public class ReplicateToDatastoreActionTest {
 
   @Test
   void testNotInMigrationState_doesNothing() {
-    // set a schedule that backtracks the current status to DATASTORE_PRIMARY_READ_ONLY
+    // set a schedule that backtracks the current status to DATASTORE_PRIMARY
     DateTime now = fakeClock.nowUtc();
     ofyTm()
         .transact(
@@ -226,6 +226,7 @@ public class ReplicateToDatastoreActionTest {
                         .put(START_OF_TIME.plusHours(3), MigrationState.SQL_PRIMARY)
                         .put(now.plusHours(1), MigrationState.SQL_PRIMARY_READ_ONLY)
                         .put(now.plusHours(2), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
+                        .put(now.plusHours(3), MigrationState.DATASTORE_PRIMARY)
                         .build()));
     fakeClock.advanceBy(Duration.standardDays(1));
 
@@ -238,7 +239,7 @@ public class ReplicateToDatastoreActionTest {
         .hasLogAtLevelWithMessage(
             Level.INFO,
             "Skipping ReplicateToDatastoreAction because we are in migration phase "
-                + "DATASTORE_PRIMARY_READ_ONLY.");
+                + "DATASTORE_PRIMARY.");
   }
 
   @Entity(name = "ReplicationTestEntity")

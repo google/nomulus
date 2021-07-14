@@ -30,6 +30,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityTestCase;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.persistence.transaction.ReadOnlyTransactionManager;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
@@ -149,6 +150,18 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
     fakeClock.setTo(START_OF_TIME.plusDays(1));
     runValidTransition(DATASTORE_PRIMARY_READ_ONLY, SQL_PRIMARY);
     assertThat(tm().isOfy()).isFalse();
+  }
+
+  @Test
+  void testSuccess_factoryUsesReadOnly() {
+    fakeClock.setTo(START_OF_TIME.plusDays(1));
+    assertThat(tm()).isNotInstanceOf(ReadOnlyTransactionManager.class);
+    runValidTransition(DATASTORE_PRIMARY, DATASTORE_PRIMARY_READ_ONLY);
+    assertThat(tm()).isInstanceOf(ReadOnlyTransactionManager.class);
+    runValidTransition(DATASTORE_PRIMARY_READ_ONLY, SQL_PRIMARY_READ_ONLY);
+    assertThat(tm()).isInstanceOf(ReadOnlyTransactionManager.class);
+    runValidTransition(SQL_PRIMARY_READ_ONLY, SQL_PRIMARY);
+    assertThat(tm()).isNotInstanceOf(ReadOnlyTransactionManager.class);
   }
 
   private void runValidTransition(MigrationState from, MigrationState to) {
