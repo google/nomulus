@@ -28,6 +28,7 @@ import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationStat
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Tests for {@link SetDatabaseMigrationStateCommand}. */
@@ -45,6 +46,11 @@ public class SetDatabaseMigrationStateCommandTest
                     .loadSingleton(DatabaseMigrationStateSchedule.class)
                     .ifPresent(ofyTm()::delete));
     DatabaseMigrationStateSchedule.CACHE.invalidateAll();
+  }
+
+  @AfterEach
+  void afterEach() {
+    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
   }
 
   @TestOfyAndSql

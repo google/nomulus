@@ -24,15 +24,15 @@ import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationStat
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 
 /** Tests for {@link GetDatabaseMigrationStateCommand}. */
 @DualDatabaseTest
 public class GetDatabaseMigrationStateCommandTest
     extends CommandTestCase<GetDatabaseMigrationStateCommand> {
 
-  @BeforeEach
-  void beforeEach() {
+  @AfterEach
+  void afterEach() {
     ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
   }
 
