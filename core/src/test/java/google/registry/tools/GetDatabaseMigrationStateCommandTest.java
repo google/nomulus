@@ -21,6 +21,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
@@ -33,7 +34,7 @@ public class GetDatabaseMigrationStateCommandTest
 
   @AfterEach
   void afterEach() {
-    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
   @TestOfyAndSql

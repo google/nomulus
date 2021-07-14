@@ -35,6 +35,7 @@ import static google.registry.model.ResourceTransferUtils.createTransferResponse
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.ofyTmOrDoNothing;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
@@ -71,6 +72,8 @@ import google.registry.model.EppResourceUtils;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
@@ -123,6 +126,7 @@ import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.Duration;
 
 /** Static utils for setting up test resources. */
 public class DatabaseHelper {
@@ -1358,6 +1362,46 @@ public class DatabaseHelper {
   public static <T> T assertDetachedFromEntityManager(T entity) {
     assertThat(jpaTm().getEntityManager().contains(entity)).isFalse();
     return entity;
+  }
+
+  /**
+   * Sets a SQL_PRIMARY state on the {@link DatabaseMigrationStateSchedule}.
+   *
+   * <p>In order to allow for tests to manipulate the clock how they need, we start the transitions
+   * one millisecond after the clock's current time (in case the clock's current value is
+   * START_OF_TIME). We then advance the clock one second so that we're in the SQL_PRIMARY phase.
+   *
+   * <p>We must use the current time, otherwise the setting of the migration state will fail due to
+   * an invalid transition.
+   */
+  public static void setMigrationScheduleToSqlPrimary(FakeClock fakeClock) {
+    DateTime now = fakeClock.nowUtc();
+    ofyTm()
+        .transact(
+            () ->
+                DatabaseMigrationStateSchedule.set(
+                    ImmutableSortedMap.of(
+                        START_OF_TIME,
+                        MigrationState.DATASTORE_ONLY,
+                        now.plusMillis(1),
+                        MigrationState.DATASTORE_PRIMARY,
+                        now.plusMillis(2),
+                        MigrationState.DATASTORE_PRIMARY_READ_ONLY,
+                        now.plusMillis(3),
+                        MigrationState.SQL_PRIMARY)));
+    fakeClock.advanceBy(Duration.standardSeconds(1));
+  }
+
+  /** Removes the database migration schedule, in essence transitioning to DATASTORE_ONLY. */
+  public static void removeDatabaseMigrationSchedule() {
+    // use the raw calls because going SQL_PRIMARY -> DATASTORE_ONLY is not valid
+    ofyTm()
+        .transact(
+            () ->
+                ofyTm()
+                    .loadSingleton(DatabaseMigrationStateSchedule.class)
+                    .ifPresent(ofyTm()::delete));
+    DatabaseMigrationStateSchedule.CACHE.invalidateAll();
   }
 
   private DatabaseHelper() {}

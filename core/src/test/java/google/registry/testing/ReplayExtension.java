@@ -22,12 +22,12 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
-import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.ReplayQueue;
 import google.registry.model.ofy.TransactionInfo;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.JpaTransactionManagerImpl;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.schema.replay.DatastoreEntity;
 import google.registry.schema.replay.ReplicateToDatastoreAction;
@@ -92,7 +92,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     // transaction manager gets injected.
     inOfyContext = DualDatabaseTestInvocationContextProvider.inOfyContext(context);
     if (sqlToDsReplicator != null && !inOfyContext) {
-      RegistryConfig.overrideCloudSqlReplicateTransactions(true);
+      JpaTransactionManagerImpl.setReplaySqlToDatastoreOverrideForTest(true);
     }
 
     context.getStore(ExtensionContext.Namespace.GLOBAL).put(ReplayExtension.class, this);
@@ -105,7 +105,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     replay();
     injectExtension.afterEach(context);
     if (sqlToDsReplicator != null) {
-      RegistryConfig.overrideCloudSqlReplicateTransactions(false);
+      JpaTransactionManagerImpl.setReplaySqlToDatastoreOverrideForTest(false);
     }
   }
 

@@ -15,7 +15,6 @@
 package google.registry.model.common;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.common.DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_ONLY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_PRIMARY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.DATASTORE_PRIMARY_READ_ONLY;
@@ -30,6 +29,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityTestCase;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.testing.DatabaseHelper;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
@@ -45,7 +45,7 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
 
   @AfterEach
   void afterEach() {
-    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
   @Test
