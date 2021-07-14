@@ -15,15 +15,15 @@
 -- This query gathers all non-canceled billing events for a given
 -- YEAR_MONTH in yyyy-MM format.
 
- select b, r
- from BillingEvent b join Registrar r on b.clientId = r.clientIdentifier
- join Domain d on b.domainRepoId = d.repoId
- join Tld t on t.tldStrId = d.tld
- left join BillingCancellation c on b.id = c.refOneTime.billingId
- left join BillingCancellation cr on b.cancellationMatchingBillingEvent = cr.refRecurring.billingId
- where r.billingIdentifier != null
- and r.type = 'REAL'
- and t.invoicingEnabled = true
- and b.billingTime between CAST('%FIRST_TIMESTAMP_OF_MONTH%' AS timestamp) and CAST('%LAST_TIMESTAMP_OF_MONTH%' AS timestamp)
- and c.id = null
- and cr.id = null
+ SELECT b, r FROM BillingEvent b
+ JOIN Registrar r ON b.clientId = r.clientIdentifier
+ JOIN Domain d ON b.domainRepoId = d.repoId
+ JOIN Tld t ON t.tldStrId = d.tld
+ LEFT JOIN BillingCancellation c ON b.id = c.refOneTime.billingId
+ LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent = cr.refRecurring.billingId
+ WHERE r.billingIdentifier IS NOT NULL
+ AND r.type = 'REAL'
+ AND t.invoicingEnabled IS TRUE
+ AND b.billingTime BETWEEN CAST('%FIRST_TIMESTAMP_OF_MONTH%' AS timestamp) AND CAST('%LAST_TIMESTAMP_OF_MONTH%' AS timestamp)
+ AND c.id IS NULL
+ AND cr.id IS NULL

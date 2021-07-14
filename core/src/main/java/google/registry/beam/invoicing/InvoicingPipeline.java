@@ -24,6 +24,7 @@ import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.registrar.Registrar;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.reporting.billing.BillingModule;
 import google.registry.util.SqlTemplate;
 import java.io.Serializable;
@@ -80,6 +81,7 @@ public class InvoicingPipeline implements Serializable {
   }
 
   void setupPipeline(Pipeline pipeline) {
+    options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
     PCollection<BillingEvent> billingEvents =
         options.getDatabase().equals("DATASTORE")
             ? readFromBigQuery(options, pipeline)
