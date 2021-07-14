@@ -40,6 +40,7 @@ import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth8;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.googlecode.objectify.Key;
@@ -357,10 +358,10 @@ public class ReplayCommitLogsToSqlActionTest {
     //    even though the domain came first in the file
     // 2. that the allocation token delete occurred after the insertions
     InOrder inOrder = Mockito.inOrder(spy);
-    inOrder.verify(spy).put(any(ContactResource.class));
-    inOrder.verify(spy).put(any(DomainBase.class));
-    inOrder.verify(spy).delete(toDelete.createVKey());
-    inOrder.verify(spy).put(any(SqlReplayCheckpoint.class));
+    inOrder.verify(spy).putIgnoringReadOnly(any(ContactResource.class));
+    inOrder.verify(spy).putIgnoringReadOnly(any(DomainBase.class));
+    inOrder.verify(spy).deleteIgnoringReadOnly(toDelete.createVKey());
+    inOrder.verify(spy).putIgnoringReadOnly(any(SqlReplayCheckpoint.class));
   }
 
   @Test
@@ -399,8 +400,8 @@ public class ReplayCommitLogsToSqlActionTest {
     // deletes have higher weight
     ArgumentCaptor<Object> putCaptor = ArgumentCaptor.forClass(Object.class);
     InOrder inOrder = Mockito.inOrder(spy);
-    inOrder.verify(spy).delete(contact.createVKey());
-    inOrder.verify(spy).put(putCaptor.capture());
+    inOrder.verify(spy).deleteIgnoringReadOnly(contact.createVKey());
+    inOrder.verify(spy).putIgnoringReadOnly(putCaptor.capture());
     assertThat(putCaptor.getValue().getClass()).isEqualTo(ContactResource.class);
     assertThat(jpaTm().transact(() -> jpaTm().loadByKey(contact.createVKey()).getEmailAddress()))
         .isEqualTo("replay@example.tld");
@@ -441,9 +442,9 @@ public class ReplayCommitLogsToSqlActionTest {
               }
             });
     runAndAssertSuccess(now.minusMinutes(1), 1, 1);
-    // jpaTm()::put should only have been called with the checkpoint
-    verify(spy, times(2)).put(any(SqlReplayCheckpoint.class));
-    verify(spy, times(2)).put(any());
+    // jpaTm()::putIgnoringReadOnly should only have been called with the checkpoint
+    verify(spy, times(2)).putIgnoringReadOnly(any(SqlReplayCheckpoint.class));
+    verify(spy, times(2)).putIgnoringReadOnly(any());
   }
 
   @Test
@@ -554,6 +555,34 @@ public class ReplayCommitLogsToSqlActionTest {
               assertThat(jpaTm().loadAllOf(DomainBase.class)).isEmpty();
               assertThat(jpaTm().loadAllOf(DelegationSignerData.class)).isEmpty();
             });
+  }
+
+  @Test
+  void testReplay_duringReadOnly() throws Exception {
+    DateTime now = fakeClock.nowUtc();
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().insertWithoutBackup(TestObject.create("previous to delete"));
+              SqlReplayCheckpoint.set(now.minusMinutes(2));
+            });
+    Key<CommitLogManifest> manifestKey =
+        CommitLogManifest.createKey(getBucketKey(1), now.minusMinutes(1));
+    saveDiffFile(
+        gcsUtils,
+        createCheckpoint(now.minusMinutes(1)),
+        CommitLogManifest.create(
+            getBucketKey(1),
+            now.minusMinutes(1),
+            ImmutableSet.of(Key.create(TestObject.create("previous to delete")))),
+        CommitLogMutation.create(manifestKey, TestObject.create("a")));
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(fakeClock);
+    runAndAssertSuccess(now.minusMinutes(1), 1, 1);
+    jpaTm()
+        .transact(
+            () ->
+                assertThat(Iterables.getOnlyElement(jpaTm().loadAllOf(TestObject.class)).getId())
+                    .isEqualTo("a"));
   }
 
   @Test

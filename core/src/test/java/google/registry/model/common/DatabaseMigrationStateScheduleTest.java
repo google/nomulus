@@ -23,12 +23,17 @@ import static google.registry.model.common.DatabaseMigrationStateSchedule.Migrat
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.SQL_PRIMARY_READ_ONLY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityTestCase;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.persistence.transaction.TransactionManagerFactory.ReadOnlyModeException;
 import google.registry.testing.DatabaseHelper;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -150,6 +155,20 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
     fakeClock.setTo(START_OF_TIME.plusDays(1));
     runValidTransition(DATASTORE_PRIMARY_READ_ONLY, SQL_PRIMARY);
     assertThat(tm().isOfy()).isFalse();
+  }
+
+  @Test
+  void testSuccess_factoryUsesReadOnly() {
+    createTld("tld");
+    fakeClock.setTo(START_OF_TIME.plusDays(1));
+    AllocationToken token =
+        new AllocationToken.Builder().setToken("token").setTokenType(TokenType.SINGLE_USE).build();
+    runValidTransition(DATASTORE_PRIMARY, DATASTORE_PRIMARY_READ_ONLY);
+    assertThrows(ReadOnlyModeException.class, () -> persistResource(token));
+    runValidTransition(DATASTORE_PRIMARY_READ_ONLY, SQL_PRIMARY_READ_ONLY);
+    assertThrows(ReadOnlyModeException.class, () -> persistResource(token));
+    runValidTransition(SQL_PRIMARY_READ_ONLY, SQL_PRIMARY);
+    persistResource(token);
   }
 
   private void runValidTransition(MigrationState from, MigrationState to) {

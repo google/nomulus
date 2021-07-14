@@ -20,6 +20,7 @@ import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
+import static google.registry.persistence.transaction.TransactionManagerFactory.assertNotReadOnlyMode;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.base.Functions;
@@ -119,72 +120,86 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void insert(Object entity) {
+    assertNotReadOnlyMode();
     put(entity);
   }
 
   @Override
   public void insertAll(ImmutableCollection<?> entities) {
+    assertNotReadOnlyMode();
     putAll(entities);
   }
 
   @Override
   public void insertWithoutBackup(Object entity) {
+    assertNotReadOnlyMode();
     putWithoutBackup(entity);
   }
 
   @Override
   public void insertAllWithoutBackup(ImmutableCollection<?> entities) {
+    assertNotReadOnlyMode();
     putAllWithoutBackup(entities);
   }
 
   @Override
   public void put(Object entity) {
+    assertNotReadOnlyMode();
     saveEntity(entity);
   }
 
   @Override
   public void putAll(Object... entities) {
+    assertNotReadOnlyMode();
     syncIfTransactionless(
         getOfy().save().entities(toDatastoreEntities(ImmutableList.copyOf(entities))));
   }
 
   @Override
   public void putAll(ImmutableCollection<?> entities) {
+    assertNotReadOnlyMode();
     syncIfTransactionless(getOfy().save().entities(toDatastoreEntities(entities)));
   }
 
   @Override
   public void putWithoutBackup(Object entity) {
+    assertNotReadOnlyMode();
     syncIfTransactionless(getOfy().saveWithoutBackup().entities(toDatastoreEntity(entity)));
   }
 
   @Override
   public void putAllWithoutBackup(ImmutableCollection<?> entities) {
+    assertNotReadOnlyMode();
     syncIfTransactionless(getOfy().saveWithoutBackup().entities(toDatastoreEntities(entities)));
   }
 
   @Override
   public void update(Object entity) {
+    assertNotReadOnlyMode();
     put(entity);
   }
 
   @Override
   public void updateAll(ImmutableCollection<?> entities) {
+    assertNotReadOnlyMode();
     putAll(entities);
   }
 
   @Override
   public void updateAll(Object... entities) {
+    assertNotReadOnlyMode();
     updateAll(ImmutableList.of(entities));
   }
 
   @Override
   public void updateWithoutBackup(Object entity) {
+    assertNotReadOnlyMode();
     putWithoutBackup(entity);
   }
 
   @Override
   public void updateAllWithoutBackup(ImmutableCollection<?> entities) {
+    assertNotReadOnlyMode();
     putAllWithoutBackup(entities);
   }
 
@@ -296,11 +311,13 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void delete(VKey<?> key) {
+    assertNotReadOnlyMode();
     syncIfTransactionless(getOfy().delete().key(key.getOfyKey()));
   }
 
   @Override
   public void delete(Iterable<? extends VKey<?>> vKeys) {
+    assertNotReadOnlyMode();
     // We have to create a list to work around the wildcard capture issue here.
     // See https://docs.oracle.com/javase/tutorial/java/generics/capture.html
     ImmutableList<Key<?>> list =
@@ -312,17 +329,20 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> T delete(T entity) {
+    assertNotReadOnlyMode();
     syncIfTransactionless(getOfy().delete().entity(toDatastoreEntity(entity)));
     return entity;
   }
 
   @Override
   public void deleteWithoutBackup(VKey<?> key) {
+    assertNotReadOnlyMode();
     syncIfTransactionless(getOfy().deleteWithoutBackup().key(key.getOfyKey()));
   }
 
   @Override
   public void deleteWithoutBackup(Iterable<? extends VKey<?>> keys) {
+    assertNotReadOnlyMode();
     syncIfTransactionless(
         getOfy()
             .deleteWithoutBackup()
@@ -331,6 +351,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void deleteWithoutBackup(Object entity) {
+    assertNotReadOnlyMode();
     syncIfTransactionless(getOfy().deleteWithoutBackup().entity(toDatastoreEntity(entity)));
   }
 
@@ -347,6 +368,16 @@ public class DatastoreTransactionManager implements TransactionManager {
   @Override
   public boolean isOfy() {
     return true;
+  }
+
+  @Override
+  public void putIgnoringReadOnly(Object entity) {
+    syncIfTransactionless(getOfy().saveIgnoringReadOnly().entities(toDatastoreEntity(entity)));
+  }
+
+  @Override
+  public void deleteIgnoringReadOnly(VKey<?> key) {
+    syncIfTransactionless(getOfy().deleteIgnoringReadOnly().key(key.getOfyKey()));
   }
 
   /**

@@ -14,7 +14,9 @@
 
 package google.registry.persistence.transaction;
 
+import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.persistence.VKey;
+import java.util.Optional;
 import java.util.function.Supplier;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -63,6 +65,22 @@ public interface JpaTransactionManager extends TransactionManager {
 
   /** Deletes the entity by its id, throws exception if the entity is not deleted. */
   <T> void assertDelete(VKey<T> key);
+
+  /**
+   * Sets the current migration schedule without checking for read-only status.
+   *
+   * <p>This avoids getting "stuck" in read-only mode and should only be used in {@link
+   * DatabaseMigrationStateSchedule}.
+   */
+  void setDatabaseMigrationScheduleUnchecked(DatabaseMigrationStateSchedule schedule);
+
+  /**
+   * Loads the current migration schedule without checking for read-only status.
+   *
+   * <p>This avoids any recursive-load issues when loading the schedule and should only be used in
+   * {@link DatabaseMigrationStateSchedule}.
+   */
+  Optional<DatabaseMigrationStateSchedule> loadDatabaseMigrationScheduleUnchecked();
 
   /**
    * Releases all resources and shuts down.
