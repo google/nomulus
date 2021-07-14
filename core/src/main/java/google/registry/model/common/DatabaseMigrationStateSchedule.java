@@ -36,8 +36,8 @@ import org.joda.time.DateTime;
 /**
  * A wrapper object representing the stage-to-time mapping of the Registry 3.0 Cloud SQL migration.
  *
- * <p>The entity is stored in Datastore throughout the entire migration so as to have a single point
- * of access.
+ * <p>The entity is stored in SQL throughout the entire migration so as to have a single point of
+ * access.
  */
 @Entity
 public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements SqlOnlyEntity {
@@ -187,12 +187,12 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
   private DatabaseMigrationStateSchedule() {}
 
   @VisibleForTesting
-  DatabaseMigrationStateSchedule(
+  public DatabaseMigrationStateSchedule(
       TimedTransitionProperty<MigrationState, MigrationStateTransition> migrationTransitions) {
     this.migrationTransitions = migrationTransitions;
   }
 
-  /** Sets and persists to Datastore the provided migration transition schedule. */
+  /** Sets and persists to SQL the provided migration transition schedule. */
   public static void set(ImmutableSortedMap<DateTime, MigrationState> migrationTransitionMap) {
     jpaTm().assertInTransaction();
     TimedTransitionProperty<MigrationState, MigrationStateTransition> transitions =
@@ -204,7 +204,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
             MigrationState.DATASTORE_ONLY,
             "migrationTransitionMap must start with DATASTORE_ONLY");
     validateTransitionAtCurrentTime(transitions);
-    jpaTm().put(new DatabaseMigrationStateSchedule(transitions));
+    jpaTm().putIgnoringReadOnly(new DatabaseMigrationStateSchedule(transitions));
     CACHE.invalidateAll();
   }
 
@@ -218,7 +218,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
     return get().getValueAtTime(dateTime);
   }
 
-  /** Loads the currently-set migration schedule from Datastore, or the default if none exists. */
+  /** Loads the currently-set migration schedule from SQL, or the default if none exists. */
   @VisibleForTesting
   static TimedTransitionProperty<MigrationState, MigrationStateTransition> getUncached() {
     return jpaTm()

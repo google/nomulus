@@ -41,6 +41,6 @@ public class SqlReplayCheckpoint extends CrossTldSingleton implements SqlOnlyEnt
     SqlReplayCheckpoint checkpoint = new SqlReplayCheckpoint();
     checkpoint.lastReplayTime = lastReplayTime;
     // this will overwrite the existing object due to the constant revisionId
-    jpaTm().put(checkpoint);
+    jpaTm().putIgnoringReadOnly(checkpoint);
   }
 }

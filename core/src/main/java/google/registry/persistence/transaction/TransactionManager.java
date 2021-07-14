@@ -307,4 +307,10 @@ public interface TransactionManager {
 
   /** Returns true if the transaction manager is DatastoreTransactionManager, false otherwise. */
   boolean isOfy();
+
+  /** Performs the given write ignoring any read-only restrictions, for use only in replay. */
+  void putIgnoringReadOnly(Object entity);
+
+  /** Performs the given delete ignoring any read-only restrictions, for use only in replay. */
+  void deleteIgnoringReadOnly(VKey<?> key);
 }

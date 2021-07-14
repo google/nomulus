@@ -250,7 +250,7 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
                           resourceName, scope, requestStatusChecker.getLogId(), now, leaseLength);
                   // Locks are not parented under an EntityGroupRoot (so as to avoid write
                   // contention) and don't need to be backed up.
-                  tm().putWithoutBackup(newLock);
+                  tm().putIgnoringReadOnly(newLock);
 
                   return AcquireResult.create(now, lock, newLock, lockState);
                 });
@@ -269,18 +269,15 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
               // delete it. If the lock in Datastore was different then this lock is gone already;
               // this can happen if release() is called around the expiration time and the lock
               // expires underneath us.
-              Lock loadedLock =
-                  tm().loadByKeyIfPresent(
-                          VKey.create(
-                              Lock.class,
-                              new LockId(resourceName, tld),
-                              Key.create(Lock.class, lockId)))
-                      .orElse(null);
+              VKey<Lock> key =
+                  VKey.create(
+                      Lock.class, new LockId(resourceName, tld), Key.create(Lock.class, lockId));
+              Lock loadedLock = tm().loadByKeyIfPresent(key).orElse(null);
               if (Lock.this.equals(loadedLock)) {
                 // Use deleteWithoutBackup() so that we don't create a commit log entry for deleting
                 // the lock.
                 logger.atInfo().log("Deleting lock: %s", lockId);
-                tm().deleteWithoutBackup(Lock.this);
+                tm().deleteIgnoringReadOnly(key);
 
                 lockMetrics.recordRelease(
                     resourceName, tld, new Duration(acquiredTime, tm().getTransactionTime()));

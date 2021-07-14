@@ -260,7 +260,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
             .ifPresent(
                 sqlEntity -> {
                   sqlEntity.beforeSqlSaveOnReplay();
-                  jpaTm().put(sqlEntity);
+                  jpaTm().putIgnoringReadOnly(sqlEntity);
                 });
       } else {
         // this should never happen, but we shouldn't fail on it
@@ -293,7 +293,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
           && !DatastoreOnlyEntity.class.isAssignableFrom(entityClass)
           && entityClass.getAnnotation(javax.persistence.Entity.class) != null) {
         ReplaySpecializer.beforeSqlDelete(entityVKey);
-        jpaTm().delete(entityVKey);
+        jpaTm().deleteIgnoringReadOnly(entityVKey);
       }
     } catch (Throwable t) {
       logger.atSevere().log("Error when deleting key %s", entityVKey);
