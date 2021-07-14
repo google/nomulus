@@ -67,6 +67,7 @@ import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.schema.replay.SqlReplayCheckpoint;
 import google.registry.schema.tld.PremiumEntry;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TestObject;
@@ -147,7 +148,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
   @AfterEach
   void afterEach() {
-    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
   @Test

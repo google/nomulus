@@ -126,7 +126,6 @@ public class RegistryConfigSettings {
     // TODO(05012021): remove username field after it is removed from all yaml files.
     public String username;
     public String instanceConnectionName;
-    public boolean replicateTransactions;
   }
 
   /** Configuration for Apache Beam (Cloud Dataflow). */
