@@ -16,7 +16,6 @@ package google.registry.backup;
 
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static google.registry.backup.BackupUtils.GcsMetadataKeys.LOWER_BOUND_CHECKPOINT;
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
 import static org.joda.time.DateTimeZone.UTC;
@@ -33,6 +32,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
+import com.google.common.util.concurrent.MoreExecutors;
 import google.registry.gcs.GcsUtils;
 import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.testing.AppEngineExtension;
@@ -60,7 +60,7 @@ public class GcsDiffFileListerTest {
   @BeforeEach
   void beforeEach() throws Exception {
     diffLister.gcsUtils = gcsUtils;
-    diffLister.executor = newDirectExecutorService();
+    diffLister.lazyExecutor = MoreExecutors::newDirectExecutorService;
     for (int i = 0; i < 5; i++) {
       addGcsFile(i, i + 1);
     }

@@ -28,6 +28,7 @@ import com.google.common.flogger.FluentLogger;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
+import dagger.Lazy;
 import google.registry.backup.BackupModule.Backups;
 import google.registry.gcs.GcsUtils;
 import java.io.IOException;
@@ -44,7 +45,7 @@ class GcsDiffFileLister {
 
   @Inject GcsUtils gcsUtils;
 
-  @Inject @Backups ListeningExecutorService executor;
+  @Inject @Backups Lazy<ListeningExecutorService> lazyExecutor;
   @Inject GcsDiffFileLister() {}
 
   /**
@@ -107,7 +108,7 @@ class GcsDiffFileLister {
       DateTime upperBoundTime = DateTime.parse(strippedFilename);
       if (isInRange(upperBoundTime, fromTime, toTime)) {
         upperBoundTimesToBlobInfo.put(
-            upperBoundTime, executor.submit(() -> getBlobInfo(gcsBucket, filename)));
+            upperBoundTime, lazyExecutor.get().submit(() -> getBlobInfo(gcsBucket, filename)));
         lastUpperBoundTime = latestOf(upperBoundTime, lastUpperBoundTime);
       }
     }
@@ -156,6 +157,7 @@ class GcsDiffFileLister {
     logger.atInfo().log(
         "Actual restore from time: %s", getLowerBoundTime(sequence.firstEntry().getValue()));
     logger.atInfo().log("Found %d files to restore", sequence.size());
+    lazyExecutor.get().shutdown();
     return ImmutableList.copyOf(sequence.values());
   }
 
