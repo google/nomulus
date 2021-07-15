@@ -35,6 +35,8 @@ import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import java.lang.annotation.Documented;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Qualifier;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.DateTime;
@@ -100,5 +102,10 @@ public final class BackupModule {
   @Backups
   static ListeningExecutorService provideListeningExecutorService() {
     return listeningDecorator(newFixedThreadPool(NUM_THREADS, currentRequestThreadFactory()));
+  }
+
+  @Provides
+  static ScheduledExecutorService provideScheduledExecutorService() {
+    return Executors.newSingleThreadScheduledExecutor();
   }
 }

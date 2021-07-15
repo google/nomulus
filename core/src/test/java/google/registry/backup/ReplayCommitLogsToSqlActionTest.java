@@ -16,7 +16,6 @@ package google.registry.backup;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static google.registry.backup.RestoreCommitLogsActionTest.createCheckpoint;
 import static google.registry.backup.RestoreCommitLogsActionTest.saveDiffFile;
 import static google.registry.backup.RestoreCommitLogsActionTest.saveDiffFileNotToRestore;
@@ -42,6 +41,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth8;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.googlecode.objectify.Key;
 import google.registry.gcs.GcsUtils;
 import google.registry.gcs.backport.LocalStorageHelper;
@@ -72,6 +72,7 @@ import google.registry.testing.FakeResponse;
 import google.registry.testing.TestObject;
 import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
+import java.util.concurrent.Executors;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
@@ -131,7 +132,8 @@ public class ReplayCommitLogsToSqlActionTest {
     action.gcsBucket = "gcs bucket";
     action.diffLister = new GcsDiffFileLister();
     action.diffLister.gcsUtils = gcsUtils;
-    action.diffLister.executor = newDirectExecutorService();
+    action.diffLister.lazyExecutor = MoreExecutors::newDirectExecutorService;
+    action.diffLister.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     ofyTm()
         .transact(
             () ->

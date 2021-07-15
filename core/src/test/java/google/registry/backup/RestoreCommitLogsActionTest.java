@@ -17,7 +17,6 @@ package google.registry.backup;
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Maps.toMap;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.util.concurrent.MoreExecutors.newDirectExecutorService;
 import static google.registry.backup.BackupUtils.GcsMetadataKeys.LOWER_BOUND_CHECKPOINT;
 import static google.registry.backup.BackupUtils.serializeEntity;
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
@@ -34,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.google.common.primitives.Longs;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.googlecode.objectify.Key;
 import google.registry.gcs.GcsUtils;
 import google.registry.gcs.backport.LocalStorageHelper;
@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.Executors;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,7 +88,8 @@ public class RestoreCommitLogsActionTest {
     action.gcsBucketOverride = Optional.empty();
     action.diffLister = new GcsDiffFileLister();
     action.diffLister.gcsUtils = gcsUtils;
-    action.diffLister.executor = newDirectExecutorService();
+    action.diffLister.lazyExecutor = MoreExecutors::newDirectExecutorService;
+    action.diffLister.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
   }
 
   @Test
