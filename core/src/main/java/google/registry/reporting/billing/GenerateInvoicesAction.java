@@ -15,6 +15,8 @@
 package google.registry.reporting.billing;
 
 import static google.registry.beam.BeamUtils.createJobName;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.reporting.ReportingModule.DATABASE;
 import static google.registry.reporting.ReportingUtils.enqueueBeamReportingTask;
 import static google.registry.reporting.billing.BillingModule.PARAM_SHOULD_PUBLISH;
 import static google.registry.request.Action.Method.POST;
@@ -70,6 +72,7 @@ public class GenerateInvoicesAction implements Runnable {
   private final Clock clock;
   private final Response response;
   private final Dataflow dataflow;
+  private final String database;
 
   @Inject
   GenerateInvoicesAction(
@@ -79,6 +82,7 @@ public class GenerateInvoicesAction implements Runnable {
       @Config("billingBucketUrl") String billingBucketUrl,
       @Config("invoiceFilePrefix") String invoiceFilePrefix,
       @Parameter(PARAM_SHOULD_PUBLISH) boolean shouldPublish,
+      @Parameter(DATABASE) String database,
       YearMonth yearMonth,
       BillingEmailUtils emailUtils,
       Clock clock,
@@ -87,9 +91,15 @@ public class GenerateInvoicesAction implements Runnable {
     this.projectId = projectId;
     this.jobRegion = jobRegion;
     this.stagingBucketUrl = stagingBucketUrl;
+    // When generating the invoices using Cloud SQL before database cutover, save the reports in a
+    // separate bucket so that it does not overwrite the Datastore invoices.
+    if (tm().isOfy() && database.equals("CLOUD_SQL")) {
+      billingBucketUrl = billingBucketUrl.concat("-sql");
+    }
     this.billingBucketUrl = billingBucketUrl;
     this.invoiceFilePrefix = invoiceFilePrefix;
     this.shouldPublish = shouldPublish;
+    this.database = database;
     this.yearMonth = yearMonth;
     this.emailUtils = emailUtils;
     this.clock = clock;
@@ -113,6 +123,8 @@ public class GenerateInvoicesAction implements Runnable {
                       yearMonth.toString("yyyy-MM"),
                       "invoiceFilePrefix",
                       invoiceFilePrefix,
+                      "database",
+                      database,
                       "billingBucketUrl",
                       billingBucketUrl));
       LaunchFlexTemplateResponse launchResponse =
