@@ -29,6 +29,7 @@ import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.util.Retrier;
 import google.registry.util.SqlTemplate;
 import google.registry.util.UtilsModule;
@@ -98,6 +99,7 @@ public class Spec11Pipeline implements Serializable {
   }
 
   void setupPipeline(Pipeline pipeline) {
+    options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
     PCollection<Subdomain> domains =
         options.getDatabase().equals("DATASTORE")
             ? readFromBigQuery(options, pipeline)
