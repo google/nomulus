@@ -18,6 +18,7 @@ import static com.google.common.collect.Iterables.transform;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.backup.BackupUtils.GcsMetadataKeys.LOWER_BOUND_CHECKPOINT;
 import static google.registry.backup.ExportCommitLogDiffAction.DIFF_FILE_PREFIX;
+import static google.registry.backup.GcsDiffFileLister.getCommitLogDiffPrefix;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -61,7 +62,7 @@ public class GcsDiffFileListerTest {
   @BeforeEach
   void beforeEach() throws Exception {
     diffLister.gcsUtils = gcsUtils;
-    diffLister.lazyExecutor = MoreExecutors::newDirectExecutorService;
+    diffLister.executorProvider = MoreExecutors::newDirectExecutorService;
     diffLister.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     for (int i = 0; i < 5; i++) {
       addGcsFile(i, i + 1);
@@ -189,12 +190,23 @@ public class GcsDiffFileListerTest {
 
   @Test
   void testList_toTimeSpecified() {
-    assertThat(listDiffFiles(
-            now.minusMinutes(4).minusSeconds(1), now.minusMinutes(2).plusSeconds(1)))
-        .containsExactly(
-            now.minusMinutes(4),
-            now.minusMinutes(3),
-            now.minusMinutes(2))
+    assertThat(
+            listDiffFiles(now.minusMinutes(4).minusSeconds(1), now.minusMinutes(2).plusSeconds(1)))
+        .containsExactly(now.minusMinutes(4), now.minusMinutes(3), now.minusMinutes(2))
         .inOrder();
+  }
+
+  @Test
+  void testPrefix_lengthened() {
+    DateTime from = DateTime.parse("2021-05-11T06:48:00.070Z");
+    assertThat(getCommitLogDiffPrefix(from, null)).isEqualTo("commit_diff_until_");
+    assertThat(getCommitLogDiffPrefix(from, DateTime.parse("2021-07-01")))
+        .isEqualTo("commit_diff_until_2021-");
+    assertThat(getCommitLogDiffPrefix(from, DateTime.parse("2021-05-21")))
+        .isEqualTo("commit_diff_until_2021-05-");
+    assertThat(getCommitLogDiffPrefix(from, DateTime.parse("2021-05-11T09:48:00.070Z")))
+        .isEqualTo("commit_diff_until_2021-05-11T");
+    assertThat(getCommitLogDiffPrefix(from, DateTime.parse("2021-05-11T06:59:00.070Z")))
+        .isEqualTo("commit_diff_until_2021-05-11T06:");
   }
 }
