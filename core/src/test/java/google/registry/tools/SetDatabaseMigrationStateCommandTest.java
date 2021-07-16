@@ -25,32 +25,20 @@ import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 
 /** Tests for {@link SetDatabaseMigrationStateCommand}. */
 @DualDatabaseTest
 public class SetDatabaseMigrationStateCommandTest
     extends CommandTestCase<SetDatabaseMigrationStateCommand> {
 
-  @BeforeEach
-  void beforeEach() {
-    // clear out any static state that may have been persisted
-    ofyTm()
-        .transact(
-            () ->
-                ofyTm()
-                    .loadSingleton(DatabaseMigrationStateSchedule.class)
-                    .ifPresent(ofyTm()::delete));
-    DatabaseMigrationStateSchedule.CACHE.invalidateAll();
-  }
-
   @AfterEach
   void afterEach() {
-    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
   @TestOfyAndSql

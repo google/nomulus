@@ -30,8 +30,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
-import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
@@ -757,7 +758,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       checkArgumentNotNull(clock);
       inTransaction = true;
       transactionTime = clock.nowUtc();
-      if (withBackup && RegistryConfig.getCloudSqlReplicateTransactions()) {
+      if (withBackup
+          && DatabaseMigrationStateSchedule.getValueAtTime(transactionTime)
+              .getReplayDirection()
+              .equals(ReplayDirection.SQL_TO_DATASTORE)) {
         contentsBuilder = new Transaction.Builder();
       }
     }
