@@ -18,7 +18,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.setTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.setTmForTest;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newRegistry;
@@ -268,7 +268,7 @@ class InvoicingPipelineTest {
   @Test
   void testSuccess_fullSqlPipeline() throws Exception {
     TransactionManager originalTm = tm();
-    setTm(jpaTm());
+    setTmForTest(jpaTm());
     setupCloudSql();
     options.setDatabase("CLOUD_SQL");
     InvoicingPipeline invoicingPipeline = new InvoicingPipeline(options);
@@ -283,19 +283,19 @@ class InvoicingPipelineTest {
                 + "UnitPriceCurrency,PONumber");
     assertThat(overallInvoice.subList(1, overallInvoice.size()))
         .containsExactlyElementsIn(EXPECTED_INVOICE_OUTPUT);
-    setTm(originalTm);
+    setTmForTest(originalTm);
   }
 
   @Test
   void testSuccess_readFromCloudSql() throws Exception {
     TransactionManager originalTm = tm();
-    setTm(jpaTm());
+    setTmForTest(jpaTm());
     setupCloudSql();
     PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
     billingEvents = billingEvents.apply(new changeDomainRepo());
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
-    setTm(originalTm);
+    setTmForTest(originalTm);
   }
 
   @Test

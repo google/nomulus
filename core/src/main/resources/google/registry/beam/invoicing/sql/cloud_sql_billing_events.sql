@@ -15,6 +15,16 @@
 -- This query gathers all non-canceled billing events for a given
 -- YEAR_MONTH in yyyy-MM format.
 
+-- This query differs from the one for BigQuery because JPQL does not have all
+-- the same functionality as a native query. Since there is no JPQL equivalent
+-- for REGEXP_EXTRACT the tld cannot be extracted from the targetId in the
+-- BillingEvent table. This requires an additional join with the domain table in
+-- order to find the value for the TLD associated with the billing event. Also,
+-- JPQL does not allow subqueries in the SELECT and FROM clauses. This prevents
+-- the query from being able to filter out certain data early in the query to
+-- reduce the size of intermediate results. It may be useful to measure this
+-- query's performance and consider switching to using a native query.
+
  SELECT b, r FROM BillingEvent b
  JOIN Registrar r ON b.clientId = r.clientIdentifier
  JOIN Domain d ON b.domainRepoId = d.repoId
