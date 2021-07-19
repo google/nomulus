@@ -600,6 +600,8 @@ class google.registry.model.registrar.Registrar {
   java.util.Set<java.lang.String> allowedTlds;
   java.util.Set<java.lang.String> rdapBaseUrls;
   org.joda.time.DateTime lastCertificateUpdateTime;
+  org.joda.time.DateTime lastExpiringCertNotificationSentDate;
+  org.joda.time.DateTime lastExpiringFailoverCertNotificationSentDate;
 }
 class google.registry.model.registrar.Registrar$BillingAccountEntry {
   java.lang.String accountId;
