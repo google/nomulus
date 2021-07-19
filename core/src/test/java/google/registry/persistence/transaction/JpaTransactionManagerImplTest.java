@@ -17,7 +17,7 @@ package google.registry.persistence.transaction;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.testing.DatabaseHelper.assertDetached;
+import static google.registry.testing.DatabaseHelper.assertDetachedFromEntityManager;
 import static google.registry.testing.TestDataHelper.fileClassPath;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -388,7 +388,8 @@ class JpaTransactionManagerImplTest {
   void load_succeeds() {
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isFalse();
     jpaTm().transact(() -> jpaTm().insert(theEntity));
-    TestEntity persisted = jpaTm().transact(() -> assertDetached(jpaTm().loadByKey(theEntityKey)));
+    TestEntity persisted =
+        jpaTm().transact(() -> assertDetachedFromEntityManager(jpaTm().loadByKey(theEntityKey)));
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
   }
@@ -404,7 +405,8 @@ class JpaTransactionManagerImplTest {
   @Test
   void loadByEntity_succeeds() {
     jpaTm().transact(() -> jpaTm().insert(theEntity));
-    TestEntity persisted = jpaTm().transact(() -> assertDetached(jpaTm().loadByEntity(theEntity)));
+    TestEntity persisted =
+        jpaTm().transact(() -> assertDetachedFromEntityManager(jpaTm().loadByEntity(theEntity)));
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
   }
@@ -414,7 +416,11 @@ class JpaTransactionManagerImplTest {
     assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isFalse();
     jpaTm().transact(() -> jpaTm().insert(theEntity));
     TestEntity persisted =
-        jpaTm().transact(() -> assertDetached(jpaTm().loadByKeyIfPresent(theEntityKey).get()));
+        jpaTm()
+            .transact(
+                () ->
+                    assertDetachedFromEntityManager(
+                        jpaTm().loadByKeyIfPresent(theEntityKey).get()));
     assertThat(persisted.name).isEqualTo("theEntity");
     assertThat(persisted.data).isEqualTo("foo");
   }
@@ -431,7 +437,9 @@ class JpaTransactionManagerImplTest {
     assertThat(jpaTm().transact(() -> jpaTm().exists(compoundIdEntity))).isFalse();
     jpaTm().transact(() -> jpaTm().insert(compoundIdEntity));
     TestCompoundIdEntity persisted =
-        jpaTm().transact(() -> assertDetached(jpaTm().loadByKey(compoundIdEntityKey)));
+        jpaTm()
+            .transact(
+                () -> assertDetachedFromEntityManager(jpaTm().loadByKey(compoundIdEntityKey)));
     assertThat(persisted.name).isEqualTo("compoundIdEntity");
     assertThat(persisted.age).isEqualTo(10);
     assertThat(persisted.data).isEqualTo("foo");
@@ -450,7 +458,7 @@ class JpaTransactionManagerImplTest {
                               theEntityKey, VKey.createSql(TestEntity.class, "does-not-exist")));
 
               assertThat(results).containsExactly(theEntityKey, theEntity);
-              assertDetached(results.get(theEntityKey));
+              assertDetachedFromEntityManager(results.get(theEntityKey));
             });
   }
 
@@ -463,7 +471,7 @@ class JpaTransactionManagerImplTest {
               ImmutableMap<VKey<? extends TestEntity>, TestEntity> results =
                   jpaTm().loadByKeysIfPresent(ImmutableList.of(theEntityKey));
               assertThat(results).containsExactly(theEntityKey, theEntity);
-              assertDetached(results.get(theEntityKey));
+              assertDetachedFromEntityManager(results.get(theEntityKey));
             });
   }
 
@@ -478,7 +486,7 @@ class JpaTransactionManagerImplTest {
                       .loadByEntitiesIfPresent(
                           ImmutableList.of(theEntity, new TestEntity("does-not-exist", "bar")));
               assertThat(results).containsExactly(theEntity);
-              assertDetached(results.get(0));
+              assertDetachedFromEntityManager(results.get(0));
             });
   }
 
@@ -491,7 +499,7 @@ class JpaTransactionManagerImplTest {
               ImmutableList<TestEntity> results =
                   jpaTm().loadByEntities(ImmutableList.of(theEntity));
               assertThat(results).containsExactly(theEntity);
-              assertDetached(results.get(0));
+              assertDetachedFromEntityManager(results.get(0));
             });
   }
 
@@ -503,7 +511,7 @@ class JpaTransactionManagerImplTest {
             .transact(
                 () ->
                     jpaTm().loadAllOf(TestEntity.class).stream()
-                        .map(DatabaseHelper::assertDetached)
+                        .map(DatabaseHelper::assertDetachedFromEntityManager)
                         .collect(toImmutableList()));
     assertThat(persisted).containsExactlyElementsIn(moreEntities);
   }
