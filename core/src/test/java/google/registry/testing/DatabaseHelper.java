@@ -1351,14 +1351,12 @@ public class DatabaseHelper {
   }
 
   /**
-   * In JPA mode, assert that the given entity is detached from the current entity manager.
+   * Asserts that the given entity is detached from the current JPA entity manager.
    *
    * <p>Returns the original entity object.
    */
-  public static <T> T assertDetached(T entity) {
-    if (!tm().isOfy()) {
-      assertThat(jpaTm().getEntityManager().contains(entity)).isFalse();
-    }
+  public static <T> T assertDetachedFromEntityManager(T entity) {
+    assertThat(jpaTm().getEntityManager().contains(entity)).isFalse();
     return entity;
   }
 

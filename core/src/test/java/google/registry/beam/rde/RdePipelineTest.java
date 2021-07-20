@@ -23,7 +23,6 @@ import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeMode.THIN;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.setTmForTest;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.rde.RdeResourceType.CONTACT;
 import static google.registry.rde.RdeResourceType.DOMAIN;
@@ -50,7 +49,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
-import google.registry.persistence.transaction.TransactionManager;
+import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.rde.DepositFragment;
 import google.registry.rde.PendingDeposit;
 import google.registry.rde.RdeResourceType;
@@ -117,12 +116,9 @@ public class RdePipelineTest {
 
   private RdePipeline rdePipeline;
 
-  private TransactionManager originalTm;
-
   @BeforeEach
   void beforeEach() throws Exception {
-    originalTm = tm();
-    setTmForTest(jpaTm());
+    TransactionManagerFactory.setTmForTest(jpaTm());
     loadInitialData();
 
     // Two real registrars have been created by loadInitialData(), named "New Registrar" and "The
@@ -169,7 +165,7 @@ public class RdePipelineTest {
 
   @AfterEach
   void afterEach() {
-    setTmForTest(originalTm);
+    TransactionManagerFactory.removeTmOverrideForTest();
   }
 
   @Test

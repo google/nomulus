@@ -77,7 +77,7 @@ public class QueryComposerTest {
                     tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.GT, "bravo")
                         .first()
-                        .map(DatabaseHelper::assertDetached)
+                        .map(QueryComposerTest::assertDetachedIfJpa)
                         .get()))
         .isEqualTo(charlie);
     assertThat(
@@ -86,7 +86,7 @@ public class QueryComposerTest {
                     tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.GTE, "charlie")
                         .first()
-                        .map(DatabaseHelper::assertDetached)
+                        .map(QueryComposerTest::assertDetachedIfJpa)
                         .get()))
         .isEqualTo(charlie);
     assertThat(
@@ -95,7 +95,7 @@ public class QueryComposerTest {
                     tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.LT, "bravo")
                         .first()
-                        .map(DatabaseHelper::assertDetached)
+                        .map(QueryComposerTest::assertDetachedIfJpa)
                         .get()))
         .isEqualTo(alpha);
     assertThat(
@@ -104,7 +104,7 @@ public class QueryComposerTest {
                     tm().createQueryComposer(TestEntity.class)
                         .where("name", Comparator.LTE, "alpha")
                         .first()
-                        .map(DatabaseHelper::assertDetached)
+                        .map(QueryComposerTest::assertDetachedIfJpa)
                         .get()))
         .isEqualTo(alpha);
   }
@@ -125,7 +125,7 @@ public class QueryComposerTest {
     assertThat(
             transactIfJpaTm(
                 () ->
-                    DatabaseHelper.assertDetached(
+                    QueryComposerTest.assertDetachedIfJpa(
                         tm().createQueryComposer(TestEntity.class)
                             .where("name", Comparator.EQ, "alpha")
                             .getSingleResult())))
@@ -174,7 +174,7 @@ public class QueryComposerTest {
                         .createQueryComposer(TestEntity.class)
                         .where("name", Comparator.GT, "alpha")
                         .stream()
-                        .map(DatabaseHelper::assertDetached)
+                        .map(QueryComposerTest::assertDetachedIfJpa)
                         .collect(toImmutableList())))
         .containsExactly(bravo, charlie);
     assertThat(
@@ -184,7 +184,7 @@ public class QueryComposerTest {
                         .createQueryComposer(TestEntity.class)
                         .where("name", Comparator.GTE, "bravo")
                         .stream()
-                        .map(DatabaseHelper::assertDetached)
+                        .map(QueryComposerTest::assertDetachedIfJpa)
                         .collect(toImmutableList())))
         .containsExactly(bravo, charlie);
     assertThat(
@@ -194,7 +194,7 @@ public class QueryComposerTest {
                         .createQueryComposer(TestEntity.class)
                         .where("name", Comparator.LT, "charlie")
                         .stream()
-                        .map(DatabaseHelper::assertDetached)
+                        .map(QueryComposerTest::assertDetachedIfJpa)
                         .collect(toImmutableList())))
         .containsExactly(alpha, bravo);
     assertThat(
@@ -204,7 +204,7 @@ public class QueryComposerTest {
                         .createQueryComposer(TestEntity.class)
                         .where("name", Comparator.LTE, "bravo")
                         .stream()
-                        .map(DatabaseHelper::assertDetached)
+                        .map(QueryComposerTest::assertDetachedIfJpa)
                         .collect(toImmutableList())))
         .containsExactly(alpha, bravo);
   }
@@ -228,7 +228,7 @@ public class QueryComposerTest {
                     tm().createQueryComposer(TestEntity.class)
                         .where("val", Comparator.EQ, 2)
                         .first()
-                        .map(DatabaseHelper::assertDetached)
+                        .map(QueryComposerTest::assertDetachedIfJpa)
                         .get()))
         .isEqualTo(bravo);
   }
@@ -243,7 +243,7 @@ public class QueryComposerTest {
                         .where("val", Comparator.GT, 1)
                         .orderBy("val")
                         .stream()
-                        .map(DatabaseHelper::assertDetached)
+                        .map(QueryComposerTest::assertDetachedIfJpa)
                         .collect(toImmutableList())))
         .containsExactly(bravo, alpha);
   }
@@ -352,6 +352,13 @@ public class QueryComposerTest {
     assertThat(thrown)
         .hasMessageThat()
         .contains("The LIKE operation is not supported on Datastore.");
+  }
+
+  private static <T> T assertDetachedIfJpa(T entity) {
+    if (!tm().isOfy()) {
+      return DatabaseHelper.assertDetachedFromEntityManager(entity);
+    }
+    return entity;
   }
 
   @javax.persistence.Entity
