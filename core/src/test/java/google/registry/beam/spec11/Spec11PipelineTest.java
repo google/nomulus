@@ -18,8 +18,8 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.removeTmOverrideForTest;
 import static google.registry.persistence.transaction.TransactionManagerFactory.setTmForTest;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
@@ -49,7 +49,6 @@ import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.model.reporting.Spec11ThreatMatchDao;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
-import google.registry.persistence.transaction.TransactionManager;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -230,7 +229,6 @@ class Spec11PipelineTest {
   }
 
   private void setupCloudSql() {
-    TransactionManager originalTm = tm();
     setTmForTest(jpaTm());
     persistNewRegistrar("TheRegistrar");
     persistNewRegistrar("NewRegistrar");
@@ -271,7 +269,7 @@ class Spec11PipelineTest {
     persistResource(createDomain("no-email.com", "2A4BA9BBC-COM", registrar2, contact2));
     persistResource(
         createDomain("anti-anti-anti-virus.dev", "555666888-DEV", registrar3, contact3));
-    setTmForTest(originalTm);
+    removeTmOverrideForTest();
   }
 
   private void verifySaveToGcs() throws Exception {
