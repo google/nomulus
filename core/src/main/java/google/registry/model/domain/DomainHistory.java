@@ -294,9 +294,26 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   }
 
   // Used to fill out the domainContent field during asynchronous replay
-  public static void beforeSqlSave(DomainHistory domainHistory) {
-    domainHistory.domainContent =
-        jpaTm().loadByKey(VKey.createSql(DomainBase.class, domainHistory.getDomainRepoId()));
+  @Override
+  public void beforeSqlSaveOnReplay() {
+    if (domainContent == null) {
+      domainContent = jpaTm().getEntityManager().find(DomainBase.class, getDomainRepoId());
+      fillAuxiliaryFieldsFromDomain(this);
+    }
+  }
+
+  private static void fillAuxiliaryFieldsFromDomain(DomainHistory domainHistory) {
+    if (domainHistory.domainContent != null) {
+      domainHistory.nsHosts = nullToEmptyImmutableCopy(domainHistory.domainContent.nsHosts);
+      domainHistory.dsDataHistories =
+          nullToEmptyImmutableCopy(domainHistory.domainContent.getDsData()).stream()
+              .map(dsData -> DomainDsDataHistory.createFrom(domainHistory.id, dsData))
+              .collect(toImmutableSet());
+      domainHistory.gracePeriodHistories =
+          nullToEmptyImmutableCopy(domainHistory.domainContent.getGracePeriods()).stream()
+              .map(gracePeriod -> GracePeriodHistory.createFrom(domainHistory.id, gracePeriod))
+              .collect(toImmutableSet());
+    }
   }
 
   /** Class to represent the composite primary key of {@link DomainHistory} entity. */
@@ -391,17 +408,7 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
       // Note that we cannot assert that instance.domainContent is not null here because this
       // builder is also used to convert legacy HistoryEntry objects to DomainHistory, when
       // domainContent is not available.
-      if (instance.domainContent != null) {
-        instance.nsHosts = nullToEmptyImmutableCopy(instance.domainContent.nsHosts);
-        instance.dsDataHistories =
-            nullToEmptyImmutableCopy(instance.domainContent.getDsData()).stream()
-                .map(dsData -> DomainDsDataHistory.createFrom(instance.id, dsData))
-                .collect(toImmutableSet());
-        instance.gracePeriodHistories =
-            nullToEmptyImmutableCopy(instance.domainContent.getGracePeriods()).stream()
-                .map(gracePeriod -> GracePeriodHistory.createFrom(instance.id, gracePeriod))
-                .collect(toImmutableSet());
-      }
+      fillAuxiliaryFieldsFromDomain(instance);
       return instance;
     }
   }

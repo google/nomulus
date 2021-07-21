@@ -136,9 +136,11 @@ public class HostHistory extends HistoryEntry implements SqlEntity {
   }
 
   // Used to fill out the hostBase field during asynchronous replay
-  public static void beforeSqlSave(HostHistory hostHistory) {
-    hostHistory.hostBase =
-        jpaTm().loadByKey(VKey.createSql(HostResource.class, hostHistory.getHostRepoId()));
+  @Override
+  public void beforeSqlSaveOnReplay() {
+    if (hostBase == null) {
+      hostBase = jpaTm().getEntityManager().find(HostResource.class, getHostRepoId());
+    }
   }
 
   /** Class to represent the composite primary key of {@link HostHistory} entity. */

@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatabaseHelper.newContactResource;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -47,7 +48,7 @@ public class ContactHistoryTest extends EntityTestCase {
     jpaTm().transact(() -> jpaTm().insert(contact));
     VKey<ContactResource> contactVKey = contact.createVKey();
     ContactResource contactFromDb = jpaTm().transact(() -> jpaTm().loadByKey(contactVKey));
-    ContactHistory contactHistory = createContactHistory(contactFromDb, contact.getRepoId());
+    ContactHistory contactHistory = createContactHistory(contactFromDb);
     jpaTm().transact(() -> jpaTm().insert(contactHistory));
     jpaTm()
         .transact(
@@ -67,10 +68,7 @@ public class ContactHistoryTest extends EntityTestCase {
     VKey<ContactResource> contactVKey = contact.createVKey();
     ContactResource contactFromDb = jpaTm().transact(() -> jpaTm().loadByKey(contactVKey));
     ContactHistory contactHistory =
-        createContactHistory(contactFromDb, contact.getRepoId())
-            .asBuilder()
-            .setContact(null)
-            .build();
+        createContactHistory(contactFromDb).asBuilder().setContact(null).build();
     jpaTm().transact(() -> jpaTm().insert(contactHistory));
 
     jpaTm()
@@ -91,7 +89,7 @@ public class ContactHistoryTest extends EntityTestCase {
     VKey<ContactResource> contactVKey = contact.createVKey();
     ContactResource contactFromDb = tm().transact(() -> tm().loadByKey(contactVKey));
     fakeClock.advanceOneMilli();
-    ContactHistory contactHistory = createContactHistory(contactFromDb, contact.getRepoId());
+    ContactHistory contactHistory = createContactHistory(contactFromDb);
     tm().transact(() -> tm().insert(contactHistory));
 
     // retrieving a HistoryEntry or a ContactHistory with the same key should return the same object
@@ -106,7 +104,38 @@ public class ContactHistoryTest extends EntityTestCase {
     assertThat(hostHistoryFromDb).isEqualTo(historyEntryFromDb);
   }
 
-  private ContactHistory createContactHistory(ContactBase contact, String contactRepoId) {
+  @Test
+  void testBeforeSqlSave_afterContactPersisted() {
+    saveRegistrar("TheRegistrar");
+    ContactResource contactResource = newContactResource("contactId");
+    ContactHistory contactHistory =
+        new ContactHistory.Builder()
+            .setType(HistoryEntry.Type.HOST_CREATE)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(fakeClock.nowUtc())
+            .setClientId("TheRegistrar")
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason("reason")
+            .setRequestedByRegistrar(true)
+            .setContactRepoId(contactResource.getRepoId())
+            .build();
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().put(contactResource);
+              contactHistory.beforeSqlSaveOnReplay();
+              jpaTm().put(contactHistory);
+            });
+    jpaTm()
+        .transact(
+            () ->
+                assertAboutImmutableObjects()
+                    .that(jpaTm().loadByEntity(contactResource))
+                    .hasFieldsEqualTo(jpaTm().loadByEntity(contactHistory).getContactBase().get()));
+  }
+
+  private ContactHistory createContactHistory(ContactBase contact) {
     return new ContactHistory.Builder()
         .setType(HistoryEntry.Type.HOST_CREATE)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
@@ -117,7 +146,7 @@ public class ContactHistoryTest extends EntityTestCase {
         .setReason("reason")
         .setRequestedByRegistrar(true)
         .setContact(contact)
-        .setContactRepoId(contactRepoId)
+        .setContactRepoId(contact.getRepoId())
         .build();
   }
 

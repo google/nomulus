@@ -75,7 +75,8 @@ public class TestObject extends ImmutableObject implements DatastoreAndSqlEntity
     beforeSqlDeleteCallCount++;
   }
 
-  public static void beforeSqlSave(TestObject testObject) {
+  @Override
+  public void beforeSqlSaveOnReplay() {
     beforeSqlSaveCallCount++;
   }
 
