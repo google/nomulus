@@ -26,4 +26,7 @@ import java.util.Optional;
 public interface SqlEntity {
 
   Optional<DatastoreEntity> toDatastoreEntity();
+
+  /** A method that will ber called before the object is saved to SQL in asynchronous replay. */
+  default void beforeSqlSaveOnReplay() {}
 }

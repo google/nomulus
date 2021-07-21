@@ -28,17 +28,11 @@ import java.lang.reflect.Method;
 public class ReplaySpecializer {
 
   public static void beforeSqlDelete(VKey<?> key) {
-    invokeMethod(key.getKind(), "beforeSqlDelete", key);
-  }
-
-  public static void beforeSqlSave(SqlEntity sqlEntity) {
-    invokeMethod(sqlEntity.getClass(), "beforeSqlSave", sqlEntity);
-  }
-
-  private static <T> void invokeMethod(Class<T> clazz, String methodName, Object argument) {
+    String methodName = "beforeSqlDelete";
+    Class<?> clazz = key.getKind();
     try {
-      Method method = clazz.getMethod(methodName, argument.getClass());
-      method.invoke(null, argument);
+      Method method = clazz.getMethod(methodName, VKey.class);
+      method.invoke(null, key);
     } catch (NoSuchMethodException e) {
       // Ignore, this just means that the class doesn't need this hook.
     } catch (IllegalAccessException e) {
