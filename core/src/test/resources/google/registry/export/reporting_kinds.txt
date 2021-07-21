@@ -8,8 +8,6 @@ ForeignKeyDomainIndex
 ForeignKeyHostIndex
 HistoryEntry
 HostResource
-KmsSecret
-KmsSecretRevision
 Modification
 OneTime
 PollMessage

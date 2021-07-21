@@ -491,15 +491,6 @@
         primary key (host_repo_id, history_revision_id)
     );
 
-    create table "KmsSecret" (
-       revision_id int8 not null,
-        creation_time timestamptz not null,
-        encrypted_value text not null,
-        crypto_key_version_name text not null,
-        secret_name text not null,
-        primary key (revision_id)
-    );
-
     create table "Lock" (
        resource_name text not null,
         scope text not null,
@@ -806,7 +797,6 @@ create index IDX1iy7njgb7wjmj9piml4l2g0qi on "HostHistory" (history_registrar_id
 create index IDXkkwbwcwvrdkkqothkiye4jiff on "HostHistory" (host_name);
 create index IDXknk8gmj7s47q56cwpa6rmpt5l on "HostHistory" (history_type);
 create index IDX67qwkjtlq5q8dv6egtrtnhqi7 on "HostHistory" (history_modification_time);
-create index IDXli9nil3s4t4p21i3xluvvilb7 on "KmsSecret" (secret_name);
 create index IDXe7wu46c7wpvfmfnj4565abibp on "PollMessage" (registrar_id);
 create index IDXaydgox62uno9qx8cjlj5lauye on "PollMessage" (event_time);
 create index premiumlist_name_idx on "PremiumList" (name);

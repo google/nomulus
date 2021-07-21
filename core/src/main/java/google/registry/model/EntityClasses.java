@@ -43,8 +43,6 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.server.KmsSecret;
-import google.registry.model.server.KmsSecretRevision;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
 import google.registry.model.tmch.ClaimsList;
@@ -88,8 +86,6 @@ public final class EntityClasses {
           HistoryEntry.class,
           HostHistory.class,
           HostResource.class,
-          KmsSecret.class,
-          KmsSecretRevision.class,
           LastSqlTransaction.class,
           Lock.class,
           PollMessage.class,

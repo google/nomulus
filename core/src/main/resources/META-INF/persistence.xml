@@ -65,7 +65,6 @@
     <class>google.registry.model.registry.Registry</class>
     <class>google.registry.model.reporting.DomainTransactionRecord</class>
     <class>google.registry.model.reporting.Spec11ThreatMatch</class>
-    <class>google.registry.model.server.KmsSecretRevision</class>
     <class>google.registry.model.server.Lock</class>
     <class>google.registry.model.server.ServerSecret</class>
     <class>google.registry.model.smd.SignedMarkRevocationList</class>

@@ -825,18 +825,6 @@ enum google.registry.model.reporting.HistoryEntry$Type {
   RDE_IMPORT;
   SYNTHETIC;
 }
-class google.registry.model.server.KmsSecret {
-  @Id java.lang.String name;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  com.googlecode.objectify.Key<google.registry.model.server.KmsSecretRevision> latestRevision;
-}
-class google.registry.model.server.KmsSecretRevision {
-  @Id long revisionKey;
-  @Parent com.googlecode.objectify.Key<google.registry.model.server.KmsSecret> parent;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  java.lang.String encryptedValue;
-  java.lang.String kmsCryptoKeyVersionName;
-}
 class google.registry.model.server.Lock {
   @Id java.lang.String lockId;
   java.lang.String requestLogId;

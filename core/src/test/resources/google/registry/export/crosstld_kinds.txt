@@ -2,8 +2,6 @@ ClaimsList
 ClaimsListSingleton
 Cursor
 DatabaseMigrationStateSchedule
-KmsSecret
-KmsSecretRevision
 PremiumList
 PremiumListEntry
 PremiumListRevision
