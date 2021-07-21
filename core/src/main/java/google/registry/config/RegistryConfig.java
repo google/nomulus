@@ -1278,6 +1278,18 @@ public final class RegistryConfig {
     }
 
     @Provides
+    @Config("expirationWarningEmailBodyText")
+    public static String provideExpirationWarningEmailBodyText(RegistryConfigSettings config) {
+      return config.sslCertificateValidation.expirationWarningEmailBodyText;
+    }
+
+    @Provides
+    @Config("expirationWarningEmailSubjectText")
+    public static String provideExpirationWarningEmailSubjectText(RegistryConfigSettings config) {
+      return config.sslCertificateValidation.expirationWarningEmailSubjectText;
+    }
+
+    @Provides
     @Config("allowedEcdsaCurves")
     public static ImmutableSet<String> provideAllowedEcdsaCurves(RegistryConfigSettings config) {
       return ImmutableSet.copyOf(config.sslCertificateValidation.allowedEcdsaCurves);

@@ -452,6 +452,13 @@ sslCertificateValidation:
   # The number of days before a certificate expires that indicates the
   # certificate is nearing expiration and warnings should be sent.
   expirationWarningDays: 30
+  # Text for expiring certificate notification email subject.
+  expirationWarningEmailSubjectText: Certificate Expring Within 30 Days.
+  # Text for expiring certificate notification email body that accepts 3 parameters:
+  # registrar name, certificate type, and expiration date, respectively.
+  expirationWarningEmailBodyText: |
+    Hello Registrar %s,
+       The %s certificate is expiring on %s.
   # The minimum number of bits an RSA key must contain.
   minimumRsaKeyLength: 2048
   # The ECDSA curves that are allowed for public keys.

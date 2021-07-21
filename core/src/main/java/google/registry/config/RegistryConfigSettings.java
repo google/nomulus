@@ -230,5 +230,7 @@ public class RegistryConfigSettings {
     public int expirationWarningDays;
     public int minimumRsaKeyLength;
     public Set<String> allowedEcdsaCurves;
+    public String expirationWarningEmailBodyText;
+    public String expirationWarningEmailSubjectText;
   }
 }
