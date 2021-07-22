@@ -800,7 +800,9 @@ CREATE TABLE public."Registrar" (
     state text,
     type text NOT NULL,
     url text,
-    whois_server text
+    whois_server text,
+    last_expiring_cert_notification_sent_date timestamp with time zone,
+    last_expiring_failover_cert_notification_sent_date timestamp with time zone
 );
 
 
