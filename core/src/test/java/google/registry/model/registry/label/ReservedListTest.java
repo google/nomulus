@@ -35,7 +35,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
-import google.registry.schema.tld.PremiumEntry;
+import google.registry.model.registry.label.PremiumList.PremiumEntry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
@@ -255,17 +255,17 @@ class ReservedListTest {
     assertThat(reservedList.getReservedListEntries()).hasSize(3);
 
     ReservedListEntry trombone = reservedList.getReservedListEntries().get("trombone");
-    assertThat(trombone.label).isEqualTo("trombone");
+    assertThat(trombone.domainLabel).isEqualTo("trombone");
     assertThat(trombone.reservationType).isEqualTo(FULLY_BLOCKED);
     assertThat(trombone.comment).isEqualTo("yup");
 
     ReservedListEntry oysters = reservedList.getReservedListEntries().get("oysters");
-    assertThat(oysters.label).isEqualTo("oysters");
+    assertThat(oysters.domainLabel).isEqualTo("oysters");
     assertThat(oysters.reservationType).isEqualTo(FULLY_BLOCKED);
     assertThat(oysters.comment).isEqualTo("this is a loooong comment");
 
     ReservedListEntry nullComment = reservedList.getReservedListEntries().get("nullcomment");
-    assertThat(nullComment.label).isEqualTo("nullcomment");
+    assertThat(nullComment.domainLabel).isEqualTo("nullcomment");
     assertThat(nullComment.reservationType).isEqualTo(ALLOWED_IN_SUNRISE);
     assertThat(nullComment.comment).isEmpty();
   }

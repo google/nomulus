@@ -53,50 +53,48 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   @Test
   // since the old entity is always null and file cannot be empty, the prompt will NOT be "No entity
   // changes to apply."
-  void commandInit_successStageNewEntity() throws Exception {
+  void commandPrompt_successStageNewEntity() throws Exception {
     CreatePremiumListCommand command = new CreatePremiumListCommand();
     command.inputFile = Paths.get(premiumTermsPath);
-    command.init();
-    assertThat(command.prompt()).contains("Create PremiumList@");
-    assertThat(command.prompt()).contains(String.format("name=%s", TLD_TEST));
+    command.prompt();
+    assertThat(command.prompt()).isEqualTo("Create new premium list for prime?");
   }
 
   @Test
-  void commandInit_successStageNewEntityWithOverride() throws Exception {
+  void commandPrompt_successStageNewEntityWithOverride() throws Exception {
     CreatePremiumListCommand command = new CreatePremiumListCommand();
     String alterTld = "override";
     command.inputFile = Paths.get(premiumTermsPath);
     command.override = true;
     command.name = alterTld;
-    command.init();
-    assertThat(command.prompt()).contains("Create PremiumList@");
-    assertThat(command.prompt()).contains(String.format("name=%s", alterTld));
+    command.prompt();
+    assertThat(command.prompt()).isEqualTo("Create new premium list for override?");
   }
 
   @Test
-  void commandInit_failureNoInputFile() {
+  void commandPrompt_failureNoInputFile() {
     CreatePremiumListCommand command = new CreatePremiumListCommand();
-    assertThrows(NullPointerException.class, command::init);
+    assertThrows(NullPointerException.class, command::prompt);
   }
 
   @Test
-  void commandInit_failurePremiumListAlreadyExists() {
+  void commandPrompt_failurePremiumListAlreadyExists() {
     String randomStr = "random";
     createTld(randomStr);
     CreatePremiumListCommand command = new CreatePremiumListCommand();
     command.name = randomStr;
-    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown).hasMessageThat().isEqualTo("A premium list already exists by this name");
   }
 
   @Test
-  void commandInit_failureMismatchedTldFileName_noOverride() throws Exception {
+  void commandPrompt_failureMismatchedTldFileName_noOverride() throws Exception {
     CreatePremiumListCommand command = new CreatePremiumListCommand();
     String fileName = "random";
     Path tmpPath = tmpDir.resolve(String.format("%s.txt", fileName));
     Files.write(new byte[0], tmpPath.toFile());
     command.inputFile = tmpPath;
-    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
         .hasMessageThat()
         .contains(
@@ -108,11 +106,11 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   }
 
   @Test
-  void commandInit_failureMismatchedTldName_noOverride() {
+  void commandPrompt_failureMismatchedTldName_noOverride() {
     CreatePremiumListCommand command = new CreatePremiumListCommand();
     String fileName = "random";
     command.name = fileName;
-    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
         .hasMessageThat()
         .contains(
@@ -121,19 +119,5 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
                     + "intended to be used on (unless --override is specified), "
                     + "yet TLD %s does not exist",
                 fileName));
-  }
-
-  @Test
-  void commandInit_failureUseEmptyFile() throws Exception {
-    CreatePremiumListCommand command = new CreatePremiumListCommand();
-    String fileName = "empty";
-    Path tmpPath = tmpDir.resolve(String.format("%s.txt", fileName));
-    Files.write(new byte[0], tmpPath.toFile());
-    command.inputFile = tmpPath;
-    command.name = TLD_TEST;
-    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("The Cloud SQL schema requires exactly one currency");
   }
 }

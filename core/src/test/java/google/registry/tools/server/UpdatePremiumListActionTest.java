@@ -17,7 +17,7 @@ package google.registry.tools.server;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.loadPremiumListEntries;
+import static google.registry.testing.DatabaseHelper.loadPremiumEntries;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
@@ -84,7 +84,7 @@ class UpdatePremiumListActionTest {
     action.inputData = "rich,USD 75\nricher,USD 5000\npoor, USD 0.99";
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    assertThat(loadPremiumListEntries(PremiumListDao.getLatestRevision("foo").get())).hasSize(3);
+    assertThat(loadPremiumEntries(PremiumListDao.getLatestRevision("foo").get())).hasSize(3);
     Truth8.assertThat(PremiumListDao.getPremiumPrice("foo", "rich"))
         .hasValue(Money.parse("USD 75"));
     Truth8.assertThat(PremiumListDao.getPremiumPrice("foo", "richer"))

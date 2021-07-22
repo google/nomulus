@@ -17,7 +17,7 @@ package google.registry.tools.server;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatabaseHelper.createTlds;
-import static google.registry.testing.DatabaseHelper.loadPremiumListEntries;
+import static google.registry.testing.DatabaseHelper.loadPremiumEntries;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import google.registry.model.registry.label.PremiumList;
@@ -88,8 +88,7 @@ public class CreatePremiumListActionTest {
     action.override = true;
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    assertThat(loadPremiumListEntries(PremiumListDao.getLatestRevision("zanzibar").get()))
-        .hasSize(1);
+    assertThat(loadPremiumEntries(PremiumListDao.getLatestRevision("zanzibar").get())).hasSize(1);
   }
 
   @Test
@@ -99,7 +98,7 @@ public class CreatePremiumListActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     PremiumList premiumList = PremiumListDao.getLatestRevision("foo").get();
-    assertThat(loadPremiumListEntries(premiumList)).hasSize(2);
+    assertThat(loadPremiumEntries(premiumList)).hasSize(2);
     assertThat(PremiumListDao.getPremiumPrice(premiumList.getName(), "rich"))
         .hasValue(Money.parse("USD 25"));
     assertThat(PremiumListDao.getPremiumPrice(premiumList.getName(), "diamond")).isEmpty();

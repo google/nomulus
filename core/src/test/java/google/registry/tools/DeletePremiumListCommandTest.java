@@ -17,7 +17,7 @@ package google.registry.tools;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.loadPremiumListEntries;
+import static google.registry.testing.DatabaseHelper.loadPremiumEntries;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,7 +33,7 @@ class DeletePremiumListCommandTest extends CommandTestCase<DeletePremiumListComm
   @Test
   void testSuccess() throws Exception {
     PremiumList premiumList = persistPremiumList("xn--q9jyb4c", "blah,USD 100");
-    assertThat(loadPremiumListEntries(premiumList)).hasSize(1);
+    assertThat(loadPremiumEntries(premiumList)).hasSize(1);
     runCommand("--force", "--name=xn--q9jyb4c");
     assertThat(PremiumListDao.getLatestRevision("xn--q9jyb4c")).isEmpty();
   }

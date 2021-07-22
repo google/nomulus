@@ -27,9 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList.PremiumListEntry;
+import google.registry.model.registry.label.PremiumList.PremiumEntry;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,14 +46,12 @@ public class PremiumListTest {
   @BeforeEach
   void before() {
     // createTld() overwrites the premium list, so call it first.
+    DatabaseHelper.persistNewRegistrar("TheRegistrar");
+    DatabaseHelper.persistNewRegistrar("NewRegistrar");
     createTld("tld");
     PremiumList pl =
         persistPremiumList(
-            "tld",
-            "lol,USD 999 # yup",
-            "rich,USD 1999 #tada",
-            "icann,JPY 100",
-            "johnny-be-goode,USD 20.50");
+            "tld", "lol,USD 999", "rich,USD 1999", "icann,JPY 100", "johnny-be-goode,USD 20.50");
     persistResource(Registry.get("tld").asBuilder().setPremiumList(pl).build());
   }
 
@@ -108,8 +107,8 @@ public class PremiumListTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new PremiumListEntry.Builder()
-                    .setPrice(Money.parse("USD 399"))
+                new PremiumEntry.Builder()
+                    .setPrice(Money.parse("USD 399").getAmount())
                     .setLabel("UPPER.tld")
                     .build());
     assertThat(e).hasMessageThat().contains("must be in puny-coded, lower-case form");
@@ -121,8 +120,8 @@ public class PremiumListTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new PremiumListEntry.Builder()
-                    .setPrice(Money.parse("USD 399"))
+                new PremiumEntry.Builder()
+                    .setPrice(Money.parse("USD 399").getAmount())
                     .setLabel("lower.みんな")
                     .build());
     assertThat(e).hasMessageThat().contains("must be in puny-coded, lower-case form");
