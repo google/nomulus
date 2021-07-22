@@ -131,13 +131,19 @@ public final class ReservedList
     @Column(nullable = false)
     ReservationType reservationType;
 
+    String comment;
+
     /** Mapper for use with @Mapify */
     static class LabelMapper implements Mapper<String, ReservedListEntry> {
 
       @Override
       public String getKey(ReservedListEntry entry) {
-        return entry.getLabel();
+        return entry.getDomainLabel();
       }
+    }
+
+    public String getComment(String comment) {
+      return comment;
     }
 
     /** Creates a {@link ReservedListEntry} from a label, reservation type, and optional comment. */
@@ -163,7 +169,7 @@ public final class ReservedList
     @Override
     public String toString() {
       return String.format(
-          "%s,%s%s", label, reservationType, isNullOrEmpty(comment) ? "" : " # " + comment);
+          "%s,%s%s", domainLabel, reservationType, isNullOrEmpty(comment) ? "" : " # " + comment);
     }
 
     /** A builder for constructing {@link ReservedListEntry} objects, since they are immutable. */
@@ -178,6 +184,11 @@ public final class ReservedList
 
       ReservedListEntry.Builder setReservationType(ReservationType reservationType) {
         getInstance().reservationType = reservationType;
+        return this;
+      }
+
+      ReservedListEntry.Builder setComment(String comment) {
+        getInstance().comment = comment;
         return this;
       }
     }
@@ -217,7 +228,7 @@ public final class ReservedList
                           .createQueryComposer(ReservedListEntry.class)
                           .where("revisionId", EQ, revisionId)
                           .stream()
-                          .collect(toImmutableMap(ReservedListEntry::getLabel, e -> e)));
+                          .collect(toImmutableMap(ReservedListEntry::getDomainLabel, e -> e)));
     }
     return ImmutableMap.copyOf(nullToEmpty(reservedListMap));
   }

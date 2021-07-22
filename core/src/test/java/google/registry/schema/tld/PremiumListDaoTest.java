@@ -90,7 +90,6 @@ public class PremiumListDaoTest {
               assertThat(persistedListOpt).isPresent();
               PremiumList persistedList = persistedListOpt.get();
               assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(TEST_PRICES);
-              assertThat(persistedList.getCreationTime()).isEqualTo(fakeClock.nowUtc());
             });
   }
 
@@ -129,9 +128,7 @@ public class PremiumListDaoTest {
                           BigDecimal.valueOf(0.01),
                           "silver",
                           BigDecimal.valueOf(30.03)));
-              assertThat(savedList.getCreationTime()).isEqualTo(fakeClock.nowUtc());
               assertThat(savedList.getRevisionId()).isGreaterThan(firstRevisionId);
-              assertThat(savedList.getCreationTime()).isEqualTo(fakeClock.nowUtc());
             });
   }
 

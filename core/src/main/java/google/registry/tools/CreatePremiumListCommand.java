@@ -22,11 +22,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Strings;
-import com.googlecode.objectify.Key;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.persistence.VKey;
 import google.registry.schema.tld.PremiumListDao;
-import google.registry.schema.tld.PremiumListUtils;
 import java.nio.file.Files;
 
 /** Command to create a {@link PremiumList} on Database. */
@@ -40,7 +37,7 @@ public class CreatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
 
   @Override
   // Using CreatePremiumListAction.java as reference;
-  protected void init() throws Exception {
+  protected String prompt() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
     checkArgument(
         !PremiumListDao.getLatestRevision(name).isPresent(),
@@ -53,9 +50,6 @@ public class CreatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
               + " (unless --override is specified), yet TLD %s does not exist");
     }
     inputData = Files.readAllLines(inputFile, UTF_8);
-    // create a premium list with only input data and store as the first version of the entity
-    PremiumList newPremiumList = PremiumListUtils.parseToPremiumList(name, inputData);
-    stageEntityChange(
-        null, newPremiumList, VKey.createOfy(PremiumList.class, Key.create(newPremiumList)));
+    return String.format("Create new premium list for %s?", name);
   }
 }

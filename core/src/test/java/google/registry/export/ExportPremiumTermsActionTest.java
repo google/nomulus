@@ -54,7 +54,7 @@ public class ExportPremiumTermsActionTest {
   private static final ImmutableList<String> PREMIUM_NAMES =
       ImmutableList.of("2048,USD 549", "0,USD 549");
   private static final String EXPECTED_FILE_CONTENT =
-      DISCLAIMER_WITH_NEWLINE + "0,USD 549.00\n" + "2048,USD 549.00\n";
+      DISCLAIMER_WITH_NEWLINE + "0, 549.00\n" + "2048, 549.00\n";
 
   @RegisterExtension
   public final AppEngineExtension appEngine =

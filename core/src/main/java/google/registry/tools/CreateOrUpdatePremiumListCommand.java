@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
  * Base class for specification of command line parameters common to creating and updating premium
  * lists.
  */
-abstract class CreateOrUpdatePremiumListCommand extends MutatingCommand {
+abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   protected List<String> inputData;

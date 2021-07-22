@@ -24,17 +24,13 @@ import com.beust.jcommander.Parameters;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
-import com.googlecode.objectify.Key;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumList.PremiumListEntry;
-import google.registry.persistence.VKey;
-import google.registry.schema.tld.PremiumEntry;
+import google.registry.model.registry.label.PremiumList.PremiumEntry;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.schema.tld.PremiumListUtils;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
-import org.joda.money.BigMoney;
 
 /** Command to safely update {@link PremiumList} in Database for a given TLD. */
 @Parameters(separators = " =", commandDescription = "Update a PremiumList in Database.")
@@ -42,23 +38,18 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
 
   @Override
   // Using UpdatePremiumListAction.java as reference;
-  protected void init() throws Exception {
+  protected String prompt() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
-    List<String> existingEntry = getExistingPremiumListEntry(name).asList();
+    List<String> existingEntry = getExistingPremiumEntry(name).asList();
     inputData = Files.readAllLines(inputFile, UTF_8);
 
     // reconstructing existing premium list to bypass Hibernate lazy initialization exception
     PremiumList existingPremiumList = PremiumListUtils.parseToPremiumList(name, existingEntry);
     PremiumList updatedPremiumList = PremiumListUtils.parseToPremiumList(name, inputData);
 
-    // use LabelsToPrices() for comparison between old and new premium lists since they have
-    // different creation date, updated date even if they have same content;
-    if (!existingPremiumList.getLabelsToPrices().equals(updatedPremiumList.getLabelsToPrices())) {
-      stageEntityChange(
-          existingPremiumList,
-          updatedPremiumList,
-          VKey.createOfy(PremiumList.class, Key.create(existingPremiumList)));
-    }
+    return String.format(
+        "Update premium list for %s?\n Old List: %s\n New List: %s",
+        name, existingPremiumList, updatedPremiumList);
   }
 
   /*
@@ -78,22 +69,21 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
     assertThat(persistedList.getLabelsToPrices()).containsEntry("foo", new BigDecimal("9000.00"));
     assertThat(persistedList.size()).isEqualTo(1);
   */
-  protected ImmutableSet<String> getExistingPremiumListEntry(String name) {
+  protected ImmutableSet<String> getExistingPremiumEntry(String name) {
     Optional<PremiumList> list = PremiumListDao.getLatestRevision(name);
     checkArgument(
         list.isPresent(),
         String.format("Could not update premium list %s because it doesn't exist.", name));
     Iterable<PremiumEntry> sqlListEntries =
-        jpaTm().transact(() -> PremiumListDao.loadPremiumListEntries(list.get()));
+        jpaTm().transact(() -> PremiumListDao.loadPremiumEntries(list.get()));
     return Streams.stream(sqlListEntries)
         .map(
             premiumEntry ->
-                new PremiumListEntry.Builder()
-                    .setPrice(
-                        BigMoney.of(list.get().getCurrency(), premiumEntry.getPrice()).toMoney())
-                    .setLabel(premiumEntry.getDomainLabel())
-                    .build()
-                    .toString())
+                String.format(
+                    "%s,%s %s",
+                    premiumEntry.getDomainLabel(),
+                    list.get().getCurrency(),
+                    premiumEntry.getValue()))
         .collect(toImmutableSet());
   }
 }

@@ -17,7 +17,7 @@ package google.registry.tools;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.Streams;
-import google.registry.model.registry.label.PremiumList.PremiumListEntry;
+import google.registry.model.registry.label.PremiumList.PremiumEntry;
 import google.registry.schema.tld.PremiumListDao;
 import java.util.Comparator;
 import java.util.List;
@@ -37,9 +37,9 @@ public class GetPremiumListCommand implements CommandWithRemoteApi {
         System.out.printf(
             "%s:\n%s\n",
             premiumListName,
-            Streams.stream(PremiumListDao.loadAllPremiumListEntries(premiumListName))
-                .sorted(Comparator.comparing(PremiumListEntry::getLabel))
-                .map(PremiumListEntry::toString)
+            Streams.stream(PremiumListDao.loadAllPremiumEntries(premiumListName))
+                .sorted(Comparator.comparing(PremiumEntry::getDomainLabel))
+                .map(PremiumEntry::toString)
                 .collect(Collectors.joining("\n")));
       } else {
         System.out.printf("No list found with name %s.%n", premiumListName);

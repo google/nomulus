@@ -37,17 +37,15 @@ public abstract class DomainLabelEntry<T extends Comparable<?>, D extends Domain
 
   @Id
   @javax.persistence.Id
-  @Column(name = "domain_label", nullable = false)
-  String label;
-
-  String comment;
+  @Column(name = "domainLabel", nullable = false)
+  String domainLabel;
 
   /**
    * Returns the label of the field, which also happens to be used as the key for the Map object
    * that is serialized from Datastore.
    */
-  public String getLabel() {
-    return label;
+  public String getDomainLabel() {
+    return domainLabel;
   }
 
   /**
@@ -72,30 +70,25 @@ public abstract class DomainLabelEntry<T extends Comparable<?>, D extends Domain
     }
 
     public B setLabel(String label) {
-      getInstance().label = label;
-      return thisCastToDerived();
-    }
-
-    public B setComment(String comment) {
-      getInstance().comment = comment;
+      getInstance().domainLabel = label;
       return thisCastToDerived();
     }
 
     @Override
     public T build() {
-      checkArgumentNotNull(emptyToNull(getInstance().label), "Label must be specified");
+      checkArgumentNotNull(emptyToNull(getInstance().domainLabel), "Label must be specified");
       checkArgument(
-          getInstance().label.equals(canonicalizeDomainName(getInstance().label)),
+          getInstance().domainLabel.equals(canonicalizeDomainName(getInstance().domainLabel)),
           "Label '%s' must be in puny-coded, lower-case form",
-          getInstance().label);
+          getInstance().domainLabel);
       checkArgumentNotNull(getInstance().getValue(), "Value must be specified");
       // Verify that the label creates a valid SLD if we add a TLD to the end of it.
       // We require that the label is not already a full domain name including a dot.
       // Domain name validation is tricky, so let InternetDomainName handle it for us.
       checkArgument(
-          InternetDomainName.from(getInstance().label + ".tld").parts().size() == 2,
+          InternetDomainName.from(getInstance().domainLabel + ".tld").parts().size() == 2,
           "Label %s must not be a multi-level domain name",
-          getInstance().label);
+          getInstance().domainLabel);
       return super.build();
     }
   }

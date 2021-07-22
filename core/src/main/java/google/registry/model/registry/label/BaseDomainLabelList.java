@@ -118,7 +118,7 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
       if (entry == null) {
         continue;
       }
-      String label = entry.getLabel();
+      String label = entry.getDomainLabel();
       // Check if the label was already processed for this list (which is an error), and if so,
       // accumulate it so that a list of all duplicates can be thrown.
       if (labelsToEntries.containsKey(label)) {

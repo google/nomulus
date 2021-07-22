@@ -42,7 +42,7 @@ public class GetReservedListCommand implements CommandWithRemoteApi {
                       .get()
                       .getReservedListEntries()
                       .values())
-              .sorted(Comparator.comparing(ReservedListEntry::getLabel))
+              .sorted(Comparator.comparing(ReservedListEntry::getDomainLabel))
               .map(ReservedListEntry::toString)
               .collect(Collectors.joining("\n")));
     } else {
