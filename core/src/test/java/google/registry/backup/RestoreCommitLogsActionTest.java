@@ -88,7 +88,7 @@ public class RestoreCommitLogsActionTest {
     action.gcsBucketOverride = Optional.empty();
     action.diffLister = new GcsDiffFileLister();
     action.diffLister.gcsUtils = gcsUtils;
-    action.diffLister.lazyExecutor = MoreExecutors::newDirectExecutorService;
+    action.diffLister.executorProvider = MoreExecutors::newDirectExecutorService;
     action.diffLister.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
   }
 
