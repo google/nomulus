@@ -18,8 +18,8 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.removeTmOverrideForTest;
 import static google.registry.persistence.transaction.TransactionManagerFactory.setTmForTest;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -45,7 +45,6 @@ import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
-import google.registry.persistence.transaction.TransactionManager;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestDataHelper;
@@ -267,7 +266,6 @@ class InvoicingPipelineTest {
 
   @Test
   void testSuccess_fullSqlPipeline() throws Exception {
-    TransactionManager originalTm = tm();
     setTmForTest(jpaTm());
     setupCloudSql();
     options.setDatabase("CLOUD_SQL");
@@ -283,19 +281,18 @@ class InvoicingPipelineTest {
                 + "UnitPriceCurrency,PONumber");
     assertThat(overallInvoice.subList(1, overallInvoice.size()))
         .containsExactlyElementsIn(EXPECTED_INVOICE_OUTPUT);
-    setTmForTest(originalTm);
+    removeTmOverrideForTest();
   }
 
   @Test
   void testSuccess_readFromCloudSql() throws Exception {
-    TransactionManager originalTm = tm();
     setTmForTest(jpaTm());
     setupCloudSql();
     PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
     billingEvents = billingEvents.apply(new changeDomainRepo());
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
-    setTmForTest(originalTm);
+    removeTmOverrideForTest();
   }
 
   @Test
