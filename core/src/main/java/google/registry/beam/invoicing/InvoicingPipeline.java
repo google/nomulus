@@ -26,14 +26,13 @@ import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.registrar.Registrar;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.reporting.billing.BillingModule;
+import google.registry.util.DateTimeUtils;
 import google.registry.util.SqlTemplate;
 import java.io.Serializable;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import org.apache.beam.sdk.Pipeline;
@@ -119,14 +118,12 @@ public class InvoicingPipeline implements Serializable {
     Registrar registrar = (Registrar) row[1];
     return BillingEvent.create(
         oneTime.getId(),
-        ZonedDateTime.ofInstant(
-            Instant.ofEpochMilli(oneTime.getBillingTime().getMillis()), ZoneId.of("UTC")),
-        ZonedDateTime.ofInstant(
-            Instant.ofEpochMilli(oneTime.getEventTime().getMillis()), ZoneId.of("UTC")),
+        DateTimeUtils.toZonedDateTime(oneTime.getBillingTime(), ZoneId.of("UTC")),
+        DateTimeUtils.toZonedDateTime(oneTime.getEventTime(), ZoneId.of("UTC")),
         registrar.getClientId(),
         registrar.getBillingIdentifier().toString(),
         registrar.getPoNumber().orElse(""),
-        oneTime.getTargetId().substring(oneTime.getTargetId().lastIndexOf('.') + 1),
+        oneTime.getTargetId().substring(oneTime.getTargetId().indexOf('.') + 1),
         oneTime.getReason().toString(),
         oneTime.getTargetId(),
         oneTime.getDomainRepoId(),

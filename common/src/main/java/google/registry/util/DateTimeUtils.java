@@ -101,6 +101,15 @@ public class DateTimeUtils {
   }
 
   /**
+   * Converts a Joda {@link DateTime} object to an equivalent java.time {@link ZonedDateTime}
+   * object.
+   */
+  public static ZonedDateTime toZonedDateTime(DateTime dateTime, ZoneId zoneId) {
+    java.time.Instant instant = java.time.Instant.ofEpochMilli(dateTime.getMillis());
+    return ZonedDateTime.ofInstant(instant, zoneId);
+  }
+
+  /**
    * Converts a java.time {@link ZonedDateTime} object to an equivalent Joda {@link DateTime}
    * object.
    */
