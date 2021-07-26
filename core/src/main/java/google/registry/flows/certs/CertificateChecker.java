@@ -201,22 +201,6 @@ public class CertificateChecker {
     return checkCertificate(getCertificate(certificateString));
   }
 
-  /**
-   * Returns whether the certificate is nearing expiration.
-   *
-   * <p>Note that this is <i>all</i> that it checks. The certificate itself may well be expired or
-   * not yet valid and this message will still return false. So you definitely want to pair a call
-   * to this method with a call to {@link #checkCertificate} to determine other issues with the
-   * certificate that may be occurring.
-   */
-  public boolean isNearingExpiration(X509Certificate certificate) {
-    Date nearingExpirationDate =
-        DateTime.parse(certificate.getNotAfter().toInstant().toString())
-            .minusDays(expirationWarningDays)
-            .toDate();
-    return clock.nowUtc().toDate().after(nearingExpirationDate);
-  }
-
   /** Converts the given string to a certificate object. */
   public X509Certificate getCertificate(String certificateStr) {
     X509Certificate certificate;

@@ -219,30 +219,6 @@ class CertificateCheckerTest {
   }
 
   @Test
-  void test_isNearingExpiration_yesItIs() throws Exception {
-    fakeClock.setTo(DateTime.parse("2021-09-20T00:00:00Z"));
-    X509Certificate certificate =
-        SelfSignedCaCertificate.create(
-                SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
-            .cert();
-    assertThat(certificateChecker.isNearingExpiration(certificate)).isTrue();
-  }
-
-  @Test
-  void test_isNearingExpiration_noItsNot() throws Exception {
-    fakeClock.setTo(DateTime.parse("2021-07-20T00:00:00Z"));
-    X509Certificate certificate =
-        SelfSignedCaCertificate.create(
-                SSL_HOST,
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
-            .cert();
-    assertThat(certificateChecker.isNearingExpiration(certificate)).isFalse();
-  }
-
-  @Test
   void test_getCertificate_throwsException_invalidCertificateString() {
     IllegalArgumentException thrown =
         assertThrows(
