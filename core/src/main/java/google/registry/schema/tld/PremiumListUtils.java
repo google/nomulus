@@ -40,18 +40,6 @@ public class PremiumListUtils {
     List<String> parts = Splitter.on(',').trimResults().splitToList(line);
     CurrencyUnit currency = Money.parse(parts.get(1)).getCurrencyUnit();
     Map<String, BigDecimal> priceAmounts = Maps.transformValues(prices, PremiumEntry::getValue);
-    // PremiumList premiumList = PremiumListDao.save(new PremiumList.Builder()
-    //     .setName(name)
-    //     .setCurrency(currency)
-    //     .setCreationTime(DateTime.now(UTC))
-    //     .build());
-    // priceAmounts.entrySet().stream()
-    //     .forEach(
-    //         entry ->
-    //             jpaTm()
-    //                 .insert(PremiumEntry
-    //                       .create(premiumList.getRevisionId(), entry.getValue(),
-    // entry.getKey())));
     return new PremiumList.Builder()
         .setName(name)
         .setCurrency(currency)
