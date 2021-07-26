@@ -24,6 +24,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.util.Clock;
 import google.registry.util.DateTimeUtils;
 import java.io.ByteArrayInputStream;
+import java.io.StringWriter;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -32,10 +33,15 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.openssl.jcajce.JcaMiscPEMGenerator;
+import org.bouncycastle.util.io.pem.PemObjectGenerator;
+import org.bouncycastle.util.io.pem.PemWriter;
 import org.joda.time.DateTime;
 import org.joda.time.Days;
 
@@ -43,10 +49,11 @@ import org.joda.time.Days;
 public class CertificateChecker {
 
   private final ImmutableSortedMap<DateTime, Integer> maxValidityLengthSchedule;
-  private final int daysToExpiration;
+  private final int expirationWarningDays;
   private final int minimumRsaKeyLength;
   private final Clock clock;
   private final ImmutableSet<String> allowedEcdsaCurves;
+  private final int expirationWarningIntervalDays;
 
   /**
    * Constructs a CertificateChecker instance with the specified configuration parameters.
@@ -72,6 +79,7 @@ public class CertificateChecker {
       @Config("maxValidityDaysSchedule")
           ImmutableSortedMap<DateTime, Integer> maxValidityDaysSchedule,
       @Config("expirationWarningDays") int expirationWarningDays,
+      @Config("expirationWarningIntervalDays") int expirationWarningIntervalDays,
       @Config("minimumRsaKeyLength") int minimumRsaKeyLength,
       @Config("allowedEcdsaCurves") ImmutableSet<String> allowedEcdsaCurves,
       Clock clock) {
@@ -79,10 +87,44 @@ public class CertificateChecker {
         maxValidityDaysSchedule.containsKey(START_OF_TIME),
         "Max validity length schedule must contain an entry for START_OF_TIME");
     this.maxValidityLengthSchedule = maxValidityDaysSchedule;
-    this.daysToExpiration = expirationWarningDays;
+    this.expirationWarningDays = expirationWarningDays;
     this.minimumRsaKeyLength = minimumRsaKeyLength;
     this.allowedEcdsaCurves = allowedEcdsaCurves;
+    this.expirationWarningIntervalDays = expirationWarningIntervalDays;
     this.clock = clock;
+  }
+
+  private static int getValidityLengthInDays(X509Certificate certificate) {
+    DateTime start = DateTime.parse(certificate.getNotBefore().toInstant().toString());
+    DateTime end = DateTime.parse(certificate.getNotAfter().toInstant().toString());
+    return Days.daysBetween(start.withTimeAtStartOfDay(), end.withTimeAtStartOfDay()).getDays();
+  }
+
+  /** Checks if the curve used for a public key is in the list of acceptable curves. */
+  private static boolean checkCurveName(PublicKey key, ImmutableSet<String> allowedEcdsaCurves) {
+    ECParameterSpec params;
+    // These 2 different instances of PublicKey need to be handled separately since their OIDs are
+    // encoded differently. More details on this can be found at
+    // https://stackoverflow.com/questions/49895713/how-to-find-the-matching-curve-name-from-an-ecpublickey.
+    if (key instanceof ECPublicKey) {
+      ECPublicKey ecKey = (ECPublicKey) key;
+      params = EC5Util.convertSpec(ecKey.getParams(), false);
+    } else if (key instanceof org.bouncycastle.jce.interfaces.ECPublicKey) {
+      org.bouncycastle.jce.interfaces.ECPublicKey ecKey =
+          (org.bouncycastle.jce.interfaces.ECPublicKey) key;
+      params = ecKey.getParameters();
+    } else {
+      throw new IllegalArgumentException("Unrecognized instance of PublicKey.");
+    }
+    return allowedEcdsaCurves.stream()
+        .anyMatch(
+            curve -> {
+              ECNamedCurveParameterSpec cParams = ECNamedCurveTable.getParameterSpec(curve);
+              return cParams.getN().equals(params.getN())
+                  && cParams.getH().equals(params.getH())
+                  && cParams.getCurve().equals(params.getCurve())
+                  && cParams.getG().equals(params.getG());
+            });
   }
 
   /**
@@ -156,18 +198,7 @@ public class CertificateChecker {
    * the violations the certificate has.
    */
   public ImmutableSet<CertificateViolation> checkCertificate(String certificateString) {
-    X509Certificate certificate;
-
-    try {
-      certificate =
-          (X509Certificate)
-              CertificateFactory.getInstance("X509")
-                  .generateCertificate(new ByteArrayInputStream(certificateString.getBytes(UTF_8)));
-    } catch (CertificateException e) {
-      throw new IllegalArgumentException("Unable to read given certificate.");
-    }
-
-    return checkCertificate(certificate);
+    return checkCertificate(getCertificate(certificateString));
   }
 
   /**
@@ -181,42 +212,59 @@ public class CertificateChecker {
   public boolean isNearingExpiration(X509Certificate certificate) {
     Date nearingExpirationDate =
         DateTime.parse(certificate.getNotAfter().toInstant().toString())
-            .minusDays(daysToExpiration)
+            .minusDays(expirationWarningDays)
             .toDate();
     return clock.nowUtc().toDate().after(nearingExpirationDate);
   }
 
-  private static int getValidityLengthInDays(X509Certificate certificate) {
-    DateTime start = DateTime.parse(certificate.getNotBefore().toInstant().toString());
-    DateTime end = DateTime.parse(certificate.getNotAfter().toInstant().toString());
-    return Days.daysBetween(start.withTimeAtStartOfDay(), end.withTimeAtStartOfDay()).getDays();
+  /** Converts the given string to a certificate object. */
+  public X509Certificate getCertificate(String certificateStr) {
+    X509Certificate certificate;
+    try {
+      certificate =
+          (X509Certificate)
+              CertificateFactory.getInstance("X509")
+                  .generateCertificate(new ByteArrayInputStream(certificateStr.getBytes(UTF_8)));
+    } catch (CertificateException e) {
+      throw new IllegalArgumentException(
+          String.format("Unable to read given certificate %s", certificateStr), e);
+    }
+    return certificate;
   }
 
-  /** Checks if the curve used for a public key is in the list of acceptable curves. */
-  private static boolean checkCurveName(PublicKey key, ImmutableSet<String> allowedEcdsaCurves) {
-    org.bouncycastle.jce.spec.ECParameterSpec params;
-    // These 2 different instances of PublicKey need to be handled separately since their OIDs are
-    // encoded differently. More details on this can be found at
-    // https://stackoverflow.com/questions/49895713/how-to-find-the-matching-curve-name-from-an-ecpublickey.
-    if (key instanceof ECPublicKey) {
-      ECPublicKey ecKey = (ECPublicKey) key;
-      params = EC5Util.convertSpec(ecKey.getParams(), false);
-    } else if (key instanceof org.bouncycastle.jce.interfaces.ECPublicKey) {
-      org.bouncycastle.jce.interfaces.ECPublicKey ecKey =
-          (org.bouncycastle.jce.interfaces.ECPublicKey) key;
-      params = ecKey.getParameters();
-    } else {
-      throw new IllegalArgumentException("Unrecognized instance of PublicKey.");
+  /** Serializes the certificate object to a certificate string. */
+  public String serializeCertificate(X509Certificate certificate) throws Exception {
+    StringWriter sw = new StringWriter();
+    try (PemWriter pw = new PemWriter(sw)) {
+      PemObjectGenerator generator = new JcaMiscPEMGenerator(certificate);
+      pw.writeObject(generator);
     }
-    return allowedEcdsaCurves.stream()
-        .anyMatch(
-            curve -> {
-              ECNamedCurveParameterSpec cParams = ECNamedCurveTable.getParameterSpec(curve);
-              return cParams.getN().equals(params.getN())
-                  && cParams.getH().equals(params.getH())
-                  && cParams.getCurve().equals(params.getCurve())
-                  && cParams.getG().equals(params.getG());
-            });
+    return sw.toString();
+  }
+
+  /** Returns whether the client should receive a notification email. */
+  public boolean shouldReceiveExpiringNotification(
+      @Nullable DateTime lastExpiringNotificationSentDate, String certificateStr) {
+    X509Certificate certificate = getCertificate(certificateStr);
+    DateTime now = clock.nowUtc();
+    // expiration date is one day after lastValidDate
+    Date lastValidDate = certificate.getNotAfter();
+    if (lastValidDate.before(now.toDate())) {
+      return false;
+    }
+    /*
+     * Client should receive a notification if :
+     *    1) client has never received notification and the certificate has entered
+     *    the expiring period, OR
+     *    2) client has received notification but the interval between now and
+     *    lastExpiringNotificationSentDate is greater than expirationWarningIntervalDays.
+     */
+    return !lastValidDate.after(now.plusDays(expirationWarningDays).toDate())
+        && (lastExpiringNotificationSentDate == null
+            || !lastExpiringNotificationSentDate
+                .plusDays(expirationWarningIntervalDays)
+                .toDate()
+                .after(now.toDate()));
   }
 
   private String getViolationDisplayMessage(CertificateViolation certificateViolation) {

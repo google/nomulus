@@ -1267,8 +1267,14 @@ public final class RegistryConfig {
 
     @Provides
     @Config("expirationWarningDays")
-    public static int provideDaysToExpiration(RegistryConfigSettings config) {
+    public static int provideExpirationWarningDays(RegistryConfigSettings config) {
       return config.sslCertificateValidation.expirationWarningDays;
+    }
+
+    @Provides
+    @Config("expirationWarningIntervalDays")
+    public static int provideExpirationWarningIntervalDays(RegistryConfigSettings config) {
+      return config.sslCertificateValidation.expirationWarningIntervalDays;
     }
 
     @Provides

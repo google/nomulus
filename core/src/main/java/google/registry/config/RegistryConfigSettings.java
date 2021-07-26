@@ -228,6 +228,7 @@ public class RegistryConfigSettings {
   public static class SslCertificateValidation {
     public Map<String, Integer> maxValidityDaysSchedule;
     public int expirationWarningDays;
+    public int expirationWarningIntervalDays;
     public int minimumRsaKeyLength;
     public Set<String> allowedEcdsaCurves;
     public String expirationWarningEmailBodyText;
