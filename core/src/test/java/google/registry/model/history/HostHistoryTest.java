@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -48,7 +49,7 @@ public class HostHistoryTest extends EntityTestCase {
     VKey<HostResource> hostVKey =
         VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().loadByKey(hostVKey));
-    HostHistory hostHistory = createHostHistory(hostFromDb, host.getRepoId());
+    HostHistory hostHistory = createHostHistory(hostFromDb);
     jpaTm().transact(() -> jpaTm().insert(hostHistory));
     jpaTm()
         .transact(
@@ -66,8 +67,7 @@ public class HostHistoryTest extends EntityTestCase {
     jpaTm().transact(() -> jpaTm().insert(host));
 
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().loadByKey(host.createVKey()));
-    HostHistory hostHistory =
-        createHostHistory(hostFromDb, host.getRepoId()).asBuilder().setHost(null).build();
+    HostHistory hostHistory = createHostHistory(hostFromDb).asBuilder().setHost(null).build();
     jpaTm().transact(() -> jpaTm().insert(hostHistory));
 
     jpaTm()
@@ -88,7 +88,7 @@ public class HostHistoryTest extends EntityTestCase {
     VKey<HostResource> hostVKey =
         VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
     HostResource hostFromDb = tm().transact(() -> tm().loadByKey(hostVKey));
-    HostHistory hostHistory = createHostHistory(hostFromDb, host.getRepoId());
+    HostHistory hostHistory = createHostHistory(hostFromDb);
     fakeClock.advanceOneMilli();
     tm().transact(() -> tm().insert(hostHistory));
 
@@ -104,6 +104,37 @@ public class HostHistoryTest extends EntityTestCase {
     assertThat(hostHistoryFromDb).isEqualTo(historyEntryFromDb);
   }
 
+  @Test
+  void testBeforeSqlSave_afterHostPersisted() {
+    saveRegistrar("TheRegistrar");
+    HostResource hostResource = newHostResource("ns1.example.tld");
+    HostHistory hostHistory =
+        new HostHistory.Builder()
+            .setType(HistoryEntry.Type.HOST_CREATE)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(fakeClock.nowUtc())
+            .setClientId("TheRegistrar")
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason("reason")
+            .setRequestedByRegistrar(true)
+            .setHostRepoId(hostResource.getRepoId())
+            .build();
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().put(hostResource);
+              hostHistory.beforeSqlSaveOnReplay();
+              jpaTm().put(hostHistory);
+            });
+    jpaTm()
+        .transact(
+            () ->
+                assertAboutImmutableObjects()
+                    .that(jpaTm().loadByEntity(hostResource))
+                    .hasFieldsEqualTo(jpaTm().loadByEntity(hostHistory).getHostBase().get()));
+  }
+
   private void assertHostHistoriesEqual(HostHistory one, HostHistory two) {
     assertAboutImmutableObjects().that(one).isEqualExceptFields(two, "hostBase");
     assertAboutImmutableObjects()
@@ -111,7 +142,7 @@ public class HostHistoryTest extends EntityTestCase {
         .isEqualExceptFields(two.getHostBase().orElse(null), "repoId");
   }
 
-  private HostHistory createHostHistory(HostBase hostBase, String hostRepoId) {
+  private HostHistory createHostHistory(HostBase hostBase) {
     return new HostHistory.Builder()
         .setType(HistoryEntry.Type.HOST_CREATE)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
@@ -122,7 +153,7 @@ public class HostHistoryTest extends EntityTestCase {
         .setReason("reason")
         .setRequestedByRegistrar(true)
         .setHost(hostBase)
-        .setHostRepoId(hostRepoId)
+        .setHostRepoId(hostBase.getRepoId())
         .build();
   }
 }

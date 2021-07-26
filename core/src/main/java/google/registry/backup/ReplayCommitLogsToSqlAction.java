@@ -239,7 +239,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
           .toSqlEntity()
           .ifPresent(
               sqlEntity -> {
-                ReplaySpecializer.beforeSqlSave(sqlEntity);
+                sqlEntity.beforeSqlSaveOnReplay();
                 jpaTm().put(sqlEntity);
               });
     } else {

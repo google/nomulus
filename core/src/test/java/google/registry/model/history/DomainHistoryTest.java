@@ -190,6 +190,44 @@ public class DomainHistoryTest extends EntityTestCase {
     jpaTm().transact(() -> jpaTm().put(domainHistoryFromDb2));
   }
 
+  @TestSqlOnly
+  void testBeforeSqlSave_afterDomainPersisted() {
+    DomainBase domain = createDomainWithContactsAndHosts();
+    DomainHistory historyWithoutResource =
+        new DomainHistory.Builder()
+            .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(fakeClock.nowUtc())
+            .setClientId("TheRegistrar")
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason("reason")
+            .setRequestedByRegistrar(true)
+            .setDomainRepoId(domain.getRepoId())
+            .setOtherClientId("otherClient")
+            .setPeriod(Period.create(1, Period.Unit.YEARS))
+            .build();
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm()
+                  .put(
+                      domain
+                          .asBuilder()
+                          .setPersistedCurrentSponsorClientId("NewRegistrar")
+                          .build());
+              historyWithoutResource.beforeSqlSaveOnReplay();
+              jpaTm().put(historyWithoutResource);
+            });
+    jpaTm()
+        .transact(
+            () ->
+                assertAboutImmutableObjects()
+                    .that(jpaTm().loadByEntity(domain))
+                    .hasFieldsEqualTo(
+                        jpaTm().loadByEntity(historyWithoutResource).getDomainContent().get()));
+  }
+
   static DomainBase createDomainWithContactsAndHosts() {
     createTld("tld");
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");

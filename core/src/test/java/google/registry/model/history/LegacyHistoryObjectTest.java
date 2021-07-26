@@ -74,7 +74,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     assertAboutImmutableObjects()
         .that(legacyHistoryEntry)
         .isEqualExceptFields(fromObjectify, "contactBase", "contactRepoId");
-    assertThat(fromObjectify instanceof ContactHistory).isTrue();
+    assertThat(fromObjectify).isInstanceOf(ContactHistory.class);
     ContactHistory legacyContactHistory = (ContactHistory) fromObjectify;
 
     // Next, save that from-Datastore object in SQL and verify we can load it back in
@@ -124,7 +124,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
             "nsHosts",
             "dsDataHistories",
             "gracePeriodHistories");
-    assertThat(fromObjectify instanceof DomainHistory).isTrue();
+    assertThat(fromObjectify).isInstanceOf(DomainHistory.class);
     DomainHistory legacyDomainHistory = (DomainHistory) fromObjectify;
 
     // Next, save that from-Datastore object in SQL and verify we can load it back in
@@ -137,15 +137,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
               // Don't compare nsHosts directly because one is null and the other is empty
               assertAboutImmutableObjects()
                   .that(legacyDomainHistory)
-                  .isEqualExceptFields(
-                      // NB: period, transaction records, and other client ID are added in #794
-                      legacyHistoryFromSql,
-                      "period",
-                      "domainTransactionRecords",
-                      "otherClientId",
-                      "nsHosts",
-                      "dsDataHistories",
-                      "gracePeriodHistories");
+                  .isEqualExceptFields(legacyHistoryFromSql, "nsHosts");
               assertThat(nullToEmpty(legacyDomainHistory.getNsHosts()))
                   .isEqualTo(nullToEmpty(legacyHistoryFromSql.getNsHosts()));
             });
@@ -174,7 +166,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     assertAboutImmutableObjects()
         .that(legacyHistoryEntry)
         .isEqualExceptFields(fromObjectify, "hostBase", "hostRepoId");
-    assertThat(fromObjectify instanceof HostHistory).isTrue();
+    assertThat(fromObjectify).isInstanceOf(HostHistory.class);
     HostHistory legacyHostHistory = (HostHistory) fromObjectify;
 
     // Next, save that from-Datastore object in SQL and verify we can load it back in

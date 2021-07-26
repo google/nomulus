@@ -53,7 +53,7 @@ import javax.inject.Inject;
  * However, since this is meant to be run during the Datastore-primary, SQL-secondary stage of the
  * migration, we want to make sure that we are using the most up-to-date version of the data. The
  * resource field of the history objects will be populated during asynchronous migration, e.g. in
- * {@link DomainHistory#beforeSqlSave(DomainHistory)}.
+ * {@link DomainHistory#beforeSqlSaveOnReplay}.
  */
 @Action(
     service = Action.Service.BACKEND,
