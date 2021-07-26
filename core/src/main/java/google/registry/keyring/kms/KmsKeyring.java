@@ -28,14 +28,8 @@ import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
-/**
- * A {@link Keyring} implementation which stores encrypted secrets in Datastore and decrypts them
- * using encryption keys stored in Cloud KMS.
- *
- * @see <a href="https://cloud.google.com/kms/docs/">Google Cloud Key Management Service
- *     Documentation</a>
- */
-// TODO(2021-07-01): rename this class to SecretManagerKeyring and delete KmsSecretRevision
+/** A {@link Keyring} implementation which stores sensitive data in the Secret Manager. */
+// TODO(2021-08-01): rename this class to SecretManagerKeyring and update config files.
 public class KmsKeyring implements Keyring {
 
   /** Key labels for private key secrets. */

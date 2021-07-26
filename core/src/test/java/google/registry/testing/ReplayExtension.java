@@ -116,7 +116,6 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
           "PremiumListEntry",
           "ReservedList",
           "RdeRevision",
-          "KmsSecretRevision",
           "ServerSecret",
           "SignedMarkRevocationList",
           "ClaimsListShard",

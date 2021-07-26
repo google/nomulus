@@ -11,8 +11,6 @@ ForeignKeyDomainIndex
 ForeignKeyHostIndex
 HistoryEntry
 HostResource
-KmsSecret
-KmsSecretRevision
 LastSqlTransaction
 Modification
 OneTime

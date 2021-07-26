@@ -74,8 +74,6 @@ def fragileTestPatterns = [
     "google/registry/cron/TldFanoutActionTest.*",
     // Test Datastore inexplicably aborts transaction.
     "google/registry/model/tmch/ClaimsListShardTest.*",
-    // Creates large object (64MBytes), occasionally throws OOM error.
-    "google/registry/model/server/KmsSecretRevisionTest.*",
     // Changes cache timeouts and for some reason appears to have contention
     // with other tests.
     "google/registry/whois/WhoisCommandFactoryTest.*",

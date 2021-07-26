@@ -37,7 +37,6 @@ import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.model.ofy.DatastoreTransactionManager;
-import google.registry.model.server.KmsSecret;
 import google.registry.model.tmch.ClaimsList.ClaimsListSingleton;
 import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
@@ -94,8 +93,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
           EppResourceIndex.class,
           ForeignKeyContactIndex.class,
           ForeignKeyDomainIndex.class,
-          ForeignKeyHostIndex.class,
-          KmsSecret.class);
+          ForeignKeyHostIndex.class);
 
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;
