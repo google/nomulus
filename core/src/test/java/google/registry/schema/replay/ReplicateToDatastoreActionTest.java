@@ -26,15 +26,16 @@ import com.google.common.testing.TestLogHandler;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.JpaTransactionManagerImpl;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
 import java.util.List;
@@ -68,41 +69,21 @@ public class ReplicateToDatastoreActionTest {
 
   @BeforeEach
   public void setUp() {
+    JpaTransactionManagerImpl.removeReplaySqlToDsOverrideForTest();
     injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
     // Use a single bucket to expose timestamp inversion problems.
     injectExtension.setStaticField(
         CommitLogBucket.class, "bucketIdSupplier", Suppliers.ofInstance(1));
     fakeClock.setAutoIncrementByOneMilli();
-    RegistryConfig.overrideCloudSqlReplicateTransactions(true);
+    DatabaseHelper.setMigrationScheduleToSqlPrimary(fakeClock);
     Logger.getLogger(ReplicateToDatastoreAction.class.getCanonicalName()).addHandler(logHandler);
-    DateTime now = fakeClock.nowUtc();
-    ofyTm()
-        .transact(
-            () ->
-                DatabaseMigrationStateSchedule.set(
-                    ImmutableSortedMap.of(
-                        START_OF_TIME,
-                        MigrationState.DATASTORE_ONLY,
-                        now,
-                        MigrationState.DATASTORE_PRIMARY,
-                        now.plusHours(1),
-                        MigrationState.DATASTORE_PRIMARY_READ_ONLY,
-                        now.plusHours(2),
-                        MigrationState.SQL_PRIMARY)));
     fakeClock.advanceBy(Duration.standardDays(1));
   }
 
   @AfterEach
   public void tearDown() {
+    DatabaseHelper.removeDatabaseMigrationSchedule();
     fakeClock.disableAutoIncrement();
-    RegistryConfig.overrideCloudSqlReplicateTransactions(false);
-    ofyTm()
-        .transact(
-            () ->
-                ofyTm()
-                    .loadSingleton(DatabaseMigrationStateSchedule.class)
-                    .ifPresent(ofyTm()::delete));
-    DatabaseMigrationStateSchedule.CACHE.invalidateAll();
   }
 
   @RetryingTest(4)

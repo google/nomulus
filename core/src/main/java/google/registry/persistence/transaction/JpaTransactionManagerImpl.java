@@ -30,8 +30,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
-import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
+import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
 import google.registry.model.index.EppResourceIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
@@ -103,6 +104,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   // synchronously.
   private final ThreadLocal<TransactionInfo> transactionInfo =
       ThreadLocal.withInitial(TransactionInfo::new);
+  // If this value is present, use it to determine whether or not to replay SQL transactions to
+  // Datastore, rather than using the schedule stored in Datastore.
+  private static ThreadLocal<Optional<Boolean>> replaySqlToDatastoreOverrideForTest =
+      ThreadLocal.withInitial(Optional::empty);
 
   public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock) {
     this.emf = emf;
@@ -736,6 +741,16 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     return entity;
   }
 
+  /** Sets the override to always/never replay SQL transactions to Datastore. */
+  public static void setReplaySqlToDatastoreOverrideForTest(boolean replaySqlToDs) {
+    replaySqlToDatastoreOverrideForTest.set(Optional.of(replaySqlToDs));
+  }
+
+  /** Removes the replay-SQL-to-Datastore override; the migration schedule will then be used. */
+  public static void removeReplaySqlToDsOverrideForTest() {
+    replaySqlToDatastoreOverrideForTest.set(Optional.empty());
+  }
+
   private static class TransactionInfo {
     EntityManager entityManager;
     boolean inTransaction = false;
@@ -755,7 +770,14 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       checkArgumentNotNull(clock);
       inTransaction = true;
       transactionTime = clock.nowUtc();
-      if (withBackup && RegistryConfig.getCloudSqlReplicateTransactions()) {
+      if (withBackup
+          && replaySqlToDatastoreOverrideForTest
+              .get()
+              .orElseGet(
+                  () ->
+                      DatabaseMigrationStateSchedule.getValueAtTime(transactionTime)
+                          .getReplayDirection()
+                          .equals(ReplayDirection.SQL_TO_DATASTORE))) {
         contentsBuilder = new Transaction.Builder();
       }
     }

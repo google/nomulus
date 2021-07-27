@@ -225,7 +225,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
   @VisibleForTesting
   static TimedTransitionProperty<MigrationState, MigrationStateTransition> getUncached() {
     return ofyTm()
-        .transact(
+        .transactNew(
             () ->
                 ofyTm()
                     .loadSingleton(DatabaseMigrationStateSchedule.class)

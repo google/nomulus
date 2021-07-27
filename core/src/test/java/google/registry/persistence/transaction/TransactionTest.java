@@ -22,34 +22,51 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import google.registry.config.RegistryConfig;
 import google.registry.model.ImmutableObject;
+import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DatabaseHelper;
+import google.registry.testing.FakeClock;
+import google.registry.testing.InjectExtension;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.StreamCorruptedException;
+import org.joda.time.DateTime;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class TransactionTest {
 
+  private final FakeClock fakeClock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+
   @RegisterExtension
   final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
+          .withClock(fakeClock)
           .withOfyTestEntities(TestEntity.class)
           .withJpaUnitTestEntities(TestEntity.class)
           .build();
+
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
 
   private TestEntity fooEntity, barEntity;
 
   @BeforeEach
   void beforeEach() {
+    JpaTransactionManagerImpl.removeReplaySqlToDsOverrideForTest();
+    inject.setStaticField(Ofy.class, "clock", fakeClock);
     fooEntity = new TestEntity("foo");
     barEntity = new TestEntity("bar");
+  }
+
+  @AfterEach
+  void afterEach() {
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
   @Test
@@ -102,14 +119,13 @@ class TransactionTest {
 
   @Test
   void testTransactionSerialization() throws IOException {
-    RegistryConfig.overrideCloudSqlReplicateTransactions(true);
-    try {
-      jpaTm()
-          .transact(
-              () -> {
-                jpaTm().insert(fooEntity);
-                jpaTm().insert(barEntity);
-              });
+    DatabaseHelper.setMigrationScheduleToSqlPrimary(fakeClock);
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().insert(fooEntity);
+              jpaTm().insert(barEntity);
+            });
       TransactionEntity txnEnt =
           jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TransactionEntity.class, 1L)));
       Transaction txn = Transaction.deserialize(txnEnt.getContents());
@@ -125,9 +141,6 @@ class TransactionTest {
       assertThat(
               jpaTm().transact(() -> jpaTm().exists(VKey.createSql(TransactionEntity.class, 2L))))
           .isFalse();
-    } finally {
-      RegistryConfig.overrideCloudSqlReplicateTransactions(false);
-    }
   }
 
   @Test

@@ -202,11 +202,13 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
     JpaTransactionManagerImpl txnManager = new JpaTransactionManagerImpl(emf, clock);
     cachedTm = TransactionManagerFactory.jpaTm();
     TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(txnManager));
+    JpaTransactionManagerImpl.setReplaySqlToDatastoreOverrideForTest(false);
   }
 
   @Override
   public void afterEach(ExtensionContext context) {
     TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(cachedTm));
+    JpaTransactionManagerImpl.removeReplaySqlToDsOverrideForTest();
     cachedTm = null;
   }
 
