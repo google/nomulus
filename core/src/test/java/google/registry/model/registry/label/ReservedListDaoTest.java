@@ -57,7 +57,7 @@ public class ReservedListDaoTest {
     testReservedList =
         new ReservedList.Builder()
             .setName("testlist")
-            .setLastUpdateTime(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.nowUtc())
             .setShouldPublish(false)
             .setReservedListMap(testReservations)
             .build();
@@ -76,7 +76,7 @@ public class ReservedListDaoTest {
                       .getSingleResult();
               assertThat(persistedList.getReservedListEntries())
                   .containsExactlyEntriesIn(testReservations);
-              assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
+              assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
             });
   }
 
@@ -108,7 +108,7 @@ public class ReservedListDaoTest {
     ReservedListDao.save(testReservedList);
     ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isNotNull();
-    assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
     assertThat(persistedList.getShouldPublish()).isFalse();
     assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);
@@ -119,7 +119,7 @@ public class ReservedListDaoTest {
     ReservedListDao.save(
         new ReservedList.Builder()
             .setName("testlist")
-            .setLastUpdateTime(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.nowUtc())
             .setShouldPublish(false)
             .setReservedListMap(
                 ImmutableMap.of(
@@ -130,7 +130,7 @@ public class ReservedListDaoTest {
     ReservedListDao.save(testReservedList);
     ReservedList persistedList = ReservedListDao.getLatestRevision("testlist").get();
     assertThat(persistedList.getRevisionId()).isNotNull();
-    assertThat(persistedList.getLastUpdateTime()).isEqualTo(fakeClock.nowUtc());
+    assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
     assertThat(persistedList.getName()).isEqualTo("testlist");
     assertThat(persistedList.getShouldPublish()).isFalse();
     assertThat(persistedList.getReservedListEntries()).containsExactlyEntriesIn(testReservations);

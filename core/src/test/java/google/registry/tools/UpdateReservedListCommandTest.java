@@ -48,8 +48,7 @@ class UpdateReservedListCommandTest
         new ReservedList.Builder()
             .setName("xn--q9jyb4c_common-reserved")
             .setReservedListMapFromLines(ImmutableList.of("helicopter,FULLY_BLOCKED"))
-            .setCreationTime(START_OF_TIME)
-            .setLastUpdateTime(START_OF_TIME)
+            .setCreationTimestamp(START_OF_TIME)
             .setShouldPublish(shouldPublish)
             .build());
   }

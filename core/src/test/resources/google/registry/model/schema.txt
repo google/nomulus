@@ -723,8 +723,7 @@ class google.registry.model.registry.label.ReservedList {
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
   boolean shouldPublish;
   java.util.Map<java.lang.String, google.registry.model.registry.label.ReservedList$ReservedListEntry> reservedListMap;
-  org.joda.time.DateTime creationTime;
-  org.joda.time.DateTime lastUpdateTime;
+  org.joda.time.DateTime creationTimestamp;
 }
 class google.registry.model.registry.label.ReservedList$ReservedListEntry {
   @Id java.lang.String domainLabel;

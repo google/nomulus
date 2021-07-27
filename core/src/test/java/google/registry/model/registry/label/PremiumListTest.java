@@ -45,9 +45,9 @@ public class PremiumListTest {
 
   @BeforeEach
   void before() {
-    // createTld() overwrites the premium list, so call it first.
     DatabaseHelper.persistNewRegistrar("TheRegistrar");
     DatabaseHelper.persistNewRegistrar("NewRegistrar");
+    // createTld() overwrites the premium list, so call it first.
     createTld("tld");
     PremiumList pl =
         persistPremiumList(
