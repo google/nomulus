@@ -44,7 +44,7 @@ public class PremiumListUtils {
         .setName(name)
         .setCurrency(currency)
         .setLabelsToPrices(priceAmounts)
-        .setCreationTime(DateTime.now(UTC))
+        .setCreationTimestamp(DateTime.now(UTC))
         .build();
   }
 

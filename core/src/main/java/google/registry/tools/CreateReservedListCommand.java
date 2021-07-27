@@ -63,8 +63,7 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
             .setName(name)
             .setReservedListMapFromLines(allLines)
             .setShouldPublish(shouldPublish)
-            .setCreationTime(now)
-            .setLastUpdateTime(now)
+            .setCreationTimestamp(now)
             .build();
 
     // calls the stageEntityChange method that takes old entity, new entity and a new vkey;

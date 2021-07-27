@@ -361,7 +361,7 @@ public class DatabaseHelper {
             .setName(listName)
             .setReservedListMapFromLines(ImmutableList.copyOf(lines))
             .setShouldPublish(shouldPublish)
-            .setLastUpdateTime(DateTime.now(DateTimeZone.UTC))
+            .setCreationTimestamp(DateTime.now(DateTimeZone.UTC))
             .build();
     return persistReservedList(reservedList);
   }
@@ -384,7 +384,7 @@ public class DatabaseHelper {
     PremiumList premiumList =
         partialPremiumList
             .asBuilder()
-            .setCreationTime(DateTime.now(DateTimeZone.UTC))
+            .setCreationTimestamp(DateTime.now(DateTimeZone.UTC))
             .setCurrency(currency)
             .setLabelsToPrices(
                 entries.entrySet().stream()

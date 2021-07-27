@@ -145,7 +145,7 @@ public final class RegistryTest extends EntityTestCase {
                 .setReservedListMapFromLines(
                     ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
                 .setShouldPublish(true)
-                .setLastUpdateTime(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     ReservedList rl16 =
         persistReservedList(
@@ -154,7 +154,7 @@ public final class RegistryTest extends EntityTestCase {
                 .setReservedListMapFromLines(
                     ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
                 .setShouldPublish(true)
-                .setLastUpdateTime(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     Registry registry1 =
         newRegistry("propter", "PROPTER")
@@ -197,7 +197,7 @@ public final class RegistryTest extends EntityTestCase {
                 .setReservedListMapFromLines(
                     ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
                 .setShouldPublish(true)
-                .setLastUpdateTime(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     ReservedList rl6 =
         persistReservedList(
@@ -206,7 +206,7 @@ public final class RegistryTest extends EntityTestCase {
                 .setReservedListMapFromLines(
                     ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
                 .setShouldPublish(true)
-                .setLastUpdateTime(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     Registry r =
         Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
@@ -223,7 +223,7 @@ public final class RegistryTest extends EntityTestCase {
             .setReservedListMapFromLines(
                 ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
             .setShouldPublish(true)
-            .setLastUpdateTime(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.nowUtc())
             .build());
     persistReservedList(
         new ReservedList.Builder()
@@ -231,7 +231,7 @@ public final class RegistryTest extends EntityTestCase {
             .setReservedListMapFromLines(
                 ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
             .setShouldPublish(true)
-            .setLastUpdateTime(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.nowUtc())
             .build());
     Registry r =
         Registry.get("tld")

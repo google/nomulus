@@ -107,7 +107,7 @@ abstract class CreateOrUpdateReservedListCommandTestCase<
       ImmutableMap<String, ReservedListEntry> labelsToEntries) {
     return new ReservedList.Builder()
         .setName(name)
-        .setLastUpdateTime(creationTime)
+        .setCreationTimestamp(creationTime)
         .setShouldPublish(shouldPublish)
         .setReservedListMap(labelsToEntries)
         .build();
