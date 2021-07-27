@@ -524,6 +524,35 @@ public class ReplayCommitLogsToSqlActionTest {
     assertThat(TestObject.beforeSqlDeleteCallCount).isEqualTo(1);
   }
 
+  @Test
+  void testSuccess_cascadingDelete() throws Exception {
+    DateTime now = fakeClock.nowUtc();
+    jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
+    createTld("tld");
+    DomainBase domain =
+        newDomainBase("example.tld")
+            .asBuilder()
+            .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+            .build();
+    jpaTm().transact(() -> jpaTm().put(domain));
+
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(DelegationSignerData.class))).isNotEmpty();
+
+    saveDiffFile(
+        gcsUtils,
+        createCheckpoint(now.minusMinutes(1)),
+        CommitLogManifest.create(
+            getBucketKey(1), now.minusMinutes(3), ImmutableSet.of(Key.create(domain))));
+    runAndAssertSuccess(now.minusMinutes(1), 1);
+
+    jpaTm()
+        .transact(
+            () -> {
+              assertThat(jpaTm().loadAllOf(DomainBase.class)).isEmpty();
+              assertThat(jpaTm().loadAllOf(DelegationSignerData.class)).isEmpty();
+            });
+  }
+
   private void runAndAssertSuccess(DateTime expectedCheckpointTime, int numFiles) {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
