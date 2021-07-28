@@ -37,6 +37,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableSortedCopy;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
 import static google.registry.util.PasswordUtils.hashPassword;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -458,6 +459,14 @@ public class Registrar extends ImmutableObject
   /** The time that the certificate was last updated. */
   DateTime lastCertificateUpdateTime;
 
+  /** The time that an expiring certificate notification email was sent to the registrar. */
+  DateTime lastExpiringCertNotificationSentDate = START_OF_TIME;
+
+  /**
+   * The time that an expiring failover certificate notification email was sent to the registrar.
+   */
+  DateTime lastExpiringFailoverCertNotificationSentDate = START_OF_TIME;
+
   /** Telephone support passcode (5-digit numeric) */
   String phonePasscode;
 
@@ -506,6 +515,14 @@ public class Registrar extends ImmutableObject
 
   public DateTime getLastCertificateUpdateTime() {
     return lastCertificateUpdateTime;
+  }
+
+  public DateTime getLastExpiringCertNotificationSentDate() {
+    return lastExpiringCertNotificationSentDate;
+  }
+
+  public DateTime getLastExpiringFailoverCertNotificationSentDate() {
+    return lastExpiringFailoverCertNotificationSentDate;
   }
 
   public String getRegistrarName() {
@@ -671,6 +688,10 @@ public class Registrar extends ImmutableObject
         .putString("creationTime", creationTime.getTimestamp())
         .putString("lastUpdateTime", lastUpdateTime.getTimestamp())
         .putString("lastCertificateUpdateTime", lastCertificateUpdateTime)
+        .putString("lastExpiringCertNotificationSentDate", lastExpiringCertNotificationSentDate)
+        .putString(
+            "lastExpiringFailoverCertNotificationSentDate",
+            lastExpiringFailoverCertNotificationSentDate)
         .put("registrarName", registrarName)
         .put("type", type)
         .put("state", state)
@@ -836,6 +857,19 @@ public class Registrar extends ImmutableObject
         getInstance().clientCertificateHash = clientCertificateHash;
         getInstance().lastCertificateUpdateTime = now;
       }
+      return this;
+    }
+
+    public Builder setLastExpiringCertNotificationSentDate(DateTime now) {
+      checkArgumentNotNull(now, "Registrar lastExpiringCertNotificationSentDate cannot be null");
+      getInstance().lastExpiringCertNotificationSentDate = now;
+      return this;
+    }
+
+    public Builder setLastExpiringFailoverCertNotificationSentDate(DateTime now) {
+      checkArgumentNotNull(
+          now, "Registrar lastExpiringFailoverCertNotificationSentDate cannot be null");
+      getInstance().lastExpiringFailoverCertNotificationSentDate = now;
       return this;
     }
 

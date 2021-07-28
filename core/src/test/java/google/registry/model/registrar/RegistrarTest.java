@@ -29,6 +29,7 @@ import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
+import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -412,6 +413,64 @@ class RegistrarTest extends EntityTestCase {
   void testFailure_phonePasscodeInvalidCharacters() {
     assertThrows(
         IllegalArgumentException.class, () -> new Registrar.Builder().setPhonePasscode("code1"));
+  }
+
+  @TestOfyAndSql
+  void testSuccess_getLastExpiringCertNotificationSentDate_returnsInitialValue() {
+    assertThat(registrar.getLastExpiringCertNotificationSentDate()).isEqualTo(START_OF_TIME);
+  }
+
+  @TestOfyAndSql
+  void testSuccess_getLastExpiringFailoverCertNotificationSentDate_returnsInitialValue() {
+    assertThat(registrar.getLastExpiringFailoverCertNotificationSentDate())
+        .isEqualTo(START_OF_TIME);
+  }
+
+  @TestOfyAndSql
+  void testSuccess_setLastExpiringCertNotificationSentDate() {
+    assertThat(
+            registrar
+                .asBuilder()
+                .setLastExpiringCertNotificationSentDate(fakeClock.nowUtc())
+                .build()
+                .getLastExpiringCertNotificationSentDate())
+        .isEqualTo(fakeClock.nowUtc());
+  }
+
+  @TestOfyAndSql
+  void testFailure_setLastExpiringCertNotificationSentDate_nullDate() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new Registrar.Builder().setLastExpiringCertNotificationSentDate(null).build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Registrar lastExpiringCertNotificationSentDate cannot be null");
+  }
+
+  @TestOfyAndSql
+  void testSuccess_setLastExpiringFailoverCertNotificationSentDate() {
+    assertThat(
+            registrar
+                .asBuilder()
+                .setLastExpiringFailoverCertNotificationSentDate(fakeClock.nowUtc())
+                .build()
+                .getLastExpiringFailoverCertNotificationSentDate())
+        .isEqualTo(fakeClock.nowUtc());
+  }
+
+  @TestOfyAndSql
+  void testFailure_setLastExpiringFailoverCertNotificationSentDate_nullDate() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                new Registrar.Builder()
+                    .setLastExpiringFailoverCertNotificationSentDate(null)
+                    .build());
+    assertThat(thrown)
+        .hasMessageThat()
+        .isEqualTo("Registrar lastExpiringFailoverCertNotificationSentDate cannot be null");
   }
 
   @TestOfyAndSql

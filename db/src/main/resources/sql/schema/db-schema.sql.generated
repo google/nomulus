@@ -581,6 +581,8 @@
         i18n_address_zip text,
         ip_address_allow_list text[],
         last_certificate_update_time timestamptz,
+        last_expiring_cert_notification_sent_date timestamptz,
+        last_expiring_failover_cert_notification_sent_date timestamptz,
         last_update_time timestamptz not null,
         localized_address_city text,
         localized_address_country_code text,
