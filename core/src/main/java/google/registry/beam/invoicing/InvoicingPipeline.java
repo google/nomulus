@@ -27,6 +27,7 @@ import google.registry.model.registrar.Registrar;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.reporting.billing.BillingModule;
 import google.registry.util.DateTimeUtils;
+import google.registry.util.DomainNameUtils;
 import google.registry.util.SqlTemplate;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -123,7 +124,7 @@ public class InvoicingPipeline implements Serializable {
         registrar.getClientId(),
         registrar.getBillingIdentifier().toString(),
         registrar.getPoNumber().orElse(""),
-        oneTime.getTargetId().substring(oneTime.getTargetId().indexOf('.') + 1),
+        DomainNameUtils.getTldFromDomainName(oneTime.getTargetId()),
         oneTime.getReason().toString(),
         oneTime.getTargetId(),
         oneTime.getDomainRepoId(),
@@ -233,7 +234,7 @@ public class InvoicingPipeline implements Serializable {
     // Remove the comments from the query string
     StringBuilder query = new StringBuilder();
     for (String line : queryWithComments.split("\n")) {
-      query.append(line.split("--", -1)[0]).append("\n");
+      query.append(line.split("^\\s*--", -1)[0]).append("\n");
     }
     return query.toString();
   }
