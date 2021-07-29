@@ -36,6 +36,7 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
@@ -234,7 +235,9 @@ public class InvoicingPipeline implements Serializable {
     // Remove the comments from the query string
     StringBuilder query = new StringBuilder();
     for (String line : queryWithComments.split("\n")) {
-      query.append(line.split("^\\s*--", -1)[0]).append("\n");
+      if (!Pattern.compile("^\\s*--").matcher(line).find()) {
+        query.append(line.concat("\n"));
+      }
     }
     return query.toString();
   }
