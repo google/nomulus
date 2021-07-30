@@ -69,6 +69,9 @@ public class InvoicingPipeline implements Serializable {
   private static final DateTimeFormatter TIMESTAMP_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
 
+  private static final Pattern SQL_COMMENT_REGEX =
+      Pattern.compile("^\\s*--.*\\n", Pattern.MULTILINE);
+
   private final InvoicingPipelineOptions options;
 
   InvoicingPipeline(InvoicingPipelineOptions options) {
@@ -233,13 +236,7 @@ public class InvoicingPipeline implements Serializable {
                 String.format("%d-%d-01", endMonth.getYear(), endMonth.getMonthValue()))
             .build();
     // Remove the comments from the query string
-    StringBuilder query = new StringBuilder();
-    for (String line : queryWithComments.split("\n")) {
-      if (!Pattern.compile("^\\s*--").matcher(line).find()) {
-        query.append(line.concat("\n"));
-      }
-    }
-    return query.toString();
+    return SQL_COMMENT_REGEX.matcher(queryWithComments).replaceAll("");
   }
 
   public static void main(String[] args) {
