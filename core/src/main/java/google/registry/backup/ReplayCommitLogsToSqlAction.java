@@ -233,20 +233,25 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
 
   private void handleEntityPut(Entity entity) {
     Object ofyPojo = auditedOfy().toPojo(entity);
-    if (ofyPojo instanceof DatastoreEntity) {
-      DatastoreEntity datastoreEntity = (DatastoreEntity) ofyPojo;
-      datastoreEntity
-          .toSqlEntity()
-          .ifPresent(
-              sqlEntity -> {
-                sqlEntity.beforeSqlSaveOnReplay();
-                jpaTm().put(sqlEntity);
-              });
-    } else {
-      // this should never happen, but we shouldn't fail on it
-      logger.atSevere().log(
-          "%s does not implement DatastoreEntity, which is necessary for SQL replay.",
-          ofyPojo.getClass());
+    try {
+      if (ofyPojo instanceof DatastoreEntity) {
+        DatastoreEntity datastoreEntity = (DatastoreEntity) ofyPojo;
+        datastoreEntity
+            .toSqlEntity()
+            .ifPresent(
+                sqlEntity -> {
+                  sqlEntity.beforeSqlSaveOnReplay();
+                  jpaTm().put(sqlEntity);
+                });
+      } else {
+        // this should never happen, but we shouldn't fail on it
+        logger.atSevere().log(
+            "%s does not implement DatastoreEntity, which is necessary for SQL replay.",
+            ofyPojo.getClass());
+      }
+    } catch (Throwable t) {
+      logger.atSevere().log("Error when replaying object %s", ofyPojo);
+      throw t;
     }
   }
 
@@ -262,13 +267,18 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
           "Skipping SQL delete for kind %s since it is not convertible.", key.getKind());
       return;
     }
-    Class<?> entityClass = entityVKey.getKind();
-    // Delete the key iff the class represents a JPA entity that is replicated
-    if (!NonReplicatedEntity.class.isAssignableFrom(entityClass)
-        && !DatastoreOnlyEntity.class.isAssignableFrom(entityClass)
-        && entityClass.getAnnotation(javax.persistence.Entity.class) != null) {
-      ReplaySpecializer.beforeSqlDelete(entityVKey);
-      jpaTm().delete(entityVKey);
+    try {
+      Class<?> entityClass = entityVKey.getKind();
+      // Delete the key iff the class represents a JPA entity that is replicated
+      if (!NonReplicatedEntity.class.isAssignableFrom(entityClass)
+          && !DatastoreOnlyEntity.class.isAssignableFrom(entityClass)
+          && entityClass.getAnnotation(javax.persistence.Entity.class) != null) {
+        ReplaySpecializer.beforeSqlDelete(entityVKey);
+        jpaTm().delete(entityVKey);
+      }
+    } catch (Throwable t) {
+      logger.atSevere().log("Error when deleting key %s", entityVKey);
+      throw t;
     }
   }
 
