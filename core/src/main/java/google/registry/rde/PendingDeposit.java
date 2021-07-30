@@ -83,7 +83,7 @@ public abstract class PendingDeposit implements Serializable {
     return new AutoValue_PendingDeposit(false, tld, watermark, mode, cursor, interval, null, null);
   }
 
-  static PendingDeposit createInManualOperation(
+  public static PendingDeposit createInManualOperation(
       String tld,
       DateTime watermark,
       RdeMode mode,

@@ -30,6 +30,7 @@ import com.google.appengine.tools.mapreduce.ReducerInput;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.StorageException;
 import com.google.common.collect.ImmutableList;
+import google.registry.beam.rde.RdePipelineTest;
 import google.registry.gcs.GcsUtils;
 import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.keyring.api.PgpHelper;
@@ -120,7 +121,7 @@ class RdeStagingReducerTest {
     String outputFile = decryptGhostrydeGcsFile("soy_2000-01-01_thin_S1_R1.xml.ghostryde");
     assertThat(outputFile)
         .isEqualTo(
-            readResourceUtf8(RdeStagingReducerTest.class, "reducer_brda.xml")
+            readResourceUtf8(RdePipelineTest.class, "reducer_brda.xml")
                 .replace("%RESEND%", " resend=\"1\""));
     compareLength(outputFile, "soy_2000-01-01_thin_S1_R1.xml.length");
     // BRDA doesn't write a report file.
@@ -147,8 +148,7 @@ class RdeStagingReducerTest {
     String outputFile = decryptGhostrydeGcsFile("manual/soy_2000-01-01_thin_S1_R0.xml.ghostryde");
     assertThat(outputFile)
         .isEqualTo(
-            readResourceUtf8(RdeStagingReducerTest.class, "reducer_brda.xml")
-                .replace("%RESEND%", ""));
+            readResourceUtf8(RdePipelineTest.class, "reducer_brda.xml").replace("%RESEND%", ""));
     compareLength(outputFile, "manual/soy_2000-01-01_thin_S1_R0.xml.length");
     // BRDA doesn't write a report file.
     assertThrows(
@@ -169,12 +169,12 @@ class RdeStagingReducerTest {
     String outputFile = decryptGhostrydeGcsFile("soy_2000-01-01_full_S1_R1.xml.ghostryde");
     assertThat(outputFile)
         .isEqualTo(
-            readResourceUtf8(RdeStagingReducerTest.class, "reducer_rde.xml")
+            readResourceUtf8(RdePipelineTest.class, "reducer_rde.xml")
                 .replace("%RESEND%", " resend=\"1\""));
     compareLength(outputFile, "soy_2000-01-01_full_S1_R1.xml.length");
     assertThat(decryptGhostrydeGcsFile("soy_2000-01-01_full_S1_R1-report.xml.ghostryde"))
         .isEqualTo(
-            readResourceUtf8(RdeStagingReducerTest.class, "reducer_rde_report.xml")
+            readResourceUtf8(RdePipelineTest.class, "reducer_rde_report.xml")
                 .replace("%RESEND%", "1"));
     assertThat(loadCursorTime(CursorType.RDE_STAGING))
         .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
@@ -191,12 +191,11 @@ class RdeStagingReducerTest {
     String outputFile = decryptGhostrydeGcsFile("manual/soy_2000-01-01_full_S1_R0.xml.ghostryde");
     assertThat(outputFile)
         .isEqualTo(
-            readResourceUtf8(RdeStagingReducerTest.class, "reducer_rde.xml")
-                .replace("%RESEND%", ""));
+            readResourceUtf8(RdePipelineTest.class, "reducer_rde.xml").replace("%RESEND%", ""));
     compareLength(outputFile, "manual/soy_2000-01-01_full_S1_R0.xml.length");
     assertThat(decryptGhostrydeGcsFile("manual/soy_2000-01-01_full_S1_R0-report.xml.ghostryde"))
         .isEqualTo(
-            readResourceUtf8(RdeStagingReducerTest.class, "reducer_rde_report.xml")
+            readResourceUtf8(RdePipelineTest.class, "reducer_rde_report.xml")
                 .replace("%RESEND%", "0"));
     // No extra operations in manual mode.
     assertThat(loadCursorTime(CursorType.RDE_STAGING)).isEquivalentAccordingToCompareTo(now);

@@ -154,7 +154,7 @@ public final class RdeRevision extends BackupGroupRoot implements NonReplicatedE
   }
 
   /** Class to represent the composite primary key of {@link RdeRevision} entity. */
-  static class RdeRevisionId extends ImmutableObject implements Serializable {
+  public static class RdeRevisionId extends ImmutableObject implements Serializable {
 
     String tld;
 
@@ -169,7 +169,7 @@ public final class RdeRevision extends BackupGroupRoot implements NonReplicatedE
     /** Hibernate requires this default constructor. */
     private RdeRevisionId() {}
 
-    static RdeRevisionId create(String tld, LocalDate date, RdeMode mode) {
+    public static RdeRevisionId create(String tld, LocalDate date, RdeMode mode) {
       RdeRevisionId instance = new RdeRevisionId();
       instance.tld = tld;
       instance.date = date;

@@ -14,9 +14,25 @@
       "name": "validationMode",
       "label": "How strict the marshaller validates the given EPP resources.",
       "helpText": "If set to LENIENT the marshaller will not warn about missing data on the EPP resources.",
-      "is_optional": true,
       "regexes": [
         "^STRICT|LENIENT$"
+      ]
+    },
+    {
+      "name": "gcsBucket",
+      "label": "The GCS bucket that where the resulting files will be  stored.",
+      "helpText": "Only the bucket name itself, without the leading \"gs://\".",
+      "is_optional": false,
+      "regexes": [
+        "^[a-zA-Z0-9_\\-]+$"
+      ]
+    },
+    {
+      "name": "stagingKey",
+      "label": "The PGP public key used to encrypt the RDE/BRDA deposit files.",
+      "helpText": "The key is Base64 URL-safe encoded.",
+      "regexes": [
+        "A-Za-z0-9\\-_"
       ]
     }
   ]
