@@ -255,12 +255,12 @@ public class IcannReportingStager {
     byte[] reportBytes = reportCsv.getBytes(UTF_8);
     String reportFilename =
         String.format(
-            "%s-%s-%s.csv",
+            "%s/%s-%s-%s.csv",
+            subdir,
             tld,
             Ascii.toLowerCase(reportType.toString()),
             DateTimeFormat.forPattern("yyyyMM").print(yearMonth));
-    String reportBucketname = String.format("%s/%s", reportingBucket, subdir);
-    final BlobId gcsFilename = BlobId.of(reportBucketname, reportFilename);
+    final BlobId gcsFilename = BlobId.of(reportingBucket, reportFilename);
     gcsUtils.createFromBytes(gcsFilename, reportBytes);
     logger.atInfo().log("Wrote %d bytes to file location %s", reportBytes.length, gcsFilename);
     return reportFilename;
