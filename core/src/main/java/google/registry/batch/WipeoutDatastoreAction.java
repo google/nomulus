@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryEnvironment;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
@@ -49,9 +50,8 @@ public class WipeoutDatastoreAction implements Runnable {
 
   private static final String PIPELINE_NAME = "bulk_delete_datastore_pipeline";
 
-  // As a short-lived class, hardcode allowed projects here instead of using config files.
-  private static final ImmutableSet<String> ALLOWED_PROJECTS =
-      ImmutableSet.of("domain-registry-qa");
+  private static final ImmutableSet<RegistryEnvironment> FORBIDDEN_ENVIRONMENTS =
+      ImmutableSet.of(RegistryEnvironment.PRODUCTION, RegistryEnvironment.SANDBOX);
 
   private final String projectId;
   private final String jobRegion;
@@ -80,9 +80,9 @@ public class WipeoutDatastoreAction implements Runnable {
   public void run() {
     response.setContentType(PLAIN_TEXT_UTF_8);
 
-    if (!ALLOWED_PROJECTS.contains(projectId)) {
+    if (FORBIDDEN_ENVIRONMENTS.contains(RegistryEnvironment.get())) {
       response.setStatus(SC_FORBIDDEN);
-      response.setPayload("Wipeout is not allowed in " + projectId);
+      response.setPayload("Wipeout is not allowed in " + RegistryEnvironment.get());
       return;
     }
 
