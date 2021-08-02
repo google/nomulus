@@ -18,6 +18,7 @@ import com.google.monitoring.metrics.MetricReporter;
 import dagger.Component;
 import dagger.Lazy;
 import google.registry.bigquery.BigqueryModule;
+import google.registry.config.CloudTasksUtilsModule;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
@@ -56,6 +57,7 @@ import javax.inject.Singleton;
       BackendRequestComponentModule.class,
       BigqueryModule.class,
       ConfigModule.class,
+      CloudTasksUtilsModule.class,
       CredentialModule.class,
       CustomLogicFactoryModule.class,
       DatastoreAdminModule.class,

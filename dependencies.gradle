@@ -18,10 +18,11 @@ ext {
     dependencyList = [
       'args4j:args4j:2.0.26',
       'com.beust:jcommander:1.60',
-      'com.google.api:gax:1.60.0',
+      'com.google.api:gax:1.66.0',
       'com.google.api.grpc:proto-google-cloud-secretmanager-v1:1.4.0',
       // The two below are needed only for Datastore bulk delete pipeline.
       'com.google.api.grpc:proto-google-cloud-datastore-v1:0.88.9',
+      'com.google.api.grpc:proto-google-cloud-tasks-v2:1.33.2',
       'com.google.api.grpc:proto-google-common-protos:2.1.0',
       'com.google.api-client:google-api-client-java6:1.31.3',
       'com.google.api-client:google-api-client:1.31.3',
@@ -63,6 +64,7 @@ ext {
       'com.google.cloud:google-cloud-secretmanager:1.4.0',
       'com.google.cloud:google-cloud-storage:1.113.12',
       'com.google.cloud:google-cloud-nio:0.123.4',
+      'com.google.cloud:google-cloud-tasks:1.33.2',
       'com.google.code.findbugs:jsr305:3.0.2',
       'com.google.code.gson:gson:2.8.6',
       'com.google.dagger:dagger-compiler:2.33',

@@ -69,8 +69,6 @@ def dockerIncompatibleTestPatterns = [
 // Nomulus classes, e.g., threads and objects retained by frameworks.
 // TODO(weiminyu): identify cause and fix offending tests.
 def fragileTestPatterns = [
-    // Problem seems to lie with AppEngine TaskQueue for test.
-    "google/registry/cron/TldFanoutActionTest.*",
     // Test Datastore inexplicably aborts transaction.
     "google/registry/model/tmch/ClaimsListShardTest.*",
     // Changes cache timeouts and for some reason appears to have contention
@@ -184,6 +182,7 @@ dependencies {
   compile deps['com.google.monitoring-client:metrics']
   compile deps['com.google.monitoring-client:stackdriver']
   compile deps['com.google.api-client:google-api-client-java6']
+  compile deps['com.google.api.grpc:proto-google-cloud-tasks-v2']
   compile deps['com.google.apis:google-api-services-admin-directory']
   compile deps['com.google.apis:google-api-services-appengine']
   compile deps['com.google.apis:google-api-services-bigquery']
@@ -216,11 +215,13 @@ dependencies {
   compile deps['com.google.flogger:flogger']
   runtime deps['com.google.flogger:flogger-system-backend']
   compile deps['com.google.guava:guava']
+  compile deps['com.google.protobuf:protobuf-java']
   gradleLint.ignore('unused-dependency') {
     compile deps['com.google.gwt:gwt-user']
   }
   compile deps['com.google.cloud:google-cloud-core']
   compile deps['com.google.cloud:google-cloud-storage']
+  compile deps['com.google.cloud:google-cloud-tasks']
   compile deps['com.google.http-client:google-http-client']
   compile deps['com.google.http-client:google-http-client-appengine']
   compile deps['com.google.http-client:google-http-client-jackson2']

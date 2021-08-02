@@ -14,14 +14,10 @@
 
 package google.registry.cron;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
-import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.in;
 import static com.google.common.base.Predicates.not;
-import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static com.google.common.collect.Iterables.getFirst;
 import static com.google.common.collect.Multimaps.filterKeys;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static google.registry.cron.CronModule.ENDPOINT_PARAM;
@@ -36,21 +32,24 @@ import static google.registry.model.tld.Registry.TldType.REAL;
 import static google.registry.model.tld.Registry.TldType.TEST;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import com.google.appengine.api.taskqueue.Queue;
-import com.google.appengine.api.taskqueue.TaskHandle;
-import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.cloud.tasks.v2.Task;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
+import com.google.protobuf.Timestamp;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.ParameterMap;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
-import google.registry.util.TaskQueueUtils;
+import google.registry.util.Clock;
+import google.registry.util.CloudTasksUtils;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Stream;
@@ -105,7 +104,8 @@ public final class TldFanoutAction implements Runnable {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Inject TaskQueueUtils taskQueueUtils;
+  @Inject Clock clock;
+  @Inject CloudTasksUtils cloudTasksUtils;
   @Inject Response response;
   @Inject @Parameter(ENDPOINT_PARAM) String endpoint;
   @Inject @Parameter(QUEUE_PARAM) String queue;
@@ -115,7 +115,9 @@ public final class TldFanoutAction implements Runnable {
   @Inject @Parameter(EXCLUDE_PARAM) ImmutableSet<String> excludes;
   @Inject @Parameter(JITTER_SECONDS_PARAM) Optional<Integer> jitterSeconds;
   @Inject @ParameterMap ImmutableListMultimap<String, String> params;
-  @Inject TldFanoutAction() {}
+
+  @Inject
+  TldFanoutAction() {}
 
   @Override
   public void run() {
@@ -126,8 +128,7 @@ public final class TldFanoutAction implements Runnable {
         runInEmpty || forEachTestTld || forEachRealTld,
         "At least one of runInEmpty, forEachTestTld, forEachRealTld must be given");
     checkArgument(
-        !(runInEmpty && !excludes.isEmpty()),
-        "Can't specify 'exclude' with 'runInEmpty'");
+        !(runInEmpty && !excludes.isEmpty()), "Can't specify 'exclude' with 'runInEmpty'");
     ImmutableSet<String> tlds =
         runInEmpty
             ? ImmutableSet.of("")
@@ -137,7 +138,6 @@ public final class TldFanoutAction implements Runnable {
                 .filter(not(in(excludes)))
                 .collect(toImmutableSet());
     Multimap<String, String> flowThruParams = filterKeys(params, not(in(CONTROL_PARAMS)));
-    Queue taskQueue = getQueue(queue);
     StringBuilder outputPayload =
         new StringBuilder(
             String.format("OK: Launched the following %d tasks in queue %s\n", tlds.size(), queue));
@@ -146,33 +146,41 @@ public final class TldFanoutAction implements Runnable {
       logger.atWarning().log("No TLDs to fan-out!");
     }
     for (String tld : tlds) {
-      TaskOptions taskOptions = createTaskOptions(tld, flowThruParams);
-      TaskHandle taskHandle = taskQueueUtils.enqueue(taskQueue, taskOptions);
+      Task task = createTask(tld, flowThruParams);
+      Task createdTask = cloudTasksUtils.enqueue(queue, task);
       outputPayload.append(
           String.format(
               "- Task: '%s', tld: '%s', endpoint: '%s'\n",
-              taskHandle.getName(), tld, taskOptions.getUrl()));
+              createdTask.getName(), tld, createdTask.getAppEngineHttpRequest().getRelativeUri()));
       logger.atInfo().log(
-          "Task: '%s', tld: '%s', endpoint: '%s'", taskHandle.getName(), tld, taskOptions.getUrl());
+          "Task: '%s', tld: '%s', endpoint: '%s'",
+          createdTask.getName(), tld, createdTask.getAppEngineHttpRequest().getRelativeUri());
     }
     response.setContentType(PLAIN_TEXT_UTF_8);
     response.setPayload(outputPayload.toString());
   }
 
-  private TaskOptions createTaskOptions(String tld, Multimap<String, String> params) {
-    TaskOptions options =
-        withUrl(endpoint)
-            .countdownMillis(
-                jitterSeconds
-                    .map(seconds -> random.nextInt((int) SECONDS.toMillis(seconds)))
-                    .orElse(0));
+  private Task createTask(String tld, Multimap<String, String> params) {
     if (!tld.isEmpty()) {
-      options.param(RequestParameters.PARAM_TLD, tld);
+      params = ArrayListMultimap.create(params);
+      params.put(RequestParameters.PARAM_TLD, tld);
     }
-    for (String param : params.keySet()) {
-      // TaskOptions.param() does not accept null values.
-      options.param(param, nullToEmpty(getFirst(params.get(param), null)));
-    }
-    return options;
+    Instant scheduleTime =
+        Instant.ofEpochMilli(
+            clock
+                .nowUtc()
+                .plusMillis(
+                    jitterSeconds
+                        .map(seconds -> random.nextInt((int) SECONDS.toMillis(seconds)))
+                        .orElse(0))
+                .getMillis());
+    return Task.newBuilder(
+            CloudTasksUtils.createPostTask(endpoint, Service.BACKEND.toString(), params))
+        .setScheduleTime(
+            Timestamp.newBuilder()
+                .setSeconds(scheduleTime.getEpochSecond())
+                .setNanos(scheduleTime.getNano())
+                .build())
+        .build();
   }
 }
