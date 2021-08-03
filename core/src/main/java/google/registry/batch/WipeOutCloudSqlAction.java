@@ -22,7 +22,7 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.flogger.FluentLogger;
-import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryEnvironment;
 import google.registry.persistence.PersistenceModule.SchemaManagerConnection;
 import google.registry.request.Action;
 import google.registry.request.Response;
@@ -48,22 +48,18 @@ import javax.inject.Inject;
 public class WipeOutCloudSqlAction implements Runnable {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  // As a short-lived class, hardcode allowed projects here instead of using config files.
-  private static final ImmutableSet<String> ALLOWED_PROJECTS =
-      ImmutableSet.of("domain-registry-qa");
+  private static final ImmutableSet<RegistryEnvironment> FORBIDDEN_ENVIRONMENTS =
+      ImmutableSet.of(RegistryEnvironment.PRODUCTION, RegistryEnvironment.SANDBOX);
 
-  private final String projectId;
   private final Supplier<Connection> connectionSupplier;
   private final Response response;
   private final Retrier retrier;
 
   @Inject
   WipeOutCloudSqlAction(
-      @Config("projectId") String projectId,
       @SchemaManagerConnection Supplier<Connection> connectionSupplier,
       Response response,
       Retrier retrier) {
-    this.projectId = projectId;
     this.connectionSupplier = connectionSupplier;
     this.response = response;
     this.retrier = retrier;
@@ -73,9 +69,9 @@ public class WipeOutCloudSqlAction implements Runnable {
   public void run() {
     response.setContentType(PLAIN_TEXT_UTF_8);
 
-    if (!ALLOWED_PROJECTS.contains(projectId)) {
+    if (FORBIDDEN_ENVIRONMENTS.contains(RegistryEnvironment.get())) {
       response.setStatus(SC_FORBIDDEN);
-      response.setPayload("Wipeout is not allowed in " + projectId);
+      response.setPayload("Wipeout is not allowed in " + RegistryEnvironment.get());
       return;
     }
 
@@ -90,11 +86,11 @@ public class WipeOutCloudSqlAction implements Runnable {
           },
           e -> !(e instanceof SQLException));
       response.setStatus(SC_OK);
-      response.setPayload("Wiped out Cloud SQL in " + projectId);
+      response.setPayload("Wiped out Cloud SQL in " + RegistryEnvironment.get());
     } catch (RuntimeException e) {
       logger.atSevere().withCause(e).log("Failed to wipe out Cloud SQL data.");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
-      response.setPayload("Failed to wipe out Cloud SQL in " + projectId);
+      response.setPayload("Failed to wipe out Cloud SQL in " + RegistryEnvironment.get());
     }
   }
 

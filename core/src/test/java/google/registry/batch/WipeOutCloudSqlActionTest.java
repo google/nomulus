@@ -28,6 +28,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import google.registry.config.RegistryEnvironment;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.FakeSleeper;
@@ -73,8 +74,7 @@ public class WipeOutCloudSqlActionTest {
 
   @Test
   void run_projectAllowed() throws Exception {
-    WipeOutCloudSqlAction action =
-        new WipeOutCloudSqlAction("domain-registry-qa", () -> conn, response, retrier);
+    WipeOutCloudSqlAction action = new WipeOutCloudSqlAction(() -> conn, response, retrier);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     verify(stmt, times(1)).executeQuery(anyString());
@@ -84,18 +84,21 @@ public class WipeOutCloudSqlActionTest {
 
   @Test
   void run_projectNotAllowed() {
-    WipeOutCloudSqlAction action =
-        new WipeOutCloudSqlAction("domain-registry", () -> conn, response, retrier);
-    action.run();
-    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
-    verifyNoInteractions(stmt);
+    try {
+      RegistryEnvironment.SANDBOX.setup();
+      WipeOutCloudSqlAction action = new WipeOutCloudSqlAction(() -> conn, response, retrier);
+      action.run();
+      assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+      verifyNoInteractions(stmt);
+    } finally {
+      RegistryEnvironment.UNITTEST.setup();
+    }
   }
 
   @Test
   void run_nonRetrieableFailure() throws Exception {
     doThrow(new SQLException()).when(conn).getMetaData();
-    WipeOutCloudSqlAction action =
-        new WipeOutCloudSqlAction("domain-registry-qa", () -> conn, response, retrier);
+    WipeOutCloudSqlAction action = new WipeOutCloudSqlAction(() -> conn, response, retrier);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     verifyNoInteractions(stmt);
@@ -104,8 +107,7 @@ public class WipeOutCloudSqlActionTest {
   @Test
   void run_retrieableFailure() throws Exception {
     when(conn.getMetaData()).thenThrow(new RuntimeException()).thenReturn(metaData);
-    WipeOutCloudSqlAction action =
-        new WipeOutCloudSqlAction("domain-registry-qa", () -> conn, response, retrier);
+    WipeOutCloudSqlAction action = new WipeOutCloudSqlAction(() -> conn, response, retrier);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     verify(stmt, times(1)).executeQuery(anyString());

@@ -25,6 +25,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import google.registry.beam.BeamActionTestBase;
+import google.registry.config.RegistryEnvironment;
 import google.registry.testing.FakeClock;
 import org.junit.jupiter.api.Test;
 
@@ -35,12 +36,22 @@ class WipeOutDatastoreActionTest extends BeamActionTestBase {
 
   @Test
   void run_projectNotAllowed() {
-    WipeoutDatastoreAction action =
-        new WipeoutDatastoreAction(
-            "domain-registry", "us-central1", "gs://some-bucket", clock, response, dataflow);
-    action.run();
-    assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
-    verifyNoInteractions(dataflow);
+    try {
+      RegistryEnvironment.SANDBOX.setup();
+      WipeoutDatastoreAction action =
+          new WipeoutDatastoreAction(
+              "domain-registry-sandbox",
+              "us-central1",
+              "gs://some-bucket",
+              clock,
+              response,
+              dataflow);
+      action.run();
+      assertThat(response.getStatus()).isEqualTo(SC_FORBIDDEN);
+      verifyNoInteractions(dataflow);
+    } finally {
+      RegistryEnvironment.UNITTEST.setup();
+    }
   }
 
   @Test
