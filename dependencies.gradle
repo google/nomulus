@@ -62,7 +62,7 @@ ext {
       'com.google.cloud:google-cloud-core-http:1.94.3',
       'com.google.cloud:google-cloud-secretmanager:1.4.0',
       'com.google.cloud:google-cloud-storage:1.113.12',
-      'com.google.cloud:google-cloud-nio:0.123.2',
+      'com.google.cloud:google-cloud-nio:0.123.4',
       'com.google.code.findbugs:jsr305:3.0.2',
       'com.google.code.gson:gson:2.8.6',
       'com.google.dagger:dagger-compiler:2.33',

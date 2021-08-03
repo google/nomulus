@@ -29,11 +29,11 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.StorageException;
+import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
 import google.registry.export.ExportDomainListsAction.ExportDomainListsReducer;
 import google.registry.gcs.GcsUtils;
-import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;

@@ -25,10 +25,10 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.gcs.GcsUtils;
-import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogCheckpoint;

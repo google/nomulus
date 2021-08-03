@@ -29,9 +29,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.testing.TestLogHandler;
 import google.registry.gcs.GcsUtils;
-import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.registry.Registry;

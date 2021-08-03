@@ -29,13 +29,13 @@ import static org.mockito.Mockito.when;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
 import com.google.common.util.concurrent.MoreExecutors;
 import google.registry.gcs.GcsUtils;
-import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.testing.AppEngineExtension;
 import java.io.IOException;
 import java.util.concurrent.Executors;

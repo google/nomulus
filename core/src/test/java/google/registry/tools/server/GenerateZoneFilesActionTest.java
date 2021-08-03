@@ -27,12 +27,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.Duration.standardDays;
 
 import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.gcs.GcsUtils;
-import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
