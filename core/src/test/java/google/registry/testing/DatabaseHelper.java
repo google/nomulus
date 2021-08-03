@@ -264,7 +264,7 @@ public class DatabaseHelper {
         .setRestoreBillingCost(Money.of(USD, 17))
         .setServerStatusChangeBillingCost(Money.of(USD, 19))
         // Always set a default premium list. Tests that don't want it can delete it.
-        .setPremiumList(persistPremiumList(tld, DEFAULT_PREMIUM_LIST_CONTENTS.get()))
+        .setPremiumList(persistPremiumList(tld, USD, DEFAULT_PREMIUM_LIST_CONTENTS.get()))
         .setPremiumPricingEngine(StaticPremiumListPricingEngine.NAME)
         .setDnsWriters(ImmutableSet.of(VoidDnsWriter.NAME))
         .build();
@@ -374,18 +374,16 @@ public class DatabaseHelper {
    * incrementing FakeClock for all tests in order to persist the commit logs properly because of
    * the requirement to have monotonically increasing timestamps.
    */
-  public static PremiumList persistPremiumList(String listName, String... lines) {
+  public static PremiumList persistPremiumList(
+      String listName, CurrencyUnit currencyUnit, String... lines) {
     checkState(lines.length != 0, "Must provide at least one premium entry");
     PremiumList partialPremiumList = new PremiumList.Builder().setName(listName).build();
     ImmutableMap<String, PremiumEntry> entries = partialPremiumList.parse(asList(lines));
-    String line = lines[0];
-    List<String> parts = Splitter.on(',').trimResults().splitToList(line);
-    CurrencyUnit currency = Money.parse(parts.get(1)).getCurrencyUnit();
     PremiumList premiumList =
         partialPremiumList
             .asBuilder()
             .setCreationTimestamp(DateTime.now(DateTimeZone.UTC))
-            .setCurrency(currency)
+            .setCurrency(currencyUnit)
             .setLabelsToPrices(
                 entries.entrySet().stream()
                     .collect(

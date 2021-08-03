@@ -71,7 +71,7 @@ public final class RegistryTest extends EntityTestCase {
   @TestOfyAndSql
   void testPersistence_updateReservedAndPremiumListSuccessfully() {
     ReservedList rl15 = persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED");
-    PremiumList pl = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
+    PremiumList pl = persistPremiumList("tld2", USD, "lol,USD 50", "cat,USD 700");
     Registry registry =
         Registry.get("tld").asBuilder().setReservedLists(rl15).setPremiumList(pl).build();
     tm().transact(() -> tm().put(registry));
@@ -245,7 +245,7 @@ public final class RegistryTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testSetPremiumList() {
-    PremiumList pl2 = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
+    PremiumList pl2 = persistPremiumList("tld2", USD, "lol,USD 50", "cat,USD 700");
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
     Optional<String> pl = registry.getPremiumListName();
     assertThat(pl).hasValue("tld2");

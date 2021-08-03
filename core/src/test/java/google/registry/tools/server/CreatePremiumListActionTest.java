@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadPremiumEntries;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static org.joda.money.CurrencyUnit.USD;
 
 import google.registry.model.registry.label.PremiumList;
 import google.registry.schema.tld.PremiumListDao;
@@ -86,6 +87,7 @@ public class CreatePremiumListActionTest {
     action.name = "zanzibar";
     action.inputData = "zanzibar,USD 100";
     action.override = true;
+    action.currency = USD;
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(loadPremiumEntries(PremiumListDao.getLatestRevision("zanzibar").get())).hasSize(1);
@@ -95,6 +97,7 @@ public class CreatePremiumListActionTest {
   void test_success() {
     action.name = "foo";
     action.inputData = "rich,USD 25\nricher,USD 1000\n";
+    action.currency = USD;
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     PremiumList premiumList = PremiumListDao.getLatestRevision("foo").get();

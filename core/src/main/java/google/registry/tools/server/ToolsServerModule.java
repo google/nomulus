@@ -28,6 +28,7 @@ import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
+import org.joda.money.CurrencyUnit;
 
 /**
  * Dagger module for the tools package.
@@ -64,6 +65,12 @@ public class ToolsServerModule {
   @Parameter("premiumListName")
   static String provideName(HttpServletRequest req) {
     return extractRequiredParameter(req, CreatePremiumListAction.NAME_PARAM);
+  }
+
+  @Provides
+  @Parameter("currency")
+  static CurrencyUnit provideCurrency(HttpServletRequest req) {
+    return CurrencyUnit.of(extractRequiredParameter(req, CreatePremiumListAction.CURRENCY));
   }
 
   @Provides

@@ -19,6 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -121,7 +122,7 @@ class CreateDomainCommandTest extends EppToolCommandTestCase<CreateDomainCommand
   @Test
   void testSuccess_premiumJpyDomain() throws Exception {
     createTld("baar");
-    persistPremiumList("baar", "parajiumu,JPY 96083");
+    persistPremiumList("baar", JPY, "parajiumu,JPY 96083");
     persistResource(
         Registry.get("baar")
             .asBuilder()

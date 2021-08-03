@@ -895,7 +895,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v06.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_response_v06.xml"));
@@ -907,7 +907,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     // The domain needs to exist in order for it to be loaded to check for restore fee.
     persistActiveDomain("allowedinsunrise.tld");
@@ -922,7 +922,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v11_create.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_response_v11_create.xml"));
@@ -934,7 +934,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v11_renew.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_response_v11_renew.xml"));
@@ -946,7 +946,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v11_transfer.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_response_v11_transfer.xml"));
@@ -958,7 +958,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v11_restore.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_response_v11_restore.xml"));
@@ -970,7 +970,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     persistPendingDeleteDomain("reserved.tld");
     persistPendingDeleteDomain("allowedinsunrise.tld");
@@ -987,7 +987,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v12.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_response_v12.xml"));
@@ -999,7 +999,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     // The domain needs to exist in order for it to be loaded to check for restore fee.
     persistActiveDomain("allowedinsunrise.tld");
@@ -1014,7 +1014,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v06.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_sunrise_response_v06.xml"));
@@ -1028,7 +1028,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     persistPendingDeleteDomain("reserved.tld");
     persistPendingDeleteDomain("allowedinsunrise.tld");
@@ -1046,7 +1046,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v11_create.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_sunrise_response_v11_create.xml"));
@@ -1059,7 +1059,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v11_renew.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_sunrise_response_v11_renew.xml"));
@@ -1072,7 +1072,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v11_transfer.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_sunrise_response_v11_transfer.xml"));
@@ -1085,7 +1085,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v11_restore.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_sunrise_response_v11_restore.xml"));
@@ -1098,7 +1098,7 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
         Registry.get("tld")
             .asBuilder()
             .setReservedLists(createReservedList())
-            .setPremiumList(persistPremiumList("tld", "premiumcollision,USD 70"))
+            .setPremiumList(persistPremiumList("tld", USD, "premiumcollision,USD 70"))
             .build());
     setEppInput("domain_check_fee_reserved_v12.xml");
     runFlowAssertResponse(loadFile("domain_check_fee_reserved_sunrise_response_v12.xml"));

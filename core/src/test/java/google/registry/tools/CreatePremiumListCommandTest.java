@@ -33,7 +33,7 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
 
   @BeforeEach
   void beforeEach() {
-    registry = createRegistry(TLD_TEST, null);
+    registry = createRegistry(TLD_TEST, null, null);
   }
 
   @Test
@@ -45,7 +45,7 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
 
   @Test
   void commandRun_successCreateList() throws Exception {
-    runCommandForced("--name=" + TLD_TEST, "--input=" + premiumTermsPath);
+    runCommandForced("--name=" + TLD_TEST, "--input=" + premiumTermsPath, "--currency=USD");
     assertThat(registry.getTld().toString()).isEqualTo(TLD_TEST);
     assertThat(PremiumListDao.getLatestRevision(TLD_TEST).isPresent()).isTrue();
   }
@@ -56,6 +56,7 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
   void commandPrompt_successStageNewEntity() throws Exception {
     CreatePremiumListCommand command = new CreatePremiumListCommand();
     command.inputFile = Paths.get(premiumTermsPath);
+    command.currencyUnit = "USD";
     command.prompt();
     assertThat(command.prompt()).isEqualTo("Create new premium list for prime?");
   }
@@ -67,6 +68,7 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
     command.inputFile = Paths.get(premiumTermsPath);
     command.override = true;
     command.name = alterTld;
+    command.currencyUnit = "USD";
     command.prompt();
     assertThat(command.prompt()).isEqualTo("Create new premium list for override?");
   }
@@ -83,6 +85,7 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
     createTld(randomStr);
     CreatePremiumListCommand command = new CreatePremiumListCommand();
     command.name = randomStr;
+    command.currencyUnit = "USD";
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown).hasMessageThat().isEqualTo("A premium list already exists by this name");
   }
@@ -94,6 +97,7 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
     Path tmpPath = tmpDir.resolve(String.format("%s.txt", fileName));
     Files.write(new byte[0], tmpPath.toFile());
     command.inputFile = tmpPath;
+    command.currencyUnit = "USD";
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
         .hasMessageThat()
@@ -110,6 +114,7 @@ class CreatePremiumListCommandTest<C extends CreatePremiumListCommand>
     CreatePremiumListCommand command = new CreatePremiumListCommand();
     String fileName = "random";
     command.name = fileName;
+    command.currencyUnit = "USD";
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
         .hasMessageThat()

@@ -17,7 +17,6 @@ package google.registry.schema.tld;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.joda.time.DateTimeZone.UTC;
 
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import google.registry.model.registry.label.PremiumList;
@@ -26,23 +25,20 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import org.joda.money.CurrencyUnit;
-import org.joda.money.Money;
 import org.joda.time.DateTime;
 
 /** Static utility methods for {@link PremiumList}. */
 public class PremiumListUtils {
 
-  public static PremiumList parseToPremiumList(String name, List<String> inputData) {
+  public static PremiumList parseToPremiumList(
+      String name, CurrencyUnit currencyUnit, List<String> inputData) {
     ImmutableMap<String, PremiumEntry> prices =
         new PremiumList.Builder().setName(name).build().parse(inputData);
     checkArgument(inputData.size() > 0, "Input cannot be empty");
-    String line = inputData.get(0);
-    List<String> parts = Splitter.on(',').trimResults().splitToList(line);
-    CurrencyUnit currency = Money.parse(parts.get(1)).getCurrencyUnit();
     Map<String, BigDecimal> priceAmounts = Maps.transformValues(prices, PremiumEntry::getValue);
     return new PremiumList.Builder()
         .setName(name)
-        .setCurrency(currency)
+        .setCurrency(currencyUnit)
         .setLabelsToPrices(priceAmounts)
         .setCreationTimestamp(DateTime.now(UTC))
         .build();

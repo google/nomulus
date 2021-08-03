@@ -25,6 +25,7 @@ import com.google.common.base.Strings;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.schema.tld.PremiumListDao;
 import java.nio.file.Files;
+import org.joda.money.CurrencyUnit;
 
 /** Command to create a {@link PremiumList} on Database. */
 @Parameters(separators = " =", commandDescription = "Create a PremiumList in Database.")
@@ -35,9 +36,16 @@ public class CreatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
       description = "Override restrictions on premium list naming")
   boolean override;
 
+  @Parameter(
+      names = {"-c", "--currency"},
+      description = "CurrencyUnit for the list",
+      required = true)
+  String currencyUnit;
+
   @Override
   // Using CreatePremiumListAction.java as reference;
   protected String prompt() throws Exception {
+    currency = CurrencyUnit.of(currencyUnit);
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
     checkArgument(
         !PremiumListDao.getLatestRevision(name).isPresent(),

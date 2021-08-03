@@ -21,6 +21,7 @@ import google.registry.tools.params.PathParameter;
 import java.nio.file.Path;
 import java.util.List;
 import javax.annotation.Nullable;
+import org.joda.money.CurrencyUnit;
 
 /**
  * Base class for specification of command line parameters common to creating and updating premium
@@ -31,6 +32,7 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   protected List<String> inputData;
+  protected CurrencyUnit currency;
 
   @Nullable
   @Parameter(
@@ -52,7 +54,7 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
     String message = String.format("Saved premium list %s with %d entries", name, inputData.size());
     try {
       logger.atInfo().log("Saving premium list for TLD %s", name);
-      PremiumListDao.save(name, inputData);
+      PremiumListDao.save(name, currency, inputData);
       logger.atInfo().log(message);
     } catch (Throwable e) {
       message = "Unexpected error saving premium list from nomulus tool command";

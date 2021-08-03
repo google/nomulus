@@ -16,15 +16,18 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 import google.registry.model.registry.Registry;
+import google.registry.model.registry.label.PremiumList;
 import google.registry.schema.tld.PremiumListDao;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,16 +38,17 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
 
   @BeforeEach
   void beforeEach() {
-    registry = createRegistry(TLD_TEST, initialPremiumListData);
+    registry = createRegistry(TLD_TEST, USD, initialPremiumListData);
   }
 
   @Test
   void verify_registryIsSetUpCorrectly() {
+    Optional<PremiumList> list = PremiumListDao.getLatestRevision(TLD_TEST);
     // ensure that no premium list is created before running the command
-    assertThat(PremiumListDao.getLatestRevision(TLD_TEST).isPresent()).isTrue();
+    assertThat(list.isPresent()).isTrue();
     // ensure that there's value in existing premium list;
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
-    ImmutableSet<String> entries = command.getExistingPremiumEntry(TLD_TEST);
+    ImmutableSet<String> entries = command.getExistingPremiumEntry(list.get());
     assertThat(entries.size()).isEqualTo(1);
     // data from @beforeEach of CreateOrUpdatePremiumListCommandTestCase.java
     assertThat(entries.contains("doge,USD 9090.00")).isTrue();
@@ -73,7 +77,8 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     command.inputFile = Paths.get(tmpFile.getPath());
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
 
-    ImmutableSet<String> entries = command.getExistingPremiumEntry(TLD_TEST);
+    ImmutableSet<String> entries =
+        command.getExistingPremiumEntry(PremiumListDao.getLatestRevision(TLD_TEST).get());
     assertThat(entries.size()).isEqualTo(1);
     // verify that list is updated; cannot use only string since price is formatted;
     assertThat(entries.contains("eth,USD 9999.00")).isTrue();
@@ -90,7 +95,8 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
 
     // assert all three lines from premiumTerms are added
-    ImmutableSet<String> entries = command.getExistingPremiumEntry(TLD_TEST);
+    ImmutableSet<String> entries =
+        command.getExistingPremiumEntry(PremiumListDao.getLatestRevision(TLD_TEST).get());
     assertThat(entries.size()).isEqualTo(3);
     assertThat(entries.contains("foo,USD 9000.00")).isTrue();
     assertThat(entries.contains("doge,USD 100.00")).isTrue();
@@ -112,7 +118,7 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   @Test
   void commandPrompt_failureNoPreviousVersion() {
     String fileName = "random";
-    registry = createRegistry(fileName, null);
+    registry = createRegistry(fileName, null, null);
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.name = fileName;
     IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
