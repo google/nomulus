@@ -54,7 +54,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
     persistReservedList("xn--q9jyb4c_abuse", "lamb,FULLY_BLOCKED");
     persistReservedList("tld_banned", "kilo,FULLY_BLOCKED", "lima,FULLY_BLOCKED");
     persistReservedList("soy_expurgated", "fireflies,FULLY_BLOCKED");
-    persistPremiumList("xn--q9jyb4c", "minecraft,USD 1000");
+    persistPremiumList("xn--q9jyb4c", USD, "minecraft,USD 1000");
     persistReservedList("xn--q9jyb4c_r1", "foo,FULLY_BLOCKED");
     persistReservedList("xn--q9jyb4c_r2", "moop,FULLY_BLOCKED");
     createTld("xn--q9jyb4c");

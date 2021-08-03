@@ -15,6 +15,8 @@
 package google.registry.tools.server;
 
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
+import static org.joda.money.CurrencyUnit.JPY;
+import static org.joda.money.CurrencyUnit.USD;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,8 +29,8 @@ class ListPremiumListsActionTest extends ListActionTestCase {
 
   @BeforeEach
   void beforeEach() {
-    persistPremiumList("xn--q9jyb4c", "rich,USD 100");
-    persistPremiumList("how", "richer,JPY 5000");
+    persistPremiumList("xn--q9jyb4c", USD, "rich,USD 100");
+    persistPremiumList("how", JPY, "richer,JPY 5000");
     action = new ListPremiumListsAction();
   }
 

@@ -27,6 +27,7 @@ import google.registry.request.auth.Auth;
 import google.registry.schema.tld.PremiumListDao;
 import java.util.List;
 import javax.inject.Inject;
+import org.joda.money.CurrencyUnit;
 
 /**
  * An action that creates a premium list, for use by the {@code nomulus create_premium_list}
@@ -43,8 +44,13 @@ public class CreatePremiumListAction extends CreateOrUpdatePremiumListAction {
 
   public static final String OVERRIDE_PARAM = "override";
   public static final String PATH = "/_dr/admin/createPremiumList";
+  public static final String CURRENCY = "currency";
 
   @Inject @Parameter(OVERRIDE_PARAM) boolean override;
+
+  @Inject
+  @Parameter("currency")
+  CurrencyUnit currency;
 
   @Inject CreatePremiumListAction() {}
 
@@ -64,7 +70,7 @@ public class CreatePremiumListAction extends CreateOrUpdatePremiumListAction {
     logInputData();
     List<String> inputDataPreProcessed =
         Splitter.on('\n').omitEmptyStrings().splitToList(inputData);
-    PremiumListDao.save(name, inputDataPreProcessed);
+    PremiumListDao.save(name, currency, inputDataPreProcessed);
     String message =
         String.format("Saved premium list %s with %d entries", name, inputDataPreProcessed.size());
     logger.atInfo().log(message);

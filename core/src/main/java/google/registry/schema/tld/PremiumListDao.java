@@ -34,6 +34,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.Duration;
 
@@ -151,8 +152,8 @@ public class PremiumListDao {
     }
   }
 
-  public static PremiumList save(String name, List<String> inputData) {
-    return save(PremiumListUtils.parseToPremiumList(name, inputData));
+  public static PremiumList save(String name, CurrencyUnit currencyUnit, List<String> inputData) {
+    return save(PremiumListUtils.parseToPremiumList(name, currencyUnit, inputData));
   }
 
   public static PremiumList save(PremiumList premiumList) {
@@ -185,15 +186,10 @@ public class PremiumListDao {
             () -> {
               Optional<PremiumList> persistedList = getLatestRevision(premiumList.getName());
               if (persistedList.isPresent()) {
-                List<PremiumEntry> entries =
-                    jpaTm()
-                        .query(
-                            "FROM PremiumEntry pe WHERE pe.revisionId = :revisionId",
-                            PremiumEntry.class)
-                        .setParameter("revisionId", persistedList.get().getRevisionId())
-                        .getResultList();
-
-                entries.forEach(jpaTm()::delete);
+                jpaTm()
+                    .query("DELETE FROM PremiumEntry WHERE revisionId = :revisionId")
+                    .setParameter("revisionId", persistedList.get().getRevisionId())
+                    .executeUpdate();
                 jpaTm().delete(persistedList.get());
               }
             });

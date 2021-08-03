@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.loadPremiumEntries;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.base.Splitter;
 import com.google.common.truth.Truth8;
@@ -79,7 +80,7 @@ class UpdatePremiumListActionTest {
             .omitEmptyStrings()
             .splitToList(
                 readResourceUtf8(DatabaseHelper.class, "default_premium_list_testdata.csv"));
-    PremiumListDao.save("foo", inputLines);
+    PremiumListDao.save("foo", USD, inputLines);
     action.name = "foo";
     action.inputData = "rich,USD 75\nricher,USD 5000\npoor, USD 0.99";
     action.run();

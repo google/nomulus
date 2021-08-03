@@ -40,12 +40,17 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
   // Using UpdatePremiumListAction.java as reference;
   protected String prompt() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
-    List<String> existingEntry = getExistingPremiumEntry(name).asList();
+    Optional<PremiumList> list = PremiumListDao.getLatestRevision(name);
+    checkArgument(
+        list.isPresent(),
+        String.format("Could not update premium list %s because it doesn't exist.", name));
+    List<String> existingEntry = getExistingPremiumEntry(list.get()).asList();
     inputData = Files.readAllLines(inputFile, UTF_8);
-
+    currency = list.get().getCurrency();
     // reconstructing existing premium list to bypass Hibernate lazy initialization exception
-    PremiumList existingPremiumList = PremiumListUtils.parseToPremiumList(name, existingEntry);
-    PremiumList updatedPremiumList = PremiumListUtils.parseToPremiumList(name, inputData);
+    PremiumList existingPremiumList =
+        PremiumListUtils.parseToPremiumList(name, currency, existingEntry);
+    PremiumList updatedPremiumList = PremiumListUtils.parseToPremiumList(name, currency, inputData);
 
     return String.format(
         "Update premium list for %s?\n Old List: %s\n New List: %s",
@@ -69,21 +74,16 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
     assertThat(persistedList.getLabelsToPrices()).containsEntry("foo", new BigDecimal("9000.00"));
     assertThat(persistedList.size()).isEqualTo(1);
   */
-  protected ImmutableSet<String> getExistingPremiumEntry(String name) {
-    Optional<PremiumList> list = PremiumListDao.getLatestRevision(name);
-    checkArgument(
-        list.isPresent(),
-        String.format("Could not update premium list %s because it doesn't exist.", name));
+  protected ImmutableSet<String> getExistingPremiumEntry(PremiumList list) {
+
     Iterable<PremiumEntry> sqlListEntries =
-        jpaTm().transact(() -> PremiumListDao.loadPremiumEntries(list.get()));
+        jpaTm().transact(() -> PremiumListDao.loadPremiumEntries(list));
     return Streams.stream(sqlListEntries)
         .map(
             premiumEntry ->
                 String.format(
                     "%s,%s %s",
-                    premiumEntry.getDomainLabel(),
-                    list.get().getCurrency(),
-                    premiumEntry.getValue()))
+                    premiumEntry.getDomainLabel(), list.getCurrency(), premiumEntry.getValue()))
         .collect(toImmutableSet());
   }
 }

@@ -49,7 +49,8 @@ public class PricingEngineProxyTest {
   @BeforeEach
   void beforeEach() {
     PremiumList premiumList =
-        persistPremiumList("rich,USD 100", "richer,USD 999", "fraction,USD 20.50");
+        persistPremiumList(
+            "premium list", USD, "rich,USD 100", "richer,USD 999", "fraction,USD 20.50");
     createTld("moka");
     persistResource(Registry.get("moka").asBuilder().setPremiumList(premiumList).build());
     clock = new FakeClock(DateTime.parse("2016-03-17T12:01:00Z"));

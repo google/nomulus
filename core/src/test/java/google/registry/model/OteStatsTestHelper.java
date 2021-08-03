@@ -23,6 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TestDataHelper.loadBytes;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
+import static org.joda.money.CurrencyUnit.USD;
 
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.eppcommon.Trid;
@@ -77,7 +78,7 @@ public final class OteStatsTestHelper {
    */
   public static void setupIncompleteOte(String baseClientId) throws IOException {
     createTld("tld");
-    persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
+    persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
     OteAccountBuilder.forClientId(baseClientId).addContact("email@example.com").buildAndPersist();
     String oteAccount1 = String.format("%s-1", baseClientId);
     DateTime now = DateTime.now(DateTimeZone.UTC);

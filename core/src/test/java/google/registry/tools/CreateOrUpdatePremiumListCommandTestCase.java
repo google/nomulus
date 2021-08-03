@@ -32,6 +32,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldType;
 import java.io.File;
 import java.io.IOException;
+import org.joda.money.CurrencyUnit;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Base class for common testing setup for create and update commands for Premium Lists. */
@@ -51,7 +52,7 @@ abstract class CreateOrUpdatePremiumListCommandTestCase<T extends CreateOrUpdate
     premiumTermsPath = premiumTermsFile.getPath();
   }
 
-  Registry createRegistry(String tldStr, String premiumListInput) {
+  Registry createRegistry(String tldStr, CurrencyUnit currency, String premiumListInput) {
     Registry registry;
     if (premiumListInput != null) {
       registry =
@@ -60,7 +61,7 @@ abstract class CreateOrUpdatePremiumListCommandTestCase<T extends CreateOrUpdate
               Ascii.toUpperCase(tldStr),
               ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY),
               TldType.TEST);
-      persistPremiumList(tldStr, premiumListInput);
+      persistPremiumList(tldStr, currency, premiumListInput);
       persistResource(registry);
     } else {
       registry =

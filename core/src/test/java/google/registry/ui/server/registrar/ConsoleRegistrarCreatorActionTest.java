@@ -20,6 +20,7 @@ import static google.registry.model.common.GaeUserIdConverter.convertEmailAddres
 import static google.registry.model.registrar.Registrar.loadByClientId;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -81,7 +82,7 @@ final class ConsoleRegistrarCreatorActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
+    persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
 
     action.req = request;
     action.method = Method.GET;
@@ -198,8 +199,7 @@ final class ConsoleRegistrarCreatorActionTest {
     Registrar registrar = loadByClientId("myclientid").orElse(null);
     assertThat(registrar).isNotNull();
     assertThat(registrar.getClientId()).isEqualTo("myclientid");
-    assertThat(registrar.getBillingAccountMap())
-        .containsExactly(CurrencyUnit.USD, "billing-account");
+    assertThat(registrar.getBillingAccountMap()).containsExactly(USD, "billing-account");
 
     assertThat(registrar.getDriveFolderId()).isEqualTo("drive-id");
     assertThat(registrar.getIanaIdentifier()).isEqualTo(12321L);
@@ -296,9 +296,12 @@ final class ConsoleRegistrarCreatorActionTest {
     assertThat(registrar).isNotNull();
     assertThat(registrar.getBillingAccountMap())
         .containsExactly(
-            CurrencyUnit.JPY, "billing-account-yen",
-            CurrencyUnit.USD, "billing-account-usd",
-            CurrencyUnit.EUR, "billing-account-eur");
+            CurrencyUnit.JPY,
+            "billing-account-yen",
+            USD,
+            "billing-account-usd",
+            CurrencyUnit.EUR,
+            "billing-account-eur");
   }
 
   @TestOfyAndSql

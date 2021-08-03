@@ -17,6 +17,7 @@ package google.registry.tools;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
@@ -76,7 +77,7 @@ class CreateAnchorTenantCommandTest extends EppToolCommandTestCase<CreateAnchorT
     persistResource(
         Registry.get("tld")
             .asBuilder()
-            .setPremiumList(persistPremiumList("tld", "premium,JPY 20000"))
+            .setPremiumList(persistPremiumList("tld", JPY, "premium,JPY 20000"))
             .build());
     runCommandForced("--client=NewRegistrar", "--superuser", "--fee",
         "--reason=anchor-tenant-test", "--contact=jd1234", "--domain_name=premium.tld");

@@ -184,9 +184,14 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
     String line = lineAndComment.get(0);
     List<String> parts = Splitter.on(',').trimResults().splitToList(line);
     checkArgument(parts.size() == 2, "Could not parse line in premium list: %s", originalLine);
+    List<String> moneyParts = Splitter.on(' ').trimResults().splitToList(parts.get(1));
+    BigDecimal price =
+        moneyParts.size() == 2
+            ? Money.parse(parts.get(1)).getAmount()
+            : new BigDecimal(parts.get(1));
     return new PremiumEntry.Builder()
         .setLabel(parts.get(0))
-        .setPrice(Money.parse(parts.get(1)).getAmount())
+        .setPrice(price)
         .setRevisionId(revisionId)
         .build();
   }
