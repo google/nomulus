@@ -554,6 +554,51 @@ public class ReplayCommitLogsToSqlActionTest {
             });
   }
 
+  @Test
+  void testReplay_deleteAndResaveCascade_withOtherDeletion_noErrors() throws Exception {
+    createTld("tld");
+    DateTime now = fakeClock.nowUtc();
+    jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
+
+    // Save a domain with a particular dsData in SQL as the base
+    ImmutableSet<DelegationSignerData> dsData =
+        ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {4, 5, 6}));
+    DomainBase domainWithDsData =
+        newDomainBase("example.tld").asBuilder().setDsData(dsData).build();
+    jpaTm().transact(() -> jpaTm().put(domainWithDsData));
+
+    // Replay a version of that domain without the dsData
+    Key<CommitLogManifest> manifestKeyOne =
+        CommitLogManifest.createKey(getBucketKey(1), now.minusMinutes(3));
+    DomainBase domainWithoutDsData =
+        domainWithDsData.asBuilder().setDsData(ImmutableSet.of()).build();
+    CommitLogMutation domainWithoutDsDataMutation =
+        ofyTm().transact(() -> CommitLogMutation.create(manifestKeyOne, domainWithoutDsData));
+
+    // Create an object (any object) to delete via replay to trigger Hibernate flush events
+    TestObject testObject = TestObject.create("foo", "bar");
+    jpaTm().transact(() -> jpaTm().put(testObject));
+
+    // Replay the original domain, with the original dsData
+    Key<CommitLogManifest> manifestKeyTwo =
+        CommitLogManifest.createKey(getBucketKey(1), now.minusMinutes(2));
+    CommitLogMutation domainWithOriginalDsDataMutation =
+        ofyTm().transact(() -> CommitLogMutation.create(manifestKeyTwo, domainWithDsData));
+
+    // If we try to perform all the events in one transaction (cascade-removal of the dsData,
+    // cascade-adding the dsData back in, and deleting any other random object), Hibernate will
+    // throw an exception
+    saveDiffFile(
+        gcsUtils,
+        createCheckpoint(now.minusMinutes(1)),
+        CommitLogManifest.create(
+            getBucketKey(1), now.minusMinutes(3), ImmutableSet.of(Key.create(testObject))),
+        domainWithoutDsDataMutation,
+        CommitLogManifest.create(getBucketKey(1), now.minusMinutes(2), ImmutableSet.of()),
+        domainWithOriginalDsDataMutation);
+    runAndAssertSuccess(now.minusMinutes(1), 1);
+  }
+
   private void runAndAssertSuccess(DateTime expectedCheckpointTime, int numFiles) {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
