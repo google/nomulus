@@ -145,10 +145,10 @@ public final class IcannReportingUploadAction implements Runnable {
         String.format(
             "icann/monthly/%d-%02d",
             cursorTimeMinusMonth.getYear(), cursorTimeMinusMonth.getMonthOfYear());
-    String reportBucketname = String.format("%s/%s", reportingBucket, reportSubdir);
     String filename = getFileName(cursorType, cursorTime, tldStr);
-    final BlobId gcsFilename = BlobId.of(reportBucketname, filename);
-    logger.atInfo().log("Reading ICANN report %s from bucket %s", filename, reportBucketname);
+    final BlobId gcsFilename =
+        BlobId.of(reportingBucket, String.format("%s/%s", reportSubdir, filename));
+    logger.atInfo().log("Reading ICANN report %s from bucket %s", filename, reportingBucket);
     // Check that the report exists
     try {
       verifyFileExists(gcsFilename);
