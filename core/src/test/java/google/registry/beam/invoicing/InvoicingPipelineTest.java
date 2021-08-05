@@ -328,6 +328,7 @@ class InvoicingPipelineTest {
   void testSuccess_makeCloudSqlQuery() throws Exception {
     // Pipeline must be run due to the TestPipelineExtension
     pipeline.run().waitUntilFinish();
+    // Test that comments are removed from the .sql file correctly
     assertThat(InvoicingPipeline.makeCloudSqlQuery("2017-10"))
         .isEqualTo(
             "\n"
