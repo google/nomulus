@@ -324,6 +324,29 @@ class InvoicingPipelineTest {
     }
   }
 
+  @Test
+  void testSuccess_makeCloudSqlQuery() throws Exception {
+    // Pipeline must be run due to the TestPipelineExtension
+    pipeline.run().waitUntilFinish();
+    assertThat(InvoicingPipeline.makeCloudSqlQuery("2017-10"))
+        .isEqualTo(
+            "\n"
+                + "SELECT b, r FROM BillingEvent b\n"
+                + "JOIN Registrar r ON b.clientId = r.clientIdentifier\n"
+                + "JOIN Domain d ON b.domainRepoId = d.repoId\n"
+                + "JOIN Tld t ON t.tldStrId = d.tld\n"
+                + "LEFT JOIN BillingCancellation c ON b.id = c.refOneTime.billingId\n"
+                + "LEFT JOIN BillingCancellation cr ON b.cancellationMatchingBillingEvent ="
+                + " cr.refRecurring.billingId\n"
+                + "WHERE r.billingIdentifier IS NOT NULL\n"
+                + "AND r.type = 'REAL'\n"
+                + "AND t.invoicingEnabled IS TRUE\n"
+                + "AND b.billingTime BETWEEN CAST('2017-10-01' AS timestamp) AND CAST('2017-11-01'"
+                + " AS timestamp)\n"
+                + "AND c.id IS NULL\n"
+                + "AND cr.id IS NULL\n");
+  }
+
   /** Returns the text contents of a file under the beamBucket/results directory. */
   private ImmutableList<String> resultFileContents(String filename) throws Exception {
     File resultFile =
