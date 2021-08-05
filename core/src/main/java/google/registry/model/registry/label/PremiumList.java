@@ -148,6 +148,10 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
       return String.format("%s, %s", domainLabel, price);
     }
 
+    public String toString(CurrencyUnit currencyUnit) {
+      return String.format("%s,%s %s", domainLabel, currencyUnit, price);
+    }
+
     @Override
     public Builder asBuilder() {
       return new Builder(clone(this));

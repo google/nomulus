@@ -26,6 +26,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.PremiumList.PremiumEntry;
@@ -165,15 +166,16 @@ public class PremiumListDao {
               if (premiumList.getLabelsToPrices() != null) {
                 Optional<PremiumList> savedPremiumList =
                     PremiumListDao.getLatestRevision(premiumList.getName());
+                ImmutableSet.Builder<PremiumEntry> entries = new ImmutableSet.Builder<>();
                 premiumList.getLabelsToPrices().entrySet().stream()
                     .forEach(
                         entry ->
-                            jpaTm()
-                                .insert(
-                                    PremiumEntry.create(
-                                        savedPremiumList.get().getRevisionId(),
-                                        entry.getValue(),
-                                        entry.getKey())));
+                            entries.add(
+                                PremiumEntry.create(
+                                    savedPremiumList.get().getRevisionId(),
+                                    entry.getValue(),
+                                    entry.getKey())));
+                jpaTm().insertAll(entries.build());
               }
             });
     premiumListCache.invalidate(premiumList.getName());

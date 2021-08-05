@@ -27,18 +27,18 @@ public class GetPremiumListCommandTest extends CommandTestCase<GetPremiumListCom
 
   private static final String BASE_LIST_CONTENTS =
       "tld:\n"
-          + "aluminum, 11.00\n"
-          + "brass, 20.00\n"
-          + "copper, 15.00\n"
-          + "diamond, 1000000.00\n"
-          + "gold, 24317.00\n"
-          + "iridium, 13117.00\n"
-          + "palladium, 877.00\n"
-          + "platinum, 87741.00\n"
-          + "rhodium, 88415.00\n"
-          + "rich, 100.00\n"
-          + "richer, 1000.00\n"
-          + "silver, 588.00\n";
+          + "aluminum,USD 11.00\n"
+          + "brass,USD 20.00\n"
+          + "copper,USD 15.00\n"
+          + "diamond,USD 1000000.00\n"
+          + "gold,USD 24317.00\n"
+          + "iridium,USD 13117.00\n"
+          + "palladium,USD 877.00\n"
+          + "platinum,USD 87741.00\n"
+          + "rhodium,USD 88415.00\n"
+          + "rich,USD 100.00\n"
+          + "richer,USD 1000.00\n"
+          + "silver,USD 588.00\n";
 
   @BeforeEach
   void beforeEach() {

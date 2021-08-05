@@ -17,10 +17,12 @@ package google.registry.tools;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.Streams;
+import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.PremiumList.PremiumEntry;
 import google.registry.schema.tld.PremiumListDao;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /** Retrieves and prints one or more premium lists. */
@@ -33,13 +35,14 @@ public class GetPremiumListCommand implements CommandWithRemoteApi {
   @Override
   public void run() {
     for (String premiumListName : mainParameters) {
-      if (PremiumListDao.getLatestRevision(premiumListName).isPresent()) {
+      Optional<PremiumList> premiumList = PremiumListDao.getLatestRevision(premiumListName);
+      if (premiumList.isPresent()) {
         System.out.printf(
             "%s:\n%s\n",
             premiumListName,
             Streams.stream(PremiumListDao.loadAllPremiumEntries(premiumListName))
                 .sorted(Comparator.comparing(PremiumEntry::getDomainLabel))
-                .map(PremiumEntry::toString)
+                .map(premiumEntry -> premiumEntry.toString(premiumList.get().getCurrency()))
                 .collect(Collectors.joining("\n")));
       } else {
         System.out.printf("No list found with name %s.%n", premiumListName);
