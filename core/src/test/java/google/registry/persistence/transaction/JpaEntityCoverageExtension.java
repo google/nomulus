@@ -42,6 +42,8 @@ public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEach
   // TODO(weiminyu): update this set when entities written to Cloud SQL and tests are added.
   private static final ImmutableSet<String> IGNORE_ENTITIES =
       ImmutableSet.of(
+          // DMSS tests clean up after themselves so we can't tell that any entities were persisted
+          "DatabaseMigrationStateSchedule",
           "DelegationSignerData",
           "DesignatedContact",
           "GracePeriod",

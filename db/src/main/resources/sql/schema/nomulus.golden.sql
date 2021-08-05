@@ -316,6 +316,16 @@ CREATE TABLE public."Cursor" (
 
 
 --
+-- Name: DatabaseMigrationStateSchedule; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."DatabaseMigrationStateSchedule" (
+    id bigint NOT NULL,
+    migration_transitions public.hstore
+);
+
+
+--
 -- Name: DelegationSignerData; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1206,6 +1216,14 @@ ALTER TABLE ONLY public."Contact"
 
 ALTER TABLE ONLY public."Cursor"
     ADD CONSTRAINT "Cursor_pkey" PRIMARY KEY (scope, type);
+
+
+--
+-- Name: DatabaseMigrationStateSchedule DatabaseMigrationStateSchedule_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."DatabaseMigrationStateSchedule"
+    ADD CONSTRAINT "DatabaseMigrationStateSchedule_pkey" PRIMARY KEY (id);
 
 
 --

@@ -1,7 +1,6 @@
 ClaimsList
 ClaimsListSingleton
 Cursor
-DatabaseMigrationStateSchedule
 PremiumList
 PremiumListEntry
 PremiumListRevision

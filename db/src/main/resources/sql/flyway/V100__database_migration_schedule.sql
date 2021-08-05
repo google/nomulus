@@ -1,4 +1,4 @@
--- Copyright 2019 The Nomulus Authors. All Rights Reserved.
+-- Copyright 2021 The Nomulus Authors. All Rights Reserved.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -12,12 +12,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-CREATE EXTENSION IF NOT EXISTS hstore WITH SCHEMA public;
-
-CREATE TABLE Person (
-  age INT NOT NULL
-);
-
-CREATE TABLE Company (
-  name TEXT NOT NULL
+CREATE TABLE "DatabaseMigrationStateSchedule" (
+   id int8 NOT NULL,
+   migration_transitions hstore,
+   PRIMARY KEY (id)
 );

@@ -35,7 +35,6 @@ public class CurrencyToBillingConverterTest {
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder()
-          .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(TestEntity.class)
           .buildUnitTestRule();
 

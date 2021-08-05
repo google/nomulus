@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static google.registry.model.common.DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableSortedMap;
@@ -59,7 +59,7 @@ public class GetDatabaseMigrationStateCommandTest
             MigrationState.SQL_PRIMARY,
             now.plusHours(4),
             MigrationState.SQL_ONLY);
-    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(transitions));
+    jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(transitions));
     runCommand();
     assertStdoutIs(String.format("Current migration schedule: %s\n", transitions));
   }

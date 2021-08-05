@@ -238,6 +238,12 @@
         primary key (scope, type)
     );
 
+    create table "DatabaseMigrationStateSchedule" (
+       id int8 not null,
+        migration_transitions hstore,
+        primary key (id)
+    );
+
     create table "DelegationSignerData" (
        algorithm int4 not null,
         digest bytea not null,

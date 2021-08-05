@@ -372,7 +372,8 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     checkArgumentNotNull(context, "The ExtensionContext must not be null");
     setUp();
     if (withCloudSql) {
-      JpaTestRules.Builder builder = new JpaTestRules.Builder();
+      JpaTestRules.Builder builder =
+          new JpaTestRules.Builder().withEntityClass(jpaTestEntities.toArray(new Class[0]));
       if (clock != null) {
         builder.withClock(clock);
       }
@@ -380,8 +381,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
         jpaIntegrationWithCoverageExtension = builder.buildIntegrationWithCoverageExtension();
         jpaIntegrationWithCoverageExtension.beforeEach(context);
       } else if (withJpaUnitTest) {
-        jpaUnitTestRule =
-            builder.withEntityClass(jpaTestEntities.toArray(new Class[0])).buildUnitTestRule();
+        jpaUnitTestRule = builder.buildUnitTestRule();
         jpaUnitTestRule.beforeEach(context);
       } else {
         jpaIntegrationTestRule = builder.buildIntegrationTestRule();
@@ -391,8 +391,10 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     if (isWithDatastoreAndCloudSql()) {
       injectTmForDualDatabaseTest(context);
     }
-    if (!withoutCannedData && (tm().isOfy() || (withCloudSql && !withJpaUnitTest))) {
-      loadInitialData();
+    if (withDatastore || withCloudSql) {
+      if (!withoutCannedData && (tm().isOfy() || (withCloudSql && !withJpaUnitTest))) {
+        loadInitialData();
+      }
     }
   }
 

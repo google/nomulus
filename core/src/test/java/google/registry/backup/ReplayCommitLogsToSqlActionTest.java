@@ -135,7 +135,7 @@ public class ReplayCommitLogsToSqlActionTest {
     action.diffLister.gcsUtils = gcsUtils;
     action.diffLister.executorProvider = MoreExecutors::newDirectExecutorService;
     action.diffLister.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-    ofyTm()
+    jpaTm()
         .transact(
             () ->
                 DatabaseMigrationStateSchedule.set(
@@ -469,7 +469,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
   @Test
   void testFailure_notEnabled() {
-    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
+    jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())

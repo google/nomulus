@@ -19,16 +19,13 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.EntityTestCase;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class SignedMarkRevocationListDaoTest extends EntityTestCase {
 
-  @RegisterExtension
-  final JpaIntegrationWithCoverageExtension jpa =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
+  public SignedMarkRevocationListDaoTest() {
+    super(JpaEntityCoverageCheck.ENABLED);
+  }
 
   @Test
   void testSave_success() {
