@@ -42,6 +42,7 @@
     <class>google.registry.model.billing.BillingEvent$OneTime</class>
     <class>google.registry.model.billing.BillingEvent$Recurring</class>
     <class>google.registry.model.common.Cursor</class>
+    <class>google.registry.model.common.DatabaseMigrationStateSchedule</class>
     <class>google.registry.model.contact.ContactHistory</class>
     <class>google.registry.model.contact.ContactResource</class>
     <class>google.registry.model.domain.DomainBase</class>
@@ -85,6 +86,7 @@
     <class>google.registry.persistence.converter.CreateAutoTimestampConverter</class>
     <class>google.registry.persistence.converter.CurrencyToBillingConverter</class>
     <class>google.registry.persistence.converter.CurrencyUnitConverter</class>
+    <class>google.registry.persistence.converter.DatabaseMigrationScheduleTransitionConverter</class>
     <class>google.registry.persistence.converter.DateTimeConverter</class>
     <class>google.registry.persistence.converter.DurationConverter</class>
     <class>google.registry.persistence.converter.InetAddressSetConverter</class>
