@@ -185,6 +185,12 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
     List<String> parts = Splitter.on(',').trimResults().splitToList(line);
     checkArgument(parts.size() == 2, "Could not parse line in premium list: %s", originalLine);
     List<String> moneyParts = Splitter.on(' ').trimResults().splitToList(parts.get(1));
+    if (moneyParts.size() == 2 && this.currency != null) {
+      if (Money.parse(parts.get(1)).getCurrencyUnit() != this.currency) {
+        throw new IllegalArgumentException(
+            String.format("The currency unit must be %s", this.currency.getCode()));
+      }
+    }
     BigDecimal price =
         moneyParts.size() == 2
             ? Money.parse(parts.get(1)).getAmount()

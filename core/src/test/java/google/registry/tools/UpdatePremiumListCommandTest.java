@@ -57,7 +57,7 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   @Test
   void commandPrompt_successStageEntityChange() throws Exception {
     File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
-    String newPremiumListData = "omg,JPY 1234";
+    String newPremiumListData = "omg,USD 1234";
     Files.asCharSink(tmpFile, UTF_8).write(newPremiumListData);
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = Paths.get(tmpFile.getPath());

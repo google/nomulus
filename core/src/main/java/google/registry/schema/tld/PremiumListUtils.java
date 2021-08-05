@@ -32,16 +32,16 @@ public class PremiumListUtils {
 
   public static PremiumList parseToPremiumList(
       String name, CurrencyUnit currencyUnit, List<String> inputData) {
-    ImmutableMap<String, PremiumEntry> prices =
-        new PremiumList.Builder().setName(name).build().parse(inputData);
+    PremiumList partialPremiumList =
+        new PremiumList.Builder()
+            .setName(name)
+            .setCurrency(currencyUnit)
+            .setCreationTimestamp(DateTime.now(UTC))
+            .build();
+    ImmutableMap<String, PremiumEntry> prices = partialPremiumList.parse(inputData);
     checkArgument(inputData.size() > 0, "Input cannot be empty");
     Map<String, BigDecimal> priceAmounts = Maps.transformValues(prices, PremiumEntry::getValue);
-    return new PremiumList.Builder()
-        .setName(name)
-        .setCurrency(currencyUnit)
-        .setLabelsToPrices(priceAmounts)
-        .setCreationTimestamp(DateTime.now(UTC))
-        .build();
+    return partialPremiumList.asBuilder().setLabelsToPrices(priceAmounts).build();
   }
 
   private PremiumListUtils() {}
