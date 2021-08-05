@@ -12,6 +12,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+CREATE EXTENSION IF NOT EXISTS hstore WITH SCHEMA public;
+
 CREATE TABLE Person (
   age INT NOT NULL
 );

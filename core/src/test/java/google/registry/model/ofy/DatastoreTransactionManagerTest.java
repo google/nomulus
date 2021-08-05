@@ -38,7 +38,7 @@ public class DatastoreTransactionManagerTest {
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastore()
+          .withDatastoreAndCloudSql()
           .withOfyTestEntities(InCrossTldTestEntity.class)
           .build();
 

@@ -37,7 +37,6 @@ public class StringMapConverterBaseTest {
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
       new JpaTestRules.Builder()
-          .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(TestStringMapConverter.class, TestEntity.class)
           .buildUnitTestRule();
 
