@@ -49,7 +49,7 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
   protected void save() {
     Optional<PremiumList> existingList = PremiumListDao.getLatestRevision(name);
     checkArgument(
-        PremiumListDao.getLatestRevision(name).isPresent(),
+        existingList.isPresent(),
         "Could not update premium list %s because it doesn't exist.",
         name);
 

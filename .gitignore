@@ -112,3 +112,7 @@ core/**/registrar_bin*.js
 core/**/registrar_dbg*.js
 core/**/registrar_bin*.css
 core/**/registrar_dbg*.css
+
+# Appengine generated files
+core/WEB-INF/appengine-generated/*.bin
+core/WEB-INF/appengine-generated/*.xml

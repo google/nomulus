@@ -131,7 +131,6 @@ public class PremiumListDaoTest {
                           BigDecimal.valueOf(30.03)));
               assertThat(savedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
               assertThat(savedList.getRevisionId()).isGreaterThan(firstRevisionId);
-              assertThat(savedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
             });
   }
 
