@@ -25,6 +25,7 @@ import google.registry.beam.common.RegistryQuery.CriteriaQuerySupplier;
 import google.registry.model.ofy.ObjectifyService;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
+import google.registry.schema.replay.SqlEntity;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
@@ -383,13 +384,16 @@ public final class RegistryJpaIO {
           jpaTm().transact(() -> jpaTm().put(ofyEntity));
           counter.inc();
         } catch (RuntimeException e) {
-          throw new RuntimeException(toOfyKey(ofyEntity).toString(), e);
+          throw new RuntimeException(toEntityKeyString(ofyEntity), e);
         }
       }
     }
 
-    private com.googlecode.objectify.Key<?> toOfyKey(Object ofyEntity) {
-      return com.googlecode.objectify.Key.create(ofyEntity);
+    private String toEntityKeyString(Object entity) {
+      if (entity instanceof SqlEntity) {
+        return ((SqlEntity) entity).getPrimaryKeyString();
+      }
+      return String.valueOf(entity);
     }
   }
 }
