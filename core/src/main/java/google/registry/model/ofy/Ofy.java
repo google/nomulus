@@ -325,7 +325,7 @@ public class Ofy {
   }
 
   /** Execute some work in a transactionless context. */
-  <R> R doTransactionless(Supplier<R> work) {
+  public <R> R doTransactionless(Supplier<R> work) {
     try {
       com.googlecode.objectify.ObjectifyService.push(
           com.googlecode.objectify.ObjectifyService.ofy().transactionless());

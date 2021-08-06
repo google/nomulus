@@ -15,6 +15,8 @@
 package google.registry.model.common;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -24,6 +26,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedMap;
+import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Mapify;
@@ -32,6 +35,7 @@ import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import java.time.Duration;
+import java.util.Optional;
 import org.joda.time.DateTime;
 
 /**
@@ -224,13 +228,20 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
   /** Loads the currently-set migration schedule from Datastore, or the default if none exists. */
   @VisibleForTesting
   static TimedTransitionProperty<MigrationState, MigrationStateTransition> getUncached() {
-    return ofyTm()
-        .transactNew(
-            () ->
-                ofyTm()
-                    .loadSingleton(DatabaseMigrationStateSchedule.class)
-                    .map(s -> s.migrationTransitions)
-                    .orElse(DEFAULT_TRANSITION_MAP));
+    return Optional.ofNullable(
+            auditedOfy()
+                .doTransactionless(
+                    () ->
+                        auditedOfy()
+                            .load()
+                            .key(
+                                Key.create(
+                                    getCrossTldKey(),
+                                    DatabaseMigrationStateSchedule.class,
+                                    CrossTldSingleton.SINGLETON_ID))
+                            .now()))
+        .map(s -> s.migrationTransitions)
+        .orElse(DEFAULT_TRANSITION_MAP);
   }
 
   /**
