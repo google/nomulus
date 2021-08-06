@@ -14,6 +14,8 @@
 
 package google.registry.schema.replay;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+
 import java.util.Optional;
 
 /**
@@ -29,4 +31,19 @@ public interface SqlEntity {
 
   /** A method that will ber called before the object is saved to SQL in asynchronous replay. */
   default void beforeSqlSaveOnReplay() {}
+
+  /* Returns this entity's primary key field(s) in a string. */
+  default String getPrimaryKeyString() {
+    return jpaTm()
+        .transact(
+            () ->
+                String.format(
+                    "%s_%s",
+                    this.getClass().getSimpleName(),
+                    jpaTm()
+                        .getEntityManager()
+                        .getEntityManagerFactory()
+                        .getPersistenceUnitUtil()
+                        .getIdentifier(this)));
+  }
 }
