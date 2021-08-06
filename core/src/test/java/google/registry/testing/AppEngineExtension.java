@@ -391,11 +391,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     if (isWithDatastoreAndCloudSql()) {
       injectTmForDualDatabaseTest(context);
     }
-    if (tm().isOfy()) {
-      if ((withDatastore || withCloudSql) && !withoutCannedData) {
-        loadInitialData();
-      }
-    } else if (withCloudSql && !withJpaUnitTest && !withoutCannedData) {
+    if (!withoutCannedData && (tm().isOfy() || (withCloudSql && !withJpaUnitTest))) {
       loadInitialData();
     }
   }
