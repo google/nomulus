@@ -189,7 +189,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
             searchStartTime.toString("yyyy-MM-dd HH"));
       }
       for (BlobInfo file : fileBatch) {
-        jpaTm().transact(() -> processFile(file));
+        processFile(file);
         filesProcessed++;
         if (clock.nowUtc().isAfter(replayTimeoutTime)) {
           return String.format(
@@ -205,10 +205,11 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
       // Load and process the Datastore transactions one at a time
       ImmutableList<ImmutableList<VersionedEntity>> allTransactions =
           CommitLogImports.loadEntitiesByTransaction(input);
-      allTransactions.forEach(this::replayTransaction);
+      allTransactions.forEach(
+          transaction -> jpaTm().transact(() -> replayTransaction(transaction)));
       // if we succeeded, set the last-seen time
       DateTime checkpoint = DateTime.parse(metadata.getName().substring(DIFF_FILE_PREFIX.length()));
-      SqlReplayCheckpoint.set(checkpoint);
+      jpaTm().transact(() -> SqlReplayCheckpoint.set(checkpoint));
       logger.atInfo().log(
           "Replayed %d transactions from commit log file %s with size %d B.",
           allTransactions.size(), metadata.getName(), metadata.getSize());
