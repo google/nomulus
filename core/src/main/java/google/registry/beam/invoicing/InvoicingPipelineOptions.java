@@ -30,6 +30,11 @@ public interface InvoicingPipelineOptions extends RegistryPipelineOptions {
 
   void setInvoiceFilePrefix(String value);
 
+  @Description("The database to read data from.")
+  String getDatabase();
+
+  void setDatabase(String value);
+
   @Description("The GCS bucket URL for invoices and detailed  reports to be uploaded.")
   String getBillingBucketUrl();
 

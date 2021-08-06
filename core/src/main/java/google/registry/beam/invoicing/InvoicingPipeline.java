@@ -14,18 +14,29 @@
 
 package google.registry.beam.invoicing;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.beam.BeamUtils.getQueryFromFile;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 
+import google.registry.beam.common.RegistryJpaIO;
+import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey;
 import google.registry.beam.invoicing.BillingEvent.InvoiceGroupingKey.InvoiceGroupingKeyCoder;
+import google.registry.model.billing.BillingEvent.Flag;
+import google.registry.model.registrar.Registrar;
+import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.reporting.billing.BillingModule;
+import google.registry.util.DateTimeUtils;
+import google.registry.util.DomainNameUtils;
 import google.registry.util.SqlTemplate;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
+import java.util.regex.Pattern;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.coders.SerializableCoder;
@@ -58,6 +69,9 @@ public class InvoicingPipeline implements Serializable {
   private static final DateTimeFormatter TIMESTAMP_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
 
+  private static final Pattern SQL_COMMENT_REGEX =
+      Pattern.compile("^\\s*--.*\\n", Pattern.MULTILINE);
+
   private final InvoicingPipelineOptions options;
 
   InvoicingPipeline(InvoicingPipelineOptions options) {
@@ -71,19 +85,58 @@ public class InvoicingPipeline implements Serializable {
   }
 
   void setupPipeline(Pipeline pipeline) {
+    options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
     PCollection<BillingEvent> billingEvents =
-        pipeline.apply(
-            "Read BillingEvents from Bigquery",
-            BigQueryIO.read(BillingEvent::parseFromRecord)
-                .fromQuery(makeQuery(options.getYearMonth(), options.getProject()))
-                .withCoder(SerializableCoder.of(BillingEvent.class))
-                .usingStandardSql()
-                .withoutValidation()
-                .withTemplateCompatibility());
+        options.getDatabase().equals("DATASTORE")
+            ? readFromBigQuery(options, pipeline)
+            : readFromCloudSql(options, pipeline);
 
     saveInvoiceCsv(billingEvents, options);
 
     saveDetailedCsv(billingEvents, options);
+  }
+
+  static PCollection<BillingEvent> readFromBigQuery(
+      InvoicingPipelineOptions options, Pipeline pipeline) {
+    return pipeline.apply(
+        "Read BillingEvents from Bigquery",
+        BigQueryIO.read(BillingEvent::parseFromRecord)
+            .fromQuery(makeQuery(options.getYearMonth(), options.getProject()))
+            .withCoder(SerializableCoder.of(BillingEvent.class))
+            .usingStandardSql()
+            .withoutValidation()
+            .withTemplateCompatibility());
+  }
+
+  static PCollection<BillingEvent> readFromCloudSql(
+      InvoicingPipelineOptions options, Pipeline pipeline) {
+    Read<Object[], BillingEvent> read =
+        RegistryJpaIO.read(
+            makeCloudSqlQuery(options.getYearMonth()), false, InvoicingPipeline::parseRow);
+
+    return pipeline.apply("Read BillingEvents from Cloud SQL", read);
+  }
+
+  private static BillingEvent parseRow(Object[] row) {
+    google.registry.model.billing.BillingEvent.OneTime oneTime =
+        (google.registry.model.billing.BillingEvent.OneTime) row[0];
+    Registrar registrar = (Registrar) row[1];
+    return BillingEvent.create(
+        oneTime.getId(),
+        DateTimeUtils.toZonedDateTime(oneTime.getBillingTime(), ZoneId.of("UTC")),
+        DateTimeUtils.toZonedDateTime(oneTime.getEventTime(), ZoneId.of("UTC")),
+        registrar.getClientId(),
+        registrar.getBillingIdentifier().toString(),
+        registrar.getPoNumber().orElse(""),
+        DomainNameUtils.getTldFromDomainName(oneTime.getTargetId()),
+        oneTime.getReason().toString(),
+        oneTime.getTargetId(),
+        oneTime.getDomainRepoId(),
+        Optional.ofNullable(oneTime.getPeriodYears()).orElse(0),
+        oneTime.getCost().getCurrencyUnit().toString(),
+        oneTime.getCost().getAmount().doubleValue(),
+        String.join(
+            " ", oneTime.getFlags().stream().map(Flag::toString).collect(toImmutableSet())));
   }
 
   /** Transform that converts a {@code BillingEvent} into an invoice CSV row. */
@@ -169,6 +222,21 @@ public class InvoicingPipeline implements Serializable {
         .put("REGISTRAR_TABLE", "Registrar")
         .put("CANCELLATION_TABLE", "Cancellation")
         .build();
+  }
+
+  /** Create the Cloud SQL query for a given yearMonth at runtime. */
+  static String makeCloudSqlQuery(String yearMonth) {
+    YearMonth endMonth = YearMonth.parse(yearMonth).plusMonths(1);
+    String queryWithComments =
+        SqlTemplate.create(
+                getQueryFromFile(InvoicingPipeline.class, "cloud_sql_billing_events.sql"))
+            .put("FIRST_TIMESTAMP_OF_MONTH", yearMonth.concat("-01"))
+            .put(
+                "LAST_TIMESTAMP_OF_MONTH",
+                String.format("%d-%d-01", endMonth.getYear(), endMonth.getMonthValue()))
+            .build();
+    // Remove the comments from the query string
+    return SQL_COMMENT_REGEX.matcher(queryWithComments).replaceAll("");
   }
 
   public static void main(String[] args) {
