@@ -35,12 +35,12 @@ import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.gcs.GcsUtils;
-import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.keyring.api.Keyring;
 import google.registry.keyring.api.PgpHelper;
 import google.registry.model.common.Cursor;

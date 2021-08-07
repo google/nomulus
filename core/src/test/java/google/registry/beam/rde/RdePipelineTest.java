@@ -41,6 +41,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.Duration.standardDays;
 
 import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -50,7 +51,6 @@ import com.google.common.collect.Streams;
 import com.google.common.io.BaseEncoding;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.gcs.GcsUtils;
-import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.keyring.api.PgpHelper;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;

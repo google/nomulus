@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -29,7 +30,6 @@ import google.registry.bigquery.BigqueryConnection;
 import google.registry.bigquery.BigqueryConnection.DestinationTable;
 import google.registry.bigquery.BigqueryUtils.TableType;
 import google.registry.gcs.GcsUtils;
-import google.registry.gcs.backport.LocalStorageHelper;
 import google.registry.reporting.icann.IcannReportingModule.ReportType;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;
