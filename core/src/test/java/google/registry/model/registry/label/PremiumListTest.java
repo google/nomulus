@@ -30,7 +30,6 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.label.PremiumList.PremiumEntry;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatabaseHelper;
 import java.math.BigDecimal;
 import org.joda.money.Money;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,8 +44,6 @@ public class PremiumListTest {
 
   @BeforeEach
   void before() {
-    DatabaseHelper.persistNewRegistrar("TheRegistrar");
-    DatabaseHelper.persistNewRegistrar("NewRegistrar");
     // createTld() overwrites the premium list, so call it first.
     createTld("tld");
     PremiumList pl =
