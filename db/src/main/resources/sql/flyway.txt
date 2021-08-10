@@ -97,3 +97,4 @@ V96__rename_sql_checkpoint_fields.sql
 V97__add_recurrence_history_id_column_to_onetime.sql
 V98__add_last_expiring_cert_notification_sent_date.sql
 V99__drop_kms_secret_table.sql
+V100__database_migration_schedule.sql
