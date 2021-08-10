@@ -30,6 +30,7 @@ import static google.registry.util.PasswordUtils.SALT_SUPPLIER;
 import static google.registry.util.PasswordUtils.hashPassword;
 import static java.util.stream.Collectors.joining;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Enums;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
@@ -396,7 +397,8 @@ public class RegistrarContact extends ImmutableObject
   }
 
   /** Class to represent the composite primary key for {@link RegistrarContact} entity. */
-  static class RegistrarPocId extends ImmutableObject implements Serializable {
+  @VisibleForTesting
+  public static class RegistrarPocId extends ImmutableObject implements Serializable {
 
     String emailAddress;
 
@@ -405,7 +407,8 @@ public class RegistrarContact extends ImmutableObject
     // Hibernate requires this default constructor.
     private RegistrarPocId() {}
 
-    RegistrarPocId(String emailAddress, String registrarId) {
+    @VisibleForTesting
+    public RegistrarPocId(String emailAddress, String registrarId) {
       this.emailAddress = emailAddress;
       this.registrarId = registrarId;
     }

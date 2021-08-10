@@ -15,96 +15,57 @@
 package google.registry.schema.replay;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import google.registry.model.contact.ContactResource;
-import google.registry.model.domain.DomainBase;
-import google.registry.model.host.HostResource;
-import google.registry.model.registry.Registry;
-import google.registry.model.reporting.Spec11ThreatMatch;
-import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.model.registrar.Registrar;
+import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.registrar.RegistrarContact.RegistrarPocId;
+import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.TransactionManagerFactory;
-import google.registry.testing.DatabaseHelper;
+import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreEntityExtension;
-import java.util.stream.Stream;
-import org.joda.time.LocalDate;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 /** Unit tests for {@link SqlEntity#getPrimaryKeyString}. */
 public class SqlEntityTest {
 
-  @RegisterExtension static final JpaStaticExtension jpa = new JpaStaticExtension();
+  @RegisterExtension
+  @Order(1)
+  final DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
-  private static ImmutableMap<SqlEntity, String> TEST_CASES;
+  @RegisterExtension
+  final AppEngineExtension database = new AppEngineExtension.Builder().withCloudSql().build();
 
-  @BeforeAll
-  static void setupTestCases() throws Exception {
-    ImmutableMap.Builder<SqlEntity, String> testCaseBuilder = new ImmutableMap.Builder<>();
-    Registry registry = DatabaseHelper.persistResource(DatabaseHelper.newRegistry("app", "TLD"));
-    testCaseBuilder.put(registry, "_app");
-    testCaseBuilder.put(DatabaseHelper.persistNewRegistrar("registrar1"), "_registrar1");
-    ContactResource contact = DatabaseHelper.newContactResourceWithRoid("contact1", "CONTACT1");
-    testCaseBuilder.put(contact, "_CONTACT1");
-    DomainBase domain = DatabaseHelper.newDomainBase("abc.app", "DOMAIN1", contact);
-    testCaseBuilder.put(domain, "_DOMAIN1");
-    HostResource host = DatabaseHelper.newHostResourceWithRoid("host1", "HOST1");
-    testCaseBuilder.put(host, "_HOST1");
-    Spec11ThreatMatch spec11ThreatMatch =
-        new Spec11ThreatMatch.Builder()
-            .setDomainRepoId("ignored")
-            .setDomainName("abc.app")
-            .setRegistrarId("")
-            .setCheckDate(LocalDate.now())
-            .setThreatTypes(ImmutableSet.of(ThreatType.MALWARE))
-            .setId(11111L)
-            .build();
-    testCaseBuilder.put(spec11ThreatMatch, "_11111");
-
-    TEST_CASES = testCaseBuilder.build();
+  @BeforeEach
+  void setup() throws Exception {
+    TransactionManagerFactory.setTmForTest(TransactionManagerFactory.jpaTm());
+    AppEngineExtension.loadInitialData();
   }
 
-  @ParameterizedTest(name = "getPrimaryKeyString_{0}")
-  @MethodSource("provideTestCases")
-  void getPrimaryKeyString(String entityType, SqlEntity entity, String pattern) {
-    assertThat(entity.getPrimaryKeyString()).contains(pattern);
+  @AfterEach
+  void teardown() {
+    TransactionManagerFactory.removeTmOverrideForTest();
   }
 
-  private static Stream<Arguments> provideTestCases() {
-    return TEST_CASES.entrySet().stream()
-        .map(
-            entry ->
-                Arguments.of(
-                    entry.getKey().getClass().getSimpleName(), entry.getKey(), entry.getValue()));
+  @Test
+  void getPrimaryKeyString_oneIdColumn() {
+    // AppEngineExtension canned data: Registrar1
+    VKey<Registrar> key = Registrar.createVKey("NewRegistrar");
+    String expected = "NewRegistrar";
+    assertThat(tm().transact(() -> tm().loadByKey(key)).getPrimaryKeyString()).contains(expected);
   }
 
-  /** Adapts {@link JpaIntegrationTestExtension} for class level setup. */
-  static class JpaStaticExtension implements AfterAllCallback, BeforeAllCallback {
-    private final DatastoreEntityExtension entityExtension = new DatastoreEntityExtension();
-    private final JpaIntegrationTestExtension jpa =
-        new JpaTestRules.Builder().buildIntegrationTestRule();
-
-    @Override
-    public void afterAll(ExtensionContext context) throws Exception {
-      TransactionManagerFactory.removeTmOverrideForTest();
-      jpa.afterEach(context);
-      entityExtension.afterEach(context);
-    }
-
-    @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
-      entityExtension.beforeEach(context);
-      jpa.beforeEach(context);
-      TransactionManagerFactory.setTmForTest(TransactionManagerFactory.jpaTm());
-    }
+  @Test
+  void getPrimaryKeyString_multiId() {
+    // AppEngineExtension canned data: RegistrarContact1
+    VKey<RegistrarContact> key =
+        VKey.createSql(
+            RegistrarContact.class, new RegistrarPocId("janedoe@theregistrar.com", "NewRegistrar"));
+    String expected = "emailAddress=janedoe@theregistrar.com\n    registrarId=NewRegistrar";
+    assertThat(tm().transact(() -> tm().loadByKey(key)).getPrimaryKeyString()).contains(expected);
   }
 }
