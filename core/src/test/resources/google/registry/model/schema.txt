@@ -711,24 +711,6 @@ enum google.registry.model.registry.Registry$TldType {
   REAL;
   TEST;
 }
-class google.registry.model.registry.label.PremiumList {
-  @Id java.lang.String name;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  com.googlecode.objectify.Key<google.registry.model.registry.label.PremiumList$PremiumListRevision> revisionKey;
-  org.joda.time.DateTime creationTime;
-  org.joda.time.DateTime lastUpdateTime;
-}
-class google.registry.model.registry.label.PremiumList$PremiumListEntry {
-  @Id java.lang.String label;
-  @Parent com.googlecode.objectify.Key<google.registry.model.registry.label.PremiumList$PremiumListRevision> parent;
-  java.lang.String comment;
-  org.joda.money.Money price;
-}
-class google.registry.model.registry.label.PremiumList$PremiumListRevision {
-  @Id long revisionId;
-  @Parent com.googlecode.objectify.Key<google.registry.model.registry.label.PremiumList> parent;
-  com.google.common.hash.BloomFilter<java.lang.String> probablePremiumLabels;
-}
 enum google.registry.model.registry.label.ReservationType {
   ALLOWED_IN_SUNRISE;
   FULLY_BLOCKED;
@@ -741,11 +723,10 @@ class google.registry.model.registry.label.ReservedList {
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
   boolean shouldPublish;
   java.util.Map<java.lang.String, google.registry.model.registry.label.ReservedList$ReservedListEntry> reservedListMap;
-  org.joda.time.DateTime creationTime;
-  org.joda.time.DateTime lastUpdateTime;
+  org.joda.time.DateTime creationTimestamp;
 }
 class google.registry.model.registry.label.ReservedList$ReservedListEntry {
-  @Id java.lang.String label;
+  @Id java.lang.String domainLabel;
   google.registry.model.registry.label.ReservationType reservationType;
   java.lang.Long revisionId;
   java.lang.String comment;

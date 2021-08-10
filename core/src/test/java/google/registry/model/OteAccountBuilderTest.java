@@ -64,7 +64,7 @@ public final class OteAccountBuilderTest {
 
   @BeforeEach
   void beforeEach() {
-    persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
+    persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
   }
 
   private void assertTldExists(String tld, TldState tldState, Money eapFee) {

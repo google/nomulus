@@ -24,6 +24,7 @@ import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -61,7 +62,7 @@ public enum Fixture {
       createTlds("xn--q9jyb4c", "example");
 
       // Used for OT&E TLDs
-      persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
+      persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
 
       try {
         OteStatsTestHelper.setupCompleteOte("otefinished");

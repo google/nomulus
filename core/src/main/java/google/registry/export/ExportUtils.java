@@ -48,7 +48,7 @@ public final class ExportUtils {
                           String.format("Reserved list %s does not exist", reservedListName)));
       if (reservedList.getShouldPublish()) {
         for (ReservedListEntry entry : reservedList.getReservedListEntries().values()) {
-          reservedTerms.add(entry.getLabel());
+          reservedTerms.add(entry.getDomainLabel());
         }
       }
     }

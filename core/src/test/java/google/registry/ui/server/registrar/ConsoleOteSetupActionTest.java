@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.registrar.Registrar.loadByClientId;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -78,7 +79,7 @@ public final class ConsoleOteSetupActionTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
+    persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
 
     action.req = request;
     action.method = Method.GET;

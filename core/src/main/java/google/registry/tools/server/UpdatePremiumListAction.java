@@ -25,6 +25,7 @@ import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.schema.tld.PremiumListDao;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Inject;
 
 /**
@@ -46,8 +47,9 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
 
   @Override
   protected void save() {
+    Optional<PremiumList> existingList = PremiumListDao.getLatestRevision(name);
     checkArgument(
-        PremiumListDao.getLatestRevision(name).isPresent(),
+        existingList.isPresent(),
         "Could not update premium list %s because it doesn't exist.",
         name);
 
@@ -55,7 +57,8 @@ public class UpdatePremiumListAction extends CreateOrUpdatePremiumListAction {
     logInputData();
     List<String> inputDataPreProcessed =
         Splitter.on('\n').omitEmptyStrings().splitToList(inputData);
-    PremiumList newPremiumList = PremiumListDao.save(name, inputDataPreProcessed);
+    PremiumList newPremiumList =
+        PremiumListDao.save(name, existingList.get().getCurrency(), inputDataPreProcessed);
 
     String message =
         String.format(

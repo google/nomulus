@@ -2,9 +2,6 @@ ClaimsList
 ClaimsListSingleton
 Cursor
 DatabaseMigrationStateSchedule
-PremiumList
-PremiumListEntry
-PremiumListRevision
 Registrar
 RegistrarContact
 Registry

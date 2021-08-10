@@ -16,15 +16,18 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 import google.registry.model.registry.Registry;
+import google.registry.model.registry.label.PremiumList;
 import google.registry.schema.tld.PremiumListDao;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,40 +38,32 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
 
   @BeforeEach
   void beforeEach() {
-    registry = createRegistry(TLD_TEST, initialPremiumListData);
+    registry = createRegistry(TLD_TEST, USD, initialPremiumListData);
   }
 
   @Test
   void verify_registryIsSetUpCorrectly() {
+    Optional<PremiumList> list = PremiumListDao.getLatestRevision(TLD_TEST);
     // ensure that no premium list is created before running the command
-    assertThat(PremiumListDao.getLatestRevision(TLD_TEST).isPresent()).isTrue();
+    assertThat(list.isPresent()).isTrue();
     // ensure that there's value in existing premium list;
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
-    ImmutableSet<String> entries = command.getExistingPremiumListEntry(TLD_TEST);
+    ImmutableSet<String> entries = command.getExistingPremiumEntry(list.get());
     assertThat(entries.size()).isEqualTo(1);
     // data from @beforeEach of CreateOrUpdatePremiumListCommandTestCase.java
     assertThat(entries.contains("doge,USD 9090.00")).isTrue();
   }
 
   @Test
-  void commandInit_successStageNoEntityChange() throws Exception {
-    UpdatePremiumListCommand command = new UpdatePremiumListCommand();
-    command.inputFile = Paths.get(premiumTermsPath);
-    command.name = TLD_TEST;
-    command.init();
-    assertThat(command.prompt()).contains("No entity changes to apply.");
-  }
-
-  @Test
-  void commandInit_successStageEntityChange() throws Exception {
+  void commandPrompt_successStageEntityChange() throws Exception {
     File tmpFile = tmpDir.resolve(String.format("%s.txt", TLD_TEST)).toFile();
-    String newPremiumListData = "omg,JPY 1234";
+    String newPremiumListData = "omg,USD 1234";
     Files.asCharSink(tmpFile, UTF_8).write(newPremiumListData);
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = Paths.get(tmpFile.getPath());
     command.name = TLD_TEST;
-    command.init();
-    assertThat(command.prompt()).contains("Update PremiumList@");
+    command.prompt();
+    assertThat(command.prompt()).contains("Update premium list for prime?");
   }
 
   @Test
@@ -82,7 +77,8 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     command.inputFile = Paths.get(tmpFile.getPath());
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
 
-    ImmutableSet<String> entries = command.getExistingPremiumListEntry(TLD_TEST);
+    ImmutableSet<String> entries =
+        command.getExistingPremiumEntry(PremiumListDao.getLatestRevision(TLD_TEST).get());
     assertThat(entries.size()).isEqualTo(1);
     // verify that list is updated; cannot use only string since price is formatted;
     assertThat(entries.contains("eth,USD 9999.00")).isTrue();
@@ -99,7 +95,8 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
     runCommandForced("--name=" + TLD_TEST, "--input=" + command.inputFile);
 
     // assert all three lines from premiumTerms are added
-    ImmutableSet<String> entries = command.getExistingPremiumListEntry(TLD_TEST);
+    ImmutableSet<String> entries =
+        command.getExistingPremiumEntry(PremiumListDao.getLatestRevision(TLD_TEST).get());
     assertThat(entries.size()).isEqualTo(3);
     assertThat(entries.contains("foo,USD 9000.00")).isTrue();
     assertThat(entries.contains("doge,USD 100.00")).isTrue();
@@ -107,26 +104,24 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   }
 
   @Test
-  void commandInit_failureUpdateEmptyList() throws Exception {
+  void commandPrompt_failureUpdateEmptyList() throws Exception {
     Path tmpPath = tmpDir.resolve(String.format("%s.txt", TLD_TEST));
     Files.write(new byte[0], tmpPath.toFile());
 
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.inputFile = tmpPath;
     command.name = TLD_TEST;
-    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
-    assertThat(thrown)
-        .hasMessageThat()
-        .contains("The Cloud SQL schema requires exactly one currency");
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
+    assertThat(thrown).hasMessageThat().contains("Input cannot be empty");
   }
 
   @Test
-  void commandInit_failureNoPreviousVersion() {
+  void commandPrompt_failureNoPreviousVersion() {
     String fileName = "random";
-    registry = createRegistry(fileName, null);
+    registry = createRegistry(fileName, null, null);
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.name = fileName;
-    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
@@ -134,17 +129,17 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   }
 
   @Test
-  void commandInit_failureNoInputFile() {
+  void commandPrompt_failureNoInputFile() {
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
-    assertThrows(NullPointerException.class, command::init);
+    assertThrows(NullPointerException.class, command::prompt);
   }
 
   @Test
-  void commandInit_failureTldFromNameDoesNotExist() {
+  void commandPrompt_failureTldFromNameDoesNotExist() {
     String fileName = "random";
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     command.name = fileName;
-    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
@@ -152,13 +147,13 @@ class UpdatePremiumListCommandTest<C extends UpdatePremiumListCommand>
   }
 
   @Test
-  void commandInit_failureTldFromInputFileDoesNotExist() {
+  void commandPrompt_failureTldFromInputFileDoesNotExist() {
     String fileName = "random";
     UpdatePremiumListCommand command = new UpdatePremiumListCommand();
     // using tld extracted from file name but this tld is not part of the registry
     command.inputFile =
         Paths.get(tmpDir.resolve(String.format("%s.txt", fileName)).toFile().getPath());
-    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::init);
+    IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, command::prompt);
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(

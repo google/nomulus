@@ -691,7 +691,7 @@ public class ExpandRecurringBillingEventsActionTest
     persistResource(
         Registry.get("tld")
             .asBuilder()
-            .setPremiumList(persistPremiumList("tld2", "example,USD 100"))
+            .setPremiumList(persistPremiumList("tld2", USD, "example,USD 100"))
             .build());
     persistResource(recurring);
     action.cursorTimeParam = Optional.of(START_OF_TIME);

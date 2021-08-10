@@ -16,6 +16,7 @@ package google.registry.schema.tld;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -36,7 +37,7 @@ class PremiumListUtilsTest {
   void parseInputToPremiumList_works() {
     PremiumList premiumList =
         parseToPremiumList(
-            "testlist", ImmutableList.of("foo,USD 99.50", "bar,USD 30", "baz,USD 10"));
+            "testlist", USD, ImmutableList.of("foo,USD 99.50", "bar,USD 30", "baz,USD 10"));
     assertThat(premiumList.getName()).isEqualTo("testlist");
     assertThat(premiumList.getLabelsToPrices())
         .containsExactly("foo", twoDigits(99.50), "bar", twoDigits(30), "baz", twoDigits(10));
@@ -49,10 +50,10 @@ class PremiumListUtilsTest {
             IllegalArgumentException.class,
             () ->
                 parseToPremiumList(
-                    "testlist", ImmutableList.of("foo,USD 99.50", "bar,USD 30", "baz,JPY 990")));
-    assertThat(thrown)
-        .hasMessageThat()
-        .isEqualTo("The Cloud SQL schema requires exactly one currency, but got: [JPY, USD]");
+                    "testlist",
+                    USD,
+                    ImmutableList.of("foo,USD 99.50", "bar,USD 30", "baz,JPY 990")));
+    assertThat(thrown).hasMessageThat().isEqualTo("The currency unit must be USD");
   }
 
   private static BigDecimal twoDigits(double num) {

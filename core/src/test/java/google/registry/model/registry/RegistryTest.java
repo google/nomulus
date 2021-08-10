@@ -71,7 +71,7 @@ public final class RegistryTest extends EntityTestCase {
   @TestOfyAndSql
   void testPersistence_updateReservedAndPremiumListSuccessfully() {
     ReservedList rl15 = persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED");
-    PremiumList pl = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
+    PremiumList pl = persistPremiumList("tld2", USD, "lol,USD 50", "cat,USD 700");
     Registry registry =
         Registry.get("tld").asBuilder().setReservedLists(rl15).setPremiumList(pl).build();
     tm().transact(() -> tm().put(registry));
@@ -145,7 +145,7 @@ public final class RegistryTest extends EntityTestCase {
                 .setReservedListMapFromLines(
                     ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
                 .setShouldPublish(true)
-                .setLastUpdateTime(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     ReservedList rl16 =
         persistReservedList(
@@ -154,7 +154,7 @@ public final class RegistryTest extends EntityTestCase {
                 .setReservedListMapFromLines(
                     ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
                 .setShouldPublish(true)
-                .setLastUpdateTime(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     Registry registry1 =
         newRegistry("propter", "PROPTER")
@@ -197,7 +197,7 @@ public final class RegistryTest extends EntityTestCase {
                 .setReservedListMapFromLines(
                     ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
                 .setShouldPublish(true)
-                .setLastUpdateTime(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     ReservedList rl6 =
         persistReservedList(
@@ -206,7 +206,7 @@ public final class RegistryTest extends EntityTestCase {
                 .setReservedListMapFromLines(
                     ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
                 .setShouldPublish(true)
-                .setLastUpdateTime(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     Registry r =
         Registry.get("tld").asBuilder().setReservedLists(ImmutableSet.of(rl5, rl6)).build();
@@ -223,7 +223,7 @@ public final class RegistryTest extends EntityTestCase {
             .setReservedListMapFromLines(
                 ImmutableList.of("potato,FULLY_BLOCKED", "phone,FULLY_BLOCKED"))
             .setShouldPublish(true)
-            .setLastUpdateTime(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.nowUtc())
             .build());
     persistReservedList(
         new ReservedList.Builder()
@@ -231,7 +231,7 @@ public final class RegistryTest extends EntityTestCase {
             .setReservedListMapFromLines(
                 ImmutableList.of("port,FULLY_BLOCKED", "manteau,FULLY_BLOCKED"))
             .setShouldPublish(true)
-            .setLastUpdateTime(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.nowUtc())
             .build());
     Registry r =
         Registry.get("tld")
@@ -245,7 +245,7 @@ public final class RegistryTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testSetPremiumList() {
-    PremiumList pl2 = persistPremiumList("tld2", "lol,USD 50", "cat,USD 700");
+    PremiumList pl2 = persistPremiumList("tld2", USD, "lol,USD 50", "cat,USD 700");
     Registry registry = Registry.get("tld").asBuilder().setPremiumList(pl2).build();
     Optional<String> pl = registry.getPremiumListName();
     assertThat(pl).hasValue("tld2");

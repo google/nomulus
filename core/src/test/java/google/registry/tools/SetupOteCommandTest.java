@@ -24,6 +24,7 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -39,7 +40,6 @@ import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.FakeClock;
 import google.registry.util.CidrAddressBlock;
 import java.security.cert.CertificateParsingException;
-import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -58,7 +58,7 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
   void beforeEach() {
     command.passwordGenerator = passwordGenerator;
     command.clock = new FakeClock(DateTime.parse("2018-07-07TZ"));
-    persistPremiumList("default_sandbox_list", "sandbox,USD 1000");
+    persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
   }
 
   /** Verify TLD creation. */
@@ -79,17 +79,17 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
     ImmutableSortedMap<DateTime, Money> eapFeeSchedule = registry.getEapFeeScheduleAsMap();
     if (!isEarlyAccess) {
       assertThat(eapFeeSchedule)
-          .isEqualTo(ImmutableSortedMap.of(new DateTime(0), Money.of(CurrencyUnit.USD, 0)));
+          .isEqualTo(ImmutableSortedMap.of(new DateTime(0), Money.of(USD, 0)));
     } else {
       assertThat(eapFeeSchedule)
           .isEqualTo(
               ImmutableSortedMap.of(
                   new DateTime(0),
-                  Money.of(CurrencyUnit.USD, 0),
+                  Money.of(USD, 0),
                   DateTime.parse("2018-03-01T00:00:00Z"),
-                  Money.of(CurrencyUnit.USD, 100),
+                  Money.of(USD, 100),
                   DateTime.parse("2030-03-01T00:00:00Z"),
-                  Money.of(CurrencyUnit.USD, 0)));
+                  Money.of(USD, 0)));
     }
   }
 

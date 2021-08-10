@@ -76,7 +76,7 @@ public class PremiumListDaoTest {
             .setName("testname")
             .setCurrency(USD)
             .setLabelsToPrices(TEST_PRICES)
-            .setCreationTime(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.nowUtc())
             .build();
   }
 
@@ -90,7 +90,7 @@ public class PremiumListDaoTest {
               assertThat(persistedListOpt).isPresent();
               PremiumList persistedList = persistedListOpt.get();
               assertThat(persistedList.getLabelsToPrices()).containsExactlyEntriesIn(TEST_PRICES);
-              assertThat(persistedList.getCreationTime()).isEqualTo(fakeClock.nowUtc());
+              assertThat(persistedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
             });
   }
 
@@ -112,7 +112,7 @@ public class PremiumListDaoTest {
                     BigDecimal.valueOf(0.01),
                     "silver",
                     BigDecimal.valueOf(30.03)))
-            .setCreationTime(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.nowUtc())
             .build());
     jpaTm()
         .transact(
@@ -129,9 +129,8 @@ public class PremiumListDaoTest {
                           BigDecimal.valueOf(0.01),
                           "silver",
                           BigDecimal.valueOf(30.03)));
-              assertThat(savedList.getCreationTime()).isEqualTo(fakeClock.nowUtc());
+              assertThat(savedList.getCreationTimestamp()).isEqualTo(fakeClock.nowUtc());
               assertThat(savedList.getRevisionId()).isGreaterThan(firstRevisionId);
-              assertThat(savedList.getCreationTime()).isEqualTo(fakeClock.nowUtc());
             });
   }
 
@@ -154,14 +153,14 @@ public class PremiumListDaoTest {
             .setName("list1")
             .setCurrency(USD)
             .setLabelsToPrices(ImmutableMap.of("wrong", BigDecimal.valueOf(1000.50)))
-            .setCreationTime(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.nowUtc())
             .build());
     PremiumListDao.save(
         new PremiumList.Builder()
             .setName("list1")
             .setCurrency(USD)
             .setLabelsToPrices(TEST_PRICES)
-            .setCreationTime(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.nowUtc())
             .build());
     jpaTm()
         .transact(
@@ -182,7 +181,7 @@ public class PremiumListDaoTest {
             .setName("list1")
             .setCurrency(JPY)
             .setLabelsToPrices(TEST_PRICES)
-            .setCreationTime(fakeClock.nowUtc())
+            .setCreationTimestamp(fakeClock.nowUtc())
             .build());
     jpaTm()
         .transact(
@@ -207,7 +206,7 @@ public class PremiumListDaoTest {
                 .setName("premlist")
                 .setCurrency(USD)
                 .setLabelsToPrices(TEST_PRICES)
-                .setCreationTime(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     persistResource(
         newRegistry("foobar", "FOOBAR").asBuilder().setPremiumList(premiumList).build());
@@ -231,7 +230,7 @@ public class PremiumListDaoTest {
                         BigDecimal.valueOf(1000.0),
                         "palladium",
                         BigDecimal.valueOf(15000)))
-                .setCreationTime(fakeClock.nowUtc())
+                .setCreationTimestamp(fakeClock.nowUtc())
                 .build());
     persistResource(
         newRegistry("foobar", "FOOBAR").asBuilder().setPremiumList(premiumList).build());
@@ -247,7 +246,7 @@ public class PremiumListDaoTest {
     PremiumListDao.save(testList);
     PremiumList pl = PremiumListDao.getLatestRevision("testname").get();
     assertThat(PremiumListDao.premiumListCache.getIfPresent("testname").get()).isEqualTo(pl);
-    transactIfJpaTm(() -> PremiumListDao.save("testname", ImmutableList.of("test,USD 1")));
+    transactIfJpaTm(() -> PremiumListDao.save("testname", USD, ImmutableList.of("test,USD 1")));
     assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).isNull();
   }
 

@@ -23,6 +23,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -54,7 +55,7 @@ public class ExportPremiumTermsActionTest {
   private static final ImmutableList<String> PREMIUM_NAMES =
       ImmutableList.of("2048,USD 549", "0,USD 549");
   private static final String EXPECTED_FILE_CONTENT =
-      DISCLAIMER_WITH_NEWLINE + "0,USD 549.00\n" + "2048,USD 549.00\n";
+      DISCLAIMER_WITH_NEWLINE + "0, 549.00\n" + "2048, 549.00\n";
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
@@ -75,7 +76,7 @@ public class ExportPremiumTermsActionTest {
   @BeforeEach
   void beforeEach() throws Exception {
     createTld("tld");
-    PremiumList pl = PremiumListDao.save("pl-name", PREMIUM_NAMES);
+    PremiumList pl = PremiumListDao.save("pl-name", USD, PREMIUM_NAMES);
     persistResource(
         Registry.get("tld").asBuilder().setPremiumList(pl).setDriveFolderId("folder_id").build());
     when(driveConnection.createOrUpdateFile(

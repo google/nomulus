@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.BloomFilter;
 import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList.PremiumListEntry;
+import google.registry.model.registry.label.PremiumList.PremiumEntry;
 import google.registry.schema.tld.PremiumListDao;
 import google.registry.testing.AppEngineExtension;
 import java.math.BigDecimal;
@@ -48,11 +48,7 @@ public class PremiumListTest {
     createTld("tld");
     PremiumList pl =
         persistPremiumList(
-            "tld",
-            "lol,USD 999 # yup",
-            "rich,USD 1999 #tada",
-            "icann,JPY 100",
-            "johnny-be-goode,USD 20.50");
+            "tld", USD, "lol, 999", "rich, 1999", "icann, 100", "johnny-be-goode, 20.50");
     persistResource(Registry.get("tld").asBuilder().setPremiumList(pl).build());
   }
 
@@ -60,7 +56,7 @@ public class PremiumListTest {
   void testSave_badSyntax() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> persistPremiumList("gtld1", "lol,nonsense USD,e,e # yup"));
+        () -> persistPremiumList("gtld1", USD, "lol,nonsense USD,e,e # yup"));
   }
 
   @Test
@@ -103,13 +99,20 @@ public class PremiumListTest {
   }
 
   @Test
+  void testParse_canIncludeOrNotIncludeCurrencyUnit() {
+    PremiumListDao.save("tld", USD, ImmutableList.of("rofl,USD 90", "paper, 80"));
+    assertThat(PremiumListDao.getPremiumPrice("tld", "rofl").get()).isEqualTo(Money.of(USD, 90));
+    assertThat(PremiumListDao.getPremiumPrice("tld", "paper").get()).isEqualTo(Money.of(USD, 80));
+  }
+
+  @Test
   void testValidation_labelMustBeLowercase() {
     Exception e =
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new PremiumListEntry.Builder()
-                    .setPrice(Money.parse("USD 399"))
+                new PremiumEntry.Builder()
+                    .setPrice(BigDecimal.valueOf(399))
                     .setLabel("UPPER.tld")
                     .build());
     assertThat(e).hasMessageThat().contains("must be in puny-coded, lower-case form");
@@ -121,8 +124,8 @@ public class PremiumListTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new PremiumListEntry.Builder()
-                    .setPrice(Money.parse("USD 399"))
+                new PremiumEntry.Builder()
+                    .setPrice(BigDecimal.valueOf(399))
                     .setLabel("lower.みんな")
                     .build());
     assertThat(e).hasMessageThat().contains("must be in puny-coded, lower-case form");

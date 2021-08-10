@@ -101,7 +101,7 @@ import google.registry.model.registry.Registry;
 import google.registry.model.registry.Registry.TldState;
 import google.registry.model.registry.Registry.TldType;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumList.PremiumListEntry;
+import google.registry.model.registry.label.PremiumList.PremiumEntry;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.registry.label.ReservedListDao;
 import google.registry.model.reporting.HistoryEntry;
@@ -264,7 +264,7 @@ public class DatabaseHelper {
         .setRestoreBillingCost(Money.of(USD, 17))
         .setServerStatusChangeBillingCost(Money.of(USD, 19))
         // Always set a default premium list. Tests that don't want it can delete it.
-        .setPremiumList(persistPremiumList(tld, DEFAULT_PREMIUM_LIST_CONTENTS.get()))
+        .setPremiumList(persistPremiumList(tld, USD, DEFAULT_PREMIUM_LIST_CONTENTS.get()))
         .setPremiumPricingEngine(StaticPremiumListPricingEngine.NAME)
         .setDnsWriters(ImmutableSet.of(VoidDnsWriter.NAME))
         .build();
@@ -361,7 +361,7 @@ public class DatabaseHelper {
             .setName(listName)
             .setReservedListMapFromLines(ImmutableList.copyOf(lines))
             .setShouldPublish(shouldPublish)
-            .setLastUpdateTime(DateTime.now(DateTimeZone.UTC))
+            .setCreationTimestamp(DateTime.now(DateTimeZone.UTC))
             .build();
     return persistReservedList(reservedList);
   }
@@ -374,29 +374,27 @@ public class DatabaseHelper {
    * incrementing FakeClock for all tests in order to persist the commit logs properly because of
    * the requirement to have monotonically increasing timestamps.
    */
-  public static PremiumList persistPremiumList(String listName, String... lines) {
+  public static PremiumList persistPremiumList(
+      String listName, CurrencyUnit currencyUnit, String... lines) {
     checkState(lines.length != 0, "Must provide at least one premium entry");
     PremiumList partialPremiumList = new PremiumList.Builder().setName(listName).build();
-    ImmutableMap<String, PremiumListEntry> entries = partialPremiumList.parse(asList(lines));
-    CurrencyUnit currencyUnit =
-        entries.entrySet().iterator().next().getValue().getValue().getCurrencyUnit();
+    ImmutableMap<String, PremiumEntry> entries = partialPremiumList.parse(asList(lines));
     PremiumList premiumList =
         partialPremiumList
             .asBuilder()
-            .setCreationTime(DateTime.now(DateTimeZone.UTC))
+            .setCreationTimestamp(DateTime.now(DateTimeZone.UTC))
             .setCurrency(currencyUnit)
             .setLabelsToPrices(
                 entries.entrySet().stream()
                     .collect(
-                        toImmutableMap(
-                            Map.Entry::getKey, entry -> entry.getValue().getValue().getAmount())))
+                        toImmutableMap(Map.Entry::getKey, entry -> entry.getValue().getValue())))
             .build();
     // Since we used to persist a PremiumList to Datastore here, it is necessary to allocate an ID
     // here to prevent breaking some of the hard-coded flow tests. IDs in tests are allocated in a
     // strictly increasing sequence, if we don't pad out the ID here, we would have to renumber
     // hundreds of unit tests.
     allocateId();
-    jpaTm().transact(() -> jpaTm().insert(premiumList));
+    PremiumListDao.save(premiumList);
     maybeAdvanceClock();
     return premiumList;
   }
@@ -1245,11 +1243,10 @@ public class DatabaseHelper {
     return result;
   }
 
-  /** Returns the entire map of {@link PremiumListEntry}s for the given {@link PremiumList}. */
-  public static ImmutableMap<String, PremiumListEntry> loadPremiumListEntries(
-      PremiumList premiumList) {
-    return Streams.stream(PremiumListDao.loadAllPremiumListEntries(premiumList.getName()))
-        .collect(toImmutableMap(PremiumListEntry::getLabel, Function.identity()));
+  /** Returns the entire map of {@link PremiumEntry}s for the given {@link PremiumList}. */
+  public static ImmutableMap<String, PremiumEntry> loadPremiumEntries(PremiumList premiumList) {
+    return Streams.stream(PremiumListDao.loadAllPremiumEntries(premiumList.getName()))
+        .collect(toImmutableMap(PremiumEntry::getDomainLabel, Function.identity()));
   }
 
   /** Loads and returns the registrar with the given client ID, or throws IAE if not present. */

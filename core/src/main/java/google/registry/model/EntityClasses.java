@@ -40,7 +40,6 @@ import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList;
 import google.registry.model.registry.label.ReservedList;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
@@ -91,9 +90,6 @@ public final class EntityClasses {
           PollMessage.class,
           PollMessage.Autorenew.class,
           PollMessage.OneTime.class,
-          PremiumList.class,
-          PremiumList.PremiumListEntry.class,
-          PremiumList.PremiumListRevision.class,
           RdeRevision.class,
           Registrar.class,
           RegistrarContact.class,

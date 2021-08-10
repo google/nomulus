@@ -15,16 +15,12 @@
 package google.registry.schema.tld;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumList.PremiumListEntry;
+import google.registry.model.registry.label.PremiumList.PremiumEntry;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -34,28 +30,18 @@ import org.joda.time.DateTime;
 /** Static utility methods for {@link PremiumList}. */
 public class PremiumListUtils {
 
-  public static PremiumList parseToPremiumList(String name, List<String> inputData) {
-    ImmutableMap<String, PremiumListEntry> prices =
-        new PremiumList.Builder().setName(name).build().parse(inputData);
-    ImmutableSet<CurrencyUnit> currencies =
-        prices.values().stream()
-            .map(e -> e.getValue().getCurrencyUnit())
-            .distinct()
-            .collect(toImmutableSet());
-    checkArgument(
-        currencies.size() == 1,
-        "The Cloud SQL schema requires exactly one currency, but got: %s",
-        ImmutableSortedSet.copyOf(currencies));
-    CurrencyUnit currency = Iterables.getOnlyElement(currencies);
-
-    Map<String, BigDecimal> priceAmounts =
-        Maps.transformValues(prices, ple -> ple.getValue().getAmount());
-    return new PremiumList.Builder()
-        .setName(name)
-        .setCurrency(currency)
-        .setLabelsToPrices(priceAmounts)
-        .setCreationTime(DateTime.now(UTC))
-        .build();
+  public static PremiumList parseToPremiumList(
+      String name, CurrencyUnit currencyUnit, List<String> inputData) {
+    PremiumList partialPremiumList =
+        new PremiumList.Builder()
+            .setName(name)
+            .setCurrency(currencyUnit)
+            .setCreationTimestamp(DateTime.now(UTC))
+            .build();
+    ImmutableMap<String, PremiumEntry> prices = partialPremiumList.parse(inputData);
+    checkArgument(inputData.size() > 0, "Input cannot be empty");
+    Map<String, BigDecimal> priceAmounts = Maps.transformValues(prices, PremiumEntry::getValue);
+    return partialPremiumList.asBuilder().setLabelsToPrices(priceAmounts).build();
   }
 
   private PremiumListUtils() {}

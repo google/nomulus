@@ -26,15 +26,15 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumList.PremiumListEntry;
+import google.registry.model.registry.label.PremiumList.PremiumEntry;
 import google.registry.util.NonFinalForTesting;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import org.joda.money.BigMoney;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.Duration;
@@ -153,18 +153,48 @@ public class PremiumListDao {
     }
   }
 
-  public static PremiumList save(String name, List<String> inputData) {
-    return save(PremiumListUtils.parseToPremiumList(name, inputData));
+  public static PremiumList save(String name, CurrencyUnit currencyUnit, List<String> inputData) {
+    return save(PremiumListUtils.parseToPremiumList(name, currencyUnit, inputData));
   }
 
   public static PremiumList save(PremiumList premiumList) {
     jpaTm().transact(() -> jpaTm().insert(premiumList));
     premiumListCache.invalidate(premiumList.getName());
+    jpaTm()
+        .transact(
+            () -> {
+              if (premiumList.getLabelsToPrices() != null) {
+                Optional<PremiumList> savedPremiumList =
+                    PremiumListDao.getLatestRevision(premiumList.getName());
+                ImmutableSet.Builder<PremiumEntry> entries = new ImmutableSet.Builder<>();
+                premiumList.getLabelsToPrices().entrySet().stream()
+                    .forEach(
+                        entry ->
+                            entries.add(
+                                PremiumEntry.create(
+                                    savedPremiumList.get().getRevisionId(),
+                                    entry.getValue(),
+                                    entry.getKey())));
+                jpaTm().insertAll(entries.build());
+              }
+            });
+    premiumListCache.invalidate(premiumList.getName());
     return premiumList;
   }
 
   public static void delete(PremiumList premiumList) {
-    jpaTm().transact(() -> getLatestRevision(premiumList.getName()).ifPresent(jpaTm()::delete));
+    jpaTm()
+        .transact(
+            () -> {
+              Optional<PremiumList> persistedList = getLatestRevision(premiumList.getName());
+              if (persistedList.isPresent()) {
+                jpaTm()
+                    .query("DELETE FROM PremiumEntry WHERE revisionId = :revisionId")
+                    .setParameter("revisionId", persistedList.get().getRevisionId())
+                    .executeUpdate();
+                jpaTm().delete(persistedList.get());
+              }
+            });
     premiumListCache.invalidate(premiumList.getName());
   }
 
@@ -183,11 +213,11 @@ public class PremiumListDao {
   }
 
   /**
-   * Returns all {@link PremiumListEntry PremiumListEntries} in the given {@code premiumList}.
+   * Returns all {@link PremiumEntry PremiumEntries} in the given {@code premiumList}.
    *
    * <p>This is an expensive operation and should only be used when the entire list is required.
    */
-  public static Iterable<PremiumEntry> loadPremiumListEntries(PremiumList premiumList) {
+  public static Iterable<PremiumEntry> loadPremiumEntries(PremiumList premiumList) {
     return jpaTm()
         .transact(
             () ->
@@ -220,24 +250,25 @@ public class PremiumListDao {
   }
 
   /**
-   * Returns all {@link PremiumListEntry PremiumListEntries} in the list with the given name.
+   * Returns all {@link PremiumEntry PremiumEntries} in the list with the given name.
    *
    * <p>This is an expensive operation and should only be used when the entire list is required.
    */
-  public static Iterable<PremiumListEntry> loadAllPremiumListEntries(String premiumListName) {
+  public static Iterable<PremiumEntry> loadAllPremiumEntries(String premiumListName) {
     PremiumList premiumList =
         getLatestRevision(premiumListName)
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(
                         String.format("No premium list with name %s.", premiumListName)));
-    CurrencyUnit currencyUnit = premiumList.getCurrency();
-    return Streams.stream(loadPremiumListEntries(premiumList))
+    Iterable<PremiumEntry> entries = loadPremiumEntries(premiumList);
+    return Streams.stream(entries)
         .map(
             premiumEntry ->
-                new PremiumListEntry.Builder()
-                    .setPrice(BigMoney.of(currencyUnit, premiumEntry.getPrice()).toMoney())
+                new PremiumEntry.Builder()
+                    .setPrice(premiumEntry.getValue())
                     .setLabel(premiumEntry.getDomainLabel())
+                    .setRevisionId(premiumList.getRevisionId())
                     .build())
         .collect(toImmutableList());
   }

@@ -74,14 +74,12 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
 
   @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
 
-  @Transient DateTime creationTime;
-
   // The list in Cloud SQL is immutable, we only have a creation_timestamp field and it should be
   // set to the timestamp when the list is created. In Datastore, we have two fields and the
   // lastUpdateTime is set to the current timestamp when creating and updating a list. So, we use
   // lastUpdateTime as the creation_timestamp column during the dual-write phase for compatibility.
   @Column(name = "creation_timestamp")
-  DateTime lastUpdateTime;
+  DateTime creationTimestamp;
 
   /** Returns the ID of this revision, or throws if null. */
   public long getRevisionId() {
@@ -97,12 +95,8 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
   }
 
   /** Returns the creation time of this revision of the reserved list. */
-  public DateTime getCreationTime() {
-    return creationTime;
-  }
-
-  public DateTime getLastUpdateTime() {
-    return lastUpdateTime;
+  public DateTime getCreationTimestamp() {
+    return creationTimestamp;
   }
 
   /**
@@ -118,7 +112,7 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
       if (entry == null) {
         continue;
       }
-      String label = entry.getLabel();
+      String label = entry.getDomainLabel();
       // Check if the label was already processed for this list (which is an error), and if so,
       // accumulate it so that a list of all duplicates can be thrown.
       if (labelsToEntries.containsKey(label)) {
@@ -196,13 +190,8 @@ public abstract class BaseDomainLabelList<T extends Comparable<?>, R extends Dom
       return thisCastToDerived();
     }
 
-    public B setCreationTime(DateTime creationTime) {
-      getInstance().creationTime = creationTime;
-      return thisCastToDerived();
-    }
-
-    public B setLastUpdateTime(DateTime lastUpdateTime) {
-      getInstance().lastUpdateTime = lastUpdateTime;
+    public B setCreationTimestamp(DateTime creationTime) {
+      getInstance().creationTimestamp = creationTime;
       return thisCastToDerived();
     }
 

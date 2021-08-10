@@ -60,6 +60,7 @@
     <class>google.registry.model.registrar.Registrar</class>
     <class>google.registry.model.registrar.RegistrarContact</class>
     <class>google.registry.model.registry.label.PremiumList</class>
+    <class>google.registry.model.registry.label.PremiumList$PremiumEntry</class>
     <class>google.registry.model.registry.label.ReservedList</class>
     <class>google.registry.model.registry.label.ReservedList$ReservedListEntry</class>
     <class>google.registry.model.registry.Registry</class>
@@ -74,7 +75,6 @@
     <class>google.registry.persistence.transaction.TransactionEntity</class>
     <class>google.registry.schema.domain.RegistryLock</class>
     <class>google.registry.schema.replay.SqlReplayCheckpoint</class>
-    <class>google.registry.schema.tld.PremiumEntry</class>
 
     <!-- Customized type converters -->
     <class>google.registry.persistence.converter.AllocationTokenStatusTransitionConverter</class>
@@ -90,7 +90,6 @@
     <class>google.registry.persistence.converter.InetAddressSetConverter</class>
     <class>google.registry.persistence.converter.LocalDateConverter</class>
     <class>google.registry.persistence.converter.PostalInfoChoiceListConverter</class>
-    <class>google.registry.persistence.converter.PremiumListKeyConverter</class>
     <class>google.registry.persistence.converter.RegistrarPocSetConverter</class>
     <class>google.registry.persistence.converter.ReservedListKeySetConverter</class>
     <class>google.registry.persistence.converter.Spec11ThreatMatchThreatTypeSetConverter</class>
