@@ -65,7 +65,8 @@ import org.joda.time.DateTime;
       @Index(columnList = "domainName"),
       @Index(columnList = "techContact"),
       @Index(columnList = "tld"),
-      @Index(columnList = "registrantContact")
+      @Index(columnList = "registrantContact"),
+      @Index(columnList = "dnsRefreshRequestTime")
     })
 @WithStringVKey
 @ExternalMessagingName("domain")
@@ -208,7 +209,8 @@ public class DomainBase extends DomainContent
           .setSmdId(domainContent.getSmdId())
           .setSubordinateHosts(domainContent.getSubordinateHosts())
           .setStatusValues(domainContent.getStatusValues())
-          .setTransferData(domainContent.getTransferData());
+          .setTransferData(domainContent.getTransferData())
+          .setDnsRefreshRequestTime(domainContent.getDnsRefreshRequestTime());
     }
   }
 }

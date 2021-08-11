@@ -169,6 +169,7 @@ public class DomainBaseTest extends EntityTestCase {
                             "registrar",
                             null))
                     .setAutorenewEndTime(Optional.of(fakeClock.nowUtc().plusYears(2)))
+                    .setDnsRefreshRequestTime(Optional.of(fakeClock.nowUtc()))
                     .build()));
   }
 

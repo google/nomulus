@@ -53,6 +53,8 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import java.util.Optional;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Tests for {@link DomainHistory}. */
@@ -245,6 +247,7 @@ public class DomainHistoryTest extends EntityTestCase {
             .asBuilder()
             .setNameservers(host.createVKey())
             .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
+            .setDnsRefreshRequestTime(Optional.of(DateTime.parse("2020-03-09T16:40:00Z")))
             .build();
     jpaTm().transact(() -> jpaTm().insert(domain));
     return domain;
