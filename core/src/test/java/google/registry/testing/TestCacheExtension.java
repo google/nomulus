@@ -18,7 +18,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import google.registry.model.EppResource;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.schema.tld.PremiumListDao;
+import google.registry.model.tld.label.PremiumListDao;
 import java.util.Map;
 import java.util.Optional;
 import org.joda.time.Duration;

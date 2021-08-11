@@ -21,8 +21,8 @@ import static google.registry.testing.DatabaseHelper.loadPremiumEntries;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.joda.money.CurrencyUnit.USD;
 
-import google.registry.model.registry.label.PremiumList;
-import google.registry.schema.tld.PremiumListDao;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumListDao;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeJsonResponse;
 import org.joda.money.Money;

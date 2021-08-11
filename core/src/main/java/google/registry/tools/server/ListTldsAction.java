@@ -15,14 +15,14 @@
 package google.registry.tools.server;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.registry.Registries.getTlds;
+import static google.registry.model.tld.Registries.getTlds;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;

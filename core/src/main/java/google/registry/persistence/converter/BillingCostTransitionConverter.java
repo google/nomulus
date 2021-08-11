@@ -15,7 +15,7 @@
 package google.registry.persistence.converter;
 
 import avro.shaded.com.google.common.collect.Maps;
-import google.registry.model.registry.Registry.BillingCostTransition;
+import google.registry.model.tld.Registry.BillingCostTransition;
 import java.util.Map;
 import javax.persistence.Converter;
 import org.joda.money.Money;

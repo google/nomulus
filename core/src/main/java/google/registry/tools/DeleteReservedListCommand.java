@@ -20,8 +20,8 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.registry.label.ReservedList;
-import google.registry.model.registry.label.ReservedListDao;
+import google.registry.model.tld.label.ReservedList;
+import google.registry.model.tld.label.ReservedListDao;
 
 /**
  * Command to delete a {@link ReservedList} from the database. This command will fail if the

@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.registry;
+package google.registry.model.tld;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
-import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
-import static google.registry.model.registry.Registry.TldState.QUIET_PERIOD;
-import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
+import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
+import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newRegistry;
@@ -38,11 +38,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.EntityTestCase;
-import google.registry.model.registry.Registry.RegistryNotFoundException;
-import google.registry.model.registry.Registry.TldState;
-import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.ReservedList;
-import google.registry.schema.tld.PremiumListDao;
+import google.registry.model.tld.Registry.RegistryNotFoundException;
+import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumListDao;
+import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;

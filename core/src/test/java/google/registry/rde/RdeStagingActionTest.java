@@ -47,7 +47,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.host.HostResource;
 import google.registry.model.ofy.Ofy;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.RequestParameters;
 import google.registry.testing.FakeClock;

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.registry.label;
+package google.registry.model.tld.label;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;

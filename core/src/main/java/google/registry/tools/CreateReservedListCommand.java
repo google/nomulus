@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.registry.Registries.assertTldExists;
+import static google.registry.model.tld.Registries.assertTldExists;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.joda.time.DateTimeZone.UTC;
@@ -26,7 +26,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.googlecode.objectify.Key;
-import google.registry.model.registry.label.ReservedList;
+import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
 import java.nio.file.Files;
 import java.util.List;

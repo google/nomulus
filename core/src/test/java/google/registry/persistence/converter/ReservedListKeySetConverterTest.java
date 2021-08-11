@@ -20,7 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
-import google.registry.model.registry.label.ReservedList;
+import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.AppEngineExtension;
 import java.util.Set;
 import javax.persistence.Entity;

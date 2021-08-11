@@ -15,16 +15,16 @@
 package google.registry.tools.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.registry.Registries.assertTldExists;
+import static google.registry.model.tld.Registries.assertTldExists;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
+import google.registry.model.tld.label.PremiumListDao;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
-import google.registry.schema.tld.PremiumListDao;
 import java.util.List;
 import javax.inject.Inject;
 import org.joda.money.CurrencyUnit;

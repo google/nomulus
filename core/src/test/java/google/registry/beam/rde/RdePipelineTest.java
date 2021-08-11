@@ -60,7 +60,7 @@ import google.registry.model.rde.RdeRevision;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;

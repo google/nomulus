@@ -32,7 +32,7 @@ import google.registry.model.domain.fee.BaseFee.FeeType;
 import google.registry.model.domain.fee.Fee;
 import google.registry.model.domain.token.AllocationToken;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Optional;

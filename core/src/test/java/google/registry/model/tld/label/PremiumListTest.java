@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.registry.label;
+package google.registry.model.tld.label;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -26,9 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.hash.BloomFilter;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList.PremiumEntry;
-import google.registry.schema.tld.PremiumListDao;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.testing.AppEngineExtension;
 import java.math.BigDecimal;
 import org.joda.money.Money;

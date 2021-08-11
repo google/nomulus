@@ -20,8 +20,8 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.registry.label.PremiumList;
-import google.registry.schema.tld.PremiumListDao;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumListDao;
 import javax.annotation.Nullable;
 
 /**

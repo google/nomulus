@@ -21,9 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList;
-import google.registry.schema.tld.PremiumListDao;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumListDao;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;

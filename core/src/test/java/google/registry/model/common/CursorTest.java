@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;

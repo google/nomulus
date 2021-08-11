@@ -41,7 +41,7 @@ import google.registry.config.RegistryConfig;
 import google.registry.model.EntityTestCase;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
-import google.registry.model.registry.Registries;
+import google.registry.model.tld.Registries;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;

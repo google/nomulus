@@ -21,7 +21,7 @@ import static org.joda.money.CurrencyUnit.JPY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.testing.DeterministicStringGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

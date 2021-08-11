@@ -28,8 +28,8 @@ import static google.registry.flows.domain.DomainFlowUtils.isValidReservedCreate
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainNameWithIdnTables;
 import static google.registry.flows.domain.DomainFlowUtils.verifyNotInPredelegation;
-import static google.registry.model.registry.Registry.TldState.START_DATE_SUNRISE;
-import static google.registry.model.registry.label.ReservationType.getTypeOfHighestSeverity;
+import static google.registry.model.tld.Registry.TldState.START_DATE_SUNRISE;
+import static google.registry.model.tld.label.ReservationType.getTypeOfHighestSeverity;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -67,10 +67,10 @@ import google.registry.model.eppoutput.CheckData.DomainCheckData;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.eppoutput.EppResponse.ResponseExtension;
 import google.registry.model.index.ForeignKeyIndex;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.Registry.TldState;
-import google.registry.model.registry.label.ReservationType;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.Registry.TldState;
+import google.registry.model.tld.label.ReservationType;
 import google.registry.persistence.VKey;
 import google.registry.util.Clock;
 import java.util.HashSet;

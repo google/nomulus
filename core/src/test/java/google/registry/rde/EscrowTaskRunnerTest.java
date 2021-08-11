@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.HttpException.ServiceUnavailableException;

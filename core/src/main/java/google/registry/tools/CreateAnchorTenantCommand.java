@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static google.registry.model.registry.Registries.findTldForNameOrThrow;
+import static google.registry.model.tld.Registries.findTldForNameOrThrow;
 import static google.registry.pricing.PricingEngineProxy.getDomainCreateCost;
 import static google.registry.util.StringGenerator.DEFAULT_PASSWORD_LENGTH;
 import static org.joda.time.DateTimeZone.UTC;

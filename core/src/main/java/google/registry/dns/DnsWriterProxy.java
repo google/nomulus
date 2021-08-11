@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.dns.writer.DnsWriter;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import java.util.Map;
 import javax.inject.Inject;
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.tld;
+package google.registry.model.tld.label;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
@@ -28,8 +28,7 @@ import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
-import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumList.PremiumEntry;
+import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.util.NonFinalForTesting;
 import java.math.BigDecimal;
 import java.util.List;

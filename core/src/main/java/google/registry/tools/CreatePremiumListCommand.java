@@ -15,15 +15,15 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.registry.Registries.assertTldExists;
+import static google.registry.model.tld.Registries.assertTldExists;
 import static google.registry.util.ListNamingUtils.convertFilePathToName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Strings;
-import google.registry.model.registry.label.PremiumList;
-import google.registry.schema.tld.PremiumListDao;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumListDao;
 import java.nio.file.Files;
 import org.joda.money.CurrencyUnit;
 

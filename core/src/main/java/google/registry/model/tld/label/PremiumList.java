@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.registry.label;
+package google.registry.model.tld.label;
 
 import static com.google.common.base.Charsets.US_ASCII;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -26,10 +26,9 @@ import com.google.common.hash.BloomFilter;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList.PremiumEntry;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.schema.replay.SqlOnlyEntity;
-import google.registry.schema.tld.PremiumListDao;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -216,7 +215,7 @@ public final class PremiumList extends BaseDomainLabelList<BigDecimal, PremiumEn
     return new Builder(clone(this));
   }
 
-  /** A builder for constructing {@link PremiumList} objects, since they are immutable.  */
+  /** A builder for constructing {@link PremiumList} objects, since they are immutable. */
   public static class Builder extends BaseDomainLabelList.Builder<PremiumList, Builder> {
 
     public Builder() {}

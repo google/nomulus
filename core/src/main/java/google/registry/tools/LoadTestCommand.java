@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
 import google.registry.loadtest.LoadTestAction;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registry.Registries;
+import google.registry.model.tld.Registries;
 
 /** Command to initiate a load-test. */
 @Parameters(separators = " =", commandDescription = "Run a load test.")

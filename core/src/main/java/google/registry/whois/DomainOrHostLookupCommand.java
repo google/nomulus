@@ -15,8 +15,8 @@
 package google.registry.whois;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static google.registry.model.registry.Registries.findTldForName;
-import static google.registry.model.registry.Registries.getTlds;
+import static google.registry.model.tld.Registries.findTldForName;
+import static google.registry.model.tld.Registries.getTlds;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.annotations.VisibleForTesting;

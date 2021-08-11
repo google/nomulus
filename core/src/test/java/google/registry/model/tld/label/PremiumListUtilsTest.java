@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.tld;
+package google.registry.model.tld.label;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.schema.tld.PremiumListUtils.parseToPremiumList;
+import static google.registry.model.tld.label.PremiumListUtils.parseToPremiumList;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.model.registry.label.PremiumList;
 import google.registry.testing.AppEngineExtension;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
