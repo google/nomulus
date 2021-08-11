@@ -20,7 +20,7 @@ import static google.registry.util.UrlFetchUtils.setAuthorizationHeader;
 import com.google.appengine.api.urlfetch.HTTPRequest;
 import com.google.common.flogger.FluentLogger;
 import google.registry.keyring.api.KeyModule.Key;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import java.util.Optional;
 import javax.inject.Inject;
 

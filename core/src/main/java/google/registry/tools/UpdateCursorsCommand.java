@@ -22,7 +22,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.tools.params.DateTimeParameter;
 import java.util.List;
 import org.joda.time.DateTime;

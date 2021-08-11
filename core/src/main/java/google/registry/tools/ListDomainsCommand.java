@@ -15,14 +15,14 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.registry.Registries.getTldsOfType;
+import static google.registry.model.tld.Registries.getTldsOfType;
 import static google.registry.util.CollectionUtils.isNullOrEmpty;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.registry.Registry.TldType;
+import google.registry.model.tld.Registry.TldType;
 import google.registry.tools.server.ListDomainsAction;
 import java.util.List;
 

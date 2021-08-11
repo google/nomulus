@@ -84,9 +84,9 @@ import google.registry.model.poll.PendingActionNotificationResponse.ContactPendi
 import google.registry.model.poll.PendingActionNotificationResponse.HostPendingActionNotificationResponse;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.poll.PollMessage.OneTime;
-import google.registry.model.registry.Registry;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
+import google.registry.model.tld.Registry;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;

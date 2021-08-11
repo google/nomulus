@@ -23,7 +23,7 @@ import google.registry.flows.domain.DomainPricingLogic;
 import google.registry.flows.domain.FeesAndCredits;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppinput.EppInput;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import org.joda.time.DateTime;
 
 /**

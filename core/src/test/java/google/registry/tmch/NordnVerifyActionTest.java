@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 import com.google.appengine.api.urlfetch.HTTPRequest;
 import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.request.HttpException.ConflictException;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;

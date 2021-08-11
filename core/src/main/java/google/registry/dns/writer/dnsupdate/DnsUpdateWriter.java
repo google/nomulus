@@ -30,7 +30,7 @@ import google.registry.dns.writer.DnsWriterZone;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.host.HostResource;
-import google.registry.model.registry.Registries;
+import google.registry.model.tld.Registries;
 import google.registry.util.Clock;
 import java.io.IOException;
 import java.net.Inet4Address;

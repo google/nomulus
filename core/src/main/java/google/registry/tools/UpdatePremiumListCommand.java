@@ -24,10 +24,10 @@ import com.beust.jcommander.Parameters;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
-import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumList.PremiumEntry;
-import google.registry.schema.tld.PremiumListDao;
-import google.registry.schema.tld.PremiumListUtils;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumList.PremiumEntry;
+import google.registry.model.tld.label.PremiumListDao;
+import google.registry.model.tld.label.PremiumListUtils;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Optional;
@@ -61,7 +61,7 @@ class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
     To get premium list content as a set of string. This is a workaround to avoid dealing with
     Hibernate.LazyInitizationException error. It occurs when trying to access data of the
     latest revision of an existing premium list.
-    "Cannot evaluate google.registry.model.registry.label.PremiumList.toString()'".
+    "Cannot evaluate google.registry.model.tld.label.PremiumList.toString()'".
     Ideally, the following should be the way to verify info in latest revision of a premium list:
 
     PremiumList existingPremiumList =

@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.tld;
+package google.registry.model.tld.label;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.money.CurrencyUnit.JPY;
@@ -26,7 +25,7 @@ import static org.joda.time.Duration.standardDays;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import google.registry.model.registry.label.PremiumList;
+import google.registry.persistence.transaction.TransactionManagerUtil;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestCacheExtension;
@@ -246,7 +245,8 @@ public class PremiumListDaoTest {
     PremiumListDao.save(testList);
     PremiumList pl = PremiumListDao.getLatestRevision("testname").get();
     assertThat(PremiumListDao.premiumListCache.getIfPresent("testname").get()).isEqualTo(pl);
-    transactIfJpaTm(() -> PremiumListDao.save("testname", USD, ImmutableList.of("test,USD 1")));
+    TransactionManagerUtil.transactIfJpaTm(
+        () -> PremiumListDao.save("testname", USD, ImmutableList.of("test,USD 1")));
     assertThat(PremiumListDao.premiumListCache.getIfPresent("testname")).isNull();
   }
 

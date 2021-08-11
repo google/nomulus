@@ -654,83 +654,6 @@ enum google.registry.model.registrar.RegistrarContact$Type {
   TECH;
   WHOIS;
 }
-class google.registry.model.registry.Registry {
-  @Id java.lang.String tldStrId;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  boolean dnsPaused;
-  boolean escrowEnabled;
-  boolean invoicingEnabled;
-  google.registry.model.CreateAutoTimestamp creationTime;
-  google.registry.model.common.TimedTransitionProperty<google.registry.model.registry.Registry$TldState, google.registry.model.registry.Registry$TldStateTransition> tldStateTransitions;
-  google.registry.model.common.TimedTransitionProperty<org.joda.money.Money, google.registry.model.registry.Registry$BillingCostTransition> eapFeeSchedule;
-  google.registry.model.common.TimedTransitionProperty<org.joda.money.Money, google.registry.model.registry.Registry$BillingCostTransition> renewBillingCostTransitions;
-  google.registry.model.registry.Registry$TldType tldType;
-  int numDnsPublishLocks;
-  java.lang.String driveFolderId;
-  java.lang.String lordnUsername;
-  java.lang.String premiumListName;
-  java.lang.String pricingEngineClassName;
-  java.lang.String roidSuffix;
-  java.lang.String tldStr;
-  java.lang.String tldUnicode;
-  java.util.Set<java.lang.String> allowedFullyQualifiedHostNames;
-  java.util.Set<java.lang.String> allowedRegistrantContactIds;
-  java.util.Set<java.lang.String> dnsWriters;
-  java.util.Set<java.lang.String> reservedListNames;
-  org.joda.money.CurrencyUnit currency;
-  org.joda.money.Money createBillingCost;
-  org.joda.money.Money registryLockOrUnlockBillingCost;
-  org.joda.money.Money restoreBillingCost;
-  org.joda.money.Money serverStatusChangeBillingCost;
-  org.joda.time.DateTime claimsPeriodEnd;
-  org.joda.time.Duration addGracePeriodLength;
-  org.joda.time.Duration anchorTenantAddGracePeriodLength;
-  org.joda.time.Duration autoRenewGracePeriodLength;
-  org.joda.time.Duration automaticTransferLength;
-  org.joda.time.Duration pendingDeleteLength;
-  org.joda.time.Duration redemptionGracePeriodLength;
-  org.joda.time.Duration renewGracePeriodLength;
-  org.joda.time.Duration transferGracePeriodLength;
-}
-class google.registry.model.registry.Registry$BillingCostTransition {
-  org.joda.money.Money billingCost;
-  org.joda.time.DateTime transitionTime;
-}
-enum google.registry.model.registry.Registry$TldState {
-  GENERAL_AVAILABILITY;
-  PDT;
-  PREDELEGATION;
-  QUIET_PERIOD;
-  START_DATE_SUNRISE;
-}
-class google.registry.model.registry.Registry$TldStateTransition {
-  google.registry.model.registry.Registry$TldState tldState;
-  org.joda.time.DateTime transitionTime;
-}
-enum google.registry.model.registry.Registry$TldType {
-  REAL;
-  TEST;
-}
-enum google.registry.model.registry.label.ReservationType {
-  ALLOWED_IN_SUNRISE;
-  FULLY_BLOCKED;
-  NAME_COLLISION;
-  RESERVED_FOR_ANCHOR_TENANT;
-  RESERVED_FOR_SPECIFIC_USE;
-}
-class google.registry.model.registry.label.ReservedList {
-  @Id java.lang.String name;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  boolean shouldPublish;
-  java.util.Map<java.lang.String, google.registry.model.registry.label.ReservedList$ReservedListEntry> reservedListMap;
-  org.joda.time.DateTime creationTimestamp;
-}
-class google.registry.model.registry.label.ReservedList$ReservedListEntry {
-  @Id java.lang.String domainLabel;
-  google.registry.model.registry.label.ReservationType reservationType;
-  java.lang.Long revisionId;
-  java.lang.String comment;
-}
 class google.registry.model.reporting.DomainTransactionRecord {
   google.registry.model.reporting.DomainTransactionRecord$TransactionReportField reportField;
   java.lang.Integer reportAmount;
@@ -821,6 +744,83 @@ class google.registry.model.server.ServerSecret {
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
   long leastSignificant;
   long mostSignificant;
+}
+class google.registry.model.tld.Registry {
+  @Id java.lang.String tldStrId;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  boolean dnsPaused;
+  boolean escrowEnabled;
+  boolean invoicingEnabled;
+  google.registry.model.CreateAutoTimestamp creationTime;
+  google.registry.model.common.TimedTransitionProperty<google.registry.model.tld.Registry$TldState, google.registry.model.tld.Registry$TldStateTransition> tldStateTransitions;
+  google.registry.model.common.TimedTransitionProperty<org.joda.money.Money, google.registry.model.tld.Registry$BillingCostTransition> eapFeeSchedule;
+  google.registry.model.common.TimedTransitionProperty<org.joda.money.Money, google.registry.model.tld.Registry$BillingCostTransition> renewBillingCostTransitions;
+  google.registry.model.tld.Registry$TldType tldType;
+  int numDnsPublishLocks;
+  java.lang.String driveFolderId;
+  java.lang.String lordnUsername;
+  java.lang.String premiumListName;
+  java.lang.String pricingEngineClassName;
+  java.lang.String roidSuffix;
+  java.lang.String tldStr;
+  java.lang.String tldUnicode;
+  java.util.Set<java.lang.String> allowedFullyQualifiedHostNames;
+  java.util.Set<java.lang.String> allowedRegistrantContactIds;
+  java.util.Set<java.lang.String> dnsWriters;
+  java.util.Set<java.lang.String> reservedListNames;
+  org.joda.money.CurrencyUnit currency;
+  org.joda.money.Money createBillingCost;
+  org.joda.money.Money registryLockOrUnlockBillingCost;
+  org.joda.money.Money restoreBillingCost;
+  org.joda.money.Money serverStatusChangeBillingCost;
+  org.joda.time.DateTime claimsPeriodEnd;
+  org.joda.time.Duration addGracePeriodLength;
+  org.joda.time.Duration anchorTenantAddGracePeriodLength;
+  org.joda.time.Duration autoRenewGracePeriodLength;
+  org.joda.time.Duration automaticTransferLength;
+  org.joda.time.Duration pendingDeleteLength;
+  org.joda.time.Duration redemptionGracePeriodLength;
+  org.joda.time.Duration renewGracePeriodLength;
+  org.joda.time.Duration transferGracePeriodLength;
+}
+class google.registry.model.tld.Registry$BillingCostTransition {
+  org.joda.money.Money billingCost;
+  org.joda.time.DateTime transitionTime;
+}
+enum google.registry.model.tld.Registry$TldState {
+  GENERAL_AVAILABILITY;
+  PDT;
+  PREDELEGATION;
+  QUIET_PERIOD;
+  START_DATE_SUNRISE;
+}
+class google.registry.model.tld.Registry$TldStateTransition {
+  google.registry.model.tld.Registry$TldState tldState;
+  org.joda.time.DateTime transitionTime;
+}
+enum google.registry.model.tld.Registry$TldType {
+  REAL;
+  TEST;
+}
+enum google.registry.model.tld.label.ReservationType {
+  ALLOWED_IN_SUNRISE;
+  FULLY_BLOCKED;
+  NAME_COLLISION;
+  RESERVED_FOR_ANCHOR_TENANT;
+  RESERVED_FOR_SPECIFIC_USE;
+}
+class google.registry.model.tld.label.ReservedList {
+  @Id java.lang.String name;
+  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
+  boolean shouldPublish;
+  java.util.Map<java.lang.String, google.registry.model.tld.label.ReservedList$ReservedListEntry> reservedListMap;
+  org.joda.time.DateTime creationTimestamp;
+}
+class google.registry.model.tld.label.ReservedList$ReservedListEntry {
+  @Id java.lang.String domainLabel;
+  google.registry.model.tld.label.ReservationType reservationType;
+  java.lang.Long revisionId;
+  java.lang.String comment;
 }
 class google.registry.model.tmch.ClaimsList {
   @Id long id;

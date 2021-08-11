@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
@@ -28,8 +28,8 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.io.Files;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.pricing.StaticPremiumListPricingEngine;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.Registry.TldType;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.Registry.TldType;
 import java.io.File;
 import java.io.IOException;
 import org.joda.money.CurrencyUnit;

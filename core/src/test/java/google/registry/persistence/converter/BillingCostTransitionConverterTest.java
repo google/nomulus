@@ -22,7 +22,7 @@ import static org.joda.money.CurrencyUnit.USD;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
-import google.registry.model.registry.Registry.BillingCostTransition;
+import google.registry.model.tld.Registry.BillingCostTransition;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import javax.persistence.Entity;

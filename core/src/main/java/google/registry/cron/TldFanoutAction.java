@@ -31,9 +31,9 @@ import static google.registry.cron.CronModule.FOR_EACH_TEST_TLD_PARAM;
 import static google.registry.cron.CronModule.JITTER_SECONDS_PARAM;
 import static google.registry.cron.CronModule.QUEUE_PARAM;
 import static google.registry.cron.CronModule.RUN_IN_EMPTY_PARAM;
-import static google.registry.model.registry.Registries.getTldsOfType;
-import static google.registry.model.registry.Registry.TldType.REAL;
-import static google.registry.model.registry.Registry.TldType.TEST;
+import static google.registry.model.tld.Registries.getTldsOfType;
+import static google.registry.model.tld.Registry.TldType.REAL;
+import static google.registry.model.tld.Registry.TldType.TEST;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.appengine.api.taskqueue.Queue;

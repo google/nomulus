@@ -36,10 +36,10 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumListDao;
 import google.registry.request.Response;
-import google.registry.schema.tld.PremiumListDao;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.AppEngineExtension;
 import java.io.IOException;

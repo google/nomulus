@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
-import static google.registry.model.registry.Registries.assertTldsExist;
+import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.rde.RdeModule.PARAM_DIRECTORY;
 import static google.registry.rde.RdeModule.PARAM_MANUAL;
 import static google.registry.rde.RdeModule.PARAM_MODE;

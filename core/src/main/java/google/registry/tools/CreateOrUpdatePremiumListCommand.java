@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.flogger.FluentLogger;
-import google.registry.schema.tld.PremiumListDao;
+import google.registry.model.tld.label.PremiumListDao;
 import google.registry.tools.params.PathParameter;
 import java.nio.file.Path;
 import java.util.List;

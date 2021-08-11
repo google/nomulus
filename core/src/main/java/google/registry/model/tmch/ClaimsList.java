@@ -36,7 +36,7 @@ import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.model.registry.label.ReservedList.ReservedListEntry;
+import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import google.registry.schema.replay.DatastoreOnlyEntity;
 import google.registry.schema.replay.NonReplicatedEntity;
 import java.util.Map;

@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.model.registry.Registry.TldState.GENERAL_AVAILABILITY;
+import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.testing.DatabaseHelper.allowRegistrarAccess;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
@@ -24,9 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableSortedMap;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.Registry.RegistryNotFoundException;
-import google.registry.model.registry.Registry.TldType;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.Registry.RegistryNotFoundException;
+import google.registry.model.tld.Registry.TldType;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import org.joda.time.DateTime;

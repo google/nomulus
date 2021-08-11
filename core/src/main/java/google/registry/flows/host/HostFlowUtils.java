@@ -16,7 +16,7 @@ package google.registry.flows.host;
 
 import static google.registry.model.EppResourceUtils.isActive;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.model.registry.Registries.findTldForName;
+import static google.registry.model.tld.Registries.findTldForName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static java.util.stream.Collectors.joining;
 

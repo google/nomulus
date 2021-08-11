@@ -47,7 +47,7 @@ import com.google.common.io.ByteSource;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeRevision;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.request.HttpException.InternalServerErrorException;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.testing.AppEngineExtension;

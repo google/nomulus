@@ -24,7 +24,7 @@ import com.google.appengine.api.datastore.EntityTranslator;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;

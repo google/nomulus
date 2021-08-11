@@ -27,7 +27,7 @@ import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link ResaveEnvironmentEntitiesCommand}. */

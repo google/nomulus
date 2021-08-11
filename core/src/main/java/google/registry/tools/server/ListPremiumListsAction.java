@@ -20,10 +20,10 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.registry.label.PremiumList;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumListDao;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
-import google.registry.schema.tld.PremiumListDao;
 import java.util.Comparator;
 import java.util.Optional;
 import javax.inject.Inject;

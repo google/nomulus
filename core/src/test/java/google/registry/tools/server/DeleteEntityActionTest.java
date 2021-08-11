@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.KeyFactory;
-import google.registry.model.registry.label.ReservedList;
+import google.registry.model.tld.label.ReservedList;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeResponse;

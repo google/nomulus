@@ -28,7 +28,7 @@ import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.DatastoreTransactionManager;
 import google.registry.model.ofy.Ofy;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.persistence.transaction.TransactionManager;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;

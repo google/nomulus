@@ -23,9 +23,9 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList;
-import google.registry.schema.tld.PremiumListDao;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumListDao;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link DeletePremiumListCommand}. */

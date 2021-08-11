@@ -20,7 +20,7 @@ import static google.registry.util.DomainNameUtils.getTldFromDomainName;
 
 import google.registry.model.pricing.PremiumPricingEngine;
 import google.registry.model.pricing.PremiumPricingEngine.DomainPrices;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import java.util.Map;
 import org.joda.money.Money;
 import org.joda.time.DateTime;

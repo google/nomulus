@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.registry.label;
+package google.registry.model.tld.label;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.monitoring.metrics.contrib.DistributionMetricSubject.assertThat;
 import static com.google.monitoring.metrics.contrib.LongMetricSubject.assertThat;
-import static google.registry.model.registry.label.DomainLabelMetrics.reservedListChecks;
-import static google.registry.model.registry.label.DomainLabelMetrics.reservedListHits;
-import static google.registry.model.registry.label.DomainLabelMetrics.reservedListProcessingTime;
-import static google.registry.model.registry.label.ReservationType.ALLOWED_IN_SUNRISE;
-import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
-import static google.registry.model.registry.label.ReservationType.NAME_COLLISION;
-import static google.registry.model.registry.label.ReservedList.ReservedListEntry;
-import static google.registry.model.registry.label.ReservedList.getReservationTypes;
+import static google.registry.model.tld.label.DomainLabelMetrics.reservedListChecks;
+import static google.registry.model.tld.label.DomainLabelMetrics.reservedListHits;
+import static google.registry.model.tld.label.DomainLabelMetrics.reservedListProcessingTime;
+import static google.registry.model.tld.label.ReservationType.ALLOWED_IN_SUNRISE;
+import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
+import static google.registry.model.tld.label.ReservationType.NAME_COLLISION;
+import static google.registry.model.tld.label.ReservedList.ReservedListEntry;
+import static google.registry.model.tld.label.ReservedList.getReservationTypes;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -34,8 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ofy.Ofy;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList.PremiumEntry;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;

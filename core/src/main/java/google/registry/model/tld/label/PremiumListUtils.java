@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.tld;
+package google.registry.model.tld.label;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.joda.time.DateTimeZone.UTC;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
-import google.registry.model.registry.label.PremiumList;
-import google.registry.model.registry.label.PremiumList.PremiumEntry;
+import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;

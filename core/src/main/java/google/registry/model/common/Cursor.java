@@ -30,7 +30,7 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.common.Cursor.CursorId;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.io.Serializable;

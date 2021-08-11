@@ -14,7 +14,7 @@
 
 package google.registry.tools;
 
-import static google.registry.model.registry.Registries.assertTldsExist;
+import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.persistence.transaction.QueryComposer.Comparator;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;

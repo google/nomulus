@@ -24,8 +24,8 @@ import static org.joda.money.CurrencyUnit.USD;
 
 import com.google.common.base.Splitter;
 import com.google.common.truth.Truth8;
-import google.registry.model.registry.label.PremiumList;
-import google.registry.schema.tld.PremiumListDao;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumListDao;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeJsonResponse;
