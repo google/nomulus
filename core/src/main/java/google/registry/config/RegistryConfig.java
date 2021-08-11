@@ -60,7 +60,7 @@ import org.joda.time.Duration;
  * <p>This class does not represent the total configuration of the Nomulus service. It's <b>only
  * meant for settings that need to be configured <i>once</i></b>. Settings which may be subject to
  * change in the future, should instead be retrieved from Datastore. The {@link
- * google.registry.model.registry.Registry Registry} class is one such example of this.
+ * google.registry.model.tld.Registry Registry} class is one such example of this.
  *
  * <p>Note: Only settings that are actually configurable belong in this file. It's not a catch-all
  * for anything widely used throughout the code base.
@@ -1394,8 +1394,8 @@ public final class RegistryConfig {
   /**
    * Returns the amount of time a domain label list should be cached in memory before expiring.
    *
-   * @see google.registry.model.registry.label.ReservedList
-   * @see google.registry.model.registry.label.PremiumList
+   * @see google.registry.model.tld.label.ReservedList
+   * @see google.registry.model.tld.label.PremiumList
    */
   public static Duration getDomainLabelListCacheDuration() {
     return Duration.standardSeconds(CONFIG_SETTINGS.get().caching.domainLabelCachingSeconds);

@@ -25,7 +25,7 @@ import google.registry.beam.TestPipelineExtension;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
 import google.registry.testing.DatastoreEntityExtension;

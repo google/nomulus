@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
-import google.registry.model.registry.Registry.TldState;
+import google.registry.model.tld.Registry.TldState;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
 

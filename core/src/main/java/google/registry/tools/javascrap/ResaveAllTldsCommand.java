@@ -17,7 +17,7 @@ package google.registry.tools.javascrap;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.beust.jcommander.Parameters;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.tools.CommandWithRemoteApi;
 
 /** Scrap command to resave all Registry entities. */

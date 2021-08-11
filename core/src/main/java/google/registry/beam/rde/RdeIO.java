@@ -30,7 +30,7 @@ import google.registry.model.common.Cursor;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.model.rde.RdeRevision;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.rde.DepositFragment;
 import google.registry.rde.Ghostryde;
 import google.registry.rde.PendingDeposit;

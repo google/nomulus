@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.registry.label;
+package google.registry.model.tld.label;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -20,7 +20,7 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.config.RegistryConfig.getDomainLabelListCacheDuration;
-import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
+import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
@@ -39,8 +39,8 @@ import com.googlecode.objectify.annotation.Mapify;
 import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.DomainLabelMetrics.MetricsReservedListMatch;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.DomainLabelMetrics.MetricsReservedListMatch;
 import google.registry.schema.replay.NonReplicatedEntity;
 import java.io.Serializable;
 import java.util.List;

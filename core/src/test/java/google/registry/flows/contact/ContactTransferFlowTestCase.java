@@ -23,7 +23,7 @@ import google.registry.flows.Flow;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.AppEngineExtension;
 import org.joda.time.DateTime;

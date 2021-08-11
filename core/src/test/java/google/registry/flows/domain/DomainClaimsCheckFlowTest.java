@@ -14,7 +14,7 @@
 
 package google.registry.flows.domain;
 
-import static google.registry.model.registry.Registry.TldState.PREDELEGATION;
+import static google.registry.model.tld.Registry.TldState.PREDELEGATION;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.createTlds;
@@ -34,8 +34,8 @@ import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException
 import google.registry.flows.domain.DomainFlowUtils.TldDoesNotExistException;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.domain.DomainBase;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.Registry.TldState;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.Registry.TldState;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;

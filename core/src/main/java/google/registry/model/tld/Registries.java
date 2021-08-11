@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.model.registry;
+package google.registry.model.tld;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Predicates.equalTo;
@@ -36,7 +36,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
 import com.google.common.net.InternetDomainName;
 import com.googlecode.objectify.Key;
-import google.registry.model.registry.Registry.TldType;
+import google.registry.model.tld.Registry.TldType;
 import java.util.Optional;
 
 /** Utilities for finding and listing {@link Registry} entities. */

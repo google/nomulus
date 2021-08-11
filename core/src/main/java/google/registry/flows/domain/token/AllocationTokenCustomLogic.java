@@ -21,7 +21,7 @@ import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.model.domain.DomainCommand;
 import google.registry.model.domain.token.AllocationToken;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import org.joda.time.DateTime;
 
 /**

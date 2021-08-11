@@ -17,7 +17,7 @@ package google.registry.persistence.converter;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 
 import com.googlecode.objectify.Key;
-import google.registry.model.registry.label.ReservedList;
+import google.registry.model.tld.label.ReservedList;
 import javax.persistence.Converter;
 
 /** JPA converter for a set of {@link Key} containing a {@link ReservedList} */

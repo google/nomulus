@@ -16,7 +16,7 @@ package google.registry.reporting.icann;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.MediaType.CSV_UTF_8;
-import static google.registry.model.registry.Registries.assertTldExists;
+import static google.registry.model.tld.Registries.assertTldExists;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.api.client.http.ByteArrayContent;

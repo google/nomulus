@@ -34,7 +34,7 @@ import com.google.common.testing.TestLogHandler;
 import google.registry.gcs.GcsUtils;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;

@@ -23,7 +23,7 @@ import com.beust.jcommander.Parameters;
 import com.googlecode.objectify.Key;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 
 /**
  * Command to re-save all environment entities to ensure that they have valid commit logs.

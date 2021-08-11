@@ -15,7 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
+import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.TestDataHelper.loadFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -25,9 +25,9 @@ import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 import com.google.common.truth.Truth8;
-import google.registry.model.registry.label.ReservedList;
-import google.registry.model.registry.label.ReservedList.ReservedListEntry;
-import google.registry.model.registry.label.ReservedListDao;
+import google.registry.model.tld.label.ReservedList;
+import google.registry.model.tld.label.ReservedList.ReservedListEntry;
+import google.registry.model.tld.label.ReservedListDao;
 import java.io.File;
 import java.io.IOException;
 import org.joda.time.DateTime;

@@ -22,8 +22,8 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.Registry.TldType;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.Registry.TldType;
 import google.registry.persistence.transaction.QueryComposer.Comparator;
 
 /**

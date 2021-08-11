@@ -18,8 +18,8 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.ReservedList;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import java.util.Optional;

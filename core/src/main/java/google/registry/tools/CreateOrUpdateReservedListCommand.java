@@ -16,8 +16,8 @@ package google.registry.tools;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.flogger.FluentLogger;
-import google.registry.model.registry.label.ReservedList;
-import google.registry.model.registry.label.ReservedListDao;
+import google.registry.model.tld.label.ReservedList;
+import google.registry.model.tld.label.ReservedListDao;
 import google.registry.tools.params.PathParameter;
 import java.nio.file.Path;
 import javax.annotation.Nullable;

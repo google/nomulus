@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.registry.label.ReservationType.FULLY_BLOCKED;
+import static google.registry.model.tld.label.ReservationType.FULLY_BLOCKED;
 import static google.registry.testing.DatabaseHelper.createTlds;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -24,8 +24,8 @@ import static google.registry.tools.CreateReservedListCommand.INVALID_FORMAT_ERR
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.io.Files;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.ReservedList;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.ReservedList;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;

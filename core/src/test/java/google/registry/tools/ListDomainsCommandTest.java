@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.MediaType;
-import google.registry.model.registry.Registry.TldType;
+import google.registry.model.tld.Registry.TldType;
 import google.registry.tools.server.ListDomainsAction;
 import org.junit.jupiter.api.Test;
 import org.mockito.junit.jupiter.MockitoSettings;

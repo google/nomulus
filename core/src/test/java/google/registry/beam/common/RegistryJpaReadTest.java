@@ -36,7 +36,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.registrar.Registrar;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTestRules;

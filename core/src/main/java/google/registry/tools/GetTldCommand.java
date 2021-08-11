@@ -14,11 +14,11 @@
 
 package google.registry.tools;
 
-import static google.registry.model.registry.Registries.assertTldsExist;
+import static google.registry.model.tld.Registries.assertTldsExist;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import java.util.List;
 
 /** Command to show a TLD record. */

@@ -31,7 +31,7 @@ import com.google.common.net.MediaType;
 import com.google.gson.Gson;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
-import google.registry.model.registry.RegistryLockDao;
+import google.registry.model.tld.RegistryLockDao;
 import google.registry.request.Action;
 import google.registry.request.Action.Method;
 import google.registry.request.Parameter;

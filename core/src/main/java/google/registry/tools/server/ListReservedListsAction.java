@@ -20,8 +20,8 @@ import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.registry.label.ReservedList;
-import google.registry.model.registry.label.ReservedListDao;
+import google.registry.model.tld.label.ReservedList;
+import google.registry.model.tld.label.ReservedListDao;
 import google.registry.request.Action;
 import google.registry.request.auth.Auth;
 import java.util.Comparator;

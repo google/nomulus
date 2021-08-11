@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.nullToEmpty;
 import static com.google.common.collect.Maps.filterValues;
 import static com.google.common.io.Resources.getResource;
-import static google.registry.model.registry.Registries.findTldForNameOrThrow;
+import static google.registry.model.tld.Registries.findTldForNameOrThrow;
 import static google.registry.tools.CommandUtilities.addHeader;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 import static google.registry.xml.XmlTransformer.prettyPrint;

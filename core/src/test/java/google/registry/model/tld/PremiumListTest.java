@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.tld;
+package google.registry.model.tld;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.hash.BloomFilter;
-import google.registry.model.registry.label.PremiumList;
+import google.registry.model.tld.label.PremiumList;
 import google.registry.testing.DatastoreEntityExtension;
 import java.math.BigDecimal;
 import org.joda.money.CurrencyUnit;

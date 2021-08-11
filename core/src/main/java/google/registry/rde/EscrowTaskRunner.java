@@ -20,7 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerUtil.tra
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
-import google.registry.model.registry.Registry;
+import google.registry.model.tld.Registry;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.HttpException.ServiceUnavailableException;
 import google.registry.request.lock.LockHandler;

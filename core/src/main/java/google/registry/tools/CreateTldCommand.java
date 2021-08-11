@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static google.registry.model.registry.Registries.getTlds;
+import static google.registry.model.tld.Registries.getTlds;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -26,8 +26,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Maps;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.Registry.TldState;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.Registry.TldState;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;

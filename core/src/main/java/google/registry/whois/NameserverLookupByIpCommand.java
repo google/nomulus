@@ -27,7 +27,7 @@ import com.google.common.collect.Streams;
 import com.google.common.net.InetAddresses;
 import com.google.common.net.InternetDomainName;
 import google.registry.model.host.HostResource;
-import google.registry.model.registry.Registries;
+import google.registry.model.tld.Registries;
 import java.net.InetAddress;
 import org.joda.time.DateTime;
 

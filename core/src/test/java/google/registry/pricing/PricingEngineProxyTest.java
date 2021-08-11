@@ -26,8 +26,8 @@ import static org.joda.money.CurrencyUnit.USD;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.PremiumList;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.PremiumList;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.Clock;

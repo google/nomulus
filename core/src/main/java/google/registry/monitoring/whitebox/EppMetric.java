@@ -20,7 +20,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import google.registry.model.eppoutput.Result.Code;
-import google.registry.model.registry.Registries;
+import google.registry.model.tld.Registries;
 import google.registry.util.Clock;
 import java.util.Optional;
 import org.joda.time.DateTime;

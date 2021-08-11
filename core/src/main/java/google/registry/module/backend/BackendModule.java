@@ -14,8 +14,8 @@
 
 package google.registry.module.backend;
 
-import static google.registry.model.registry.Registries.assertTldExists;
-import static google.registry.model.registry.Registries.assertTldsExist;
+import static google.registry.model.tld.Registries.assertTldExists;
+import static google.registry.model.tld.Registries.assertTldsExist;
 import static google.registry.request.RequestParameters.extractOptionalDatetimeParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfParameters;

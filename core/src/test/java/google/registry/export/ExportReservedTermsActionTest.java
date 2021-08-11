@@ -32,8 +32,8 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.MediaType;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.ReservedList;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.ReservedList;
 import google.registry.request.Response;
 import google.registry.storage.drive.DriveConnection;
 import google.registry.testing.AppEngineExtension;

@@ -16,10 +16,10 @@ package google.registry.export;
 
 import com.google.common.base.Joiner;
 import google.registry.config.RegistryConfig.Config;
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.ReservedList;
-import google.registry.model.registry.label.ReservedList.ReservedListEntry;
-import google.registry.model.registry.label.ReservedListDao;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.ReservedList;
+import google.registry.model.tld.label.ReservedList.ReservedListEntry;
+import google.registry.model.tld.label.ReservedListDao;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.inject.Inject;

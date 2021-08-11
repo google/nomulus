@@ -13,4 +13,4 @@
 // limitations under the License.
 
 @javax.annotation.ParametersAreNonnullByDefault
-package google.registry.model.registry.label;
+package google.registry.model.tld.label;

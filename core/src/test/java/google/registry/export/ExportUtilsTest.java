@@ -19,8 +19,8 @@ import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistReservedList;
 import static google.registry.testing.DatabaseHelper.persistResource;
 
-import google.registry.model.registry.Registry;
-import google.registry.model.registry.label.ReservedList;
+import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.ReservedList;
 import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
