@@ -73,8 +73,8 @@
     <class>google.registry.model.tmch.ClaimsEntry</class>
     <class>google.registry.model.tmch.TmchCrl</class>
     <class>google.registry.persistence.transaction.TransactionEntity</class>
-    <class>google.registry.schema.domain.RegistryLock</class>
-    <class>google.registry.schema.replay.SqlReplayCheckpoint</class>
+    <class>google.registry.model.domain.RegistryLock</class>
+    <class>google.registry.model.replay.SqlReplayCheckpoint</class>
 
     <!-- Customized type converters -->
     <class>google.registry.persistence.converter.AllocationTokenStatusTransitionConverter</class>

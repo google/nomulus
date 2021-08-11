@@ -12,12 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import java.util.Optional;
 
-/** An entity that is only stored in Datastore, that should not be replayed to SQL. */
-public interface DatastoreOnlyEntity extends DatastoreEntity {
+/**
+ * Represents an entity that should not participate in asynchronous replication.
+ *
+ * <p>We expect that this is a result of the entity being dually-written.
+ */
+public interface NonReplicatedEntity extends DatastoreEntity, SqlEntity {
+
+  @Override
+  default Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.empty();
+  }
+
   @Override
   default Optional<SqlEntity> toSqlEntity() {
     return Optional.empty();

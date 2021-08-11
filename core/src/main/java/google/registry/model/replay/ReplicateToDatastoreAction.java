@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;

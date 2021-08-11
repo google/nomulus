@@ -22,7 +22,7 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.schema.replay.EntityTest.EntityForTesting;
+import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;

@@ -14,7 +14,7 @@
 
 package google.registry.persistence.transaction;
 
-import google.registry.schema.replay.SqlOnlyEntity;
+import google.registry.model.replay.SqlOnlyEntity;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;

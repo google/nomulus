@@ -18,10 +18,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import google.registry.model.ImmutableObject;
+import google.registry.model.replay.EntityTest;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
-import google.registry.schema.replay.EntityTest;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.LocalDate;

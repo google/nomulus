@@ -21,7 +21,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
-import google.registry.schema.replay.SqlOnlyEntity;
+import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.util.DomainNameUtils;
 import java.util.Set;
 import javax.persistence.Column;

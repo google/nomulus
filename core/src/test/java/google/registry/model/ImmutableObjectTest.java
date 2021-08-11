@@ -29,7 +29,7 @@ import com.google.common.collect.Iterables;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import google.registry.schema.replay.EntityTest.EntityForTesting;
+import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import google.registry.util.CidrAddressBlock;
 import java.lang.reflect.Field;

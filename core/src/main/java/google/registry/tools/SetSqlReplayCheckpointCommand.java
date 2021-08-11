@@ -20,7 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.Iterables;
-import google.registry.schema.replay.SqlReplayCheckpoint;
+import google.registry.model.replay.SqlReplayCheckpoint;
 import java.util.List;
 import org.joda.time.DateTime;
 

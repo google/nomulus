@@ -654,6 +654,10 @@ enum google.registry.model.registrar.RegistrarContact$Type {
   TECH;
   WHOIS;
 }
+class google.registry.model.replay.LastSqlTransaction {
+  @Id long id;
+  long transactionId;
+}
 class google.registry.model.reporting.DomainTransactionRecord {
   google.registry.model.reporting.DomainTransactionRecord$TransactionReportField reportField;
   java.lang.Integer reportAmount;
@@ -905,8 +909,4 @@ class google.registry.persistence.BillingVKey$BillingRecurrenceVKey {
 class google.registry.persistence.DomainHistoryVKey {
   java.lang.Long historyRevisionId;
   java.lang.String repoId;
-}
-class google.registry.schema.replay.LastSqlTransaction {
-  @Id long id;
-  long transactionId;
 }

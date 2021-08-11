@@ -18,10 +18,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.collect.ImmutableList;
-import google.registry.schema.domain.RegistryLock;
+import google.registry.model.domain.RegistryLock;
 import java.util.Optional;
 
-/** Data access object for {@link google.registry.schema.domain.RegistryLock}. */
+/** Data access object for {@link RegistryLock}. */
 public final class RegistryLockDao {
 
   /** Returns the {@link RegistryLock} referred to by this revision ID, or empty if none exists. */

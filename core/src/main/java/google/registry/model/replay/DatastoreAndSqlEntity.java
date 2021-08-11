@@ -12,24 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import java.util.Optional;
 
-/**
- * Represents an entity that should not participate in asynchronous replication.
- *
- * <p>We expect that this is a result of the entity being dually-written.
- */
-public interface NonReplicatedEntity extends DatastoreEntity, SqlEntity {
+/** An entity that has the same Java object representation in SQL and Datastore. */
+public interface DatastoreAndSqlEntity extends DatastoreEntity, SqlEntity {
 
   @Override
   default Optional<DatastoreEntity> toDatastoreEntity() {
-    return Optional.empty();
+    return Optional.of(this);
   }
 
   @Override
   default Optional<SqlEntity> toSqlEntity() {
-    return Optional.empty();
+    return Optional.of(this);
   }
 }

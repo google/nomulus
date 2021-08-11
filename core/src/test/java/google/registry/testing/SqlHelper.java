@@ -21,9 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import google.registry.model.domain.RegistryLock;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.RegistryLockDao;
-import google.registry.schema.domain.RegistryLock;
 import java.sql.SQLException;
 import java.util.Optional;
 import javax.persistence.PersistenceException;
