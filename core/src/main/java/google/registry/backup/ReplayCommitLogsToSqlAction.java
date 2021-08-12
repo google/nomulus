@@ -58,6 +58,7 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.joda.time.Seconds;
 
 /** Action that replays commit logs to Cloud SQL to keep it up to date. */
 @Action(
@@ -97,7 +98,8 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
 
   @Override
   public void run() {
-    MigrationState state = DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc());
+    DateTime startTime = clock.nowUtc();
+    MigrationState state = DatabaseMigrationStateSchedule.getValueAtTime(startTime);
     if (!state.getReplayDirection().equals(ReplayDirection.DATASTORE_TO_SQL)) {
       String message =
           String.format(
@@ -126,7 +128,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
       if (dryRun) {
         resultMessage = executeDryRun();
       } else {
-        resultMessage = replayFiles();
+        resultMessage = replayFiles(startTime);
       }
       response.setStatus(SC_OK);
       response.setPayload(resultMessage);
@@ -160,10 +162,11 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
         fileBatch.stream().limit(10).collect(toImmutableList()));
   }
 
-  private String replayFiles() {
-    DateTime replayTimeoutTime = clock.nowUtc().plus(REPLAY_TIMEOUT_DURATION);
+  private String replayFiles(DateTime startTime) {
+    DateTime replayTimeoutTime = startTime.plus(REPLAY_TIMEOUT_DURATION);
     DateTime searchStartTime = jpaTm().transact(() -> SqlReplayCheckpoint.get().plusMillis(1));
     int filesProcessed = 0;
+    int transactionsProcessed = 0;
     // Starting from one millisecond after the last file we processed, search for and import files
     // one hour at a time until we catch up to the current time or we hit the replay timeout (in
     // which case the next run will pick up from where we leave off).
@@ -171,12 +174,12 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
     // We use hour-long batches because GCS supports filename prefix-based searches.
     while (true) {
       if (isAtOrAfter(clock.nowUtc(), replayTimeoutTime)) {
-        return String.format(
-            "Reached max execution time after replaying %d file(s).", filesProcessed);
+        return createResponseString(
+            "Reached max execution time", startTime, filesProcessed, transactionsProcessed);
       }
       if (isBeforeOrAt(clock.nowUtc(), searchStartTime)) {
-        return String.format(
-            "Caught up to current time after replaying %d file(s).", filesProcessed);
+        return createResponseString(
+            "Caught up to current time", startTime, filesProcessed, transactionsProcessed);
       }
       // Search through the end of the hour
       DateTime searchEndTime =
@@ -189,18 +192,32 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
             searchStartTime.toString("yyyy-MM-dd HH"));
       }
       for (BlobInfo file : fileBatch) {
-        processFile(file);
+        transactionsProcessed += processFile(file);
         filesProcessed++;
         if (clock.nowUtc().isAfter(replayTimeoutTime)) {
-          return String.format(
-              "Reached max execution time after replaying %d file(s).", filesProcessed);
+          return createResponseString(
+              "Reached max execution time", startTime, filesProcessed, transactionsProcessed);
         }
       }
       searchStartTime = searchEndTime.plusMillis(1);
     }
   }
 
-  private void processFile(BlobInfo metadata) {
+  private String createResponseString(
+      String msg, DateTime startTime, int filesProcessed, int transactionsProcessed) {
+    double tps =
+        (double) transactionsProcessed
+            / (double) Seconds.secondsBetween(startTime, clock.nowUtc()).getSeconds();
+    return String.format(
+        "%s after replaying %d file(s) containing %d total transaction(s) (%.2f tx/s).",
+        msg, filesProcessed, transactionsProcessed, tps);
+  }
+
+  /**
+   * Replays the commit logs in the given commit log file and returns the number of transactions
+   * committed.
+   */
+  private int processFile(BlobInfo metadata) {
     try (InputStream input = gcsUtils.openInputStream(metadata.getBlobId())) {
       // Load and process the Datastore transactions one at a time
       ImmutableList<ImmutableList<VersionedEntity>> allTransactions =
@@ -213,6 +230,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
       logger.atInfo().log(
           "Replayed %d transactions from commit log file %s with size %d B.",
           allTransactions.size(), metadata.getName(), metadata.getSize());
+      return allTransactions.size();
     } catch (IOException e) {
       throw new RuntimeException(
           "Errored out while replaying commit log file " + metadata.getName(), e);
