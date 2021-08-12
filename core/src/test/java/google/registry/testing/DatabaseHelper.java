@@ -35,7 +35,6 @@ import static google.registry.model.ResourceTransferUtils.createTransferResponse
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.ofyTmOrDoNothing;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
@@ -1373,7 +1372,7 @@ public class DatabaseHelper {
    */
   public static void setMigrationScheduleToSqlPrimary(FakeClock fakeClock) {
     DateTime now = fakeClock.nowUtc();
-    ofyTm()
+    jpaTm()
         .transact(
             () ->
                 DatabaseMigrationStateSchedule.set(
@@ -1392,12 +1391,12 @@ public class DatabaseHelper {
   /** Removes the database migration schedule, in essence transitioning to DATASTORE_ONLY. */
   public static void removeDatabaseMigrationSchedule() {
     // use the raw calls because going SQL_PRIMARY -> DATASTORE_ONLY is not valid
-    ofyTm()
+    jpaTm()
         .transact(
             () ->
-                ofyTm()
+                jpaTm()
                     .loadSingleton(DatabaseMigrationStateSchedule.class)
-                    .ifPresent(ofyTm()::delete));
+                    .ifPresent(jpaTm()::delete));
     DatabaseMigrationStateSchedule.CACHE.invalidateAll();
   }
 

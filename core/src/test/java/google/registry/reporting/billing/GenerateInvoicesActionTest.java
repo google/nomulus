@@ -37,7 +37,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class GenerateInvoicesActionTest extends BeamActionTestBase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final BillingEmailUtils emailUtils = mock(BillingEmailUtils.class);
   private FakeClock clock = new FakeClock();

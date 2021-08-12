@@ -41,6 +41,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 public class JpaTestRules {
 
   private static final String GOLDEN_SCHEMA_SQL_PATH = "sql/schema/nomulus.golden.sql";
+  private static final String HSTORE_EXTENSION_SQL_PATH =
+      "sql/flyway/V14__load_extension_for_hstore.sql";
 
   /**
    * Junit rule for integration tests with JPA framework, when the underlying database is populated
@@ -174,7 +176,8 @@ public class JpaTestRules {
           "Unit tests must not depend on the Nomulus schema.");
       return new JpaUnitTestExtension(
           clock == null ? new FakeClock(DateTime.now(UTC)) : clock,
-          Optional.ofNullable(initScript),
+          // Use the hstore extension by default so we can save the migration schedule
+          Optional.of(initScript == null ? HSTORE_EXTENSION_SQL_PATH : initScript),
           ImmutableList.copyOf(extraEntityClasses),
           ImmutableMap.copyOf(userProperties));
     }

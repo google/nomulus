@@ -196,7 +196,7 @@ public class ReplicateToDatastoreActionTest {
   void testNotInMigrationState_doesNothing() {
     // set a schedule that backtracks the current status to DATASTORE_PRIMARY_READ_ONLY
     DateTime now = fakeClock.nowUtc();
-    ofyTm()
+    jpaTm()
         .transact(
             () ->
                 DatabaseMigrationStateSchedule.set(
