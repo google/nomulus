@@ -65,7 +65,8 @@ import org.joda.time.DateTime;
       @Index(columnList = "domainName"),
       @Index(columnList = "techContact"),
       @Index(columnList = "tld"),
-      @Index(columnList = "registrantContact")
+      @Index(columnList = "registrantContact"),
+      @Index(columnList = "dnsRefreshRequestTime")
     })
 @WithStringVKey
 @ExternalMessagingName("domain")
