@@ -20,8 +20,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.model.ImmutableObject;
+import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.persistence.VKey;
-import google.registry.schema.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import java.net.InetAddress;
 import java.util.Set;

@@ -23,7 +23,7 @@ import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.schema.replay.DatastoreOnlyEntity;
+import google.registry.model.replay.DatastoreOnlyEntity;
 import org.joda.time.DateTime;
 
 /** Singleton parent entity for all commit log checkpoints. */

@@ -12,21 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import java.util.Optional;
 
 /**
- * An object that can be stored in Cloud SQL using {@link
- * javax.persistence.EntityManager#persist(Object)}
+ * An object that can be stored in Datastore and serialized using Objectify's {@link
+ * com.googlecode.objectify.cmd.Saver#toEntity(Object)} code.
  *
- * <p>This will be used when replaying SQL transactions into Datastore, during the second,
- * SQL-primary, phase of the migration from Datastore to SQL.
+ * <p>This is used when replaying {@link google.registry.model.ofy.CommitLogManifest}s to import
+ * transactions and data into the secondary SQL store during the first, Datastore-primary, phase of
+ * the migration.
  */
-public interface SqlEntity {
+public interface DatastoreEntity {
 
-  Optional<DatastoreEntity> toDatastoreEntity();
-
-  /** A method that will ber called before the object is saved to SQL in asynchronous replay. */
-  default void beforeSqlSaveOnReplay() {}
+  Optional<SqlEntity> toSqlEntity();
 }

@@ -33,7 +33,7 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.schema.replay.DatastoreOnlyEntity;
+import google.registry.model.replay.DatastoreOnlyEntity;
 import google.registry.util.NonFinalForTesting;
 import java.util.Random;
 import java.util.function.Supplier;

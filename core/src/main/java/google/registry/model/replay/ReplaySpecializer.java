@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import google.registry.persistence.VKey;
 import java.lang.reflect.InvocationTargetException;

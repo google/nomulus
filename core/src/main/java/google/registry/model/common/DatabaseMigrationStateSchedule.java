@@ -33,7 +33,7 @@ import com.googlecode.objectify.annotation.Mapify;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.common.TimedTransitionProperty.TimeMapper;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
-import google.registry.schema.replay.DatastoreOnlyEntity;
+import google.registry.model.replay.DatastoreOnlyEntity;
 import java.time.Duration;
 import java.util.Optional;
 import org.joda.time.DateTime;

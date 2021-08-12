@@ -22,7 +22,7 @@ import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
-import google.registry.schema.replay.DatastoreAndSqlEntity;
+import google.registry.model.replay.DatastoreAndSqlEntity;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;

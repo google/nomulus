@@ -23,9 +23,9 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.common.EntityGroupRoot;
+import google.registry.model.replay.DatastoreAndSqlEntity;
+import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.persistence.VKey;
-import google.registry.schema.replay.DatastoreAndSqlEntity;
-import google.registry.schema.replay.EntityTest.EntityForTesting;
 import javax.persistence.Transient;
 
 /** A test model object that can be persisted in any entity group. */

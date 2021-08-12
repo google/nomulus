@@ -18,9 +18,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
+import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
-import google.registry.schema.replay.EntityTest.EntityForTesting;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;

@@ -15,7 +15,7 @@
 package google.registry.model.tmch;
 
 import google.registry.model.ImmutableObject;
-import google.registry.schema.replay.NonReplicatedEntity;
+import google.registry.model.replay.NonReplicatedEntity;
 import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;

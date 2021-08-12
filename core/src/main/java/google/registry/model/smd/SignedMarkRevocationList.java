@@ -21,7 +21,7 @@ import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
-import google.registry.schema.replay.SqlOnlyEntity;
+import google.registry.model.replay.SqlOnlyEntity;
 import java.util.Map;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;

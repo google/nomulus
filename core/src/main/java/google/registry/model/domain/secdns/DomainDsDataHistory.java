@@ -17,7 +17,7 @@ package google.registry.model.domain.secdns;
 import static google.registry.model.IdService.allocateId;
 
 import google.registry.model.domain.DomainHistory;
-import google.registry.schema.replay.SqlOnlyEntity;
+import google.registry.model.replay.SqlOnlyEntity;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;

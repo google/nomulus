@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import java.util.Optional;
 
-/** An entity that has the same Java object representation in SQL and Datastore. */
-public interface DatastoreAndSqlEntity extends DatastoreEntity, SqlEntity {
+/**
+ * An object that can be stored in Cloud SQL using {@link
+ * javax.persistence.EntityManager#persist(Object)}
+ *
+ * <p>This will be used when replaying SQL transactions into Datastore, during the second,
+ * SQL-primary, phase of the migration from Datastore to SQL.
+ */
+public interface SqlEntity {
 
-  @Override
-  default Optional<DatastoreEntity> toDatastoreEntity() {
-    return Optional.of(this);
-  }
+  Optional<DatastoreEntity> toDatastoreEntity();
 
-  @Override
-  default Optional<SqlEntity> toSqlEntity() {
-    return Optional.of(this);
-  }
+  /** A method that will ber called before the object is saved to SQL in asynchronous replay. */
+  default void beforeSqlSaveOnReplay() {}
 }

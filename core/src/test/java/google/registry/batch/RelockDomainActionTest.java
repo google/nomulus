@@ -41,8 +41,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.RegistryLock;
 import google.registry.model.host.HostResource;
-import google.registry.schema.domain.RegistryLock;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DeterministicStringGenerator;
 import google.registry.testing.DualDatabaseTest;

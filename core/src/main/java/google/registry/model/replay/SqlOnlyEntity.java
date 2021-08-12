@@ -1,4 +1,4 @@
-// Copyright 2020 The Nomulus Authors. All Rights Reserved.
+// Copyright 2021 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import java.util.Optional;
 
-/**
- * An object that can be stored in Datastore and serialized using Objectify's {@link
- * com.googlecode.objectify.cmd.Saver#toEntity(Object)} code.
- *
- * <p>This is used when replaying {@link google.registry.model.ofy.CommitLogManifest}s to import
- * transactions and data into the secondary SQL store during the first, Datastore-primary, phase of
- * the migration.
- */
-public interface DatastoreEntity {
-
-  Optional<SqlEntity> toSqlEntity();
+/** An entity that is only stored in SQL, that should not be replayed to Datastore. */
+public interface SqlOnlyEntity extends SqlEntity {
+  @Override
+  default Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.empty();
+  }
 }

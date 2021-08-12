@@ -39,6 +39,7 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.replay.LastSqlTransaction;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
@@ -48,7 +49,6 @@ import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsList.ClaimsListRevision;
 import google.registry.model.tmch.ClaimsList.ClaimsListSingleton;
 import google.registry.model.tmch.TmchCrl;
-import google.registry.schema.replay.LastSqlTransaction;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
 public final class EntityClasses {

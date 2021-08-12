@@ -19,7 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.Assert.assertThrows;
 
-import google.registry.schema.replay.SqlReplayCheckpoint;
+import google.registry.model.replay.SqlReplayCheckpoint;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 

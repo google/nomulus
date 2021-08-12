@@ -27,7 +27,7 @@ import static google.registry.testing.SqlHelper.saveRegistryLock;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
-import google.registry.schema.domain.RegistryLock;
+import google.registry.model.domain.RegistryLock;
 import java.util.Optional;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
