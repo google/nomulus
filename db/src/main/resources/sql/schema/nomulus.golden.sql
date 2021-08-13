@@ -398,7 +398,8 @@ CREATE TABLE public."Domain" (
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    transfer_billing_cancellation_history_id bigint
+    transfer_billing_cancellation_history_id bigint,
+    dns_refresh_request_time timestamp with time zone
 );
 
 
@@ -490,7 +491,8 @@ CREATE TABLE public."DomainHistory" (
     transfer_history_entry_id bigint,
     transfer_repo_id text,
     transfer_poll_message_id_3 bigint,
-    transfer_billing_cancellation_history_id bigint
+    transfer_billing_cancellation_history_id bigint,
+    dns_refresh_request_time timestamp with time zone
 );
 
 
@@ -1478,6 +1480,13 @@ CREATE INDEX allocation_token_domain_name_idx ON public."AllocationToken" USING 
 --
 
 CREATE UNIQUE INDEX database_migration_state_schedule_singleton ON public."DatabaseMigrationStateSchedule" USING btree ((true));
+
+
+--
+-- Name: domain_dns_refresh_request_time_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domain_dns_refresh_request_time_idx ON public."Domain" USING btree (dns_refresh_request_time);
 
 
 --
