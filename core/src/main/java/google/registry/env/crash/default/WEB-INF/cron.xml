@@ -147,9 +147,6 @@
     <target>backend</target>
   </cron>
 
-  <!--
-    Removed for the duration of load testing
-    TODO(b/71607184): Restore after loadtesting is done
   <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/deleteProberData&runInEmpty]]></url>
     <description>
@@ -159,7 +156,6 @@
     <timezone>UTC</timezone>
     <target>backend</target>
   </cron>
-  -->
 
   <!-- TODO: Add borgmon job to check that these files are created and updated successfully. -->
   <cron>
@@ -200,12 +196,24 @@
     <target>backend</target>
   </cron>
 
+  <!--
+    The next two wipeout jobs are required when crash has production data.
+   -->
   <cron>
-    <url><![CDATA[/_dr/cron/fanout?queue=replay-commit-logs-to-sql&endpoint=/_dr/task/replayCommitLogsToSql&runInEmpty]]></url>
+    <url><![CDATA[/_dr/task/wipeOutCloudSql]]></url>
     <description>
-      Replays recent commit logs from Datastore to the SQL secondary backend.
+      This job runs an action that deletes all data in Cloud SQL.
     </description>
-    <schedule>every 3 minutes</schedule>
+    <schedule>every saturday 03:07</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/task/wipeOutDatastore]]></url>
+    <description>
+      This job runs an action that deletes all data in Cloud Datastore.
+    </description>
+    <schedule>every saturday 03:07</schedule>
     <target>backend</target>
   </cron>
 </cronentries>
