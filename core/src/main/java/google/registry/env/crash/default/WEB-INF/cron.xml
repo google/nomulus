@@ -102,6 +102,7 @@
     <target>backend</target>
   </cron>
 
+  <!-- Disabled for sql-only tests.
   <cron>
     <url><![CDATA[/_dr/cron/commitLogCheckpoint]]></url>
     <description>
@@ -110,6 +111,7 @@
     <schedule>every 3 minutes synchronized</schedule>
     <target>backend</target>
   </cron>
+  -->
 
   <cron>
     <url><![CDATA[/_dr/task/deleteContactsAndHosts]]></url>
@@ -133,6 +135,7 @@
     <target>backend</target>
   </cron>
 
+  <!-- Disabled for sql-only tests
   <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=export-snapshot&endpoint=/_dr/task/backupDatastore&runInEmpty]]></url>
     <description>
@@ -142,10 +145,11 @@
     </description>
     <!--
       Keep google.registry.export.CheckBackupAction.MAXIMUM_BACKUP_RUNNING_TIME less than
-      this interval. -->
+      this interval. - ->
     <schedule>every day 06:00</schedule>
     <target>backend</target>
   </cron>
+  -->
 
   <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/deleteProberData&runInEmpty]]></url>
