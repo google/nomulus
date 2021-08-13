@@ -223,7 +223,7 @@ public final class ReservedList
    * @return An Optional&lt;ReservedList&gt; that has a value if a reserved list exists by the given
    *     name, or absent if not.
    * @throws UncheckedExecutionException if some other error occurs while trying to load the
-   *     ReservedList from the cache or Datastore.
+   *     ReservedList from the cache or database.
    */
   public static Optional<ReservedList> get(String listName) {
     return getFromCache(listName, cache);

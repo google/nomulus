@@ -38,7 +38,6 @@ import static org.mockito.Mockito.verify;
 
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth8;
@@ -422,8 +421,6 @@ public class ReplayCommitLogsToSqlActionTest {
 
     createTld("tld");
     // Have a commit log with a couple objects that shouldn't be replayed
-    ReservedList reservedList =
-        new ReservedList.Builder().setReservedListMap(ImmutableMap.of()).setName("name").build();
     ForeignKeyIndex<DomainBase> fki = ForeignKeyIndex.create(newDomainBase("foo.tld"), now);
     tm().transact(
             () -> {
