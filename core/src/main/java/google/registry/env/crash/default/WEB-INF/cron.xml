@@ -200,6 +200,17 @@
     <target>backend</target>
   </cron>
 
+  <!-- Disabled for sql-only tests.
+  <cron>
+    <url><![CDATA[/_dr/cron/fanout?queue=replay-commit-logs-to-sql&endpoint=/_dr/task/replayCommitLogsToSql&runInEmpty]]></url>
+    <description>
+      Replays recent commit logs from Datastore to the SQL secondary backend.
+    </description>
+    <schedule>every 3 minutes</schedule>
+    <target>backend</target>
+  </cron>
+  -->
+
   <!--
     The next two wipeout jobs are required when crash has production data.
    -->
