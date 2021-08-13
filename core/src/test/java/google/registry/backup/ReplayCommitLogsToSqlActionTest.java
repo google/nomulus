@@ -61,6 +61,7 @@ import google.registry.model.server.Lock;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.model.tld.label.ReservedList;
+import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.persistence.VKey;
@@ -108,6 +109,8 @@ public class ReplayCommitLogsToSqlActionTest {
               PremiumList.class,
               PremiumEntry.class,
               RegistrarContact.class,
+              ReservedList.class,
+              ReservedListEntry.class,
               SqlReplayCheckpoint.class,
               TestObject.class)
           .build();
@@ -430,8 +433,6 @@ public class ReplayCommitLogsToSqlActionTest {
                     createCheckpoint(now.minusMinutes(1)),
                     CommitLogManifest.create(
                         getBucketKey(1), now.minusMinutes(1), ImmutableSet.of()),
-                    // Reserved list is dually-written non-replicated
-                    CommitLogMutation.create(manifestKey, reservedList),
                     // FKIs aren't replayed to SQL at all
                     CommitLogMutation.create(manifestKey, fki));
               } catch (IOException e) {

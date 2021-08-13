@@ -789,26 +789,6 @@ enum google.registry.model.tld.Registry$TldType {
   REAL;
   TEST;
 }
-enum google.registry.model.tld.label.ReservationType {
-  ALLOWED_IN_SUNRISE;
-  FULLY_BLOCKED;
-  NAME_COLLISION;
-  RESERVED_FOR_ANCHOR_TENANT;
-  RESERVED_FOR_SPECIFIC_USE;
-}
-class google.registry.model.tld.label.ReservedList {
-  @Id java.lang.String name;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  boolean shouldPublish;
-  java.util.Map<java.lang.String, google.registry.model.tld.label.ReservedList$ReservedListEntry> reservedListMap;
-  org.joda.time.DateTime creationTimestamp;
-}
-class google.registry.model.tld.label.ReservedList$ReservedListEntry {
-  @Id java.lang.String domainLabel;
-  google.registry.model.tld.label.ReservationType reservationType;
-  java.lang.Long revisionId;
-  java.lang.String comment;
-}
 class google.registry.model.tmch.ClaimsList {
   @Id long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsList$ClaimsListRevision> parent;

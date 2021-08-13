@@ -26,7 +26,8 @@ import javax.annotation.Nullable;
  * Base class for specification of command line parameters common to creating and updating reserved
  * lists.
  */
-public abstract class CreateOrUpdateReservedListCommand extends MutatingCommand {
+public abstract class CreateOrUpdateReservedListCommand extends ConfirmingCommand
+    implements CommandWithRemoteApi {
 
   static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

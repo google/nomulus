@@ -33,13 +33,9 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Mapify;
-import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.Buildable;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.model.replay.NonReplicatedEntity;
+import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.DomainLabelMetrics.MetricsReservedListMatch;
 import java.io.Serializable;
@@ -65,13 +61,12 @@ import org.joda.time.DateTime;
  * succeeds, we will end up with having two exact same reserved lists that differ only by
  * revisionId. This is fine though, because we only use the list with the highest revisionId.
  */
-@Entity
 @ReportedOn
 @javax.persistence.Entity
 @Table(indexes = {@Index(columnList = "name", name = "reservedlist_name_idx")})
 public final class ReservedList
     extends BaseDomainLabelList<ReservationType, ReservedList.ReservedListEntry>
-    implements NonReplicatedEntity {
+    implements SqlOnlyEntity {
 
   /**
    * Mapping from domain name to its reserved list info.
@@ -80,7 +75,6 @@ public final class ReservedList
    * from the immutability contract so we can modify it after construction and we have to handle the
    * database processing on our own so we can detach it after load.
    */
-  @Mapify(ReservedListEntry.LabelMapper.class)
   @Insignificant
   @Transient
   Map<String, ReservedListEntry> reservedListMap;
@@ -121,10 +115,9 @@ public final class ReservedList
    * A reserved list entry entity, persisted to Datastore, that represents a single label and its
    * reservation type.
    */
-  @Embed
   @javax.persistence.Entity(name = "ReservedEntry")
   public static class ReservedListEntry extends DomainLabelEntry<ReservationType, ReservedListEntry>
-      implements Buildable, NonReplicatedEntity, Serializable {
+      implements Buildable, SqlOnlyEntity, Serializable {
 
     @Insignificant @Id Long revisionId;
 
@@ -132,15 +125,6 @@ public final class ReservedList
     ReservationType reservationType;
 
     String comment;
-
-    /** Mapper for use with @Mapify */
-    static class LabelMapper implements Mapper<String, ReservedListEntry> {
-
-      @Override
-      public String getKey(ReservedListEntry entry) {
-        return entry.getDomainLabel();
-      }
-    }
 
     public String getComment(String comment) {
       return comment;

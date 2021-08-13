@@ -25,15 +25,28 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.io.Files;
 import google.registry.model.tld.Registry;
+import google.registry.model.tld.label.PremiumList;
+import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.model.tld.label.ReservedList;
+import google.registry.model.tld.label.ReservedList.ReservedListEntry;
+import google.registry.testing.AppEngineExtension;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link CreateReservedListCommand}. */
 class CreateReservedListCommandTest
     extends CreateOrUpdateReservedListCommandTestCase<CreateReservedListCommand> {
+
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
+          .withJpaUnitTestEntities(
+              PremiumList.class, PremiumEntry.class, ReservedList.class, ReservedListEntry.class)
+          .withDatastoreAndCloudSql()
+          .build();
 
   @BeforeEach
   void beforeEach() {

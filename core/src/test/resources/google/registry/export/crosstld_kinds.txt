@@ -4,6 +4,5 @@ Cursor
 Registrar
 RegistrarContact
 Registry
-ReservedList
 ServerSecret
 TmchCrl

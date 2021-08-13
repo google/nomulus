@@ -161,6 +161,6 @@ class UpdateReservedListCommandTest
     command.input = Paths.get(reservedTermsPath);
     command.init();
 
-    assertThat(command.prompt()).contains("Update ReservedList@xn--q9jyb4c_common-reserved");
+    assertThat(command.prompt()).contains("Update reserved list for xn--q9jyb4c_common-reserved?");
   }
 }
