@@ -289,7 +289,7 @@ class InvoicingPipelineTest {
     setTmForTest(jpaTm());
     setupCloudSql();
     PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
-    billingEvents = billingEvents.apply(new changeDomainRepo());
+    billingEvents = billingEvents.apply(new ChangeDomainRepo());
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
     removeTmOverrideForTest();
@@ -590,7 +590,7 @@ class InvoicingPipelineTest {
     return persistResource(billingEventBuilder.build());
   }
 
-  private static class changeDomainRepo
+  private static class ChangeDomainRepo
       extends PTransform<PCollection<BillingEvent>, PCollection<BillingEvent>> {
     @Override
     public PCollection<BillingEvent> expand(PCollection<BillingEvent> input) {
