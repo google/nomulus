@@ -3,7 +3,7 @@
 This project contains Nomulus's Cloud SQL schema and schema-deployment
 utilities.
 
-### ER Diagrams
+### Entity Relationship (ER) diagrams
 
 The following links are the ER diagrams generated from the current SQL schema:
 
@@ -14,7 +14,7 @@ shows all columns, foreign keys and indexes.
 shows only significant columns, such as primary and foreign key columns, and 
 columns that are part of unique indexes.
 
-### Database Roles and Privileges
+### Database roles and privileges
 
 Nomulus uses the 'postgres' database in the 'public' schema. The following
 users/roles are defined:
@@ -31,14 +31,18 @@ users/roles are defined:
     *   Reporting job user and individual human readers may be granted this
         role.
 
-### Schema DDL Scripts
+### How to update the schema
 
 Currently we use Flyway for schema deployment. Versioned incremental update
 scripts are organized in the src/main/resources/sql/flyway folder. A Flyway
 'migration' task examines the target database instance, and makes sure that only
 changes not yet deployed are pushed.
 
-Below are the steps to submit a schema change:
+Because we have SQL integration tests enabled to ensure that deployments are
+rollback-safe, which prevent Java code from executing against a version of the
+schema it is incompatible with, you will need to commit your schema additions in
+two separate PRs, with a wait for a deployment in-between, as explained in the
+following steps:
 
 1.  Make your changes to entity classes, remembering to add new ones to
     `core/src/main/resources/META-INF/persistence.xml` so they'll be picked up.
@@ -76,6 +80,16 @@ Below are the steps to submit a schema change:
 
     You'll want to have a look at the diffs in the golden schema to verify that
     all changes are intentional.
+6.  Now, split your outstanding changes into two PRs. The first PR should _only_
+    include your new Flyway version `.sql` file, its addition to the `flyway.txt`
+    index, changes to the `nomulus.golden.sql` schema file, and changes to the
+    Entity Relationship diagram `.html` files. The second PR should include
+    everything else, including _all_ changes to `.java` files and the
+    `db-schema.sql.generated` changes that derive from them.
+7.  Submit the first PR and wait until it is successfully deployed to production,
+    then submit the second PR. Note, if you are removing things from the schema
+    (rather than adding them), then these PRs should be in the opposite order:
+    Java changes first, then SQL changes afterwards.
 
 Relevant files (under `db/src/main/resources/sql/schema/`):
 
@@ -91,7 +105,16 @@ example, when adding a new column to a table, we would deploy the change before
 adding it to the relevant ORM class. Therefore, for a short time the golden file
 will contain the new column while the generated one does not.
 
-### Schema Push
+Note that, when making schema changes, you _cannot_ add a new `NOT NULL` column
+to an existing table that does not have a default value, or make any other
+similar addition of a constraint that will be violated by existing data. If you
+wish to rename a column, you must first add a new column with the desired name,
+copy over its contents using a `@PostLoad` action in Java, re-save all rows,
+update the Java to no longer contain the old column, wait for a deployment, and
+then remove the old column. A rename operation requires the most complicated
+series of steps to complete, as it is effectively an add followed by a remove.
+
+### Schema push
 
 Currently Cloud SQL schema is released with the Nomulus server, and shares the
 server release's tag (e.g., `nomulus-20191101-RC00`). Automatic schema push
@@ -126,7 +149,7 @@ following command to deploy the local schema,
 ./nom_build :db:flywayMigrate --dbServer=[alpha|crash] --environment=[alpha|crash]
 ```
 
-#### Glass Breaking
+#### Glass breaking
 
 If you need to deploy a schema off-cycle, try making a release first, then
 deploy that release schema to Cloud SQL.
@@ -134,7 +157,7 @@ deploy that release schema to Cloud SQL.
 TODO(weiminyu): elaborate on different ways to push schema without a full
 release.
 
-#### Notes On Flyway
+#### Notes on Flyway
 
 Please note: to run Flyway commands, you need Cloud SDK and need to log in once.
 
@@ -154,7 +177,7 @@ The Flyway-based Cloud Build schema push process is safe in common scenarios:
 *   Concurrent deployment runs are safe. Flyway locks its own metadata table,
     serializing deployment runs without affecting normal accesses.
 
-#### Schema Push to Local Database
+#### Schema push to local database
 
 The Flyway tasks may also be used to deploy to local instances, e.g, your own
 test instance. E.g.,
