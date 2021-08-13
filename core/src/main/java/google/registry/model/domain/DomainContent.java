@@ -303,28 +303,6 @@ public class DomainContent extends EppResource
    */
   @Index DateTime autorenewEndTime;
 
-  /**
-   * When this domain's DNS was requested to be refreshed, or null if its DNS is up-to-date.
-   *
-   * <p>This will almost always be null except in the couple minutes' interval between when a
-   * DNS-affecting create or update operation takes place and when the {@link RefreshDnsAction}
-   * runs, which resets this back to null upon completion of the DNS refresh task. This is a {@link
-   * DateTime} rather than a simple dirty boolean so that the DNS refresh action can order by the
-   * DNS refresh request time and take action on the oldest ones first.
-   *
-   * <p>Note that this is a Cloud SQL-based replacement for the {@code dns-pull} task queue. The
-   * domains that have a non-null value for this field should be exactly the same as the tasks that
-   * would be in the {@code dns-pull} queue. Because this is Cloud SQL-specific, it is omitted from
-   * Datastore.
-   *
-   * <p>Note that in the {@link DomainHistory} table this value means something slightly different:
-   * It means that the given domain action requested a DNS update. Unlike on the {@code Domain}
-   * table, this value is not then subsequently nulled out once the DNS refresh is complete; rather,
-   * it remains as a permanent record of which actions were DNS-affecting and which were not.
-   */
-  // TODO(mcilwain): Start using this field once we are further along in the DB migration.
-  @Ignore DateTime dnsRefreshRequestTime;
-
   @OnLoad
   void load() {
     // Reconstitute all of the contacts so that they have VKeys.
