@@ -32,7 +32,6 @@ import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationStat
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTransactionManagerImpl;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
@@ -69,7 +68,6 @@ public class ReplicateToDatastoreActionTest {
 
   @BeforeEach
   public void setUp() {
-    JpaTransactionManagerImpl.removeReplaySqlToDsOverrideForTest();
     injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
     // Use a single bucket to expose timestamp inversion problems.
     injectExtension.setStaticField(

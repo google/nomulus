@@ -105,7 +105,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     replay();
     injectExtension.afterEach(context);
     if (sqlToDsReplicator != null) {
-      JpaTransactionManagerImpl.setReplaySqlToDatastoreOverrideForTest(false);
+      JpaTransactionManagerImpl.removeReplaySqlToDsOverrideForTest();
     }
   }
 

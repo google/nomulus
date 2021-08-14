@@ -58,7 +58,6 @@ class TransactionTest {
 
   @BeforeEach
   void beforeEach() {
-    JpaTransactionManagerImpl.removeReplaySqlToDsOverrideForTest();
     inject.setStaticField(Ofy.class, "clock", fakeClock);
     fooEntity = new TestEntity("foo");
     barEntity = new TestEntity("bar");
