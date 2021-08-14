@@ -222,7 +222,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements
   @VisibleForTesting
   static TimedTransitionProperty<MigrationState, MigrationStateTransition> getUncached() {
     return jpaTm()
-        .transactNew(
+        .transactWithoutBackup(
             () -> {
               try {
                 return jpaTm()
