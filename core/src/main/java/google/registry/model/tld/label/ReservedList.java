@@ -34,7 +34,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import google.registry.model.Buildable;
-import google.registry.model.annotations.ReportedOn;
 import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.model.tld.Registry;
 import google.registry.model.tld.label.DomainLabelMetrics.MetricsReservedListMatch;
@@ -61,7 +60,6 @@ import org.joda.time.DateTime;
  * succeeds, we will end up with having two exact same reserved lists that differ only by
  * revisionId. This is fine though, because we only use the list with the highest revisionId.
  */
-@ReportedOn
 @javax.persistence.Entity
 @Table(indexes = {@Index(columnList = "name", name = "reservedlist_name_idx")})
 public final class ReservedList
