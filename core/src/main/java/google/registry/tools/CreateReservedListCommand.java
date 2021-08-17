@@ -25,9 +25,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
-import com.googlecode.objectify.Key;
 import google.registry.model.tld.label.ReservedList;
-import google.registry.persistence.VKey;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,7 +46,7 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
   boolean override;
 
   @Override
-  protected void init() throws Exception {
+  protected String prompt() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
     checkArgument(
         !ReservedList.get(name).isPresent(), "A reserved list already exists by this name");
@@ -66,35 +64,11 @@ final class CreateReservedListCommand extends CreateOrUpdateReservedListCommand 
             .setCreationTimestamp(now)
             .build();
 
-    // calls the stageEntityChange method that takes old entity, new entity and a new vkey;
-    // Because ReservedList is a sqlEntity and its primary key field (revisionId) is only set when
-    // it's being persisted; a vkey has to be created here explicitly for ReservedList instances.
-    stageEntityChange(
-        null, reservedList, VKey.createOfy(ReservedList.class, Key.create(reservedList)));
-  }
-
-  @Override
-  protected String prompt() {
-    return getChangedEntities().isEmpty()
-        ? "No entity changes to apply."
-        : getChangedEntities().stream()
-            .map(
-                entity -> {
-                  if (entity instanceof ReservedList) {
-                    // Format the entries of the reserved list as well.
-                    String entries =
-                        ((ReservedList) entity)
-                            .getReservedListEntries().entrySet().stream()
-                                .map(
-                                    entry ->
-                                        String.format("%s=%s", entry.getKey(), entry.getValue()))
-                                .collect(Collectors.joining(", "));
-                    return String.format("%s\nreservedListMap={%s}\n", entity, entries);
-                  } else {
-                    return entity.toString();
-                  }
-                })
-            .collect(Collectors.joining("\n"));
+    String entries =
+        reservedList.getReservedListEntries().entrySet().stream()
+            .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
+            .collect(Collectors.joining(", "));
+    return String.format("%s\nreservedListMap={%s}\n", reservedList, entries);
   }
 
   private static void validateListName(String name) {

@@ -33,15 +33,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
-import google.registry.model.tld.label.PremiumList.PremiumEntry;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
-import google.registry.testing.InjectExtension;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -50,19 +46,9 @@ class ReservedListTest {
 
   private FakeClock clock = new FakeClock(DateTime.parse("2010-01-01T10:00:00Z"));
 
-  @Order(value = Order.DEFAULT - 1)
   @RegisterExtension
-  final InjectExtension inject =
-      new InjectExtension().withStaticFieldOverride(Ofy.class, "clock", clock);
-
-  @RegisterExtension
-  final AppEngineExtension appEngine =
-      AppEngineExtension.builder()
-          .withClock(clock)
-          .withJpaUnitTestEntities(
-              PremiumList.class, PremiumEntry.class, ReservedList.class, ReservedListEntry.class)
-          .withDatastoreAndCloudSql()
-          .build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withClock(clock).withCloudSql().build();
 
   @BeforeEach
   void beforeEach() {

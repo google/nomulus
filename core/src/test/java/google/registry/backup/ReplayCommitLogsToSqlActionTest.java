@@ -38,7 +38,6 @@ import static org.mockito.Mockito.verify;
 
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.truth.Truth8;
@@ -55,12 +54,14 @@ import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
+import google.registry.model.rde.RdeMode;
+import google.registry.model.rde.RdeNamingUtils;
+import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.replay.SqlReplayCheckpoint;
 import google.registry.model.server.Lock;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
-import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.persistence.VKey;
@@ -419,8 +420,9 @@ public class ReplayCommitLogsToSqlActionTest {
 
     createTld("tld");
     // Have a commit log with a couple objects that shouldn't be replayed
-    ReservedList reservedList =
-        new ReservedList.Builder().setReservedListMap(ImmutableMap.of()).setName("name").build();
+    String triplet = RdeNamingUtils.makePartialName("tld", fakeClock.nowUtc(), RdeMode.FULL);
+    RdeRevision rdeRevision =
+        RdeRevision.create(triplet, "tld", fakeClock.nowUtc().toLocalDate(), RdeMode.FULL, 1);
     ForeignKeyIndex<DomainBase> fki = ForeignKeyIndex.create(newDomainBase("foo.tld"), now);
     tm().transact(
             () -> {
@@ -430,8 +432,8 @@ public class ReplayCommitLogsToSqlActionTest {
                     createCheckpoint(now.minusMinutes(1)),
                     CommitLogManifest.create(
                         getBucketKey(1), now.minusMinutes(1), ImmutableSet.of()),
-                    // Reserved list is dually-written non-replicated
-                    CommitLogMutation.create(manifestKey, reservedList),
+                    // RDE Revisions are not replicated
+                    CommitLogMutation.create(manifestKey, rdeRevision),
                     // FKIs aren't replayed to SQL at all
                     CommitLogMutation.create(manifestKey, fki));
               } catch (IOException e) {

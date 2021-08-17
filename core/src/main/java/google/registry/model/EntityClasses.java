@@ -43,7 +43,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
 import google.registry.model.tld.Registry;
-import google.registry.model.tld.label.ReservedList;
 import google.registry.model.tmch.ClaimsList;
 import google.registry.model.tmch.ClaimsList.ClaimsListRevision;
 import google.registry.model.tmch.ClaimsList.ClaimsListSingleton;
@@ -92,7 +91,6 @@ public final class EntityClasses {
           Registrar.class,
           RegistrarContact.class,
           Registry.class,
-          ReservedList.class,
           ServerSecret.class,
           TmchCrl.class);
 
