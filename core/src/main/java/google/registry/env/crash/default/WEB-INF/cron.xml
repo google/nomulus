@@ -143,7 +143,7 @@
       It also enqueues a new task to wait on the completion of that job and then load the resulting
       snapshot into bigquery.
     </description>
-    <!--
+    <!- -
       Keep google.registry.export.CheckBackupAction.MAXIMUM_BACKUP_RUNNING_TIME less than
       this interval. - ->
     <schedule>every day 06:00</schedule>
