@@ -15,7 +15,6 @@
 package google.registry.tools.server;
 
 import static com.google.common.base.Strings.emptyToNull;
-import static google.registry.request.RequestParameters.extractBooleanParameter;
 import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
@@ -28,7 +27,6 @@ import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
-import org.joda.money.CurrencyUnit;
 
 /**
  * Dagger module for the tools package.
@@ -53,30 +51,6 @@ public class ToolsServerModule {
   static Optional<Boolean> provideFullFieldNames(HttpServletRequest req) {
     String s = emptyToNull(req.getParameter(ListObjectsAction.FULL_FIELD_NAMES_PARAM));
     return (s == null) ? Optional.empty() : Optional.of(Boolean.parseBoolean(s));
-  }
-
-  @Provides
-  @Parameter("inputData")
-  static String provideInput(HttpServletRequest req) {
-    return extractRequiredParameter(req, CreatePremiumListAction.INPUT_PARAM);
-  }
-
-  @Provides
-  @Parameter("premiumListName")
-  static String provideName(HttpServletRequest req) {
-    return extractRequiredParameter(req, CreatePremiumListAction.NAME_PARAM);
-  }
-
-  @Provides
-  @Parameter("currency")
-  static CurrencyUnit provideCurrency(HttpServletRequest req) {
-    return CurrencyUnit.of(extractRequiredParameter(req, CreatePremiumListAction.CURRENCY));
-  }
-
-  @Provides
-  @Parameter("override")
-  static boolean provideOverride(HttpServletRequest req) {
-   return extractBooleanParameter(req, CreatePremiumListAction.OVERRIDE_PARAM);
   }
 
   @Provides

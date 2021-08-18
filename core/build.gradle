@@ -44,7 +44,6 @@ def outcastTestPatterns = [
     "google/registry/flows/domain/DomainCreateFlowTest.*",
     "google/registry/flows/domain/DomainUpdateFlowTest.*",
     "google/registry/tools/CreateDomainCommandTest.*",
-    "google/registry/tools/server/CreatePremiumListActionTest.*",
 ]
 
 // Tests that fail when running Gradle in a docker container, e. g. when

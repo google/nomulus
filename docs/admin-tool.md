@@ -62,8 +62,7 @@ to `ToolsServlet` to execute the action on the server (these commands implement
 [Remote API](https://cloud.google.com/appengine/docs/java/tools/remoteapi)
 (these commands implement `RemoteApiCommand`). Server-side commands take more
 work to implement because they require both a client and a server-side
-component, e.g. `CreatePremiumListCommand.java` and
-`CreatePremiumListAction.java` respectively for creating a premium list.
+component.
 However, they are fully capable of doing anything that is possible with App
 Engine, including running a large MapReduce, because they execute on the tools
 service in the App Engine cloud.

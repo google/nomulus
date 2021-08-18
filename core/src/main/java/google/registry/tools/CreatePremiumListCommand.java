@@ -43,7 +43,6 @@ public class CreatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
   String currencyUnit;
 
   @Override
-  // Using CreatePremiumListAction.java as reference;
   protected String prompt() throws Exception {
     currency = CurrencyUnit.of(currencyUnit);
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
@@ -51,7 +50,6 @@ public class CreatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
         !PremiumListDao.getLatestRevision(name).isPresent(),
         "A premium list already exists by this name");
     if (!override) {
-      // refer to CreatePremiumListAction.java
       assertTldExists(
           name,
           "Premium names must match the name of the TLD they are intended to be used on"
