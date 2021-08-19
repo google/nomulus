@@ -36,7 +36,7 @@ class HostCheckFlowTest extends ResourceCheckFlowTestCase<HostCheckFlow, HostRes
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
+  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   HostCheckFlowTest() {
     setEppInput("host_check.xml");

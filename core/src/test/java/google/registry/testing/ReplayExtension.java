@@ -15,8 +15,10 @@
 package google.registry.testing;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
@@ -28,9 +30,16 @@ import google.registry.model.ofy.ReplayQueue;
 import google.registry.model.ofy.TransactionInfo;
 import google.registry.model.replay.DatastoreEntity;
 import google.registry.model.replay.ReplicateToDatastoreAction;
+import google.registry.model.replay.SqlEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManagerImpl;
+import google.registry.persistence.transaction.Transaction;
+import google.registry.persistence.transaction.Transaction.Delete;
+import google.registry.persistence.transaction.Transaction.Mutation;
+import google.registry.persistence.transaction.Transaction.Update;
 import google.registry.persistence.transaction.TransactionEntity;
+import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -186,12 +195,50 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
       return;
     }
 
-    // TODO(mmuller): Verify that all entities are the same across both databases.
-    for (TransactionEntity txn : sqlToDsReplicator.getTransactionBatch()) {
-      if (sqlToDsReplicator.applyTransaction(txn)) {
-        break;
+    List<TransactionEntity> transactionBatch;
+    do {
+      transactionBatch = sqlToDsReplicator.getTransactionBatch();
+      for (TransactionEntity txn : transactionBatch) {
+        if (sqlToDsReplicator.applyTransaction(txn)) {
+          throw new RuntimeException(
+              "Error when replaying to Datastore in tests; see logs for more details");
+        }
+        if (compare) {
+          ofyTm().transact(() -> compareSqlTransaction(txn));
+        }
+        clock.advanceOneMilli();
       }
-      clock.advanceOneMilli();
+    } while (!transactionBatch.isEmpty());
+  }
+
+  /** Verifies that the replaying the SQL transaction created the same entities in Datastore. */
+  private void compareSqlTransaction(TransactionEntity transactionEntity) {
+    Transaction transaction;
+    try {
+      transaction = Transaction.deserialize(transactionEntity.getContents());
+    } catch (IOException e) {
+      throw new RuntimeException("Error during transaction deserialization.", e);
+    }
+    for (Mutation mutation : transaction.getMutations()) {
+      if (mutation instanceof Update) {
+        Update update = (Update) mutation;
+        ImmutableObject fromTransactionEntity = (ImmutableObject) update.getEntity();
+        ImmutableObject fromDatastore = ofyTm().loadByEntity(fromTransactionEntity);
+        if (fromDatastore instanceof SqlEntity) {
+          // We store the Datastore entity in the transaction, so use that if necessary
+          fromDatastore = (ImmutableObject) ((SqlEntity) fromDatastore).toDatastoreEntity().get();
+        }
+        assertAboutImmutableObjects().that(fromDatastore).hasCorrectHashValue();
+        assertAboutImmutableObjects()
+            .that(fromDatastore)
+            .isEqualAcrossDatabases(fromTransactionEntity);
+      } else {
+        Delete delete = (Delete) mutation;
+        VKey<?> key = delete.getKey();
+        assertWithMessage(String.format("Expected key %s to not exist in Datastore", key))
+            .that(ofyTm().exists(key))
+            .isFalse();
+      }
     }
   }
 }

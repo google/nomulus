@@ -14,6 +14,7 @@
 
 package google.registry.persistence.transaction;
 
+import google.registry.model.ImmutableObject;
 import google.registry.model.replay.SqlOnlyEntity;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -28,7 +29,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "Transaction")
-public class TransactionEntity implements SqlOnlyEntity {
+public class TransactionEntity extends ImmutableObject implements SqlOnlyEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

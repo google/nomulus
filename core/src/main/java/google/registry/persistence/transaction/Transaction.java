@@ -21,10 +21,12 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityTranslator;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.replay.SqlEntity;
 import google.registry.persistence.VKey;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -56,6 +58,11 @@ public class Transaction extends ImmutableObject implements Buildable {
   private static ThreadLocal<Boolean> inSerializationMode = ThreadLocal.withInitial(() -> false);
 
   private transient ImmutableList<Mutation> mutations;
+
+  @VisibleForTesting
+  public ImmutableList<Mutation> getMutations() {
+    return mutations;
+  }
 
   /** Write the entire transaction to the datastore in a datastore transaction. */
   public void writeToDatastore() {
@@ -128,7 +135,7 @@ public class Transaction extends ImmutableObject implements Buildable {
    * Returns true if we are serializing a transaction in the current thread.
    *
    * <p>This should be checked by any Ofy translators prior to making any changes to an entity's
-   * state representation based on the assumption that we are currently pseristing the entity to
+   * state representation based on the assumption that we are currently persisting the entity to
    * datastore.
    */
   public static boolean inSerializationMode() {
@@ -146,7 +153,7 @@ public class Transaction extends ImmutableObject implements Buildable {
 
   public static class Builder extends GenericBuilder<Transaction, Builder> {
 
-    ImmutableList.Builder listBuilder = new ImmutableList.Builder();
+    ImmutableList.Builder<Mutation> listBuilder = new ImmutableList.Builder<>();
 
     Builder() {}
 
@@ -224,7 +231,8 @@ public class Transaction extends ImmutableObject implements Buildable {
     private Object entity;
 
     Update(Object entity) {
-      this.entity = entity;
+      this.entity =
+          (entity instanceof SqlEntity) ? ((SqlEntity) entity).toDatastoreEntity().get() : entity;
     }
 
     @Override
@@ -239,6 +247,11 @@ public class Transaction extends ImmutableObject implements Buildable {
       EntityProto proto = EntityTranslator.convertToPb(realEntity);
       out.write(VERSION_ID);
       proto.writeDelimitedTo(out);
+    }
+
+    @VisibleForTesting
+    public Object getEntity() {
+      return entity;
     }
 
     public static Update deserializeFrom(ObjectInputStream in) throws IOException {
@@ -273,9 +286,14 @@ public class Transaction extends ImmutableObject implements Buildable {
       out.writeObject(key);
     }
 
+    @VisibleForTesting
+    public VKey<?> getKey() {
+      return key;
+    }
+
     public static Delete deserializeFrom(ObjectInputStream in) throws IOException {
       try {
-        return new Delete((VKey) in.readObject());
+        return new Delete((VKey<?>) in.readObject());
       } catch (ClassNotFoundException e) {
         throw new IllegalArgumentException(e);
       }

@@ -93,7 +93,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
+  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   private void setEppHostUpdateInput(
       String oldHostName, String newHostName, String ipOrStatusToAdd, String ipOrStatusToRem) {
