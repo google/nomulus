@@ -51,7 +51,8 @@ import org.mockito.Mockito;
 class FlowRunnerTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngineRule = new AppEngineExtension.Builder().build();
+  final AppEngineExtension appEngineRule =
+      new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
 
   private final FlowRunner flowRunner = new FlowRunner();
   private final EppMetric.Builder eppMetricBuilder = EppMetric.builderForRequest(new FakeClock());
