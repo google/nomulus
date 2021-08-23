@@ -23,7 +23,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
-import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.replay.SqlOnlyEntity;
@@ -48,13 +47,10 @@ import org.joda.time.DateTime;
  * succeeds, we will end up with having two exact same claims list with only different {@link
  * #revisionId}. However, this is not an actual problem because we only use the claims list with
  * highest {@link #revisionId}.
- *
- * <p>TODO(b/162007765): Remove Datastore related fields and methods.
  */
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 @javax.persistence.Entity(name = "ClaimsList")
 @Table
-@InCrossTld
 public class ClaimsList extends ImmutableObject implements SqlOnlyEntity {
 
   @javax.persistence.Id

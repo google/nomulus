@@ -20,10 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
-import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import javax.persistence.PersistenceException;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -35,10 +33,6 @@ public class ClaimsListDaoTest {
   @RegisterExtension
   final JpaIntegrationWithCoverageExtension jpa =
       new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
-
-  @RegisterExtension
-  @Order(value = 1)
-  final DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   @Test
   void save_insertsClaimsListSuccessfully() {

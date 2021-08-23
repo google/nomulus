@@ -46,7 +46,7 @@ public final class TmchDnlAction implements Runnable {
   @Inject @Key("marksdbDnlLoginAndPassword") Optional<String> marksdbDnlLoginAndPassword;
   @Inject TmchDnlAction() {}
 
-  /** Synchronously fetches latest domain name list and saves it to Datastore. */
+  /** Synchronously fetches latest domain name list and saves it to Cloud SQL. */
   @Override
   public void run() {
     List<String> lines;
