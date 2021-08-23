@@ -65,7 +65,7 @@ class ContactTransferRequestFlowTest
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
+  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   ContactTransferRequestFlowTest() {
     // We need the transfer to happen at exactly this time in order for the response to match up.

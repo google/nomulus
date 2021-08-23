@@ -58,7 +58,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
+  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   private DomainBase domain;
   private ContactResource contact;

@@ -51,7 +51,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
+  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   /** This is the message id being sent in the ACK request. */
   private static final long MESSAGE_ID = 3;

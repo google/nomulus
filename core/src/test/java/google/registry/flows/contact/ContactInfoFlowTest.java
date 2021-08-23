@@ -51,7 +51,7 @@ class ContactInfoFlowTest extends ResourceFlowTestCase<ContactInfoFlow, ContactR
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
+  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   ContactInfoFlowTest() {
     setEppInput("contact_info.xml");
