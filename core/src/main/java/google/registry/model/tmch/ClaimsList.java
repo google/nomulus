@@ -17,31 +17,19 @@ package google.registry.model.tmch;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static google.registry.model.IdService.allocateId;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.QueryComposer.Comparator.EQ;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
-import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
-import google.registry.model.annotations.VirtualEntity;
-import google.registry.model.common.CrossTldSingleton;
-import google.registry.model.replay.DatastoreOnlyEntity;
-import google.registry.model.replay.NonReplicatedEntity;
+import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -63,23 +51,16 @@ import org.joda.time.DateTime;
  *
  * <p>TODO(b/162007765): Remove Datastore related fields and methods.
  */
-@Entity
 @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
 @javax.persistence.Entity(name = "ClaimsList")
 @Table
 @InCrossTld
-public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
+public class ClaimsList extends ImmutableObject implements SqlOnlyEntity {
 
-  @Transient @Id long id;
-
-  @Transient @Parent Key<ClaimsListRevision> parent;
-
-  @Ignore
   @javax.persistence.Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long revisionId;
 
-  @Ignore
   @Column(nullable = false)
   CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
 
@@ -217,63 +198,9 @@ public class ClaimsList extends ImmutableObject implements NonReplicatedEntity {
   public static ClaimsList create(
       DateTime tmdbGenerationTime, ImmutableMap<String, String> labelsToKeys) {
     ClaimsList instance = new ClaimsList();
-    instance.id = allocateId();
     instance.creationTime = checkNotNull(tmdbGenerationTime);
     instance.labelsToKeys = checkNotNull(labelsToKeys);
     return instance;
-  }
-
-  /** Virtual parent entity for claims list shards of a specific revision. */
-  @Entity
-  @VirtualEntity
-  public static class ClaimsListRevision extends ImmutableObject implements DatastoreOnlyEntity {
-    @Parent Key<ClaimsListSingleton> parent;
-
-    @Id long versionId;
-
-    @VisibleForTesting
-    public static Key<ClaimsListRevision> createKey(ClaimsListSingleton singleton) {
-      ClaimsListRevision revision = new ClaimsListRevision();
-      revision.versionId = allocateId();
-      revision.parent = Key.create(singleton);
-      return Key.create(revision);
-    }
-
-    @VisibleForTesting
-    public static Key<ClaimsListRevision> createKey() {
-      return createKey(new ClaimsListSingleton());
-    }
-  }
-
-  /**
-   * Serves as the coordinating claims list singleton linking to the {@link ClaimsListRevision} that
-   * is live.
-   */
-  @Entity
-  @NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
-  public static class ClaimsListSingleton extends CrossTldSingleton implements DatastoreOnlyEntity {
-    Key<ClaimsListRevision> activeRevision;
-
-    static ClaimsListSingleton create(Key<ClaimsListRevision> revision) {
-      ClaimsListSingleton instance = new ClaimsListSingleton();
-      instance.activeRevision = revision;
-      return instance;
-    }
-
-    @VisibleForTesting
-    public void setActiveRevision(Key<ClaimsListRevision> revision) {
-      activeRevision = revision;
-    }
-  }
-
-  /**
-   * Returns the current ClaimsListRevision if there is one, or null if no claims list revisions
-   * have ever been persisted yet.
-   */
-  @Nullable
-  public static Key<ClaimsListRevision> getCurrentRevision() {
-    ClaimsListSingleton singleton = auditedOfy().load().entity(new ClaimsListSingleton()).now();
-    return singleton == null ? null : singleton.activeRevision;
   }
 
   /** Exception when trying to directly save a {@link ClaimsList} without sharding. */

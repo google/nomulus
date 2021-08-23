@@ -43,9 +43,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
 import google.registry.model.tld.Registry;
-import google.registry.model.tmch.ClaimsList;
-import google.registry.model.tmch.ClaimsList.ClaimsListRevision;
-import google.registry.model.tmch.ClaimsList.ClaimsListSingleton;
 import google.registry.model.tmch.TmchCrl;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
@@ -59,9 +56,6 @@ public final class EntityClasses {
           BillingEvent.Modification.class,
           BillingEvent.OneTime.class,
           BillingEvent.Recurring.class,
-          ClaimsList.class,
-          ClaimsListRevision.class,
-          ClaimsListSingleton.class,
           CommitLogBucket.class,
           CommitLogCheckpoint.class,
           CommitLogCheckpointRoot.class,

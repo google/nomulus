@@ -109,7 +109,7 @@ class EppLifecycleToolsTest extends EppTestCase {
         .atTime("2001-06-08T00:00:00Z")
         .hasResponse("poll_response_unrenew.xml");
 
-    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-8-TLD-21-22-2001"))
+    assertThatCommand("poll_ack.xml", ImmutableMap.of("ID", "1-7-TLD-20-21-2001"))
         .atTime("2001-06-08T00:00:01Z")
         .hasResponse("poll_ack_response_empty.xml");
 
@@ -130,7 +130,7 @@ class EppLifecycleToolsTest extends EppTestCase {
         .hasResponse(
             "poll_response_autorenew.xml",
             ImmutableMap.of(
-                "ID", "1-8-TLD-21-24-2003",
+                "ID", "1-7-TLD-20-23-2003",
                 "QDATE", "2003-06-01T00:02:00Z",
                 "DOMAIN", "example.tld",
                 "EXDATE", "2004-06-01T00:02:00Z"));
