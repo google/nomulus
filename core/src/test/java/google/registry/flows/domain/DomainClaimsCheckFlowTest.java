@@ -50,7 +50,7 @@ public class DomainClaimsCheckFlowTest
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
+  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   DomainClaimsCheckFlowTest() {
     setEppInput("domain_check_claims.xml");
