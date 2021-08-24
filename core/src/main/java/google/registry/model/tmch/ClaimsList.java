@@ -23,15 +23,15 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
-import google.registry.model.annotations.NotBackedUp;
-import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import java.util.Map;
 import java.util.Optional;
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.PostPersist;
 import javax.persistence.PostUpdate;
 import javax.persistence.PreRemove;
@@ -48,12 +48,11 @@ import org.joda.time.DateTime;
  * #revisionId}. However, this is not an actual problem because we only use the claims list with
  * highest {@link #revisionId}.
  */
-@NotBackedUp(reason = Reason.EXTERNALLY_SOURCED)
-@javax.persistence.Entity(name = "ClaimsList")
+@Entity(name = "ClaimsList")
 @Table
 public class ClaimsList extends ImmutableObject implements SqlOnlyEntity {
 
-  @javax.persistence.Id
+  @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long revisionId;
 
@@ -198,7 +197,4 @@ public class ClaimsList extends ImmutableObject implements SqlOnlyEntity {
     instance.labelsToKeys = checkNotNull(labelsToKeys);
     return instance;
   }
-
-  /** Exception when trying to directly save a {@link ClaimsList} without sharding. */
-  public static class UnshardedSaveException extends RuntimeException {}
 }
