@@ -52,6 +52,11 @@ public class HostResource extends HostBase
   }
 
   @Override
+  public void beforeDatastoreSaveOnReplay() {
+    saveIndexesToDatastore();
+  }
+
+  @Override
   public Builder asBuilder() {
     return new Builder(clone(this));
   }

@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -29,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.contact.Disclose.PostalInfoChoice;
@@ -37,6 +39,9 @@ import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.index.EppResourceIndex;
+import google.registry.model.index.ForeignKeyIndex;
+import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
@@ -276,5 +281,29 @@ public class ContactResourceTest extends EntityTestCase {
   void testToHydratedString_notCircular() {
     // If there are circular references, this will overflow the stack.
     contactResource.toHydratedString();
+  }
+
+  @Test
+  void testBeforeDatastoreSaveOnReplay_indexes() {
+    ImmutableList<ForeignKeyContactIndex> foreignKeyIndexes =
+        ofyTm().loadAllOf(ForeignKeyContactIndex.class);
+    ImmutableList<EppResourceIndex> eppResourceIndexes = ofyTm().loadAllOf(EppResourceIndex.class);
+    fakeClock.advanceOneMilli();
+    ofyTm()
+        .transact(
+            () -> {
+              foreignKeyIndexes.forEach(ofyTm()::delete);
+              eppResourceIndexes.forEach(ofyTm()::delete);
+            });
+    assertThat(ofyTm().loadAllOf(ForeignKeyContactIndex.class)).isEmpty();
+    assertThat(ofyTm().loadAllOf(EppResourceIndex.class)).isEmpty();
+
+    ofyTm().transact(() -> contactResource.beforeDatastoreSaveOnReplay());
+
+    assertThat(ofyTm().loadAllOf(ForeignKeyContactIndex.class))
+        .containsExactly(
+            ForeignKeyIndex.create(contactResource, contactResource.getDeletionTime()));
+    assertThat(ofyTm().loadAllOf(EppResourceIndex.class))
+        .containsExactly(EppResourceIndex.create(Key.create(contactResource)));
   }
 }

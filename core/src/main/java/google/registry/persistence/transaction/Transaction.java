@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.replay.DatastoreEntity;
 import google.registry.model.replay.SqlEntity;
 import google.registry.persistence.VKey;
 import java.io.ByteArrayInputStream;
@@ -237,6 +238,10 @@ public class Transaction extends ImmutableObject implements Buildable {
 
     @Override
     public void writeToDatastore() {
+      // this should always be the case, but check just in case
+      if (entity instanceof DatastoreEntity) {
+        ((DatastoreEntity) entity).beforeDatastoreSaveOnReplay();
+      }
       ofyTm().put(entity);
     }
 
