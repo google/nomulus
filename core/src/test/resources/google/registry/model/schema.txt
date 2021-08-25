@@ -789,21 +789,6 @@ enum google.registry.model.tld.Registry$TldType {
   REAL;
   TEST;
 }
-class google.registry.model.tmch.ClaimsList {
-  @Id long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsList$ClaimsListRevision> parent;
-  com.google.common.collect.ImmutableMap<java.lang.String, java.lang.String> labelsToKeys;
-  org.joda.time.DateTime creationTime;
-}
-class google.registry.model.tmch.ClaimsList$ClaimsListRevision {
-  @Id long versionId;
-  @Parent com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsList$ClaimsListSingleton> parent;
-}
-class google.registry.model.tmch.ClaimsList$ClaimsListSingleton {
-  @Id long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsList$ClaimsListRevision> activeRevision;
-}
 class google.registry.model.tmch.TmchCrl {
   @Id long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
