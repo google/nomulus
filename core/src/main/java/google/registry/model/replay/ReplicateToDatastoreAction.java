@@ -87,15 +87,14 @@ public class ReplicateToDatastoreAction implements Runnable {
    * Apply a transaction to Datastore, returns true if there was a fatal error and the batch should
    * be aborted.
    *
-   * <p>TODO(gbrodman): this should throw an exception on error instead since it gives more
-   * information and we can't rely on the caller checking the boolean result.
+   * <p>Throws an exception if a fatal error occurred and the batch should be aborted
    */
   @VisibleForTesting
-  public boolean applyTransaction(TransactionEntity txnEntity) {
+  public void applyTransaction(TransactionEntity txnEntity) {
     logger.atInfo().log("Applying a single transaction Cloud SQL -> Cloud Datastore");
     try (UpdateAutoTimestamp.DisableAutoUpdateResource disabler =
         UpdateAutoTimestamp.disableAutoUpdate()) {
-      return ofyTm()
+      ofyTm()
           .transact(
               () -> {
                 // Reload the last transaction id, which could possibly have changed.
@@ -105,11 +104,10 @@ public class ReplicateToDatastoreAction implements Runnable {
                   // We're missing a transaction.  This is bad.  Transaction ids are supposed to
                   // increase monotonically, so we abort rather than applying anything out of
                   // order.
-                  logger.atSevere().log(
-                      "Missing transaction: last transaction id = %s, next available transaction "
-                          + "= %s",
-                      nextTxnId - 1, txnEntity.getId());
-                  return true;
+                  throw new IllegalStateException(
+                      String.format(
+                          "Missing transaction: last txn id = %s, next available txn = %s",
+                          nextTxnId - 1, txnEntity.getId()));
                 } else if (nextTxnId > txnEntity.getId()) {
                   // We've already replayed this transaction.  This shouldn't happen, as GAE cron
                   // is supposed to avoid overruns and this action shouldn't be executed from any
@@ -118,7 +116,7 @@ public class ReplicateToDatastoreAction implements Runnable {
                   logger.atWarning().log(
                       "Ignoring transaction %s, which appears to have already been applied.",
                       txnEntity.getId());
-                  return false;
+                  return;
                 }
 
                 logger.atInfo().log(
@@ -137,7 +135,6 @@ public class ReplicateToDatastoreAction implements Runnable {
                 auditedOfy().save().entity(lastSqlTxn.cloneWithNewTransactionId(nextTxnId));
                 logger.atInfo().log(
                     "Finished applying single transaction Cloud SQL -> Cloud Datastore");
-                return false;
               });
     }
   }
@@ -147,18 +144,23 @@ public class ReplicateToDatastoreAction implements Runnable {
     MigrationState state = DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc());
     if (!state.getReplayDirection().equals(ReplayDirection.SQL_TO_DATASTORE)) {
       logger.atInfo().log(
-          String.format(
-              "Skipping ReplicateToDatastoreAction because we are in migration phase %s.", state));
+          "Skipping ReplicateToDatastoreAction because we are in migration phase %s.", state);
       return;
     }
     // TODO(b/181758163): Deal with objects that don't exist in Cloud SQL, e.g. ForeignKeyIndex,
     // EppResourceIndex.
     logger.atInfo().log("Processing transaction replay batch Cloud SQL -> Cloud Datastore");
+    int numTransactionsReplayed = 0;
     for (TransactionEntity txnEntity : getTransactionBatch()) {
-      if (applyTransaction(txnEntity)) {
-        break;
+      try {
+        applyTransaction(txnEntity);
+      } catch (Throwable t) {
+        logger.atSevere().withCause(t).log("Errored out replaying files");
+        return;
       }
+      numTransactionsReplayed++;
     }
-    logger.atInfo().log("Done processing transaction replay batch Cloud SQL -> Cloud Datastore");
+    logger.atInfo().log(
+        "Replayed %d transactions from Cloud SQL -> Datastore", numTransactionsReplayed);
   }
 }
