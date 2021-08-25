@@ -45,6 +45,7 @@ public class RegistryConfigSettings {
   /** Configuration options that apply to the entire App Engine project. */
   public static class AppEngine {
     public String projectId;
+    public String locationId;
     public boolean isLocal;
     public String defaultServiceUrl;
     public String backendServiceUrl;

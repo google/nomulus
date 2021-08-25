@@ -8,6 +8,10 @@
 appEngine:
   # Globally unique App Engine project ID
   projectId: registry-project-id
+  # Location of the App engine project, note that us-central1 and europe-west1 are special in that
+  # they are used without the trailing number in App Engine commands and Google Cloud Console.
+  # See: https://cloud.google.com/appengine/docs/locations
+  locationId: registry-location-id
 
   # whether to use local/test credentials when connecting to the servers
   isLocal: true

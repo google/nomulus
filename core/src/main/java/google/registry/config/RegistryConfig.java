@@ -105,6 +105,12 @@ public final class RegistryConfig {
       return config.appEngine.projectId;
     }
 
+    @Provides
+    @Config("locationId")
+    public static String provideLocationId(RegistryConfigSettings config) {
+      return config.appEngine.locationId;
+    }
+
     /**
      * The filename of the logo to be displayed in the header of the registrar console.
      *
