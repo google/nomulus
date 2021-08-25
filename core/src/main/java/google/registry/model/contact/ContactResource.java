@@ -67,6 +67,11 @@ public class ContactResource extends ContactBase
   }
 
   @Override
+  public void beforeDatastoreSaveOnReplay() {
+    saveIndexesToDatastore();
+  }
+
+  @Override
   public Builder asBuilder() {
     return new Builder(clone(this));
   }

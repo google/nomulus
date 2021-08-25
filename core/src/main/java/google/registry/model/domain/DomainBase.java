@@ -163,6 +163,11 @@ public class DomainBase extends DomainContent
     return cloneDomainProjectedAtTime(this, now);
   }
 
+  @Override
+  public void beforeDatastoreSaveOnReplay() {
+    saveIndexesToDatastore();
+  }
+
   public static VKey<DomainBase> createVKey(Key<DomainBase> key) {
     return VKey.create(DomainBase.class, key.getName(), key);
   }

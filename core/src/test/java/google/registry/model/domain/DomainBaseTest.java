@@ -19,6 +19,7 @@ import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
@@ -51,6 +52,9 @@ import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
+import google.registry.model.index.EppResourceIndex;
+import google.registry.model.index.ForeignKeyIndex;
+import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
@@ -891,6 +895,29 @@ public class DomainBaseTest extends EntityTestCase {
             ImmutableSet.of(
                 new BillEventInfo(null, oneTimeBillKey),
                 new BillEventInfo(recurringBillKey, null)));
+  }
+
+  @Test
+  void testBeforeDatastoreSaveOnReplay_indexes() {
+    ImmutableList<ForeignKeyDomainIndex> foreignKeyIndexes =
+        ofyTm().loadAllOf(ForeignKeyDomainIndex.class);
+    ImmutableList<EppResourceIndex> eppResourceIndexes = ofyTm().loadAllOf(EppResourceIndex.class);
+    fakeClock.advanceOneMilli();
+    ofyTm()
+        .transact(
+            () -> {
+              foreignKeyIndexes.forEach(ofyTm()::delete);
+              eppResourceIndexes.forEach(ofyTm()::delete);
+            });
+    assertThat(ofyTm().loadAllOf(ForeignKeyDomainIndex.class)).isEmpty();
+    assertThat(ofyTm().loadAllOf(EppResourceIndex.class)).isEmpty();
+
+    ofyTm().transact(() -> domain.beforeDatastoreSaveOnReplay());
+
+    assertThat(ofyTm().loadAllOf(ForeignKeyDomainIndex.class))
+        .containsExactly(ForeignKeyIndex.create(domain, domain.getDeletionTime()));
+    assertThat(ofyTm().loadAllOf(EppResourceIndex.class))
+        .containsExactly(EppResourceIndex.create(Key.create(domain)));
   }
 
   static class BillEventInfo extends ImmutableObject {
