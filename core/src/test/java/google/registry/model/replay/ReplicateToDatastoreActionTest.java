@@ -188,7 +188,7 @@ public class ReplicateToDatastoreActionTest {
   @Test
   void testMissingTransactions_fullTask() {
     // Write a transaction (should have a transaction id of 1).
-    TestEntity foo = new TestEntity("foo");
+    TestObject foo = TestObject.create("foo");
     jpaTm().transact(() -> jpaTm().insert(foo));
 
     // Force the last transaction id back to -1 so that we look for transaction 0.
