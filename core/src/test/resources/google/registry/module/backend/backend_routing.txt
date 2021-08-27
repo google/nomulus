@@ -47,4 +47,5 @@ PATH                                               CLASS                        
 /_dr/task/updateSnapshotView                       UpdateSnapshotViewAction                       POST     n  INTERNAL,API APP ADMIN
 /_dr/task/uploadDatastoreBackup                    UploadDatastoreBackupAction                    POST     n  INTERNAL,API APP ADMIN
 /_dr/task/wipeOutCloudSql                          WipeOutCloudSqlAction                          GET      n  INTERNAL,API APP ADMIN
+/_dr/task/wipeOutContactHistoryPii                 WipeOutContactHistoryPiiAction                 GET      n  INTERNAL,API APP ADMIN
 /_dr/task/wipeOutDatastore                         WipeoutDatastoreAction                         GET      n  INTERNAL,API APP ADMIN
