@@ -113,6 +113,8 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
    */
   @VisibleForTesting
   ImmutableList<RegistrarInfo> getRegistrarsWithExpiringCertificates() {
+    logger.atInfo().log(
+        "Getting a list of registrars that should receive expiring notification emails.");
     return Streams.stream(Registrar.loadAllCached())
         .map(
             registrar ->
@@ -167,6 +169,11 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
               .setRecipients(recipients)
               .setCcs(getEmailAddresses(registrar, Type.ADMIN))
               .build());
+      logger.atInfo().log(
+          "Sent an email to inform registrar %s that its %s SSL certificate will expire on %s.",
+          registrar.getRegistrarName(),
+          certificateType.getDisplayName(),
+          DATE_FORMATTER.print(lastExpiringCertNotificationSentDate));
       /*
        * A duration time offset is used here to ensure that date comparison between two
        * successive dates is always greater than 1 day. This date is set as last updated date,
@@ -198,17 +205,21 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                     newRegistrar.setLastExpiringCertNotificationSentDate(now);
                     tm().put(newRegistrar.build());
                     logger.atInfo().log(
-                        "Updated last notification email sent date for %s certificate of "
+                        "Updated last notification email sent date to %s for %s certificate of "
                             + "registrar %s.",
-                        certificateType.getDisplayName(), registrar.getRegistrarName());
+                        DATE_FORMATTER.print(now),
+                        certificateType.getDisplayName(),
+                        registrar.getRegistrarName());
                     break;
                   case FAILOVER:
                     newRegistrar.setLastExpiringFailoverCertNotificationSentDate(now);
                     tm().put(newRegistrar.build());
                     logger.atInfo().log(
-                        "Updated last notification email sent date for %s certificate of "
+                        "Updated last notification email sent date to %s for %s certificate of "
                             + "registrar %s.",
-                        certificateType.getDisplayName(), registrar.getRegistrarName());
+                        DATE_FORMATTER.print(now),
+                        certificateType.getDisplayName(),
+                        registrar.getRegistrarName());
                     break;
                   default:
                     throw new IllegalArgumentException(
@@ -251,7 +262,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
       }
     }
     logger.atInfo().log(
-        "Sent %d expiring certificate notification emails to registrars.", emailsSent);
+        "Attempted to send %d expiring certificate notification emails.", emailsSent);
     return emailsSent;
   }
 
