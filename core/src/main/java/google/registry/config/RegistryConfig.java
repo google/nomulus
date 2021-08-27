@@ -1306,6 +1306,12 @@ public final class RegistryConfig {
     public static ImmutableSet<String> provideAllowedEcdsaCurves(RegistryConfigSettings config) {
       return ImmutableSet.copyOf(config.sslCertificateValidation.allowedEcdsaCurves);
     }
+
+    @Provides
+    @Config("minMonthsBeforeWipeOut")
+    public static int provideMinMonthsBeforeWipeOut(RegistryConfigSettings config) {
+      return config.contactHistory.minMonthsBeforeWipeOut;
+    } 
   }
 
   /** Returns the App Engine project ID, which is based off the environment name. */

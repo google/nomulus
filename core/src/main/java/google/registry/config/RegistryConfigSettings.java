@@ -41,6 +41,7 @@ public class RegistryConfigSettings {
   public Keyring keyring;
   public RegistryTool registryTool;
   public SslCertificateValidation sslCertificateValidation;
+  public ContactHistory contactHistory;
 
   /** Configuration options that apply to the entire App Engine project. */
   public static class AppEngine {
@@ -233,5 +234,10 @@ public class RegistryConfigSettings {
     public Set<String> allowedEcdsaCurves;
     public String expirationWarningEmailBodyText;
     public String expirationWarningEmailSubjectText;
+  }
+
+  /** Configuration for the certificate checker. */
+  public static class ContactHistory {
+    public int minMonthsBeforeWipeOut;
   }
 }
