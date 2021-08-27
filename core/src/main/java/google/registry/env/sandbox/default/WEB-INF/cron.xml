@@ -246,4 +246,14 @@
     <schedule>every 3 minutes</schedule>
     <target>backend</target>
   </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/task/wipeOutContactHistoryPii]]></url>
+    <description>
+      This job runs weekly to wpe out the fields on contact entities in history
+      entries that are at least 18 months old.
+    </description>
+    <schedule>every monday synchronized</schedule>
+    <target>backend</target>
+  </cron>
 </cronentries>
