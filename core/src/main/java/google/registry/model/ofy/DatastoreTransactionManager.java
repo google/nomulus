@@ -336,7 +336,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
-    return new DatastoreQueryComposerImpl(entity);
+    return new DatastoreQueryComposerImpl<>(entity);
   }
 
   @Override
@@ -347,6 +347,16 @@ public class DatastoreTransactionManager implements TransactionManager {
   @Override
   public boolean isOfy() {
     return true;
+  }
+
+  @Override
+  public void putIgnoringReadOnly(Object entity) {
+    syncIfTransactionless(getOfy().saveIgnoringReadOnly().entities(toDatastoreEntity(entity)));
+  }
+
+  @Override
+  public void deleteIgnoringReadOnly(VKey<?> key) {
+    syncIfTransactionless(getOfy().deleteIgnoringReadOnly().key(key.getOfyKey()));
   }
 
   /**

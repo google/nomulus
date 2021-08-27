@@ -638,7 +638,9 @@ class JpaTransactionManagerImplTest {
     jpaTm()
         .transact(
             () ->
-                jpaTm().query("FROM TestEntity", TestEntity.class).getResultList().stream()
+                jpaTm()
+                    .query("FROM TestEntity", TestEntity.class)
+                    .getResultList()
                     .forEach(e -> assertThat(jpaTm().getEntityManager().contains(e)).isFalse()));
     jpaTm()
         .transact(

@@ -119,22 +119,23 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public EntityManager getEntityManager() {
-    if (transactionInfo.get().entityManager == null) {
+    EntityManager entityManager = transactionInfo.get().entityManager;
+    if (entityManager == null) {
       throw new PersistenceException(
           "No EntityManager has been initialized. getEntityManager() must be invoked in the scope"
               + " of a transaction");
     }
-    return transactionInfo.get().entityManager;
+    return entityManager;
   }
 
   @Override
   public <T> TypedQuery<T> query(String sqlString, Class<T> resultClass) {
-    return new DetachingTypedQuery(getEntityManager().createQuery(sqlString, resultClass));
+    return new DetachingTypedQuery<>(getEntityManager().createQuery(sqlString, resultClass));
   }
 
   @Override
   public <T> TypedQuery<T> query(CriteriaQuery<T> criteriaQuery) {
-    return new DetachingTypedQuery(getEntityManager().createQuery(criteriaQuery));
+    return new DetachingTypedQuery<>(getEntityManager().createQuery(criteriaQuery));
   }
 
   @Override
@@ -171,7 +172,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             return work.get();
           }
           TransactionInfo txnInfo = transactionInfo.get();
-          txnInfo.entityManager = emf.createEntityManager();
+          txnInfo.entityManager = createReadOnlyCheckingEntityManager();
           EntityTransaction txn = txnInfo.entityManager.getTransaction();
           try {
             txn.begin();
@@ -203,7 +204,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return work.get();
     }
     TransactionInfo txnInfo = transactionInfo.get();
-    txnInfo.entityManager = emf.createEntityManager();
+    txnInfo.entityManager = createReadOnlyCheckingEntityManager();
     EntityTransaction txn = txnInfo.entityManager.getTransaction();
     try {
       txn.begin();
@@ -594,7 +595,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
-    return new JpaQueryComposerImpl<T>(entity);
+    return new JpaQueryComposerImpl<>(entity);
   }
 
   @Override
@@ -608,11 +609,47 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public void putIgnoringReadOnly(Object entity) {
+    checkArgumentNotNull(entity);
+    if (isEntityOfIgnoredClass(entity)) {
+      return;
+    }
+    assertInTransaction();
+    // Necessary due to the changes in HistoryEntry representation during the migration to SQL
+    Object toPersist = toSqlEntity(entity);
+    TransactionInfo txn = transactionInfo.get();
+    Object merged = txn.entityManager.mergeIgnoringReadOnly(toPersist);
+    txn.objectsToSave.add(merged);
+    txn.addUpdate(toPersist);
+  }
+
+  @Override
+  public void deleteIgnoringReadOnly(VKey<?> key) {
+    checkArgumentNotNull(key, "key must be specified");
+    assertInTransaction();
+    if (IGNORED_ENTITY_CLASSES.contains(key.getKind())) {
+      return;
+    }
+    EntityType<?> entityType = getEntityType(key.getKind());
+    ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getSqlKey());
+    String sql =
+        String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
+    ReadOnlyCheckingQuery query = transactionInfo.get().entityManager.createQuery(sql);
+    entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
+    transactionInfo.get().addDelete(key);
+    query.executeUpdateIgnoringReadOnly();
+  }
+
+  @Override
   public <T> void assertDelete(VKey<T> key) {
     if (internalDelete(key) != 1) {
       throw new IllegalArgumentException(
           String.format("Error deleting the entity of the key: %s", key.getSqlKey()));
     }
+  }
+
+  private ReadOnlyCheckingEntityManager createReadOnlyCheckingEntityManager() {
+    return new ReadOnlyCheckingEntityManager(emf.createEntityManager());
   }
 
   private <T> EntityType<T> getEntityType(Class<T> clazz) {
@@ -750,7 +787,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   private static class TransactionInfo {
-    EntityManager entityManager;
+    ReadOnlyCheckingEntityManager entityManager;
     boolean inTransaction = false;
     DateTime transactionTime;
 

@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.uniqueIndex;
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import static google.registry.config.RegistryConfig.getBaseOfyRetryDuration;
+import static google.registry.persistence.transaction.TransactionManagerFactory.assertNotReadOnlyMode;
 import static google.registry.util.CollectionUtils.union;
 
 import com.google.appengine.api.datastore.DatastoreFailureException;
@@ -131,6 +132,7 @@ public class Ofy {
    * <p>We only allow this in transactions so commit logs can be written in tandem with the delete.
    */
   public Deleter delete() {
+    assertNotReadOnlyMode();
     return new AugmentedDeleter() {
       @Override
       protected void handleDeletion(Iterable<Key<?>> keys) {
@@ -148,12 +150,8 @@ public class Ofy {
    * <p>No backups get written.
    */
   public Deleter deleteWithoutBackup() {
-    return new AugmentedDeleter() {
-      @Override
-      protected void handleDeletion(Iterable<Key<?>> keys) {
-        checkProhibitedAnnotations(keys, VirtualEntity.class);
-      }
-    };
+    assertNotReadOnlyMode();
+    return deleteIgnoringReadOnly();
   }
 
   /**
@@ -163,6 +161,7 @@ public class Ofy {
    * <p>We only allow this in transactions so commit logs can be written in tandem with the save.
    */
   public Saver save() {
+    assertNotReadOnlyMode();
     return new AugmentedSaver() {
       @Override
       protected void handleSave(Iterable<?> entities) {
@@ -182,10 +181,26 @@ public class Ofy {
    * <p>No backups get written.
    */
   public Saver saveWithoutBackup() {
+    assertNotReadOnlyMode();
+    return saveIgnoringReadOnly();
+  }
+
+  /** Save, ignoring any backups or any read-only settings. */
+  public Saver saveIgnoringReadOnly() {
     return new AugmentedSaver() {
       @Override
       protected void handleSave(Iterable<?> entities) {
         checkProhibitedAnnotations(entities, VirtualEntity.class);
+      }
+    };
+  }
+
+  /** Delete, ignoring any backups or any read-only settings. */
+  public Deleter deleteIgnoringReadOnly() {
+    return new AugmentedDeleter() {
+      @Override
+      protected void handleDeletion(Iterable<Key<?>> keys) {
+        checkProhibitedAnnotations(keys, VirtualEntity.class);
       }
     };
   }

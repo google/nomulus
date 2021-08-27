@@ -1361,6 +1361,33 @@ public class DatabaseHelper {
   }
 
   /**
+   * Sets a DATASTORE_PRIMARY_READ_ONLY state on the {@link DatabaseMigrationStateSchedule}.
+   *
+   * <p>In order to allow for tests to manipulate the clock how they need, we start the transitions
+   * one millisecond after the clock's current time (in case the clock's current value is
+   * START_OF_TIME). We then advance the clock one second so that we're in the
+   * DATASTORE_PRIMARY_READ_ONLY phase.
+   *
+   * <p>We must use the current time, otherwise the setting of the migration state will fail due to
+   * an invalid transition.
+   */
+  public static void setMigrationScheduleToDatastorePrimaryReadOnly(FakeClock fakeClock) {
+    DateTime now = fakeClock.nowUtc();
+    jpaTm()
+        .transact(
+            () ->
+                DatabaseMigrationStateSchedule.set(
+                    ImmutableSortedMap.of(
+                        START_OF_TIME,
+                        MigrationState.DATASTORE_ONLY,
+                        now.plusMillis(1),
+                        MigrationState.DATASTORE_PRIMARY,
+                        now.plusMillis(2),
+                        MigrationState.DATASTORE_PRIMARY_READ_ONLY)));
+    fakeClock.advanceBy(Duration.standardSeconds(1));
+  }
+
+  /**
    * Sets a SQL_PRIMARY state on the {@link DatabaseMigrationStateSchedule}.
    *
    * <p>In order to allow for tests to manipulate the clock how they need, we start the transitions
@@ -1395,8 +1422,9 @@ public class DatabaseHelper {
         .transact(
             () ->
                 jpaTm()
-                    .loadSingleton(DatabaseMigrationStateSchedule.class)
-                    .ifPresent(jpaTm()::delete));
+                    .putIgnoringReadOnly(
+                        new DatabaseMigrationStateSchedule(
+                            DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP)));
     DatabaseMigrationStateSchedule.CACHE.invalidateAll();
   }
 
