@@ -443,7 +443,7 @@ public class DatabaseHelper {
    * Deletes "domain" and all history records, billing events, poll messages and subordinate hosts.
    */
   public static void deleteTestDomain(DomainBase domain, DateTime now) {
-    Iterable<BillingEvent> billingEvents = getBillingEvents();
+    Iterable<BillingEvent> billingEvents = getBillingEvents(domain);
     Iterable<? extends HistoryEntry> historyEntries =
         HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey());
     Iterable<PollMessage> pollMessages = loadAllOf(PollMessage.class);
@@ -791,13 +791,13 @@ public class DatabaseHelper {
     return transactIfJpaTm(
         () ->
             Iterables.concat(
-                tm().loadAllOf(BillingEvent.OneTime.class).stream()
+                tm().loadAllOfStream(BillingEvent.OneTime.class)
                     .filter(oneTime -> oneTime.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList()),
-                tm().loadAllOf(BillingEvent.Recurring.class).stream()
+                tm().loadAllOfStream(BillingEvent.Recurring.class)
                     .filter(recurring -> recurring.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList()),
-                tm().loadAllOf(BillingEvent.Cancellation.class).stream()
+                tm().loadAllOfStream(BillingEvent.Cancellation.class)
                     .filter(
                         cancellation -> cancellation.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList())));
@@ -1351,7 +1351,25 @@ public class DatabaseHelper {
   }
 
   /**
-   * Asserts that the given entity is detached from the current JPA entity manager.
+   * Loads all given entities from the database if possible.
+   *
+   * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
+   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   *
+   * <p>Nonexistent entities are absent from the resulting list, but no {@link
+   * NoSuchElementException} will be thrown.
+   */
+  public static <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities) {
+    return transactIfJpaTm(() -> tm().loadByEntitiesIfPresent(entities));
+  }
+
+  /** Returns whether or not the given entity exists in the database. */
+  public static boolean existsInDatabase(Object object) {
+    return transactIfJpaTm(() -> tm().exists(object));
+  }
+
+  /**
+   * In JPA mode, asserts that the given entity is detached from the current entity manager.
    *
    * <p>Returns the original entity object.
    */
