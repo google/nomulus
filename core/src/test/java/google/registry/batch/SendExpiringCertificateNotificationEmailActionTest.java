@@ -66,6 +66,51 @@ class SendExpiringCertificateNotificationEmailActionTest {
   private SendExpiringCertificateNotificationEmailAction action;
   private Registrar sampleRegistrar;
   private Response response;
+  private static final String expirationWarningEmailBodyText =
+      " Dear %1$s,\n"
+          + "\n"
+          + "    We would like to inform you that your %2$s SSL certificate will expire at\n"
+          + "    %3$s. Please take note that using expired certificates will prevent\n"
+          + "    successful Registry login.\n"
+          + "\n"
+          + "    Kindly update your production account certificate within the support\n"
+          + "    console using the following steps:\n"
+          + "\n"
+          + "      1. Navigate to support.registry.google and login using your\n"
+          + "    %4$s@registry.google credentials.\n"
+          + "          * If this is your first time logging in, you will be prompted to\n"
+          + "          reset your password, so please keep your new password safe.\n"
+          + "          * If you are already logged in with some other Google account(s) but\n"
+          + "          not your %4$s@registry.google account, you need to click on\n"
+          + "          “Add Account” and login using your %4$s@registry.google credentials.\n"
+          + "      2. Select “Settings > Security” from the left navigation bar.\n"
+          + "      3. Click “Edit” on the top left corner.\n"
+          + "      4. Enter your full certificate string\n"
+          + "         (including lines -----BEGIN CERTIFICATE----- and\n"
+          + "         -----END CERTIFICATE-----) in the box.\n"
+          + "      5. Click “Save”. If there are validation issues with the form, you will\n"
+          + "         be prompted to fix them and click “Save” again.\n"
+          + "\n"
+          + "    A failover SSL certificate can also be added in order to prevent connection\n"
+          + "    issues once your main certificate expires. Connecting with either of the\n"
+          + "    certificates will work with our production EPP server.\n"
+          + "\n"
+          + "    Further information about our EPP connection requirements can be found in\n"
+          + "    section 9.2 in the updated Technical Guide in your Google Drive folder.\n"
+          + "\n"
+          + "    Note that account certificate changes take a few minutes to become\n"
+          + "    effective and that the existing connections will remain unaffected by\n"
+          + "    the change.\n"
+          + "\n"
+          + "    If you also would like to update your OT&E account certificate, please send\n"
+          + "    an email from your primary or technical contact to\n"
+          + "    registry-support@google.com and include the full certificate string\n"
+          + "    (including lines -----BEGIN CERTIFICATE----- and -----END CERTIFICATE-----).\n"
+          + "\n"
+          + "    Regards,\n"
+          + "    Google Registry\n";
+  private static final String expirationWarningEmailSubjectText =
+      "[Important] Expiring SSL certificate for Google " + "Registry EPP connection";
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -77,9 +122,6 @@ class SendExpiringCertificateNotificationEmailActionTest {
             2048,
             ImmutableSet.of("secp256r1", "secp384r1"),
             clock);
-    String expirationWarningEmailBodyText =
-        " Hello Registrar %s,\n" + "       The %s certificate is expiring on %s.";
-    String expirationWarningEmailSubjectText = "expiring certificate notification email";
 
     action =
         new SendExpiringCertificateNotificationEmailAction(
@@ -578,12 +620,21 @@ class SendExpiringCertificateNotificationEmailActionTest {
     String registrarName = "good registrar";
     String certExpirationDateStr = "2021-06-15";
     CertificateType certificateType = CertificateType.PRIMARY;
+    String registrarId = "registrarid";
     String emailBody =
         action.getEmailBody(
-            registrarName, certificateType, DateTime.parse(certExpirationDateStr).toDate());
+            registrarName,
+            certificateType,
+            DateTime.parse(certExpirationDateStr).toDate(),
+            registrarId);
     assertThat(emailBody).contains(registrarName);
     assertThat(emailBody).contains(certificateType.getDisplayName());
     assertThat(emailBody).contains(certExpirationDateStr);
+    assertThat(emailBody).contains(registrarId + "@registry.google");
+    assertThat(emailBody).doesNotContain("%1$s@registry.google");
+    assertThat(emailBody).doesNotContain("%2$s@registry.google");
+    assertThat(emailBody).doesNotContain("%3$s@registry.google");
+    assertThat(emailBody).doesNotContain("%4$s@registry.google");
   }
 
   @TestOfyAndSql
@@ -591,7 +642,9 @@ class SendExpiringCertificateNotificationEmailActionTest {
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> action.getEmailBody("good registrar", CertificateType.FAILOVER, null));
+            () ->
+                action.getEmailBody(
+                    "good registrar", CertificateType.FAILOVER, null, "registrarId"));
     assertThat(thrown).hasMessageThat().contains("Expiration date cannot be null");
   }
 
@@ -601,7 +654,22 @@ class SendExpiringCertificateNotificationEmailActionTest {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                action.getEmailBody("good registrar", null, DateTime.parse("2021-06-15").toDate()));
+                action.getEmailBody(
+                    "good registrar", null, DateTime.parse("2021-06-15").toDate(), "registrarId"));
     assertThat(thrown).hasMessageThat().contains("Certificate type cannot be null");
+  }
+
+  @TestOfyAndSql
+  void getEmailBody_throwsIllegalArgumentException_noRegistrarId() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                action.getEmailBody(
+                    "good registrar",
+                    CertificateType.FAILOVER,
+                    DateTime.parse("2021-06-15").toDate(),
+                    null));
+    assertThat(thrown).hasMessageThat().contains("Registrar Id cannot be null");
   }
 }

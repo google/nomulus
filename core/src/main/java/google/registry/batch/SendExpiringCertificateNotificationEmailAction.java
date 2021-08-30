@@ -165,7 +165,8 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                   getEmailBody(
                       registrar.getRegistrarName(),
                       certificateType,
-                      certificateChecker.getCertificate(certificate.get()).getNotAfter()))
+                      certificateChecker.getCertificate(certificate.get()).getNotAfter(),
+                      registrar.getClientId()))
               .setRecipients(recipients)
               .setCcs(getEmailAddresses(registrar, Type.ADMIN))
               .build());
@@ -289,14 +290,17 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
    */
   @VisibleForTesting
   @SuppressWarnings("lgtm[java/dereferenced-value-may-be-null]")
-  String getEmailBody(String registrarName, CertificateType type, Date expirationDate) {
+  String getEmailBody(
+      String registrarName, CertificateType type, Date expirationDate, String registrarId) {
     checkArgumentNotNull(expirationDate, "Expiration date cannot be null");
     checkArgumentNotNull(type, "Certificate type cannot be null");
+    checkArgumentNotNull(registrarId, "Registrar Id cannot be null");
     return String.format(
         expirationWarningEmailBodyText,
         registrarName,
         type.getDisplayName(),
-        DATE_FORMATTER.print(new DateTime(expirationDate)));
+        DATE_FORMATTER.print(new DateTime(expirationDate)),
+        registrarId);
   }
 
   /**
