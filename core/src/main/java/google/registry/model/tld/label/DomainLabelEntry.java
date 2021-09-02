@@ -20,10 +20,10 @@ import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.net.InternetDomainName;
-import com.googlecode.objectify.annotation.Id;
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
 import javax.persistence.Column;
+import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 
 /**
@@ -36,13 +36,12 @@ public abstract class DomainLabelEntry<T extends Comparable<?>, D extends Domain
     extends ImmutableObject implements Comparable<D> {
 
   @Id
-  @javax.persistence.Id
   @Column(name = "domainLabel", nullable = false)
   String domainLabel;
 
   /**
    * Returns the label of the field, which also happens to be used as the key for the Map object
-   * that is serialized from Datastore.
+   * that is serialized from the database.
    */
   public String getDomainLabel() {
     return domainLabel;
