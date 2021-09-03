@@ -91,6 +91,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junitpioneer.jupiter.RetryingTest;
 
 /** Unit tests for {@link RdePipeline}. */
 public class RdePipelineTest {
@@ -288,7 +289,8 @@ public class RdePipelineTest {
     pipeline.run().waitUntilFinish();
   }
 
-  @Test
+  // The GCS folder listing can be a bit flaky, so retry if necessary
+  @RetryingTest(4)
   void testSuccess_persistData() throws Exception {
     PendingDeposit brdaKey =
         PendingDeposit.create("soy", now, THIN, CursorType.BRDA, Duration.standardDays(1));
@@ -314,7 +316,8 @@ public class RdePipelineTest {
     assertThat(loadRevision(now, FULL)).isEqualTo(1);
   }
 
-  @Test
+  // The GCS folder listing can be a bit flaky, so retry if necessary
+  @RetryingTest(4)
   void testSuccess_persistData_manual() throws Exception {
     PendingDeposit brdaKey = PendingDeposit.createInManualOperation("soy", now, THIN, "test/", 0);
     PendingDeposit rdeKey = PendingDeposit.createInManualOperation("soy", now, FULL, "test/", 0);
