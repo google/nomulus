@@ -55,18 +55,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 @DualDatabaseTest
 class SendExpiringCertificateNotificationEmailActionTest {
 
-  @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-  private final FakeClock clock = new FakeClock(DateTime.parse("2021-05-24T20:21:22Z"));
-  private final SendEmailService sendEmailService = mock(SendEmailService.class);
-  private CertificateChecker certificateChecker;
-  private SendExpiringCertificateNotificationEmailAction action;
-  private Registrar sampleRegistrar;
-  private Response response;
-  private static final String expirationWarningEmailBodyText =
+  private static final String EXPIRATION_WARNING_EMAIL_BODY_TEXT =
       " Dear %1$s,\n"
           + "\n"
           + "    We would like to inform you that your %2$s SSL certificate will expire at\n"
@@ -109,8 +98,21 @@ class SendExpiringCertificateNotificationEmailActionTest {
           + "\n"
           + "    Regards,\n"
           + "    Google Registry\n";
-  private static final String expirationWarningEmailSubjectText =
+
+  private static final String EXPIRATION_WARNING_EMAIL_SUBJECT_TEXT =
       "[Important] Expiring SSL certificate for Google " + "Registry EPP connection";
+
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+  private final FakeClock clock = new FakeClock(DateTime.parse("2021-05-24T20:21:22Z"));
+  private final SendEmailService sendEmailService = mock(SendEmailService.class);
+  private CertificateChecker certificateChecker;
+  private SendExpiringCertificateNotificationEmailAction action;
+  private Registrar sampleRegistrar;
+  private Response response;
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -125,8 +127,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
 
     action =
         new SendExpiringCertificateNotificationEmailAction(
-            expirationWarningEmailBodyText,
-            expirationWarningEmailSubjectText,
+            EXPIRATION_WARNING_EMAIL_BODY_TEXT,
+            EXPIRATION_WARNING_EMAIL_SUBJECT_TEXT,
             new InternetAddress("test@example.com"),
             sendEmailService,
             certificateChecker,
