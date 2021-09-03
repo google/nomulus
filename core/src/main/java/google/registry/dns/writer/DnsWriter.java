@@ -31,12 +31,12 @@ package google.registry.dns.writer;
 public interface DnsWriter {
 
   /**
-   * Loads {@code domainName} from Datastore and publishes its NS/DS records to the DNS server.
+   * Loads {@code domainName} from the database and publishes its NS/DS records to the DNS server.
    * Replaces existing records for the exact name supplied with an NS record for each name server
    * and a DS record for each delegation signer stored in the registry for the supplied domain name.
    * If the domain is deleted or is in a "non-publish" state then any existing records are deleted.
    *
-   * This must NOT actually perform any action, instead it should stage the action so that it's
+   * <p>This must NOT actually perform any action, instead it should stage the action so that it's
    * performed when {@link #commit()} is called.
    *
    * @param domainName the fully qualified domain name, with no trailing dot
@@ -44,14 +44,14 @@ public interface DnsWriter {
   void publishDomain(String domainName);
 
   /**
-   * Loads {@code hostName} from Datastore and publishes its A/AAAA glue records to the DNS server,
-   * if it is used as an in-bailiwick nameserver. Orphaned glue records are prohibited. Replaces
-   * existing records for the exact name supplied, with an A or AAAA record (as appropriate) for
-   * each address stored in the registry, for the supplied host name. If the host is deleted then
-   * the existing records are deleted. Assumes that this method will only be called for in-bailiwick
-   * hosts. The registry does not have addresses for other hosts.
+   * Loads {@code hostName} from the database and publishes its A/AAAA glue records to the DNS
+   * server, if it is used as an in-bailiwick nameserver. Orphaned glue records are prohibited.
+   * Replaces existing records for the exact name supplied, with an A or AAAA record (as
+   * appropriate) for each address stored in the registry, for the supplied host name. If the host
+   * is deleted then the existing records are deleted. Assumes that this method will only be called
+   * for in-bailiwick hosts. The registry does not have addresses for other hosts.
    *
-   * This must NOT actually perform any action, instead it should stage the action so that it's
+   * <p>This must NOT actually perform any action, instead it should stage the action so that it's
    * performed when {@link #commit()} is called.
    *
    * @param hostName the fully qualified host name, with no trailing dot

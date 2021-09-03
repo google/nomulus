@@ -150,7 +150,8 @@ public final class SyncGroupMembersAction implements Runnable {
 
   /**
    * Parses the results from Google Groups for each registrar, setting the dirty flag to false in
-   * Datastore for the calls that succeeded and accumulating the errors for the calls that failed.
+   * the database for the calls that succeeded and accumulating the errors for the calls that
+   * failed.
    */
   private static List<Throwable> getErrorsAndUpdateFlagsForSuccesses(
       ImmutableMap<Registrar, Optional<Throwable>> results) {

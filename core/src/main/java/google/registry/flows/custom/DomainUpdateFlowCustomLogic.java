@@ -51,10 +51,10 @@ public class DomainUpdateFlowCustomLogic extends BaseFlowCustomLogic {
   /**
    * A hook that runs before new entities are persisted, allowing them to be changed.
    *
-   * <p>It returns the actual entity changes that should be persisted to Datastore. It is important
-   * to be careful when changing the flow behavior for existing entities, because the core logic
-   * across many different flows expects the existence of these entities and many of the fields on
-   * them.
+   * <p>It returns the actual entity changes that should be persisted to the database. It is
+   * important to be careful when changing the flow behavior for existing entities, because the core
+   * logic across many different flows expects the existence of these entities and many of the
+   * fields on them.
    */
   @SuppressWarnings("unused")
   public EntityChanges beforeSave(BeforeSaveParameters parameters) throws EppException {
