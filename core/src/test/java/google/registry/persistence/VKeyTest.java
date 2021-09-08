@@ -15,11 +15,14 @@ package google.registry.persistence;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
+import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.billing.BillingEvent.OneTime;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TestObject;
@@ -112,6 +115,19 @@ class VKeyTest {
     assertThat(thrown)
         .hasMessageThat()
         .contains("Missing value for last key of type class google.registry.testing.TestObject");
+  }
+
+  @Test
+  void testFromWebsafeKey() {
+    // Creating an objectify key instead of a datastore key as this should get a correctly formatted
+    // key path.  We have to one of our actual model object classes for this, TestObject can not be
+    // reconstructed by the VKeyTranslatorFactory.
+    DomainBase domain = newDomainBase("example.com", "ROID-1", persistActiveContact("contact-1"));
+    Key<DomainBase> key = Key.create(domain);
+    VKey<DomainBase> vkey = VKey.fromWebsafeKey(key.getString());
+    assertThat(vkey.getKind()).isEqualTo(DomainBase.class);
+    assertThat(vkey.getOfyKey()).isEqualTo(key);
+    assertThat(vkey.getSqlKey()).isEqualTo("ROID-1");
   }
 
   @Entity
