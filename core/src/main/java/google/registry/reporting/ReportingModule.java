@@ -14,7 +14,6 @@
 
 package google.registry.reporting;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 
@@ -56,22 +55,11 @@ public class ReportingModule {
   /** The request parameter specifying the jobId for a running Dataflow pipeline. */
   public static final String PARAM_JOB_ID = "jobId";
 
-  /** The request parameter for specifying which database reporting actions should read from. */
-  public static final String DATABASE = "database";
-
   /** Provides the Cloud Dataflow jobId for a pipeline. */
   @Provides
   @Parameter(PARAM_JOB_ID)
   static String provideJobId(HttpServletRequest req) {
     return extractRequiredParameter(req, PARAM_JOB_ID);
-  }
-
-  /** Provides the database for the pipeline to read from. */
-  @Provides
-  @Parameter(DATABASE)
-  static String provideDatabase(HttpServletRequest req) {
-    Optional<String> optionalDatabase = extractOptionalParameter(req, DATABASE);
-    return optionalDatabase.orElse(tm().isOfy() ? "DATASTORE" : "CLOUD_SQL");
   }
 
   /** Extracts an optional YearMonth in yyyy-MM format from the request. */

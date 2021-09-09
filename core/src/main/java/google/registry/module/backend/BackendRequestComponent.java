@@ -94,7 +94,6 @@ import google.registry.tools.javascrap.CreateSyntheticHistoryEntriesAction;
 @RequestScope
 @Subcomponent(
     modules = {
-      BackendModule.class,
       BackupModule.class,
       BatchModule.class,
       BillingModule.class,

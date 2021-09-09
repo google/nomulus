@@ -18,13 +18,10 @@ import static com.google.common.base.Strings.emptyToNull;
 import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
-import static google.registry.request.RequestParameters.extractSetOfParameters;
 
-import com.google.common.collect.ImmutableSet;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.request.Parameter;
-import google.registry.request.RequestParameters;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 
@@ -58,18 +55,6 @@ public class ToolsServerModule {
   static Optional<Boolean> providePrintHeaderRow(HttpServletRequest req) {
     String s = emptyToNull(req.getParameter(ListObjectsAction.PRINT_HEADER_ROW_PARAM));
     return (s == null) ? Optional.empty() : Optional.of(Boolean.parseBoolean(s));
-  }
-
-  @Provides
-  @Parameter(RequestParameters.PARAM_TLD)
-  static String provideTld(HttpServletRequest req) {
-    return extractRequiredParameter(req, RequestParameters.PARAM_TLD);
-  }
-
-  @Provides
-  @Parameter(RequestParameters.PARAM_TLDS)
-  static ImmutableSet<String> provideTlds(HttpServletRequest req) {
-    return extractSetOfParameters(req, RequestParameters.PARAM_TLDS);
   }
 
   @Provides

@@ -38,6 +38,14 @@ public final class RequestParameters {
   public static final String PARAM_TLDS = "tlds";
 
   /**
+   * The standardized optional request parameter name used by any action to specify which database
+   * to use, if the action supports such override. The supported values are (case-insensitive)
+   * "datastore" and "cloud_sql".
+   */
+  // TODO (jianglai): delete this param after the database migration.
+  public static final String PARAM_DATABASE = "database";
+
+  /**
    * Returns first GET or POST parameter associated with {@code name}.
    *
    * <p>For example, assume {@code name} is "bar". The following request URIs would cause this

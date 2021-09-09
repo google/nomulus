@@ -15,16 +15,24 @@
 package google.registry.request;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
+import static google.registry.model.tld.Registries.assertTldExists;
+import static google.registry.model.tld.Registries.assertTldsExist;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.request.RequestParameters.extractOptionalParameter;
+import static google.registry.request.RequestParameters.extractRequiredParameter;
+import static google.registry.request.RequestParameters.extractSetOfParameters;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.VerifyException;
 import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CharStreams;
 import com.google.common.net.MediaType;
 import dagger.Module;
 import dagger.Provides;
+import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.HttpException.UnsupportedMediaTypeException;
 import google.registry.request.auth.AuthResult;
@@ -58,6 +66,29 @@ public final class RequestModule {
     this.req = req;
     this.rsp = rsp;
     this.authResult = authResult;
+  }
+
+  @Provides
+  @Parameter(RequestParameters.PARAM_TLD)
+  static String provideTld(HttpServletRequest req) {
+    return assertTldExists(extractRequiredParameter(req, RequestParameters.PARAM_TLD));
+  }
+
+  @Provides
+  @Parameter(RequestParameters.PARAM_TLDS)
+  static ImmutableSet<String> provideTlds(HttpServletRequest req) {
+    ImmutableSet<String> tlds = extractSetOfParameters(req, RequestParameters.PARAM_TLDS);
+    assertTldsExist(tlds);
+    return tlds;
+  }
+
+  @Provides
+  @Parameter(RequestParameters.PARAM_DATABASE)
+  static PrimaryDatabase provideDatabase(HttpServletRequest req) {
+    return extractOptionalParameter(req, RequestParameters.PARAM_DATABASE)
+        .map(String::toUpperCase)
+        .map(PrimaryDatabase::valueOf)
+        .orElse(tm().isOfy() ? PrimaryDatabase.DATASTORE : PrimaryDatabase.CLOUD_SQL);
   }
 
   @Provides
