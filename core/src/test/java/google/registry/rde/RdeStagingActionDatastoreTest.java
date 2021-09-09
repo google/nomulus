@@ -90,8 +90,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/** Unit tests for {@link RdeStagingAction}. */
-public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
+/** Unit tests for {@link RdeStagingAction} in Datastore. */
+public class RdeStagingActionDatastoreTest extends MapreduceTestCase<RdeStagingAction> {
 
   private static final BlobId XML_FILE =
       BlobId.of("rde-bucket", "lol_2000-01-01_full_S1_R0.xml.ghostryde");

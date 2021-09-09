@@ -14,7 +14,6 @@
 
 package google.registry.rde;
 
-import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static com.google.common.base.Verify.verify;
 import static com.google.common.net.MediaType.PLAIN_TEXT_UTF_8;
 import static com.jcraft.jsch.ChannelSftp.OVERWRITE;
@@ -24,14 +23,15 @@ import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
+import static google.registry.rde.RdeModule.RDE_REPORT_QUEUE;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 import static java.util.Arrays.asList;
 
-import com.google.appengine.api.taskqueue.Queue;
 import com.google.cloud.storage.BlobId;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.HashMultimap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.io.ByteStreams;
 import com.jcraft.jsch.JSch;
@@ -49,14 +49,15 @@ import google.registry.model.tld.Registry;
 import google.registry.rde.EscrowTaskRunner.EscrowTask;
 import google.registry.rde.JSchSshSession.JSchSshSessionFactory;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.HttpException.NoContentException;
 import google.registry.request.Parameter;
 import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
+import google.registry.util.CloudTasksUtils;
 import google.registry.util.Retrier;
-import google.registry.util.TaskQueueUtils;
 import google.registry.util.TeeOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -66,7 +67,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.util.Optional;
 import javax.inject.Inject;
-import javax.inject.Named;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -90,7 +90,7 @@ import org.joda.time.Duration;
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class RdeUploadAction implements Runnable, EscrowTask {
 
-  static final String PATH = "/_dr/task/rdeUpload";
+  public static final String PATH = "/_dr/task/rdeUpload";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -109,9 +109,10 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   @Inject JSchSshSessionFactory jschSshSessionFactory;
   @Inject Response response;
   @Inject SftpProgressMonitor sftpProgressMonitor;
-  @Inject TaskQueueUtils taskQueueUtils;
+  @Inject CloudTasksUtils cloudTasksUtils;
   @Inject Retrier retrier;
   @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
+  @Inject @Parameter(RdeModule.PARAM_PREFIX) Optional<String> prefix;
   @Inject @Config("rdeBucket") String bucket;
   @Inject @Config("rdeInterval") Duration interval;
   @Inject @Config("rdeUploadLockTimeout") Duration timeout;
@@ -120,15 +121,21 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   @Inject @Key("rdeReceiverKey") PGPPublicKey receiverKey;
   @Inject @Key("rdeSigningKey") PGPKeyPair signingKey;
   @Inject @Key("rdeStagingDecryptionKey") PGPPrivateKey stagingDecryptionKey;
-  @Inject @Named("rde-report") Queue reportQueue;
   @Inject RdeUploadAction() {}
 
   @Override
   public void run() {
     logger.atInfo().log("Attempting to acquire RDE upload lock for TLD '%s'.", tld);
     runner.lockRunAndRollForward(this, Registry.get(tld), timeout, CursorType.RDE_UPLOAD, interval);
-    taskQueueUtils.enqueue(
-        reportQueue, withUrl(RdeReportAction.PATH).param(RequestParameters.PARAM_TLD, tld));
+    HashMultimap<String, String> params = HashMultimap.create();
+    params.put(RequestParameters.PARAM_TLD, tld);
+    if (prefix.isPresent()) {
+      params.put(RdeModule.PARAM_PREFIX, prefix.get());
+    }
+    cloudTasksUtils.enqueue(
+        RDE_REPORT_QUEUE,
+        CloudTasksUtils.createPostTask(
+            RdeReportAction.PATH, Service.BACKEND.getServiceId(), params));
   }
 
   @Override
@@ -164,7 +171,9 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
         RdeRevision.getCurrentRevision(tld, watermark, FULL)
             .orElseThrow(
                 () -> new IllegalStateException("RdeRevision was not set on generated deposit"));
-    final String name = RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
+    final String nameWithoutPrefix =
+        RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
+    final String name = prefix.orElse("") + nameWithoutPrefix;
     final BlobId xmlFilename = BlobId.of(bucket, name + ".xml.ghostryde");
     final BlobId xmlLengthFilename = BlobId.of(bucket, name + ".xml.length");
     BlobId reportFilename = BlobId.of(bucket, name + "-report.xml.ghostryde");
@@ -174,7 +183,8 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
     logger.atInfo().log("Commencing RDE upload for TLD '%s' to '%s'.", tld, uploadUrl);
     final long xmlLength = readXmlLength(xmlLengthFilename);
     retrier.callWithRetry(
-        () -> upload(xmlFilename, xmlLength, watermark, name), JSchException.class);
+        () -> upload(xmlFilename, xmlLength, watermark, name, nameWithoutPrefix),
+        JSchException.class);
     logger.atInfo().log(
         "Updating RDE cursor '%s' for TLD '%s' following successful upload.", RDE_UPLOAD_SFTP, tld);
     tm().transact(
@@ -210,7 +220,8 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
    * }</pre>
    */
   @VisibleForTesting
-  protected void upload(BlobId xmlFile, long xmlLength, DateTime watermark, String name)
+  protected void upload(
+      BlobId xmlFile, long xmlLength, DateTime watermark, String name, String nameWithoutPrefix)
       throws Exception {
     logger.atInfo().log("Uploading XML file '%s' to remote path '%s'.", xmlFile, uploadUrl);
     try (InputStream gcsInput = gcsUtils.openInputStream(xmlFile);
@@ -218,8 +229,8 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
       try (JSchSshSession session = jschSshSessionFactory.create(lazyJsch.get(), uploadUrl);
           JSchSftpChannel ftpChan = session.openSftpChannel()) {
         ByteArrayOutputStream sigOut = new ByteArrayOutputStream();
-        String rydeFilename = name + ".ryde";
-        BlobId rydeGcsFilename = BlobId.of(bucket, rydeFilename);
+        String rydeFilename = nameWithoutPrefix + ".ryde";
+        BlobId rydeGcsFilename = BlobId.of(bucket, name + ".ryde");
         try (OutputStream ftpOutput =
                 ftpChan.get().put(rydeFilename, sftpProgressMonitor, OVERWRITE);
             OutputStream gcsOutput = gcsUtils.openOutputStream(rydeGcsFilename);
@@ -228,14 +239,15 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
                 new RydeEncoder.Builder()
                     .setRydeOutput(teeOutput, receiverKey)
                     .setSignatureOutput(sigOut, signingKey)
-                    .setFileMetadata(name, xmlLength, watermark)
+                    .setFileMetadata(nameWithoutPrefix, xmlLength, watermark)
                     .build()) {
             long bytesCopied = ByteStreams.copy(ghostrydeDecoder, rydeEncoder);
           logger.atInfo().log("Uploaded %,d bytes to path '%s'.", bytesCopied, rydeFilename);
           }
-        String sigFilename = name + ".sig";
+        String sigFilename = nameWithoutPrefix + ".sig";
+        BlobId sigGcsFilename = BlobId.of(bucket, name + ".sig");
         byte[] signature = sigOut.toByteArray();
-        gcsUtils.createFromBytes(BlobId.of(bucket, sigFilename), signature);
+        gcsUtils.createFromBytes(sigGcsFilename, signature);
         ftpChan.get().put(new ByteArrayInputStream(signature), sigFilename);
         logger.atInfo().log("Uploaded %,d bytes to path '%s'.", signature.length, sigFilename);
       }

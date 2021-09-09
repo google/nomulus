@@ -3,11 +3,20 @@
   "description": "An Apache Beam pipeline generates RDE or BRDA deposits and deposits them to GCS with GhostRyde encryption.",
   "parameters": [
     {
+      "name": "registryEnvironment",
+      "label": "The Registry environment.",
+      "helpText": "The Registry environment, required if environment-specific initialization (such as JPA) is needed on worker VMs.",
+      "is_optional": false,
+      "regexes": [
+        "^PRODUCTION|SANDBOX|CRASH|QA|ALPHA$"
+      ]
+    },
+    {
       "name": "pendings",
       "label": "The pendings deposits to generate.",
       "helpText": "A TLD to PendingDeposit map that is serialized and Base64 URL-safe encoded.",
       "regexes": [
-        "A-Za-z0-9\\-_"
+        "[A-Za-z0-9\\-_]+"
       ]
     },
     {
@@ -19,12 +28,12 @@
       ]
     },
     {
-      "name": "gcsBucket",
-      "label": "The GCS bucket that where the resulting files will be  stored.",
+      "name": "rdeStagingBucket",
+      "label": "The GCS bucket that where the resulting files will be stored.",
       "helpText": "Only the bucket name itself, without the leading \"gs://\".",
       "is_optional": false,
       "regexes": [
-        "^[a-zA-Z0-9_\\-]+$"
+        "[a-zA-Z0-9_\\-]+$"
       ]
     },
     {
@@ -32,7 +41,7 @@
       "label": "The PGP public key used to encrypt the RDE/BRDA deposit files.",
       "helpText": "The key is Base64 URL-safe encoded.",
       "regexes": [
-        "A-Za-z0-9\\-_"
+        "[A-Za-z0-9\\-_]+"
       ]
     }
   ]

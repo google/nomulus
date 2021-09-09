@@ -35,26 +35,28 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Optional;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Unit tests for {@link BrdaCopyAction}. */
 public class BrdaCopyActionTest {
 
   private static final ByteSource DEPOSIT_XML = RdeTestData.loadBytes("deposit_full.xml");
+  private static final String STAGE_FILENAME = "lol_2010-10-17_thin_S1_R0";
+  private static final BlobId RYDE_FILE =
+      BlobId.of("tub", String.format("%s.ryde", STAGE_FILENAME));
+  private static final BlobId SIG_FILE = BlobId.of("tub", String.format("%s.sig", STAGE_FILENAME));
 
-  private static final BlobId STAGE_FILE =
-      BlobId.of("keg", "lol_2010-10-17_thin_S1_R0.xml.ghostryde");
-  private static final BlobId STAGE_LENGTH_FILE =
-      BlobId.of("keg", "lol_2010-10-17_thin_S1_R0.xml.length");
-  private static final BlobId RYDE_FILE = BlobId.of("tub", "lol_2010-10-17_thin_S1_R0.ryde");
-  private static final BlobId SIG_FILE = BlobId.of("tub", "lol_2010-10-17_thin_S1_R0.sig");
+  private BlobId stageFile;
+  private BlobId stageLengthFile;
 
   @RegisterExtension
   public final BouncyCastleProviderExtension bouncy = new BouncyCastleProviderExtension();
@@ -87,6 +89,16 @@ public class BrdaCopyActionTest {
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final BrdaCopyAction action = new BrdaCopyAction();
 
+  private void runAction(String prefix) throws IOException {
+    stageFile = BlobId.of("keg", String.format("%s%s.xml.ghostryde", prefix, STAGE_FILENAME));
+    stageLengthFile = BlobId.of("keg", String.format("%s%s.xml.length", prefix, STAGE_FILENAME));
+    byte[] xml = DEPOSIT_XML.read();
+    gcsUtils.createFromBytes(stageFile, Ghostryde.encode(xml, encryptKey));
+    gcsUtils.createFromBytes(stageLengthFile, Long.toString(xml.length).getBytes(UTF_8));
+    action.prefix = prefix.isEmpty() ? Optional.empty() : Optional.of(prefix);
+    action.run();
+  }
+
   @BeforeEach
   void beforeEach() throws Exception {
     action.gcsUtils = gcsUtils;
@@ -97,24 +109,22 @@ public class BrdaCopyActionTest {
     action.receiverKey = receiverKey;
     action.signingKey = signingKey;
     action.stagingDecryptionKey = decryptKey;
-
-    byte[] xml = DEPOSIT_XML.read();
-    gcsUtils.createFromBytes(STAGE_FILE, Ghostryde.encode(xml, encryptKey));
-    gcsUtils.createFromBytes(STAGE_LENGTH_FILE, Long.toString(xml.length).getBytes(UTF_8));
   }
 
-  @Test
-  void testRun() {
-    action.run();
-    assertThat(gcsUtils.existsAndNotEmpty(STAGE_FILE)).isTrue();
-    assertThat(gcsUtils.existsAndNotEmpty(RYDE_FILE)).isTrue();
+  @ParameterizedTest
+  @ValueSource(strings = {"", "job-name/"})
+  void testRun(String prefix) throws Exception {
+    runAction(prefix);
+    assertThat(gcsUtils.existsAndNotEmpty(stageFile)).isTrue();
+    assertThat(gcsUtils.existsAndNotEmpty(stageLengthFile)).isTrue();
     assertThat(gcsUtils.existsAndNotEmpty(SIG_FILE)).isTrue();
   }
 
-  @Test
-  void testRun_rydeFormat() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"", "job-name/"})
+  void testRun_rydeFormat(String prefix) throws Exception {
     assumeTrue(hasCommand("gpg --version"));
-    action.run();
+    runAction(prefix);
 
     File rydeTmp = new File(gpg.getCwd(), "ryde");
     Files.write(gcsUtils.readBytesFrom(RYDE_FILE), rydeTmp);
@@ -158,10 +168,11 @@ public class BrdaCopyActionTest {
         .contains("ID 7F9084EE54E1EB0F");
   }
 
-  @Test
-  void testRun_rydeSignature() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"", "job-name/"})
+  void testRun_rydeSignature(String prefix) throws Exception {
     assumeTrue(hasCommand("gpg --version"));
-    action.run();
+    runAction(prefix);
 
     File rydeTmp = new File(gpg.getCwd(), "ryde");
     File sigTmp = new File(gpg.getCwd(), "ryde.sig");

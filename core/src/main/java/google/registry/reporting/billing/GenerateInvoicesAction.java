@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryEnvironment;
 import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
@@ -127,7 +128,9 @@ public class GenerateInvoicesAction implements Runnable {
                       "database",
                       database.name(),
                       "billingBucketUrl",
-                      billingBucketUrl));
+                      billingBucketUrl,
+                      "registryEnvironment",
+                      RegistryEnvironment.get().name()));
       LaunchFlexTemplateResponse launchResponse =
           dataflow
               .projects()

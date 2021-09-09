@@ -37,7 +37,7 @@ import com.google.protobuf.ByteString;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import javax.inject.Provider;
+import java.util.function.Supplier;
 
 /** Utilities for dealing with Cloud Tasks. */
 public class CloudTasksUtils implements Serializable {
@@ -48,17 +48,14 @@ public class CloudTasksUtils implements Serializable {
   private final Retrier retrier;
   private final String projectId;
   private final String locationId;
-  private final Provider<CloudTasksClient> clientProvider;
+  private final SerializableCloudTasksClient client;
 
   public CloudTasksUtils(
-      Retrier retrier,
-      String projectId,
-      String locationId,
-      Provider<CloudTasksClient> clientProvider) {
+      Retrier retrier, String projectId, String locationId, SerializableCloudTasksClient client) {
     this.retrier = retrier;
     this.projectId = projectId;
     this.locationId = locationId;
-    this.clientProvider = clientProvider;
+    this.client = client;
   }
 
   public Task enqueue(String queue, Task task) {
@@ -69,9 +66,7 @@ public class CloudTasksUtils implements Serializable {
               queue,
               task.getAppEngineHttpRequest().getRelativeUri(),
               task.getAppEngineHttpRequest().getAppEngineRouting().getService());
-          try (CloudTasksClient client = clientProvider.get()) {
-            return client.createTask(QueueName.of(projectId, locationId, queue), task);
-          }
+          return client.enqueue(projectId, locationId, queue, task);
         },
         ApiException.class);
   }
@@ -140,5 +135,29 @@ public class CloudTasksUtils implements Serializable {
 
   public static Task createGetTask(String path, String service, Multimap<String, String> params) {
     return createTask(path, HttpMethod.GET, service, params);
+  }
+
+  public abstract static class SerializableCloudTasksClient implements Serializable {
+    public abstract Task enqueue(String projectId, String locationId, String queueName, Task task);
+  }
+
+  public static class GcpCloudTasksClient extends SerializableCloudTasksClient {
+
+    private static final long serialVersionUID = -5959253033129154037L;
+
+    // Use a supplier so that we can use try-with-resources with the client, which implements
+    // Autocloseable.
+    private final Supplier<CloudTasksClient> clientSupplier;
+
+    public GcpCloudTasksClient(Supplier<CloudTasksClient> clientSupplier) {
+      this.clientSupplier = clientSupplier;
+    }
+
+    @Override
+    public Task enqueue(String projectId, String locationId, String queueName, Task task) {
+      try (CloudTasksClient client = clientSupplier.get()) {
+        return client.createTask(QueueName.of(projectId, locationId, queueName), task);
+      }
+    }
   }
 }
