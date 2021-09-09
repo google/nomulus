@@ -16,6 +16,7 @@ package google.registry.beam.common;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
+import google.registry.persistence.transaction.JpaTransactionManager;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -28,6 +29,15 @@ import javax.persistence.criteria.CriteriaQuery;
 
 /** Interface for query instances used by {@link RegistryJpaIO.Read}. */
 public interface RegistryQuery<T> extends Serializable {
+
+  /**
+   * Number of JPA entities to fetch in each batch during a query.
+   *
+   * <p>With Hibernate, for result streaming to work, a query's fetchSize property must be set to a
+   * non-zero value.
+   */
+  int QUERY_FETCH_SIZE = 1000;
+
   Stream<T> stream();
 
   interface CriteriaQuerySupplier<T> extends Supplier<CriteriaQuery<T>>, Serializable {}
@@ -49,6 +59,7 @@ public interface RegistryQuery<T> extends Serializable {
       if (parameters != null) {
         parameters.forEach(query::setParameter);
       }
+      JpaTransactionManager.setQueryFetchSize(query, QUERY_FETCH_SIZE);
       @SuppressWarnings("unchecked")
       Stream<T> resultStream = query.getResultStream();
       return nativeQuery ? resultStream : resultStream.map(e -> detach(entityManager, e));
@@ -64,11 +75,14 @@ public interface RegistryQuery<T> extends Serializable {
   static <T> RegistryQuery<T> createQuery(
       String jpql, @Nullable Map<String, Object> parameters, Class<T> clazz) {
     return () -> {
-      TypedQuery<T> query = jpaTm().query(jpql, clazz);
+      // TODO(b/193662898): switch to jpaTm().query() when it can properly detach loaded entities.
+      EntityManager entityManager = jpaTm().getEntityManager();
+      TypedQuery<T> query = entityManager.createQuery(jpql, clazz);
       if (parameters != null) {
         parameters.forEach(query::setParameter);
       }
-      return query.getResultStream();
+      JpaTransactionManager.setQueryFetchSize(query, QUERY_FETCH_SIZE);
+      return query.getResultStream().map(e -> detach(entityManager, e));
     };
   }
 
@@ -82,7 +96,13 @@ public interface RegistryQuery<T> extends Serializable {
    * @param <T> Type of each row in the result set.
    */
   static <T> RegistryQuery<T> createQuery(CriteriaQuerySupplier<T> criteriaQuery) {
-    return () -> jpaTm().query(criteriaQuery.get()).getResultStream();
+    return () -> {
+      // TODO(b/193662898): switch to jpaTm().query() when it can properly detach loaded entities.
+      EntityManager entityManager = jpaTm().getEntityManager();
+      TypedQuery<T> query = entityManager.createQuery(criteriaQuery.get());
+      JpaTransactionManager.setQueryFetchSize(query, QUERY_FETCH_SIZE);
+      return query.getResultStream().map(e -> detach(entityManager, e));
+    };
   }
 
   /**
@@ -108,7 +128,10 @@ public interface RegistryQuery<T> extends Serializable {
       return;
     }
     try {
-      entityManager.detach(object);
+      // TODO(b/193662898): choose detach() or clear() based on the type of transaction.
+      // For context, EntityManager.detach() does not remove all metadata about loaded entities.
+      // See b/193925312 or https://hibernate.atlassian.net/browse/HHH-14735 for details.
+      entityManager.clear();
     } catch (IllegalArgumentException e) {
       // Not an entity. Do nothing.
     }
