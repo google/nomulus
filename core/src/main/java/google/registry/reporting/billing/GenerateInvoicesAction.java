@@ -127,7 +127,9 @@ public class GenerateInvoicesAction implements Runnable {
                       "database",
                       database.name(),
                       "billingBucketUrl",
-                      billingBucketUrl));
+                      billingBucketUrl,
+                      "registryEnvironment",
+                      RegistryEnvironment.get().name()));
       LaunchFlexTemplateResponse launchResponse =
           dataflow
               .projects()

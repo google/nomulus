@@ -6,9 +6,9 @@
       "name": "registryEnvironment",
       "label": "The Registry environment.",
       "helpText": "The Registry environment, required if environment-specific initialization (such as JPA) is needed on worker VMs.",
-      "is_optional": true,
+      "is_optional": false,
       "regexes": [
-        "^[0-9A-Z_]+$"
+        "^PRODUCTION|SANDBOX|CRASH|QA|ALPHA$"
       ]
     },
     {

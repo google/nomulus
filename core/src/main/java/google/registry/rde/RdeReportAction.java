@@ -68,6 +68,7 @@ public final class RdeReportAction implements Runnable, EscrowTask {
   @Inject Response response;
   @Inject RdeReporter reporter;
   @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
+  @Inject @Parameter(RdeModule.PARAM_PREFIX) Optional<String> prefix;
   @Inject @Config("rdeBucket") String bucket;
   @Inject @Config("rdeInterval") Duration interval;
   @Inject @Config("rdeReportLockTimeout") Duration timeout;
@@ -96,8 +97,9 @@ public final class RdeReportAction implements Runnable, EscrowTask {
         RdeRevision.getCurrentRevision(tld, watermark, FULL)
             .orElseThrow(
                 () -> new IllegalStateException("RdeRevision was not set on generated deposit"));
-    String prefix = RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
-    BlobId reportFilename = BlobId.of(bucket, prefix + "-report.xml.ghostryde");
+    String name =
+        prefix.orElse("") + RdeNamingUtils.makeRydeFilename(tld, watermark, FULL, 1, revision);
+    BlobId reportFilename = BlobId.of(bucket, name + "-report.xml.ghostryde");
     verify(gcsUtils.existsAndNotEmpty(reportFilename), "Missing file: %s", reportFilename);
     reporter.send(readReportFromGcs(reportFilename));
     response.setContentType(PLAIN_TEXT_UTF_8);

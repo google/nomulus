@@ -31,6 +31,7 @@ import google.registry.request.auth.Auth;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Optional;
 import javax.inject.Inject;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -60,7 +61,7 @@ import org.joda.time.DateTime;
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public final class BrdaCopyAction implements Runnable {
 
-  static final String PATH = "/_dr/task/brdaCopy";
+  public static final String PATH = "/_dr/task/brdaCopy";
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -69,6 +70,7 @@ public final class BrdaCopyAction implements Runnable {
   @Inject @Config("rdeBucket") String stagingBucket;
   @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
   @Inject @Parameter(RdeModule.PARAM_WATERMARK) DateTime watermark;
+  @Inject @Parameter(RdeModule.PARAM_PREFIX) Optional<String> prefix;
   @Inject @Key("brdaReceiverKey") PGPPublicKey receiverKey;
   @Inject @Key("brdaSigningKey") PGPKeyPair signingKey;
   @Inject @Key("rdeStagingDecryptionKey") PGPPrivateKey stagingDecryptionKey;
@@ -84,11 +86,12 @@ public final class BrdaCopyAction implements Runnable {
   }
 
   private void copyAsRyde() throws IOException {
-    String prefix = RdeNamingUtils.makeRydeFilename(tld, watermark, THIN, 1, 0);
-    BlobId xmlFilename = BlobId.of(stagingBucket, prefix + ".xml.ghostryde");
-    BlobId xmlLengthFilename = BlobId.of(stagingBucket, prefix + ".xml.length");
-    BlobId rydeFile = BlobId.of(brdaBucket, prefix + ".ryde");
-    BlobId sigFile = BlobId.of(brdaBucket, prefix + ".sig");
+    String nameWithoutPrefix = RdeNamingUtils.makeRydeFilename(tld, watermark, THIN, 1, 0);
+    String name = prefix.orElse("") + nameWithoutPrefix;
+    BlobId xmlFilename = BlobId.of(stagingBucket, name + ".xml.ghostryde");
+    BlobId xmlLengthFilename = BlobId.of(stagingBucket, name + ".xml.length");
+    BlobId rydeFile = BlobId.of(brdaBucket, nameWithoutPrefix + ".ryde");
+    BlobId sigFile = BlobId.of(brdaBucket, nameWithoutPrefix + ".sig");
 
     long xmlLength = readXmlLength(xmlLengthFilename);
 
@@ -97,11 +100,12 @@ public final class BrdaCopyAction implements Runnable {
         InputStream ghostrydeDecoder = Ghostryde.decoder(gcsInput, stagingDecryptionKey);
         OutputStream rydeOut = gcsUtils.openOutputStream(rydeFile);
         OutputStream sigOut = gcsUtils.openOutputStream(sigFile);
-        RydeEncoder rydeEncoder = new RydeEncoder.Builder()
-            .setRydeOutput(rydeOut, receiverKey)
-            .setSignatureOutput(sigOut, signingKey)
-            .setFileMetadata(prefix, xmlLength, watermark)
-            .build()) {
+        RydeEncoder rydeEncoder =
+            new RydeEncoder.Builder()
+                .setRydeOutput(rydeOut, receiverKey)
+                .setSignatureOutput(sigOut, signingKey)
+                .setFileMetadata(nameWithoutPrefix, xmlLength, watermark)
+                .build()) {
       ByteStreams.copy(ghostrydeDecoder, rydeEncoder);
     }
   }

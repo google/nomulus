@@ -772,15 +772,16 @@ createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 // This packages more code and dependency than necessary. However, without
 // restructuring the source tree it is difficult to generate leaner jars.
 createUberJar(
-    'beam_pipeline_common',
+    'beamPipelineCommon',
     'beam_pipeline_common',
     '')
 
-// Create beam staging task if environment is alpha or crash.
-// All other environments use formally released pipelines through CloudBuild.
+// Create beam staging task if the environment is alpha. Production and sandbox
+// use formally released pipelines through CloudBuild, whereas crash and qa use
+// the pipelines staged on alpha deployment project.
 //
 // User should install gcloud and login to GCP before invoking this tasks.
-if (environment in ['alpha', 'crash']) {
+if (environment == 'alpha') {
   def pipelines = [
       [
           mainClass: 'google.registry.beam.initsql.InitSqlPipeline',
@@ -803,7 +804,7 @@ if (environment in ['alpha', 'crash']) {
           metaData: 'google/registry/beam/rde_pipeline_metadata.json'
       ],
   ]
-  project.tasks.create("stage_beam_pipelines") {
+  project.tasks.create("stageBeamPipelines") {
     doLast {
       pipelines.each {
         def mainClass = it['mainClass']
@@ -813,7 +814,7 @@ if (environment in ['alpha', 'crash']) {
                 mainClass.substring(mainClass.lastIndexOf('.') + 1))
         def imageName = "gcr.io/${gcpProject}/beam/${pipelineName}"
         def metaDataBaseName = metaData.substring(metaData.lastIndexOf('/') + 1)
-        def uberJarName = tasks.beam_pipeline_common.outputs.files.asPath
+        def uberJarName = tasks.beamPipelineCommon.outputs.files.asPath
 
         def command = "\
             gcloud dataflow flex-template build \
@@ -828,7 +829,7 @@ if (environment in ['alpha', 'crash']) {
         rootProject.ext.execInBash(command, '/tmp')
       }
     }
-  }.dependsOn(tasks.beam_pipeline_common)
+  }.dependsOn(tasks.beamPipelineCommon)
 }
 
 // A jar with classes and resources from main sourceSet, excluding internal

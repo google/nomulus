@@ -27,6 +27,7 @@ import com.google.common.io.BaseEncoding;
 import dagger.BindsInstance;
 import dagger.Component;
 import google.registry.beam.common.RegistryJpaIO;
+import google.registry.config.CloudTasksUtilsModule;
 import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.gcs.GcsUtils;
@@ -44,6 +45,8 @@ import google.registry.rde.PendingDeposit;
 import google.registry.rde.PendingDeposit.PendingDepositCoder;
 import google.registry.rde.RdeFragmenter;
 import google.registry.rde.RdeMarshaller;
+import google.registry.util.CloudTasksUtils;
+import google.registry.util.UtilsModule;
 import google.registry.xml.ValidationMode;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -87,12 +90,14 @@ import org.joda.time.DateTime;
 @Singleton
 public class RdePipeline implements Serializable {
 
+
   private final transient RdePipelineOptions options;
   private final ValidationMode mode;
   private final ImmutableSetMultimap<String, PendingDeposit> pendings;
   private final String rdeBucket;
   private final byte[] stagingKeyBytes;
   private final GcsUtils gcsUtils;
+  private final CloudTasksUtils cloudTasksUtils;
 
   // Registrars to be excluded from data escrow. Not including the sandbox-only OTE type so that
   // if sneaks into production we would get an extra signal.
@@ -111,13 +116,14 @@ public class RdePipeline implements Serializable {
   }
 
   @Inject
-  RdePipeline(RdePipelineOptions options, GcsUtils gcsUtils) {
+  RdePipeline(RdePipelineOptions options, GcsUtils gcsUtils, CloudTasksUtils cloudTasksUtils) {
     this.options = options;
     this.mode = ValidationMode.valueOf(options.getValidationMode());
     this.pendings = decodePendings(options.getPendings());
-    this.rdeBucket = options.getGcsBucket();
+    this.rdeBucket = options.getRdeStagingBucket();
     this.stagingKeyBytes = BaseEncoding.base64Url().decode(options.getStagingKey());
     this.gcsUtils = gcsUtils;
+    this.cloudTasksUtils = cloudTasksUtils;
   }
 
   PipelineResult run() {
@@ -144,6 +150,7 @@ public class RdePipeline implements Serializable {
         RdeIO.Write.builder()
             .setRdeBucket(rdeBucket)
             .setGcsUtils(gcsUtils)
+            .setCloudTasksUtils(cloudTasksUtils)
             .setValidationMode(mode)
             .setStagingKeyBytes(stagingKeyBytes)
             .build());
@@ -270,7 +277,7 @@ public class RdePipeline implements Serializable {
    * Encodes the TLD to pending deposit map in an URL safe string that is sent to the pipeline
    * worker by the pipeline launcher as a pipeline option.
    */
-  static String encodePendings(ImmutableSetMultimap<String, PendingDeposit> pendings)
+  public static String encodePendings(ImmutableSetMultimap<String, PendingDeposit> pendings)
       throws IOException {
     try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
       ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -282,13 +289,20 @@ public class RdePipeline implements Serializable {
 
   public static void main(String[] args) throws IOException, ClassNotFoundException {
     PipelineOptionsFactory.register(RdePipelineOptions.class);
-    RdePipelineOptions options = PipelineOptionsFactory.fromArgs(args).as(RdePipelineOptions.class);
+    RdePipelineOptions options =
+        PipelineOptionsFactory.fromArgs(args).withValidation().as(RdePipelineOptions.class);
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
     DaggerRdePipeline_RdePipelineComponent.builder().options(options).build().rdePipeline().run();
   }
 
   @Singleton
-  @Component(modules = {CredentialModule.class, ConfigModule.class})
+  @Component(
+      modules = {
+        CredentialModule.class,
+        ConfigModule.class,
+        CloudTasksUtilsModule.class,
+        UtilsModule.class
+      })
   interface RdePipelineComponent {
     RdePipeline rdePipeline();
 

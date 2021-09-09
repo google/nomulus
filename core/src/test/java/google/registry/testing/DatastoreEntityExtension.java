@@ -17,14 +17,12 @@ package google.registry.testing;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.google.apphosting.api.ApiProxy;
-import com.google.apphosting.api.ApiProxy.Environment;
+import google.registry.util.PlaceholderEnvironment;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Map;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
 /**
  * Allows instantiation of Datastore {@code Entity}s without the heavyweight {@link
@@ -43,8 +41,6 @@ import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
  * JUnit 5 User Guide</a> for details of extension ordering.
  */
 public class DatastoreEntityExtension implements BeforeEachCallback, AfterEachCallback {
-
-  private static final Environment PLACEHOLDER_ENV = new PlaceholderEnvironment();
 
   private boolean allThreads = false;
 
@@ -69,13 +65,13 @@ public class DatastoreEntityExtension implements BeforeEachCallback, AfterEachCa
 
   @Override
   public void beforeEach(ExtensionContext context) {
-    ApiProxy.setEnvironmentForCurrentThread(PLACEHOLDER_ENV);
+    ApiProxy.setEnvironmentForCurrentThread(PlaceholderEnvironment.get());
     // In order to create keys for entities they must be registered with Ofy. Calling this method
     // will load the ObjectifyService class, whose static initialization block registers all Ofy
     // entities.
     auditedOfy();
     if (allThreads) {
-      ApiProxy.setEnvironmentFactory(() -> PLACEHOLDER_ENV);
+      ApiProxy.setEnvironmentFactory(PlaceholderEnvironment::get);
     }
   }
 
@@ -88,60 +84,6 @@ public class DatastoreEntityExtension implements BeforeEachCallback, AfterEachCa
       Method method = ApiProxy.class.getDeclaredMethod("clearEnvironmentFactory");
       method.setAccessible(true);
       method.invoke(null);
-    }
-  }
-
-  private static final class PlaceholderEnvironment implements Environment {
-
-    @Override
-    public String getAppId() {
-      return "PlaceholderAppId";
-    }
-
-    @Override
-    public Map<String, Object> getAttributes() {
-      return ImmutableMap.of();
-    }
-
-    @Override
-    public String getModuleId() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String getVersionId() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String getEmail() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isLoggedIn() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isAdmin() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String getAuthDomain() {
-      throw new UnsupportedOperationException();
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public String getRequestNamespace() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public long getRemainingMillis() {
-      throw new UnsupportedOperationException();
     }
   }
 }
