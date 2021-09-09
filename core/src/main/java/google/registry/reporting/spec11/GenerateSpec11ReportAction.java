@@ -16,8 +16,6 @@ package google.registry.reporting.spec11;
 
 import static google.registry.beam.BeamUtils.createJobName;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.reporting.ReportingModule.DATABASE;
-import static google.registry.reporting.ReportingModule.PARAM_DATE;
 import static google.registry.reporting.ReportingUtils.enqueueBeamReportingTask;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -33,9 +31,11 @@ import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryEnvironment;
 import google.registry.keyring.api.KeyModule.Key;
+import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
+import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -71,7 +71,7 @@ public class GenerateSpec11ReportAction implements Runnable {
   private final Clock clock;
   private final Response response;
   private final Dataflow dataflow;
-  private final String database;
+  private final PrimaryDatabase database;
 
   @Inject
   GenerateSpec11ReportAction(
@@ -80,21 +80,21 @@ public class GenerateSpec11ReportAction implements Runnable {
       @Config("beamStagingBucketUrl") String stagingBucketUrl,
       @Config("reportingBucketUrl") String reportingBucketUrl,
       @Key("safeBrowsingAPIKey") String apiKey,
-      @Parameter(PARAM_DATE) LocalDate date,
-      @Parameter(DATABASE) String database,
+      @Parameter(ReportingModule.PARAM_DATE) LocalDate date,
+      @Parameter(RequestParameters.PARAM_DATABASE) PrimaryDatabase database,
       Clock clock,
       Response response,
       Dataflow dataflow) {
     this.projectId = projectId;
     this.jobRegion = jobRegion;
     this.stagingBucketUrl = stagingBucketUrl;
-    if (tm().isOfy() && database.equals("CLOUD_SQL")) {
+    this.database = database;
+    if (tm().isOfy() && database.equals(PrimaryDatabase.CLOUD_SQL)) {
       reportingBucketUrl = reportingBucketUrl.concat("-sql");
     }
     this.reportingBucketUrl = reportingBucketUrl;
     this.apiKey = apiKey;
     this.date = date;
-    this.database = database;
     this.clock = clock;
     this.response = response;
     this.dataflow = dataflow;
@@ -114,7 +114,7 @@ public class GenerateSpec11ReportAction implements Runnable {
                       "safeBrowsingApiKey",
                       apiKey,
                       "database",
-                      database,
+                      database.name(),
                       ReportingModule.PARAM_DATE,
                       date.toString(),
                       "reportingBucketUrl",
@@ -131,21 +131,21 @@ public class GenerateSpec11ReportAction implements Runnable {
                   jobRegion,
                   new LaunchFlexTemplateRequest().setLaunchParameter(parameter))
               .execute();
+      logger.atInfo().log("Got response: %s", launchResponse.getJob().toPrettyString());
+      String jobId = launchResponse.getJob().getId();
       Map<String, String> beamTaskParameters =
           ImmutableMap.of(
               ReportingModule.PARAM_JOB_ID,
-              launchResponse.getJob().getId(),
+              jobId,
               ReportingModule.PARAM_DATE,
               date.toString());
       enqueueBeamReportingTask(PublishSpec11ReportAction.PATH, beamTaskParameters);
-      logger.atInfo().log("Got response: %s", launchResponse.getJob().toPrettyString());
+      response.setStatus(SC_OK);
+      response.setPayload(String.format("Launched Spec11 dataflow template: %s.", jobId));
     } catch (IOException e) {
       logger.atWarning().withCause(e).log("Template Launch failed");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload(String.format("Template launch failed: %s", e.getMessage()));
-      return;
     }
-    response.setStatus(SC_OK);
-    response.setPayload("Launched Spec11 dataflow template.");
   }
 }
