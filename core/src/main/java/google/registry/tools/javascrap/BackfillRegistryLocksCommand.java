@@ -26,7 +26,6 @@ import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.domain.DomainBase;
@@ -134,10 +133,10 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
   private DateTime getLockCompletionTimestamp(DomainBase domainBase, DateTime now) {
     // Best-effort, if a domain was URS-locked we should use that time
     // If we can't find that, return now.
-    return Streams.stream(HistoryEntryDao.loadHistoryObjectsForResource(domainBase.createVKey()))
+    return HistoryEntryDao.loadHistoryObjectsForResource(domainBase.createVKey()).stream()
         // sort by modification time descending so we get the most recent one if it was locked twice
         .sorted(Comparator.comparing(HistoryEntry::getModificationTime).reversed())
-        .filter(entry -> entry.getReason().equals("Uniform Rapid Suspension"))
+        .filter(entry -> "Uniform Rapid Suspension".equals(entry.getReason()))
         .findFirst()
         .map(HistoryEntry::getModificationTime)
         .orElse(now);
