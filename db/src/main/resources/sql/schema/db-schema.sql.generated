@@ -274,6 +274,7 @@
         billing_contact text,
         deletion_poll_message_id int8,
         deletion_poll_message_history_id int8,
+        dns_refresh_request_time timestamptz,
         domain_name text,
         idn_table_name text,
         last_transfer_time timestamptz,
@@ -347,6 +348,7 @@
         billing_contact text,
         deletion_poll_message_id int8,
         deletion_poll_message_history_id int8,
+        dns_refresh_request_time timestamptz,
         domain_name text,
         idn_table_name text,
         last_transfer_time timestamptz,
@@ -788,6 +790,7 @@ create index IDXc5aw4pk1vkd6ymhvkpanmoadv on "Domain" (domain_name);
 create index IDXr22ciyccwi9rrqmt1ro0s59qf on "Domain" (tech_contact);
 create index IDXrwl38wwkli1j7gkvtywi9jokq on "Domain" (tld);
 create index IDXa7fu0bqynfb79rr80528b4jqt on "Domain" (registrant_contact);
+create index IDXcws5mvmpl8o10wrhde780ors2 on "Domain" (dns_refresh_request_time);
 create index IDXrh4xmrot9bd63o382ow9ltfig on "DomainHistory" (creation_time);
 create index IDXaro1omfuaxjwmotk3vo00trwm on "DomainHistory" (history_registrar_id);
 create index IDXsu1nam10cjes9keobapn5jvxj on "DomainHistory" (history_type);
