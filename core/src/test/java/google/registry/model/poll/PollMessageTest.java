@@ -63,7 +63,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setPeriod(Period.create(1, Period.Unit.YEARS))
                 .setXmlBytes("<xml></xml>".getBytes(UTF_8))
                 .setModificationTime(fakeClock.nowUtc())
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setTrid(Trid.create("ABC-123", "server-trid"))
                 .setBySuperuser(false)
                 .setReason("reason")
@@ -73,7 +73,7 @@ public class PollMessageTest extends EntityTestCase {
     oneTime =
         new PollMessage.OneTime.Builder()
             .setId(100L)
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
             .setParent(historyEntry)
@@ -81,7 +81,7 @@ public class PollMessageTest extends EntityTestCase {
     autoRenew =
         new PollMessage.Autorenew.Builder()
             .setId(200L)
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
             .setParent(historyEntry)
@@ -113,7 +113,7 @@ public class PollMessageTest extends EntityTestCase {
     PollMessage.OneTime pollMessage =
         persistResource(
             new PollMessage.OneTime.Builder()
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
                 .setParent(historyEntry)
@@ -126,7 +126,7 @@ public class PollMessageTest extends EntityTestCase {
     PollMessage.Autorenew pollMessage =
         persistResource(
             new PollMessage.Autorenew.Builder()
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
                 .setParent(historyEntry)
@@ -141,7 +141,7 @@ public class PollMessageTest extends EntityTestCase {
     PollMessage.Autorenew pollMessage =
         persistResource(
             new PollMessage.Autorenew.Builder()
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setEventTime(fakeClock.nowUtc())
                 .setMsg("Test poll message")
                 .setParent(historyEntry)

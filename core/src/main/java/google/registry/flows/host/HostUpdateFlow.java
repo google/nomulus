@@ -16,7 +16,7 @@ package google.registry.flows.host;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.Sets.union;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.checkSameValuesNotAddedAndRemoved;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyAllStatusesAreClientSettable;
@@ -39,7 +39,7 @@ import google.registry.flows.EppException.ObjectAlreadyExistsException;
 import google.registry.flows.EppException.ParameterValueRangeErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
@@ -113,7 +113,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject HostHistory.Builder historyBuilder;
@@ -126,7 +126,7 @@ public final class HostUpdateFlow implements TransactionalFlow {
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     Update command = (Update) resourceCommand;
     Change change = command.getInnerChange();
     String suppliedNewHostName = change.getFullyQualifiedHostName();
@@ -170,10 +170,10 @@ public final class HostUpdateFlow implements TransactionalFlow {
     // since external hosts store their own clientId. For subordinate hosts the canonical clientId
     // comes from the superordinate domain, but we might as well update the persisted value. For
     // non-superusers this is the flow clientId, but for superusers it might not be, so compute it.
-    String newPersistedClientId =
+    String newPersistedRegistrarId =
         newSuperordinateDomain.isPresent()
-            ? newSuperordinateDomain.get().getCurrentSponsorClientId()
-            : owningResource.getPersistedCurrentSponsorClientId();
+            ? newSuperordinateDomain.get().getCurrentSponsorRegistrarId()
+            : owningResource.getPersistedCurrentSponsorRegistrarId();
     HostResource newHost =
         existingHost
             .asBuilder()
@@ -183,11 +183,11 @@ public final class HostUpdateFlow implements TransactionalFlow {
             .addInetAddresses(add.getInetAddresses())
             .removeInetAddresses(remove.getInetAddresses())
             .setLastEppUpdateTime(now)
-            .setLastEppUpdateClientId(clientId)
+            .setLastEppUpdateRegistrarId(registrarId)
             .setSuperordinateDomain(newSuperordinateDomainKey)
             .setLastSuperordinateChange(lastSuperordinateChange)
             .setLastTransferTime(lastTransferTime)
-            .setPersistedCurrentSponsorClientId(newPersistedClientId)
+            .setPersistedCurrentSponsorRegistrarId(newPersistedRegistrarId)
             .build();
     verifyHasIpsIffIsExternal(command, existingHost, newHost);
     ImmutableSet.Builder<ImmutableObject> entitiesToInsert = new ImmutableSet.Builder<>();
@@ -217,12 +217,12 @@ public final class HostUpdateFlow implements TransactionalFlow {
     if (!isSuperuser) {
       // Verify that the host belongs to this registrar, either directly or because it is currently
       // subordinate to a domain owned by this registrar.
-      verifyResourceOwnership(clientId, owningResource);
+      verifyResourceOwnership(registrarId, owningResource);
       if (isHostRename && !existingHost.isSubordinate()) {
         throw new CannotRenameExternalHostException();
       }
       // Verify that the new superordinate domain belongs to this registrar.
-      verifySuperordinateDomainOwnership(clientId, newSuperordinateDomain);
+      verifySuperordinateDomainOwnership(registrarId, newSuperordinateDomain);
       ImmutableSet<StatusValue> statusesToAdd = command.getInnerAdd().getStatusValues();
       ImmutableSet<StatusValue> statusesToRemove = command.getInnerRemove().getStatusValues();
       // If the resource is marked with clientUpdateProhibited, and this update does not clear that

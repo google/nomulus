@@ -14,13 +14,13 @@
 
 package google.registry.flows.session;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_AND_CLOSE;
 
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.SessionMetadata;
 import google.registry.model.eppoutput.EppResponse;
 import javax.inject.Inject;
@@ -33,7 +33,7 @@ import javax.inject.Inject;
 public class LogoutFlow implements Flow {
 
   @Inject ExtensionManager extensionManager;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject SessionMetadata sessionMetadata;
   @Inject EppResponse.Builder responseBuilder;
   @Inject LogoutFlow() {}
@@ -41,7 +41,7 @@ public class LogoutFlow implements Flow {
   @Override
   public final EppResponse run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     sessionMetadata.invalidate();
     return responseBuilder.setResultFromCode(SUCCESS_AND_CLOSE).build();
   }

@@ -324,7 +324,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
       DomainHistory historyEntry =
           new DomainHistory.Builder()
               .setBySuperuser(false)
-              .setClientId(recurring.getClientId())
+              .setRegistrarId(recurring.getRegistrarId())
               .setModificationTime(tm().getTransactionTime())
               .setDomain(tm().loadByKey(domainKey))
               .setPeriod(Period.create(1, YEARS))
@@ -354,7 +354,7 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
       syntheticOneTimesBuilder.add(
           new OneTime.Builder()
               .setBillingTime(billingTime)
-              .setClientId(recurring.getClientId())
+              .setRegistrarId(recurring.getRegistrarId())
               .setCost(renewCost)
               .setEventTime(eventTime)
               .setFlags(union(recurring.getFlags(), Flag.SYNTHETIC))

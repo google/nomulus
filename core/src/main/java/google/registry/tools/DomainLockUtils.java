@@ -315,7 +315,7 @@ public final class DomainLockUtils {
     // The user must have specified either the correct registrar ID or the admin registrar ID
     checkArgument(
         registryAdminRegistrarId.equals(registrarId)
-            || domain.getCurrentSponsorClientId().equals(registrarId),
+            || domain.getCurrentSponsorRegistrarId().equals(registrarId),
         "Domain %s is not owned by registrar %s",
         domainName,
         registrarId);
@@ -364,7 +364,7 @@ public final class DomainLockUtils {
             "%s of a domain through a RegistryLock operation", isLock ? "Lock" : "Unlock");
     DomainHistory domainHistory =
         new DomainHistory.Builder()
-            .setClientId(domain.getCurrentSponsorClientId())
+            .setRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setBySuperuser(lock.isSuperuser())
             .setRequestedByRegistrar(!lock.isSuperuser())
             .setType(HistoryEntry.Type.DOMAIN_UPDATE)
@@ -379,7 +379,7 @@ public final class DomainLockUtils {
           new BillingEvent.OneTime.Builder()
               .setReason(Reason.SERVER_STATUS)
               .setTargetId(domain.getForeignKey())
-              .setClientId(domain.getCurrentSponsorClientId())
+              .setRegistrarId(domain.getCurrentSponsorRegistrarId())
               .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
               .setEventTime(now)
               .setBillingTime(now)

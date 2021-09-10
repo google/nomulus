@@ -44,7 +44,7 @@ class RegistrarWhoisResponseTest {
   void getTextOutputTest() {
     Registrar registrar =
         new Registrar.Builder()
-            .setClientId("exregistrar")
+            .setRegistrarId("exregistrar")
             .setRegistrarName("Example Registrar, Inc.")
             .setType(Registrar.Type.REAL)
             .setIanaIdentifier(8L)

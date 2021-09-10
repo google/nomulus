@@ -14,7 +14,7 @@
 
 package google.registry.flows.poll;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.poll.PollFlowUtils.getFirstPollMessage;
 import static google.registry.flows.poll.PollFlowUtils.getPollMessageCount;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_ACK_MESSAGE;
@@ -25,8 +25,8 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
-import google.registry.flows.FlowModule.ClientId;
 import google.registry.flows.FlowModule.PollMessageId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.MessageQueueInfo;
 import google.registry.model.poll.PollMessage;
@@ -50,7 +50,7 @@ import org.joda.time.DateTime;
 public class PollRequestFlow implements Flow {
 
   @Inject ExtensionManager extensionManager;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @PollMessageId String messageId;
   @Inject Clock clock;
   @Inject EppResponse.Builder responseBuilder;
@@ -59,13 +59,13 @@ public class PollRequestFlow implements Flow {
   @Override
   public final EppResponse run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     if (!messageId.isEmpty()) {
       throw new UnexpectedMessageIdException();
     }
     // Return the oldest message from the queue.
     DateTime now = clock.nowUtc();
-    Optional<PollMessage> maybePollMessage = getFirstPollMessage(clientId, now);
+    Optional<PollMessage> maybePollMessage = getFirstPollMessage(registrarId, now);
     if (!maybePollMessage.isPresent()) {
       return responseBuilder.setResultFromCode(SUCCESS_WITH_NO_MESSAGES).build();
     }
@@ -76,7 +76,7 @@ public class PollRequestFlow implements Flow {
             new MessageQueueInfo.Builder()
                 .setQueueDate(pollMessage.getEventTime())
                 .setMsg(pollMessage.getMsg())
-                .setQueueLength(getPollMessageCount(clientId, now))
+                .setQueueLength(getPollMessageCount(registrarId, now))
                 .setMessageId(makePollMessageExternalId(pollMessage))
                 .build())
         .setMultipleResData(pollMessage.getResponseData())

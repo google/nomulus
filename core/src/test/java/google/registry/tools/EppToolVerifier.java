@@ -51,7 +51,7 @@ public class EppToolVerifier {
 
   private final AppEngineConnection connection = mock(AppEngineConnection.class);
 
-  private String clientId;
+  private String registrarId;
   private boolean superuser;
   private boolean dryRun;
   private ImmutableList<byte[]> capturedParams;
@@ -67,12 +67,12 @@ public class EppToolVerifier {
   }
 
   /**
-   * Sets the expected clientId for any following verifySent command.
+   * Sets the expected registrarId for any following verifySent command.
    *
    * <p>Must be called at least once before any {@link #verifySent} calls.
    */
-  EppToolVerifier expectClientId(String clientId) {
-    this.clientId = clientId;
+  EppToolVerifier expectRegistrarId(String registrarId) {
+    this.registrarId = registrarId;
     return this;
   }
 
@@ -175,14 +175,14 @@ public class EppToolVerifier {
   }
 
   private String bytesToXml(byte[] bytes) throws Exception {
-    checkState(clientId != null, "expectClientId must be called before any verifySent command");
+    checkState(registrarId != null, "expectClientId must be called before any verifySent command");
     Map<String, String> map =
         Splitter.on('&')
         .withKeyValueSeparator('=')
         .split(new String(bytes, UTF_8));
     assertThat(map).hasSize(4);
     assertThat(map).containsEntry("dryRun", Boolean.toString(dryRun));
-    assertThat(map).containsEntry("clientId", clientId);
+    assertThat(map).containsEntry("clientId", registrarId);
     assertThat(map).containsEntry("superuser", Boolean.toString(superuser));
     return URLDecoder.decode(map.get("xml"), UTF_8.toString());
   }

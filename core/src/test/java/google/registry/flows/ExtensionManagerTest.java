@@ -221,7 +221,7 @@ class ExtensionManagerTest {
 
     ExtensionManager build() {
       manager.flowClass = HelloFlow.class;
-      manager.clientId = manager.sessionMetadata.getClientId();
+      manager.registrarId = manager.sessionMetadata.getRegistrarId();
       return manager;
     }
   }

@@ -14,7 +14,7 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.contact.ContactFlowUtils.createTransferResponse;
@@ -22,7 +22,7 @@ import static google.registry.flows.contact.ContactFlowUtils.createTransferRespo
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.exceptions.NoTransferHistoryToQueryException;
@@ -55,7 +55,7 @@ public final class ContactTransferQueryFlow implements Flow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject Clock clock;
   @Inject EppResponse.Builder responseBuilder;
@@ -64,7 +64,7 @@ public final class ContactTransferQueryFlow implements Flow {
   @Override
   public final EppResponse run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     ContactResource contact =
         loadAndVerifyExistence(ContactResource.class, targetId, clock.nowUtc());
     verifyOptionalAuthInfo(authInfo, contact);
@@ -76,8 +76,8 @@ public final class ContactTransferQueryFlow implements Flow {
     // Note that the authorization info on the command (if present) has already been verified. If
     // it's present, then the other checks are unnecessary.
     if (!authInfo.isPresent()
-        && !clientId.equals(contact.getTransferData().getGainingClientId())
-        && !clientId.equals(contact.getTransferData().getLosingClientId())) {
+        && !registrarId.equals(contact.getTransferData().getGainingRegistrarId())
+        && !registrarId.equals(contact.getTransferData().getLosingRegistrarId())) {
       throw new NotAuthorizedToViewTransferException();
     }
     return responseBuilder

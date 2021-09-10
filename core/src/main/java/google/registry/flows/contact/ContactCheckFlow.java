@@ -14,7 +14,7 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 import static google.registry.model.EppResourceUtils.checkResourcesExist;
 
@@ -24,7 +24,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.contact.ContactCommand.Check;
 import google.registry.model.contact.ContactResource;
@@ -47,7 +47,7 @@ import javax.inject.Inject;
 public final class ContactCheckFlow implements Flow {
 
   @Inject ResourceCommand resourceCommand;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject ExtensionManager extensionManager;
   @Inject Clock clock;
   @Inject @Config("maxChecks") int maxChecks;
@@ -57,7 +57,7 @@ public final class ContactCheckFlow implements Flow {
   @Override
   public final EppResponse run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     ImmutableList<String> targetIds = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(targetIds, maxChecks);
     ImmutableSet<String> existingIds =

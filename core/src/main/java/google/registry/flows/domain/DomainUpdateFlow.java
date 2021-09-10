@@ -19,7 +19,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.collect.Sets.symmetricDifference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.checkSameValuesNotAddedAndRemoved;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyAllStatusesAreClientSettable;
@@ -47,7 +47,7 @@ import com.google.common.net.InternetDomainName;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
@@ -139,7 +139,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
@@ -158,7 +158,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
         DomainUpdateSuperuserExtension.class);
     flowCustomLogic.beforeValidation();
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     DateTime now = tm().getTransactionTime();
     Update command = cloneAndLinkReferences((Update) resourceCommand, now);
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
@@ -197,10 +197,10 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     String tld = existingDomain.getTld();
     if (!isSuperuser) {
       verifyNoDisallowedStatuses(existingDomain, UPDATE_DISALLOWED_STATUSES);
-      verifyResourceOwnership(clientId, existingDomain);
+      verifyResourceOwnership(registrarId, existingDomain);
       verifyClientUpdateNotProhibited(command, existingDomain);
       verifyAllStatusesAreClientSettable(union(add.getStatusValues(), remove.getStatusValues()));
-      checkAllowedAccessToTld(clientId, tld);
+      checkAllowedAccessToTld(registrarId, tld);
     }
     Registry registry = Registry.get(tld);
     Optional<FeeUpdateCommandExtension> feeUpdate =
@@ -244,7 +244,7 @@ public final class DomainUpdateFlow implements TransactionalFlow {
                         secDnsUpdate.get())
                     : domain.getDsData())
             .setLastEppUpdateTime(now)
-            .setLastEppUpdateClientId(clientId)
+            .setLastEppUpdateRegistrarId(registrarId)
             .addStatusValues(add.getStatusValues())
             .removeStatusValues(remove.getStatusValues())
             .addNameservers(add.getNameservers().stream().collect(toImmutableSet()))
@@ -291,15 +291,16 @@ public final class DomainUpdateFlow implements TransactionalFlow {
           : symmetricDifference(existingDomain.getStatusValues(), newDomain.getStatusValues())) {
         if (statusValue.isChargedStatus()) {
           // Only charge once.
-          return Optional.of(new BillingEvent.OneTime.Builder()
-              .setReason(Reason.SERVER_STATUS)
-              .setTargetId(targetId)
-              .setClientId(clientId)
-              .setCost(Registry.get(existingDomain.getTld()).getServerStatusChangeCost())
-              .setEventTime(now)
-              .setBillingTime(now)
-              .setParent(historyEntry)
-              .build());
+          return Optional.of(
+              new BillingEvent.OneTime.Builder()
+                  .setReason(Reason.SERVER_STATUS)
+                  .setTargetId(targetId)
+                  .setRegistrarId(registrarId)
+                  .setCost(Registry.get(existingDomain.getTld()).getServerStatusChangeCost())
+                  .setEventTime(now)
+                  .setBillingTime(now)
+                  .setParent(historyEntry)
+                  .build());
         }
       }
     }

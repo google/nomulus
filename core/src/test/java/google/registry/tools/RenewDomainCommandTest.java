@@ -58,11 +58,11 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
                 DateTime.parse("2014-09-05T05:05:05Z"),
                 DateTime.parse("2015-09-05T05:05:05Z"))
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("NewRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
             .build());
     runCommandForced("domain.tld");
     eppVerifier
-        .expectClientId("NewRegistrar")
+        .expectRegistrarId("NewRegistrar")
         .verifySent(
             "domain_renew.xml",
             ImmutableMap.of("DOMAIN", "domain.tld", "EXPDATE", "2015-09-05", "YEARS", "1"))
@@ -88,7 +88,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
                 .asBuilder()
                 .setCreationTimeForTest(DateTime.parse("2015-01-05T05:05:05Z"))
                 .setRegistrationExpirationTime(DateTime.parse("2016-01-05T05:05:05Z"))
-                .setPersistedCurrentSponsorClientId("NewRegistrar")
+                .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                 .build()));
     return domains.build();
   }
@@ -98,14 +98,14 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
     persistThreeDomains();
     runCommandForced("--period 3", "domain1.tld", "domain2.tld", "domain3.tld");
     eppVerifier
-        .expectClientId("TheRegistrar")
+        .expectRegistrarId("TheRegistrar")
         .verifySent(
             "domain_renew.xml",
             ImmutableMap.of("DOMAIN", "domain1.tld", "EXPDATE", "2015-09-05", "YEARS", "3"))
         .verifySent(
             "domain_renew.xml",
             ImmutableMap.of("DOMAIN", "domain2.tld", "EXPDATE", "2015-11-05", "YEARS", "3"))
-        .expectClientId("NewRegistrar")
+        .expectRegistrarId("NewRegistrar")
         .verifySent(
             "domain_renew.xml",
             ImmutableMap.of("DOMAIN", "domain3.tld", "EXPDATE", "2016-01-05", "YEARS", "3"))
@@ -118,7 +118,7 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
     persistNewRegistrar("reg3", "Registrar 3", Registrar.Type.REAL, 9783L);
     runCommandForced("--period 3", "domain1.tld", "domain2.tld", "domain3.tld", "-u", "-c reg3");
     eppVerifier
-        .expectClientId("reg3")
+        .expectRegistrarId("reg3")
         .expectSuperuser()
         .verifySent(
             "domain_renew.xml",

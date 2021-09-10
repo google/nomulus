@@ -103,7 +103,7 @@ public final class CopyDetailReportsAction implements Runnable {
       // The standard report format is "invoice_details_yyyy-MM_registrarId_tld.csv
       // TODO(larryruili): Determine a safer way of enforcing this.
       String registrarId = Iterables.get(Splitter.on('_').split(detailReportName), 3);
-      Optional<Registrar> registrar = Registrar.loadByClientId(registrarId);
+      Optional<Registrar> registrar = Registrar.loadByRegistrarId(registrarId);
       if (!registrar.isPresent()) {
         logger.atWarning().log(
             "Registrar %s not found in database for file %s", registrar, detailReportName);

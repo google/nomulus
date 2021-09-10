@@ -14,7 +14,7 @@
 
 package google.registry.flows.poll;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.poll.PollFlowUtils.ackPollMessage;
 import static google.registry.flows.poll.PollFlowUtils.getPollMessageCount;
 import static google.registry.model.eppoutput.Result.Code.SUCCESS_WITH_NO_MESSAGES;
@@ -29,8 +29,8 @@ import google.registry.flows.EppException.ObjectDoesNotExistException;
 import google.registry.flows.EppException.ParameterValueSyntaxErrorException;
 import google.registry.flows.EppException.RequiredParameterMissingException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
 import google.registry.flows.FlowModule.PollMessageId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.poll.MessageQueueInfo;
@@ -58,15 +58,16 @@ import org.joda.time.DateTime;
 public class PollAckFlow implements TransactionalFlow {
 
   @Inject ExtensionManager extensionManager;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @PollMessageId String messageId;
   @Inject EppResponse.Builder responseBuilder;
+
   @Inject PollAckFlow() {}
 
   @Override
   public final EppResponse run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     if (messageId.isEmpty()) {
       throw new MissingMessageIdException();
     }
@@ -94,7 +95,7 @@ public class PollAckFlow implements TransactionalFlow {
 
     // Make sure this client is authorized to ack this message. It could be that the message is
     // supposed to go to a different registrar.
-    if (!clientId.equals(pollMessage.getClientId())) {
+    if (!registrarId.equals(pollMessage.getRegistrarId())) {
       throw new NotAuthorizedToAckMessageException();
     }
 
@@ -107,7 +108,7 @@ public class PollAckFlow implements TransactionalFlow {
     // acked, then we return a special status code indicating that. Note that the query will
     // include the message being acked.
 
-    int messageCount = tm().doTransactionless(() -> getPollMessageCount(clientId, now));
+    int messageCount = tm().doTransactionless(() -> getPollMessageCount(registrarId, now));
     // Within the same transaction, Datastore will not reflect the updated count (potentially
     // reduced by one thanks to the acked poll message). SQL will, however, so we shouldn't reduce
     // the count in the SQL case.

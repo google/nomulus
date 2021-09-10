@@ -164,11 +164,11 @@ public class FlowModule {
 
   @Provides
   @FlowScope
-  @ClientId
-  static String provideClientId(SessionMetadata sessionMetadata) {
-    // Treat a missing clientId as null so we can always inject a non-null value. All we do with the
-    // clientId is log it (as "") or detect its absence, both of which work fine with empty.
-    return Strings.nullToEmpty(sessionMetadata.getClientId());
+  @RegistrarId
+  static String provideRegistrarId(SessionMetadata sessionMetadata) {
+    // Treat a missing registrarId as null so we can always inject a non-null value. All we do with
+    // the registrarId is log it (as "") or detect its absence, both of which work fine with empty.
+    return Strings.nullToEmpty(sessionMetadata.getRegistrarId());
   }
 
   @Provides
@@ -220,14 +220,14 @@ public class FlowModule {
           Trid trid,
           byte[] inputXmlBytes,
           boolean isSuperuser,
-          String clientId,
+          String registrarId,
           EppInput eppInput) {
     builder
         .setModificationTime(tm().getTransactionTime())
         .setTrid(trid)
         .setXmlBytes(inputXmlBytes)
         .setBySuperuser(isSuperuser)
-        .setClientId(clientId);
+        .setRegistrarId(registrarId);
     Optional<MetadataExtension> metadataExtension =
         eppInput.getSingleExtension(MetadataExtension.class);
     metadataExtension.ifPresent(
@@ -249,10 +249,10 @@ public class FlowModule {
       Trid trid,
       @InputXml byte[] inputXmlBytes,
       @Superuser boolean isSuperuser,
-      @ClientId String clientId,
+      @RegistrarId String registrarId,
       EppInput eppInput) {
     return makeHistoryEntryBuilder(
-        new ContactHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
+        new ContactHistory.Builder(), trid, inputXmlBytes, isSuperuser, registrarId, eppInput);
   }
 
   /**
@@ -266,10 +266,10 @@ public class FlowModule {
       Trid trid,
       @InputXml byte[] inputXmlBytes,
       @Superuser boolean isSuperuser,
-      @ClientId String clientId,
+      @RegistrarId String registrarId,
       EppInput eppInput) {
     return makeHistoryEntryBuilder(
-        new HostHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
+        new HostHistory.Builder(), trid, inputXmlBytes, isSuperuser, registrarId, eppInput);
   }
 
   /**
@@ -283,10 +283,10 @@ public class FlowModule {
       Trid trid,
       @InputXml byte[] inputXmlBytes,
       @Superuser boolean isSuperuser,
-      @ClientId String clientId,
+      @RegistrarId String registrarId,
       EppInput eppInput) {
     return makeHistoryEntryBuilder(
-        new DomainHistory.Builder(), trid, inputXmlBytes, isSuperuser, clientId, eppInput);
+        new DomainHistory.Builder(), trid, inputXmlBytes, isSuperuser, registrarId, eppInput);
   }
 
   /**
@@ -322,7 +322,7 @@ public class FlowModule {
   /** Dagger qualifier for registrar client id. */
   @Qualifier
   @Documented
-  public @interface ClientId {}
+  public @interface RegistrarId {}
 
   /** Dagger qualifier for the target id (foreign key) for single resource flows. */
   @Qualifier

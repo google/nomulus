@@ -80,7 +80,7 @@ public class BillingEventTest extends EntityTestCase {
                 .setDomain(domain)
                 .setModificationTime(now)
                 .setRequestedByRegistrar(false)
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setXmlBytes(new byte[0])
                 .build());
@@ -90,7 +90,7 @@ public class BillingEventTest extends EntityTestCase {
                 .setDomain(domain)
                 .setModificationTime(now.plusDays(1))
                 .setRequestedByRegistrar(false)
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setXmlBytes(new byte[0])
                 .build());
@@ -181,7 +181,7 @@ public class BillingEventTest extends EntityTestCase {
   }
 
   private <E extends BillingEvent, B extends BillingEvent.Builder<E, B>> E commonInit(B builder) {
-    return builder.setClientId("TheRegistrar").setTargetId("foo.tld").build();
+    return builder.setRegistrarId("TheRegistrar").setTargetId("foo.tld").build();
   }
 
   @TestOfyAndSql

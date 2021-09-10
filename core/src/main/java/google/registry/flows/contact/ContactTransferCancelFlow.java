@@ -14,7 +14,7 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyHasPendingTransfer;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
@@ -29,7 +29,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
@@ -65,7 +65,7 @@ public final class ContactTransferCancelFlow implements TransactionalFlow {
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject ContactHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
@@ -75,14 +75,14 @@ public final class ContactTransferCancelFlow implements TransactionalFlow {
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     DateTime now = tm().getTransactionTime();
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingContact);
     verifyHasPendingTransfer(existingContact);
-    verifyTransferInitiator(clientId, existingContact);
+    verifyTransferInitiator(registrarId, existingContact);
     ContactResource newContact =
-        denyPendingTransfer(existingContact, TransferStatus.CLIENT_CANCELLED, now, clientId);
+        denyPendingTransfer(existingContact, TransferStatus.CLIENT_CANCELLED, now, registrarId);
     ContactHistory contactHistory =
         historyBuilder.setType(CONTACT_TRANSFER_CANCEL).setContact(newContact).build();
     // Create a poll message for the losing client.

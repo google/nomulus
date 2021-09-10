@@ -14,7 +14,7 @@
 
 package google.registry.flows.host;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.checkLinkedDomains;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
@@ -29,7 +29,7 @@ import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
@@ -78,7 +78,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
   private static final DnsQueue dnsQueue = DnsQueue.create();
 
   @Inject ExtensionManager extensionManager;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject Trid trid;
   @Inject @Superuser boolean isSuperuser;
@@ -93,7 +93,7 @@ public final class HostDeleteFlow implements TransactionalFlow {
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     DateTime now = tm().getTransactionTime();
     validateHostName(targetId);
     checkLinkedDomains(targetId, now, HostResource.class, DomainBase::getNameservers);
@@ -106,14 +106,14 @@ public final class HostDeleteFlow implements TransactionalFlow {
           existingHost.isSubordinate()
               ? tm().loadByKey(existingHost.getSuperordinateDomain()).cloneProjectedAtTime(now)
               : existingHost;
-      verifyResourceOwnership(clientId, owningResource);
+      verifyResourceOwnership(registrarId, owningResource);
     }
     HistoryEntry.Type historyEntryType;
     Result.Code resultCode;
     HostResource newHost;
     if (tm().isOfy()) {
       asyncTaskEnqueuer.enqueueAsyncDelete(
-          existingHost, tm().getTransactionTime(), clientId, trid, isSuperuser);
+          existingHost, tm().getTransactionTime(), registrarId, trid, isSuperuser);
       newHost = existingHost.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build();
       historyEntryType = Type.HOST_PENDING_DELETE;
       resultCode = SUCCESS_WITH_ACTION_PENDING;

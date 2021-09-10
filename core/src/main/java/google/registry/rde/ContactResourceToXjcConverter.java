@@ -63,9 +63,9 @@ final class ContactResourceToXjcConverter {
       bean.getPostalInfos().add(convertPostalInfo(internationalizedPostalInfo));
     }
     bean.setId(model.getContactId());
-    bean.setClID(model.getCurrentSponsorClientId());
-    bean.setCrRr(RdeAdapter.convertRr(model.getCreationClientId(), null));
-    bean.setUpRr(RdeAdapter.convertRr(model.getLastEppUpdateClientId(), null));
+    bean.setClID(model.getCurrentSponsorRegistrarId());
+    bean.setCrRr(RdeAdapter.convertRr(model.getCreationRegistrarId(), null));
+    bean.setUpRr(RdeAdapter.convertRr(model.getLastEppUpdateRegistrarId(), null));
     bean.setCrDate(model.getCreationTime());
     bean.setUpDate(model.getLastEppUpdateTime());
     bean.setTrDate(model.getLastTransferTime());
@@ -112,8 +112,8 @@ final class ContactResourceToXjcConverter {
   private static XjcRdeContactTransferDataType convertTransferData(TransferData model) {
     XjcRdeContactTransferDataType bean = new XjcRdeContactTransferDataType();
     bean.setTrStatus(XjcEppcomTrStatusType.fromValue(model.getTransferStatus().getXmlName()));
-    bean.setReRr(RdeUtil.makeXjcRdeRrType(model.getGainingClientId()));
-    bean.setAcRr(RdeUtil.makeXjcRdeRrType(model.getLosingClientId()));
+    bean.setReRr(RdeUtil.makeXjcRdeRrType(model.getGainingRegistrarId()));
+    bean.setAcRr(RdeUtil.makeXjcRdeRrType(model.getLosingRegistrarId()));
     bean.setReDate(model.getTransferRequestTime());
     bean.setAcDate(model.getPendingTransferExpirationTime());
     return bean;

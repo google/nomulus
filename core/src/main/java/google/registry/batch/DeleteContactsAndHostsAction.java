@@ -343,15 +343,15 @@ public class DeleteContactsAndHostsAction implements Runnable {
       }
       // Contacts and external hosts have a direct client id. For subordinate hosts it needs to be
       // read off of the superordinate domain.
-      String resourceClientId = resource.getPersistedCurrentSponsorClientId();
+      String resourceRegistrarId = resource.getPersistedCurrentSponsorRegistrarId();
       if (resource instanceof HostResource && ((HostResource) resource).isSubordinate()) {
-        resourceClientId =
+        resourceRegistrarId =
             tm().loadByKey(((HostResource) resource).getSuperordinateDomain())
                 .cloneProjectedAtTime(now)
-                .getCurrentSponsorClientId();
+                .getCurrentSponsorRegistrarId();
       }
       boolean requestedByCurrentOwner =
-          resourceClientId.equals(deletionRequest.requestingClientId());
+          resourceRegistrarId.equals(deletionRequest.requestingClientId());
 
       boolean deleteAllowed =
           hasNoActiveReferences && (requestedByCurrentOwner || deletionRequest.isSuperuser());
@@ -371,14 +371,14 @@ public class DeleteContactsAndHostsAction implements Runnable {
 
       HistoryEntry historyEntry =
           HistoryEntry.createBuilderForResource(resource)
-              .setClientId(deletionRequest.requestingClientId())
+              .setRegistrarId(deletionRequest.requestingClientId())
               .setModificationTime(now)
               .setType(getHistoryEntryType(resource, deleteAllowed))
               .build();
 
       PollMessage.OneTime pollMessage =
           new PollMessage.OneTime.Builder()
-              .setClientId(deletionRequest.requestingClientId())
+              .setRegistrarId(deletionRequest.requestingClientId())
               .setMsg(pollMessageText)
               .setParent(historyEntry)
               .setEventTime(now)

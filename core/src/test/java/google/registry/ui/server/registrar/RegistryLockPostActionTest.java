@@ -259,7 +259,8 @@ final class RegistryLockPostActionTest {
 
   @Test
   void testFailure_incorrectRegistrarIdForDomain() {
-    persistResource(domain.asBuilder().setPersistedCurrentSponsorClientId("NewRegistrar").build());
+    persistResource(
+        domain.asBuilder().setPersistedCurrentSponsorRegistrarId("NewRegistrar").build());
     Map<String, ?> response = action.handleJsonRequest(lockRequest());
     assertFailureWithMessage(response, "Domain example.tld is not owned by registrar TheRegistrar");
   }

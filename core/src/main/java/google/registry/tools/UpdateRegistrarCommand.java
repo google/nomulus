@@ -29,7 +29,7 @@ final class UpdateRegistrarCommand extends CreateOrUpdateRegistrarCommand {
   @Override
   Registrar getOldRegistrar(String clientId) {
     return checkArgumentPresent(
-        Registrar.loadByClientId(clientId), "Registrar %s not found", clientId);
+        Registrar.loadByRegistrarId(clientId), "Registrar %s not found", clientId);
   }
 
   @Override

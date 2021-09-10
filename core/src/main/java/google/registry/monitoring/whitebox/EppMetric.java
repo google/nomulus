@@ -35,7 +35,7 @@ public abstract class EppMetric {
 
   public abstract Optional<String> getCommandName();
 
-  public abstract Optional<String> getClientId();
+  public abstract Optional<String> getRegistrarId();
 
   public abstract Optional<String> getTld();
 
@@ -78,9 +78,9 @@ public abstract class EppMetric {
       return setCommandName(flowSimpleClassName.replaceFirst("Flow$", ""));
     }
 
-    public abstract Builder setClientId(String clientId);
+    public abstract Builder setRegistrarId(String registrarId);
 
-    public abstract Builder setClientId(Optional<String> clientId);
+    public abstract Builder setRegistrarId(Optional<String> registrarId);
 
     public abstract Builder setTld(String tld);
 

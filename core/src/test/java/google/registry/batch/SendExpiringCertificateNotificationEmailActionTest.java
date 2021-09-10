@@ -140,7 +140,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
 
   /** Returns a sample registrar with a customized registrar name, client id and certificate* */
   private Registrar.Builder createRegistrar(
-      String clientId,
+      String registrarId,
       String registrarName,
       @Nullable X509Certificate certificate,
       @Nullable X509Certificate failOverCertificate)
@@ -148,7 +148,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
     // set up only required fields sample test data
     Registrar.Builder builder =
         new Registrar.Builder()
-            .setClientId(clientId)
+            .setRegistrarId(registrarId)
             .setRegistrarName(registrarName)
             .setType(Registrar.Type.REAL)
             .setIanaIdentifier(8L)

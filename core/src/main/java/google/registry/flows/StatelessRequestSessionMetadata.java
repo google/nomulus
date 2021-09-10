@@ -25,12 +25,12 @@ import java.util.Set;
 /** A read-only {@link SessionMetadata} that doesn't support login/logout. */
 public class StatelessRequestSessionMetadata implements SessionMetadata {
 
-  private final String clientId;
+  private final String registrarId;
   private final ImmutableSet<String> serviceExtensionUris;
 
   public StatelessRequestSessionMetadata(
-      String clientId, ImmutableSet<String> serviceExtensionUris) {
-    this.clientId = checkNotNull(clientId);
+      String registrarId, ImmutableSet<String> serviceExtensionUris) {
+    this.registrarId = checkNotNull(registrarId);
     this.serviceExtensionUris = checkNotNull(serviceExtensionUris);
   }
 
@@ -40,8 +40,8 @@ public class StatelessRequestSessionMetadata implements SessionMetadata {
   }
 
   @Override
-  public String getClientId() {
-    return clientId;
+  public String getRegistrarId() {
+    return registrarId;
   }
 
   @Override
@@ -55,7 +55,7 @@ public class StatelessRequestSessionMetadata implements SessionMetadata {
   }
 
   @Override
-  public void setClientId(String clientId) {
+  public void setRegistrarId(String registrarId) {
     throw new UnsupportedOperationException();
   }
 
@@ -77,7 +77,7 @@ public class StatelessRequestSessionMetadata implements SessionMetadata {
   @Override
   public String toString() {
     return toStringHelper(getClass())
-        .add("clientId", getClientId())
+        .add("clientId", getRegistrarId())
         .add("failedLoginAttempts", getFailedLoginAttempts())
         .add("serviceExtensionUris", Joiner.on('.').join(nullToEmpty(getServiceExtensionUris())))
         .toString();

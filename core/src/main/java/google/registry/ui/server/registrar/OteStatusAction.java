@@ -79,7 +79,7 @@ public final class OteStatusAction implements Runnable, JsonActionRunner.JsonAct
       checkArgument(
           !Strings.isNullOrEmpty(oteClientId), "Missing key for OT&E client: %s", CLIENT_ID_PARAM);
 
-      String baseClientId = OteAccountBuilder.getBaseClientId(oteClientId);
+      String baseClientId = OteAccountBuilder.getBaseRegistrarId(oteClientId);
       Registrar oteRegistrar = registrarAccessor.getRegistrar(oteClientId);
       verifyOteAccess(baseClientId);
       checkArgument(
@@ -99,7 +99,7 @@ public final class OteStatusAction implements Runnable, JsonActionRunner.JsonAct
   }
 
   private void verifyOteAccess(String baseClientId) throws RegistrarAccessDeniedException {
-    for (String oteClientId : OteAccountBuilder.createClientIdToTldMap(baseClientId).keySet()) {
+    for (String oteClientId : OteAccountBuilder.createRegistrarIdToTldMap(baseClientId).keySet()) {
       registrarAccessor.verifyAccess(oteClientId);
     }
   }

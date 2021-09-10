@@ -112,7 +112,7 @@ class DomainTransferApproveFlowTest
                     .put(TRANSFER_REQUEST_TIME.plusMillis(1), Money.of(USD, 333))
                     .build())
             .build());
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     createTld("extra");
     setupDomainWithPendingTransfer("example", "tld");
     clock.advanceOneMilli();
@@ -121,7 +121,7 @@ class DomainTransferApproveFlowTest
   private void assertTransferApproved(DomainBase domain, DomainTransferData oldTransferData) {
     assertAboutDomains()
         .that(domain)
-        .hasCurrentSponsorClientId("NewRegistrar")
+        .hasCurrentSponsorRegistrarId("NewRegistrar")
         .and()
         .hasLastTransferTime(clock.nowUtc())
         .and()
@@ -270,7 +270,7 @@ class DomainTransferApproveFlowTest
             .setTargetId(domain.getDomainName())
             .setEventTime(clock.nowUtc())
             .setBillingTime(clock.nowUtc().plus(registry.getTransferGracePeriodLength()))
-            .setClientId("NewRegistrar")
+            .setRegistrarId("NewRegistrar")
             .setCost(Money.of(USD, 11).multipliedBy(expectedYearsToCharge))
             .setPeriodYears(expectedYearsToCharge)
             .setParent(historyEntryTransferApproved)
@@ -409,7 +409,7 @@ class DomainTransferApproveFlowTest
         new BillingEvent.Cancellation.Builder()
             .setReason(Reason.RENEW)
             .setTargetId("example.tld")
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(clock.nowUtc()) // The cancellation happens at the moment of transfer.
             .setBillingTime(
                 oldExpirationTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
@@ -503,7 +503,7 @@ class DomainTransferApproveFlowTest
 
   @TestOfyAndSql
   void testFailure_gainingClient() {
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
     EppException thrown =
         assertThrows(
             ResourceNotOwnedException.class, () -> doFailingTest("domain_transfer_approve.xml"));
@@ -512,7 +512,7 @@ class DomainTransferApproveFlowTest
 
   @TestOfyAndSql
   void testFailure_unrelatedClient() {
-    setClientIdForFlow("ClientZ");
+    setRegistrarIdForFlow("ClientZ");
     EppException thrown =
         assertThrows(
             ResourceNotOwnedException.class, () -> doFailingTest("domain_transfer_approve.xml"));
@@ -608,7 +608,7 @@ class DomainTransferApproveFlowTest
             .setType(DOMAIN_TRANSFER_REQUEST)
             .setDomain(domain)
             .setModificationTime(clock.nowUtc().minusDays(4))
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setDomainTransactionRecords(
                 ImmutableSet.of(previousSuccessRecord, notCancellableRecord))
             .build());

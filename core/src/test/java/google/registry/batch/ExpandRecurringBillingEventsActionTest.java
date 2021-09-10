@@ -107,7 +107,7 @@ public class ExpandRecurringBillingEventsActionTest
     historyEntry =
         persistResource(
             new DomainHistory.Builder()
-                .setClientId(domain.getCreationClientId())
+                .setRegistrarId(domain.getCreationRegistrarId())
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setModificationTime(DateTime.parse("1999-01-05T00:00:00Z"))
                 .setDomain(domain)
@@ -115,7 +115,7 @@ public class ExpandRecurringBillingEventsActionTest
     recurring =
         new BillingEvent.Recurring.Builder()
             .setParent(historyEntry)
-            .setClientId(domain.getCreationClientId())
+            .setRegistrarId(domain.getCreationRegistrarId())
             .setEventTime(DateTime.parse("2000-01-05T00:00:00Z"))
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setId(2L)
@@ -152,11 +152,11 @@ public class ExpandRecurringBillingEventsActionTest
   private void assertHistoryEntryMatches(
       DomainBase domain,
       HistoryEntry actual,
-      String clientId,
+      String registrarId,
       DateTime billingTime,
       boolean shouldHaveTxRecord) {
     assertThat(actual.getBySuperuser()).isFalse();
-    assertThat(actual.getClientId()).isEqualTo(clientId);
+    assertThat(actual.getRegistrarId()).isEqualTo(registrarId);
     assertThat(actual.getParent()).isEqualTo(Key.create(domain));
     assertThat(actual.getPeriod()).isEqualTo(Period.create(1, YEARS));
     assertThat(actual.getReason())
@@ -176,7 +176,7 @@ public class ExpandRecurringBillingEventsActionTest
   private OneTime.Builder defaultOneTimeBuilder() {
     return new BillingEvent.OneTime.Builder()
         .setBillingTime(DateTime.parse("2000-02-19T00:00:00Z"))
-        .setClientId("TheRegistrar")
+        .setRegistrarId("TheRegistrar")
         .setCost(Money.of(USD, 11))
         .setEventTime(DateTime.parse("2000-01-05T00:00:00Z"))
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW, Flag.SYNTHETIC))
@@ -209,7 +209,7 @@ public class ExpandRecurringBillingEventsActionTest
         persistResource(
             new DomainHistory.Builder()
                 .setDomain(deletedDomain)
-                .setClientId(deletedDomain.getCreationClientId())
+                .setRegistrarId(deletedDomain.getCreationRegistrarId())
                 .setModificationTime(deletedDomain.getCreationTime())
                 .setType(DOMAIN_CREATE)
                 .build());
@@ -217,7 +217,7 @@ public class ExpandRecurringBillingEventsActionTest
         persistResource(
             new BillingEvent.Recurring.Builder()
                 .setParent(historyEntry)
-                .setClientId(deletedDomain.getCreationClientId())
+                .setRegistrarId(deletedDomain.getCreationRegistrarId())
                 .setEventTime(DateTime.parse("2000-01-05T00:00:00Z"))
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setId(2L)

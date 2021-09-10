@@ -176,8 +176,9 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @Nullable
   @Access(AccessType.PROPERTY)
   @Column(name = "historyOtherRegistrarId")
+  @Override
   public String getOtherRegistrarId() {
-    return super.getOtherClientId();
+    return super.getOtherRegistrarId();
   }
 
   /**

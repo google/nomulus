@@ -276,9 +276,10 @@ abstract class CreateOrUpdateRegistrarCommand extends MutatingCommand {
     DateTime now = DateTime.now(UTC);
     for (String clientId : mainParameters) {
       Registrar oldRegistrar = getOldRegistrar(clientId);
-      Registrar.Builder builder = (oldRegistrar == null)
-          ? new Registrar.Builder().setClientId(clientId)
-          : oldRegistrar.asBuilder();
+      Registrar.Builder builder =
+          (oldRegistrar == null)
+              ? new Registrar.Builder().setRegistrarId(clientId)
+              : oldRegistrar.asBuilder();
 
       if (!isNullOrEmpty(password)) {
         builder.setPassword(password);

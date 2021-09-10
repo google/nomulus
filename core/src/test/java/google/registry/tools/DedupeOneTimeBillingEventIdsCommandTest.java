@@ -102,7 +102,7 @@ class DedupeOneTimeBillingEventIdsCommandTest
   private PollMessage.Autorenew persistAutorenewPollMessage(HistoryEntry historyEntry) {
     return persistResource(
         new PollMessage.Autorenew.Builder()
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(fakeClock.nowUtc())
             .setMsg("Test poll message")
             .setParent(historyEntry)
@@ -114,7 +114,7 @@ class DedupeOneTimeBillingEventIdsCommandTest
   private BillingEvent.OneTime persistBillingEvent(DomainHistory historyEntry) {
     return persistResource(
         new BillingEvent.OneTime.Builder()
-            .setClientId("a registrar")
+            .setRegistrarId("a registrar")
             .setTargetId("foo.tld")
             .setParent(historyEntry)
             .setReason(Reason.CREATE)
@@ -134,7 +134,7 @@ class DedupeOneTimeBillingEventIdsCommandTest
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .setModificationTime(fakeClock.nowUtc())
-            .setClientId("foo")
+            .setRegistrarId("foo")
             .setTrid(Trid.create("ABC-123", "server-trid"))
             .setBySuperuser(false)
             .setReason("reason")

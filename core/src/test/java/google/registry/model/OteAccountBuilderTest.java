@@ -83,16 +83,16 @@ public final class OteAccountBuilderTest {
         .isEqualTo(eapFee.getAmount());
   }
 
-  private void assertRegistrarExists(String clientId, String tld) {
-    Registrar registrar = Registrar.loadByClientId(clientId).orElse(null);
+  private void assertRegistrarExists(String registrarId, String tld) {
+    Registrar registrar = Registrar.loadByRegistrarId(registrarId).orElse(null);
     assertThat(registrar).isNotNull();
     assertThat(registrar.getType()).isEqualTo(Registrar.Type.OTE);
     assertThat(registrar.getState()).isEqualTo(Registrar.State.ACTIVE);
     assertThat(registrar.getAllowedTlds()).containsExactly(tld);
   }
 
-  private void assertContactExists(String clientId, String email) {
-    Registrar registrar = Registrar.loadByClientId(clientId).get();
+  private void assertContactExists(String registrarId, String email) {
+    Registrar registrar = Registrar.loadByRegistrarId(registrarId).get();
     assertThat(registrar.getContacts().stream().map(RegistrarContact::getEmailAddress))
         .contains(email);
     RegistrarContact contact =
@@ -154,7 +154,7 @@ public final class OteAccountBuilderTest {
   void testCreateOteEntities_setPassword() {
     OteAccountBuilder.forClientId("myclientid").setPassword("myPassword").buildAndPersist();
 
-    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("myPassword"))
+    assertThat(Registrar.loadByRegistrarId("myclientid-3").get().verifyPassword("myPassword"))
         .isTrue();
   }
 
@@ -164,9 +164,9 @@ public final class OteAccountBuilderTest {
         .setCertificate(SAMPLE_CERT, new SystemClock().nowUtc())
         .buildAndPersist();
 
-    assertThat(Registrar.loadByClientId("myclientid-3").get().getClientCertificateHash())
+    assertThat(Registrar.loadByRegistrarId("myclientid-3").get().getClientCertificateHash())
         .hasValue(SAMPLE_CERT_HASH);
-    assertThat(Registrar.loadByClientId("myclientid-3").get().getClientCertificate())
+    assertThat(Registrar.loadByRegistrarId("myclientid-3").get().getClientCertificate())
         .hasValue(SAMPLE_CERT);
   }
 
@@ -176,7 +176,7 @@ public final class OteAccountBuilderTest {
         .setIpAllowList(ImmutableList.of("1.1.1.0/24"))
         .buildAndPersist();
 
-    assertThat(Registrar.loadByClientId("myclientid-3").get().getIpAddressAllowList())
+    assertThat(Registrar.loadByRegistrarId("myclientid-3").get().getIpAddressAllowList())
         .containsExactly(CidrAddressBlock.create("1.1.1.0/24"));
   }
 
@@ -218,7 +218,7 @@ public final class OteAccountBuilderTest {
 
   @TestOfyAndSql
   void testCreateOteEntities_registrarExists_failsWhenNotReplaceExisting() {
-    persistSimpleResource(makeRegistrar1().asBuilder().setClientId("myclientid-1").build());
+    persistSimpleResource(makeRegistrar1().asBuilder().setRegistrarId("myclientid-1").build());
 
     OteAccountBuilder oteSetupHelper = OteAccountBuilder.forClientId("myclientid");
 
@@ -240,7 +240,7 @@ public final class OteAccountBuilderTest {
 
   @TestOfyAndSql
   void testCreateOteEntities_entitiesExist_succeedsWhenReplaceExisting() {
-    persistSimpleResource(makeRegistrar1().asBuilder().setClientId("myclientid-1").build());
+    persistSimpleResource(makeRegistrar1().asBuilder().setRegistrarId("myclientid-1").build());
     // we intentionally create the -ga TLD with the wrong state, to make sure it's overwritten.
     createTld("myclientid-ga", START_DATE_SUNRISE);
 
@@ -260,7 +260,7 @@ public final class OteAccountBuilderTest {
         .addContact("email@example.com")
         .buildAndPersist();
 
-    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("oldPassword"))
+    assertThat(Registrar.loadByRegistrarId("myclientid-3").get().verifyPassword("oldPassword"))
         .isTrue();
 
     OteAccountBuilder.forClientId("myclientid")
@@ -269,9 +269,9 @@ public final class OteAccountBuilderTest {
         .setReplaceExisting(true)
         .buildAndPersist();
 
-    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("oldPassword"))
+    assertThat(Registrar.loadByRegistrarId("myclientid-3").get().verifyPassword("oldPassword"))
         .isFalse();
-    assertThat(Registrar.loadByClientId("myclientid-3").get().verifyPassword("newPassword"))
+    assertThat(Registrar.loadByRegistrarId("myclientid-3").get().verifyPassword("newPassword"))
         .isTrue();
   }
 
@@ -292,7 +292,7 @@ public final class OteAccountBuilderTest {
 
   @TestOfyAndSql
   void testCreateClientIdToTldMap_validEntries() {
-    assertThat(OteAccountBuilder.createClientIdToTldMap("myclientid"))
+    assertThat(OteAccountBuilder.createRegistrarIdToTldMap("myclientid"))
         .containsExactly(
             "myclientid-1", "myclientid-sunrise",
             "myclientid-3", "myclientid-ga",
@@ -304,13 +304,13 @@ public final class OteAccountBuilderTest {
   void testCreateClientIdToTldMap_invalidId() {
     IllegalArgumentException exception =
         assertThrows(
-            IllegalArgumentException.class, () -> OteAccountBuilder.createClientIdToTldMap("a"));
+            IllegalArgumentException.class, () -> OteAccountBuilder.createRegistrarIdToTldMap("a"));
     assertThat(exception).hasMessageThat().isEqualTo("Invalid registrar name: a");
   }
 
   @TestOfyAndSql
   void testGetBaseClientId_validOteId() {
-    assertThat(OteAccountBuilder.getBaseClientId("myclientid-4")).isEqualTo("myclientid");
+    assertThat(OteAccountBuilder.getBaseRegistrarId("myclientid-4")).isEqualTo("myclientid");
   }
 
   @TestOfyAndSql
@@ -318,9 +318,9 @@ public final class OteAccountBuilderTest {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
-                () -> OteAccountBuilder.getBaseClientId("myclientid")))
+                () -> OteAccountBuilder.getBaseRegistrarId("myclientid")))
         .hasMessageThat()
-        .isEqualTo("Invalid OT&E client ID: myclientid");
+        .isEqualTo("Invalid OT&E registrar ID: myclientid");
   }
 
   @TestOfyAndSql
@@ -328,8 +328,8 @@ public final class OteAccountBuilderTest {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
-                () -> OteAccountBuilder.getBaseClientId("myclientid-7")))
+                () -> OteAccountBuilder.getBaseRegistrarId("myclientid-7")))
         .hasMessageThat()
-        .isEqualTo("ID myclientid-7 is not one of the OT&E client IDs for base myclientid");
+        .isEqualTo("ID myclientid-7 is not one of the OT&E registrar IDs for base myclientid");
   }
 }

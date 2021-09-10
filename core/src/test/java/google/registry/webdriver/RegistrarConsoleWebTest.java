@@ -162,7 +162,7 @@ public class RegistrarConsoleWebTest extends WebDriverTestCase {
     Thread.sleep(1000);
     Registrar registrar = server.runInAppEngineEnvironment(() -> loadRegistrar("TheRegistrar"));
     assertThat(registrar.getEmailAddress()).isEqualTo("test1@example.com");
-    assertThat(registrar.getClientId()).isEqualTo("TheRegistrar");
+    assertThat(registrar.getRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(registrar.getWhoisServer()).isEqualTo("foo.bar.baz");
     assertThat(registrar.getUrl()).isEqualTo("blah.blar");
     assertThat(registrar.getPhoneNumber()).isEqualTo("+1.2125650000");

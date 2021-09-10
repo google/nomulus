@@ -130,7 +130,7 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
     HistoryEntry historyEntry =
         new DomainHistory.Builder()
             .setBySuperuser(true)
-            .setClientId("adminreg")
+            .setRegistrarId("adminreg")
             .setModificationTime(ursTime)
             .setDomain(ursDomain)
             .setReason("Uniform Rapid Suspension")

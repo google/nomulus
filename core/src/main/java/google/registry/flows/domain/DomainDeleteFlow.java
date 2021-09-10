@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.flows.FlowUtils.createHistoryKey;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
@@ -50,7 +50,7 @@ import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.AssociationProhibitsOperationException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.SessionMetadata;
@@ -124,7 +124,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
   @Inject EppInput eppInput;
   @Inject SessionMetadata sessionMetadata;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
@@ -141,7 +141,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
         MetadataExtension.class, SecDnsCreateExtension.class, DomainDeleteSuperuserExtension.class);
     flowCustomLogic.beforeValidation();
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     DateTime now = tm().getTransactionTime();
     // Loads the target resource if it exists
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
@@ -153,12 +153,12 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     DomainBase.Builder builder;
     if (existingDomain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       builder =
-          denyPendingTransfer(existingDomain, TransferStatus.SERVER_CANCELLED, now, clientId)
+          denyPendingTransfer(existingDomain, TransferStatus.SERVER_CANCELLED, now, registrarId)
               .asBuilder();
     } else {
       builder = existingDomain.asBuilder();
     }
-    builder.setLastEppUpdateTime(now).setLastEppUpdateClientId(clientId);
+    builder.setLastEppUpdateTime(now).setLastEppUpdateRegistrarId(registrarId);
     Duration redemptionGracePeriodLength = registry.getRedemptionGracePeriodLength();
     Duration pendingDeleteLength = registry.getPendingDeleteLength();
     Optional<DomainDeleteSuperuserExtension> domainDeleteSuperuserExtension =
@@ -199,7 +199,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
                       GracePeriodStatus.REDEMPTION,
                       existingDomain.getRepoId(),
                       redemptionTime,
-                      clientId)));
+                      registrarId)));
       // Note: The expiration time is unchanged, so if it's before the new deletion time, there will
       // be a "phantom autorenew" where the expiration time advances. No poll message will be
       // produced (since we are ending the autorenew recurrences at "now" below) and the billing
@@ -220,7 +220,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     // Send a second poll message immediately if the domain is being deleted asynchronously by a
     // registrar other than the sponsoring registrar (which will necessarily be a superuser).
     if (durationUntilDelete.isLongerThan(Duration.ZERO)
-        && !clientId.equals(existingDomain.getPersistedCurrentSponsorClientId())) {
+        && !registrarId.equals(existingDomain.getPersistedCurrentSponsorRegistrarId())) {
       entitiesToSave.add(
           createImmediateDeletePollMessage(existingDomain, domainHistoryKey, now, deletionTime));
     }
@@ -292,9 +292,9 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     verifyNoDisallowedStatuses(existingDomain, DISALLOWED_STATUSES);
     verifyOptionalAuthInfo(authInfo, existingDomain);
     if (!isSuperuser) {
-      verifyResourceOwnership(clientId, existingDomain);
+      verifyResourceOwnership(registrarId, existingDomain);
       verifyNotInPredelegation(registry, now);
-      checkAllowedAccessToTld(clientId, registry.getTld().toString());
+      checkAllowedAccessToTld(registrarId, registry.getTld().toString());
     }
     if (!existingDomain.getSubordinateHosts().isEmpty()) {
       throw new DomainToDeleteHasHostsException();
@@ -347,7 +347,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
                 : "Deleted by registry administrator.")
             : "Domain deleted.";
     return new PollMessage.OneTime.Builder()
-        .setClientId(existingDomain.getCurrentSponsorClientId())
+        .setRegistrarId(existingDomain.getCurrentSponsorRegistrarId())
         .setEventTime(deletionTime)
         .setMsg(message)
         .setResponseData(
@@ -364,7 +364,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
       DateTime now,
       DateTime deletionTime) {
     return new PollMessage.OneTime.Builder()
-        .setClientId(existingDomain.getPersistedCurrentSponsorClientId())
+        .setRegistrarId(existingDomain.getPersistedCurrentSponsorRegistrarId())
         .setEventTime(now)
         .setParentKey(domainHistoryKey)
         .setMsg(

@@ -82,7 +82,7 @@ final class ValidateLoginCredentialsCommand implements CommandWithRemoteApi {
     }
     Registrar registrar =
         checkArgumentPresent(
-            Registrar.loadByClientId(clientId), "Registrar %s not found", clientId);
+            Registrar.loadByRegistrarId(clientId), "Registrar %s not found", clientId);
     new TlsCredentials(
             true,
             Optional.ofNullable(clientCertificateHash),

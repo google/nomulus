@@ -95,10 +95,11 @@ class ConsoleUiActionTest {
     assertThat(RegistrarConsoleMetrics.consoleRequestMetric).hasNoOtherValues();
   }
 
-  void assertMetric(String clientId, String explicitClientId, String roles, String status) {
+  void assertMetric(String registrarId, String explicitClientId, String roles, String status) {
     assertThat(RegistrarConsoleMetrics.consoleRequestMetric)
-        .hasValueForLabels(1, clientId, explicitClientId, roles, status);
-    RegistrarConsoleMetrics.consoleRequestMetric.reset(clientId, explicitClientId, roles, status);
+        .hasValueForLabels(1, registrarId, explicitClientId, roles, status);
+    RegistrarConsoleMetrics.consoleRequestMetric.reset(
+        registrarId, explicitClientId, roles, status);
   }
 
   @Test

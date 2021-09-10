@@ -316,7 +316,7 @@ final class RegistryLockVerifyActionTest {
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.SERVER_STATUS)
             .setTargetId(domain.getForeignKey())
-            .setClientId(domain.getCurrentSponsorClientId())
+            .setRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
             .setEventTime(fakeClock.nowUtc())
             .setBillingTime(fakeClock.nowUtc())

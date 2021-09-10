@@ -15,7 +15,7 @@
 package google.registry.flows.domain;
 
 import static google.registry.flows.FlowUtils.createHistoryKey;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
@@ -40,7 +40,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.StatusProhibitsOperationException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
@@ -116,7 +116,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
@@ -132,8 +132,8 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
         MetadataExtension.class,
         RgpUpdateExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
-    verifyRegistrarIsActive(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
+    verifyRegistrarIsActive(registrarId);
     Update command = (Update) resourceCommand;
     DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
@@ -174,7 +174,12 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
             .build();
     DomainBase newDomain =
         performRestore(
-            existingDomain, newExpirationTime, autorenewEvent, autorenewPollMessage, now, clientId);
+            existingDomain,
+            newExpirationTime,
+            autorenewEvent,
+            autorenewPollMessage,
+            now,
+            registrarId);
     updateForeignKeyIndexDeletionTime(newDomain);
     DomainHistory domainHistory = buildDomainHistory(newDomain, now);
     entitiesToSave.add(newDomain, domainHistory, autorenewEvent, autorenewPollMessage);
@@ -205,10 +210,10 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
       DateTime now) throws EppException {
     verifyOptionalAuthInfo(authInfo, existingDomain);
     if (!isSuperuser) {
-      verifyResourceOwnership(clientId, existingDomain);
+      verifyResourceOwnership(registrarId, existingDomain);
       verifyNotReserved(InternetDomainName.from(targetId), false);
-      verifyPremiumNameIsNotBlocked(targetId, now, clientId);
-      checkAllowedAccessToTld(clientId, existingDomain.getTld());
+      verifyPremiumNameIsNotBlocked(targetId, now, registrarId);
+      checkAllowedAccessToTld(registrarId, existingDomain.getTld());
     }
     // No other changes can be specified on a restore request.
     if (!command.noChangesPresent()) {
@@ -227,7 +232,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
       BillingEvent.Recurring autorenewEvent,
       PollMessage.Autorenew autorenewPollMessage,
       DateTime now,
-      String clientId) {
+      String registrarId) {
     return existingDomain
         .asBuilder()
         .setRegistrationExpirationTime(newExpirationTime)
@@ -241,7 +246,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
         // it won't immediately be deleted again.
         .setAutorenewEndTime(Optional.empty())
         .setLastEppUpdateTime(now)
-        .setLastEppUpdateClientId(clientId)
+        .setLastEppUpdateRegistrarId(registrarId)
         .build();
   }
 
@@ -261,7 +266,7 @@ public final class DomainRestoreRequestFlow implements TransactionalFlow  {
       Key<DomainHistory> domainHistoryKey, Money cost, DateTime now) {
     return new BillingEvent.OneTime.Builder()
         .setTargetId(targetId)
-        .setClientId(clientId)
+        .setRegistrarId(registrarId)
         .setEventTime(now)
         .setBillingTime(now)
         .setPeriodYears(1)

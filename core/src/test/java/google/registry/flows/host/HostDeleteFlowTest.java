@@ -156,7 +156,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
 
   @TestOfyAndSql
   void testFailure_unauthorizedClient() {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveHost("ns1.example.tld");
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -164,7 +164,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
 
   @TestOfyAndSql
   void testSuccess_superuserUnauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveHost("ns1.example.tld");
     clock.advanceOneMilli();
     if (tm().isOfy()) {
@@ -180,18 +180,18 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
 
   @TestOfyAndSql
   void testSuccess_authorizedClientReadFromSuperordinate() throws Exception {
-    sessionMetadata.setClientId("TheRegistrar");
+    sessionMetadata.setRegistrarId("TheRegistrar");
     createTld("tld");
     DomainBase domain =
         persistResource(
             newDomainBase("example.tld")
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId("TheRegistrar")
+                .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
                 .build());
     persistResource(
         newHostResource("ns1.example.tld")
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("NewRegistrar") // Shouldn't hurt.
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar") // Shouldn't hurt.
             .setSuperordinateDomain(domain.createVKey())
             .build());
     clock.advanceOneMilli();
@@ -206,18 +206,18 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
 
   @TestOfyAndSql
   void testFailure_unauthorizedClientReadFromSuperordinate() {
-    sessionMetadata.setClientId("TheRegistrar");
+    sessionMetadata.setRegistrarId("TheRegistrar");
     createTld("tld");
     DomainBase domain =
         persistResource(
             newDomainBase("example.tld")
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId("NewRegistrar")
+                .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                 .build());
     persistResource(
         newHostResource("ns1.example.tld")
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("TheRegistrar") // Shouldn't help.
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar") // Shouldn't help.
             .setSuperordinateDomain(domain.createVKey())
             .build());
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
@@ -226,7 +226,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
 
   @TestOfyAndSql
   void testSuccess_authorizedClientReadFromTransferredSuperordinate() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
     // Setup a transfer that should have been server approved a day ago.
     DateTime now = clock.nowUtc();
@@ -236,21 +236,21 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
         persistResource(
             newDomainBase("example.tld")
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId("NewRegistrar") // Shouldn't hurt.
+                .setPersistedCurrentSponsorRegistrarId("NewRegistrar") // Shouldn't hurt.
                 .addStatusValue(StatusValue.PENDING_TRANSFER)
                 .setTransferData(
                     new DomainTransferData.Builder()
                         .setTransferStatus(TransferStatus.PENDING)
-                        .setGainingClientId("NewRegistrar")
+                        .setGainingRegistrarId("NewRegistrar")
                         .setTransferRequestTime(requestTime)
-                        .setLosingClientId("TheRegistrar")
+                        .setLosingRegistrarId("TheRegistrar")
                         .setPendingTransferExpirationTime(transferExpirationTime)
                         .build())
                 .build());
     persistResource(
         newHostResource("ns1.example.tld")
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("TheRegistrar") // Shouldn't hurt.
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar") // Shouldn't hurt.
             .setSuperordinateDomain(domain.createVKey())
             .build());
     clock.advanceOneMilli();
@@ -265,7 +265,7 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
 
   @TestOfyAndSql
   void testFailure_unauthorizedClientReadFromTransferredSuperordinate() {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
     // Setup a transfer that should have been server approved a day ago.
     DateTime now = clock.nowUtc();
@@ -275,21 +275,21 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
         persistResource(
             newDomainBase("example.tld")
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId("NewRegistrar") // Shouldn't help.
+                .setPersistedCurrentSponsorRegistrarId("NewRegistrar") // Shouldn't help.
                 .addStatusValue(StatusValue.PENDING_TRANSFER)
                 .setTransferData(
                     new DomainTransferData.Builder()
                         .setTransferStatus(TransferStatus.PENDING)
-                        .setGainingClientId("TheRegistrar")
+                        .setGainingRegistrarId("TheRegistrar")
                         .setTransferRequestTime(requestTime)
-                        .setLosingClientId("NewRegistrar")
+                        .setLosingRegistrarId("NewRegistrar")
                         .setPendingTransferExpirationTime(transferExpirationTime)
                         .build())
                 .build());
     persistResource(
         newHostResource("ns1.example.tld")
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("NewRegistrar") // Shouldn't help.
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar") // Shouldn't help.
             .setSuperordinateDomain(domain.createVKey())
             .build());
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
@@ -338,11 +338,11 @@ class HostDeleteFlowTest extends ResourceFlowTestCase<HostDeleteFlow, HostResour
     assertIcannReportingActivityFieldLogged("srs-host-delete");
   }
 
-  private void assertOfyDeleteSuccess(String clientId, String clientTrid, boolean isSuperuser)
+  private void assertOfyDeleteSuccess(String registrarId, String clientTrid, boolean isSuperuser)
       throws Exception {
     HostResource deletedHost = reloadResourceByForeignKey();
     assertAsyncDeletionTaskEnqueued(
-        deletedHost, clientId, Trid.create(clientTrid, "server-trid"), isSuperuser);
+        deletedHost, registrarId, Trid.create(clientTrid, "server-trid"), isSuperuser);
     assertAboutHosts()
         .that(deletedHost)
         .hasStatusValue(StatusValue.PENDING_DELETE)

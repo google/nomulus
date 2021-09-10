@@ -64,7 +64,7 @@ class ResaveAllHistoryEntriesActionTest extends MapreduceTestCase<ResaveAllHisto
                     .setDomain(domain)
                     .setType(HistoryEntry.Type.DOMAIN_CREATE)
                     .setModificationTime(domain.getCreationTime())
-                    .setClientId(domain.getCreationClientId())
+                    .setRegistrarId(domain.getCreationRegistrarId())
                     .build()
                     .asHistoryEntry());
     Entity contactEntry =
@@ -74,7 +74,7 @@ class ResaveAllHistoryEntriesActionTest extends MapreduceTestCase<ResaveAllHisto
                 new ContactHistory.Builder()
                     .setContact(contact)
                     .setType(HistoryEntry.Type.CONTACT_CREATE)
-                    .setClientId(contact.getCreationClientId())
+                    .setRegistrarId(contact.getCreationRegistrarId())
                     .setModificationTime(contact.getCreationTime())
                     .build()
                     .asHistoryEntry());

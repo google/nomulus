@@ -163,7 +163,7 @@ public abstract class BillingEvent extends ImmutableObject
     domainRepoId = parent.getParent().getName();
   }
 
-  public String getClientId() {
+  public String getRegistrarId() {
     return clientId;
   }
 
@@ -223,8 +223,8 @@ public abstract class BillingEvent extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setClientId(String clientId) {
-      getInstance().clientId = clientId;
+    public B setRegistrarId(String registrarId) {
+      getInstance().clientId = registrarId;
       return thisCastToDerived();
     }
 
@@ -660,7 +660,7 @@ public abstract class BillingEvent extends ImmutableObject
           new BillingEvent.Cancellation.Builder()
               .setReason(checkNotNull(GRACE_PERIOD_TO_REASON.get(gracePeriod.getType())))
               .setTargetId(targetId)
-              .setClientId(gracePeriod.getClientId())
+              .setRegistrarId(gracePeriod.getRegistrarId())
               .setEventTime(eventTime)
               // The charge being cancelled will take place at the grace period's expiration time.
               .setBillingTime(gracePeriod.getExpirationTime())
@@ -778,7 +778,7 @@ public abstract class BillingEvent extends ImmutableObject
     public static Modification createRefundFor(
         OneTime billingEvent, DomainHistory historyEntry, String description) {
       return new Builder()
-          .setClientId(billingEvent.getClientId())
+          .setRegistrarId(billingEvent.getRegistrarId())
           .setFlags(billingEvent.getFlags())
           .setReason(billingEvent.getReason())
           .setTargetId(billingEvent.getTargetId())

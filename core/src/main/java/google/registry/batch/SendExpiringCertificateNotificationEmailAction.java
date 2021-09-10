@@ -172,7 +172,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                       registrar.getRegistrarName(),
                       certificateType,
                       expirationDate,
-                      registrar.getClientId()))
+                      registrar.getRegistrarId()))
               .setRecipients(recipients)
               .setCcs(getEmailAddresses(registrar, Type.ADMIN))
               .build());

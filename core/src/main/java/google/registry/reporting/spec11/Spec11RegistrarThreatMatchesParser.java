@@ -104,12 +104,12 @@ public class Spec11RegistrarThreatMatchesParser {
 
   private RegistrarThreatMatches parseRegistrarThreatMatch(String line) throws JSONException {
     JSONObject reportJSON = new JSONObject(line);
-    String clientId = reportJSON.getString(Spec11Pipeline.REGISTRAR_CLIENT_ID_FIELD);
+    String registrarId = reportJSON.getString(Spec11Pipeline.REGISTRAR_CLIENT_ID_FIELD);
     JSONArray threatMatchesArray = reportJSON.getJSONArray(Spec11Pipeline.THREAT_MATCHES_FIELD);
     ImmutableList.Builder<ThreatMatch> threatMatches = ImmutableList.builder();
     for (int i = 0; i < threatMatchesArray.length(); i++) {
       threatMatches.add(ThreatMatch.fromJSON(threatMatchesArray.getJSONObject(i)));
     }
-    return RegistrarThreatMatches.create(clientId, threatMatches.build());
+    return RegistrarThreatMatches.create(registrarId, threatMatches.build());
   }
 }

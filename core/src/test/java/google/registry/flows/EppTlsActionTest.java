@@ -48,6 +48,6 @@ class EppTlsActionTest {
         eq(false),
         eq(false),
         eq(INPUT_XML_BYTES));
-    assertThat(captor.getValue().getClientId()).isEqualTo("ClientIdentifier");
+    assertThat(captor.getValue().getRegistrarId()).isEqualTo("ClientIdentifier");
   }
 }

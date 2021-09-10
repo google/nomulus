@@ -222,14 +222,15 @@ public class Registrar extends ImmutableObject
       comparing(RegistrarContact::getEmailAddress, String::compareTo);
 
   /**
-   * A caching {@link Supplier} of a clientId to {@link Registrar} map.
+   * A caching {@link Supplier} of a registrarId to {@link Registrar} map.
    *
    * <p>The supplier's get() method enters a transactionless context briefly to avoid enrolling the
    * query inside an unrelated client-affecting transaction.
    */
-  private static final Supplier<ImmutableMap<String, Registrar>> CACHE_BY_CLIENT_ID =
+  private static final Supplier<ImmutableMap<String, Registrar>> CACHE_BY_REGISTRAR_ID =
       memoizeWithShortExpiration(
-          () -> tm().doTransactionless(() -> Maps.uniqueIndex(loadAll(), Registrar::getClientId)));
+          () ->
+              tm().doTransactionless(() -> Maps.uniqueIndex(loadAll(), Registrar::getRegistrarId)));
 
   @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
 
@@ -479,7 +480,7 @@ public class Registrar extends ImmutableObject
   /** Whether or not registry lock is allowed for this registrar. */
   boolean registryLockAllowed = false;
 
-  public String getClientId() {
+  public String getRegistrarId() {
     return clientIdentifier;
   }
 
@@ -764,13 +765,13 @@ public class Registrar extends ImmutableObject
       super(instance);
     }
 
-    public Builder setClientId(String clientId) {
-      // Client id must be [3,16] chars long. See "clIDType" in the base EPP schema of RFC 5730.
+    public Builder setRegistrarId(String registrarId) {
+      // Registrar id must be [3,16] chars long. See "clIDType" in the base EPP schema of RFC 5730.
       // (Need to validate this here as there's no matching EPP XSD for validation.)
       checkArgument(
-          Range.closed(3, 16).contains(clientId.length()),
-          "Client identifier must be 3-16 characters long.");
-      getInstance().clientIdentifier = clientId;
+          Range.closed(3, 16).contains(registrarId.length()),
+          "Registrar ID must be 3-16 characters long.");
+      getInstance().clientIdentifier = registrarId;
       return this;
     }
 
@@ -1026,40 +1027,40 @@ public class Registrar extends ImmutableObject
 
   /** Loads all registrar entities using an in-memory cache. */
   public static Iterable<Registrar> loadAllCached() {
-    return CACHE_BY_CLIENT_ID.get().values();
+    return CACHE_BY_REGISTRAR_ID.get().values();
   }
 
   /** Loads all registrar keys using an in-memory cache. */
   public static ImmutableSet<VKey<Registrar>> loadAllKeysCached() {
-    return CACHE_BY_CLIENT_ID.get().keySet().stream()
+    return CACHE_BY_REGISTRAR_ID.get().keySet().stream()
         .map(Registrar::createVKey)
         .collect(toImmutableSet());
   }
 
-  /** Loads and returns a registrar entity by its client id directly from Datastore. */
-  public static Optional<Registrar> loadByClientId(String clientId) {
-    checkArgument(!Strings.isNullOrEmpty(clientId), "clientId must be specified");
-    return transactIfJpaTm(() -> tm().loadByKeyIfPresent(createVKey(clientId)));
+  /** Loads and returns a registrar entity by its id directly from Datastore. */
+  public static Optional<Registrar> loadByRegistrarId(String registrarId) {
+    checkArgument(!Strings.isNullOrEmpty(registrarId), "registrarId must be specified");
+    return transactIfJpaTm(() -> tm().loadByKeyIfPresent(createVKey(registrarId)));
   }
 
   /**
-   * Loads and returns a registrar entity by its client id using an in-memory cache.
+   * Loads and returns a registrar entity by its id using an in-memory cache.
    *
    * <p>Returns empty if the registrar isn't found.
    */
-  public static Optional<Registrar> loadByClientIdCached(String clientId) {
-    checkArgument(!Strings.isNullOrEmpty(clientId), "clientId must be specified");
-    return Optional.ofNullable(CACHE_BY_CLIENT_ID.get().get(clientId));
+  public static Optional<Registrar> loadByRegistrarIdCached(String registrarId) {
+    checkArgument(!Strings.isNullOrEmpty(registrarId), "registrarId must be specified");
+    return Optional.ofNullable(CACHE_BY_REGISTRAR_ID.get().get(registrarId));
   }
 
   /**
-   * Loads and returns a registrar entity by its client id using an in-memory cache.
+   * Loads and returns a registrar entity by its id using an in-memory cache.
    *
    * <p>Throws if the registrar isn't found.
    */
-  public static Registrar loadRequiredRegistrarCached(String clientId) {
-    Optional<Registrar> registrar = loadByClientIdCached(clientId);
-    checkArgument(registrar.isPresent(), "couldn't find registrar '%s'", clientId);
+  public static Registrar loadRequiredRegistrarCached(String registrarId) {
+    Optional<Registrar> registrar = loadByRegistrarIdCached(registrarId);
+    checkArgument(registrar.isPresent(), "couldn't find registrar '%s'", registrarId);
     return registrar.get();
   }
 }

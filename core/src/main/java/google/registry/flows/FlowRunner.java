@@ -19,9 +19,9 @@ import static google.registry.xml.XmlTransformer.prettyPrint;
 
 import com.google.common.base.Strings;
 import com.google.common.flogger.FluentLogger;
-import google.registry.flows.FlowModule.ClientId;
 import google.registry.flows.FlowModule.DryRun;
 import google.registry.flows.FlowModule.InputXml;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.Transactional;
 import google.registry.flows.session.LoginFlow;
@@ -38,7 +38,7 @@ public class FlowRunner {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject TransportCredentials credentials;
   @Inject EppRequestSource eppRequestSource;
   @Inject Provider<Flow> flowProvider;
@@ -59,7 +59,7 @@ public class FlowRunner {
     logger.atInfo().log(
         COMMAND_LOG_FORMAT,
         trid.getServerTransactionId(),
-        clientId,
+        registrarId,
         sessionMetadata,
         prettyXml.replace("\n", "\n\t"),
         credentials,
@@ -74,8 +74,8 @@ public class FlowRunner {
     if (!isTransactional) {
       EppOutput eppOutput = EppOutput.create(flowProvider.get().run());
       if (flowClass.equals(LoginFlow.class)) {
-        // In LoginFlow, clientId isn't known until after the flow executes, so save it then.
-        eppMetricBuilder.setClientId(sessionMetadata.getClientId());
+        // In LoginFlow, registrarId isn't known until after the flow executes, so save it then.
+        eppMetricBuilder.setRegistrarId(sessionMetadata.getRegistrarId());
       }
       return eppOutput;
     }

@@ -14,7 +14,7 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist;
 import static google.registry.flows.contact.ContactFlowUtils.validateAsciiPostalInfo;
 import static google.registry.flows.contact.ContactFlowUtils.validateContactAgainstPolicy;
@@ -27,7 +27,7 @@ import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
@@ -60,7 +60,7 @@ public final class ContactCreateFlow implements TransactionalFlow {
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject ContactHistory.Builder historyBuilder;
   @Inject EppResponse.Builder responseBuilder;
@@ -71,16 +71,16 @@ public final class ContactCreateFlow implements TransactionalFlow {
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     Create command = (Create) resourceCommand;
     DateTime now = tm().getTransactionTime();
-    verifyResourceDoesNotExist(ContactResource.class, targetId, now, clientId);
+    verifyResourceDoesNotExist(ContactResource.class, targetId, now, registrarId);
     ContactResource newContact =
         new ContactResource.Builder()
             .setContactId(targetId)
             .setAuthInfo(command.getAuthInfo())
-            .setCreationClientId(clientId)
-            .setPersistedCurrentSponsorClientId(clientId)
+            .setCreationRegistrarId(registrarId)
+            .setPersistedCurrentSponsorRegistrarId(registrarId)
             .setRepoId(createRepoId(allocateId(), roidSuffix))
             .setFaxNumber(command.getFax())
             .setVoiceNumber(command.getVoice())

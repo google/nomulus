@@ -125,7 +125,7 @@ public final class OteAccountBuilder {
     checkState(
         RegistryEnvironment.get() != RegistryEnvironment.PRODUCTION,
         "Can't setup OT&E in production");
-    clientIdToTld = createClientIdToTldMap(baseClientId);
+    clientIdToTld = createRegistrarIdToTldMap(baseClientId);
     sunriseTld = createTld(baseClientId + "-sunrise", START_DATE_SUNRISE, false, 0);
     gaTld = createTld(baseClientId + "-ga", GENERAL_AVAILABILITY, false, 2);
     eapTld = createTld(baseClientId + "-eap", GENERAL_AVAILABILITY, true, 3);
@@ -279,7 +279,7 @@ public final class OteAccountBuilder {
   }
 
   private Registrar addAllowedTld(Registrar registrar) {
-    String tld = clientIdToTld.get(registrar.getClientId());
+    String tld = clientIdToTld.get(registrar.getRegistrarId());
     if (registrar.getAllowedTlds().contains(tld)) {
       return registrar;
     }
@@ -324,7 +324,7 @@ public final class OteAccountBuilder {
    */
   private static Registrar createRegistrar(String registrarName) {
     return new Registrar.Builder()
-        .setClientId(registrarName)
+        .setRegistrarId(registrarName)
         .setRegistrarName(registrarName)
         .setType(Registrar.Type.OTE)
         .setLocalizedAddress(DEFAULT_ADDRESS)
@@ -346,31 +346,31 @@ public final class OteAccountBuilder {
         .build();
   }
 
-  /** Returns the ClientIds of the OT&amp;E, with the TLDs each has access to. */
-  public static ImmutableMap<String, String> createClientIdToTldMap(String baseClientId) {
+  /** Returns the registrar IDs of the OT&amp;E, with the TLDs each has access to. */
+  public static ImmutableMap<String, String> createRegistrarIdToTldMap(String baseRegistrarId) {
     checkArgument(
-        REGISTRAR_PATTERN.matcher(baseClientId).matches(),
+        REGISTRAR_PATTERN.matcher(baseRegistrarId).matches(),
         "Invalid registrar name: %s",
-        baseClientId);
+        baseRegistrarId);
     return new ImmutableMap.Builder<String, String>()
-        .put(baseClientId + "-1", baseClientId + "-sunrise")
+        .put(baseRegistrarId + "-1", baseRegistrarId + "-sunrise")
         // The -2 registrar no longer exists because landrush no longer exists.
-        .put(baseClientId + "-3", baseClientId + "-ga")
-        .put(baseClientId + "-4", baseClientId + "-ga")
-        .put(baseClientId + "-5", baseClientId + "-eap")
+        .put(baseRegistrarId + "-3", baseRegistrarId + "-ga")
+        .put(baseRegistrarId + "-4", baseRegistrarId + "-ga")
+        .put(baseRegistrarId + "-5", baseRegistrarId + "-eap")
         .build();
   }
 
-  /** Returns the base client ID that correspond to a given OT&amp;E client ID. */
-  public static String getBaseClientId(String oteClientId) {
-    int index = oteClientId.lastIndexOf('-');
-    checkArgument(index > 0, "Invalid OT&E client ID: %s", oteClientId);
-    String baseClientId = oteClientId.substring(0, index);
+  /** Returns the base client ID that correspond to a given OT&amp;E registrar ID. */
+  public static String getBaseRegistrarId(String oteRegistrarId) {
+    int index = oteRegistrarId.lastIndexOf('-');
+    checkArgument(index > 0, "Invalid OT&E registrar ID: %s", oteRegistrarId);
+    String baseRegistrarId = oteRegistrarId.substring(0, index);
     checkArgument(
-        createClientIdToTldMap(baseClientId).containsKey(oteClientId),
-        "ID %s is not one of the OT&E client IDs for base %s",
-        oteClientId,
-        baseClientId);
-    return baseClientId;
+        createRegistrarIdToTldMap(baseRegistrarId).containsKey(oteRegistrarId),
+        "ID %s is not one of the OT&E registrar IDs for base %s",
+        oteRegistrarId,
+        baseRegistrarId);
+    return baseRegistrarId;
   }
 }

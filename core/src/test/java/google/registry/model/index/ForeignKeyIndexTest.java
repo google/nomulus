@@ -211,7 +211,10 @@ class ForeignKeyIndexTest extends EntityTestCase {
         .containsExactly("ns1.example.com", originalFki);
     HostResource modifiedHost =
         persistResource(
-            originalHost.asBuilder().setPersistedCurrentSponsorClientId("OtherRegistrar").build());
+            originalHost
+                .asBuilder()
+                .setPersistedCurrentSponsorRegistrarId("OtherRegistrar")
+                .build());
     fakeClock.advanceOneMilli();
     ForeignKeyIndex<HostResource> newFki = loadHostFki("ns1.example.com");
     assertThat(newFki).isNotEqualTo(originalFki);

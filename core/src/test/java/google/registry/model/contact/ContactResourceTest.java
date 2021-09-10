@@ -65,11 +65,11 @@ public class ContactResourceTest extends EntityTestCase {
         new ContactResource.Builder()
             .setContactId("contact_id")
             .setRepoId("1-FOOBAR")
-            .setCreationClientId("registrar1")
+            .setCreationRegistrarId("registrar1")
             .setLastEppUpdateTime(fakeClock.nowUtc())
-            .setLastEppUpdateClientId("registrar2")
+            .setLastEppUpdateRegistrarId("registrar2")
             .setLastTransferTime(fakeClock.nowUtc())
-            .setPersistedCurrentSponsorClientId("registrar3")
+            .setPersistedCurrentSponsorRegistrarId("registrar3")
             .setLocalizedPostalInfo(
                 new PostalInfo.Builder()
                     .setType(Type.LOCALIZED)
@@ -115,8 +115,8 @@ public class ContactResourceTest extends EntityTestCase {
             .setStatusValues(ImmutableSet.of(StatusValue.OK))
             .setTransferData(
                 new ContactTransferData.Builder()
-                    .setGainingClientId("gaining")
-                    .setLosingClientId("losing")
+                    .setGainingRegistrarId("gaining")
+                    .setLosingRegistrarId("losing")
                     .setPendingTransferExpirationTime(fakeClock.nowUtc())
                     .setTransferRequestTime(fakeClock.nowUtc())
                     .setTransferStatus(TransferStatus.SERVER_APPROVED)
@@ -258,13 +258,13 @@ public class ContactResourceTest extends EntityTestCase {
                     .asBuilder()
                     .setTransferStatus(TransferStatus.PENDING)
                     .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1))
-                    .setGainingClientId("winner")
+                    .setGainingRegistrarId("winner")
                     .build())
             .build()
             .cloneProjectedAtTime(fakeClock.nowUtc().plusDays(1));
     assertThat(afterTransfer.getTransferData().getTransferStatus())
         .isEqualTo(TransferStatus.SERVER_APPROVED);
-    assertThat(afterTransfer.getCurrentSponsorClientId()).isEqualTo("winner");
+    assertThat(afterTransfer.getCurrentSponsorRegistrarId()).isEqualTo("winner");
     assertThat(afterTransfer.getLastTransferTime()).isEqualTo(fakeClock.nowUtc().plusDays(1));
   }
 

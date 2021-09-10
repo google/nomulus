@@ -114,7 +114,7 @@ public class CreateSyntheticHistoryEntriesAction implements Runnable {
                 EppResource eppResource = auditedOfy().load().key(resourceKey).now();
                 tm().put(
                         HistoryEntry.createBuilderForResource(eppResource)
-                            .setClientId(registryAdminRegistrarId)
+                            .setRegistrarId(registryAdminRegistrarId)
                             .setBySuperuser(true)
                             .setRequestedByRegistrar(false)
                             .setModificationTime(tm().getTransactionTime())

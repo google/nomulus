@@ -52,7 +52,7 @@ class VerifyOteCommandTest extends CommandTestCase<VerifyOteCommand> {
     Registrar registrar =
         loadRegistrar("TheRegistrar")
             .asBuilder()
-            .setClientId("blobio-1")
+            .setRegistrarId("blobio-1")
             .setRegistrarName("blobio-1")
             .build();
     persistResource(registrar);

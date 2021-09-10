@@ -189,14 +189,14 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
             .setModificationTime(now)
             .setBySuperuser(true)
             .setType(Type.SYNTHETIC)
-            .setClientId(domain.getCurrentSponsorClientId())
+            .setRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setReason("Domain unrenewal")
             .setPeriod(Period.create(period, Unit.YEARS))
             .setRequestedByRegistrar(false)
             .build();
     PollMessage oneTimePollMessage =
         new PollMessage.OneTime.Builder()
-            .setClientId(domain.getCurrentSponsorClientId())
+            .setRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setMsg(
                 String.format(
                     "Domain %s was unrenewed by %d years; now expires at %s.",
@@ -222,7 +222,7 @@ class UnrenewDomainCommand extends ConfirmingCommand implements CommandWithRemot
             .asBuilder()
             .setRegistrationExpirationTime(newExpirationTime)
             .setLastEppUpdateTime(now)
-            .setLastEppUpdateClientId(domain.getCurrentSponsorClientId())
+            .setLastEppUpdateRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
             .setAutorenewPollMessage(newAutorenewPollMessage.createVKey())
             .build();

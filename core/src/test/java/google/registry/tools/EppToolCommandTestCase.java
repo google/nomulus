@@ -35,7 +35,7 @@ public abstract class EppToolCommandTestCase<C extends EppToolCommand> extends C
   public void beforeEachEppToolCommandTestCase() {
     // Create two TLDs for commands that allow multiple TLDs at once.
     createTlds("tld", "tld2");
-    eppVerifier = EppToolVerifier.create(command).expectClientId("NewRegistrar");
+    eppVerifier = EppToolVerifier.create(command).expectRegistrarId("NewRegistrar");
   }
 
   @AfterEach

@@ -165,7 +165,7 @@ final class RegistrarContactCommand extends MutatingCommand {
     String clientId = mainParameters.get(0);
     Registrar registrar =
         checkArgumentPresent(
-            Registrar.loadByClientId(clientId), "Registrar %s not found", clientId);
+            Registrar.loadByRegistrarId(clientId), "Registrar %s not found", clientId);
     // If the contact_type parameter is not specified, we should not make any changes.
     if (contactTypeNames == null) {
       contactTypes = null;

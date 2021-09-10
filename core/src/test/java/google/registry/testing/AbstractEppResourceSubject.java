@@ -161,16 +161,16 @@ abstract class AbstractEppResourceSubject<
     return andChainer();
   }
 
-  public And<S> hasLastEppUpdateClientId(String clientId) {
-    return hasValue(clientId, actual.getLastEppUpdateClientId(), "getLastEppUpdateClientId()");
+  public And<S> hasLastEppUpdateClientId(String registrarId) {
+    return hasValue(
+        registrarId, actual.getLastEppUpdateRegistrarId(), "getLastEppUpdateRegistrarId()");
   }
 
-
-  public And<S> hasPersistedCurrentSponsorClientId(String clientId) {
+  public And<S> hasPersistedCurrentSponsorRegistrarId(String registrarId) {
     return hasValue(
-        clientId,
-        actual.getPersistedCurrentSponsorClientId(),
-        "getPersistedCurrentSponsorClientId()");
+        registrarId,
+        actual.getPersistedCurrentSponsorRegistrarId(),
+        "getPersistedCurrentSponsorRegistrarId()");
   }
 
   public And<S> isActiveAt(DateTime time) {

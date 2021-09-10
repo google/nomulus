@@ -150,7 +150,7 @@ public class Spec11Pipeline implements Serializable {
     return Subdomain.create(
         domainBase.getDomainName(),
         domainBase.getRepoId(),
-        domainBase.getCurrentSponsorClientId(),
+        domainBase.getCurrentSponsorRegistrarId(),
         emailAddress);
   }
 
@@ -198,15 +198,15 @@ public class Spec11Pipeline implements Serializable {
             MapElements.into(TypeDescriptors.strings())
                 .via(
                     (KV<String, Iterable<EmailAndThreatMatch>> kv) -> {
-                      String clientId = kv.getKey();
+                      String registrarId = kv.getKey();
                       checkArgument(
                           kv.getValue().iterator().hasNext(),
                           String.format(
-                              "Registrar with ID %s had no corresponding threats", clientId));
+                              "Registrar with ID %s had no corresponding threats", registrarId));
                       String email = kv.getValue().iterator().next().email();
                       JSONObject output = new JSONObject();
                       try {
-                        output.put(REGISTRAR_CLIENT_ID_FIELD, clientId);
+                        output.put(REGISTRAR_CLIENT_ID_FIELD, registrarId);
                         output.put(REGISTRAR_EMAIL_FIELD, email);
                         JSONArray threatMatchArray = new JSONArray();
                         for (EmailAndThreatMatch emailAndThreatMatch : kv.getValue()) {

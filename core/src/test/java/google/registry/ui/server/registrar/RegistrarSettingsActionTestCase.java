@@ -148,10 +148,10 @@ public abstract class RegistrarSettingsActionTestCase {
     assertThat(RegistrarConsoleMetrics.settingsRequestMetric).hasNoOtherValues();
   }
 
-  void assertMetric(String clientId, String op, String roles, String status) {
+  void assertMetric(String registrarId, String op, String roles, String status) {
     assertThat(RegistrarConsoleMetrics.settingsRequestMetric)
-        .hasValueForLabels(1, clientId, op, roles, status);
-    RegistrarConsoleMetrics.settingsRequestMetric.reset(clientId, op, roles, status);
+        .hasValueForLabels(1, registrarId, op, roles, status);
+    RegistrarConsoleMetrics.settingsRequestMetric.reset(registrarId, op, roles, status);
   }
 
   /** Sets registrarAccessor.getRegistrar to succeed for CLIENT_ID only. */

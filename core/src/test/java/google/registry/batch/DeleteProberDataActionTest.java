@@ -293,26 +293,27 @@ class DeleteProberDataActionTest extends MapreduceTestCase<DeleteProberDataActio
             new DomainHistory.Builder()
                 .setDomain(domain)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setModificationTime(DELETION_TIME.minusYears(3))
                 .build());
-    BillingEvent.OneTime billingEvent = persistSimpleResource(
-        new BillingEvent.OneTime.Builder()
-            .setParent(historyEntry)
-            .setBillingTime(DELETION_TIME.plusYears(1))
-            .setCost(Money.parse("USD 10"))
-            .setPeriodYears(1)
-            .setReason(Reason.CREATE)
-            .setClientId("TheRegistrar")
-            .setEventTime(DELETION_TIME)
-            .setTargetId(fqdn)
-            .build());
+    BillingEvent.OneTime billingEvent =
+        persistSimpleResource(
+            new BillingEvent.OneTime.Builder()
+                .setParent(historyEntry)
+                .setBillingTime(DELETION_TIME.plusYears(1))
+                .setCost(Money.parse("USD 10"))
+                .setPeriodYears(1)
+                .setReason(Reason.CREATE)
+                .setRegistrarId("TheRegistrar")
+                .setEventTime(DELETION_TIME)
+                .setTargetId(fqdn)
+                .build());
     PollMessage.OneTime pollMessage =
         persistSimpleResource(
             new PollMessage.OneTime.Builder()
                 .setParent(historyEntry)
                 .setEventTime(DELETION_TIME)
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setMsg("Domain registered")
                 .build());
     ImmutableSet.Builder<ImmutableObject> builder =

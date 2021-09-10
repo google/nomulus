@@ -94,7 +94,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
     // Clear the cache so that the CreateAutoTimestamp field gets reloaded.
     tm().clearSessionCache();
 
-    Optional<Registrar> registrarOptional = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrarOptional = Registrar.loadByRegistrarId("clientz");
     assertThat(registrarOptional).isPresent();
     Registrar registrar = registrarOptional.get();
     assertThat(registrar.verifyPassword("some_password")).isTrue();
@@ -136,7 +136,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().verifyPassword("some_password")).isTrue();
   }
@@ -156,7 +156,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getType()).isEqualTo(Registrar.Type.TEST);
   }
@@ -178,7 +178,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getState()).isEqualTo(Registrar.State.SUSPENDED);
   }
@@ -205,7 +205,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--force",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getAllowedTlds()).containsExactly("xn--q9jyb4c", "foobar");
   }
@@ -232,7 +232,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--force",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getAllowedTlds()).containsExactly("xn--q9jyb4c", "foobar");
   }
@@ -277,7 +277,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertInStdout("Registrar created, but groups creation failed with error");
     assertInStdout("BAD ROBOT NO COOKIE");
@@ -320,7 +320,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getIpAddressAllowList())
         .containsExactlyElementsIn(registrar.get().getIpAddressAllowList())
@@ -344,7 +344,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getIpAddressAllowList()).isEmpty();
   }
@@ -367,7 +367,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getClientCertificateHash()).hasValue(SAMPLE_CERT3_HASH);
   }
@@ -398,7 +398,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         .isEqualTo(
             "Certificate validity period is too long; it must be less than or equal to 398"
                 + " days.");
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isEmpty();
   }
 
@@ -428,7 +428,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         .isEqualTo(
             "Certificate is expired.\nCertificate validity period is too long; it must be less"
                 + " than or equal to 398 days.");
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isEmpty();
   }
 
@@ -450,7 +450,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrarOptional = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrarOptional = Registrar.loadByRegistrarId("clientz");
     assertThat(registrarOptional).isPresent();
     Registrar registrar = registrarOptional.get();
     assertThat(registrar.getClientCertificate()).isEmpty();
@@ -485,7 +485,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         .isEqualTo(
             "Certificate validity period is too long; it must be less than or equal to 398"
                 + " days.");
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isEmpty();
   }
 
@@ -515,7 +515,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         .isEqualTo(
             "Certificate is expired.\nCertificate validity period is too long; it must be less"
                 + " than or equal to 398 days.");
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isEmpty();
   }
 
@@ -535,7 +535,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getIanaIdentifier()).isEqualTo(12345);
   }
@@ -557,7 +557,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getBillingIdentifier()).isEqualTo(12345);
   }
@@ -579,7 +579,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getPoNumber()).hasValue("AA55G");
   }
@@ -601,7 +601,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getBillingAccountMap())
         .containsExactly(CurrencyUnit.USD, "abc123", CurrencyUnit.JPY, "789xyz");
@@ -654,7 +654,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getBillingAccountMap()).containsExactly(CurrencyUnit.JPY, "789xyz");
   }
@@ -677,7 +677,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--icann_referral_email=foo@bar.test",
         "clientz");
 
-    Optional<Registrar> registrarOptional = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrarOptional = Registrar.loadByRegistrarId("clientz");
     assertThat(registrarOptional).isPresent();
     Registrar registrar = registrarOptional.get();
     assertThat(registrar.getLocalizedAddress()).isNotNull();
@@ -708,7 +708,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getEmailAddress()).isEqualTo("foo@foo.foo");
   }
@@ -729,7 +729,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getEmailAddress()).isEqualTo("foo@bar.test");
   }
@@ -751,7 +751,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getUrl()).isEqualTo("http://foo.foo");
   }
@@ -773,7 +773,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getPhoneNumber()).isEqualTo("+1.2125556342");
   }
@@ -798,7 +798,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrarOptional = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrarOptional = Registrar.loadByRegistrarId("clientz");
     assertThat(registrarOptional).isPresent();
     Registrar registrar = registrarOptional.get();
     assertThat(registrar.getIanaIdentifier()).isNull();
@@ -829,7 +829,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrarOptional = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrarOptional = Registrar.loadByRegistrarId("clientz");
     assertThat(registrarOptional).isPresent();
     Registrar registrar = registrarOptional.get();
     assertThat(registrar.getIanaIdentifier()).isNull();
@@ -857,7 +857,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getBlockPremiumNames()).isTrue();
   }
@@ -879,7 +879,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getBlockPremiumNames()).isFalse();
   }
@@ -901,7 +901,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().isRegistryLockAllowed()).isTrue();
   }
@@ -923,7 +923,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().isRegistryLockAllowed()).isFalse();
   }
@@ -991,7 +991,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
         "--cc US",
         "clientz");
 
-    Optional<Registrar> registrar = Registrar.loadByClientId("clientz");
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId("clientz");
     assertThat(registrar).isPresent();
     assertThat(registrar.get().getFaxNumber()).isEqualTo("+1.2125556342");
   }

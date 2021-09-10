@@ -109,7 +109,7 @@ class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResource
             persistActiveHost("ns.foo.tld2"))) {
       HistoryEntry history =
           HistoryEntry.createBuilderForResource(resource)
-              .setClientId(resource.getCreationClientId())
+              .setRegistrarId(resource.getCreationRegistrarId())
               .setModificationTime(resource.getCreationTime())
               .setType(HISTORY_ENTRY_CREATE_TYPES.get(resource.getClass()))
               .build();
@@ -119,12 +119,12 @@ class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResource
                   history,
                   new PollMessage.OneTime.Builder()
                       .setParent(history)
-                      .setClientId("")
+                      .setRegistrarId("")
                       .setEventTime(START_OF_TIME)
                       .build(),
                   new PollMessage.Autorenew.Builder()
                       .setParent(history)
-                      .setClientId("")
+                      .setRegistrarId("")
                       .setEventTime(START_OF_TIME)
                       .build());
       if (history instanceof DomainHistory) {
@@ -133,7 +133,7 @@ class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResource
                 .setParent((DomainHistory) history)
                 .setBillingTime(START_OF_TIME)
                 .setEventTime(START_OF_TIME)
-                .setClientId("")
+                .setRegistrarId("")
                 .setTargetId("")
                 .setReason(Reason.CREATE)
                 .setPeriodYears(1)
@@ -142,7 +142,7 @@ class KillAllEppResourcesActionTest extends MapreduceTestCase<KillAllEppResource
             new BillingEvent.Recurring.Builder()
                 .setParent((DomainHistory) history)
                 .setEventTime(START_OF_TIME)
-                .setClientId("")
+                .setRegistrarId("")
                 .setTargetId("")
                 .setReason(Reason.RENEW)
                 .build());

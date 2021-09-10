@@ -310,7 +310,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 .setModificationTime(fakeClock.nowUtc())
                 .setType(DOMAIN_CREATE)
                 .setDomain(domain)
-                .setClientId(domain.getCreationClientId())
+                .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
     BillingEvent.Recurring autorenewBillingEvent =
         persistResource(
@@ -318,7 +318,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
                 .setReason(Reason.RENEW)
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId("example.tld")
-                .setClientId("NewRegistrar")
+                .setRegistrarId("NewRegistrar")
                 .setEventTime(fakeClock.nowUtc().minusDays(5))
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setParent(createHistoryEntry)

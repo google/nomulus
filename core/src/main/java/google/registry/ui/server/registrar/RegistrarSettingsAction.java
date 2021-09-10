@@ -113,8 +113,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       throw new BadRequestException("Malformed JSON");
     }
 
-    String clientId = (String) input.get(ID_PARAM);
-    if (Strings.isNullOrEmpty(clientId)) {
+    String registrarId = (String) input.get(ID_PARAM);
+    if (Strings.isNullOrEmpty(registrarId)) {
       throw new BadRequestException(String.format("Missing key for resource ID: %s", ID_PARAM));
     }
 
@@ -126,20 +126,21 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
         (Map<String, Object>)
             Optional.<Object>ofNullable(input.get(ARGS_PARAM)).orElse(ImmutableMap.of());
 
-    logger.atInfo().log("Received request '%s' on registrar '%s' with args %s", op, clientId, args);
+    logger.atInfo().log(
+        "Received request '%s' on registrar '%s' with args %s", op, registrarId, args);
     String status = "SUCCESS";
     try {
       switch (op) {
         case "update":
-          return update(args, clientId).toJsonResponse();
+          return update(args, registrarId).toJsonResponse();
         case "read":
-          return read(clientId).toJsonResponse();
+          return read(registrarId).toJsonResponse();
         default:
           throw new IllegalArgumentException("Unknown or unsupported operation: " + op);
       }
     } catch (Throwable e) {
       logger.atWarning().withCause(e).log(
-          "Failed to perform operation '%s' on registrar '%s' for args %s", op, clientId, args);
+          "Failed to perform operation '%s' on registrar '%s' for args %s", op, registrarId, args);
       status = "ERROR: " + e.getClass().getSimpleName();
       if (e instanceof FormFieldException) {
         FormFieldException formFieldException = (FormFieldException) e;
@@ -150,7 +151,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
           ERROR, Optional.ofNullable(e.getMessage()).orElse("Unspecified error"));
     } finally {
       registrarConsoleMetrics.registerSettingsRequest(
-          clientId, op, registrarAccessor.getRolesForRegistrar(clientId), status);
+          registrarId, op, registrarAccessor.getRolesForRegistrar(registrarId), status);
     }
   }
 
@@ -169,8 +170,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     }
   }
 
-  private RegistrarResult read(String clientId) {
-    return RegistrarResult.create("Success", loadRegistrarUnchecked(clientId));
+  private RegistrarResult read(String registrarId) {
+    return RegistrarResult.create("Success", loadRegistrarUnchecked(registrarId));
   }
 
   private Registrar loadRegistrarUnchecked(String registrarId) {
@@ -181,13 +182,13 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     }
   }
 
-  private RegistrarResult update(final Map<String, ?> args, String clientId) {
+  private RegistrarResult update(final Map<String, ?> args, String registrarId) {
     tm().transact(
             () -> {
               // We load the registrar here rather than outside of the transaction - to make
               // sure we have the latest version. This one is loaded inside the transaction, so it's
               // guaranteed to not change before we update it.
-              Registrar registrar = loadRegistrarUnchecked(clientId);
+              Registrar registrar = loadRegistrarUnchecked(registrarId);
               // Detach the registrar to avoid Hibernate object-updates, since we wish to email
               // out the diffs between the existing and updated registrar objects
               if (!tm().isOfy()) {
@@ -226,7 +227,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
 
               // Save the updated contacts
               if (!updatedContacts.equals(contacts)) {
-                if (!registrarAccessor.hasRoleOnRegistrar(Role.OWNER, registrar.getClientId())) {
+                if (!registrarAccessor.hasRoleOnRegistrar(Role.OWNER, registrar.getRegistrarId())) {
                   throw new ForbiddenException("Only OWNERs can update the contacts");
                 }
                 checkContactRequirements(contacts, updatedContacts);
@@ -245,7 +246,7 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
                   registrar, contacts, updatedRegistrar, updatedContacts);
             });
     // Reload the result outside of the transaction to get the most recent version
-    return RegistrarResult.create("Saved " + clientId, loadRegistrarUnchecked(clientId));
+    return RegistrarResult.create("Saved " + registrarId, loadRegistrarUnchecked(registrarId));
   }
 
   private Map<String, Object> expandRegistrarWithContacts(
@@ -397,11 +398,11 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
       return updatedRegistrar;
     }
     checkArgument(
-        updatedRegistrar.getClientId().equals(originalRegistrar.getClientId()),
+        updatedRegistrar.getRegistrarId().equals(originalRegistrar.getRegistrarId()),
         "Can't change clientId (%s -> %s)",
-        originalRegistrar.getClientId(),
-        updatedRegistrar.getClientId());
-    if (registrarAccessor.hasRoleOnRegistrar(allowedRole, originalRegistrar.getClientId())) {
+        originalRegistrar.getRegistrarId(),
+        updatedRegistrar.getRegistrarId());
+    if (registrarAccessor.hasRoleOnRegistrar(allowedRole, originalRegistrar.getRegistrarId())) {
       return updatedRegistrar;
     }
     Map<?, ?> diffs =
@@ -598,12 +599,12 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
     sendEmailUtils.sendEmail(
         String.format(
             "Registrar %s (%s) updated in registry %s environment",
-            existingRegistrar.getRegistrarName(), existingRegistrar.getClientId(), environment),
+            existingRegistrar.getRegistrarName(), existingRegistrar.getRegistrarId(), environment),
         String.format(
             "The following changes were made in registry %s environment to "
                 + "the registrar %s by %s:\n\n%s",
             environment,
-            existingRegistrar.getClientId(),
+            existingRegistrar.getRegistrarId(),
             authResult.userIdForLogging(),
             DiffUtils.prettyPrintDiffedMap(diffs, null)),
         existingContacts.stream()

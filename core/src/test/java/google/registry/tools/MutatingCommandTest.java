@@ -67,7 +67,7 @@ public class MutatingCommandTest {
     newHost1 = host1.asBuilder()
         .setLastEppUpdateTime(DateTime.parse("2014-09-09T09:09:09.000Z"))
         .build();
-    newHost2 = host2.asBuilder().setPersistedCurrentSponsorClientId("Registrar2").build();
+    newHost2 = host2.asBuilder().setPersistedCurrentSponsorRegistrarId("Registrar2").build();
   }
 
   @Test

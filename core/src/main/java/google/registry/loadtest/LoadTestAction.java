@@ -74,10 +74,10 @@ public class LoadTestAction implements Runnable {
 
   public static final String PATH = "/_dr/loadtest";
 
-  /** The client identifier of the registrar to use for load testing. */
+  /** The ID of the registrar to use for load testing. */
   @Inject
   @Parameter("loadtestClientId")
-  String clientId;
+  String registrarId;
 
   /**
    * The number of seconds to delay the execution of the first load testing tasks by. Preparatory
@@ -276,11 +276,11 @@ public class LoadTestAction implements Runnable {
             || hostInfosPerSecond > 0,
         "You must specify at least one of the 'operations per second' parameters.");
     logger.atInfo().log(
-        "Running load test with the following params. clientId: %s, delaySeconds: %d, "
+        "Running load test with the following params. registrarId: %s, delaySeconds: %d, "
             + "runSeconds: %d, successful|failed domain creates/s: %d|%d, domain infos/s: %d, "
             + "domain checks/s: %d, successful|failed contact creates/s: %d|%d, "
             + "contact infos/s: %d, successful|failed host creates/s: %d|%d, host infos/s: %d.",
-        clientId,
+        registrarId,
         delaySeconds,
         runSeconds,
         successfulDomainCreatesPerSecond,
@@ -327,13 +327,14 @@ public class LoadTestAction implements Runnable {
     for (int i = 0; i < xmls.size(); i++) {
       // Space tasks evenly within across a second.
       int offsetMillis = (int) (1000.0 / xmls.size() * i);
-      tasks.add(TaskOptions.Builder.withUrl("/_dr/epptool")
-          .etaMillis(start.getMillis() + offsetMillis)
-          .header(X_CSRF_TOKEN, xsrfToken)
-          .param("clientId", clientId)
-          .param("superuser", Boolean.FALSE.toString())
-          .param("dryRun", Boolean.FALSE.toString())
-          .param("xml", xmls.get(i)));
+      tasks.add(
+          TaskOptions.Builder.withUrl("/_dr/epptool")
+              .etaMillis(start.getMillis() + offsetMillis)
+              .header(X_CSRF_TOKEN, xsrfToken)
+              .param("clientId", registrarId)
+              .param("superuser", Boolean.FALSE.toString())
+              .param("dryRun", Boolean.FALSE.toString())
+              .param("xml", xmls.get(i)));
     }
     return tasks.build();
   }

@@ -88,9 +88,9 @@ public final class RdeStagingMapper extends Mapper<EppResource, PendingDeposit, 
     }
 
     // Skip prober data.
-    if (nullToEmpty(resource.getCreationClientId()).startsWith("prober-")
-        || nullToEmpty(resource.getPersistedCurrentSponsorClientId()).startsWith("prober-")
-        || nullToEmpty(resource.getLastEppUpdateClientId()).startsWith("prober-")) {
+    if (nullToEmpty(resource.getCreationRegistrarId()).startsWith("prober-")
+        || nullToEmpty(resource.getPersistedCurrentSponsorRegistrarId()).startsWith("prober-")
+        || nullToEmpty(resource.getLastEppUpdateRegistrarId()).startsWith("prober-")) {
       getContext().incrementCounter("prober data skipped");
       return;
     }

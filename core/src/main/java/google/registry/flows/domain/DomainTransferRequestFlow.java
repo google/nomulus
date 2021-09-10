@@ -15,7 +15,7 @@
 package google.registry.flows.domain;
 
 import static google.registry.flows.FlowUtils.createHistoryKey;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.computeExDateForApprovalTime;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyAuthInfo;
@@ -41,7 +41,7 @@ import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
@@ -125,7 +125,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String gainingClientId;
+  @Inject @RegistrarId String gainingClientId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
@@ -142,7 +142,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
         FeeTransferCommandExtension.class,
         MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(gainingClientId);
+    validateRegistrarIsLoggedIn(gainingClientId);
     verifyRegistrarIsActive(gainingClientId);
     DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
@@ -174,7 +174,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
     Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
     historyBuilder
         .setId(domainHistoryKey.getId())
-        .setOtherClientId(existingDomain.getCurrentSponsorClientId());
+        .setOtherRegistrarId(existingDomain.getCurrentSponsorRegistrarId());
     DateTime automaticTransferTime =
         superuserExtension.isPresent()
             ? now.plusDays(superuserExtension.get().getAutomaticTransferLength())
@@ -207,8 +207,8 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             new DomainTransferData.Builder()
                 .setTransferRequestTrid(trid)
                 .setTransferRequestTime(now)
-                .setGainingClientId(gainingClientId)
-                .setLosingClientId(existingDomain.getCurrentSponsorClientId())
+                .setGainingRegistrarId(gainingClientId)
+                .setLosingRegistrarId(existingDomain.getCurrentSponsorRegistrarId())
                 .setPendingTransferExpirationTime(automaticTransferTime)
                 .setTransferredRegistrationExpirationTime(serverApproveNewExpirationTime),
             serverApproveEntities,
@@ -231,7 +231,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             .setTransferData(pendingTransferData)
             .addStatusValue(StatusValue.PENDING_TRANSFER)
             .setLastEppUpdateTime(now)
-            .setLastEppUpdateClientId(gainingClientId)
+            .setLastEppUpdateRegistrarId(gainingClientId)
             .build();
     DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now, period);
 
@@ -264,7 +264,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
       throw new AlreadyPendingTransferException(targetId);
     }
     // Verify that this client doesn't already sponsor this resource.
-    if (gainingClientId.equals(existingDomain.getCurrentSponsorClientId())) {
+    if (gainingClientId.equals(existingDomain.getCurrentSponsorRegistrarId())) {
       throw new ObjectAlreadySponsoredException();
     }
     verifyTransferPeriod(period, superuserExtension);

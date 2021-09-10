@@ -64,11 +64,11 @@ public class LordnTaskUtilsTest {
   private DomainBase.Builder newDomainBuilder() {
     return new DomainBase.Builder()
         .setDomainName("fleece.example")
-        .setPersistedCurrentSponsorClientId("TheRegistrar")
-        .setCreationClientId("TheRegistrar")
+        .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+        .setCreationRegistrarId("TheRegistrar")
         .setRegistrant(persistActiveContact("jd1234").createVKey())
         .setSmdId("smdzzzz")
-        .setCreationClientId("TheRegistrar");
+        .setCreationRegistrarId("TheRegistrar");
   }
 
   @TestOfyAndSql
@@ -116,13 +116,13 @@ public class LordnTaskUtilsTest {
     DomainBase domain =
         newDomainBuilder()
             .setRepoId("9000-EXAMPLE")
-            .setCreationClientId("nonexistentRegistrar")
+            .setCreationRegistrarId("nonexistentRegistrar")
             .build();
     IllegalStateException thrown =
         assertThrows(IllegalStateException.class, () -> persistDomainAndEnqueueLordn(domain));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("No registrar found for client id: nonexistentRegistrar");
+        .contains("No registrar found with ID: nonexistentRegistrar");
   }
 
   @TestOfyAndSql

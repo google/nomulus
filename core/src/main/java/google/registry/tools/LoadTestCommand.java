@@ -96,7 +96,7 @@ class LoadTestCommand extends ConfirmingCommand
       System.err.printf("No such TLD: %s\n", tld);
       return false;
     }
-    if (!Registrar.loadByClientId(clientId).isPresent()) {
+    if (!Registrar.loadByRegistrarId(clientId).isPresent()) {
       System.err.printf("No such client: %s\n", clientId);
       return false;
     }

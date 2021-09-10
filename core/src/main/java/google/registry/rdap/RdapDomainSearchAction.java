@@ -392,7 +392,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
               partialStringQuery.getInitialString(),
               shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
       return (!host.isPresent()
-              || !desiredRegistrar.get().equals(host.get().getPersistedCurrentSponsorClientId()))
+              || !desiredRegistrar.get().equals(host.get().getPersistedCurrentSponsorRegistrarId()))
           ? ImmutableList.of()
           : ImmutableList.of(host.get().createVKey());
     } else {
@@ -434,7 +434,9 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
                   fqhn,
                   shouldIncludeDeleted() ? START_OF_TIME : getRequestTime());
           if (host.isPresent()
-              && desiredRegistrar.get().equals(host.get().getPersistedCurrentSponsorClientId())) {
+              && desiredRegistrar
+                  .get()
+                  .equals(host.get().getPersistedCurrentSponsorRegistrarId())) {
             builder.add(host.get().createVKey());
           }
         } else {

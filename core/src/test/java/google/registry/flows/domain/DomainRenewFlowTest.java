@@ -130,14 +130,14 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
                         .setDomain(domain)
                         .setType(HistoryEntry.Type.DOMAIN_CREATE)
                         .setModificationTime(clock.nowUtc())
-                        .setClientId(domain.getCreationClientId())
+                        .setRegistrarId(domain.getCreationRegistrarId())
                         .build();
                 BillingEvent.Recurring autorenewEvent =
                     new BillingEvent.Recurring.Builder()
                         .setReason(Reason.RENEW)
                         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                         .setTargetId(getUniqueIdFromCommand())
-                        .setClientId("TheRegistrar")
+                        .setRegistrarId("TheRegistrar")
                         .setEventTime(expirationTime)
                         .setRecurrenceEndTime(END_OF_TIME)
                         .setParent(historyEntryDomainCreate)
@@ -145,7 +145,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
                 PollMessage.Autorenew autorenewPollMessage =
                     new PollMessage.Autorenew.Builder()
                         .setTargetId(getUniqueIdFromCommand())
-                        .setClientId("TheRegistrar")
+                        .setRegistrarId("TheRegistrar")
                         .setEventTime(expirationTime)
                         .setAutorenewEndTime(END_OF_TIME)
                         .setMsg("Domain was auto-renewed.")
@@ -222,7 +222,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.RENEW)
             .setTargetId(getUniqueIdFromCommand())
-            .setClientId(renewalClientId)
+            .setRegistrarId(renewalClientId)
             .setCost(totalRenewCost)
             .setPeriodYears(renewalYears)
             .setEventTime(clock.nowUtc())
@@ -235,7 +235,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(expirationTime)
             .setRecurrenceEndTime(clock.nowUtc())
             .setParent(
@@ -246,7 +246,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setRecurrenceEndTime(END_OF_TIME)
             .setParent(historyEntryDomainRenew)
@@ -256,7 +256,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     assertPollMessages(
         new PollMessage.Autorenew.Builder()
             .setTargetId(getUniqueIdFromCommand())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
@@ -296,7 +296,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
   @TestOfyAndSql
   void testSuccess_recurringClientIdIsSame_whenSuperuserOverridesRenewal() throws Exception {
     persistDomain();
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
     doSuccessfulTest(
         "domain_renew_response.xml",
         5,
@@ -466,7 +466,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
 
   private void doFailingTest_invalidRegistrarState(State registrarState) {
     persistResource(
-        Registrar.loadByClientId("TheRegistrar")
+        Registrar.loadByRegistrarId("TheRegistrar")
             .get()
             .asBuilder()
             .setState(registrarState)
@@ -515,7 +515,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
     assertPollMessages(
         new PollMessage.Autorenew.Builder()
             .setTargetId(getUniqueIdFromCommand())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(expirationTime.minusYears(1))
             .setAutorenewEndTime(clock.nowUtc())
             .setMsg("Domain was auto-renewed.")
@@ -525,7 +525,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .build(),
         new PollMessage.Autorenew.Builder()
             .setTargetId(getUniqueIdFromCommand())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(reloadResourceByForeignKey().getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
@@ -743,7 +743,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
 
   @TestOfyAndSql
   void testFailure_unauthorizedClient() throws Exception {
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
     persistActiveDomain(getUniqueIdFromCommand());
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -751,7 +751,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
 
   @TestOfyAndSql
   void testSuccess_superuserUnauthorizedClient() throws Exception {
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
     persistDomain();
     runFlowAssertResponse(
         CommitMode.LIVE,

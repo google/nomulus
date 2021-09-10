@@ -99,7 +99,7 @@ class EppControllerTest {
   void beforeEach() throws Exception {
     loggerToIntercept.addHandler(logHandler);
 
-    when(sessionMetadata.getClientId()).thenReturn("some-client");
+    when(sessionMetadata.getRegistrarId()).thenReturn("some-client");
     when(flowComponentBuilder.flowModule(ArgumentMatchers.any())).thenReturn(flowComponentBuilder);
     when(flowComponentBuilder.build()).thenReturn(flowComponent);
     when(flowComponent.flowRunner()).thenReturn(flowRunner);
@@ -137,7 +137,7 @@ class EppControllerTest {
     // actually get values.
     EppMetric.Builder metricBuilder =
         EppMetric.builderForRequest(clock)
-            .setClientId("some-client")
+            .setRegistrarId("some-client")
             .setStatus(Code.SUCCESS_WITH_NO_MESSAGES)
             .setTld("tld");
     eppController.handleEppCommand(

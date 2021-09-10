@@ -52,7 +52,7 @@ public final class OteStatusActionTest {
   @BeforeEach
   void beforeEach() {
     ImmutableSetMultimap<String, Role> authValues =
-        OteAccountBuilder.createClientIdToTldMap(BASE_CLIENT_ID).keySet().stream()
+        OteAccountBuilder.createRegistrarIdToTldMap(BASE_CLIENT_ID).keySet().stream()
             .collect(toImmutableSetMultimap(Function.identity(), ignored -> Role.OWNER));
     action.registrarAccessor = AuthenticatedRegistrarAccessor.createForTesting(authValues);
   }
@@ -133,7 +133,7 @@ public final class OteStatusActionTest {
     assertThat(action.handleJsonRequest(ImmutableMap.of("clientId", "badclient-id")))
         .containsExactlyEntriesIn(
             errorResultWithMessage(
-                "ID badclient-id is not one of the OT&E client IDs for base badclient"));
+                "ID badclient-id is not one of the OT&E registrar IDs for base badclient"));
   }
 
   @Test

@@ -169,8 +169,8 @@ public class DatabaseHelper {
   public static HostResource newHostResourceWithRoid(String hostName, String repoId) {
     return new HostResource.Builder()
         .setHostName(hostName)
-        .setCreationClientId("TheRegistrar")
-        .setPersistedCurrentSponsorClientId("TheRegistrar")
+        .setCreationRegistrarId("TheRegistrar")
+        .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .setCreationTimeForTest(START_OF_TIME)
         .setRepoId(repoId)
         .build();
@@ -198,8 +198,8 @@ public class DatabaseHelper {
     return new DomainBase.Builder()
         .setRepoId(repoId)
         .setDomainName(domainName)
-        .setCreationClientId("TheRegistrar")
-        .setPersistedCurrentSponsorClientId("TheRegistrar")
+        .setCreationRegistrarId("TheRegistrar")
+        .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .setCreationTimeForTest(START_OF_TIME)
         .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("2fooBAR")))
         .setRegistrant(contactKey)
@@ -223,8 +223,8 @@ public class DatabaseHelper {
     return new ContactResource.Builder()
         .setRepoId(repoId)
         .setContactId(contactId)
-        .setCreationClientId("TheRegistrar")
-        .setPersistedCurrentSponsorClientId("TheRegistrar")
+        .setCreationRegistrarId("TheRegistrar")
+        .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("2fooBAR")))
         .setCreationTimeForTest(START_OF_TIME)
         .build();
@@ -469,14 +469,14 @@ public class DatabaseHelper {
             });
   }
 
-  public static void allowRegistrarAccess(String clientId, String tld) {
-    Registrar registrar = loadRegistrar(clientId);
+  public static void allowRegistrarAccess(String registrarId, String tld) {
+    Registrar registrar = loadRegistrar(registrarId);
     persistResource(
         registrar.asBuilder().setAllowedTlds(union(registrar.getAllowedTlds(), tld)).build());
   }
 
-  public static void disallowRegistrarAccess(String clientId, String tld) {
-    Registrar registrar = loadRegistrar(clientId);
+  public static void disallowRegistrarAccess(String registrarId, String tld) {
+    Registrar registrar = loadRegistrar(registrarId);
     persistResource(
         registrar.asBuilder().setAllowedTlds(difference(registrar.getAllowedTlds(), tld)).build());
   }
@@ -485,9 +485,9 @@ public class DatabaseHelper {
       DateTime requestTime, DateTime expirationTime) {
     return new DomainTransferData.Builder()
         .setTransferStatus(TransferStatus.PENDING)
-        .setGainingClientId("NewRegistrar")
+        .setGainingRegistrarId("NewRegistrar")
         .setTransferRequestTime(requestTime)
-        .setLosingClientId("TheRegistrar")
+        .setLosingRegistrarId("TheRegistrar")
         .setPendingTransferExpirationTime(expirationTime);
   }
 
@@ -495,16 +495,16 @@ public class DatabaseHelper {
       DateTime requestTime, DateTime expirationTime) {
     return new ContactTransferData.Builder()
         .setTransferStatus(TransferStatus.PENDING)
-        .setGainingClientId("NewRegistrar")
+        .setGainingRegistrarId("NewRegistrar")
         .setTransferRequestTime(requestTime)
-        .setLosingClientId("TheRegistrar")
+        .setLosingRegistrarId("TheRegistrar")
         .setPendingTransferExpirationTime(expirationTime);
   }
 
   public static PollMessage.OneTime createPollMessageForImplicitTransfer(
       EppResource resource,
       HistoryEntry historyEntry,
-      String clientId,
+      String registrarId,
       DateTime requestTime,
       DateTime expirationTime,
       @Nullable DateTime extendedRegistrationExpirationTime) {
@@ -513,7 +513,7 @@ public class DatabaseHelper {
             .setTransferredRegistrationExpirationTime(extendedRegistrationExpirationTime)
             .build();
     return new PollMessage.OneTime.Builder()
-        .setClientId(clientId)
+        .setRegistrarId(registrarId)
         .setEventTime(expirationTime)
         .setMsg("Transfer server approved.")
         .setResponseData(ImmutableList.of(createTransferResponse(resource, transferData)))
@@ -529,7 +529,7 @@ public class DatabaseHelper {
         .setEventTime(eventTime)
         .setBillingTime(
             eventTime.plus(Registry.get(domain.getTld()).getTransferGracePeriodLength()))
-        .setClientId("NewRegistrar")
+        .setRegistrarId("NewRegistrar")
         .setPeriodYears(1)
         .setCost(getDomainRenewCost(domain.getDomainName(), costLookupTime, 1))
         .setParent(historyEntry)
@@ -544,13 +544,13 @@ public class DatabaseHelper {
                 .setType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST)
                 .setContact(persistResource(contact))
                 .setModificationTime(now)
-                .setClientId(contact.getCurrentSponsorClientId())
+                .setRegistrarId(contact.getCurrentSponsorRegistrarId())
                 .build()
                 .toChildHistoryEntity());
     return persistResource(
         contact
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
             .addStatusValue(StatusValue.PENDING_TRANSFER)
             .setTransferData(
                 createContactTransferDataBuilder(requestTime, expirationTime)
@@ -596,8 +596,8 @@ public class DatabaseHelper {
             new DomainBase.Builder()
                 .setRepoId(repoId)
                 .setDomainName(domainName)
-                .setPersistedCurrentSponsorClientId("TheRegistrar")
-                .setCreationClientId("TheRegistrar")
+                .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+                .setCreationRegistrarId("TheRegistrar")
                 .setCreationTimeForTest(creationTime)
                 .setRegistrationExpirationTime(expirationTime)
                 .setRegistrant(contact.createVKey())
@@ -616,7 +616,7 @@ public class DatabaseHelper {
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setModificationTime(now)
                 .setDomain(domain)
-                .setClientId(domain.getCreationClientId())
+                .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
     BillingEvent.Recurring autorenewEvent =
         persistResource(
@@ -624,7 +624,7 @@ public class DatabaseHelper {
                 .setReason(Reason.RENEW)
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(domainName)
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setEventTime(expirationTime)
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setParent(historyEntryDomainCreate)
@@ -633,7 +633,7 @@ public class DatabaseHelper {
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setTargetId(domainName)
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setEventTime(expirationTime)
                 .setAutorenewEndTime(END_OF_TIME)
                 .setMsg("Domain was auto-renewed.")
@@ -658,7 +658,7 @@ public class DatabaseHelper {
                 .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
                 .setModificationTime(tm().transact(() -> tm().getTransactionTime()))
                 .setDomain(domain)
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .build());
     BillingEvent.OneTime transferBillingEvent =
         persistResource(
@@ -670,7 +670,7 @@ public class DatabaseHelper {
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setReason(Reason.RENEW)
                 .setTargetId(domain.getDomainName())
-                .setClientId("NewRegistrar")
+                .setRegistrarId("NewRegistrar")
                 .setEventTime(extendedRegistrationExpirationTime)
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setParent(historyEntryDomainTransfer)
@@ -679,7 +679,7 @@ public class DatabaseHelper {
         persistResource(
             new PollMessage.Autorenew.Builder()
                 .setTargetId(domain.getDomainName())
-                .setClientId("NewRegistrar")
+                .setRegistrarId("NewRegistrar")
                 .setEventTime(extendedRegistrationExpirationTime)
                 .setAutorenewEndTime(END_OF_TIME)
                 .setMsg("Domain was auto-renewed.")
@@ -707,7 +707,7 @@ public class DatabaseHelper {
     return persistResource(
         domain
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
             .addStatusValue(StatusValue.PENDING_TRANSFER)
             .setTransferData(
                 transferDataBuilder
@@ -748,10 +748,13 @@ public class DatabaseHelper {
 
   /** Persists and returns a {@link Registrar} with the specified attributes. */
   public static Registrar persistNewRegistrar(
-      String clientId, String registrarName, Registrar.Type type, @Nullable Long ianaIdentifier) {
+      String registrarId,
+      String registrarName,
+      Registrar.Type type,
+      @Nullable Long ianaIdentifier) {
     return persistSimpleResource(
         new Registrar.Builder()
-            .setClientId(clientId)
+            .setRegistrarId(registrarId)
             .setRegistrarName(registrarName)
             .setType(type)
             .setIanaIdentifier(ianaIdentifier)
@@ -861,8 +864,8 @@ public class DatabaseHelper {
         .containsExactlyElementsIn(expected);
   }
 
-  public static void assertPollMessages(String clientId, PollMessage... expected) {
-    assertPollMessagesEqual(getPollMessages(clientId), asList(expected));
+  public static void assertPollMessages(String registrarId, PollMessage... expected) {
+    assertPollMessagesEqual(getPollMessages(registrarId), asList(expected));
   }
 
   public static void assertPollMessages(PollMessage... expected) {
@@ -877,11 +880,11 @@ public class DatabaseHelper {
     return ImmutableList.copyOf(transactIfJpaTm(() -> tm().loadAllOf(PollMessage.class)));
   }
 
-  public static ImmutableList<PollMessage> getPollMessages(String clientId) {
+  public static ImmutableList<PollMessage> getPollMessages(String registrarId) {
     return transactIfJpaTm(
         () ->
             tm().loadAllOf(PollMessage.class).stream()
-                .filter(pollMessage -> pollMessage.getClientId().equals(clientId))
+                .filter(pollMessage -> pollMessage.getRegistrarId().equals(registrarId))
                 .collect(toImmutableList()));
   }
 
@@ -895,18 +898,19 @@ public class DatabaseHelper {
                 .collect(toImmutableList()));
   }
 
-  public static ImmutableList<PollMessage> getPollMessages(String clientId, DateTime beforeOrAt) {
+  public static ImmutableList<PollMessage> getPollMessages(
+      String registrarId, DateTime beforeOrAt) {
     return transactIfJpaTm(
         () ->
             tm().loadAllOf(PollMessage.class).stream()
-                .filter(pollMessage -> pollMessage.getClientId().equals(clientId))
+                .filter(pollMessage -> pollMessage.getRegistrarId().equals(registrarId))
                 .filter(pollMessage -> isBeforeOrAt(pollMessage.getEventTime(), beforeOrAt))
                 .collect(toImmutableList()));
   }
 
   /** Gets all PollMessages associated with the given EppResource. */
   public static ImmutableList<PollMessage> getPollMessages(
-      EppResource resource, String clientId, DateTime now) {
+      EppResource resource, String registrarId, DateTime now) {
     return transactIfJpaTm(
         () ->
             tm().loadAllOf(PollMessage.class).stream()
@@ -917,7 +921,7 @@ public class DatabaseHelper {
                             .getParent()
                             .getName()
                             .equals(resource.getRepoId()))
-                .filter(pollMessage -> pollMessage.getClientId().equals(clientId))
+                .filter(pollMessage -> pollMessage.getRegistrarId().equals(registrarId))
                 .filter(
                     pollMessage ->
                         pollMessage.getEventTime().isEqual(now)
@@ -925,25 +929,28 @@ public class DatabaseHelper {
                 .collect(toImmutableList()));
   }
 
-  public static PollMessage getOnlyPollMessage(String clientId) {
-    return Iterables.getOnlyElement(getPollMessages(clientId));
+  public static PollMessage getOnlyPollMessage(String registrarId) {
+    return Iterables.getOnlyElement(getPollMessages(registrarId));
   }
 
-  public static PollMessage getOnlyPollMessage(String clientId, DateTime now) {
-    return Iterables.getOnlyElement(getPollMessages(clientId, now));
+  public static PollMessage getOnlyPollMessage(String registrarId, DateTime now) {
+    return Iterables.getOnlyElement(getPollMessages(registrarId, now));
   }
 
   public static PollMessage getOnlyPollMessage(
-      String clientId, DateTime now, Class<? extends PollMessage> subType) {
-    return getPollMessages(clientId, now).stream()
+      String registrarId, DateTime now, Class<? extends PollMessage> subType) {
+    return getPollMessages(registrarId, now).stream()
         .filter(subType::isInstance)
         .map(subType::cast)
         .collect(onlyElement());
   }
 
   public static PollMessage getOnlyPollMessage(
-      DomainContent domain, String clientId, DateTime now, Class<? extends PollMessage> subType) {
-    return getPollMessages(domain, clientId, now).stream()
+      DomainContent domain,
+      String registrarId,
+      DateTime now,
+      Class<? extends PollMessage> subType) {
+    return getPollMessages(domain, registrarId, now).stream()
         .filter(subType::isInstance)
         .map(subType::cast)
         .collect(onlyElement());
@@ -1083,7 +1090,7 @@ public class DatabaseHelper {
               tm().put(resource);
               tm().put(
                       HistoryEntry.createBuilderForResource(resource)
-                          .setClientId(resource.getCreationClientId())
+                          .setRegistrarId(resource.getCreationRegistrarId())
                           .setType(getHistoryEntryType(resource))
                           .setModificationTime(tm().getTransactionTime())
                           .build());
@@ -1183,7 +1190,7 @@ public class DatabaseHelper {
         HistoryEntry.createBuilderForResource(parentResource)
             .setType(getHistoryEntryType(parentResource))
             .setModificationTime(DateTime.now(DateTimeZone.UTC))
-            .setClientId(parentResource.getPersistedCurrentSponsorClientId())
+            .setRegistrarId(parentResource.getPersistedCurrentSponsorRegistrarId())
             .build());
   }
 
@@ -1249,11 +1256,11 @@ public class DatabaseHelper {
   }
 
   /** Loads and returns the registrar with the given client ID, or throws IAE if not present. */
-  public static Registrar loadRegistrar(String clientId) {
+  public static Registrar loadRegistrar(String registrarId) {
     return checkArgumentPresent(
-        Registrar.loadByClientId(clientId),
+        Registrar.loadByRegistrarId(registrarId),
         "Error in tests: Registrar %s does not exist",
-        clientId);
+        registrarId);
   }
 
   /**

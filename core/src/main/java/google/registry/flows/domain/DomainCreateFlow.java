@@ -16,7 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist;
 import static google.registry.flows.domain.DomainFlowUtils.COLLISION_MESSAGE;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
@@ -62,7 +62,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
@@ -204,7 +204,7 @@ public class DomainCreateFlow implements TransactionalFlow {
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
   @Inject ResourceCommand resourceCommand;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
@@ -226,15 +226,15 @@ public class DomainCreateFlow implements TransactionalFlow {
         AllocationTokenExtension.class);
     flowCustomLogic.beforeValidation();
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
-    verifyRegistrarIsActive(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
+    verifyRegistrarIsActive(registrarId);
     DateTime now = tm().getTransactionTime();
     DomainCommand.Create command = cloneAndLinkReferences((Create) resourceCommand, now);
     Period period = command.getPeriod();
     verifyUnitIsYears(period);
     int years = period.getValue();
     validateRegistrationPeriod(years);
-    verifyResourceDoesNotExist(DomainBase.class, targetId, now, clientId);
+    verifyResourceDoesNotExist(DomainBase.class, targetId, now, registrarId);
     // Validate that this is actually a legal domain name on a TLD that the registrar has access to.
     InternetDomainName domainName = validateDomainName(command.getFullyQualifiedDomainName());
     String domainLabel = domainName.parts().get(0);
@@ -252,7 +252,7 @@ public class DomainCreateFlow implements TransactionalFlow {
     }
     boolean isSunriseCreate = hasSignedMarks && (tldState == START_DATE_SUNRISE);
     Optional<AllocationToken> allocationToken =
-        verifyAllocationTokenIfPresent(command, registry, clientId, now);
+        verifyAllocationTokenIfPresent(command, registry, registrarId, now);
     boolean isAnchorTenant =
         isAnchorTenant(
             domainName, allocationToken, eppInput.getSingleExtension(MetadataExtension.class));
@@ -261,7 +261,7 @@ public class DomainCreateFlow implements TransactionalFlow {
     // notice without specifying a claims key, ignore the registry phase, and override blocks on
     // registering premium domains.
     if (!isSuperuser) {
-      checkAllowedAccessToTld(clientId, registry.getTldStr());
+      checkAllowedAccessToTld(registrarId, registry.getTldStr());
       boolean isValidReservedCreate = isValidReservedCreate(domainName, allocationToken);
       verifyIsGaOrIsSpecialCase(tldState, isAnchorTenant, isValidReservedCreate, hasSignedMarks);
       if (launchCreate.isPresent()) {
@@ -276,7 +276,7 @@ public class DomainCreateFlow implements TransactionalFlow {
       if (now.isBefore(registry.getClaimsPeriodEnd())) {
         verifyClaimsNoticeIfAndOnlyIfNeeded(domainName, hasSignedMarks, hasClaimsNotice);
       }
-      verifyPremiumNameIsNotBlocked(targetId, now, clientId);
+      verifyPremiumNameIsNotBlocked(targetId, now, registrarId);
       verifySignedMarkOnlyInSunrise(hasSignedMarks, tldState);
     }
     String signedMarkId = null;
@@ -338,8 +338,8 @@ public class DomainCreateFlow implements TransactionalFlow {
             : ImmutableSet.of();
     DomainBase domain =
         new DomainBase.Builder()
-            .setCreationClientId(clientId)
-            .setPersistedCurrentSponsorClientId(clientId)
+            .setCreationRegistrarId(registrarId)
+            .setPersistedCurrentSponsorRegistrarId(registrarId)
             .setRepoId(repoId)
             .setIdnTableName(validateDomainNameWithIdnTables(domainName))
             .setRegistrationExpirationTime(registrationExpirationTime)
@@ -361,7 +361,7 @@ public class DomainCreateFlow implements TransactionalFlow {
         buildDomainHistory(domain, registry, now, period, registry.getAddGracePeriodLength());
     if (reservationTypes.contains(NAME_COLLISION)) {
       entitiesToSave.add(
-          createNameCollisionOneTimePollMessage(targetId, domainHistory, clientId, now));
+          createNameCollisionOneTimePollMessage(targetId, domainHistory, registrarId, now));
     }
     entitiesToSave.add(
         domain,
@@ -472,14 +472,14 @@ public class DomainCreateFlow implements TransactionalFlow {
 
   /** Verifies and returns the allocation token if one is specified, otherwise does nothing. */
   private Optional<AllocationToken> verifyAllocationTokenIfPresent(
-      DomainCommand.Create command, Registry registry, String clientId, DateTime now)
+      DomainCommand.Create command, Registry registry, String registrarId, DateTime now)
       throws EppException {
     Optional<AllocationTokenExtension> extension =
         eppInput.getSingleExtension(AllocationTokenExtension.class);
     return Optional.ofNullable(
         extension.isPresent()
             ? allocationTokenFlowUtils.loadTokenAndValidateDomainCreate(
-                command, extension.get().getAllocationToken(), registry, clientId, now)
+                command, extension.get().getAllocationToken(), registry, registrarId, now)
             : null);
   }
 
@@ -524,7 +524,7 @@ public class DomainCreateFlow implements TransactionalFlow {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.CREATE)
         .setTargetId(targetId)
-        .setClientId(clientId)
+        .setRegistrarId(registrarId)
         .setPeriodYears(years)
         .setCost(feesAndCredits.getCreateCost())
         .setEventTime(now)
@@ -545,7 +545,7 @@ public class DomainCreateFlow implements TransactionalFlow {
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(targetId)
-        .setClientId(clientId)
+        .setRegistrarId(registrarId)
         .setEventTime(registrationExpirationTime)
         .setRecurrenceEndTime(END_OF_TIME)
         .setParent(domainHistoryKey)
@@ -556,7 +556,7 @@ public class DomainCreateFlow implements TransactionalFlow {
       Key<DomainHistory> domainHistoryKey, DateTime registrationExpirationTime) {
     return new PollMessage.Autorenew.Builder()
         .setTargetId(targetId)
-        .setClientId(clientId)
+        .setRegistrarId(registrarId)
         .setEventTime(registrationExpirationTime)
         .setMsg("Domain was auto-renewed.")
         .setParentKey(domainHistoryKey)
@@ -568,7 +568,7 @@ public class DomainCreateFlow implements TransactionalFlow {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.FEE_EARLY_ACCESS)
         .setTargetId(createBillingEvent.getTargetId())
-        .setClientId(createBillingEvent.getClientId())
+        .setRegistrarId(createBillingEvent.getRegistrarId())
         .setPeriodYears(1)
         .setCost(feesAndCredits.getEapCost())
         .setEventTime(createBillingEvent.getEventTime())
@@ -579,9 +579,12 @@ public class DomainCreateFlow implements TransactionalFlow {
   }
 
   private static PollMessage.OneTime createNameCollisionOneTimePollMessage(
-      String fullyQualifiedDomainName, HistoryEntry historyEntry, String clientId, DateTime now) {
+      String fullyQualifiedDomainName,
+      HistoryEntry historyEntry,
+      String registrarId,
+      DateTime now) {
     return new PollMessage.OneTime.Builder()
-        .setClientId(clientId)
+        .setRegistrarId(registrarId)
         .setEventTime(now)
         .setMsg(COLLISION_MESSAGE) // Remind the registrar of the name collision policy.
         .setResponseData(

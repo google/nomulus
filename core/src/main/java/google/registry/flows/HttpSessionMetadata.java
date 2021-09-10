@@ -41,7 +41,7 @@ public class HttpSessionMetadata implements SessionMetadata {
   }
 
   @Override
-  public String getClientId() {
+  public String getRegistrarId() {
     return (String) session.getAttribute(CLIENT_ID);
   }
 
@@ -57,8 +57,8 @@ public class HttpSessionMetadata implements SessionMetadata {
   }
 
   @Override
-  public void setClientId(String clientId) {
-    session.setAttribute(CLIENT_ID, clientId);
+  public void setRegistrarId(String registrarId) {
+    session.setAttribute(CLIENT_ID, registrarId);
   }
 
   @Override
@@ -79,7 +79,7 @@ public class HttpSessionMetadata implements SessionMetadata {
   @Override
   public String toString() {
     return toStringHelper(getClass())
-        .add("clientId", getClientId())
+        .add("clientId", getRegistrarId())
         .add("failedLoginAttempts", getFailedLoginAttempts())
         .add("serviceExtensionUris", Joiner.on('.').join(nullToEmpty(getServiceExtensionUris())))
         .toString();

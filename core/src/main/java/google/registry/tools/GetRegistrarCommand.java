@@ -35,7 +35,9 @@ final class GetRegistrarCommand implements CommandWithRemoteApi {
     for (String clientId : mainParameters) {
       Registrar registrar =
           checkArgumentPresent(
-              Registrar.loadByClientId(clientId), "Registrar with id %s does not exist", clientId);
+              Registrar.loadByRegistrarId(clientId),
+              "Registrar with id %s does not exist",
+              clientId);
       System.out.println(registrar);
     }
   }

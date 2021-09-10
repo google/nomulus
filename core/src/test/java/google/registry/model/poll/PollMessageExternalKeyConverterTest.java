@@ -67,7 +67,7 @@ public class PollMessageExternalKeyConverterTest {
                 .setPeriod(Period.create(1, Period.Unit.YEARS))
                 .setXmlBytes("<xml></xml>".getBytes(UTF_8))
                 .setModificationTime(clock.nowUtc())
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setTrid(Trid.create("ABC-123", "server-trid"))
                 .setBySuperuser(false)
                 .setReason("reason")
@@ -80,7 +80,7 @@ public class PollMessageExternalKeyConverterTest {
     PollMessage.OneTime pollMessage =
         persistResource(
             new PollMessage.OneTime.Builder()
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
                 .setParent(historyEntry)
@@ -97,7 +97,7 @@ public class PollMessageExternalKeyConverterTest {
     PollMessage.OneTime pollMessage =
         persistResource(
             new PollMessage.OneTime.Builder()
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
                 .setParent(historyEntry)
@@ -114,7 +114,7 @@ public class PollMessageExternalKeyConverterTest {
     PollMessage.OneTime pollMessage =
         persistResource(
             new PollMessage.OneTime.Builder()
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setMsg("Test poll message")
                 .setParent(historyEntry)

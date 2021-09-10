@@ -83,9 +83,9 @@ public final class RdeUtil {
     return BaseEncoding.base32().omitPadding().encode(bytes);
   }
 
-  static XjcRdeRrType makeXjcRdeRrType(String clientId) {
+  static XjcRdeRrType makeXjcRdeRrType(String registrarId) {
     XjcRdeRrType bean = new XjcRdeRrType();
-    bean.setValue(clientId);
+    bean.setValue(registrarId);
     return bean;
   }
 

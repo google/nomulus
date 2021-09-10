@@ -56,7 +56,7 @@ class ContactTransferCancelFlowTest
   @BeforeEach
   void setUp() {
     this.setEppInput("contact_transfer_cancel.xml");
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
     setupContactWithPendingTransfer();
     clock.advanceOneMilli();
   }
@@ -76,12 +76,14 @@ class ContactTransferCancelFlowTest
 
     // Transfer should have been cancelled. Verify correct fields were set.
     contact = reloadResourceByForeignKey();
-    assertAboutContacts().that(contact)
-        .hasCurrentSponsorClientId("TheRegistrar").and()
-        .hasLastTransferTimeNotEqualTo(clock.nowUtc()).and()
+    assertAboutContacts()
+        .that(contact)
+        .hasCurrentSponsorRegistrarId("TheRegistrar")
+        .and()
+        .hasLastTransferTimeNotEqualTo(clock.nowUtc())
+        .and()
         .hasOneHistoryEntryEachOfTypes(
-            HistoryEntry.Type.CONTACT_TRANSFER_REQUEST,
-            HistoryEntry.Type.CONTACT_TRANSFER_CANCEL);
+            HistoryEntry.Type.CONTACT_TRANSFER_REQUEST, HistoryEntry.Type.CONTACT_TRANSFER_CANCEL);
     assertThat(contact.getTransferData())
         .isEqualTo(
             originalTransferData.copyConstantFieldsToBuilder()
@@ -203,7 +205,7 @@ class ContactTransferCancelFlowTest
 
   @TestOfyAndSql
   void testFailure_sponsoringClient() {
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     EppException thrown =
         assertThrows(
             NotTransferInitiatorException.class,
@@ -213,7 +215,7 @@ class ContactTransferCancelFlowTest
 
   @TestOfyAndSql
   void testFailure_unrelatedClient() {
-    setClientIdForFlow("ClientZ");
+    setRegistrarIdForFlow("ClientZ");
     EppException thrown =
         assertThrows(
             NotTransferInitiatorException.class,

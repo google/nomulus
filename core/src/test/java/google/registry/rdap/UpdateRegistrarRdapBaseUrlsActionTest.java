@@ -145,11 +145,11 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
   }
 
   private static void persistRegistrar(
-      String clientId, Long ianaId, Registrar.Type type, String... rdapBaseUrls) {
+      String registrarId, Long ianaId, Registrar.Type type, String... rdapBaseUrls) {
     persistSimpleResource(
         new Registrar.Builder()
-            .setClientId(clientId)
-            .setRegistrarName(clientId)
+            .setRegistrarId(registrarId)
+            .setRegistrarName(registrarId)
             .setType(type)
             .setIanaIdentifier(ianaId)
             .setRdapBaseUrls(ImmutableSet.copyOf(rdapBaseUrls))

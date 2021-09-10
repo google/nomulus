@@ -64,7 +64,7 @@ public abstract class BaseTransferObject extends ImmutableObject {
     return transferStatus;
   }
 
-  public String getGainingClientId() {
+  public String getGainingRegistrarId() {
     return gainingClientId;
   }
 
@@ -72,7 +72,7 @@ public abstract class BaseTransferObject extends ImmutableObject {
     return transferRequestTime;
   }
 
-  public String getLosingClientId() {
+  public String getLosingRegistrarId() {
     return losingClientId;
   }
 
@@ -99,8 +99,8 @@ public abstract class BaseTransferObject extends ImmutableObject {
     }
 
     /** Set the gaining registrar for a pending transfer on this resource. */
-    public B setGainingClientId(String gainingClientId) {
-      getInstance().gainingClientId = gainingClientId;
+    public B setGainingRegistrarId(String gainingRegistrarId) {
+      getInstance().gainingClientId = gainingRegistrarId;
       return thisCastToDerived();
     }
 
@@ -111,8 +111,8 @@ public abstract class BaseTransferObject extends ImmutableObject {
     }
 
     /** Set the losing registrar for a pending transfer on this resource. */
-    public B setLosingClientId(String losingClientId) {
-      getInstance().losingClientId = losingClientId;
+    public B setLosingRegistrarId(String losingRegistrarId) {
+      getInstance().losingClientId = losingRegistrarId;
       return thisCastToDerived();
     }
 

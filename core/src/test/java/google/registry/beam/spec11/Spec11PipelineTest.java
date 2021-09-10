@@ -236,21 +236,21 @@ class Spec11PipelineTest {
         persistResource(
             makeRegistrar1()
                 .asBuilder()
-                .setClientId("hello-registrar")
+                .setRegistrarId("hello-registrar")
                 .setEmailAddress("email@hello.net")
                 .build());
     Registrar registrar2 =
         persistResource(
             makeRegistrar1()
                 .asBuilder()
-                .setClientId("kitty-registrar")
+                .setRegistrarId("kitty-registrar")
                 .setEmailAddress("contact@kit.ty")
                 .build());
     Registrar registrar3 =
         persistResource(
             makeRegistrar1()
                 .asBuilder()
-                .setClientId("cool-registrar")
+                .setRegistrarId("cool-registrar")
                 .setEmailAddress("cool@aid.net")
                 .build());
 
@@ -259,9 +259,9 @@ class Spec11PipelineTest {
     createTld("bank");
     createTld("dev");
 
-    ContactResource contact1 = persistActiveContact(registrar1.getClientId());
-    ContactResource contact2 = persistActiveContact(registrar2.getClientId());
-    ContactResource contact3 = persistActiveContact(registrar3.getClientId());
+    ContactResource contact1 = persistActiveContact(registrar1.getRegistrarId());
+    ContactResource contact2 = persistActiveContact(registrar2.getRegistrarId());
+    ContactResource contact3 = persistActiveContact(registrar3.getRegistrarId());
 
     persistResource(createDomain("111.com", "123456789-COM", registrar1, contact1));
     persistResource(createDomain("party-night.net", "2244AABBC-NET", registrar2, contact2));
@@ -303,12 +303,12 @@ class Spec11PipelineTest {
     return new DomainBase.Builder()
         .setDomainName(domainName)
         .setRepoId(repoId)
-        .setCreationClientId(registrar.getClientId())
+        .setCreationRegistrarId(registrar.getRegistrarId())
         .setLastEppUpdateTime(fakeClock.nowUtc())
-        .setLastEppUpdateClientId(registrar.getClientId())
+        .setLastEppUpdateRegistrarId(registrar.getRegistrarId())
         .setLastTransferTime(fakeClock.nowUtc())
         .setRegistrant(contact.createVKey())
-        .setPersistedCurrentSponsorClientId(registrar.getClientId())
+        .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
         .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
         .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
         .build();

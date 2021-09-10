@@ -61,7 +61,7 @@ public final class EppController {
       boolean isDryRun,
       boolean isSuperuser,
       byte[] inputXmlBytes) {
-    eppMetricBuilder.setClientId(Optional.ofNullable(sessionMetadata.getClientId()));
+    eppMetricBuilder.setRegistrarId(Optional.ofNullable(sessionMetadata.getRegistrarId()));
     try {
       EppInput eppInput;
       try {
@@ -76,7 +76,7 @@ public final class EppController {
                     JSONValue.toJSONString(
                         ImmutableMap.<String, Object>of(
                             "clientId",
-                            nullToEmpty(sessionMetadata.getClientId()),
+                            nullToEmpty(sessionMetadata.getRegistrarId()),
                             "resultCode",
                             e.getResult().getCode().code,
                             "resultMessage",

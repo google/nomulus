@@ -67,8 +67,9 @@ public final class DomainBaseSubject
     return hasValue(pw, authInfo == null ? null : authInfo.getPw().getValue(), "has auth info pw");
   }
 
-  public And<DomainBaseSubject> hasCurrentSponsorClientId(String clientId) {
-    return hasValue(clientId, actual.getCurrentSponsorClientId(), "has currentSponsorClientId");
+  public And<DomainBaseSubject> hasCurrentSponsorRegistrarId(String registrarId) {
+    return hasValue(
+        registrarId, actual.getCurrentSponsorRegistrarId(), "has currentSponsorRegistrarId");
   }
 
   public And<DomainBaseSubject> hasRegistrationExpirationTime(DateTime expiration) {

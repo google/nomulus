@@ -19,7 +19,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.util.CollectionUtils.nullToEmpty;
-import static google.registry.util.RegistrarUtils.normalizeClientId;
+import static google.registry.util.RegistrarUtils.normalizeRegistrarId;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
@@ -96,16 +96,15 @@ public final class SyncGroupMembersAction implements Runnable {
   }
 
   /**
-   * Returns the Google Groups email address for the given registrar clientId and
-   * RegistrarContact.Type
+   * Returns the Google Groups email address for the given registrar ID and RegistrarContact.Type.
    */
   public static String getGroupEmailAddressForContactType(
-      String clientId, RegistrarContact.Type type, String gSuiteDomainName) {
-    // Take the registrar's clientId, make it lowercase, and remove all characters that aren't
+      String registrarId, RegistrarContact.Type type, String gSuiteDomainName) {
+    // Take the registrar's ID, make it lowercase, and remove all characters that aren't
     // alphanumeric, hyphens, or underscores.
     return String.format(
         "%s-%s-contacts@%s",
-        normalizeClientId(clientId), type.getDisplayName(), gSuiteDomainName);
+        normalizeRegistrarId(registrarId), type.getDisplayName(), gSuiteDomainName);
   }
 
   /**
@@ -175,8 +174,8 @@ public final class SyncGroupMembersAction implements Runnable {
       long totalAdded = 0;
       long totalRemoved = 0;
       for (final RegistrarContact.Type type : RegistrarContact.Type.values()) {
-        groupKey = getGroupEmailAddressForContactType(
-            registrar.getClientId(), type, gSuiteDomainName);
+        groupKey =
+            getGroupEmailAddressForContactType(registrar.getRegistrarId(), type, gSuiteDomainName);
         Set<String> currentMembers = groupsConnection.getMembersOfGroup(groupKey);
         Set<String> desiredMembers =
             registrarContacts
@@ -195,11 +194,13 @@ public final class SyncGroupMembersAction implements Runnable {
       }
       logger.atInfo().log(
           "Successfully synced contacts for registrar %s: added %d and removed %d",
-          registrar.getClientId(), totalAdded, totalRemoved);
+          registrar.getRegistrarId(), totalAdded, totalRemoved);
     } catch (IOException e) {
       // Package up exception and re-throw with attached additional relevant info.
-      String msg = String.format("Couldn't sync contacts for registrar %s to group %s",
-          registrar.getClientId(), groupKey);
+      String msg =
+          String.format(
+              "Couldn't sync contacts for registrar %s to group %s",
+              registrar.getRegistrarId(), groupKey);
       throw new RuntimeException(msg, e);
     }
   }

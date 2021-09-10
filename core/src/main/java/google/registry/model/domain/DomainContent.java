@@ -520,8 +520,8 @@ public class DomainContent extends EppResource
     this.dsData = dsData;
   }
 
-  public final String getCurrentSponsorClientId() {
-    return getPersistedCurrentSponsorClientId();
+  public final String getCurrentSponsorRegistrarId() {
+    return getPersistedCurrentSponsorRegistrarId();
   }
 
   /** Returns true if DNS information should be published for the given domain. */
@@ -617,7 +617,7 @@ public class DomainContent extends EppResource
                     domain.getRepoId(),
                     transferExpirationTime.plus(
                         Registry.get(domain.getTld()).getTransferGracePeriodLength()),
-                    transferData.getGainingClientId(),
+                    transferData.getGainingRegistrarId(),
                     transferData.getServerApproveBillingEvent())));
       } else {
         // There won't be a billing event, so we don't need a grace period
@@ -627,7 +627,7 @@ public class DomainContent extends EppResource
       setAutomaticTransferSuccessProperties(builder, transferData);
       builder
           .setLastEppUpdateTime(transferExpirationTime)
-          .setLastEppUpdateClientId(transferData.getGainingClientId());
+          .setLastEppUpdateRegistrarId(transferData.getGainingRegistrarId());
       // Finish projecting to now.
       return (T) builder.build().cloneProjectedAtTime(now);
     }
@@ -653,7 +653,7 @@ public class DomainContent extends EppResource
                   domain.getRepoId(),
                   lastAutorenewTime.plus(
                       Registry.get(domain.getTld()).getAutoRenewGracePeriodLength()),
-                  domain.getCurrentSponsorClientId(),
+                  domain.getCurrentSponsorRegistrarId(),
                   domain.getAutorenewBillingEvent()));
       newLastEppUpdateTime = Optional.of(lastAutorenewTime);
     }
@@ -679,7 +679,7 @@ public class DomainContent extends EppResource
           || newLastEppUpdateTime.get().isAfter(domain.getLastEppUpdateTime())) {
         builder
             .setLastEppUpdateTime(newLastEppUpdateTime.get())
-            .setLastEppUpdateClientId(domain.getCurrentSponsorClientId());
+            .setLastEppUpdateRegistrarId(domain.getCurrentSponsorRegistrarId());
       }
     }
 

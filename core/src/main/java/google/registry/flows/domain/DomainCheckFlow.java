@@ -17,7 +17,7 @@ package google.registry.flows.domain;
 import static com.google.common.base.Strings.emptyToNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
 import static google.registry.flows.domain.DomainFlowUtils.getReservationTypes;
@@ -41,7 +41,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValuePolicyErrorException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainCheckFlowCustomLogic;
@@ -113,7 +113,7 @@ public final class DomainCheckFlow implements Flow {
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
 
   @Inject
   @Config("maxChecks")
@@ -135,7 +135,7 @@ public final class DomainCheckFlow implements Flow {
         FeeCheckCommandExtension.class, LaunchCheckExtension.class, AllocationTokenExtension.class);
     flowCustomLogic.beforeValidation();
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     ImmutableList<String> domainNames = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(domainNames, maxChecks);
     DateTime now = clock.nowUtc();
@@ -151,7 +151,7 @@ public final class DomainCheckFlow implements Flow {
       String tld = parsedDomain.parent().toString();
       boolean tldFirstTimeSeen = seenTlds.add(tld);
       if (tldFirstTimeSeen && !isSuperuser) {
-        checkAllowedAccessToTld(clientId, tld);
+        checkAllowedAccessToTld(registrarId, tld);
         verifyNotInPredelegation(Registry.get(tld), now);
       }
     }
@@ -172,7 +172,7 @@ public final class DomainCheckFlow implements Flow {
                 allocationTokenFlowUtils.checkDomainsWithToken(
                     ImmutableList.copyOf(parsedDomains.values()),
                     tokenExtension.getAllocationToken(),
-                    clientId,
+                    registrarId,
                     now));
 
     ImmutableList.Builder<DomainCheck> checksBuilder = new ImmutableList.Builder<>();

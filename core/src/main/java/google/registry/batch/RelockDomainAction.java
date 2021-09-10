@@ -203,11 +203,11 @@ public class RelockDomainAction implements Runnable {
         "Domain %s has a pending transfer.",
         domainName);
     checkArgument(
-        domain.getCurrentSponsorClientId().equals(oldLock.getRegistrarId()),
+        domain.getCurrentSponsorRegistrarId().equals(oldLock.getRegistrarId()),
         "Domain %s has been transferred from registrar %s to registrar %s since the unlock.",
         domainName,
         oldLock.getRegistrarId(),
-        domain.getCurrentSponsorClientId());
+        domain.getCurrentSponsorRegistrarId());
   }
 
   private void handleNonRetryableFailure(RegistryLock oldLock, Throwable t) {
@@ -293,7 +293,7 @@ public class RelockDomainAction implements Runnable {
 
   private ImmutableSet<InternetAddress> getEmailRecipients(String registrarId) {
     Registrar registrar =
-        Registrar.loadByClientIdCached(registrarId)
+        Registrar.loadByRegistrarIdCached(registrarId)
             .orElseThrow(
                 () ->
                     new IllegalStateException(String.format("Unknown registrar %s", registrarId)));

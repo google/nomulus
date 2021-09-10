@@ -17,7 +17,7 @@ package google.registry.ui.server.registrar;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
-import static google.registry.model.registrar.Registrar.loadByClientId;
+import static google.registry.model.registrar.Registrar.loadByRegistrarId;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -146,9 +146,10 @@ public final class ConsoleOteSetupActionTest {
 
     // We just check some samples to make sure OteAccountBuilder was called successfully. We aren't
     // checking that all the entities are there or that they have the correct values.
-    assertThat(loadByClientId("myclientid-3")).isPresent();
+    assertThat(loadByRegistrarId("myclientid-3")).isPresent();
     assertThat(Registry.get("myclientid-ga")).isNotNull();
-    assertThat(loadByClientId("myclientid-5").get().getContacts().asList().get(0).getEmailAddress())
+    assertThat(
+            loadByRegistrarId("myclientid-5").get().getContacts().asList().get(0).getEmailAddress())
         .isEqualTo("contact@registry.example");
     assertThat(response.getPayload())
         .contains("<h1>OT&E successfully created for registrar myclientid!</h1>");
@@ -179,8 +180,7 @@ public final class ConsoleOteSetupActionTest {
 
     // We just check some samples to make sure OteAccountBuilder was called successfully. We aren't
     // checking that all the entities are there or that they have the correct values.
-    assertThat(loadByClientId("myclientid-4").get().verifyPassword("SomePassword"))
-        .isTrue();
+    assertThat(loadByRegistrarId("myclientid-4").get().verifyPassword("SomePassword")).isTrue();
     assertThat(response.getPayload())
         .contains("<h1>OT&E successfully created for registrar myclientid!</h1>");
     assertThat(response.getPayload())

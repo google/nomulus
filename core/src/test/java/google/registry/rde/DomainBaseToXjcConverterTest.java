@@ -225,14 +225,14 @@ public class DomainBaseToXjcConverterTest {
                 .setModificationTime(clock.nowUtc())
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setDomain(domain)
-                .setClientId(domain.getCreationClientId())
+                .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
     BillingEvent.OneTime billingEvent =
         persistResource(
             new BillingEvent.OneTime.Builder()
                 .setReason(Reason.CREATE)
                 .setTargetId("example.xn--q9jyb4c")
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setCost(Money.of(USD, 26))
                 .setPeriodYears(2)
                 .setEventTime(DateTime.parse("1910-01-01T00:00:00Z"))
@@ -263,15 +263,15 @@ public class DomainBaseToXjcConverterTest {
                                 "bird or fiend!? i shrieked upstarting",
                                 "bog@cat.みんな")
                             .createVKey())))
-            .setCreationClientId("TheRegistrar")
+            .setCreationRegistrarId("TheRegistrar")
             .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-            .setPersistedCurrentSponsorClientId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
             .setDsData(
                 ImmutableSet.of(
                     DelegationSignerData.create(123, 200, 230, base16().decode("1234567890"))))
             .setDomainName(Idn.toASCII("love.みんな"))
             .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-            .setLastEppUpdateClientId("TheRegistrar")
+            .setLastEppUpdateRegistrarId("TheRegistrar")
             .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
             .setNameservers(
                 ImmutableSet.of(
@@ -293,7 +293,7 @@ public class DomainBaseToXjcConverterTest {
                             new BillingEvent.OneTime.Builder()
                                 .setReason(Reason.RENEW)
                                 .setTargetId("love.xn--q9jyb4c")
-                                .setClientId("TheRegistrar")
+                                .setRegistrarId("TheRegistrar")
                                 .setCost(Money.of(USD, 456))
                                 .setPeriodYears(2)
                                 .setEventTime(DateTime.parse("1920-01-01T00:00:00Z"))
@@ -319,7 +319,7 @@ public class DomainBaseToXjcConverterTest {
                             .setReason(Reason.RENEW)
                             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                             .setTargetId("lol")
-                            .setClientId("TheRegistrar")
+                            .setRegistrarId("TheRegistrar")
                             .setEventTime(END_OF_TIME)
                             .setRecurrenceEndTime(END_OF_TIME)
                             .setParent(domainHistory)
@@ -329,7 +329,7 @@ public class DomainBaseToXjcConverterTest {
                 persistResource(
                         new PollMessage.Autorenew.Builder()
                             .setTargetId("lol")
-                            .setClientId("TheRegistrar")
+                            .setRegistrarId("TheRegistrar")
                             .setEventTime(END_OF_TIME)
                             .setAutorenewEndTime(END_OF_TIME)
                             .setMsg("Domain was auto-renewed.")
@@ -338,8 +338,8 @@ public class DomainBaseToXjcConverterTest {
                     .createVKey())
             .setTransferData(
                 new DomainTransferData.Builder()
-                    .setGainingClientId("NewRegistrar")
-                    .setLosingClientId("TheRegistrar")
+                    .setGainingRegistrarId("NewRegistrar")
+                    .setLosingRegistrarId("TheRegistrar")
                     .setPendingTransferExpirationTime(DateTime.parse("1925-04-20T00:00:00Z"))
                     .setServerApproveBillingEvent(billingEvent.createVKey())
                     .setServerApproveAutorenewEvent(
@@ -348,7 +348,7 @@ public class DomainBaseToXjcConverterTest {
                                     .setReason(Reason.RENEW)
                                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                                     .setTargetId("example.xn--q9jyb4c")
-                                    .setClientId("TheRegistrar")
+                                    .setRegistrarId("TheRegistrar")
                                     .setEventTime(END_OF_TIME)
                                     .setRecurrenceEndTime(END_OF_TIME)
                                     .setParent(domainHistory)
@@ -358,7 +358,7 @@ public class DomainBaseToXjcConverterTest {
                         persistResource(
                                 new Autorenew.Builder()
                                     .setTargetId("example.xn--q9jyb4c")
-                                    .setClientId("TheRegistrar")
+                                    .setRegistrarId("TheRegistrar")
                                     .setEventTime(END_OF_TIME)
                                     .setAutorenewEndTime(END_OF_TIME)
                                     .setMsg("Domain was auto-renewed.")
@@ -384,8 +384,8 @@ public class DomainBaseToXjcConverterTest {
         new ContactResource.Builder()
             .setContactId(id)
             .setEmailAddress(email)
-            .setPersistedCurrentSponsorClientId("TheRegistrar")
-            .setCreationClientId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+            .setCreationRegistrarId("TheRegistrar")
             .setCreationTimeForTest(END_OF_TIME)
             .setInternationalizedPostalInfo(
                 new PostalInfo.Builder()
@@ -413,13 +413,13 @@ public class DomainBaseToXjcConverterTest {
     clock.advanceOneMilli();
     return persistEppResource(
         new HostResource.Builder()
-            .setCreationClientId("TheRegistrar")
+            .setCreationRegistrarId("TheRegistrar")
             .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-            .setPersistedCurrentSponsorClientId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
             .setHostName(Idn.toASCII(fqhn))
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString(ip)))
             .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-            .setLastEppUpdateClientId("TheRegistrar")
+            .setLastEppUpdateRegistrarId("TheRegistrar")
             .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
             .setRepoId(repoId)
             .setStatusValues(ImmutableSet.of(StatusValue.OK))

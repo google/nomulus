@@ -288,7 +288,7 @@ public class RdapJsonFormatter {
             Event.builder()
                 .setEventAction(EventAction.REGISTRATION)
                 .setEventActor(
-                    Optional.ofNullable(domainBase.getCreationClientId()).orElse("(none)"))
+                    Optional.ofNullable(domainBase.getCreationRegistrarId()).orElse("(none)"))
                 .setEventDate(domainBase.getCreationTime())
                 .build(),
             Event.builder()
@@ -307,7 +307,7 @@ public class RdapJsonFormatter {
     //
     // See {@link createRdapRegistrarEntity} for details of section 2.4 conformance
     Registrar registrar =
-        Registrar.loadRequiredRegistrarCached(domainBase.getCurrentSponsorClientId());
+        Registrar.loadRequiredRegistrarCached(domainBase.getCurrentSponsorRegistrarId());
     builder.entitiesBuilder().add(createRdapRegistrarEntity(registrar, OutputDataType.INTERNAL));
     // RDAP Technical Implementation Guide 3.2: must have link to the registrar's RDAP URL for this
     // domain, with rel=related.
@@ -457,7 +457,8 @@ public class RdapJsonFormatter {
     // RDAP Response Profile 4.3 - Registrar member is optional, so we only set it for FULL
     if (outputDataType == OutputDataType.FULL) {
       Registrar registrar =
-          Registrar.loadRequiredRegistrarCached(hostResource.getPersistedCurrentSponsorClientId());
+          Registrar.loadRequiredRegistrarCached(
+              hostResource.getPersistedCurrentSponsorRegistrarId());
       builder.entitiesBuilder().add(createRdapRegistrarEntity(registrar, OutputDataType.INTERNAL));
     }
     if (outputDataType != OutputDataType.INTERNAL) {
@@ -490,7 +491,7 @@ public class RdapJsonFormatter {
     //
     // 2.8 allows for unredacted output for authorized people.
     boolean isAuthorized =
-        rdapAuthorization.isAuthorizedForClientId(contactResource.getCurrentSponsorClientId());
+        rdapAuthorization.isAuthorizedForRegistrar(contactResource.getCurrentSponsorRegistrarId());
 
     // ROID needs to be redacted if we aren't authorized, so we can't have a self-link for
     // unauthorized users
@@ -741,7 +742,7 @@ public class RdapJsonFormatter {
           .noneMatch(contact -> contact.roles().contains(RdapEntity.Role.ABUSE))) {
         logger.atWarning().log(
             "Registrar '%s' (IANA ID %s) is missing ABUSE contact",
-            registrar.getClientId(), registrar.getIanaIdentifier());
+            registrar.getRegistrarId(), registrar.getIanaIdentifier());
       }
       builder.entitiesBuilder().addAll(registrarContacts);
     }
@@ -910,7 +911,7 @@ public class RdapJsonFormatter {
       eventsBuilder.add(
           Event.builder()
               .setEventAction(rdapEventAction)
-              .setEventActor(historyEntry.getClientId())
+              .setEventActor(historyEntry.getRegistrarId())
               .setEventDate(modificationTime)
               .build());
       // The last change time might not be the lastEppUpdateTime, since some changes happen without

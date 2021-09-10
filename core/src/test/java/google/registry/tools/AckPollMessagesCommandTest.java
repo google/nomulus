@@ -62,7 +62,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
             new DomainHistory.Builder()
                 .setModificationTime(clock.nowUtc())
                 .setDomainRepoId(domain.getRepoId())
-                .setClientId(domain.getCreationClientId())
+                .setRegistrarId(domain.getCreationRegistrarId())
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setId(2406L)
                 .build());
@@ -102,7 +102,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
                 .setId(625L)
                 .setParentKey(domainHistory.createVKey().getOfyKey())
                 .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setMsg("autorenew")
                 .build());
     Autorenew resaved =
@@ -130,7 +130,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
                 .setParentKey(domainHistory.createVKey().getOfyKey())
                 .setEventTime(DateTime.parse("2011-04-15T22:33:44Z"))
                 .setAutorenewEndTime(DateTime.parse("2012-01-01T22:33:44Z"))
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setMsg("autorenew")
                 .build());
     VKey<Autorenew> pm3 = autorenew.createVKey();
@@ -173,7 +173,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
             new PollMessage.OneTime.Builder()
                 .setId(2474L)
                 .setParentKey(domainHistory.createVKey().getOfyKey())
-                .setClientId("NewRegistrar")
+                .setRegistrarId("NewRegistrar")
                 .setEventTime(DateTime.parse("2013-06-01T22:33:44Z"))
                 .setMsg("baaaahh")
                 .build());
@@ -207,7 +207,7 @@ public class AckPollMessagesCommandTest extends CommandTestCase<AckPollMessagesC
                     Key.create(DomainBase.class, "FSDGS-TLD"),
                     HistoryEntry.class,
                     domainHistory.getId()))
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(eventTime)
             .setMsg(message)
             .build());

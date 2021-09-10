@@ -76,7 +76,7 @@ public class OfyTest {
     createTld("tld");
     someObject =
         new ContactHistory.Builder()
-            .setClientId("clientid")
+            .setRegistrarId("clientid")
             .setModificationTime(START_OF_TIME)
             .setType(HistoryEntry.Type.CONTACT_CREATE)
             .setContact(persistActiveContact("parentContact"))

@@ -64,8 +64,8 @@ class HistoryEntryTest extends EntityTestCase {
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .setModificationTime(fakeClock.nowUtc())
-            .setClientId("TheRegistrar")
-            .setOtherClientId("otherClient")
+            .setRegistrarId("TheRegistrar")
+            .setOtherRegistrarId("otherClient")
             .setTrid(Trid.create("ABC-123", "server-trid"))
             .setBySuperuser(false)
             .setReason("reason")
@@ -100,7 +100,7 @@ class HistoryEntryTest extends EntityTestCase {
                 new ContactHistory.Builder()
                     .setId(5L)
                     .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
-                    .setClientId("TheRegistrar")
+                    .setRegistrarId("TheRegistrar")
                     .setReason("Reason")
                     .build());
     assertThat(thrown).hasMessageThat().isEqualTo("History entry type must be specified");
@@ -115,7 +115,7 @@ class HistoryEntryTest extends EntityTestCase {
                 new ContactHistory.Builder()
                     .setId(5L)
                     .setType(HistoryEntry.Type.CONTACT_CREATE)
-                    .setClientId("TheRegistrar")
+                    .setRegistrarId("TheRegistrar")
                     .setReason("Reason")
                     .build());
     assertThat(thrown).hasMessageThat().isEqualTo("Modification time must be specified");
@@ -146,7 +146,7 @@ class HistoryEntryTest extends EntityTestCase {
                     .setId(5L)
                     .setType(HistoryEntry.Type.SYNTHETIC)
                     .setModificationTime(DateTime.parse("1985-07-12T22:30:00Z"))
-                    .setClientId("TheRegistrar")
+                    .setRegistrarId("TheRegistrar")
                     .setReason("Reason")
                     .setRequestedByRegistrar(true)
                     .build());

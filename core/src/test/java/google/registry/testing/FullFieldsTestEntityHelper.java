@@ -50,40 +50,43 @@ import org.joda.time.DateTime;
 public final class FullFieldsTestEntityHelper {
 
   public static Registrar makeRegistrar(
-      String clientId, String registrarName, Registrar.State state) {
-    return makeRegistrar(clientId, registrarName, state, 1L);
+      String registrarId, String registrarName, Registrar.State state) {
+    return makeRegistrar(registrarId, registrarName, state, 1L);
   }
 
   public static Registrar makeRegistrar(
-      String clientId, String registrarName, Registrar.State state, Long ianaIdentifier) {
+      String registrarId, String registrarName, Registrar.State state, Long ianaIdentifier) {
     return new Registrar.Builder()
-      .setClientId(clientId)
-      .setRegistrarName(registrarName)
-      .setType(Registrar.Type.REAL)
-      .setIanaIdentifier(ianaIdentifier)
-      .setState(state)
-      .setInternationalizedAddress(new RegistrarAddress.Builder()
-          .setStreet(ImmutableList.of("123 Example Boulevard <script>"))
-          .setCity("Williamsburg <script>")
-          .setState("NY")
-          .setZip("11211")
-          .setCountryCode("US")
-          .build())
-      .setLocalizedAddress(new RegistrarAddress.Builder()
-          .setStreet(ImmutableList.of("123 Example Boulevard <script>"))
-          .setCity("Williamsburg <script>")
-          .setState("NY")
-          .setZip("11211")
-          .setCountryCode("US")
-          .build())
-      .setPhoneNumber("+1.2125551212")
-      .setFaxNumber("+1.2125551213")
-      .setEmailAddress("contact-us@example.com")
-      .setWhoisServer("whois.example.com")
-      .setRdapBaseUrls(ImmutableSet.of(
-          "https://rdap.example.com/withSlash/", "https://rdap.example.com/withoutSlash"))
-      .setUrl("http://my.fake.url")
-      .build();
+        .setRegistrarId(registrarId)
+        .setRegistrarName(registrarName)
+        .setType(Registrar.Type.REAL)
+        .setIanaIdentifier(ianaIdentifier)
+        .setState(state)
+        .setInternationalizedAddress(
+            new RegistrarAddress.Builder()
+                .setStreet(ImmutableList.of("123 Example Boulevard <script>"))
+                .setCity("Williamsburg <script>")
+                .setState("NY")
+                .setZip("11211")
+                .setCountryCode("US")
+                .build())
+        .setLocalizedAddress(
+            new RegistrarAddress.Builder()
+                .setStreet(ImmutableList.of("123 Example Boulevard <script>"))
+                .setCity("Williamsburg <script>")
+                .setState("NY")
+                .setZip("11211")
+                .setCountryCode("US")
+                .build())
+        .setPhoneNumber("+1.2125551212")
+        .setFaxNumber("+1.2125551213")
+        .setEmailAddress("contact-us@example.com")
+        .setWhoisServer("whois.example.com")
+        .setRdapBaseUrls(
+            ImmutableSet.of(
+                "https://rdap.example.com/withSlash/", "https://rdap.example.com/withoutSlash"))
+        .setUrl("http://my.fake.url")
+        .build();
   }
 
   public static ImmutableList<RegistrarContact> makeRegistrarContacts(Registrar registrar) {
@@ -138,7 +141,7 @@ public final class FullFieldsTestEntityHelper {
             .setRepoId(generateNewContactHostRoid())
             .setHostName(Idn.toASCII(fqhn))
             .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
-            .setPersistedCurrentSponsorClientId(registrarClientId);
+            .setPersistedCurrentSponsorRegistrarId(registrarClientId);
     if ((ip1 != null) || (ip2 != null)) {
       ImmutableSet.Builder<InetAddress> ipBuilder = new ImmutableSet.Builder<>();
       if (ip1 != null) {
@@ -230,8 +233,8 @@ public final class FullFieldsTestEntityHelper {
     if (email != null) {
       builder.setEmailAddress(email);
     }
-    String registrarId = registrar == null ? "TheRegistrar" : registrar.getClientId();
-    builder.setCreationClientId(registrarId).setPersistedCurrentSponsorClientId(registrarId);
+    String registrarId = registrar == null ? "TheRegistrar" : registrar.getRegistrarId();
+    builder.setCreationRegistrarId(registrarId).setPersistedCurrentSponsorRegistrarId(registrarId);
     if (deletionTime != null) {
       builder.setDeletionTime(deletionTime);
     }
@@ -248,8 +251,8 @@ public final class FullFieldsTestEntityHelper {
         .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"));
     if (registrar != null) {
       builder
-          .setCreationClientId(registrar.getClientId())
-          .setPersistedCurrentSponsorClientId(registrar.getClientId());
+          .setCreationRegistrarId(registrar.getRegistrarId())
+          .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId());
     }
     if (deletionTime != null) {
       builder.setDeletionTime(deletionTime);
@@ -342,8 +345,8 @@ public final class FullFieldsTestEntityHelper {
             .setLastEppUpdateTime(DateTime.parse("2009-05-29T20:13:00Z"))
             .setCreationTimeForTest(DateTime.parse("2000-10-08T00:45:00Z"))
             .setRegistrationExpirationTime(DateTime.parse("2110-10-08T00:44:59Z"))
-            .setPersistedCurrentSponsorClientId(registrar.getClientId())
-            .setCreationClientId(registrar.getClientId())
+            .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
+            .setCreationRegistrarId(registrar.getRegistrarId())
             .setStatusValues(
                 ImmutableSet.of(
                     StatusValue.CLIENT_DELETE_PROHIBITED,
@@ -390,7 +393,7 @@ public final class FullFieldsTestEntityHelper {
         .setPeriod(period)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
         .setModificationTime(modificationTime)
-        .setClientId(resource.getPersistedCurrentSponsorClientId())
+        .setRegistrarId(resource.getPersistedCurrentSponsorRegistrarId())
         .setTrid(Trid.create("ABC-123", "server-trid"))
         .setBySuperuser(false)
         .setReason(reason)

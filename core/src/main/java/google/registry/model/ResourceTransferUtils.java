@@ -72,8 +72,9 @@ public final class ResourceTransferUtils {
                       ? domainTransferData.getTransferredRegistrationExpirationTime()
                       : null);
     }
-    builder.setGainingClientId(transferData.getGainingClientId())
-        .setLosingClientId(transferData.getLosingClientId())
+    builder
+        .setGainingRegistrarId(transferData.getGainingRegistrarId())
+        .setLosingRegistrarId(transferData.getLosingRegistrarId())
         .setPendingTransferExpirationTime(transferData.getPendingTransferExpirationTime())
         .setTransferRequestTime(transferData.getTransferRequestTime())
         .setTransferStatus(transferData.getTransferStatus());
@@ -119,7 +120,7 @@ public final class ResourceTransferUtils {
       tm().delete(oldTransferData.getServerApproveEntities());
       tm().put(
               new PollMessage.OneTime.Builder()
-                  .setClientId(oldTransferData.getGainingClientId())
+                  .setRegistrarId(oldTransferData.getGainingRegistrarId())
                   .setEventTime(now)
                   .setMsg(TransferStatus.SERVER_CANCELLED.getMessage())
                   .setResponseData(
@@ -178,7 +179,7 @@ public final class ResourceTransferUtils {
     B builder = resolvePendingTransfer(resource, transferStatus, now);
     return builder
         .setLastTransferTime(now)
-        .setPersistedCurrentSponsorClientId(resource.getTransferData().getGainingClientId())
+        .setPersistedCurrentSponsorRegistrarId(resource.getTransferData().getGainingRegistrarId())
         .build();
   }
 
@@ -195,7 +196,7 @@ public final class ResourceTransferUtils {
     checkArgument(transferStatus.isDenied(), "Not a denial transfer status");
     return resolvePendingTransfer(resource, transferStatus, now)
         .setLastEppUpdateTime(now)
-        .setLastEppUpdateClientId(lastEppUpdateClientId)
+        .setLastEppUpdateRegistrarId(lastEppUpdateClientId)
         .build();
   }
 }

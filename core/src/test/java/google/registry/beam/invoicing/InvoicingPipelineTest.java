@@ -480,7 +480,7 @@ class InvoicingPipelineTest {
         new Cancellation()
             .asBuilder()
             .setId(1)
-            .setClientId(registrar1.getClientId())
+            .setRegistrarId(registrar1.getRegistrarId())
             .setDomainHistoryRevisionId(domainHistory.getId())
             .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
             .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
@@ -498,7 +498,7 @@ class InvoicingPipelineTest {
     Recurring recurring =
         new Recurring()
             .asBuilder()
-            .setClientId(registrar1.getClientId())
+            .setRegistrarId(registrar1.getRegistrarId())
             .setRecurrenceEndTime(END_OF_TIME)
             .setId(1)
             .setParent(domainHistoryRecurring)
@@ -523,7 +523,7 @@ class InvoicingPipelineTest {
         new Cancellation()
             .asBuilder()
             .setId(2)
-            .setClientId(registrar1.getClientId())
+            .setRegistrarId(registrar1.getRegistrarId())
             .setDomainHistoryRevisionId(domainHistoryRecurring.getId())
             .setEventTime(DateTime.parse("2017-10-05T00:00:00.0Z"))
             .setBillingTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
@@ -541,7 +541,7 @@ class InvoicingPipelineTest {
             .setType(HistoryEntry.Type.DOMAIN_RENEW)
             .setModificationTime(DateTime.parse("2017-10-04T00:00:00.0Z"))
             .setDomain(domainBase)
-            .setClientId(registrar.getClientId())
+            .setRegistrarId(registrar.getRegistrarId())
             .build();
     return persistResource(domainHistory);
   }
@@ -575,7 +575,7 @@ class InvoicingPipelineTest {
             .setId(id)
             .setBillingTime(billingTime)
             .setEventTime(eventTime)
-            .setClientId(registrar.getClientId())
+            .setRegistrarId(registrar.getRegistrarId())
             .setReason(reason)
             .setTargetId(domainBase.getDomainName())
             .setDomainRepoId("REPO-ID")

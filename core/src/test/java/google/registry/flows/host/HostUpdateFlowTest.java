@@ -125,14 +125,14 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     DateTime transferExpirationTime = now.minusDays(1);
     return newDomainBase(domainName)
         .asBuilder()
-        .setPersistedCurrentSponsorClientId("TheRegistrar")
+        .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .addStatusValue(StatusValue.PENDING_TRANSFER)
         .setTransferData(
             new DomainTransferData.Builder()
                 .setTransferStatus(TransferStatus.PENDING)
-                .setGainingClientId("NewRegistrar")
+                .setGainingRegistrarId("NewRegistrar")
                 .setTransferRequestTime(requestTime)
-                .setLosingClientId("TheRegistrar")
+                .setLosingRegistrarId("TheRegistrar")
                 .setPendingTransferExpirationTime(transferExpirationTime)
                 .build())
         .build();
@@ -239,7 +239,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .and()
         .hasSuperordinateDomain(domain.createVKey())
         .and()
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(null)
         .and()
@@ -250,7 +250,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
 
   @TestOfyAndSql
   void testSuccess_nameUnchanged_superordinateDomainWasTransferred() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     setEppInput("host_update_name_unchanged.xml");
     createTld("tld");
     // Create a domain that will belong to NewRegistrar after cloneProjectedAtTime is called.
@@ -265,7 +265,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .and()
         .hasSuperordinateDomain(domain.createVKey())
         .and()
-        .hasPersistedCurrentSponsorClientId("NewRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("NewRegistrar")
         .and()
         .hasLastTransferTime(domain.getTransferData().getPendingTransferExpirationTime())
         .and()
@@ -300,7 +300,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .and()
         .hasLastSuperordinateChange(oldHost.getLastSuperordinateChange())
         .and()
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(oneDayAgo);
     DomainBase reloadedDomain = loadByEntity(domain).cloneProjectedAtTime(now);
@@ -334,7 +334,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .and()
         .hasLastSuperordinateChange(now)
         .and()
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
     assertThat(loadByEntity(foo).cloneProjectedAtTime(now).getSubordinateHosts()).isEmpty();
@@ -370,7 +370,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .and()
         .hasLastSuperordinateChange(now)
         .and()
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
     DomainBase reloadedFooDomain = loadByEntity(fooDomain).cloneProjectedAtTime(now);
@@ -396,13 +396,13 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
                 .asBuilder()
                 .setSubordinateHosts(ImmutableSet.of(oldHostName()))
                 .build());
-    assertThat(domain.getCurrentSponsorClientId()).isEqualTo("TheRegistrar");
+    assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("TheRegistrar");
     DateTime oneDayAgo = clock.nowUtc().minusDays(1);
     HostResource oldHost =
         persistResource(
             persistActiveSubordinateHost(oldHostName(), domain)
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId("Superseded")
+                .setPersistedCurrentSponsorRegistrarId("Superseded")
                 .setLastTransferTime(oneDayAgo)
                 .build());
     assertThat(oldHost.isSubordinate()).isTrue();
@@ -412,7 +412,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .that(renamedHost)
         .hasSuperordinateDomain(null)
         .and()
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(oneDayAgo)
         .and()
@@ -451,7 +451,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .and()
         .hasLastSuperordinateChange(now)
         .and()
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
     assertThat(loadByEntity(domain).cloneProjectedAtTime(now).getSubordinateHosts())
@@ -478,7 +478,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         .and()
         .hasLastSuperordinateChange(null)
         .and()
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
     assertNoDnsTasksEnqueued();
@@ -497,7 +497,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
     assertAboutHosts()
         .that(reloadResourceByForeignKey())
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(null)
         .and()
@@ -538,7 +538,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     HostResource renamedHost = doSuccessfulTest();
     assertAboutHosts()
         .that(renamedHost)
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(lastTransferTime);
   }
@@ -577,7 +577,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     HostResource renamedHost = doSuccessfulTest();
     assertAboutHosts()
         .that(renamedHost)
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(lastTransferTime);
   }
@@ -613,7 +613,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     HostResource renamedHost = doSuccessfulTest();
     assertAboutHosts()
         .that(renamedHost)
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(lastTransferTime);
   }
@@ -645,7 +645,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     HostResource renamedHost = doSuccessfulTest();
     assertAboutHosts()
         .that(renamedHost)
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(lastTransferTime);
   }
@@ -677,7 +677,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     HostResource renamedHost = doSuccessfulTest();
     assertAboutHosts()
         .that(renamedHost)
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(null);
   }
@@ -712,7 +712,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     // update, not what it is later changed to.
     assertAboutHosts()
         .that(renamedHost)
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(lastTransferTime)
         .and()
@@ -751,7 +751,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     // superordinate domain.
     assertAboutHosts()
         .that(renamedHost)
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(lastTransferTime);
   }
@@ -785,7 +785,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     // was transferred more recently than the last time the host's superordinate domain was changed.
     assertAboutHosts()
         .that(renamedHost)
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(domain.getLastTransferTime());
   }
@@ -805,7 +805,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     HostResource renamedHost = doSuccessfulTestAsSuperuser();
     assertAboutHosts()
         .that(renamedHost)
-        .hasPersistedCurrentSponsorClientId("TheRegistrar")
+        .hasPersistedCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasLastTransferTime(hostTransferTime);
   }
@@ -1096,7 +1096,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
 
   @TestOfyAndSql
   void testFailure_unauthorizedClient() {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveHost("ns1.example.tld");
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1104,7 +1104,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
 
   @TestOfyAndSql
   void testSuccess_superuserUnauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveHost(oldHostName());
 
     clock.advanceOneMilli();
@@ -1114,18 +1114,18 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
 
   @TestOfyAndSql
   void testSuccess_authorizedClientReadFromSuperordinate() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
     DomainBase domain =
         persistResource(
             newDomainBase("example.tld")
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId("NewRegistrar")
+                .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                 .build());
     persistResource(
         newHostResource("ns1.example.tld")
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("TheRegistrar") // Shouldn't hurt.
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar") // Shouldn't hurt.
             .setSuperordinateDomain(domain.createVKey())
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
             .build());
@@ -1136,18 +1136,18 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
 
   @TestOfyAndSql
   void testFailure_unauthorizedClientReadFromSuperordinate() {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
     DomainBase domain =
         persistResource(
             newDomainBase("example.tld")
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId("TheRegistrar")
+                .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
                 .build());
     persistResource(
         newHostResource("ns1.example.tld")
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("NewRegistrar") // Shouldn't help.
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar") // Shouldn't help.
             .setSuperordinateDomain(domain.createVKey())
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
             .build());
@@ -1158,14 +1158,14 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
 
   @TestOfyAndSql
   void testSuccess_authorizedClientReadFromTransferredSuperordinate() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
     // Create a domain that will belong to NewRegistrar after cloneProjectedAtTime is called.
     DomainBase domain = persistResource(createDomainWithServerApprovedTransfer("example.tld"));
     persistResource(
         newHostResource("ns1.example.tld")
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("TheRegistrar") // Shouldn't hurt.
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar") // Shouldn't hurt.
             .setSuperordinateDomain(domain.createVKey())
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
             .build());
@@ -1176,14 +1176,14 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
 
   @TestOfyAndSql
   void testFailure_unauthorizedClientReadFromTransferredSuperordinate() {
-    sessionMetadata.setClientId("TheRegistrar");
+    sessionMetadata.setRegistrarId("TheRegistrar");
     createTld("tld");
     // Create a domain that will belong to NewRegistrar after cloneProjectedAtTime is called.
     DomainBase domain = persistResource(createDomainWithServerApprovedTransfer("example.tld"));
     persistResource(
         newHostResource("ns1.example.tld")
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("TheRegistrar") // Shouldn't help.
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar") // Shouldn't help.
             .setSuperordinateDomain(domain.createVKey())
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
             .build());
@@ -1196,17 +1196,17 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
   void testFailure_newSuperordinateOwnedByDifferentRegistrar() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
-    sessionMetadata.setClientId("TheRegistrar");
+    sessionMetadata.setRegistrarId("TheRegistrar");
     createTld("foo");
     createTld("tld");
     persistResource(
         newDomainBase("example.tld")
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("NewRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
             .build());
     HostResource host =
         persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.foo"));
-    assertAboutHosts().that(host).hasPersistedCurrentSponsorClientId("TheRegistrar");
+    assertAboutHosts().that(host).hasPersistedCurrentSponsorRegistrarId("TheRegistrar");
 
     EppException thrown = assertThrows(HostDomainNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1216,15 +1216,15 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
   void testFailure_newSuperordinateWasTransferredToDifferentRegistrar() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
-    sessionMetadata.setClientId("TheRegistrar");
+    sessionMetadata.setRegistrarId("TheRegistrar");
     createTld("foo");
     createTld("tld");
     HostResource host =
         persistActiveSubordinateHost(oldHostName(), persistActiveDomain("example.foo"));
     // The domain will belong to NewRegistrar after cloneProjectedAtTime is called.
     DomainBase domain = persistResource(createDomainWithServerApprovedTransfer("example.tld"));
-    assertAboutDomains().that(domain).hasPersistedCurrentSponsorClientId("TheRegistrar");
-    assertAboutHosts().that(host).hasPersistedCurrentSponsorClientId("TheRegistrar");
+    assertAboutDomains().that(domain).hasPersistedCurrentSponsorRegistrarId("TheRegistrar");
+    assertAboutHosts().that(host).hasPersistedCurrentSponsorRegistrarId("TheRegistrar");
 
     EppException thrown = assertThrows(HostDomainNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -1234,7 +1234,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
   void testSuccess_newSuperordinateWasTransferredToCorrectRegistrar() throws Exception {
     setEppHostUpdateInput(
         "ns1.example.foo", "ns2.example.tld", "<host:addr ip=\"v4\">192.0.2.22</host:addr>", null);
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("foo");
     createTld("tld");
     // The domain will belong to NewRegistrar after cloneProjectedAtTime is called.
@@ -1243,14 +1243,14 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
         persistResource(
             newDomainBase("example.foo")
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId("NewRegistrar")
+                .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                 .build());
-    assertAboutDomains().that(domain).hasPersistedCurrentSponsorClientId("TheRegistrar");
+    assertAboutDomains().that(domain).hasPersistedCurrentSponsorRegistrarId("TheRegistrar");
     persistResource(
         newHostResource("ns1.example.foo")
             .asBuilder()
             .setSuperordinateDomain(superordinate.createVKey())
-            .setPersistedCurrentSponsorClientId("NewRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
             .build());
 
     clock.advanceOneMilli();

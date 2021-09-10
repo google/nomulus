@@ -127,7 +127,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
         .and()
         .hasPeriodYears(2)
         .and()
-        .hasClientId("TheRegistrar")
+        .hasRegistrarId("TheRegistrar")
         .and()
         .bySuperuser(true)
         .and()
@@ -141,7 +141,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(domain.getDomainName())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(newExpirationTime)
             .build());
     assertPollMessagesEqual(
@@ -149,7 +149,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
         ImmutableSet.of(
             new PollMessage.OneTime.Builder()
                 .setParent(synthetic)
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setMsg(
                     "Domain foo.tld was unrenewed by 2 years; "
                         + "now expires at 2019-12-06T13:55:01.001Z.")
@@ -158,7 +158,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
             new PollMessage.Autorenew.Builder()
                 .setParent(synthetic)
                 .setTargetId("foo.tld")
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setEventTime(newExpirationTime)
                 .setMsg("Domain was auto-renewed.")
                 .build()));
@@ -168,7 +168,7 @@ public class UnrenewDomainCommandTest extends CommandTestCase<UnrenewDomainComma
         .isEqualTo(Key.create(synthetic));
     assertThat(domain.getRegistrationExpirationTime()).isEqualTo(newExpirationTime);
     assertThat(domain.getLastEppUpdateTime()).isEqualTo(unrenewTime);
-    assertThat(domain.getLastEppUpdateClientId()).isEqualTo("TheRegistrar");
+    assertThat(domain.getLastEppUpdateRegistrarId()).isEqualTo("TheRegistrar");
   }
 
   @TestOfyAndSql

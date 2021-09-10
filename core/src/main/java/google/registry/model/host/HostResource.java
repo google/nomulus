@@ -70,16 +70,16 @@ public class HostResource extends HostBase
     }
 
     public Builder copyFrom(HostBase hostBase) {
-      return this.setCreationClientId(hostBase.getCreationClientId())
+      return this.setCreationRegistrarId(hostBase.getCreationRegistrarId())
           .setCreationTime(hostBase.getCreationTime())
           .setDeletionTime(hostBase.getDeletionTime())
           .setHostName(hostBase.getHostName())
           .setInetAddresses(hostBase.getInetAddresses())
           .setLastTransferTime(hostBase.getLastTransferTime())
           .setLastSuperordinateChange(hostBase.getLastSuperordinateChange())
-          .setLastEppUpdateClientId(hostBase.getLastEppUpdateClientId())
+          .setLastEppUpdateRegistrarId(hostBase.getLastEppUpdateRegistrarId())
           .setLastEppUpdateTime(hostBase.getLastEppUpdateTime())
-          .setPersistedCurrentSponsorClientId(hostBase.getPersistedCurrentSponsorClientId())
+          .setPersistedCurrentSponsorRegistrarId(hostBase.getPersistedCurrentSponsorRegistrarId())
           .setRepoId(hostBase.getRepoId())
           .setSuperordinateDomain(hostBase.getSuperordinateDomain())
           .setStatusValues(hostBase.getStatusValues());

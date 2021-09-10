@@ -207,14 +207,15 @@ public class Spec11EmailUtils {
     }
   }
 
-  private InternetAddress getEmailAddressForRegistrar(String clientId) throws MessagingException {
+  private InternetAddress getEmailAddressForRegistrar(String registrarId)
+      throws MessagingException {
     // Attempt to use the registrar's WHOIS abuse contact, then fall back to the regular address.
     Registrar registrar =
-        Registrar.loadByClientIdCached(clientId)
+        Registrar.loadByRegistrarIdCached(registrarId)
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(
-                        String.format("Could not find registrar %s", clientId)));
+                        String.format("Could not find registrar %s", registrarId)));
     return new InternetAddress(
         registrar
             .getWhoisAbuseContact()

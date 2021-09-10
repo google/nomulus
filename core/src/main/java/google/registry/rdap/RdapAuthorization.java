@@ -32,22 +32,22 @@ public abstract class RdapAuthorization extends ImmutableObject {
   public abstract Role role();
 
   /** The registrar client IDs for which access is granted (used only if the role is REGISTRAR. */
-  public abstract ImmutableSet<String> clientIds();
+  public abstract ImmutableSet<String> registrarIds();
 
-  static RdapAuthorization create(Role role, String clientId) {
-    return new AutoValue_RdapAuthorization(role, ImmutableSet.of(clientId));
+  static RdapAuthorization create(Role role, String registrarId) {
+    return new AutoValue_RdapAuthorization(role, ImmutableSet.of(registrarId));
   }
 
   static RdapAuthorization create(Role role, ImmutableSet<String> clientIds) {
     return new AutoValue_RdapAuthorization(role, clientIds);
   }
 
-  boolean isAuthorizedForClientId(String clientId) {
+  boolean isAuthorizedForRegistrar(String registrarId) {
     switch (role()) {
       case ADMINISTRATOR:
         return true;
       case REGISTRAR:
-        return clientIds().contains(clientId);
+        return registrarIds().contains(registrarId);
       default:
         return false;
     }

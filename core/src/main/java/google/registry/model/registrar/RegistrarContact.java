@@ -229,7 +229,7 @@ public class RegistrarContact extends ImmutableObject
                     .query(
                         "DELETE FROM RegistrarPoc WHERE registrarId = :registrarId AND "
                             + "emailAddress NOT IN :emailAddressesToKeep")
-                    .setParameter("registrarId", registrar.getClientId())
+                    .setParameter("registrarId", registrar.getRegistrarId())
                     .setParameter("emailAddressesToKeep", emailAddressesToKeep)
                     .executeUpdate();
               }

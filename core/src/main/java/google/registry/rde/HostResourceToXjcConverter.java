@@ -47,10 +47,11 @@ final class HostResourceToXjcConverter {
 
   /** Converts {@link HostResource} to {@link XjcRdeHost}. */
   static XjcRdeHost convertSubordinateHost(HostResource model, DomainBase superordinateDomain) {
-    XjcRdeHost bean = convertHostCommon(
-        model,
-        superordinateDomain.getCurrentSponsorClientId(),
-        model.computeLastTransferTime(superordinateDomain));
+    XjcRdeHost bean =
+        convertHostCommon(
+            model,
+            superordinateDomain.getCurrentSponsorRegistrarId(),
+            model.computeLastTransferTime(superordinateDomain));
     if (superordinateDomain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
       bean.getStatuses().add(convertStatusValue(StatusValue.PENDING_TRANSFER));
     }
@@ -60,22 +61,20 @@ final class HostResourceToXjcConverter {
   /** Converts {@link HostResource} to {@link XjcRdeHost}. */
   static XjcRdeHost convertExternalHost(HostResource model) {
     return convertHostCommon(
-        model,
-        model.getPersistedCurrentSponsorClientId(),
-        model.getLastTransferTime());
+        model, model.getPersistedCurrentSponsorRegistrarId(), model.getLastTransferTime());
   }
 
   private static XjcRdeHost convertHostCommon(
-      HostResource model, String clientId, DateTime lastTransferTime) {
+      HostResource model, String registrarId, DateTime lastTransferTime) {
     XjcRdeHost bean = new XjcRdeHost();
     bean.setName(model.getHostName());
     bean.setRoid(model.getRepoId());
     bean.setCrDate(model.getCreationTime());
     bean.setUpDate(model.getLastEppUpdateTime());
-    bean.setCrRr(RdeAdapter.convertRr(model.getCreationClientId(), null));
-    bean.setUpRr(RdeAdapter.convertRr(model.getLastEppUpdateClientId(), null));
-    bean.setCrRr(RdeAdapter.convertRr(model.getCreationClientId(), null));
-    bean.setClID(clientId);
+    bean.setCrRr(RdeAdapter.convertRr(model.getCreationRegistrarId(), null));
+    bean.setUpRr(RdeAdapter.convertRr(model.getLastEppUpdateRegistrarId(), null));
+    bean.setCrRr(RdeAdapter.convertRr(model.getCreationRegistrarId(), null));
+    bean.setClID(registrarId);
     bean.setTrDate(lastTransferTime);
     for (StatusValue status : model.getStatusValues()) {
       // TODO(b/34844887): Remove when PENDING_TRANSFER is not persisted on host resources.

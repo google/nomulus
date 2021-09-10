@@ -272,7 +272,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
                   DeletedItemHandling.EXCLUDE,
                   rdapResultSetMaxSize + 1);
           if (!rdapAuthorization.role().equals(Role.ADMINISTRATOR)) {
-            query = query.filter("currentSponsorClientId in", rdapAuthorization.clientIds());
+            query = query.filter("currentSponsorClientId in", rdapAuthorization.registrarIds());
           }
           resultSet = getMatchingResources(query, false, rdapResultSetMaxSize + 1);
         } else {
@@ -290,7 +290,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
                         if (!rdapAuthorization.role().equals(Role.ADMINISTRATOR)) {
                           builder =
                               builder.whereFieldIsIn(
-                                  "currentSponsorClientId", rdapAuthorization.clientIds());
+                                  "currentSponsorClientId", rdapAuthorization.registrarIds());
                         }
                         return getMatchingResourcesSql(builder, false, rdapResultSetMaxSize + 1);
                       });

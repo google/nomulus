@@ -41,7 +41,7 @@ public class EppMetricSubject extends Subject {
   }
 
   public And<EppMetricSubject> hasClientId(String clientId) {
-    return hasValue(clientId, actual.getClientId(), "getClientId()");
+    return hasValue(clientId, actual.getRegistrarId(), "getClientId()");
   }
 
   public And<EppMetricSubject> hasCommandName(String commandName) {

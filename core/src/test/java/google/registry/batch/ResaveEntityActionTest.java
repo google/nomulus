@@ -109,10 +109,10 @@ public class ResaveEntityActionTest {
             DateTime.parse("2016-02-11T10:00:00Z"),
             DateTime.parse("2017-01-02T10:11:00Z"));
     clock.advanceOneMilli();
-    assertThat(domain.getCurrentSponsorClientId()).isEqualTo("TheRegistrar");
+    assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("TheRegistrar");
     runAction(Key.create(domain), DateTime.parse("2016-02-06T10:00:01Z"), ImmutableSortedSet.of());
     DomainBase resavedDomain = loadByEntity(domain);
-    assertThat(resavedDomain.getCurrentSponsorClientId()).isEqualTo("NewRegistrar");
+    assertThat(resavedDomain.getCurrentSponsorRegistrarId()).isEqualTo("NewRegistrar");
     verify(response).setPayload("Entity re-saved.");
   }
 

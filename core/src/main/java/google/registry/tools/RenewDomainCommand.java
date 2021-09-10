@@ -71,7 +71,7 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
       setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
       DomainBase domain = domainOptional.get();
       addSoyRecord(
-          isNullOrEmpty(clientId) ? domain.getCurrentSponsorClientId() : clientId,
+          isNullOrEmpty(clientId) ? domain.getCurrentSponsorRegistrarId() : clientId,
           new SoyMapData(
               "domainName", domain.getDomainName(),
               "expirationDate", domain.getRegistrationExpirationTime().toString(DATE_FORMATTER),

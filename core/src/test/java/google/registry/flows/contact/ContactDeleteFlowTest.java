@@ -203,7 +203,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
 
   @TestOfyAndSql
   void testFailure_unauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -211,7 +211,7 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
 
   @TestOfyAndSql
   void testSuccess_superuserUnauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     if (tm().isOfy()) {
@@ -243,11 +243,11 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     assertIcannReportingActivityFieldLogged("srs-cont-delete");
   }
 
-  private void assertOfyDeleteSuccess(String clientId, String clientTrid, boolean isSuperuser)
+  private void assertOfyDeleteSuccess(String registrarId, String clientTrid, boolean isSuperuser)
       throws Exception {
     ContactResource deletedContact = reloadResourceByForeignKey();
     assertAsyncDeletionTaskEnqueued(
-        deletedContact, clientId, Trid.create(clientTrid, "server-trid"), isSuperuser);
+        deletedContact, registrarId, Trid.create(clientTrid, "server-trid"), isSuperuser);
     assertAboutContacts()
         .that(deletedContact)
         .hasStatusValue(StatusValue.PENDING_DELETE)

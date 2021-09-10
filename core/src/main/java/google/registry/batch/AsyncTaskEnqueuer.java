@@ -126,18 +126,18 @@ public final class AsyncTaskEnqueuer {
   public void enqueueAsyncDelete(
       EppResource resourceToDelete,
       DateTime now,
-      String requestingClientId,
+      String requestingRegistrarId,
       Trid trid,
       boolean isSuperuser) {
     Key<EppResource> resourceKey = Key.create(resourceToDelete);
     logger.atInfo().log(
         "Enqueuing async deletion of %s on behalf of registrar %s.",
-        resourceKey, requestingClientId);
+        resourceKey, requestingRegistrarId);
     TaskOptions task =
         TaskOptions.Builder.withMethod(Method.PULL)
             .countdownMillis(asyncDeleteDelay.getMillis())
             .param(PARAM_RESOURCE_KEY, resourceKey.getString())
-            .param(PARAM_REQUESTING_CLIENT_ID, requestingClientId)
+            .param(PARAM_REQUESTING_CLIENT_ID, requestingRegistrarId)
             .param(PARAM_SERVER_TRANSACTION_ID, trid.getServerTransactionId())
             .param(PARAM_IS_SUPERUSER, Boolean.toString(isSuperuser))
             .param(PARAM_REQUESTED_TIME, now.toString());

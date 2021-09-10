@@ -282,7 +282,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.CREATE)
             .setTargetId(getUniqueIdFromCommand())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setCost(creationCost)
             .setPeriodYears(2)
             .setEventTime(clock.nowUtc())
@@ -297,7 +297,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(getUniqueIdFromCommand())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setRecurrenceEndTime(END_OF_TIME)
             .setParent(historyEntry)
@@ -313,7 +313,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
           new BillingEvent.OneTime.Builder()
               .setReason(Reason.FEE_EARLY_ACCESS)
               .setTargetId(getUniqueIdFromCommand())
-              .setClientId("TheRegistrar")
+              .setRegistrarId("TheRegistrar")
               .setPeriodYears(1)
               .setCost(eapFee)
               .setEventTime(clock.nowUtc())
@@ -328,7 +328,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         domain,
         new PollMessage.Autorenew.Builder()
             .setTargetId(domain.getDomainName())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")
             .setParent(historyEntry)
@@ -1082,7 +1082,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
     persistResource(
         newDomainBase(targetId)
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("NewRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
             .build());
     ResourceCreateContentionException thrown =
         assertThrows(ResourceCreateContentionException.class, this::runFlow);
@@ -1591,7 +1591,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         domain,
         new PollMessage.Autorenew.Builder()
             .setTargetId(domain.getDomainName())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")
             .setParent(historyEntry)
@@ -1599,7 +1599,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new PollMessage.OneTime.Builder()
             .setParent(historyEntry)
             .setEventTime(domain.getCreationTime())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setMsg(DomainFlowUtils.COLLISION_MESSAGE)
             .setResponseData(
                 ImmutableList.of(
@@ -1746,7 +1746,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         domain,
         new PollMessage.Autorenew.Builder()
             .setTargetId(domain.getDomainName())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setMsg("Domain was auto-renewed.")
             .setParent(historyEntry)
@@ -1754,7 +1754,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
         new PollMessage.OneTime.Builder()
             .setParent(historyEntry)
             .setEventTime(domain.getCreationTime())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setMsg("Custom logic was triggered")
             .setId(1L)
             .build());
@@ -1978,7 +1978,7 @@ class DomainCreateFlowTest extends ResourceFlowTestCase<DomainCreateFlow, Domain
   private void doFailingTest_invalidRegistrarState(State registrarState) {
     persistContactsAndHosts();
     persistResource(
-        Registrar.loadByClientId("TheRegistrar")
+        Registrar.loadByRegistrarId("TheRegistrar")
             .get()
             .asBuilder()
             .setState(registrarState)

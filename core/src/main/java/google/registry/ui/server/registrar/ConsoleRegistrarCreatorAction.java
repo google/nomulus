@@ -203,7 +203,7 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
           optionalPasscode.orElse(passcodeGenerator.createString(PASSCODE_LENGTH));
       Registrar registrar =
           new Registrar.Builder()
-              .setClientId(clientId.get())
+              .setRegistrarId(clientId.get())
               .setRegistrarName(name.get())
               .setBillingAccountMap(parseBillingAccount(billingAccount.get()))
               .setIanaIdentifier(Long.valueOf(ianaId.get()))
@@ -237,9 +237,9 @@ public final class ConsoleRegistrarCreatorAction extends HtmlAction {
       tm().transact(
               () -> {
                 checkState(
-                    !Registrar.loadByClientId(registrar.getClientId()).isPresent(),
+                    !Registrar.loadByRegistrarId(registrar.getRegistrarId()).isPresent(),
                     "Registrar with client ID %s already exists",
-                    registrar.getClientId());
+                    registrar.getRegistrarId());
                 tm().putAll(registrar, contact);
               });
       data.put("password", password);

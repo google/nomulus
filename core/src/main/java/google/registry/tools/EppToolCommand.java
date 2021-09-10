@@ -101,7 +101,7 @@ abstract class EppToolCommand extends ConfirmingCommand
 
   protected void addXmlCommand(String clientId, String xml) {
     checkArgumentPresent(
-        Registrar.loadByClientId(clientId), "Registrar with client ID %s not found", clientId);
+        Registrar.loadByRegistrarId(clientId), "Registrar with client ID %s not found", clientId);
     commands.add(new XmlEppParameters(clientId, xml));
   }
 

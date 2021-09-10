@@ -351,10 +351,12 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
   @Test
   void testFailure_registrarExists() {
-    Registrar registrar = loadRegistrar("TheRegistrar").asBuilder()
-        .setClientId("blobio-1")
-        .setRegistrarName("blobio-1")
-        .build();
+    Registrar registrar =
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setRegistrarId("blobio-1")
+            .setRegistrarName("blobio-1")
+            .build();
     persistResource(registrar);
     IllegalStateException thrown =
         assertThrows(
@@ -370,10 +372,12 @@ class SetupOteCommandTest extends CommandTestCase<SetupOteCommand> {
 
   @Test
   void testSuccess_registrarExists_replaceExisting() throws Exception {
-    Registrar registrar = loadRegistrar("TheRegistrar").asBuilder()
-        .setClientId("blobio-1")
-        .setRegistrarName("blobio-1")
-        .build();
+    Registrar registrar =
+        loadRegistrar("TheRegistrar")
+            .asBuilder()
+            .setRegistrarId("blobio-1")
+            .setRegistrarName("blobio-1")
+            .build();
     persistResource(registrar);
 
     runCommandForced(

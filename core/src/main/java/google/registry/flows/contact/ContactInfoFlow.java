@@ -14,7 +14,7 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceOwnership;
 import static google.registry.model.EppResourceUtils.isLinked;
@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.annotations.ReportingSpec;
@@ -54,7 +54,7 @@ public final class ContactInfoFlow implements Flow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Clock clock;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject Optional<AuthInfo> authInfo;
   @Inject @Superuser boolean isSuperuser;
@@ -67,13 +67,13 @@ public final class ContactInfoFlow implements Flow {
   public final EppResponse run() throws EppException {
     DateTime now = clock.nowUtc();
     extensionManager.validate(); // There are no legal extensions for this flow.
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     ContactResource contact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     if (!isSuperuser) {
-      verifyResourceOwnership(clientId, contact);
+      verifyResourceOwnership(registrarId, contact);
     }
     boolean includeAuthInfo =
-        clientId.equals(contact.getCurrentSponsorClientId()) || authInfo.isPresent();
+        registrarId.equals(contact.getCurrentSponsorRegistrarId()) || authInfo.isPresent();
     ImmutableSet.Builder<StatusValue> statusValues = new ImmutableSet.Builder<>();
     statusValues.addAll(contact.getStatusValues());
     if (isLinked(contact.createVKey(), now)) {
@@ -89,10 +89,10 @@ public final class ContactInfoFlow implements Flow {
                 .setVoiceNumber(contact.getVoiceNumber())
                 .setFaxNumber(contact.getFaxNumber())
                 .setEmailAddress(contact.getEmailAddress())
-                .setCurrentSponsorClientId(contact.getCurrentSponsorClientId())
-                .setCreationClientId(contact.getCreationClientId())
+                .setCurrentSponsorClientId(contact.getCurrentSponsorRegistrarId())
+                .setCreationClientId(contact.getCreationRegistrarId())
                 .setCreationTime(contact.getCreationTime())
-                .setLastEppUpdateClientId(contact.getLastEppUpdateClientId())
+                .setLastEppUpdateClientId(contact.getLastEppUpdateRegistrarId())
                 .setLastEppUpdateTime(contact.getLastEppUpdateTime())
                 .setLastTransferTime(contact.getLastTransferTime())
                 .setAuthInfo(includeAuthInfo ? contact.getAuthInfo() : null)

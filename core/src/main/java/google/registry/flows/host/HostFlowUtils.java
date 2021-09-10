@@ -105,11 +105,11 @@ public class HostFlowUtils {
     }
   }
 
-  /** Ensure that the superordinate domain is sponsored by the provided clientId. */
-  static void verifySuperordinateDomainOwnership(
-      String clientId, DomainBase superordinateDomain) throws EppException {
+  /** Ensure that the superordinate domain is sponsored by the provided registrar ID. */
+  static void verifySuperordinateDomainOwnership(String registrarId, DomainBase superordinateDomain)
+      throws EppException {
     if (superordinateDomain != null
-        && !clientId.equals(superordinateDomain.getCurrentSponsorClientId())) {
+        && !registrarId.equals(superordinateDomain.getCurrentSponsorRegistrarId())) {
       throw new HostDomainNotOwnedException();
     }
   }

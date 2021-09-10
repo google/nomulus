@@ -85,7 +85,8 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
   void beforeEachDomainTransferFlowTestCase() {
     // Registrar ClientZ is used in tests that need another registrar that definitely doesn't own
     // the resources in question.
-    persistResource(AppEngineExtension.makeRegistrar1().asBuilder().setClientId("ClientZ").build());
+    persistResource(
+        AppEngineExtension.makeRegistrar1().asBuilder().setRegistrarId("ClientZ").build());
   }
 
   static DomainBase persistWithPendingTransfer(DomainBase domain) {
@@ -113,8 +114,8 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
             new HostResource.Builder()
                 .setRepoId("2-".concat(Ascii.toUpperCase(tld)))
                 .setHostName("ns1." + label + "." + tld)
-                .setPersistedCurrentSponsorClientId("TheRegistrar")
-                .setCreationClientId("TheRegistrar")
+                .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+                .setCreationRegistrarId("TheRegistrar")
                 .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
                 .setSuperordinateDomain(domain.createVKey())
                 .build());
@@ -139,7 +140,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())
-        .setClientId("TheRegistrar")
+        .setRegistrarId("TheRegistrar")
         .setEventTime(REGISTRATION_EXPIRATION_TIME)
         .setRecurrenceEndTime(TRANSFER_EXPIRATION_TIME)
         .setParent(historyEntryDomainCreate)
@@ -152,7 +153,7 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())
-        .setClientId("NewRegistrar")
+        .setRegistrarId("NewRegistrar")
         .setEventTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)
         .setRecurrenceEndTime(END_OF_TIME)
         .setParent(
@@ -163,9 +164,11 @@ abstract class DomainTransferFlowTestCase<F extends Flow, R extends EppResource>
 
   void assertTransferFailed(
       DomainBase domain, TransferStatus status, TransferData oldTransferData) {
-    assertAboutDomains().that(domain)
-        .doesNotHaveStatusValue(StatusValue.PENDING_TRANSFER).and()
-        .hasCurrentSponsorClientId("TheRegistrar");
+    assertAboutDomains()
+        .that(domain)
+        .doesNotHaveStatusValue(StatusValue.PENDING_TRANSFER)
+        .and()
+        .hasCurrentSponsorRegistrarId("TheRegistrar");
     // The domain TransferData should reflect the failed transfer as we expect, with
     // all the speculative server-approve fields nulled out.
     assertThat(domain.getTransferData())

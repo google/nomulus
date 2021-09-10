@@ -157,7 +157,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         new DomainHistory.Builder()
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setModificationTime(clock.nowUtc())
-            .setClientId(domain.getCreationClientId())
+            .setRegistrarId(domain.getCreationRegistrarId())
             .setDomain(domain)
             .build());
     clock.advanceOneMilli();
@@ -181,7 +181,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         new DomainHistory.Builder()
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setModificationTime(clock.nowUtc())
-            .setClientId(domain.getCreationClientId())
+            .setRegistrarId(domain.getCreationRegistrarId())
             .setDomain(domain)
             .build());
     clock.advanceOneMilli();
@@ -681,7 +681,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
           new BillingEvent.OneTime.Builder()
               .setReason(Reason.SERVER_STATUS)
               .setTargetId("example.tld")
-              .setClientId("TheRegistrar")
+              .setRegistrarId("TheRegistrar")
               .setCost(Money.of(USD, 19))
               .setEventTime(clock.nowUtc())
               .setBillingTime(clock.nowUtc())
@@ -1035,7 +1035,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
 
   @TestOfyAndSql
   void testFailure_unauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistReferencedEntities();
     persistDomain();
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
@@ -1044,7 +1044,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
 
   @TestOfyAndSql
   void testSuccess_superuserUnauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistReferencedEntities();
     persistDomain();
     clock.advanceOneMilli();

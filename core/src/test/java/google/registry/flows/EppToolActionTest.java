@@ -29,7 +29,7 @@ class EppToolActionTest {
 
   private void doTest(boolean isDryRun, boolean isSuperuser) {
     EppToolAction action = new EppToolAction();
-    action.clientId = "ClientIdentifier";
+    action.registrarId = "ClientIdentifier";
     action.isDryRun = isDryRun;
     action.isSuperuser = isSuperuser;
     action.eppRequestHandler = mock(EppRequestHandler.class);
@@ -43,7 +43,7 @@ class EppToolActionTest {
         eq(isDryRun),
         eq(isSuperuser),
         eq(action.xml.getBytes(UTF_8)));
-    assertThat(captor.getValue().getClientId()).isEqualTo("ClientIdentifier");
+    assertThat(captor.getValue().getRegistrarId()).isEqualTo("ClientIdentifier");
   }
 
   @Test

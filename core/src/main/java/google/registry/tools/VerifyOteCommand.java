@@ -16,7 +16,7 @@ package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
-import static google.registry.model.registrar.Registrar.loadByClientId;
+import static google.registry.model.registrar.Registrar.loadByRegistrarId;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameter;
@@ -80,12 +80,12 @@ final class VerifyOteCommand implements CommandWithConnection, CommandWithRemote
     checkArgument(
         mainParameters.isEmpty() == checkAll,
         "Must provide at least one registrar name, or supply --check_all with no names.");
-    for (String clientId : mainParameters) {
+    for (String registrarId : mainParameters) {
       // OT&E registrars are created with clientIDs of registrarName-[1-4], but this command is
       // passed registrarName.  So check the existence of the first persisted registrar to see if
       // the input is valid.
       checkArgumentPresent(
-          loadByClientId(clientId + "-1"), "Registrar %s does not exist.", clientId);
+          loadByRegistrarId(registrarId + "-1"), "Registrar %s does not exist.", registrarId);
     }
     Collection<String> registrars =
         mainParameters.isEmpty() ? getAllRegistrarNames() : mainParameters;
@@ -116,7 +116,7 @@ final class VerifyOteCommand implements CommandWithConnection, CommandWithRemote
               if (!registrar.isLive()) {
                 return null;
               }
-              String name = registrar.getClientId();
+              String name = registrar.getRegistrarId();
               // Look for names of the form "regname-1", "regname-2", etc. and strip the -# suffix.
               String replacedName = name.replaceFirst("^(.*)-[1234]$", "$1");
               // Check if any replacement happened, and thus whether the name matches the format.

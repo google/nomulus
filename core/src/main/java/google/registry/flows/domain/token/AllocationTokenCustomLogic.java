@@ -36,7 +36,7 @@ public class AllocationTokenCustomLogic {
       DomainCommand.Create command,
       AllocationToken token,
       Registry registry,
-      String clientId,
+      String registrarId,
       DateTime now)
       throws EppException {
     // Do nothing.
@@ -47,7 +47,7 @@ public class AllocationTokenCustomLogic {
   public ImmutableMap<InternetDomainName, String> checkDomainsWithToken(
       ImmutableList<InternetDomainName> domainNames,
       AllocationToken token,
-      String clientId,
+      String registrarId,
       DateTime now) {
     // Do nothing.
     return Maps.toMap(domainNames, k -> "");

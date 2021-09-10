@@ -60,7 +60,7 @@ final class DeleteTldCommand extends ConfirmingCommand implements CommandWithRem
       checkState(
           !registrar.getAllowedTlds().contains(tld),
           "Cannot delete TLD because registrar %s lists it as an allowed TLD",
-          registrar.getClientId());
+          registrar.getRegistrarId());
     }
     checkState(!tldContainsDomains(tld), "Cannot delete TLD because a domain is defined on it");
   }

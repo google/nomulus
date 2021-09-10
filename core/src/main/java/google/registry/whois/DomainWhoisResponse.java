@@ -74,11 +74,11 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
   @Override
   public WhoisResponseResults getResponse(final boolean preferUnicode, String disclaimer) {
     Optional<Registrar> registrarOptional =
-        Registrar.loadByClientIdCached(domain.getCurrentSponsorClientId());
+        Registrar.loadByRegistrarIdCached(domain.getCurrentSponsorRegistrarId());
     checkState(
         registrarOptional.isPresent(),
         "Could not load registrar %s",
-        domain.getCurrentSponsorClientId());
+        domain.getCurrentSponsorRegistrarId());
     Registrar registrar = registrarOptional.get();
     Optional<RegistrarContact> abuseContact =
         registrar

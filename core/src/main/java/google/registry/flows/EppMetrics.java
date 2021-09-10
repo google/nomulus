@@ -88,7 +88,7 @@ public class EppMetrics {
     String eppStatusCode =
         metric.getStatus().isPresent() ? String.valueOf(metric.getStatus().get().code) : "";
     eppRequestsByRegistrar.increment(
-        metric.getCommandName().orElse(""), metric.getClientId().orElse(""), eppStatusCode);
+        metric.getCommandName().orElse(""), metric.getRegistrarId().orElse(""), eppStatusCode);
     eppRequestsByTld.increment(
         metric.getCommandName().orElse(""), metric.getTld().orElse(""), eppStatusCode);
   }

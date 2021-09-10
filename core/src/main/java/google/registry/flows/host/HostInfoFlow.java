@@ -14,7 +14,7 @@
 
 package google.registry.flows.host;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
 import static google.registry.model.EppResourceUtils.isLinked;
@@ -25,7 +25,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.domain.DomainBase;
@@ -53,7 +53,7 @@ import org.joda.time.DateTime;
 public final class HostInfoFlow implements Flow {
 
   @Inject ExtensionManager extensionManager;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject Clock clock;
   @Inject EppResponse.Builder responseBuilder;
@@ -62,7 +62,7 @@ public final class HostInfoFlow implements Flow {
   @Override
   public EppResponse run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     validateHostName(targetId);
     DateTime now = clock.nowUtc();
     HostResource host = loadAndVerifyExistence(HostResource.class, targetId, now);
@@ -80,14 +80,14 @@ public final class HostInfoFlow implements Flow {
           transactIfJpaTm(
               () -> tm().loadByKey(host.getSuperordinateDomain()).cloneProjectedAtTime(now));
       hostInfoDataBuilder
-          .setCurrentSponsorClientId(superordinateDomain.getCurrentSponsorClientId())
+          .setCurrentSponsorClientId(superordinateDomain.getCurrentSponsorRegistrarId())
           .setLastTransferTime(host.computeLastTransferTime(superordinateDomain));
       if (superordinateDomain.getStatusValues().contains(StatusValue.PENDING_TRANSFER)) {
         statusValues.add(StatusValue.PENDING_TRANSFER);
       }
     } else {
       hostInfoDataBuilder
-          .setCurrentSponsorClientId(host.getPersistedCurrentSponsorClientId())
+          .setCurrentSponsorClientId(host.getPersistedCurrentSponsorRegistrarId())
           .setLastTransferTime(host.getLastTransferTime());
     }
     return responseBuilder
@@ -97,9 +97,9 @@ public final class HostInfoFlow implements Flow {
                 .setRepoId(host.getRepoId())
                 .setStatusValues(statusValues.build())
                 .setInetAddresses(host.getInetAddresses())
-                .setCreationClientId(host.getCreationClientId())
+                .setCreationClientId(host.getCreationRegistrarId())
                 .setCreationTime(host.getCreationTime())
-                .setLastEppUpdateClientId(host.getLastEppUpdateClientId())
+                .setLastEppUpdateClientId(host.getLastEppUpdateRegistrarId())
                 .setLastEppUpdateTime(host.getLastEppUpdateTime())
                 .build())
         .build();
