@@ -17,7 +17,6 @@ package google.registry.model;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.common.Cursor;
-import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.EntityGroupRoot;
 import google.registry.model.common.GaeUserIdConverter;
 import google.registry.model.contact.ContactHistory;
@@ -39,16 +38,12 @@ import google.registry.model.poll.PollMessage;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.replay.LastSqlTransaction;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
 import google.registry.model.tld.Registry;
-import google.registry.model.tld.label.ReservedList;
-import google.registry.model.tmch.ClaimsList;
-import google.registry.model.tmch.ClaimsList.ClaimsListRevision;
-import google.registry.model.tmch.ClaimsList.ClaimsListSingleton;
 import google.registry.model.tmch.TmchCrl;
-import google.registry.schema.replay.LastSqlTransaction;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
 public final class EntityClasses {
@@ -61,9 +56,6 @@ public final class EntityClasses {
           BillingEvent.Modification.class,
           BillingEvent.OneTime.class,
           BillingEvent.Recurring.class,
-          ClaimsList.class,
-          ClaimsListRevision.class,
-          ClaimsListSingleton.class,
           CommitLogBucket.class,
           CommitLogCheckpoint.class,
           CommitLogCheckpointRoot.class,
@@ -72,7 +64,6 @@ public final class EntityClasses {
           ContactHistory.class,
           ContactResource.class,
           Cursor.class,
-          DatabaseMigrationStateSchedule.class,
           DomainBase.class,
           DomainHistory.class,
           EntityGroupRoot.class,
@@ -94,7 +85,6 @@ public final class EntityClasses {
           Registrar.class,
           RegistrarContact.class,
           Registry.class,
-          ReservedList.class,
           ServerSecret.class,
           TmchCrl.class);
 

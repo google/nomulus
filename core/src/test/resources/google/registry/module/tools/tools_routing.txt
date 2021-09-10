@@ -1,14 +1,11 @@
 PATH                              CLASS                         METHODS  OK AUTH_METHODS MIN USER_POLICY
 /_dr/admin/createGroups           CreateGroupsAction            POST     n  INTERNAL,API APP ADMIN
-/_dr/admin/createPremiumList      CreatePremiumListAction       POST     n  INTERNAL,API APP ADMIN
-/_dr/admin/deleteEntity           DeleteEntityAction            GET      n  INTERNAL,API APP ADMIN
 /_dr/admin/list/domains           ListDomainsAction             GET,POST n  INTERNAL,API APP ADMIN
 /_dr/admin/list/hosts             ListHostsAction               GET,POST n  INTERNAL,API APP ADMIN
 /_dr/admin/list/premiumLists      ListPremiumListsAction        GET,POST n  INTERNAL,API APP ADMIN
 /_dr/admin/list/registrars        ListRegistrarsAction          GET,POST n  INTERNAL,API APP ADMIN
 /_dr/admin/list/reservedLists     ListReservedListsAction       GET,POST n  INTERNAL,API APP ADMIN
 /_dr/admin/list/tlds              ListTldsAction                GET,POST n  INTERNAL,API APP ADMIN
-/_dr/admin/updatePremiumList      UpdatePremiumListAction       POST     n  INTERNAL,API APP ADMIN
 /_dr/admin/verifyOte              VerifyOteAction               POST     n  INTERNAL,API APP ADMIN
 /_dr/epptool                      EppToolAction                 POST     n  INTERNAL,API APP ADMIN
 /_dr/loadtest                     LoadTestAction                POST     y  INTERNAL,API APP ADMIN

@@ -42,6 +42,7 @@
     <class>google.registry.model.billing.BillingEvent$OneTime</class>
     <class>google.registry.model.billing.BillingEvent$Recurring</class>
     <class>google.registry.model.common.Cursor</class>
+    <class>google.registry.model.common.DatabaseMigrationStateSchedule</class>
     <class>google.registry.model.contact.ContactHistory</class>
     <class>google.registry.model.contact.ContactResource</class>
     <class>google.registry.model.domain.DomainBase</class>
@@ -73,8 +74,8 @@
     <class>google.registry.model.tmch.ClaimsEntry</class>
     <class>google.registry.model.tmch.TmchCrl</class>
     <class>google.registry.persistence.transaction.TransactionEntity</class>
-    <class>google.registry.schema.domain.RegistryLock</class>
-    <class>google.registry.schema.replay.SqlReplayCheckpoint</class>
+    <class>google.registry.model.domain.RegistryLock</class>
+    <class>google.registry.model.replay.SqlReplayCheckpoint</class>
 
     <!-- Customized type converters -->
     <class>google.registry.persistence.converter.AllocationTokenStatusTransitionConverter</class>
@@ -85,13 +86,13 @@
     <class>google.registry.persistence.converter.CreateAutoTimestampConverter</class>
     <class>google.registry.persistence.converter.CurrencyToBillingConverter</class>
     <class>google.registry.persistence.converter.CurrencyUnitConverter</class>
+    <class>google.registry.persistence.converter.DatabaseMigrationScheduleTransitionConverter</class>
     <class>google.registry.persistence.converter.DateTimeConverter</class>
     <class>google.registry.persistence.converter.DurationConverter</class>
     <class>google.registry.persistence.converter.InetAddressSetConverter</class>
     <class>google.registry.persistence.converter.LocalDateConverter</class>
     <class>google.registry.persistence.converter.PostalInfoChoiceListConverter</class>
     <class>google.registry.persistence.converter.RegistrarPocSetConverter</class>
-    <class>google.registry.persistence.converter.ReservedListKeySetConverter</class>
     <class>google.registry.persistence.converter.Spec11ThreatMatchThreatTypeSetConverter</class>
     <class>google.registry.persistence.converter.StatusValueSetConverter</class>
     <class>google.registry.persistence.converter.StringListConverter</class>

@@ -215,6 +215,7 @@ PRESUBMITS = {
          "RdapDomainSearchAction.java",
          "RdapNameserverSearchAction.java",
          "RdapSearchActionBase.java",
+         "ReadOnlyCheckingEntityManager.java",
          "RegistryQuery",
          },
     ):

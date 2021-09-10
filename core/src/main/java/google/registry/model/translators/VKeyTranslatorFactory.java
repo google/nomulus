@@ -92,11 +92,6 @@ public class VKeyTranslatorFactory extends AbstractSimpleTranslatorFactory<VKey,
     }
   }
 
-  /** Create a VKey from a URL-safe string representation. */
-  public static VKey<?> createVKey(String urlSafe) {
-    return createVKey(com.googlecode.objectify.Key.create(urlSafe));
-  }
-
   @VisibleForTesting
   public static void addTestEntityClass(Class<?> clazz) {
     CLASS_REGISTRY.put(com.googlecode.objectify.Key.getKind(clazz), clazz);

@@ -86,9 +86,11 @@ public class TransactionManagerFactory {
     if (tmForTest.isPresent()) {
       return tmForTest.get();
     }
-    PrimaryDatabase primaryDatabase =
-        DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC)).getPrimaryDatabase();
-    return primaryDatabase.equals(PrimaryDatabase.DATASTORE) ? ofyTm() : jpaTm();
+    return DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC))
+            .getPrimaryDatabase()
+            .equals(PrimaryDatabase.DATASTORE)
+        ? ofyTm()
+        : jpaTm();
   }
 
   /**
@@ -140,5 +142,18 @@ public class TransactionManagerFactory {
   /** Resets the overridden transaction manager post-test. */
   public static void removeTmOverrideForTest() {
     tmForTest = Optional.empty();
+  }
+
+  public static void assertNotReadOnlyMode() {
+    if (DatabaseMigrationStateSchedule.getValueAtTime(DateTime.now(UTC)).isReadOnly()) {
+      throw new ReadOnlyModeException();
+    }
+  }
+
+  /** Thrown when a write is attempted when the DB is in read-only mode. */
+  public static class ReadOnlyModeException extends IllegalStateException {
+    public ReadOnlyModeException() {
+      super("Registry is currently in read-only mode");
+    }
   }
 }

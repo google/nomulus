@@ -63,7 +63,7 @@ public final class BackupTestStore implements AutoCloseable {
     this.fakeClock = fakeClock;
     this.appEngine =
         new AppEngineExtension.Builder()
-            .withDatastore()
+            .withDatastoreAndCloudSql()
             .withoutCannedData()
             .withClock(fakeClock)
             .build();

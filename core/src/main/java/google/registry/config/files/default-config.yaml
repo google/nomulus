@@ -8,6 +8,10 @@
 appEngine:
   # Globally unique App Engine project ID
   projectId: registry-project-id
+  # Location of the App engine project, note that us-central1 and europe-west1 are special in that
+  # they are used without the trailing number in App Engine commands and Google Cloud Console.
+  # See: https://cloud.google.com/appengine/docs/locations
+  locationId: registry-location-id
 
   # whether to use local/test credentials when connecting to the servers
   isLocal: true
@@ -452,12 +456,36 @@ sslCertificateValidation:
   # The minimum number of days between two successive expiring notification emails.
   expirationWarningIntervalDays: 15
   # Text for expiring certificate notification email subject.
-  expirationWarningEmailSubjectText: Certificate Expring Within 30 Days.
+  expirationWarningEmailSubjectText: "[Important] Expiring SSL certificate for Google Registry EPP connection"
   # Text for expiring certificate notification email body that accepts 3 parameters:
   # registrar name, certificate type, and expiration date, respectively.
   expirationWarningEmailBodyText: |
-    Hello Registrar %s,
-       The %s certificate is expiring on %s.
+    Dear %1$s,
+
+    We would like to inform you that your %2$s SSL certificate will expire at %3$s. Please take note that using expired certificates will prevent successful Registry login.
+
+    Kindly update your production account certificate within the support console using the following steps:
+
+      1. Navigate to support.registry.google and login using your %4$s@registry.google credentials.
+          * If this is your first time logging in, you will be prompted to reset your password, so please keep your new password safe.
+          * If you are already logged in with some other Google account(s) but not your %4$s@registry.google account, you need to click on
+          “Add Account” and login using your %4$s@registry.google credentials.
+      2. Select “Settings > Security” from the left navigation bar.
+      3. Click “Edit” on the top left corner.
+      4. Enter your full certificate string (including lines -----BEGIN CERTIFICATE----- and -----END CERTIFICATE-----) in the box.
+      5. Click “Save”. If there are validation issues with the form, you will be prompted to fix them and click “Save” again.
+
+    A failover SSL certificate can also be added in order to prevent connection issues once your main certificate expires. Connecting with either of the certificates will work with our production EPP server.
+
+    Further information about our EPP connection requirements can be found in section 9.2 in the updated Technical Guide in your Google Drive folder.
+
+    Note that account certificate changes take a few minutes to become effective and that the existing connections will remain unaffected by the change.
+
+    If you also would like to update your OT&E account certificate, please send an email from your primary or technical contact to registry-support@google.com and include the full certificate string (including lines -----BEGIN CERTIFICATE----- and -----END CERTIFICATE-----).
+
+    Regards,
+    Google Registry
+
   # The minimum number of bits an RSA key must contain.
   minimumRsaKeyLength: 2048
   # The ECDSA curves that are allowed for public keys.

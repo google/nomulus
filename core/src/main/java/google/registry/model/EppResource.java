@@ -20,6 +20,7 @@ import static com.google.common.collect.Sets.difference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.config.RegistryConfig.getEppResourceCachingDuration;
 import static google.registry.config.RegistryConfig.getEppResourceMaxCachedEntries;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.CollectionUtils.nullToEmpty;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
@@ -37,6 +38,8 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.config.RegistryConfig;
 import google.registry.model.eppcommon.StatusValue;
+import google.registry.model.index.EppResourceIndex;
+import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.transfer.TransferData;
 import google.registry.persistence.VKey;
@@ -218,6 +221,14 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
   /** Override of {@link Buildable#asBuilder} so that the extra methods are visible. */
   @Override
   public abstract Builder<?, ?> asBuilder();
+
+  /** Used when replaying from SQL to DS to populate the Datastore indexes. */
+  protected void saveIndexesToDatastore() {
+    ofyTm()
+        .putAll(
+            ForeignKeyIndex.create(this, getDeletionTime()),
+            EppResourceIndex.create(Key.create(this)));
+  }
 
   /** EppResources that are loaded via foreign keys should implement this marker interface. */
   public interface ForeignKeyedEppResource {}

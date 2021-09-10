@@ -27,7 +27,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.common.EntityGroupRoot;
-import google.registry.schema.replay.EntityTest.EntityForTesting;
+import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -38,7 +38,7 @@ public class DatastoreTransactionManagerTest {
   @RegisterExtension
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
-          .withDatastore()
+          .withDatastoreAndCloudSql()
           .withOfyTestEntities(InCrossTldTestEntity.class)
           .build();
 

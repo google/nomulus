@@ -26,6 +26,7 @@ import google.registry.model.history.DomainHistoryTest;
 import google.registry.model.history.HostHistoryTest;
 import google.registry.model.poll.PollMessageTest;
 import google.registry.model.rde.RdeRevisionTest;
+import google.registry.model.replay.SqlReplayCheckpointTest;
 import google.registry.model.reporting.Spec11ThreatMatchTest;
 import google.registry.model.server.LockTest;
 import google.registry.model.server.ServerSecretTest;
@@ -41,7 +42,6 @@ import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCo
 import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTest;
 import google.registry.schema.registrar.RegistrarDaoTest;
-import google.registry.schema.replay.SqlReplayCheckpointTest;
 import google.registry.testing.AppEngineExtension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

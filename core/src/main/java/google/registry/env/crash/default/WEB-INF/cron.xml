@@ -102,6 +102,7 @@
     <target>backend</target>
   </cron>
 
+  <!-- Disabled for sql-only tests.
   <cron>
     <url><![CDATA[/_dr/cron/commitLogCheckpoint]]></url>
     <description>
@@ -110,6 +111,7 @@
     <schedule>every 3 minutes synchronized</schedule>
     <target>backend</target>
   </cron>
+  -->
 
   <cron>
     <url><![CDATA[/_dr/task/deleteContactsAndHosts]]></url>
@@ -133,6 +135,7 @@
     <target>backend</target>
   </cron>
 
+  <!-- Disabled for sql-only tests
   <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=export-snapshot&endpoint=/_dr/task/backupDatastore&runInEmpty]]></url>
     <description>
@@ -140,16 +143,14 @@
       It also enqueues a new task to wait on the completion of that job and then load the resulting
       snapshot into bigquery.
     </description>
-    <!--
+    <!- -
       Keep google.registry.export.CheckBackupAction.MAXIMUM_BACKUP_RUNNING_TIME less than
-      this interval. -->
+      this interval. - ->
     <schedule>every day 06:00</schedule>
     <target>backend</target>
   </cron>
+  -->
 
-  <!--
-    Removed for the duration of load testing
-    TODO(b/71607184): Restore after loadtesting is done
   <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=retryable-cron-tasks&endpoint=/_dr/task/deleteProberData&runInEmpty]]></url>
     <description>
@@ -159,7 +160,6 @@
     <timezone>UTC</timezone>
     <target>backend</target>
   </cron>
-  -->
 
   <!-- TODO: Add borgmon job to check that these files are created and updated successfully. -->
   <cron>
@@ -200,12 +200,35 @@
     <target>backend</target>
   </cron>
 
+  <!-- Disabled for sql-only tests.
   <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=replay-commit-logs-to-sql&endpoint=/_dr/task/replayCommitLogsToSql&runInEmpty]]></url>
     <description>
       Replays recent commit logs from Datastore to the SQL secondary backend.
     </description>
     <schedule>every 3 minutes</schedule>
+    <target>backend</target>
+  </cron>
+  -->
+
+  <!--
+    The next two wipeout jobs are required when crash has production data.
+   -->
+  <cron>
+    <url><![CDATA[/_dr/task/wipeOutCloudSql]]></url>
+    <description>
+      This job runs an action that deletes all data in Cloud SQL.
+    </description>
+    <schedule>every saturday 03:07</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
+    <url><![CDATA[/_dr/task/wipeOutDatastore]]></url>
+    <description>
+      This job runs an action that deletes all data in Cloud Datastore.
+    </description>
+    <schedule>every saturday 03:07</schedule>
     <target>backend</target>
   </cron>
 </cronentries>

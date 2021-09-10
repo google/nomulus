@@ -23,6 +23,7 @@ import com.google.common.collect.Streams;
 import google.registry.backup.AppEngineEnvironment;
 import google.registry.beam.common.RegistryQuery.CriteriaQuerySupplier;
 import google.registry.model.ofy.ObjectifyService;
+import google.registry.model.replay.SqlEntity;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import java.io.Serializable;
@@ -358,17 +359,17 @@ public final class RegistryJpaIO {
     @ProcessElement
     public void processElement(@Element KV<ShardedKey<Integer>, Iterable<T>> kv) {
       try (AppEngineEnvironment env = new AppEngineEnvironment()) {
-        ImmutableList<Object> ofyEntities =
+        ImmutableList<Object> entities =
             Streams.stream(kv.getValue())
                 .map(this.jpaConverter::apply)
                 // TODO(b/177340730): post migration delete the line below.
                 .filter(Objects::nonNull)
                 .collect(ImmutableList.toImmutableList());
         try {
-          jpaTm().transact(() -> jpaTm().putAll(ofyEntities));
-          counter.inc(ofyEntities.size());
+          jpaTm().transact(() -> jpaTm().putAll(entities));
+          counter.inc(entities.size());
         } catch (RuntimeException e) {
-          processSingly(ofyEntities);
+          processSingly(entities);
         }
       }
     }
@@ -377,19 +378,22 @@ public final class RegistryJpaIO {
      * Writes entities in a failed batch one by one to identify the first bad entity and throws a
      * {@link RuntimeException} on it.
      */
-    private void processSingly(ImmutableList<Object> ofyEntities) {
-      for (Object ofyEntity : ofyEntities) {
+    private void processSingly(ImmutableList<Object> entities) {
+      for (Object entity : entities) {
         try {
-          jpaTm().transact(() -> jpaTm().put(ofyEntity));
+          jpaTm().transact(() -> jpaTm().put(entity));
           counter.inc();
         } catch (RuntimeException e) {
-          throw new RuntimeException(toOfyKey(ofyEntity).toString(), e);
+          throw new RuntimeException(toEntityKeyString(entity), e);
         }
       }
     }
 
-    private com.googlecode.objectify.Key<?> toOfyKey(Object ofyEntity) {
-      return com.googlecode.objectify.Key.create(ofyEntity);
+    private String toEntityKeyString(Object entity) {
+      if (entity instanceof SqlEntity) {
+        return ((SqlEntity) entity).getPrimaryKeyString();
+      }
+      return "Non-SqlEntity: " + String.valueOf(entity);
     }
   }
 }

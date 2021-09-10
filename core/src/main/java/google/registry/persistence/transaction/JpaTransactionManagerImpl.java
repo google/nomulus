@@ -38,17 +38,18 @@ import google.registry.model.index.ForeignKeyIndex.ForeignKeyContactIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyDomainIndex;
 import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.model.ofy.DatastoreTransactionManager;
-import google.registry.model.tmch.ClaimsList.ClaimsListSingleton;
+import google.registry.model.replay.NonReplicatedEntity;
+import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.persistence.JpaRetries;
 import google.registry.persistence.VKey;
-import google.registry.schema.replay.NonReplicatedEntity;
-import google.registry.schema.replay.SqlOnlyEntity;
 import google.registry.util.Clock;
 import google.registry.util.Retrier;
 import google.registry.util.SystemSleeper;
 import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -74,7 +75,6 @@ import javax.persistence.TemporalType;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.metamodel.EntityType;
-import javax.persistence.metamodel.SingularAttribute;
 import org.joda.time.DateTime;
 
 /** Implementation of {@link JpaTransactionManager} for JPA compatible database. */
@@ -90,7 +90,6 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   // TODO(b/176108270): Remove this property after database migration.
   private static final ImmutableSet<Class<? extends ImmutableObject>> IGNORED_ENTITY_CLASSES =
       ImmutableSet.of(
-          ClaimsListSingleton.class,
           EppResourceIndex.class,
           ForeignKeyContactIndex.class,
           ForeignKeyDomainIndex.class,
@@ -121,22 +120,23 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public EntityManager getEntityManager() {
-    if (transactionInfo.get().entityManager == null) {
+    EntityManager entityManager = transactionInfo.get().entityManager;
+    if (entityManager == null) {
       throw new PersistenceException(
           "No EntityManager has been initialized. getEntityManager() must be invoked in the scope"
               + " of a transaction");
     }
-    return transactionInfo.get().entityManager;
+    return entityManager;
   }
 
   @Override
   public <T> TypedQuery<T> query(String sqlString, Class<T> resultClass) {
-    return new DetachingTypedQuery(getEntityManager().createQuery(sqlString, resultClass));
+    return new DetachingTypedQuery<>(getEntityManager().createQuery(sqlString, resultClass));
   }
 
   @Override
   public <T> TypedQuery<T> query(CriteriaQuery<T> criteriaQuery) {
-    return new DetachingTypedQuery(getEntityManager().createQuery(criteriaQuery));
+    return new DetachingTypedQuery<>(getEntityManager().createQuery(criteriaQuery));
   }
 
   @Override
@@ -173,7 +173,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             return work.get();
           }
           TransactionInfo txnInfo = transactionInfo.get();
-          txnInfo.entityManager = emf.createEntityManager();
+          txnInfo.entityManager = createReadOnlyCheckingEntityManager();
           EntityTransaction txn = txnInfo.entityManager.getTransaction();
           try {
             txn.begin();
@@ -205,7 +205,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       return work.get();
     }
     TransactionInfo txnInfo = transactionInfo.get();
-    txnInfo.entityManager = emf.createEntityManager();
+    txnInfo.entityManager = createReadOnlyCheckingEntityManager();
     EntityTransaction txn = txnInfo.entityManager.getTransaction();
     try {
       txn.begin();
@@ -596,7 +596,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
-    return new JpaQueryComposerImpl<T>(entity);
+    return new JpaQueryComposerImpl<>(entity);
   }
 
   @Override
@@ -610,11 +610,47 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public void putIgnoringReadOnly(Object entity) {
+    checkArgumentNotNull(entity);
+    if (isEntityOfIgnoredClass(entity)) {
+      return;
+    }
+    assertInTransaction();
+    // Necessary due to the changes in HistoryEntry representation during the migration to SQL
+    Object toPersist = toSqlEntity(entity);
+    TransactionInfo txn = transactionInfo.get();
+    Object merged = txn.entityManager.mergeIgnoringReadOnly(toPersist);
+    txn.objectsToSave.add(merged);
+    txn.addUpdate(toPersist);
+  }
+
+  @Override
+  public void deleteIgnoringReadOnly(VKey<?> key) {
+    checkArgumentNotNull(key, "key must be specified");
+    assertInTransaction();
+    if (IGNORED_ENTITY_CLASSES.contains(key.getKind())) {
+      return;
+    }
+    EntityType<?> entityType = getEntityType(key.getKind());
+    ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getSqlKey());
+    String sql =
+        String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
+    ReadOnlyCheckingQuery query = transactionInfo.get().entityManager.createQuery(sql);
+    entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
+    transactionInfo.get().addDelete(key);
+    query.executeUpdateIgnoringReadOnly();
+  }
+
+  @Override
   public <T> void assertDelete(VKey<T> key) {
     if (internalDelete(key) != 1) {
       throw new IllegalArgumentException(
           String.format("Error deleting the entity of the key: %s", key.getSqlKey()));
     }
+  }
+
+  private ReadOnlyCheckingEntityManager createReadOnlyCheckingEntityManager() {
+    return new ReadOnlyCheckingEntityManager(emf.createEntityManager());
   }
 
   private <T> EntityType<T> getEntityType(Class<T> clazz) {
@@ -659,10 +695,22 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private static ImmutableSet<EntityId> getEntityIdsFromIdContainer(
       EntityType<?> entityType, Object idContainer) {
     return entityType.getIdClassAttributes().stream()
-        .map(SingularAttribute::getName)
         .map(
-            idName -> {
-              Object idValue = getFieldValue(idContainer, idName);
+            attribute -> {
+              String idName = attribute.getName();
+              // The object may use either Java getters or field names to represent the ID object.
+              // Attempt the Java getter, then fall back to the field name if that fails.
+              String methodName = attribute.getJavaMember().getName();
+              Object idValue;
+              try {
+                Method method = idContainer.getClass().getDeclaredMethod(methodName);
+                method.setAccessible(true);
+                idValue = method.invoke(idContainer);
+              } catch (NoSuchMethodException
+                  | IllegalAccessException
+                  | InvocationTargetException e) {
+                idValue = getFieldValue(idContainer, idName);
+              }
               return new EntityId(idName, idValue);
             })
         .collect(toImmutableSet());
@@ -752,7 +800,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   private static class TransactionInfo {
-    EntityManager entityManager;
+    ReadOnlyCheckingEntityManager entityManager;
     boolean inTransaction = false;
     DateTime transactionTime;
 

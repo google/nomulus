@@ -15,9 +15,7 @@
 package google.registry.model.common;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
-import static google.registry.model.ofy.ObjectifyService.auditedOfy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -26,28 +24,25 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSortedMap;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Embed;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Mapify;
-import google.registry.model.annotations.InCrossTld;
-import google.registry.model.common.TimedTransitionProperty.TimeMapper;
+import com.google.common.flogger.FluentLogger;
+import google.registry.config.RegistryEnvironment;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
-import google.registry.schema.replay.DatastoreOnlyEntity;
+import google.registry.model.replay.SqlOnlyEntity;
 import java.time.Duration;
-import java.util.Optional;
+import javax.persistence.Entity;
+import javax.persistence.PersistenceException;
 import org.joda.time.DateTime;
 
 /**
  * A wrapper object representing the stage-to-time mapping of the Registry 3.0 Cloud SQL migration.
  *
- * <p>The entity is stored in Datastore throughout the entire migration so as to have a single point
- * of access.
+ * <p>The entity is stored in SQL throughout the entire migration so as to have a single point of
+ * access.
  */
 @Entity
-@InCrossTld
-public class DatabaseMigrationStateSchedule extends CrossTldSingleton
-    implements DatastoreOnlyEntity {
+public class DatabaseMigrationStateSchedule extends CrossTldSingleton implements SqlOnlyEntity {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   public enum PrimaryDatabase {
     CLOUD_SQL,
@@ -96,12 +91,11 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
     }
   }
 
-  @Embed
   public static class MigrationStateTransition extends TimedTransition<MigrationState> {
     private MigrationState migrationState;
 
     @Override
-    protected MigrationState getValue() {
+    public MigrationState getValue() {
       return migrationState;
     }
 
@@ -185,7 +179,6 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
               MigrationStateTransition.class);
 
   @VisibleForTesting
-  @Mapify(TimeMapper.class)
   public TimedTransitionProperty<MigrationState, MigrationStateTransition> migrationTransitions =
       TimedTransitionProperty.forMapify(
           MigrationState.DATASTORE_ONLY, MigrationStateTransition.class);
@@ -194,14 +187,14 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
   private DatabaseMigrationStateSchedule() {}
 
   @VisibleForTesting
-  DatabaseMigrationStateSchedule(
+  public DatabaseMigrationStateSchedule(
       TimedTransitionProperty<MigrationState, MigrationStateTransition> migrationTransitions) {
     this.migrationTransitions = migrationTransitions;
   }
 
-  /** Sets and persists to Datastore the provided migration transition schedule. */
+  /** Sets and persists to SQL the provided migration transition schedule. */
   public static void set(ImmutableSortedMap<DateTime, MigrationState> migrationTransitionMap) {
-    ofyTm().assertInTransaction();
+    jpaTm().assertInTransaction();
     TimedTransitionProperty<MigrationState, MigrationStateTransition> transitions =
         TimedTransitionProperty.make(
             migrationTransitionMap,
@@ -211,7 +204,7 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
             MigrationState.DATASTORE_ONLY,
             "migrationTransitionMap must start with DATASTORE_ONLY");
     validateTransitionAtCurrentTime(transitions);
-    ofyTm().put(new DatabaseMigrationStateSchedule(transitions));
+    jpaTm().putIgnoringReadOnly(new DatabaseMigrationStateSchedule(transitions));
     CACHE.invalidateAll();
   }
 
@@ -225,23 +218,26 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
     return get().getValueAtTime(dateTime);
   }
 
-  /** Loads the currently-set migration schedule from Datastore, or the default if none exists. */
+  /** Loads the currently-set migration schedule from SQL, or the default if none exists. */
   @VisibleForTesting
   static TimedTransitionProperty<MigrationState, MigrationStateTransition> getUncached() {
-    return Optional.ofNullable(
-            auditedOfy()
-                .doTransactionless(
-                    () ->
-                        auditedOfy()
-                            .load()
-                            .key(
-                                Key.create(
-                                    getCrossTldKey(),
-                                    DatabaseMigrationStateSchedule.class,
-                                    CrossTldSingleton.SINGLETON_ID))
-                            .now()))
-        .map(s -> s.migrationTransitions)
-        .orElse(DEFAULT_TRANSITION_MAP);
+    return jpaTm()
+        .transactWithoutBackup(
+            () -> {
+              try {
+                return jpaTm()
+                    .loadSingleton(DatabaseMigrationStateSchedule.class)
+                    .map(s -> s.migrationTransitions)
+                    .orElse(DEFAULT_TRANSITION_MAP);
+              } catch (PersistenceException e) {
+                if (!RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)) {
+                  throw e;
+                }
+                logger.atWarning().withCause(e).log(
+                    "Error when retrieving migration schedule; this should only happen in tests.");
+                return DEFAULT_TRANSITION_MAP;
+              }
+            });
   }
 
   /**
@@ -252,8 +248,8 @@ public class DatabaseMigrationStateSchedule extends CrossTldSingleton
    */
   private static void validateTransitionAtCurrentTime(
       TimedTransitionProperty<MigrationState, MigrationStateTransition> newTransitions) {
-    MigrationState currentValue = getUncached().getValueAtTime(ofyTm().getTransactionTime());
-    MigrationState nextCurrentValue = newTransitions.getValueAtTime(ofyTm().getTransactionTime());
+    MigrationState currentValue = getUncached().getValueAtTime(jpaTm().getTransactionTime());
+    MigrationState nextCurrentValue = newTransitions.getValueAtTime(jpaTm().getTransactionTime());
     checkArgument(
         VALID_STATE_TRANSITIONS.get(currentValue).contains(nextCurrentValue),
         "Cannot transition from current state-as-of-now %s to new state-as-of-now %s",

@@ -23,9 +23,9 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.VirtualEntity;
 import google.registry.model.common.EntityGroupRoot;
+import google.registry.model.replay.DatastoreAndSqlEntity;
+import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.persistence.VKey;
-import google.registry.schema.replay.DatastoreAndSqlEntity;
-import google.registry.schema.replay.EntityTest.EntityForTesting;
 import javax.persistence.Transient;
 
 /** A test model object that can be persisted in any entity group. */
@@ -36,6 +36,7 @@ public class TestObject extends ImmutableObject implements DatastoreAndSqlEntity
 
   public static int beforeSqlSaveCallCount;
   public static int beforeSqlDeleteCallCount;
+  public static int beforeDatastoreSaveCallCount;
 
   @Parent @Transient Key<EntityGroupRoot> parent;
 
@@ -49,6 +50,10 @@ public class TestObject extends ImmutableObject implements DatastoreAndSqlEntity
 
   public String getField() {
     return field;
+  }
+
+  public VKey<TestObject> key() {
+    return VKey.create(TestObject.class, id, Key.create(this));
   }
 
   public static VKey<TestObject> createVKey(Key<TestObject> key) {
@@ -78,6 +83,11 @@ public class TestObject extends ImmutableObject implements DatastoreAndSqlEntity
   @Override
   public void beforeSqlSaveOnReplay() {
     beforeSqlSaveCallCount++;
+  }
+
+  @Override
+  public void beforeDatastoreSaveOnReplay() {
+    beforeDatastoreSaveCallCount++;
   }
 
   /** A test @VirtualEntity model object, which should not be persisted. */

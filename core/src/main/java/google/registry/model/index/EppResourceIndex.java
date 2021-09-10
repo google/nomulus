@@ -25,7 +25,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.EppResource;
 import google.registry.model.annotations.ReportedOn;
-import google.registry.schema.replay.DatastoreOnlyEntity;
+import google.registry.model.replay.DatastoreOnlyEntity;
 
 /** An index that allows for quick enumeration of all EppResource entities (e.g. via map reduce). */
 @ReportedOn

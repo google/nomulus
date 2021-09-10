@@ -126,7 +126,7 @@ class DomainTransferRequestFlowTest
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
+  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   private static final ImmutableMap<String, String> BASE_FEE_MAP =
       new ImmutableMap.Builder<String, String>()

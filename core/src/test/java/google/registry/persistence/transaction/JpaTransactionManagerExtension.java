@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Streams;
 import com.google.common.io.Resources;
+import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.persistence.HibernateSchemaExporter;
 import google.registry.persistence.NomulusPostgreSql;
 import google.registry.persistence.PersistenceModule;
@@ -202,12 +203,12 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
     JpaTransactionManagerImpl txnManager = new JpaTransactionManagerImpl(emf, clock);
     cachedTm = TransactionManagerFactory.jpaTm();
     TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(txnManager));
-    JpaTransactionManagerImpl.setReplaySqlToDatastoreOverrideForTest(false);
   }
 
   @Override
   public void afterEach(ExtensionContext context) {
     TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(cachedTm));
+    // Even though we didn't set this, reset it to make sure no other tests are affected
     JpaTransactionManagerImpl.removeReplaySqlToDsOverrideForTest();
     cachedTm = null;
   }
@@ -341,9 +342,12 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   }
 
   private ImmutableList<Class<?>> getTestEntities() {
-    // We have to add the TransactionEntity to extra entities, as this is required by the
-    // transaction replication mechanism.
-    return Stream.concat(extraEntityClasses.stream(), Stream.of(TransactionEntity.class))
+    // We have to add the DatabaseMigrationStateSchedule and TransactionEntity classes to extra
+    // entities, as they are required by the transaction manager factory and transaction replication
+    // mechanism, respectively.
+    return Stream.concat(
+            extraEntityClasses.stream(),
+            Stream.of(DatabaseMigrationStateSchedule.class, TransactionEntity.class))
         .collect(toImmutableList());
   }
 }

@@ -37,7 +37,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.flogger.LoggerConfig;
 import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
-import google.registry.schema.domain.RegistryLock;
+import google.registry.model.domain.RegistryLock;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;

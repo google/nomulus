@@ -75,7 +75,8 @@ class JpaTransactionManagerImplTest {
       new JpaTestRules.Builder()
           .withInitScript(fileClassPath(getClass(), "test_schema.sql"))
           .withClock(fakeClock)
-          .withEntityClass(TestEntity.class, TestCompoundIdEntity.class)
+          .withEntityClass(
+              TestEntity.class, TestCompoundIdEntity.class, TestNamedCompoundIdEntity.class)
           .buildUnitTestRule();
 
   @Test
@@ -270,6 +271,24 @@ class JpaTransactionManagerImplTest {
     assertThat(jpaTm().transact(() -> jpaTm().exists(compoundIdEntity))).isTrue();
     assertThat(jpaTm().transact(() -> jpaTm().loadByKey(compoundIdEntityKey)))
         .isEqualTo(compoundIdEntity);
+  }
+
+  @Test
+  void createNamedCompoundIdEntity_succeeds() {
+    // Compound IDs should also work even if the field names don't match up exactly
+    TestNamedCompoundIdEntity entity = new TestNamedCompoundIdEntity("foo", 1);
+    jpaTm().transact(() -> jpaTm().insert(entity));
+    jpaTm()
+        .transact(
+            () -> {
+              assertThat(jpaTm().exists(entity)).isTrue();
+              assertThat(
+                      jpaTm()
+                          .loadByKey(
+                              VKey.createSql(
+                                  TestNamedCompoundIdEntity.class, new NamedCompoundId("foo", 1))))
+                  .isEqualTo(entity);
+            });
   }
 
   @Test
@@ -638,7 +657,9 @@ class JpaTransactionManagerImplTest {
     jpaTm()
         .transact(
             () ->
-                jpaTm().query("FROM TestEntity", TestEntity.class).getResultList().stream()
+                jpaTm()
+                    .query("FROM TestEntity", TestEntity.class)
+                    .getResultList()
                     .forEach(e -> assertThat(jpaTm().getEntityManager().contains(e)).isFalse()));
     jpaTm()
         .transact(
@@ -775,6 +796,73 @@ class JpaTransactionManagerImplTest {
     private CompoundId(String name, int age) {
       this.name = name;
       this.age = age;
+    }
+  }
+
+  // An entity should still behave properly if the name fields in the ID are different
+  @Entity(name = "TestNamedCompoundIdEntity")
+  @IdClass(NamedCompoundId.class)
+  private static class TestNamedCompoundIdEntity extends ImmutableObject {
+    private String name;
+    private int age;
+
+    private TestNamedCompoundIdEntity() {}
+
+    private TestNamedCompoundIdEntity(String name, int age) {
+      this.name = name;
+      this.age = age;
+    }
+
+    @Id
+    public String getNameField() {
+      return name;
+    }
+
+    @Id
+    public int getAgeField() {
+      return age;
+    }
+
+    @SuppressWarnings("unused")
+    private void setNameField(String name) {
+      this.name = name;
+    }
+
+    @SuppressWarnings("unused")
+    private void setAgeField(int age) {
+      this.age = age;
+    }
+  }
+
+  private static class NamedCompoundId implements Serializable {
+    String nameField;
+    int ageField;
+
+    private NamedCompoundId() {}
+
+    private NamedCompoundId(String nameField, int ageField) {
+      this.nameField = nameField;
+      this.ageField = ageField;
+    }
+
+    @SuppressWarnings("unused")
+    private String getNameField() {
+      return nameField;
+    }
+
+    @SuppressWarnings("unused")
+    private int getAgeField() {
+      return ageField;
+    }
+
+    @SuppressWarnings("unused")
+    private void setNameField(String nameField) {
+      this.nameField = nameField;
+    }
+
+    @SuppressWarnings("unused")
+    private void setAgeField(int ageField) {
+      this.ageField = ageField;
     }
   }
 }

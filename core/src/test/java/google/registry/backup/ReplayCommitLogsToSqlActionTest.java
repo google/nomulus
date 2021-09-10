@@ -38,9 +38,9 @@ import static org.mockito.Mockito.verify;
 
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth8;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.googlecode.objectify.Key;
@@ -55,17 +55,19 @@ import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
+import google.registry.model.rde.RdeMode;
+import google.registry.model.rde.RdeNamingUtils;
+import google.registry.model.rde.RdeRevision;
 import google.registry.model.registrar.RegistrarContact;
+import google.registry.model.replay.SqlReplayCheckpoint;
 import google.registry.model.server.Lock;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
-import google.registry.model.tld.label.ReservedList;
-import google.registry.model.tmch.ClaimsList;
+import google.registry.model.tmch.TmchCrl;
 import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
-import google.registry.schema.replay.SqlReplayCheckpoint;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
@@ -135,7 +137,7 @@ public class ReplayCommitLogsToSqlActionTest {
     action.diffLister.gcsUtils = gcsUtils;
     action.diffLister.executorProvider = MoreExecutors::newDirectExecutorService;
     action.diffLister.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-    ofyTm()
+    jpaTm()
         .transact(
             () ->
                 DatabaseMigrationStateSchedule.set(
@@ -201,7 +203,7 @@ public class ReplayCommitLogsToSqlActionTest {
         CommitLogMutation.create(manifest2Key, TestObject.create("f")));
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
     fakeClock.advanceOneMilli();
-    runAndAssertSuccess(now, 2);
+    runAndAssertSuccess(now, 2, 3);
     assertExpectedIds("previous to keep", "b", "d", "e", "f");
   }
 
@@ -212,7 +214,7 @@ public class ReplayCommitLogsToSqlActionTest {
     saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(1));
     saveDiffFile(gcsUtils, createCheckpoint(now.minusMillis(2)));
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMillis(1)));
-    runAndAssertSuccess(now.minusMillis(1), 0);
+    runAndAssertSuccess(now.minusMillis(1), 0, 0);
     assertExpectedIds("previous to keep");
   }
 
@@ -256,7 +258,7 @@ public class ReplayCommitLogsToSqlActionTest {
         CommitLogManifest.create(bucketKey, now, null),
         CommitLogMutation.create(manifestKey, TestObject.create("a")),
         CommitLogMutation.create(manifestKey, TestObject.create("b")));
-    runAndAssertSuccess(now.minusMinutes(1), 1);
+    runAndAssertSuccess(now.minusMinutes(1), 1, 1);
     assertExpectedIds("previous to keep", "a", "b");
   }
 
@@ -278,7 +280,7 @@ public class ReplayCommitLogsToSqlActionTest {
             getBucketKey(1),
             now,
             ImmutableSet.of(Key.create(TestObject.create("previous to delete")))));
-    runAndAssertSuccess(now.minusMinutes(1), 1);
+    runAndAssertSuccess(now.minusMinutes(1), 1, 1);
     assertExpectedIds("previous to keep");
   }
 
@@ -350,16 +352,16 @@ public class ReplayCommitLogsToSqlActionTest {
         domainMutation,
         contactMutation);
 
-    runAndAssertSuccess(now.minusMinutes(1), 1);
+    runAndAssertSuccess(now.minusMinutes(1), 1, 1);
     // Verify two things:
     // 1. that the contact insert occurred before the domain insert (necessary for FK ordering)
     //    even though the domain came first in the file
     // 2. that the allocation token delete occurred after the insertions
     InOrder inOrder = Mockito.inOrder(spy);
-    inOrder.verify(spy).put(any(ContactResource.class));
-    inOrder.verify(spy).put(any(DomainBase.class));
-    inOrder.verify(spy).delete(toDelete.createVKey());
-    inOrder.verify(spy).put(any(SqlReplayCheckpoint.class));
+    inOrder.verify(spy).putIgnoringReadOnly(any(ContactResource.class));
+    inOrder.verify(spy).putIgnoringReadOnly(any(DomainBase.class));
+    inOrder.verify(spy).deleteIgnoringReadOnly(toDelete.createVKey());
+    inOrder.verify(spy).putIgnoringReadOnly(any(SqlReplayCheckpoint.class));
   }
 
   @Test
@@ -393,13 +395,13 @@ public class ReplayCommitLogsToSqlActionTest {
         CommitLogManifest.create(
             getBucketKey(1), now.minusMinutes(1).plusMillis(1), ImmutableSet.of()),
         contactMutation);
-    runAndAssertSuccess(now.minusMinutes(1).plusMillis(1), 1);
+    runAndAssertSuccess(now.minusMinutes(1).plusMillis(1), 1, 2);
     // Verify that the delete occurred first (because it was in the first transaction) even though
     // deletes have higher weight
     ArgumentCaptor<Object> putCaptor = ArgumentCaptor.forClass(Object.class);
     InOrder inOrder = Mockito.inOrder(spy);
-    inOrder.verify(spy).delete(contact.createVKey());
-    inOrder.verify(spy).put(putCaptor.capture());
+    inOrder.verify(spy).deleteIgnoringReadOnly(contact.createVKey());
+    inOrder.verify(spy).putIgnoringReadOnly(putCaptor.capture());
     assertThat(putCaptor.getValue().getClass()).isEqualTo(ContactResource.class);
     assertThat(jpaTm().transact(() -> jpaTm().loadByKey(contact.createVKey()).getEmailAddress()))
         .isEqualTo("replay@example.tld");
@@ -419,8 +421,9 @@ public class ReplayCommitLogsToSqlActionTest {
 
     createTld("tld");
     // Have a commit log with a couple objects that shouldn't be replayed
-    ReservedList reservedList =
-        new ReservedList.Builder().setReservedListMap(ImmutableMap.of()).setName("name").build();
+    String triplet = RdeNamingUtils.makePartialName("tld", fakeClock.nowUtc(), RdeMode.FULL);
+    RdeRevision rdeRevision =
+        RdeRevision.create(triplet, "tld", fakeClock.nowUtc().toLocalDate(), RdeMode.FULL, 1);
     ForeignKeyIndex<DomainBase> fki = ForeignKeyIndex.create(newDomainBase("foo.tld"), now);
     tm().transact(
             () -> {
@@ -430,18 +433,18 @@ public class ReplayCommitLogsToSqlActionTest {
                     createCheckpoint(now.minusMinutes(1)),
                     CommitLogManifest.create(
                         getBucketKey(1), now.minusMinutes(1), ImmutableSet.of()),
-                    // Reserved list is dually-written non-replicated
-                    CommitLogMutation.create(manifestKey, reservedList),
+                    // RDE Revisions are not replicated
+                    CommitLogMutation.create(manifestKey, rdeRevision),
                     // FKIs aren't replayed to SQL at all
                     CommitLogMutation.create(manifestKey, fki));
               } catch (IOException e) {
                 throw new RuntimeException(e);
               }
             });
-    runAndAssertSuccess(now.minusMinutes(1), 1);
-    // jpaTm()::put should only have been called with the checkpoint
-    verify(spy, times(2)).put(any(SqlReplayCheckpoint.class));
-    verify(spy, times(2)).put(any());
+    runAndAssertSuccess(now.minusMinutes(1), 1, 1);
+    // jpaTm()::putIgnoringReadOnly should only have been called with the checkpoint
+    verify(spy, times(2)).putIgnoringReadOnly(any(SqlReplayCheckpoint.class));
+    verify(spy, times(2)).putIgnoringReadOnly(any());
   }
 
   @Test
@@ -453,7 +456,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
     // Save a couple deletes that aren't propagated to SQL (the objects deleted are irrelevant)
-    Key<ClaimsList> claimsListKey = Key.create(ClaimsList.class, 1L);
+    Key<TmchCrl> tmchCrlKey = Key.create(TmchCrl.class, 1L);
     saveDiffFile(
         gcsUtils,
         createCheckpoint(now.minusMinutes(1)),
@@ -461,15 +464,15 @@ public class ReplayCommitLogsToSqlActionTest {
             getBucketKey(1),
             now.minusMinutes(1),
             // one object only exists in Datastore, one is dually-written (so isn't replicated)
-            ImmutableSet.of(getCrossTldKey(), claimsListKey)));
+            ImmutableSet.of(getCrossTldKey(), tmchCrlKey)));
 
-    runAndAssertSuccess(now.minusMinutes(1), 1);
+    runAndAssertSuccess(now.minusMinutes(1), 1, 1);
     verify(spy, times(0)).delete(any(VKey.class));
   }
 
   @Test
   void testFailure_notEnabled() {
-    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
+    jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(DEFAULT_TRANSITION_MAP.toValueMap()));
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_NO_CONTENT);
     assertThat(response.getPayload())
@@ -506,7 +509,7 @@ public class ReplayCommitLogsToSqlActionTest {
         createCheckpoint(now.minusMinutes(1)),
         CommitLogManifest.create(bucketKey, now, null),
         CommitLogMutation.create(manifestKey, TestObject.create("a")));
-    runAndAssertSuccess(now.minusMinutes(1), 1);
+    runAndAssertSuccess(now.minusMinutes(1), 1, 1);
     assertThat(TestObject.beforeSqlSaveCallCount).isEqualTo(1);
   }
 
@@ -544,7 +547,7 @@ public class ReplayCommitLogsToSqlActionTest {
         createCheckpoint(now.minusMinutes(1)),
         CommitLogManifest.create(
             getBucketKey(1), now.minusMinutes(3), ImmutableSet.of(Key.create(domain))));
-    runAndAssertSuccess(now.minusMinutes(1), 1);
+    runAndAssertSuccess(now.minusMinutes(1), 1, 1);
 
     jpaTm()
         .transact(
@@ -552,6 +555,34 @@ public class ReplayCommitLogsToSqlActionTest {
               assertThat(jpaTm().loadAllOf(DomainBase.class)).isEmpty();
               assertThat(jpaTm().loadAllOf(DelegationSignerData.class)).isEmpty();
             });
+  }
+
+  @Test
+  void testReplay_duringReadOnly() throws Exception {
+    DateTime now = fakeClock.nowUtc();
+    jpaTm()
+        .transact(
+            () -> {
+              jpaTm().insertWithoutBackup(TestObject.create("previous to delete"));
+              SqlReplayCheckpoint.set(now.minusMinutes(2));
+            });
+    Key<CommitLogManifest> manifestKey =
+        CommitLogManifest.createKey(getBucketKey(1), now.minusMinutes(1));
+    saveDiffFile(
+        gcsUtils,
+        createCheckpoint(now.minusMinutes(1)),
+        CommitLogManifest.create(
+            getBucketKey(1),
+            now.minusMinutes(1),
+            ImmutableSet.of(Key.create(TestObject.create("previous to delete")))),
+        CommitLogMutation.create(manifestKey, TestObject.create("a")));
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(fakeClock);
+    runAndAssertSuccess(now.minusMinutes(1), 1, 1);
+    jpaTm()
+        .transact(
+            () ->
+                assertThat(Iterables.getOnlyElement(jpaTm().loadAllOf(TestObject.class)).getId())
+                    .isEqualTo("a"));
   }
 
   @Test
@@ -596,15 +627,19 @@ public class ReplayCommitLogsToSqlActionTest {
         domainWithoutDsDataMutation,
         CommitLogManifest.create(getBucketKey(1), now.minusMinutes(2), ImmutableSet.of()),
         domainWithOriginalDsDataMutation);
-    runAndAssertSuccess(now.minusMinutes(1), 1);
+    runAndAssertSuccess(now.minusMinutes(1), 1, 2);
   }
 
-  private void runAndAssertSuccess(DateTime expectedCheckpointTime, int numFiles) {
+  private void runAndAssertSuccess(
+      DateTime expectedCheckpointTime, int numFiles, int numTransactions) {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload())
-        .isEqualTo(
-            String.format("Caught up to current time after replaying %d file(s).", numFiles));
+        .startsWith(
+            String.format(
+                "Caught up to current time after replaying %d file(s) containing %d total"
+                    + " transaction(s)",
+                numFiles, numTransactions));
     assertThat(jpaTm().transact(SqlReplayCheckpoint::get)).isEqualTo(expectedCheckpointTime);
   }
 

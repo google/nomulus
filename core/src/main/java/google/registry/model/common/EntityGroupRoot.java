@@ -19,7 +19,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.BackupGroupRoot;
-import google.registry.schema.replay.DatastoreOnlyEntity;
+import google.registry.model.replay.DatastoreOnlyEntity;
 import javax.annotation.Nullable;
 
 /**

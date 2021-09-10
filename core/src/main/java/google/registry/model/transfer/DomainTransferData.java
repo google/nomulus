@@ -157,10 +157,12 @@ public class DomainTransferData extends TransferData<DomainTransferData.Builder>
         DomainBase.restoreOfyFrom(rootKey, billingCancellationId, billingCancellationHistoryId);
 
     // Reconstruct server approve entities.  We currently have to call postLoad() a _second_ time
-    // if the billing cancellation id has been reconstituted, as it is part of that set.
+    // if any of the billing objects have been reconstituted, as they are part of that set.
     // TODO(b/183010623): Normalize the approaches to VKey reconstitution for the TransferData
     // hierarchy (the logic currently lives either in PostLoad or here, depending on the key).
-    if (billingCancellationId != null) {
+    if (billingCancellationId != null
+        || serverApproveBillingEvent != null
+        || serverApproveAutorenewEvent != null) {
       serverApproveEntities = null;
       postLoad();
     }

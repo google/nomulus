@@ -39,15 +39,14 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  */
 public class JpaEntityCoverageExtension implements BeforeEachCallback, AfterEachCallback {
 
-  // TODO(weiminyu): update this set when entities written to Cloud SQL and tests are added.
   private static final ImmutableSet<String> IGNORE_ENTITIES =
       ImmutableSet.of(
-          "DelegationSignerData",
-          "DesignatedContact",
-          "GracePeriod",
-          "RegistrarContact",
-
-          // TransactionEntity is trivial, its persistence is tested in TransactionTest.
+          // DatabaseMigrationStateSchedule is persisted in tests, however any test that sets it
+          // needs to remove it in order to avoid affecting any other tests running in the same JVM.
+          // TODO(gbrodman): remove this when we implement proper read-only modes for the
+          // transaction managers.
+          "DatabaseMigrationStateSchedule",
+          // TransactionEntity is trivial; its persistence is tested in TransactionTest.
           "TransactionEntity");
 
   private static final ImmutableSet<Class<?>> ALL_JPA_ENTITIES =

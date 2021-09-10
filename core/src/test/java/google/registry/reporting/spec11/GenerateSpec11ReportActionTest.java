@@ -35,7 +35,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class GenerateSpec11ReportActionTest extends BeamActionTestBase {
 
   @RegisterExtension
-  final AppEngineExtension appEngine = AppEngineExtension.builder().withTaskQueue().build();
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2018-06-11T12:23:56Z"));
   private GenerateSpec11ReportAction action;

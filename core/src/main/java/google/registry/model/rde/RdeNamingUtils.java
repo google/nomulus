@@ -39,7 +39,7 @@ public final class RdeNamingUtils {
   }
 
   /** Returns same thing as {@link #makeRydeFilename} except without the series and revision. */
-  static String makePartialName(String tld, DateTime date, RdeMode mode) {
+  public static String makePartialName(String tld, DateTime date, RdeMode mode) {
     return String.format("%s_%s_%s",
         checkNotNull(tld), formatDate(date), mode.getFilenameComponent());
   }

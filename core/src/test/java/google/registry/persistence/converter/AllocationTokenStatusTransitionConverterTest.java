@@ -40,7 +40,6 @@ public class AllocationTokenStatusTransitionConverterTest {
   @RegisterExtension
   public final JpaUnitTestExtension jpa =
       new JpaTestRules.Builder()
-          .withInitScript("sql/flyway/V14__load_extension_for_hstore.sql")
           .withEntityClass(AllocationTokenStatusTransitionConverterTestEntity.class)
           .buildUnitTestRule();
 

@@ -12,25 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.persistence.converter;
+package google.registry.model.replay;
 
-import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
+import java.util.Optional;
 
-import com.googlecode.objectify.Key;
-import google.registry.model.tld.label.ReservedList;
-import javax.persistence.Converter;
-
-/** JPA converter for a set of {@link Key} containing a {@link ReservedList} */
-@Converter(autoApply = true)
-public class ReservedListKeySetConverter extends StringSetConverterBase<Key<ReservedList>> {
+/**
+ * Represents an entity that should not participate in asynchronous replication.
+ *
+ * <p>We expect that this is a result of the entity being dually-written.
+ */
+public interface NonReplicatedEntity extends DatastoreEntity, SqlEntity {
 
   @Override
-  String toString(Key<ReservedList> key) {
-    return key.getName();
+  default Optional<DatastoreEntity> toDatastoreEntity() {
+    return Optional.empty();
   }
 
   @Override
-  Key<ReservedList> fromString(String value) {
-    return Key.create(getCrossTldKey(), ReservedList.class, value);
+  default Optional<SqlEntity> toSqlEntity() {
+    return Optional.empty();
   }
 }

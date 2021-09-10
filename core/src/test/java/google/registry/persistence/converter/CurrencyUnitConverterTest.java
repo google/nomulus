@@ -19,9 +19,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.ImmutableObject;
+import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
-import google.registry.schema.replay.EntityTest.EntityForTesting;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.PersistenceException;

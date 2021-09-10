@@ -169,6 +169,15 @@
   </cron>
 
   <cron>
+    <url><![CDATA[/_dr/task/sendExpiringCertificateNotificationEmail]]></url>
+    <description>
+      This job runs an action that sends emails to partners if their certificates are expiring soon.
+    </description>
+    <schedule>every day 04:30</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
     <url><![CDATA[/_dr/cron/fanout?queue=export-snapshot&endpoint=/_dr/task/backupDatastore&runInEmpty]]></url>
     <description>
       This job fires off a Datastore managed-export job that generates snapshot files in GCS.
@@ -230,7 +239,7 @@
   </cron>
 
   <cron>
-    <url><![CDATA[/_dr/cron/fanout?queue=replay-commit-logs-to-sql&endpoint=/_dr/task/replayCommitLogsToSql&runInEmpty&dryRun=true]]></url>
+    <url><![CDATA[/_dr/cron/fanout?queue=replay-commit-logs-to-sql&endpoint=/_dr/task/replayCommitLogsToSql&runInEmpty]]></url>
     <description>
       Replays recent commit logs from Datastore to the SQL secondary backend.
     </description>

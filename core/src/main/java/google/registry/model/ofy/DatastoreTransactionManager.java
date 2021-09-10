@@ -36,12 +36,12 @@ import google.registry.model.annotations.InCrossTld;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostHistory;
+import google.registry.model.replay.DatastoreEntity;
+import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.QueryComposer;
 import google.registry.persistence.transaction.TransactionManager;
-import google.registry.schema.replay.DatastoreEntity;
-import google.registry.schema.replay.SqlEntity;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -336,7 +336,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public <T> QueryComposer<T> createQueryComposer(Class<T> entity) {
-    return new DatastoreQueryComposerImpl(entity);
+    return new DatastoreQueryComposerImpl<>(entity);
   }
 
   @Override
@@ -347,6 +347,16 @@ public class DatastoreTransactionManager implements TransactionManager {
   @Override
   public boolean isOfy() {
     return true;
+  }
+
+  @Override
+  public void putIgnoringReadOnly(Object entity) {
+    syncIfTransactionless(getOfy().saveIgnoringReadOnly().entities(toDatastoreEntity(entity)));
+  }
+
+  @Override
+  public void deleteIgnoringReadOnly(VKey<?> key) {
+    syncIfTransactionless(getOfy().deleteIgnoringReadOnly().key(key.getOfyKey()));
   }
 
   /**

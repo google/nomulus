@@ -2,7 +2,6 @@ AllocationToken
 Cancellation
 ContactResource
 Cursor
-DatabaseMigrationStateSchedule
 DomainBase
 EntityGroupRoot
 EppResourceIndex
@@ -20,4 +19,3 @@ Recurring
 Registrar
 RegistrarContact
 Registry
-ReservedList

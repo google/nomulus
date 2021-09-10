@@ -23,7 +23,7 @@ import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.common.CrossTldSingleton;
-import google.registry.schema.replay.NonReplicatedEntity;
+import google.registry.model.replay.NonReplicatedEntity;
 import java.util.Optional;
 import javax.annotation.concurrent.Immutable;
 import javax.persistence.Column;

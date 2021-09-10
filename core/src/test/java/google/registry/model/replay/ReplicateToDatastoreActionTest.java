@@ -12,32 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.junit.Assert.assertThrows;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.testing.TestLogHandler;
-import com.googlecode.objectify.Key;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
-import google.registry.model.ImmutableObject;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.Ofy;
-import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTransactionManagerImpl;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.TestObject;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,8 +53,8 @@ public class ReplicateToDatastoreActionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
-          .withOfyTestEntities(TestEntity.class)
-          .withJpaUnitTestEntities(TestEntity.class)
+          .withOfyTestEntities(TestObject.class)
+          .withJpaUnitTestEntities(TestObject.class)
           .withClock(fakeClock)
           .build();
 
@@ -68,8 +64,7 @@ public class ReplicateToDatastoreActionTest {
   private final TestLogHandler logHandler = new TestLogHandler();
 
   @BeforeEach
-  public void setUp() {
-    JpaTransactionManagerImpl.removeReplaySqlToDsOverrideForTest();
+  void setUp() {
     injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
     // Use a single bucket to expose timestamp inversion problems.
     injectExtension.setStaticField(
@@ -78,19 +73,20 @@ public class ReplicateToDatastoreActionTest {
     DatabaseHelper.setMigrationScheduleToSqlPrimary(fakeClock);
     Logger.getLogger(ReplicateToDatastoreAction.class.getCanonicalName()).addHandler(logHandler);
     fakeClock.advanceBy(Duration.standardDays(1));
+    TestObject.beforeDatastoreSaveCallCount = 0;
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     DatabaseHelper.removeDatabaseMigrationSchedule();
     fakeClock.disableAutoIncrement();
   }
 
   @RetryingTest(4)
-  public void testReplication() {
-    TestEntity foo = new TestEntity("foo");
-    TestEntity bar = new TestEntity("bar");
-    TestEntity baz = new TestEntity("baz");
+  void testReplication() {
+    TestObject foo = TestObject.create("foo");
+    TestObject bar = TestObject.create("bar");
+    TestObject baz = TestObject.create("baz");
 
     jpaTm()
         .transact(
@@ -117,9 +113,9 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
-  public void testReplayFromLastTxn() {
-    TestEntity foo = new TestEntity("foo");
-    TestEntity bar = new TestEntity("bar");
+  void testReplayFromLastTxn() {
+    TestObject foo = TestObject.create("foo");
+    TestObject bar = TestObject.create("bar");
 
     // Write a transaction containing "foo".
     jpaTm().transact(() -> jpaTm().insert(foo));
@@ -139,9 +135,9 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
-  public void testUnintentionalConcurrency() {
-    TestEntity foo = new TestEntity("foo");
-    TestEntity bar = new TestEntity("bar");
+  void testUnintentionalConcurrency() {
+    TestObject foo = TestObject.create("foo");
+    TestObject bar = TestObject.create("bar");
 
     // Write a transaction and run just the batch fetch.
     jpaTm().transact(() -> jpaTm().insert(foo));
@@ -154,14 +150,14 @@ public class ReplicateToDatastoreActionTest {
     assertThat(txns2).hasSize(2);
 
     // Apply the first batch.
-    assertThat(task.applyTransaction(txns1.get(0))).isFalse();
+    task.applyTransaction(txns1.get(0));
 
     // Remove the foo record so we can ensure that this transaction doesn't get doublle-played.
     ofyTm().transact(() -> ofyTm().delete(foo.key()));
 
     // Apply the second batch.
     for (TransactionEntity txn : txns2) {
-      assertThat(task.applyTransaction(txn)).isFalse();
+      task.applyTransaction(txn);
     }
 
     // Verify that the first transaction didn't get replayed but the second one did.
@@ -174,9 +170,9 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
-  public void testMissingTransactions() {
+  void testMissingTransactions() {
     // Write a transaction (should have a transaction id of 1).
-    TestEntity foo = new TestEntity("foo");
+    TestObject foo = TestObject.create("foo");
     jpaTm().transact(() -> jpaTm().insert(foo));
 
     // Force the last transaction id back to -1 so that we look for transaction 0.
@@ -184,19 +180,41 @@ public class ReplicateToDatastoreActionTest {
 
     List<TransactionEntity> txns = task.getTransactionBatch();
     assertThat(txns).hasSize(1);
-    assertThat(task.applyTransaction(txns.get(0))).isTrue();
+    assertThat(assertThrows(IllegalStateException.class, () -> task.applyTransaction(txns.get(0))))
+        .hasMessageThat()
+        .isEqualTo("Missing transaction: last txn id = -1, next available txn = 1");
+  }
+
+  @Test
+  void testMissingTransactions_fullTask() {
+    // Write a transaction (should have a transaction id of 1).
+    TestObject foo = TestObject.create("foo");
+    jpaTm().transact(() -> jpaTm().insert(foo));
+
+    // Force the last transaction id back to -1 so that we look for transaction 0.
+    ofyTm().transact(() -> ofyTm().insert(new LastSqlTransaction(-1)));
+    task.run();
     assertAboutLogs()
         .that(logHandler)
-        .hasLogAtLevelWithMessage(
-            Level.SEVERE,
-            "Missing transaction: last transaction id = -1, next available transaction = 1");
+        .hasSevereLogWithCause(
+            new IllegalStateException(
+                "Missing transaction: last txn id = -1, next available txn = 1"));
+  }
+
+  @Test
+  void testBeforeDatastoreSaveCallback() {
+    TestObject testObject = TestObject.create("foo");
+    jpaTm().transact(() -> jpaTm().put(testObject));
+    task.run();
+    assertThat(ofyTm().loadAllOf(TestObject.class)).containsExactly(testObject);
+    assertThat(TestObject.beforeDatastoreSaveCallCount).isEqualTo(1);
   }
 
   @Test
   void testNotInMigrationState_doesNothing() {
-    // set a schedule that backtracks the current status to DATASTORE_PRIMARY_READ_ONLY
+    // set a schedule that backtracks the current status to DATASTORE_PRIMARY
     DateTime now = fakeClock.nowUtc();
-    ofyTm()
+    jpaTm()
         .transact(
             () ->
                 DatabaseMigrationStateSchedule.set(
@@ -207,34 +225,19 @@ public class ReplicateToDatastoreActionTest {
                         .put(START_OF_TIME.plusHours(3), MigrationState.SQL_PRIMARY)
                         .put(now.plusHours(1), MigrationState.SQL_PRIMARY_READ_ONLY)
                         .put(now.plusHours(2), MigrationState.DATASTORE_PRIMARY_READ_ONLY)
+                        .put(now.plusHours(3), MigrationState.DATASTORE_PRIMARY)
                         .build()));
     fakeClock.advanceBy(Duration.standardDays(1));
 
-    jpaTm().transact(() -> jpaTm().insert(new TestEntity("foo")));
+    jpaTm().transact(() -> jpaTm().insert(TestObject.create("foo")));
     task.run();
     // Replication shouldn't have happened
-    assertThat(ofyTm().loadAllOf(TestEntity.class)).isEmpty();
+    assertThat(ofyTm().loadAllOf(TestObject.class)).isEmpty();
     assertAboutLogs()
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
             "Skipping ReplicateToDatastoreAction because we are in migration phase "
-                + "DATASTORE_PRIMARY_READ_ONLY.");
-  }
-
-  @Entity(name = "ReplicationTestEntity")
-  @javax.persistence.Entity(name = "TestEntity")
-  private static class TestEntity extends ImmutableObject {
-    @Id @javax.persistence.Id private String name;
-
-    private TestEntity() {}
-
-    private TestEntity(String name) {
-      this.name = name;
-    }
-
-    public VKey<TestEntity> key() {
-      return VKey.create(TestEntity.class, name, Key.create(this));
-    }
+                + "DATASTORE_PRIMARY.");
   }
 }

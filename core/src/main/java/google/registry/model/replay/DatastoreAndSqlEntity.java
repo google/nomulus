@@ -1,4 +1,4 @@
-// Copyright 2021 The Nomulus Authors. All Rights Reserved.
+// Copyright 2020 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import java.util.Optional;
 
-/** An entity that is only stored in SQL, that should not be replayed to Datastore. */
-public interface SqlOnlyEntity extends SqlEntity {
+/** An entity that has the same Java object representation in SQL and Datastore. */
+public interface DatastoreAndSqlEntity extends DatastoreEntity, SqlEntity {
+
   @Override
   default Optional<DatastoreEntity> toDatastoreEntity() {
-    return Optional.empty();
+    return Optional.of(this);
+  }
+
+  @Override
+  default Optional<SqlEntity> toSqlEntity() {
+    return Optional.of(this);
   }
 }

@@ -37,7 +37,6 @@ import java.util.Optional;
 class UpdatePremiumListCommand extends CreateOrUpdatePremiumListCommand {
 
   @Override
-  // Using UpdatePremiumListAction.java as reference;
   protected String prompt() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(inputFile) : name;
     Optional<PremiumList> list = PremiumListDao.getLatestRevision(name);

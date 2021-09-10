@@ -1097,10 +1097,11 @@ public class DomainFlowUtils {
     } else {
       return jpaTm()
           .query(
-              "FROM DomainHistory WHERE modificationTime >= :beginning "
-                  + "ORDER BY modificationTime ASC",
+              "FROM DomainHistory WHERE modificationTime >= :beginning AND domainRepoId = "
+                  + ":repoId ORDER BY modificationTime ASC",
               DomainHistory.class)
           .setParameter("beginning", now.minus(maxSearchPeriod))
+          .setParameter("repoId", domainBase.getRepoId())
           .getResultList();
     }
   }

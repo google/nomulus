@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.domain;
+package google.registry.model.domain;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
@@ -23,7 +23,7 @@ import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.UpdateAutoTimestamp;
-import google.registry.schema.replay.SqlOnlyEntity;
+import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.util.DateTimeUtils;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -232,7 +232,7 @@ public final class RegistryLock extends ImmutableObject implements Buildable, Sq
     return new Builder(clone(this));
   }
 
-  /** Builder for {@link google.registry.schema.domain.RegistryLock}. */
+  /** Builder for {@link RegistryLock}. */
   public static class Builder extends Buildable.Builder<RegistryLock> {
     public Builder() {}
 

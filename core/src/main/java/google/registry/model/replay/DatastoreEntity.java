@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import java.util.Optional;
 
@@ -27,4 +27,7 @@ import java.util.Optional;
 public interface DatastoreEntity {
 
   Optional<SqlEntity> toSqlEntity();
+
+  /** A method called before the object is saved to Datastore in asynchronous replay. */
+  default void beforeDatastoreSaveOnReplay() {}
 }

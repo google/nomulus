@@ -36,7 +36,10 @@ public class VKeyTranslatorFactoryTest {
 
   @RegisterExtension
   public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastore().withOfyTestEntities(TestObject.class).build();
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .withOfyTestEntities(TestObject.class)
+          .build();
 
   VKeyTranslatorFactoryTest() {}
 
@@ -83,18 +86,6 @@ public class VKeyTranslatorFactoryTest {
     assertThat(vkey.getKind()).isEqualTo(BillingEvent.OneTime.class);
     assertThat(vkey.getOfyKey()).isEqualTo(oneTimeKey);
     assertThat(vkey.getSqlKey()).isEqualTo(200L);
-  }
-
-  @Test
-  void testUrlSafeKey() {
-    // Creating an objectify key instead of a datastore key as this should get a correctly formatted
-    // key path.
-    DomainBase domain = newDomainBase("example.com", "ROID-1", persistActiveContact("contact-1"));
-    Key<DomainBase> key = Key.create(domain);
-    VKey<DomainBase> vkey = (VKey<DomainBase>) VKeyTranslatorFactory.createVKey(key.getString());
-    assertThat(vkey.getKind()).isEqualTo(DomainBase.class);
-    assertThat(vkey.getOfyKey()).isEqualTo(key);
-    assertThat(vkey.getSqlKey()).isEqualTo("ROID-1");
   }
 
   @Test

@@ -19,18 +19,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Strings;
-import com.googlecode.objectify.Key;
 import google.registry.model.tld.label.ReservedList;
-import google.registry.persistence.VKey;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /** Command to safely update {@link ReservedList}. */
 @Parameters(separators = " =", commandDescription = "Update a ReservedList.")
 final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand {
 
   @Override
-  protected void init() throws Exception {
+  protected String prompt() throws Exception {
     name = Strings.isNullOrEmpty(name) ? convertFilePathToName(input) : name;
     ReservedList existingReservedList =
         ReservedList.get(name)
@@ -53,15 +52,18 @@ final class UpdateReservedListCommand extends CreateOrUpdateReservedListCommand 
     if (!existingReservedList
         .getReservedListEntries()
         .equals(reservedList.getReservedListEntries())) {
-      // calls the stageEntityChange method that takes old entity, new entity and a new vkey;
-      // a vkey has to be created here explicitly for ReservedList instances.
-      // ReservedList is a sqlEntity; it triggers the static method Vkey.create(Key<?> ofyCall),
-      // which invokes a static ReservedList.createVkey(Key ofyKey) method that does not exist.
-      // the sql primary key field (revisionId) is only set when it's being persisted;
-      stageEntityChange(
-          existingReservedList,
-          reservedList,
-          VKey.createOfy(ReservedList.class, Key.create(existingReservedList)));
+      String oldEntries =
+          existingReservedList.getReservedListEntries().entrySet().stream()
+              .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
+              .collect(Collectors.joining(", "));
+      String newEntries =
+          reservedList.getReservedListEntries().entrySet().stream()
+              .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
+              .collect(Collectors.joining(", "));
+      return String.format(
+          "Update reserved list for %s?\nOld List: %s\n New List: %s",
+          name, oldEntries, newEntries);
     }
+    return "No entity changes to apply.";
   }
 }

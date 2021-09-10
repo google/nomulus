@@ -78,23 +78,6 @@ class google.registry.model.common.Cursor {
   google.registry.model.UpdateAutoTimestamp lastUpdateTime;
   org.joda.time.DateTime cursorTime;
 }
-class google.registry.model.common.DatabaseMigrationStateSchedule {
-  @Id long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  google.registry.model.common.TimedTransitionProperty<google.registry.model.common.DatabaseMigrationStateSchedule$MigrationState, google.registry.model.common.DatabaseMigrationStateSchedule$MigrationStateTransition> migrationTransitions;
-}
-enum google.registry.model.common.DatabaseMigrationStateSchedule$MigrationState {
-  DATASTORE_ONLY;
-  DATASTORE_PRIMARY;
-  DATASTORE_PRIMARY_READ_ONLY;
-  SQL_ONLY;
-  SQL_PRIMARY;
-  SQL_PRIMARY_READ_ONLY;
-}
-class google.registry.model.common.DatabaseMigrationStateSchedule$MigrationStateTransition {
-  google.registry.model.common.DatabaseMigrationStateSchedule$MigrationState migrationState;
-  org.joda.time.DateTime transitionTime;
-}
 class google.registry.model.common.EntityGroupRoot {
   @Id java.lang.String id;
   google.registry.model.UpdateAutoTimestamp updateTimestamp;
@@ -654,6 +637,10 @@ enum google.registry.model.registrar.RegistrarContact$Type {
   TECH;
   WHOIS;
 }
+class google.registry.model.replay.LastSqlTransaction {
+  @Id long id;
+  long transactionId;
+}
 class google.registry.model.reporting.DomainTransactionRecord {
   google.registry.model.reporting.DomainTransactionRecord$TransactionReportField reportField;
   java.lang.Integer reportAmount;
@@ -802,41 +789,6 @@ enum google.registry.model.tld.Registry$TldType {
   REAL;
   TEST;
 }
-enum google.registry.model.tld.label.ReservationType {
-  ALLOWED_IN_SUNRISE;
-  FULLY_BLOCKED;
-  NAME_COLLISION;
-  RESERVED_FOR_ANCHOR_TENANT;
-  RESERVED_FOR_SPECIFIC_USE;
-}
-class google.registry.model.tld.label.ReservedList {
-  @Id java.lang.String name;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  boolean shouldPublish;
-  java.util.Map<java.lang.String, google.registry.model.tld.label.ReservedList$ReservedListEntry> reservedListMap;
-  org.joda.time.DateTime creationTimestamp;
-}
-class google.registry.model.tld.label.ReservedList$ReservedListEntry {
-  @Id java.lang.String domainLabel;
-  google.registry.model.tld.label.ReservationType reservationType;
-  java.lang.Long revisionId;
-  java.lang.String comment;
-}
-class google.registry.model.tmch.ClaimsList {
-  @Id long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsList$ClaimsListRevision> parent;
-  com.google.common.collect.ImmutableMap<java.lang.String, java.lang.String> labelsToKeys;
-  org.joda.time.DateTime creationTime;
-}
-class google.registry.model.tmch.ClaimsList$ClaimsListRevision {
-  @Id long versionId;
-  @Parent com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsList$ClaimsListSingleton> parent;
-}
-class google.registry.model.tmch.ClaimsList$ClaimsListSingleton {
-  @Id long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  com.googlecode.objectify.Key<google.registry.model.tmch.ClaimsList$ClaimsListRevision> activeRevision;
-}
 class google.registry.model.tmch.TmchCrl {
   @Id long id;
   @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
@@ -905,8 +857,4 @@ class google.registry.persistence.BillingVKey$BillingRecurrenceVKey {
 class google.registry.persistence.DomainHistoryVKey {
   java.lang.Long historyRevisionId;
   java.lang.String repoId;
-}
-class google.registry.schema.replay.LastSqlTransaction {
-  @Id long id;
-  long transactionId;
 }

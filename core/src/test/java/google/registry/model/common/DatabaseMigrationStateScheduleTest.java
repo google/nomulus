@@ -21,14 +21,19 @@ import static google.registry.model.common.DatabaseMigrationStateSchedule.Migrat
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.SQL_ONLY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.SQL_PRIMARY;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState.SQL_PRIMARY_READ_ONLY;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.EntityTestCase;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenType;
+import google.registry.persistence.transaction.TransactionManagerFactory.ReadOnlyModeException;
 import google.registry.testing.DatabaseHelper;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -36,6 +41,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/** Tests for {@link DatabaseMigrationStateSchedule}. */
 public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
 
   @BeforeEach
@@ -123,7 +129,7 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
-                () -> ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(nowInvalidMap))))
+                () -> jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(nowInvalidMap))))
         .hasMessageThat()
         .isEqualTo(
             "Cannot transition from current state-as-of-now DATASTORE_ONLY "
@@ -139,7 +145,7 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
                     DatabaseMigrationStateSchedule.set(
                         DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP.toValueMap())))
         .hasMessageThat()
-        .isEqualTo("Must be called in a transaction");
+        .isEqualTo("Not in a transaction");
   }
 
   @Test
@@ -151,10 +157,24 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
     assertThat(tm().isOfy()).isFalse();
   }
 
+  @Test
+  void testSuccess_factoryUsesReadOnly() {
+    createTld("tld");
+    fakeClock.setTo(START_OF_TIME.plusDays(1));
+    AllocationToken token =
+        new AllocationToken.Builder().setToken("token").setTokenType(TokenType.SINGLE_USE).build();
+    runValidTransition(DATASTORE_PRIMARY, DATASTORE_PRIMARY_READ_ONLY);
+    assertThrows(ReadOnlyModeException.class, () -> persistResource(token));
+    runValidTransition(DATASTORE_PRIMARY_READ_ONLY, SQL_PRIMARY_READ_ONLY);
+    assertThrows(ReadOnlyModeException.class, () -> persistResource(token));
+    runValidTransition(SQL_PRIMARY_READ_ONLY, SQL_PRIMARY);
+    persistResource(token);
+  }
+
   private void runValidTransition(MigrationState from, MigrationState to) {
     ImmutableSortedMap<DateTime, MigrationState> transitions =
         createMapEndingWithTransition(from, to);
-    ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(transitions));
+    jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(transitions));
     assertThat(DatabaseMigrationStateSchedule.getUncached().toValueMap())
         .containsExactlyEntriesIn(transitions);
   }
@@ -165,7 +185,7 @@ public class DatabaseMigrationStateScheduleTest extends EntityTestCase {
     assertThat(
             assertThrows(
                 IllegalArgumentException.class,
-                () -> ofyTm().transact(() -> DatabaseMigrationStateSchedule.set(transitions))))
+                () -> jpaTm().transact(() -> DatabaseMigrationStateSchedule.set(transitions))))
         .hasMessageThat()
         .isEqualTo(
             String.format("validStateTransitions map cannot transition from %s to %s.", from, to));

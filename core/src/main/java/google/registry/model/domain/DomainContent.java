@@ -63,6 +63,7 @@ import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
+import google.registry.model.replay.ReplaySpecializer;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
@@ -404,7 +405,7 @@ public class DomainContent extends EppResource
   /**
    * Callback to delete grace periods and DelegationSignerData records prior to domain delete.
    *
-   * <p>See {@link google.registry.schema.replay.ReplaySpecializer}.
+   * <p>See {@link ReplaySpecializer}.
    */
   public static void beforeSqlDelete(VKey<DomainBase> key) {
     // Delete all grace periods associated with the domain.

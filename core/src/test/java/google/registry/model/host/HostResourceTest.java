@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
@@ -30,11 +31,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
+import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.index.EppResourceIndex;
+import google.registry.model.index.ForeignKeyIndex;
+import google.registry.model.index.ForeignKeyIndex.ForeignKeyHostIndex;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DualDatabaseTest;
@@ -280,5 +285,28 @@ class HostResourceTest extends EntityTestCase {
     domain = domain.asBuilder().setLastTransferTime(day3).build();
     host = host.asBuilder().setLastTransferTime(day1).setLastSuperordinateChange(day2).build();
     assertThat(host.computeLastTransferTime(domain)).isEqualTo(day3);
+  }
+
+  @TestOfyOnly
+  void testBeforeDatastoreSaveOnReplay_indexes() {
+    ImmutableList<ForeignKeyHostIndex> foreignKeyIndexes =
+        ofyTm().loadAllOf(ForeignKeyHostIndex.class);
+    ImmutableList<EppResourceIndex> eppResourceIndexes = ofyTm().loadAllOf(EppResourceIndex.class);
+    fakeClock.advanceOneMilli();
+    ofyTm()
+        .transact(
+            () -> {
+              foreignKeyIndexes.forEach(ofyTm()::delete);
+              eppResourceIndexes.forEach(ofyTm()::delete);
+            });
+    assertThat(ofyTm().loadAllOf(ForeignKeyHostIndex.class)).isEmpty();
+    assertThat(ofyTm().loadAllOf(EppResourceIndex.class)).isEmpty();
+
+    ofyTm().transact(() -> host.beforeDatastoreSaveOnReplay());
+
+    assertThat(ofyTm().loadAllOf(ForeignKeyHostIndex.class))
+        .containsExactly(ForeignKeyIndex.create(host, host.getDeletionTime()));
+    assertThat(ofyTm().loadAllOf(EppResourceIndex.class))
+        .containsExactly(EppResourceIndex.create(Key.create(host)));
   }
 }

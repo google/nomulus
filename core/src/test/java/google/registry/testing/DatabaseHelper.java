@@ -35,7 +35,6 @@ import static google.registry.model.ResourceTransferUtils.createTransferResponse
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.ofyTmOrDoNothing;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
@@ -444,7 +443,7 @@ public class DatabaseHelper {
    * Deletes "domain" and all history records, billing events, poll messages and subordinate hosts.
    */
   public static void deleteTestDomain(DomainBase domain, DateTime now) {
-    Iterable<BillingEvent> billingEvents = getBillingEvents();
+    Iterable<BillingEvent> billingEvents = getBillingEvents(domain);
     Iterable<? extends HistoryEntry> historyEntries =
         HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey());
     Iterable<PollMessage> pollMessages = loadAllOf(PollMessage.class);
@@ -792,13 +791,13 @@ public class DatabaseHelper {
     return transactIfJpaTm(
         () ->
             Iterables.concat(
-                tm().loadAllOf(BillingEvent.OneTime.class).stream()
+                tm().loadAllOfStream(BillingEvent.OneTime.class)
                     .filter(oneTime -> oneTime.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList()),
-                tm().loadAllOf(BillingEvent.Recurring.class).stream()
+                tm().loadAllOfStream(BillingEvent.Recurring.class)
                     .filter(recurring -> recurring.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList()),
-                tm().loadAllOf(BillingEvent.Cancellation.class).stream()
+                tm().loadAllOfStream(BillingEvent.Cancellation.class)
                     .filter(
                         cancellation -> cancellation.getDomainRepoId().equals(resource.getRepoId()))
                     .collect(toImmutableList())));
@@ -1352,13 +1351,58 @@ public class DatabaseHelper {
   }
 
   /**
-   * Asserts that the given entity is detached from the current JPA entity manager.
+   * Loads all given entities from the database if possible.
+   *
+   * <p>If the transaction manager is Cloud SQL, then this creates an inner wrapping transaction for
+   * convenience, so you don't need to wrap it in a transaction at the callsite.
+   *
+   * <p>Nonexistent entities are absent from the resulting list, but no {@link
+   * NoSuchElementException} will be thrown.
+   */
+  public static <T> ImmutableList<T> loadByEntitiesIfPresent(Iterable<T> entities) {
+    return transactIfJpaTm(() -> tm().loadByEntitiesIfPresent(entities));
+  }
+
+  /** Returns whether or not the given entity exists in the database. */
+  public static boolean existsInDatabase(Object object) {
+    return transactIfJpaTm(() -> tm().exists(object));
+  }
+
+  /**
+   * In JPA mode, asserts that the given entity is detached from the current entity manager.
    *
    * <p>Returns the original entity object.
    */
   public static <T> T assertDetachedFromEntityManager(T entity) {
     assertThat(jpaTm().getEntityManager().contains(entity)).isFalse();
     return entity;
+  }
+
+  /**
+   * Sets a DATASTORE_PRIMARY_READ_ONLY state on the {@link DatabaseMigrationStateSchedule}.
+   *
+   * <p>In order to allow for tests to manipulate the clock how they need, we start the transitions
+   * one millisecond after the clock's current time (in case the clock's current value is
+   * START_OF_TIME). We then advance the clock one second so that we're in the
+   * DATASTORE_PRIMARY_READ_ONLY phase.
+   *
+   * <p>We must use the current time, otherwise the setting of the migration state will fail due to
+   * an invalid transition.
+   */
+  public static void setMigrationScheduleToDatastorePrimaryReadOnly(FakeClock fakeClock) {
+    DateTime now = fakeClock.nowUtc();
+    jpaTm()
+        .transact(
+            () ->
+                DatabaseMigrationStateSchedule.set(
+                    ImmutableSortedMap.of(
+                        START_OF_TIME,
+                        MigrationState.DATASTORE_ONLY,
+                        now.plusMillis(1),
+                        MigrationState.DATASTORE_PRIMARY,
+                        now.plusMillis(2),
+                        MigrationState.DATASTORE_PRIMARY_READ_ONLY)));
+    fakeClock.advanceBy(Duration.standardSeconds(1));
   }
 
   /**
@@ -1373,7 +1417,7 @@ public class DatabaseHelper {
    */
   public static void setMigrationScheduleToSqlPrimary(FakeClock fakeClock) {
     DateTime now = fakeClock.nowUtc();
-    ofyTm()
+    jpaTm()
         .transact(
             () ->
                 DatabaseMigrationStateSchedule.set(
@@ -1392,12 +1436,13 @@ public class DatabaseHelper {
   /** Removes the database migration schedule, in essence transitioning to DATASTORE_ONLY. */
   public static void removeDatabaseMigrationSchedule() {
     // use the raw calls because going SQL_PRIMARY -> DATASTORE_ONLY is not valid
-    ofyTm()
+    jpaTm()
         .transact(
             () ->
-                ofyTm()
-                    .loadSingleton(DatabaseMigrationStateSchedule.class)
-                    .ifPresent(ofyTm()::delete));
+                jpaTm()
+                    .putIgnoringReadOnly(
+                        new DatabaseMigrationStateSchedule(
+                            DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP)));
     DatabaseMigrationStateSchedule.CACHE.invalidateAll();
   }
 

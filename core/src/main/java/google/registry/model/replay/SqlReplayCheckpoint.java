@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -41,6 +41,6 @@ public class SqlReplayCheckpoint extends CrossTldSingleton implements SqlOnlyEnt
     SqlReplayCheckpoint checkpoint = new SqlReplayCheckpoint();
     checkpoint.lastReplayTime = lastReplayTime;
     // this will overwrite the existing object due to the constant revisionId
-    jpaTm().put(checkpoint);
+    jpaTm().putIgnoringReadOnly(checkpoint);
   }
 }

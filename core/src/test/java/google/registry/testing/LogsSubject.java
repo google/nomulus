@@ -14,6 +14,7 @@
 
 package google.registry.testing;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertWithMessage;
 
@@ -26,6 +27,7 @@ import com.google.common.truth.StringSubject;
 import com.google.common.truth.Subject;
 import google.registry.testing.TruthChainer.Which;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -41,7 +43,13 @@ public class LogsSubject extends Subject {
   }
 
   private static final Correspondence<String, String> CONTAINS_CORRESPONDENCE =
-      Correspondence.from((actual, expected) -> actual.contains(expected), "contains");
+      Correspondence.from(String::contains, "contains");
+
+  private static final Correspondence<Throwable, Throwable> THROWABLE_CORRESPONDENCE =
+      Correspondence.from(
+          (t1, t2) ->
+              t1.getClass().equals(t2.getClass()) && t1.getMessage().equals(t2.getMessage()),
+          "throwableEquivalent");
 
   private List<String> getMessagesAtLevel(Level level) {
     ImmutableList.Builder<String> builder = new ImmutableList.Builder<>();
@@ -55,6 +63,19 @@ public class LogsSubject extends Subject {
 
   public void hasNoLogsAtLevel(Level level) {
     check("atLevel(%s)", level).that(getMessagesAtLevel(level)).isEmpty();
+  }
+
+  public void hasSevereLogWithCause(Throwable throwable) {
+    ImmutableList<Throwable> actualThrowables =
+        actual.getStoredLogRecords().stream()
+            .filter(record -> record.getLevel().equals(Level.SEVERE))
+            .map(LogRecord::getThrown)
+            .filter(Objects::nonNull)
+            .collect(toImmutableList());
+    check("atSevere")
+        .that(actualThrowables)
+        .comparingElementsUsing(THROWABLE_CORRESPONDENCE)
+        .contains(throwable);
   }
 
   public Which<StringSubject> hasLogAtLevelWithMessage(Level level, String message) {

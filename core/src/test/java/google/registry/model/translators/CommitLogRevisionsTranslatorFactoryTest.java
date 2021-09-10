@@ -27,7 +27,7 @@ import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.common.CrossTldSingleton;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.Ofy;
-import google.registry.schema.replay.EntityTest.EntityForTesting;
+import google.registry.model.replay.EntityTest.EntityForTesting;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;

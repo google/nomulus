@@ -30,8 +30,6 @@ import google.registry.request.RequestComponentBuilder;
 import google.registry.request.RequestModule;
 import google.registry.request.RequestScope;
 import google.registry.tools.server.CreateGroupsAction;
-import google.registry.tools.server.CreatePremiumListAction;
-import google.registry.tools.server.DeleteEntityAction;
 import google.registry.tools.server.GenerateZoneFilesAction;
 import google.registry.tools.server.KillAllCommitLogsAction;
 import google.registry.tools.server.KillAllEppResourcesAction;
@@ -44,7 +42,6 @@ import google.registry.tools.server.ListTldsAction;
 import google.registry.tools.server.RefreshDnsForAllDomainsAction;
 import google.registry.tools.server.ResaveAllHistoryEntriesAction;
 import google.registry.tools.server.ToolsServerModule;
-import google.registry.tools.server.UpdatePremiumListAction;
 import google.registry.tools.server.VerifyOteAction;
 
 /** Dagger component with per-request lifetime for "tools" App Engine module. */
@@ -62,8 +59,6 @@ import google.registry.tools.server.VerifyOteAction;
     })
 interface ToolsRequestComponent {
   CreateGroupsAction createGroupsAction();
-  CreatePremiumListAction createPremiumListAction();
-  DeleteEntityAction deleteEntityAction();
   EppToolAction eppToolAction();
   FlowComponent.Builder flowComponentBuilder();
   GenerateZoneFilesAction generateZoneFilesAction();
@@ -79,7 +74,6 @@ interface ToolsRequestComponent {
   RefreshDnsForAllDomainsAction refreshDnsForAllDomainsAction();
   ResaveAllHistoryEntriesAction resaveAllHistoryEntriesAction();
   RestoreCommitLogsAction restoreCommitLogsAction();
-  UpdatePremiumListAction updatePremiumListAction();
   VerifyOteAction verifyOteAction();
 
   @Subcomponent.Builder

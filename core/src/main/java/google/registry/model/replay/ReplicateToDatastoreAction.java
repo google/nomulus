@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.schema.replay;
+package google.registry.model.replay;
 
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
@@ -22,6 +22,7 @@ import static google.registry.request.Action.Method.GET;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
+import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
@@ -64,7 +65,7 @@ public class ReplicateToDatastoreAction implements Runnable {
   @VisibleForTesting
   public List<TransactionEntity> getTransactionBatch() {
     // Get the next batch of transactions that we haven't replicated.
-    LastSqlTransaction lastSqlTxnBeforeBatch = ofyTm().transact(() -> LastSqlTransaction.load());
+    LastSqlTransaction lastSqlTxnBeforeBatch = ofyTm().transact(LastSqlTransaction::load);
     try {
       return jpaTm()
           .transactWithoutBackup(
@@ -85,53 +86,57 @@ public class ReplicateToDatastoreAction implements Runnable {
   /**
    * Apply a transaction to Datastore, returns true if there was a fatal error and the batch should
    * be aborted.
+   *
+   * <p>Throws an exception if a fatal error occurred and the batch should be aborted
    */
   @VisibleForTesting
-  public boolean applyTransaction(TransactionEntity txnEntity) {
+  public void applyTransaction(TransactionEntity txnEntity) {
     logger.atInfo().log("Applying a single transaction Cloud SQL -> Cloud Datastore");
-    return ofyTm()
-        .transact(
-            () -> {
-              // Reload the last transaction id, which could possibly have changed.
-              LastSqlTransaction lastSqlTxn = LastSqlTransaction.load();
-              long nextTxnId = lastSqlTxn.getTransactionId() + 1;
-              if (nextTxnId < txnEntity.getId()) {
-                // We're missing a transaction.  This is bad.  Transaction ids are supposed to
-                // increase monotonically, so we abort rather than applying anything out of
-                // order.
-                logger.atSevere().log(
-                    "Missing transaction: last transaction id = %s, next available transaction "
-                        + "= %s",
-                    nextTxnId - 1, txnEntity.getId());
-                return true;
-              } else if (nextTxnId > txnEntity.getId()) {
-                // We've already replayed this transaction.  This shouldn't happen, as GAE cron
-                // is supposed to avoid overruns and this action shouldn't be executed from any
-                // other context, but it's not harmful as we can just ignore the transaction.  Log
-                // it so that we know about it and move on.
-                logger.atWarning().log(
-                    "Ignoring transaction %s, which appears to have already been applied.",
-                    txnEntity.getId());
-                return false;
-              }
+    try (UpdateAutoTimestamp.DisableAutoUpdateResource disabler =
+        UpdateAutoTimestamp.disableAutoUpdate()) {
+      ofyTm()
+          .transact(
+              () -> {
+                // Reload the last transaction id, which could possibly have changed.
+                LastSqlTransaction lastSqlTxn = LastSqlTransaction.load();
+                long nextTxnId = lastSqlTxn.getTransactionId() + 1;
+                if (nextTxnId < txnEntity.getId()) {
+                  // We're missing a transaction.  This is bad.  Transaction ids are supposed to
+                  // increase monotonically, so we abort rather than applying anything out of
+                  // order.
+                  throw new IllegalStateException(
+                      String.format(
+                          "Missing transaction: last txn id = %s, next available txn = %s",
+                          nextTxnId - 1, txnEntity.getId()));
+                } else if (nextTxnId > txnEntity.getId()) {
+                  // We've already replayed this transaction.  This shouldn't happen, as GAE cron
+                  // is supposed to avoid overruns and this action shouldn't be executed from any
+                  // other context, but it's not harmful as we can just ignore the transaction.  Log
+                  // it so that we know about it and move on.
+                  logger.atWarning().log(
+                      "Ignoring transaction %s, which appears to have already been applied.",
+                      txnEntity.getId());
+                  return;
+                }
 
-              logger.atInfo().log("Applying transaction %s to Cloud Datastore", txnEntity.getId());
+                logger.atInfo().log(
+                    "Applying transaction %s to Cloud Datastore", txnEntity.getId());
 
-              // At this point, we know txnEntity is the correct next transaction, so write it
-              // to datastore.
-              try {
-                Transaction.deserialize(txnEntity.getContents()).writeToDatastore();
-              } catch (IOException e) {
-                throw new RuntimeException("Error during transaction deserialization.", e);
-              }
+                // At this point, we know txnEntity is the correct next transaction, so write it
+                // to datastore.
+                try {
+                  Transaction.deserialize(txnEntity.getContents()).writeToDatastore();
+                } catch (IOException e) {
+                  throw new RuntimeException("Error during transaction deserialization.", e);
+                }
 
-              // Write the updated last transaction id to datastore as part of this datastore
-              // transaction.
-              auditedOfy().save().entity(lastSqlTxn.cloneWithNewTransactionId(nextTxnId));
-              logger.atInfo().log(
-                  "Finished applying single transaction Cloud SQL -> Cloud Datastore");
-              return false;
-            });
+                // Write the updated last transaction id to datastore as part of this datastore
+                // transaction.
+                auditedOfy().save().entity(lastSqlTxn.cloneWithNewTransactionId(nextTxnId));
+                logger.atInfo().log(
+                    "Finished applying single transaction Cloud SQL -> Cloud Datastore");
+              });
+    }
   }
 
   @Override
@@ -139,18 +144,23 @@ public class ReplicateToDatastoreAction implements Runnable {
     MigrationState state = DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc());
     if (!state.getReplayDirection().equals(ReplayDirection.SQL_TO_DATASTORE)) {
       logger.atInfo().log(
-          String.format(
-              "Skipping ReplicateToDatastoreAction because we are in migration phase %s.", state));
+          "Skipping ReplicateToDatastoreAction because we are in migration phase %s.", state);
       return;
     }
     // TODO(b/181758163): Deal with objects that don't exist in Cloud SQL, e.g. ForeignKeyIndex,
     // EppResourceIndex.
     logger.atInfo().log("Processing transaction replay batch Cloud SQL -> Cloud Datastore");
+    int numTransactionsReplayed = 0;
     for (TransactionEntity txnEntity : getTransactionBatch()) {
-      if (applyTransaction(txnEntity)) {
-        break;
+      try {
+        applyTransaction(txnEntity);
+      } catch (Throwable t) {
+        logger.atSevere().withCause(t).log("Errored out replaying files");
+        return;
       }
+      numTransactionsReplayed++;
     }
-    logger.atInfo().log("Done processing transaction replay batch Cloud SQL -> Cloud Datastore");
+    logger.atInfo().log(
+        "Replayed %d transactions from Cloud SQL -> Datastore", numTransactionsReplayed);
   }
 }

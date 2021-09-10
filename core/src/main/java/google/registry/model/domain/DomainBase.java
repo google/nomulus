@@ -21,9 +21,9 @@ import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.host.HostResource;
+import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
-import google.registry.schema.replay.DatastoreAndSqlEntity;
 import java.util.Set;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -162,6 +162,11 @@ public class DomainBase extends DomainContent
   @Override
   public DomainBase cloneProjectedAtTime(final DateTime now) {
     return cloneDomainProjectedAtTime(this, now);
+  }
+
+  @Override
+  public void beforeDatastoreSaveOnReplay() {
+    saveIndexesToDatastore();
   }
 
   public static VKey<DomainBase> createVKey(Key<DomainBase> key) {

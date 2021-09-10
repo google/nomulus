@@ -85,7 +85,7 @@ public class ExpandRecurringBillingEventsActionTest
 
   @Order(Order.DEFAULT - 2)
   @RegisterExtension
-  public final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
+  public final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   private DomainBase domain;
   private DomainHistory historyEntry;
