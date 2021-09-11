@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.persistence.FlushModeType;
 import javax.persistence.LockModeType;
 import javax.persistence.Parameter;
@@ -39,6 +40,11 @@ class ReadOnlyCheckingTypedQuery<T> implements TypedQuery<T> {
   @Override
   public List<T> getResultList() {
     return delegate.getResultList();
+  }
+
+  @Override
+  public Stream<T> getResultStream() {
+    return delegate.getResultStream();
   }
 
   @Override
