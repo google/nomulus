@@ -324,7 +324,8 @@ public final class RegistryJpaIO {
               GroupIntoBatches.<Integer, T>ofSize(batchSize()).withShardedKey())
           .apply(
               "Write in batch for " + name(),
-              ParDo.of(new SqlBatchWriter<>(name(), jpaConverter(), disableUpdateAutoTimestamp())));
+              ParDo.of(
+                  new SqlBatchWriter<>(name(), jpaConverter(), !disableUpdateAutoTimestamp())));
     }
 
     static <T> Builder<T> builder() {
@@ -357,13 +358,13 @@ public final class RegistryJpaIO {
   private static class SqlBatchWriter<T> extends DoFn<KV<ShardedKey<Integer>, Iterable<T>>, Void> {
     private final Counter counter;
     private final SerializableFunction<T, Object> jpaConverter;
-    private final boolean writeAsRawData;
+    private final boolean allowAutoTimestamp;
 
     SqlBatchWriter(
-        String type, SerializableFunction<T, Object> jpaConverter, boolean writeAsRawData) {
+        String type, SerializableFunction<T, Object> jpaConverter, boolean allowAutoTimestamp) {
       counter = Metrics.counter("SQL_WRITE", type);
       this.jpaConverter = jpaConverter;
-      this.writeAsRawData = writeAsRawData;
+      this.allowAutoTimestamp = allowAutoTimestamp;
     }
 
     @Setup
@@ -378,13 +379,13 @@ public final class RegistryJpaIO {
 
     @ProcessElement
     public void processElement(@Element KV<ShardedKey<Integer>, Iterable<T>> kv) {
-      if (writeAsRawData) {
-        try (DisableAutoUpdateResource disable = UpdateAutoTimestamp.disableAutoUpdate()) {
-          actuallyProcessElement(kv);
-        }
+      if (allowAutoTimestamp) {
+        actuallyProcessElement(kv);
         return;
       }
-      actuallyProcessElement(kv);
+      try (DisableAutoUpdateResource disable = UpdateAutoTimestamp.disableAutoUpdate()) {
+        actuallyProcessElement(kv);
+      }
     }
 
     private void actuallyProcessElement(@Element KV<ShardedKey<Integer>, Iterable<T>> kv) {
