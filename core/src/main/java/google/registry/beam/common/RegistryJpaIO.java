@@ -277,8 +277,8 @@ public final class RegistryJpaIO {
     public abstract SerializableFunction<T, Object> jpaConverter();
 
     /**
-     * Signal to the writer that the the {@link UpdateAutoTimestamp} property should be written as
-     * is, without pre-persist manipulation.
+     * Signal to the writer that the {@link UpdateAutoTimestamp} property should be written as is,
+     * without pre-persist manipulation.
      *
      * <p>The default value is {@code false}.
      */
