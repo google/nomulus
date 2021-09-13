@@ -80,7 +80,7 @@ class SafeBrowsingTransformsTest {
   private static final String REGISTRAR_ID = "registrarID";
   private static final String REGISTRAR_EMAIL = "email@registrar.net";
 
-  private static ImmutableMap<Subdomain, ThreatMatch> THREAT_MATCH_MAP;
+  private static ImmutableMap<DomainNameInfo, ThreatMatch> THREAT_MATCH_MAP;
 
   private final CloseableHttpClient mockHttpClient =
       mock(CloseableHttpClient.class, withSettings().serializable());
@@ -95,24 +95,25 @@ class SafeBrowsingTransformsTest {
   final TestPipelineExtension pipeline =
       TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
 
-  private static Subdomain createSubdomain(String url) {
-    return Subdomain.create(url, REPO_ID, REGISTRAR_ID, REGISTRAR_EMAIL);
+  private static DomainNameInfo createDomainNameInfo(String url) {
+    return DomainNameInfo.create(url, REPO_ID, REGISTRAR_ID, REGISTRAR_EMAIL);
   }
 
-  private KV<Subdomain, ThreatMatch> getKv(String url) {
-    Subdomain subdomain = createSubdomain(url);
-    return KV.of(subdomain, THREAT_MATCH_MAP.get(subdomain));
+  private KV<DomainNameInfo, ThreatMatch> getKv(String url) {
+    DomainNameInfo domainNameInfo = createDomainNameInfo(url);
+    return KV.of(domainNameInfo, THREAT_MATCH_MAP.get(domainNameInfo));
   }
 
   @BeforeAll
   static void beforeAll() {
-    ImmutableMap.Builder<Subdomain, ThreatMatch> builder = new ImmutableMap.Builder<>();
+    ImmutableMap.Builder<DomainNameInfo, ThreatMatch> builder = new ImmutableMap.Builder<>();
     THREAT_MAP
         .entrySet()
         .forEach(
             kv ->
                 builder.put(
-                    createSubdomain(kv.getKey()), ThreatMatch.create(kv.getValue(), kv.getKey())));
+                    createDomainNameInfo(kv.getKey()),
+                    ThreatMatch.create(kv.getValue(), kv.getKey())));
     THREAT_MATCH_MAP = builder.build();
   }
 
@@ -123,16 +124,16 @@ class SafeBrowsingTransformsTest {
 
   @Test
   void testSuccess_someBadDomains() throws Exception {
-    ImmutableList<Subdomain> subdomains =
+    ImmutableList<DomainNameInfo> domainNameInfos =
         ImmutableList.of(
-            createSubdomain("111.com"),
-            createSubdomain("hooli.com"),
-            createSubdomain("party-night.net"),
-            createSubdomain("anti-anti-anti-virus.dev"),
-            createSubdomain("no-email.com"));
-    PCollection<KV<Subdomain, ThreatMatch>> threats =
+            createDomainNameInfo("111.com"),
+            createDomainNameInfo("hooli.com"),
+            createDomainNameInfo("party-night.net"),
+            createDomainNameInfo("anti-anti-anti-virus.dev"),
+            createDomainNameInfo("no-email.com"));
+    PCollection<KV<DomainNameInfo, ThreatMatch>> threats =
         pipeline
-            .apply(Create.of(subdomains).withCoder(SerializableCoder.of(Subdomain.class)))
+            .apply(Create.of(domainNameInfos).withCoder(SerializableCoder.of(DomainNameInfo.class)))
             .apply(ParDo.of(safeBrowsingFn));
 
     PAssert.that(threats)
@@ -146,14 +147,14 @@ class SafeBrowsingTransformsTest {
 
   @Test
   void testSuccess_noBadDomains() throws Exception {
-    ImmutableList<Subdomain> subdomains =
+    ImmutableList<DomainNameInfo> domainNameInfos =
         ImmutableList.of(
-            createSubdomain("hello_kitty.dev"),
-            createSubdomain("555.com"),
-            createSubdomain("goodboy.net"));
-    PCollection<KV<Subdomain, ThreatMatch>> threats =
+            createDomainNameInfo("hello_kitty.dev"),
+            createDomainNameInfo("555.com"),
+            createDomainNameInfo("goodboy.net"));
+    PCollection<KV<DomainNameInfo, ThreatMatch>> threats =
         pipeline
-            .apply(Create.of(subdomains).withCoder(SerializableCoder.of(Subdomain.class)))
+            .apply(Create.of(domainNameInfos).withCoder(SerializableCoder.of(DomainNameInfo.class)))
             .apply(ParDo.of(safeBrowsingFn));
 
     PAssert.that(threats).empty();

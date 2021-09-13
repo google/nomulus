@@ -55,13 +55,14 @@ public class SafeBrowsingTransforms {
       "https://safebrowsing.googleapis.com/v4/threatMatches:find";
 
   /**
-   * {@link DoFn} mapping a {@link Subdomain} to its evaluation report from SafeBrowsing.
+   * {@link DoFn} mapping a {@link DomainNameInfo} to its evaluation report from SafeBrowsing.
    *
    * <p>Refer to the Lookup API documentation for the request/response format and other details.
    *
    * @see <a href=https://developers.google.com/safe-browsing/v4/lookup-api>Lookup API</a>
    */
-  static class EvaluateSafeBrowsingFn extends DoFn<Subdomain, KV<Subdomain, ThreatMatch>> {
+  static class EvaluateSafeBrowsingFn
+      extends DoFn<DomainNameInfo, KV<DomainNameInfo, ThreatMatch>> {
 
     /**
      * Max number of urls we can check in a single query.
@@ -74,10 +75,11 @@ public class SafeBrowsingTransforms {
     private final String apiKey;
 
     /**
-     * Maps a subdomain's {@code fullyQualifiedDomainName} to its corresponding {@link Subdomain} to
-     * facilitate batching SafeBrowsing API requests.
+     * Maps a domain name's {@code fullyQualifiedDomainName} to its corresponding {@link
+     * DomainNameInfo} to facilitate batching SafeBrowsing API requests.
      */
-    private final Map<String, Subdomain> subdomainBuffer = new LinkedHashMap<>(BATCH_SIZE);
+    private final Map<String, DomainNameInfo> domainNameInfoBuffer =
+        new LinkedHashMap<>(BATCH_SIZE);
 
     /**
      * Provides the HTTP client we use to interact with the SafeBrowsing API.
@@ -119,37 +121,38 @@ public class SafeBrowsingTransforms {
       closeableHttpClientSupplier = clientSupplier;
     }
 
-    /** Evaluates any buffered {@link Subdomain} objects upon completing the bundle. */
+    /** Evaluates any buffered {@link DomainNameInfo} objects upon completing the bundle. */
     @FinishBundle
     public void finishBundle(FinishBundleContext context) {
-      if (!subdomainBuffer.isEmpty()) {
-        ImmutableSet<KV<Subdomain, ThreatMatch>> results = evaluateAndFlush();
+      if (!domainNameInfoBuffer.isEmpty()) {
+        ImmutableSet<KV<DomainNameInfo, ThreatMatch>> results = evaluateAndFlush();
         results.forEach((kv) -> context.output(kv, Instant.now(), GlobalWindow.INSTANCE));
       }
     }
 
     /**
-     * Buffers {@link Subdomain} objects until we reach the batch size, then bulk-evaluate the URLs
-     * with the SafeBrowsing API.
+     * Buffers {@link DomainNameInfo} objects until we reach the batch size, then bulk-evaluate the
+     * URLs with the SafeBrowsing API.
      */
     @ProcessElement
     public void processElement(ProcessContext context) {
-      Subdomain subdomain = context.element();
-      subdomainBuffer.put(subdomain.domainName(), subdomain);
-      if (subdomainBuffer.size() >= BATCH_SIZE) {
-        ImmutableSet<KV<Subdomain, ThreatMatch>> results = evaluateAndFlush();
+      DomainNameInfo domainNameInfo = context.element();
+      domainNameInfoBuffer.put(domainNameInfo.domainName(), domainNameInfo);
+      if (domainNameInfoBuffer.size() >= BATCH_SIZE) {
+        ImmutableSet<KV<DomainNameInfo, ThreatMatch>> results = evaluateAndFlush();
         results.forEach(context::output);
       }
     }
 
     /**
-     * Evaluates all {@link Subdomain} objects in the buffer and returns a list of key-value pairs
-     * from {@link Subdomain} to its SafeBrowsing report.
+     * Evaluates all {@link DomainNameInfo} objects in the buffer and returns a list of key-value
+     * pairs from {@link DomainNameInfo} to its SafeBrowsing report.
      *
-     * <p>If a {@link Subdomain} is safe according to the API, it will not emit a report.
+     * <p>If a {@link DomainNameInfo} is safe according to the API, it will not emit a report.
      */
-    private ImmutableSet<KV<Subdomain, ThreatMatch>> evaluateAndFlush() {
-      ImmutableSet.Builder<KV<Subdomain, ThreatMatch>> resultBuilder = new ImmutableSet.Builder<>();
+    private ImmutableSet<KV<DomainNameInfo, ThreatMatch>> evaluateAndFlush() {
+      ImmutableSet.Builder<KV<DomainNameInfo, ThreatMatch>> resultBuilder =
+          new ImmutableSet.Builder<>();
       try {
         URIBuilder uriBuilder = new URIBuilder(SAFE_BROWSING_URL);
         // Add the API key param
@@ -174,7 +177,7 @@ public class SafeBrowsingTransforms {
         throw new RuntimeException("Caught parsing exception, failing pipeline.", e);
       } finally {
         // Flush the buffer
-        subdomainBuffer.clear();
+        domainNameInfoBuffer.clear();
       }
       return resultBuilder.build();
     }
@@ -183,7 +186,7 @@ public class SafeBrowsingTransforms {
     private JSONObject createRequestBody() throws JSONException {
       // Accumulate all domain names to evaluate.
       JSONArray threatArray = new JSONArray();
-      for (String fullyQualifiedDomainName : subdomainBuffer.keySet()) {
+      for (String fullyQualifiedDomainName : domainNameInfoBuffer.keySet()) {
         threatArray.put(new JSONObject().put("url", fullyQualifiedDomainName));
       }
       // Construct the JSON request body
@@ -211,7 +214,7 @@ public class SafeBrowsingTransforms {
      */
     private void processResponse(
         CloseableHttpResponse response,
-        ImmutableSet.Builder<KV<Subdomain, ThreatMatch>> resultBuilder)
+        ImmutableSet.Builder<KV<DomainNameInfo, ThreatMatch>> resultBuilder)
         throws JSONException, IOException {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != SC_OK) {
@@ -226,16 +229,17 @@ public class SafeBrowsingTransforms {
         if (responseBody.length() == 0) {
           logger.atInfo().log("Response was empty, no threats detected");
         } else {
-          // Emit all Subdomains with their API results.
+          // Emit all DomainNameInfos with their API results.
           JSONArray threatMatches = responseBody.getJSONArray("matches");
           for (int i = 0; i < threatMatches.length(); i++) {
             JSONObject match = threatMatches.getJSONObject(i);
             String url = match.getJSONObject("threat").getString("url");
-            Subdomain subdomain = subdomainBuffer.get(url);
+            DomainNameInfo domainNameInfo = domainNameInfoBuffer.get(url);
             resultBuilder.add(
                 KV.of(
-                    subdomain,
-                    ThreatMatch.create(match.getString("threatType"), subdomain.domainName())));
+                    domainNameInfo,
+                    ThreatMatch.create(
+                        match.getString("threatType"), domainNameInfo.domainName())));
           }
         }
       }
