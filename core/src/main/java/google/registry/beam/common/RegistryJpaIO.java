@@ -277,12 +277,12 @@ public final class RegistryJpaIO {
     public abstract SerializableFunction<T, Object> jpaConverter();
 
     /**
-     * Signal to the writer that entities should be written as is, without data manipulation in
-     * PrePersist/PreUpdate methods.
+     * Signal to the writer that the the {@link UpdateAutoTimestamp} property should be written as
+     * is, without pre-persist manipulation.
      *
      * <p>The default value is {@code false}.
      */
-    public abstract boolean writeAsRawData();
+    public abstract boolean disableUpdateAutoTimestamp();
 
     public Write<T> withName(String name) {
       return toBuilder().name(name).build();
@@ -304,8 +304,8 @@ public final class RegistryJpaIO {
       return toBuilder().jpaConverter(jpaConverter).build();
     }
 
-    public Write<T> withWriteAsRawData() {
-      return toBuilder().writeAsRawData(true).build();
+    public Write<T> withUpdateAutoTimestampDisabled() {
+      return toBuilder().disableUpdateAutoTimestamp(true).build();
     }
 
     abstract Builder<T> toBuilder();
@@ -324,7 +324,7 @@ public final class RegistryJpaIO {
               GroupIntoBatches.<Integer, T>ofSize(batchSize()).withShardedKey())
           .apply(
               "Write in batch for " + name(),
-              ParDo.of(new SqlBatchWriter<>(name(), jpaConverter(), writeAsRawData())));
+              ParDo.of(new SqlBatchWriter<>(name(), jpaConverter(), disableUpdateAutoTimestamp())));
     }
 
     static <T> Builder<T> builder() {
@@ -333,7 +333,7 @@ public final class RegistryJpaIO {
           .batchSize(DEFAULT_BATCH_SIZE)
           .shards(DEFAULT_SHARDS)
           .jpaConverter(x -> x)
-          .writeAsRawData(false);
+          .disableUpdateAutoTimestamp(false);
     }
 
     @AutoValue.Builder
@@ -347,7 +347,7 @@ public final class RegistryJpaIO {
 
       abstract Builder<T> jpaConverter(SerializableFunction<T, Object> jpaConverter);
 
-      abstract Builder<T> writeAsRawData(boolean writeAsRawData);
+      abstract Builder<T> disableUpdateAutoTimestamp(boolean writeAsRawData);
 
       abstract Write<T> build();
     }
