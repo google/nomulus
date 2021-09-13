@@ -73,9 +73,9 @@ import javax.inject.Inject;
  * that we can skip the contact search altogether (because we returned a registrar, and all
  * registrars come after all contacts).
  *
- * @see <a href="http://tools.ietf.org/html/rfc7482">RFC 7482: Registration Data Access Protocol
+ * @see <a href="http://tools.ietf.org/html/rfc9082">RFC 9082: Registration Data Access Protocol
  *     (RDAP) Query Format</a>
- * @see <a href="http://tools.ietf.org/html/rfc7483">RFC 7483: JSON Responses for the Registration
+ * @see <a href="http://tools.ietf.org/html/rfc9083">RFC 9083: JSON Responses for the Registration
  *     Data Access Protocol (RDAP)</a>
  */
 // TODO: This isn't required by the RDAP Technical Implementation Guide, and hence should be
@@ -195,7 +195,7 @@ public class RdapEntitySearchAction extends RdapSearchActionBase {
    * <p>The search is by registrar name only. The profile is supporting the functionality defined in
    * the Base Registry Agreement.
    *
-   * <p>According to RFC 7482 section 6.1, punycode is only used for domain name labels, so we can
+   * <p>According to RFC 9082 section 6.1, punycode is only used for domain name labels, so we can
    * assume that entity names are regular unicode.
    *
    * <p>The includeDeleted flag is ignored when searching for contacts, because contact names are
