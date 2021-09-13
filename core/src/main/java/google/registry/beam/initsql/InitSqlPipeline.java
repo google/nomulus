@@ -220,7 +220,7 @@ public class InitSqlPipeline implements Serializable {
             .withBatchSize(options.getSqlWriteBatchSize())
             .withShards(options.getSqlWriteShards())
             .withJpaConverter(Transforms::convertVersionedEntityToSqlEntity)
-            .withUpdateAutoTimestampDisabled());
+            .disableUpdateAutoTimestamp());
   }
 
   private static ImmutableList<String> toKindStrings(Collection<Class<?>> entityClasses) {
