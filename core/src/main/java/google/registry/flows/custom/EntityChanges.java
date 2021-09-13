@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 
-/** A wrapper class that encapsulates Datastore entities to both save and delete. */
+/** A wrapper class that encapsulates database entities to both save and delete. */
 @AutoValue
 public abstract class EntityChanges {
 

@@ -47,7 +47,7 @@ import javax.inject.Inject;
 import org.joda.time.DateTime;
 
 /**
- * Class for synchronizing all {@link Registrar} Datastore objects to a Google Spreadsheet.
+ * Class for synchronizing all {@link Registrar} objects to a Google Spreadsheet.
  *
  * @see SyncRegistrarsSheetAction
  */
