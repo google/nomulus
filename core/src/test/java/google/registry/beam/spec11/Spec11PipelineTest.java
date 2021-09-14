@@ -94,13 +94,16 @@ class Spec11PipelineTest {
   private final CloseableHttpClient mockHttpClient =
       mock(CloseableHttpClient.class, withSettings().serializable());
 
-  private static final ImmutableList<Subdomain> SUBDOMAINS =
+  private static final ImmutableList<DomainNameInfo> DOMAIN_NAME_INFOS =
       ImmutableList.of(
-          Subdomain.create("111.com", "123456789-COM", "hello-registrar", "email@hello.net"),
-          Subdomain.create("party-night.net", "2244AABBC-NET", "kitty-registrar", "contact@kit.ty"),
-          Subdomain.create("bitcoin.bank", "1C3D5E7F9-BANK", "hello-registrar", "email@hello.net"),
-          Subdomain.create("no-email.com", "2A4BA9BBC-COM", "kitty-registrar", "contact@kit.ty"),
-          Subdomain.create(
+          DomainNameInfo.create("111.com", "123456789-COM", "hello-registrar", "email@hello.net"),
+          DomainNameInfo.create(
+              "party-night.net", "2244AABBC-NET", "kitty-registrar", "contact@kit.ty"),
+          DomainNameInfo.create(
+              "bitcoin.bank", "1C3D5E7F9-BANK", "hello-registrar", "email@hello.net"),
+          DomainNameInfo.create(
+              "no-email.com", "2A4BA9BBC-COM", "kitty-registrar", "contact@kit.ty"),
+          DomainNameInfo.create(
               "anti-anti-anti-virus.dev", "555666888-DEV", "cool-registrar", "cool@aid.net"));
 
   private static final ImmutableList<ThreatMatch> THREAT_MATCHES =
@@ -129,7 +132,7 @@ class Spec11PipelineTest {
       PipelineOptionsFactory.create().as(Spec11PipelineOptions.class);
 
   private File reportingBucketUrl;
-  private PCollection<KV<Subdomain, ThreatMatch>> threatMatches;
+  private PCollection<KV<DomainNameInfo, ThreatMatch>> threatMatches;
 
   ImmutableSet<Spec11ThreatMatch> sqlThreatMatches;
 
@@ -143,11 +146,11 @@ class Spec11PipelineTest {
     threatMatches =
         pipeline.apply(
             Create.of(
-                    Streams.zip(SUBDOMAINS.stream(), THREAT_MATCHES.stream(), KV::of)
+                    Streams.zip(DOMAIN_NAME_INFOS.stream(), THREAT_MATCHES.stream(), KV::of)
                         .collect(toImmutableList()))
                 .withCoder(
                     KvCoder.of(
-                        SerializableCoder.of(Subdomain.class),
+                        SerializableCoder.of(DomainNameInfo.class),
                         SerializableCoder.of(ThreatMatch.class))));
 
     sqlThreatMatches =
@@ -223,8 +226,8 @@ class Spec11PipelineTest {
   @Test
   void testSuccess_readFromCloudSql() throws Exception {
     setupCloudSql();
-    PCollection<Subdomain> subdomains = Spec11Pipeline.readFromCloudSql(pipeline);
-    PAssert.that(subdomains).containsInAnyOrder(SUBDOMAINS);
+    PCollection<DomainNameInfo> domainNameInfos = Spec11Pipeline.readFromCloudSql(pipeline);
+    PAssert.that(domainNameInfos).containsInAnyOrder(DOMAIN_NAME_INFOS);
     pipeline.run().waitUntilFinish();
   }
 
