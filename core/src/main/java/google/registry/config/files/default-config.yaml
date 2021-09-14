@@ -444,7 +444,7 @@ registryTool:
 
 # Configuration options for handling contact history.
 contactHistory:
-  # The number of months that a ContactHistory record should be stored in the database.
+  # The number of months that a ContactHistory entity should be stored in the database.
   minMonthsBeforeWipeOut: 18
   # The batch size for querying ContactHistory table in the database.
   wipeOutQueryBatchSize: 100
