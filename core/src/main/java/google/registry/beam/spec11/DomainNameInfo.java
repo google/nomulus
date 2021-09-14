@@ -25,7 +25,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
 
 /**
- * A POJO representing a single subdomain, parsed from a {@code SchemaAndRecord}.
+ * A POJO representing a domain name and associated info, parsed from a {@code SchemaAndRecord}.
  *
  * <p>This is a trivially serializable class that allows Beam to transform the results of a Bigquery
  * query into a standard Java representation, giving us the type guarantees and ease of manipulation
@@ -33,28 +33,31 @@ import org.apache.beam.sdk.io.gcp.bigquery.SchemaAndRecord;
  * function.
  */
 @AutoValue
-public abstract class Subdomain implements Serializable {
+public abstract class DomainNameInfo implements Serializable {
 
   private static final ImmutableList<String> FIELD_NAMES =
       ImmutableList.of("domainName", "domainRepoId", "registrarId", "registrarEmailAddress");
 
   /** Returns the fully qualified domain name. */
   abstract String domainName();
+
   /** Returns the domain repo ID (the primary key of the domain table). */
   abstract String domainRepoId();
+
   /** Returns the registrar ID of the associated registrar for this domain. */
   abstract String registrarId();
+
   /** Returns the email address of the registrar associated with this domain. */
   abstract String registrarEmailAddress();
 
   /**
-   * Constructs a {@link Subdomain} from an Apache Avro {@code SchemaAndRecord}.
+   * Constructs a {@link DomainNameInfo} from an Apache Avro {@code SchemaAndRecord}.
    *
    * @see <a
    *     href=http://avro.apache.org/docs/1.7.7/api/java/org/apache/avro/generic/GenericData.Record.html>
    *     Apache AVRO GenericRecord</a>
    */
-  static Subdomain parseFromRecord(SchemaAndRecord schemaAndRecord) {
+  static DomainNameInfo parseFromRecord(SchemaAndRecord schemaAndRecord) {
     checkFieldsNotNull(FIELD_NAMES, schemaAndRecord);
     GenericRecord record = schemaAndRecord.getRecord();
     return create(
@@ -65,18 +68,15 @@ public abstract class Subdomain implements Serializable {
   }
 
   /**
-   * Creates a concrete {@link Subdomain}.
+   * Creates a concrete {@link DomainNameInfo}.
    *
-   * <p>This should only be used outside this class for testing- instances of {@link Subdomain}
+   * <p>This should only be used outside this class for testing- instances of {@link DomainNameInfo}
    * should otherwise come from {@link #parseFromRecord}.
    */
   @VisibleForTesting
-  static Subdomain create(
-      String domainName,
-      String domainRepoId,
-      String registrarId,
-      String registrarEmailAddress) {
-    return new AutoValue_Subdomain(
+  static DomainNameInfo create(
+      String domainName, String domainRepoId, String registrarId, String registrarEmailAddress) {
+    return new AutoValue_DomainNameInfo(
         domainName, domainRepoId, registrarId, registrarEmailAddress);
   }
 }

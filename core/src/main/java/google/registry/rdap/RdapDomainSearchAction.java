@@ -68,9 +68,9 @@ import org.hibernate.Hibernate;
  *
  * <p>All commands and responses conform to the RDAP spec as defined in RFCs 7480 through 7485.
  *
- * @see <a href="http://tools.ietf.org/html/rfc7482">RFC 7482: Registration Data Access Protocol
+ * @see <a href="http://tools.ietf.org/html/rfc9082">RFC 9082: Registration Data Access Protocol
  *     (RDAP) Query Format</a>
- * @see <a href="http://tools.ietf.org/html/rfc7483">RFC 7483: JSON Responses for the Registration
+ * @see <a href="http://tools.ietf.org/html/rfc9083">RFC 9083: JSON Responses for the Registration
  *     Data Access Protocol (RDAP)</a>
  */
 // TODO: This isn't required by the RDAP Technical Implementation Guide, and hence should be
@@ -119,7 +119,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
     } else if (nsLdhNameParam.isPresent()) {
       metricInformationBuilder.setSearchType(SearchType.BY_NAMESERVER_NAME);
       // syntax: /rdap/domains?nsLdhName=ns1.exam*.com
-      // RFC 7482 appears to say that Unicode domains must be specified using punycode when
+      // RFC 9082 appears to say that Unicode domains must be specified using punycode when
       // passed to nsLdhName, so IDN.toASCII is not called here.
       results =
           searchByNameserverLdhName(

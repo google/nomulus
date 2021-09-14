@@ -41,9 +41,7 @@ import google.registry.rdap.RdapDataStructures.Remark;
 import google.registry.util.Idn;
 import java.util.Optional;
 
-/**
- * Object Classes defined in RFC7483 section 5.
- */
+/** Object Classes defined in RFC 9083 section 5. */
 final class RdapObjectClasses {
 
   /**
@@ -161,7 +159,7 @@ final class RdapObjectClasses {
   /**
    * The Top Level JSON reply, Adds the required top-level boilerplate to a ReplyPayloadBase.
    *
-   * <p>RFC 7483 specifies that the top-level object should include an entry indicating the
+   * <p>RFC 9083 specifies that the top-level object should include an entry indicating the
    * conformance level. ICANN RDAP spec for 15feb19 mandates several additional entries, in sections
    * 2.6.3, 2.11 of the Response Profile and 3.3, 3.5, of the Technical Implementation Guide.
    */
@@ -250,7 +248,7 @@ final class RdapObjectClasses {
   }
 
   /**
-   * The Entity Object Class defined in 5.1 of RFC7483.
+   * The Entity Object Class defined in 5.1 of RFC 9083.
    *
    * <p>Entities are used both for Contacts and for Registrars. We will create different subobjects
    * for each one for type safety.
@@ -260,7 +258,7 @@ final class RdapObjectClasses {
   @RestrictJsonNames({"entities[]", "entitySearchResults[]"})
   abstract static class RdapEntity extends RdapObjectBase {
 
-    /** Role values specified in RFC 7483 § 10.2.4. */
+    /** Role values specified in RFC 9083 § 10.2.4. */
     @RestrictJsonNames("roles[]")
     enum Role implements Jsonable {
       REGISTRANT("registrant"),
@@ -276,15 +274,15 @@ final class RdapObjectClasses {
       NOC("noc");
 
       /** Value as it appears in RDAP messages. */
-      final String rfc7483String;
+      final String rfc9083String;
 
-      Role(String rfc7483String) {
-        this.rfc7483String = rfc7483String;
+      Role(String rfc9083String) {
+        this.rfc9083String = rfc9083String;
       }
 
       @Override
       public JsonPrimitive toJson() {
-        return new JsonPrimitive(rfc7483String);
+        return new JsonPrimitive(rfc9083String);
       }
     }
 
@@ -306,7 +304,7 @@ final class RdapObjectClasses {
   }
 
   /**
-   * Registrar version of the Entity Object Class defined in 5.1 of RFC7483.
+   * Registrar version of the Entity Object Class defined in 5.1 of RFC 9083.
    *
    * <p>Entities are used both for Contacts and for Registrars. We will create different subobjects
    * for each one for type safety.
@@ -325,7 +323,7 @@ final class RdapObjectClasses {
   }
 
   /**
-   * Contact version of the Entity Object Class defined in 5.1 of RFC7483.
+   * Contact version of the Entity Object Class defined in 5.1 of RFC 9083.
    *
    * <p>Entities are used both for Contacts and for Registrars. We will create different subobjects
    * for each one for type safety.
@@ -385,9 +383,7 @@ final class RdapObjectClasses {
     }
   }
 
-  /**
-   * The Nameserver Object Class defined in 5.2 of RFC7483.
-   */
+  /** The Nameserver Object Class defined in 5.2 of RFC 9083. */
   @RestrictJsonNames({"nameservers[]", "nameserverSearchResults[]"})
   @AutoValue
   abstract static class RdapNameserver extends RdapNamedObjectBase {
@@ -429,7 +425,7 @@ final class RdapObjectClasses {
     }
   }
 
-  /** Object defined in RFC7483 section 5.3, only used for RdapDomain. */
+  /** Object defined in RFC 9083 section 5.3, only used for RdapDomain. */
   @RestrictJsonNames("secureDNS")
   @AutoValue
   abstract static class SecureDns extends AbstractJsonableObject {
@@ -471,7 +467,7 @@ final class RdapObjectClasses {
      * an integer representing the signature lifetime in seconds to be used when creating the RRSIG
      * DS record in the parent zone [RFC5910].
      *
-     * <p>Note that although it isn't given as optional in RFC7483, in RFC5910 it's mentioned as
+     * <p>Note that although it isn't given as optional in RFC 9083, in RFC5910 it's mentioned as
      * optional. Also, our code doesn't support it at all - so it's set to always be empty.
      */
     @JsonableElement
@@ -504,9 +500,9 @@ final class RdapObjectClasses {
   }
 
   /**
-   * The Domain Object Class defined in 5.3 of RFC7483.
+   * The Domain Object Class defined in 5.3 of RFC 9083.
    *
-   * We're missing the "variants", "secureDNS", "network" fields
+   * <p>We're missing the "variants", "secureDNS", "network" fields
    */
   @RestrictJsonNames("domainSearchResults[]")
   @AutoValue
@@ -535,9 +531,7 @@ final class RdapObjectClasses {
     }
   }
 
-  /**
-   * Error Response Body defined in 6 of RFC7483.
-   */
+  /** Error Response Body defined in 6 of RFC 9083. */
   @RestrictJsonNames({})
   @AutoValue
   abstract static class ErrorResponse extends ReplyPayloadBase {
@@ -559,7 +553,7 @@ final class RdapObjectClasses {
   }
 
   /**
-   * Help Response defined in 7 of RFC7483.
+   * Help Response defined in 7 of RFC 9083.
    *
    * <p>The helpNotice field is optional, because if the user requests the TOS - that's already
    * given by the boilerplate of TopLevelReplyObject so we don't want to give it again.

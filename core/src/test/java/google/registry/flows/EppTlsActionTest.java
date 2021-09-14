@@ -37,7 +37,7 @@ class EppTlsActionTest {
     action.inputXmlBytes = INPUT_XML_BYTES;
     action.tlsCredentials = mock(TlsCredentials.class);
     action.session = new FakeHttpSession();
-    action.session.setAttribute("CLIENT_ID", "ClientIdentifier");
+    action.session.setAttribute("REGISTRAR_ID", "ClientIdentifier");
     action.eppRequestHandler = mock(EppRequestHandler.class);
     action.run();
     ArgumentCaptor<SessionMetadata> captor = ArgumentCaptor.forClass(SessionMetadata.class);

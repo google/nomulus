@@ -127,7 +127,7 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
   void testBackfill_usesUrsTime_ifExists() throws Exception {
     DateTime ursTime = fakeClock.nowUtc();
     DomainBase ursDomain = persistLockedDomain("urs.tld");
-    HistoryEntry historyEntry =
+    persistResource(
         new DomainHistory.Builder()
             .setBySuperuser(true)
             .setRegistrarId("adminreg")
@@ -136,9 +136,17 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
             .setReason("Uniform Rapid Suspension")
             .setType(HistoryEntry.Type.DOMAIN_UPDATE)
             .setRequestedByRegistrar(false)
-            .build();
-    persistResource(historyEntry);
+            .build());
     DomainBase nonUrsDomain = persistLockedDomain("nonurs.tld");
+    persistResource(
+        new DomainHistory.Builder()
+            .setBySuperuser(true)
+            .setRegistrarId("adminreg")
+            .setDomain(nonUrsDomain)
+            .setType(HistoryEntry.Type.DOMAIN_UPDATE)
+            .setRequestedByRegistrar(false)
+            .setModificationTime(ursTime)
+            .build());
 
     fakeClock.advanceBy(Duration.standardDays(10));
     runCommandForced(

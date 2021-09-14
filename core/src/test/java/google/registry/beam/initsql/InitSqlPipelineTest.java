@@ -306,6 +306,7 @@ class InitSqlPipelineTest {
               .build());
       exportDir = store.export(exportRootDir.getAbsolutePath(), ALL_KINDS, ImmutableSet.of());
       commitLogDir = Files.createDirectory(tmpDir.resolve("commits")).toFile();
+      fakeClock.advanceOneMilli();
     }
   }
 
@@ -362,6 +363,7 @@ class InitSqlPipelineTest {
         .isEqualTo(expected.getAutorenewPollMessage().getOfyKey());
     assertThat(actual.getDeletePollMessage().getOfyKey())
         .isEqualTo(expected.getDeletePollMessage().getOfyKey());
+    assertThat(actual.getUpdateTimestamp()).isEqualTo(expected.getUpdateTimestamp());
     // TODO(weiminyu): check gracePeriods and transferData when it is easier to do
   }
 }

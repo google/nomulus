@@ -52,9 +52,9 @@ import javax.inject.Inject;
  *
  * <p>All commands and responses conform to the RDAP spec as defined in RFCs 7480 through 7485.
  *
- * @see <a href="http://tools.ietf.org/html/rfc7482">RFC 7482: Registration Data Access Protocol
+ * @see <a href="http://tools.ietf.org/html/rfc9082">RFC 9082: Registration Data Access Protocol
  *     (RDAP) Query Format</a>
- * @see <a href="http://tools.ietf.org/html/rfc7483">RFC 7483: JSON Responses for the Registration
+ * @see <a href="http://tools.ietf.org/html/rfc9083">RFC 9083: JSON Responses for the Registration
  *     Data Access Protocol (RDAP)</a>
  */
 @Action(
@@ -91,7 +91,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
     NameserverSearchResponse results;
     if (nameParam.isPresent()) {
       // RDAP Technical Implementation Guilde 2.2.3 - we MAY support nameserver search queries based
-      // on a "nameserver search pattern" as defined in RFC7482
+      // on a "nameserver search pattern" as defined in RFC 9082
       //
       // syntax: /rdap/nameservers?name=exam*.com
       metricInformationBuilder.setSearchType(SearchType.BY_NAMESERVER_NAME);
@@ -101,7 +101,7 @@ public class RdapNameserverSearchAction extends RdapSearchActionBase {
                   RdapSearchPattern.createFromLdhOrUnicodeDomainName(nameParam.get())));
     } else {
       // RDAP Technical Implementation Guide 2.2.3 - we MUST support nameserver search queries based
-      // on IP address as defined in RFC7482 3.2.2. Doesn't require pattern matching
+      // on IP address as defined in RFC 9082 3.2.2. Doesn't require pattern matching
       //
       // syntax: /rdap/nameservers?ip=1.2.3.4
       metricInformationBuilder.setSearchType(SearchType.BY_NAMESERVER_ADDRESS);

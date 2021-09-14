@@ -41,7 +41,7 @@ import javax.inject.Inject;
  * profile dictates that the "handle" for registrars is to be the IANA registrar ID:
  *
  * <p>2.8.3. Registries MUST support lookup for entities with the registrar role within other
- * objects using the handle (as described in 3.1.5 of RFC7482). The handle of the entity with the
+ * objects using the handle (as described in 3.1.5 of RFC 9082). The handle of the entity with the
  * registrar role MUST be equal to IANA Registrar ID. The entity with the registrar role in the RDAP
  * response MUST contain a publicIDs member to identify the IANA Registrar ID from the IANA’s
  * Registrar ID registry. The type value of the publicID object MUST be equal to IANA Registrar ID.

@@ -91,8 +91,8 @@ import org.joda.time.DateTime;
  * of the methods, is used as the first part of the link URL. For instance, if linkBase is
  * "http://rdap.org/dir/", the link URLs will look like "http://rdap.org/dir/domain/XXXX", etc.
  *
- * @see <a href="https://tools.ietf.org/html/rfc7483">
- *        RFC 7483: JSON Responses for the Registration Data Access Protocol (RDAP)</a>
+ * @see <a href="https://tools.ietf.org/html/rfc9083">RFC 9083: JSON Responses for the Registration
+ *     Data Access Protocol (RDAP)</a>
  */
 public class RdapJsonFormatter {
 
@@ -253,9 +253,9 @@ public class RdapJsonFormatter {
   /**
    * Creates a JSON object for a {@link DomainBase}.
    *
-   * <p>NOTE that domain searches aren't in the spec yet - they're in the RFC7482 that describes the
-   * query format, but they aren't in the RDAP Technical Implementation Guide 15feb19, meaning we
-   * don't have to implement them yet and the RDAP Response Profile doesn't apply to them.
+   * <p>NOTE that domain searches aren't in the spec yet - they're in the RFC 9082 that describes
+   * the query format, but they aren't in the RDAP Technical Implementation Guide 15feb19, meaning
+   * we don't have to implement them yet and the RDAP Response Profile doesn't apply to them.
    *
    * <p>We're implementing domain searches anyway, BUT we won't have the response for searches
    * conform to the RDAP Response Profile.
@@ -812,7 +812,7 @@ public class RdapJsonFormatter {
     return Optional.of(builder.build());
   }
 
-  /** Converts a domain registry contact type into a role as defined by RFC 7483. */
+  /** Converts a domain registry contact type into a role as defined by RFC 9083. */
   private static RdapEntity.Role convertContactTypeToRdapRole(DesignatedContact.Type contactType) {
     switch (contactType) {
       case REGISTRANT:
@@ -929,7 +929,7 @@ public class RdapJsonFormatter {
     return eventsBuilder.build();
   }
 
-  /** Creates an RDAP event object as defined by RFC 7483. */
+  /** Creates an RDAP event object as defined by RFC 9083. */
   private static Event makeEvent(
       EventAction eventAction, @Nullable String eventActor, DateTime eventDate) {
     Event.Builder builder = Event.builder()
@@ -1070,7 +1070,7 @@ public class RdapJsonFormatter {
   /**
    * Creates a self link as directed by the spec.
    *
-   * @see <a href="https://tools.ietf.org/html/rfc7483">RFC 7483: JSON Responses for the
+   * @see <a href="https://tools.ietf.org/html/rfc9083">RFC 9083: JSON Responses for the
    *     Registration Data Access Protocol (RDAP)</a>
    */
   private Link makeSelfLink(String type, String name) {

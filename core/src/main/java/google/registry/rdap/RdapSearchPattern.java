@@ -29,8 +29,8 @@ import javax.annotation.Nullable;
  * must be at the end, except for a possible suffix string on the end to restrict the search to a
  * particular TLD (for domains) or domain (for nameservers).
  *
- * @see <a href="http://www.ietf.org/rfc/rfc7482.txt">
- *        RFC 7482: Registration Data Access Protocol (RDAP) Query Format</a>
+ * @see <a href="http://www.ietf.org/rfc/rfc9082.txt">RFC 9082: Registration Data Access Protocol
+ *     (RDAP) Query Format</a>
  */
 public final class RdapSearchPattern {
 
@@ -39,7 +39,7 @@ public final class RdapSearchPattern {
   /**
    * Pattern for allowed LDH searches.
    *
-   * <p>Based on RFC7482 4.1. Must contains only alphanumeric plus dots and hyphens. A single
+   * <p>Based on RFC 9082 4.1. Must contains only alphanumeric plus dots and hyphens. A single
    * whildcard asterix is allowed - but if exists must be the last character of a domain name label
    * (so exam* and exam*.com are allowed, but exam*le.com isn't allowd)
    *
@@ -57,11 +57,10 @@ public final class RdapSearchPattern {
 
   /**
    * Terminating suffix after the wildcard, or null if none was specified; for domains, it should be
-   * a TLD, for nameservers, a domain. RFC 7482 requires only that it be a sequence of domain
+   * a TLD, for nameservers, a domain. RFC 9082 requires only that it be a sequence of domain
    * labels, but this definition is stricter for efficiency purposes.
    */
-  @Nullable
-  private final String suffix;
+  @Nullable private final String suffix;
 
   private RdapSearchPattern(
       final String initialString, final boolean hasWildcard, @Nullable final String suffix) {
@@ -153,7 +152,7 @@ public final class RdapSearchPattern {
    * <p>The domain search pattern can have a single wildcard asterix that can match 0 or more
    * charecters. If such an asterix exists - it must be at the end of a domain label.
    *
-   * <p>In theory, according to RFC7482 4.1 - we should make some checks about partial matching in
+   * <p>In theory, according to RFC 9082 4.1 - we should make some checks about partial matching in
    * unicode queries. We don't, but we might want to just disable partial matches for unicode inputs
    * (meaning if it doesn't match LDH_PATTERN, then don't allow wildcard at all).
    *

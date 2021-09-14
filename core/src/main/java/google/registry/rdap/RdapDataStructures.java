@@ -22,16 +22,12 @@ import google.registry.rdap.AbstractJsonableObject.RestrictJsonNames;
 import java.util.Optional;
 import org.joda.time.DateTime;
 
-/**
- * Data Structures defined in RFC7483 section 4.
- */
+/** Data Structures defined in RFC 9083 section 4. */
 final class RdapDataStructures {
 
   private RdapDataStructures() {}
 
-  /**
-   * RDAP conformance defined in 4.1 of RFC7483.
-   */
+  /** RDAP conformance defined in 4.1 of RFC 9083. */
   @RestrictJsonNames("rdapConformance")
   static final class RdapConformance implements Jsonable {
 
@@ -42,7 +38,7 @@ final class RdapDataStructures {
     @Override
     public JsonArray toJson() {
       JsonArray jsonArray = new JsonArray();
-      // Conformance to RFC7483
+      // Conformance to RFC 9083
       jsonArray.add("rdap_level_0");
 
       // Conformance to the RDAP Response Profile V2.1
@@ -57,9 +53,7 @@ final class RdapDataStructures {
     }
   }
 
-  /**
-   * Links defined in 4.2 of RFC7483.
-   */
+  /** Links defined in 4.2 of RFC 9083. */
   @RestrictJsonNames("links[]")
   @AutoValue
   abstract static class Link extends AbstractJsonableObject {
@@ -91,7 +85,7 @@ final class RdapDataStructures {
   }
 
   /**
-   * Notices and Remarks defined in 4.3 of RFC7483.
+   * Notices and Remarks defined in 4.3 of RFC 9083.
    *
    * <p>Each has an optional "type" denoting a registered type string defined in 10.2.1. The type is
    * defined as common to both Notices and Remarks, but each item is only appropriate to one of
@@ -118,7 +112,7 @@ final class RdapDataStructures {
   }
 
   /**
-   * Notices defined in 4.3 of RFC7483.
+   * Notices defined in 4.3 of RFC 9083.
    *
    * <p>A notice denotes information about the service itself or the entire response, and hence will
    * only be in the top-most object.
@@ -128,7 +122,7 @@ final class RdapDataStructures {
   abstract static class Notice extends NoticeOrRemark {
 
     /**
-     * Notice and Remark Type are defined in 10.2.1 of RFC7483.
+     * Notice and Remark Type are defined in 10.2.1 of RFC 9083.
      *
      * <p>We only keep the "service or entire response" values for Notice.Type.
      */
@@ -138,16 +132,15 @@ final class RdapDataStructures {
       RESULT_TRUNCATED_LOAD("result set truncated due to excessive load"),
       RESULT_TRUNCATED_UNEXPLAINABLE("result set truncated due to unexplainable reasons");
 
+      private final String rfc9083String;
 
-      private final String rfc7483String;
-
-      Type(String rfc7483String) {
-        this.rfc7483String = rfc7483String;
+      Type(String rfc9083String) {
+        this.rfc9083String = rfc9083String;
       }
 
       @Override
       public JsonPrimitive toJson() {
-        return new JsonPrimitive(rfc7483String);
+        return new JsonPrimitive(rfc9083String);
       }
     }
 
@@ -167,7 +160,7 @@ final class RdapDataStructures {
   }
 
   /**
-   * Remarks defined in 4.3 of RFC7483.
+   * Remarks defined in 4.3 of RFC 9083.
    *
    * <p>A remark denotes information about the specific object, and hence each object has its own
    * "remarks" array.
@@ -177,7 +170,7 @@ final class RdapDataStructures {
   abstract static class Remark extends NoticeOrRemark {
 
     /**
-     * Notice and Remark Type are defined in 10.2.1 of RFC7483.
+     * Notice and Remark Type are defined in 10.2.1 of RFC 9083.
      *
      * <p>We only keep the "specific object" values for Remark.Type.
      */
@@ -190,15 +183,15 @@ final class RdapDataStructures {
       // so I'm adding it here, but we have to ask them about it...
       OBJECT_REDACTED_AUTHORIZATION("object redacted due to authorization");
 
-      private final String rfc7483String;
+      private final String rfc9083String;
 
-      Type(String rfc7483String) {
-        this.rfc7483String = rfc7483String;
+      Type(String rfc9083String) {
+        this.rfc9083String = rfc9083String;
       }
 
       @Override
       public JsonPrimitive toJson() {
-        return new JsonPrimitive(rfc7483String);
+        return new JsonPrimitive(rfc9083String);
       }
     }
 
@@ -218,9 +211,9 @@ final class RdapDataStructures {
   }
 
   /**
-   * Language Identifier defined in 4.4 of RFC7483.
+   * Language Identifier defined in 4.4 of RFC 9083.
    *
-   * The allowed values are described in RFC5646.
+   * <p>The allowed values are described in RFC5646.
    */
   @RestrictJsonNames("lang")
   enum LanguageIdentifier implements Jsonable {
@@ -239,7 +232,7 @@ final class RdapDataStructures {
   }
 
   /**
-   * Events defined in 4.5 of RFC7483.
+   * Events defined in 4.5 of RFC 9083.
    *
    * <p>There's a type of Event that must not have the "eventActor" (see 5.1), so we create 2
    * versions - one with and one without.
@@ -263,7 +256,7 @@ final class RdapDataStructures {
     }
   }
 
-  /** Status values for events specified in RFC 7483 § 10.2.3. */
+  /** Status values for events specified in RFC 9083 § 10.2.3. */
   enum EventAction implements Jsonable {
     REGISTRATION("registration"),
     REREGISTRATION("reregistration"),
@@ -277,25 +270,24 @@ final class RdapDataStructures {
     LAST_UPDATE_OF_RDAP_DATABASE("last update of RDAP database");
 
     /** Value as it appears in RDAP messages. */
-    private final String rfc7483String;
+    private final String rfc9083String;
 
-    EventAction(String rfc7483String) {
-      this.rfc7483String = rfc7483String;
+    EventAction(String rfc9083String) {
+      this.rfc9083String = rfc9083String;
     }
 
     String getDisplayName() {
-      return rfc7483String;
+      return rfc9083String;
     }
 
     @Override
     public JsonPrimitive toJson() {
-      return new JsonPrimitive(rfc7483String);
+      return new JsonPrimitive(rfc9083String);
     }
   }
 
-
   /**
-   * Events defined in 4.5 of RFC7483.
+   * Events defined in 4.5 of RFC 9083.
    *
    * <p>There's a type of Event that MUST NOT have the "eventActor" (see 5.1), so we have this
    * object to enforce that.
@@ -315,9 +307,7 @@ final class RdapDataStructures {
     }
   }
 
-  /**
-   * Events defined in 4.5 of RFC7483.
-   */
+  /** Events defined in 4.5 of RFC 9083. */
   @RestrictJsonNames("events[]")
   @AutoValue
   abstract static class Event extends EventBase {
@@ -336,7 +326,7 @@ final class RdapDataStructures {
   }
 
   /**
-   * Status defined in 4.6 of RFC7483.
+   * Status defined in 4.6 of RFC 9083.
    *
    * <p>This indicates the state of the registered object.
    *
@@ -345,7 +335,7 @@ final class RdapDataStructures {
   @RestrictJsonNames("status[]")
   enum RdapStatus implements Jsonable {
 
-    // Status values specified in RFC 7483 § 10.2.2.
+    // Status values specified in RFC 9083 § 10.2.2.
     VALIDATED("validated"),
     RENEW_PROHIBITED("renew prohibited"),
     UPDATE_PROHIBITED("update prohibited"),
@@ -385,24 +375,24 @@ final class RdapDataStructures {
     TRANSFER_PERIOD("transfer period");
 
     /** Value as it appears in RDAP messages. */
-    private final String rfc7483String;
+    private final String rfc9083String;
 
-    RdapStatus(String rfc7483String) {
-      this.rfc7483String = rfc7483String;
+    RdapStatus(String rfc9083String) {
+      this.rfc9083String = rfc9083String;
     }
 
     String getDisplayName() {
-      return rfc7483String;
+      return rfc9083String;
     }
 
     @Override
     public JsonPrimitive toJson() {
-      return new JsonPrimitive(rfc7483String);
+      return new JsonPrimitive(rfc9083String);
     }
   }
 
   /**
-   * Port 43 WHOIS Server defined in 4.7 of RFC7483.
+   * Port 43 WHOIS Server defined in 4.7 of RFC 9083.
    *
    * <p>This contains the fully qualifies host name of IP address of the WHOIS RFC3912 server where
    * the containing object instance may be found.
@@ -423,7 +413,7 @@ final class RdapDataStructures {
   }
 
   /**
-   * Public IDs defined in 4.8 of RFC7483.
+   * Public IDs defined in 4.8 of RFC 9083.
    *
    * <p>Maps a public identifier to an object class.
    */
@@ -434,15 +424,15 @@ final class RdapDataStructures {
     enum Type implements Jsonable {
       IANA_REGISTRAR_ID("IANA Registrar ID");
 
-      private final String rfc7483String;
+      private final String rfc9083String;
 
-      Type(String rfc7483String) {
-        this.rfc7483String = rfc7483String;
+      Type(String rfc9083String) {
+        this.rfc9083String = rfc9083String;
       }
 
       @Override
       public JsonPrimitive toJson() {
-        return new JsonPrimitive(rfc7483String);
+        return new JsonPrimitive(rfc9083String);
       }
     }
 
@@ -457,7 +447,7 @@ final class RdapDataStructures {
   }
 
   /**
-   * Object Class Name defined in 4.7 of RFC7483.
+   * Object Class Name defined in 4.7 of RFC 9083.
    *
    * <p>Identifies the type of the object being processed. Is REQUIRED in all RDAP response objects,
    * but not so for internal objects whose type can be inferred by their key name in the enclosing
@@ -465,15 +455,15 @@ final class RdapDataStructures {
    */
   @RestrictJsonNames("objectClassName")
   enum ObjectClassName implements Jsonable {
-    /** Defined in 5.1 of RFC7483. */
+    /** Defined in 5.1 of RFC 9083. */
     ENTITY("entity"),
-    /** Defined in 5.2 of RFC7483. */
+    /** Defined in 5.2 of RFC 9083. */
     NAMESERVER("nameserver"),
-    /** Defined in 5.3 of RFC7483. */
+    /** Defined in 5.3 of RFC 9083. */
     DOMAIN("domain"),
-    /** Defined in 5.4 of RFC7483. Only relevant for Registrars, so isn't implemented here. */
+    /** Defined in 5.4 of RFC 9083. Only relevant for Registrars, so isn't implemented here. */
     IP_NETWORK("ip network"),
-    /** Defined in 5.5 of RFC7483. Only relevant for Registrars, so isn't implemented here. */
+    /** Defined in 5.5 of RFC 9083. Only relevant for Registrars, so isn't implemented here. */
     AUTONOMUS_SYSTEM("autnum");
 
     private final String className;

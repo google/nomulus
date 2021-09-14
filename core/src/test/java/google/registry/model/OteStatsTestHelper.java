@@ -79,7 +79,9 @@ public final class OteStatsTestHelper {
   public static void setupIncompleteOte(String baseClientId) throws IOException {
     createTld("tld");
     persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
-    OteAccountBuilder.forRegistrarId(baseClientId).addContact("email@example.com").buildAndPersist();
+    OteAccountBuilder.forRegistrarId(baseClientId)
+        .addContact("email@example.com")
+        .buildAndPersist();
     String oteAccount1 = String.format("%s-1", baseClientId);
     DateTime now = DateTime.now(DateTimeZone.UTC);
     persistResource(

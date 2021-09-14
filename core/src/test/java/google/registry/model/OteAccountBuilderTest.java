@@ -106,7 +106,9 @@ public final class OteAccountBuilderTest {
 
   @TestOfyAndSql
   void testCreateOteEntities_success() {
-    OteAccountBuilder.forRegistrarId("myclientid").addContact("email@example.com").buildAndPersist();
+    OteAccountBuilder.forRegistrarId("myclientid")
+        .addContact("email@example.com")
+        .buildAndPersist();
 
     assertTldExists("myclientid-sunrise", START_DATE_SUNRISE, Money.zero(USD));
     assertTldExists("myclientid-ga", GENERAL_AVAILABILITY, Money.zero(USD));
@@ -192,7 +194,8 @@ public final class OteAccountBuilderTest {
   @TestOfyAndSql
   void testCreateOteEntities_clientIdTooShort_fails() {
     assertThat(
-            assertThrows(IllegalArgumentException.class, () -> OteAccountBuilder.forRegistrarId("bl")))
+            assertThrows(
+                IllegalArgumentException.class, () -> OteAccountBuilder.forRegistrarId("bl")))
         .hasMessageThat()
         .isEqualTo("Invalid registrar name: bl");
   }
@@ -277,7 +280,9 @@ public final class OteAccountBuilderTest {
 
   @TestOfyAndSql
   void testCreateOteEntities_doubleCreation_keepsOldContacts() {
-    OteAccountBuilder.forRegistrarId("myclientid").addContact("email@example.com").buildAndPersist();
+    OteAccountBuilder.forRegistrarId("myclientid")
+        .addContact("email@example.com")
+        .buildAndPersist();
 
     assertContactExists("myclientid-3", "email@example.com");
 

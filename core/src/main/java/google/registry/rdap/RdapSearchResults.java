@@ -39,9 +39,7 @@ import java.util.Optional;
 @AutoValue
 abstract class RdapSearchResults {
 
-  /**
-   * Responding To Searches defined in 8 of RFC7483.
-   */
+  /** Responding To Searches defined in 8 of RFC 9083. */
   abstract static class BaseSearchResponse extends ReplyPayloadBase {
     abstract IncompletenessWarningType incompletenessWarningType();
     abstract ImmutableMap<String, URI> navigationLinks();

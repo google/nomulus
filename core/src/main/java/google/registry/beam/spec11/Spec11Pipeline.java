@@ -100,20 +100,20 @@ public class Spec11Pipeline implements Serializable {
 
   void setupPipeline(Pipeline pipeline) {
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
-    PCollection<Subdomain> domains =
+    PCollection<DomainNameInfo> domains =
         options.getDatabase().equals("DATASTORE")
             ? readFromBigQuery(options, pipeline)
             : readFromCloudSql(pipeline);
 
-    PCollection<KV<Subdomain, ThreatMatch>> threatMatches =
+    PCollection<KV<DomainNameInfo, ThreatMatch>> threatMatches =
         domains.apply("Run through SafeBrowsing API", ParDo.of(safeBrowsingFn));
 
     saveToSql(threatMatches, options);
     saveToGcs(threatMatches, options);
   }
 
-  static PCollection<Subdomain> readFromCloudSql(Pipeline pipeline) {
-    Read<Object[], Subdomain> read =
+  static PCollection<DomainNameInfo> readFromCloudSql(Pipeline pipeline) {
+    Read<Object[], DomainNameInfo> read =
         RegistryJpaIO.read(
             "select d, r.emailAddress from Domain d join Registrar r on"
                 + " d.currentSponsorClientId = r.clientIdentifier where r.type = 'REAL'"
@@ -124,30 +124,31 @@ public class Spec11Pipeline implements Serializable {
     return pipeline.apply("Read active domains from Cloud SQL", read);
   }
 
-  static PCollection<Subdomain> readFromBigQuery(Spec11PipelineOptions options, Pipeline pipeline) {
+  static PCollection<DomainNameInfo> readFromBigQuery(
+      Spec11PipelineOptions options, Pipeline pipeline) {
     return pipeline.apply(
         "Read active domains from BigQuery",
-        BigQueryIO.read(Subdomain::parseFromRecord)
+        BigQueryIO.read(DomainNameInfo::parseFromRecord)
             .fromQuery(
-                SqlTemplate.create(getQueryFromFile(Spec11Pipeline.class, "subdomains.sql"))
+                SqlTemplate.create(getQueryFromFile(Spec11Pipeline.class, "domain_name_infos.sql"))
                     .put("PROJECT_ID", options.getProject())
                     .put("DATASTORE_EXPORT_DATASET", "latest_datastore_export")
                     .put("REGISTRAR_TABLE", "Registrar")
                     .put("DOMAIN_BASE_TABLE", "DomainBase")
                     .build())
-            .withCoder(SerializableCoder.of(Subdomain.class))
+            .withCoder(SerializableCoder.of(DomainNameInfo.class))
             .usingStandardSql()
             .withoutValidation()
             .withTemplateCompatibility());
   }
 
-  private static Subdomain parseRow(Object[] row) {
+  private static DomainNameInfo parseRow(Object[] row) {
     DomainBase domainBase = (DomainBase) row[0];
     String emailAddress = (String) row[1];
     if (emailAddress == null) {
       emailAddress = "";
     }
-    return Subdomain.create(
+    return DomainNameInfo.create(
         domainBase.getDomainName(),
         domainBase.getRepoId(),
         domainBase.getCurrentSponsorRegistrarId(),
@@ -155,31 +156,31 @@ public class Spec11Pipeline implements Serializable {
   }
 
   static void saveToSql(
-      PCollection<KV<Subdomain, ThreatMatch>> threatMatches, Spec11PipelineOptions options) {
+      PCollection<KV<DomainNameInfo, ThreatMatch>> threatMatches, Spec11PipelineOptions options) {
     String transformId = "Spec11 Threat Matches";
     LocalDate date = LocalDate.parse(options.getDate(), ISODateTimeFormat.date());
     threatMatches.apply(
         "Write to Sql: " + transformId,
-        RegistryJpaIO.<KV<Subdomain, ThreatMatch>>write()
+        RegistryJpaIO.<KV<DomainNameInfo, ThreatMatch>>write()
             .withName(transformId)
             .withBatchSize(options.getSqlWriteBatchSize())
             .withShards(options.getSqlWriteShards())
             .withJpaConverter(
                 (kv) -> {
-                  Subdomain subdomain = kv.getKey();
+                  DomainNameInfo domainNameInfo = kv.getKey();
                   return new Spec11ThreatMatch.Builder()
                       .setThreatTypes(
                           ImmutableSet.of(ThreatType.valueOf(kv.getValue().threatType())))
                       .setCheckDate(date)
-                      .setDomainName(subdomain.domainName())
-                      .setDomainRepoId(subdomain.domainRepoId())
-                      .setRegistrarId(subdomain.registrarId())
+                      .setDomainName(domainNameInfo.domainName())
+                      .setDomainRepoId(domainNameInfo.domainRepoId())
+                      .setRegistrarId(domainNameInfo.registrarId())
                       .build();
                 }));
   }
 
   static void saveToGcs(
-      PCollection<KV<Subdomain, ThreatMatch>> threatMatches, Spec11PipelineOptions options) {
+      PCollection<KV<DomainNameInfo, ThreatMatch>> threatMatches, Spec11PipelineOptions options) {
     threatMatches
         .apply(
             "Map registrar ID to email/ThreatMatch pair",
@@ -187,7 +188,7 @@ public class Spec11Pipeline implements Serializable {
                     TypeDescriptors.kvs(
                         TypeDescriptors.strings(), TypeDescriptor.of(EmailAndThreatMatch.class)))
                 .via(
-                    (KV<Subdomain, ThreatMatch> kv) ->
+                    (KV<DomainNameInfo, ThreatMatch> kv) ->
                         KV.of(
                             kv.getKey().registrarId(),
                             EmailAndThreatMatch.create(
@@ -230,7 +231,7 @@ public class Spec11Pipeline implements Serializable {
                         options.getReportingBucketUrl(),
                         getSpec11ReportFilePath(LocalDate.parse(options.getDate()))))
                 .withoutSharding()
-                .withHeader("Map from registrar email / name to detected subdomain threats:"));
+                .withHeader("Map from registrar email / name to detected domain name threats:"));
   }
 
   public static void main(String[] args) {

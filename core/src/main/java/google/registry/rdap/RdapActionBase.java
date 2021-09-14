@@ -50,8 +50,8 @@ import org.joda.time.DateTime;
 /**
  * Base RDAP (new WHOIS) action for all requests.
  *
- * @see <a href="https://tools.ietf.org/html/rfc7482">
- *        RFC 7482: Registration Data Access Protocol (RDAP) Query Format</a>
+ * @see <a href="https://tools.ietf.org/html/rfc9082">RFC 9082: Registration Data Access Protocol
+ *     (RDAP) Query Format</a>
  */
 public abstract class RdapActionBase implements Runnable {
 
