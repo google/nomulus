@@ -135,7 +135,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public <T> TypedQuery<T> query(CriteriaQuery<T> criteriaQuery) {
+  public <T> TypedQuery<T> criteriaQuery(CriteriaQuery<T> criteriaQuery) {
     return new DetachingTypedQuery<>(getEntityManager().createQuery(criteriaQuery));
   }
 
