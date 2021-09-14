@@ -72,7 +72,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
     persistResource(
         new PollMessage.OneTime.Builder()
             .setId(messageId)
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
             .setParent(createHistoryEntryForEppResource(domain))
@@ -83,7 +83,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
     persistResource(
         new PollMessage.Autorenew.Builder()
             .setId(MESSAGE_ID)
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(eventTime)
             .setAutorenewEndTime(endTime)
             .setMsg("Domain was auto-renewed.")
@@ -104,7 +104,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
     persistResource(
         new PollMessage.OneTime.Builder()
             .setId(MESSAGE_ID)
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
             .setParent(createHistoryEntryForEppResource(contact))
@@ -119,7 +119,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
     persistResource(
         new PollMessage.OneTime.Builder()
             .setId(MESSAGE_ID)
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
             .setParent(createHistoryEntryForEppResource(contact))
@@ -207,7 +207,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
     persistResource(
         new PollMessage.OneTime.Builder()
             .setId(MESSAGE_ID)
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Some poll message.")
             .setParent(createHistoryEntryForEppResource(contact))
@@ -256,7 +256,7 @@ class PollAckFlowTest extends FlowTestCase<PollAckFlow> {
     persistResource(
         new PollMessage.OneTime.Builder()
             .setId(MESSAGE_ID)
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().plusDays(1))
             .setMsg("Some poll message.")
             .setParent(createHistoryEntryForEppResource(domain))

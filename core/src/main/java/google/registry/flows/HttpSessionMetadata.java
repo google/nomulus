@@ -25,7 +25,7 @@ import javax.servlet.http.HttpSession;
 /** A metadata class that is a wrapper around {@link HttpSession}. */
 public class HttpSessionMetadata implements SessionMetadata {
 
-  private static final String CLIENT_ID = "CLIENT_ID";
+  private static final String REGISTRAR_ID = "REGISTRAR_ID";
   private static final String SERVICE_EXTENSIONS = "SERVICE_EXTENSIONS";
   private static final String FAILED_LOGIN_ATTEMPTS = "FAILED_LOGIN_ATTEMPTS";
 
@@ -42,7 +42,7 @@ public class HttpSessionMetadata implements SessionMetadata {
 
   @Override
   public String getRegistrarId() {
-    return (String) session.getAttribute(CLIENT_ID);
+    return (String) session.getAttribute(REGISTRAR_ID);
   }
 
   @Override
@@ -58,7 +58,7 @@ public class HttpSessionMetadata implements SessionMetadata {
 
   @Override
   public void setRegistrarId(String registrarId) {
-    session.setAttribute(CLIENT_ID, registrarId);
+    session.setAttribute(REGISTRAR_ID, registrarId);
   }
 
   @Override

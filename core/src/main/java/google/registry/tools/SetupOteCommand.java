@@ -86,7 +86,7 @@ final class SetupOteCommand extends ConfirmingCommand implements CommandWithRemo
 
     password = passwordGenerator.createString(PASSWORD_LENGTH);
     oteAccountBuilder =
-        OteAccountBuilder.forClientId(registrar)
+        OteAccountBuilder.forRegistrarId(registrar)
             .addContact(email)
             .setPassword(password)
             .setIpAllowList(ipAllowList)
@@ -100,7 +100,7 @@ final class SetupOteCommand extends ConfirmingCommand implements CommandWithRemo
 
   @Override
   protected String prompt() {
-    ImmutableMap<String, String> registrarToTldMap = oteAccountBuilder.getClientIdToTldMap();
+    ImmutableMap<String, String> registrarToTldMap = oteAccountBuilder.getRegistrarIdToTldMap();
     StringBuilder builder = new StringBuilder();
     builder.append("Creating TLDs:");
     registrarToTldMap.values().forEach(tld -> builder.append("\n    ").append(tld));

@@ -78,7 +78,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   private void persistPendingTransferPollMessage() {
     persistResource(
         new PollMessage.OneTime.Builder()
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Transfer approved.")
             .setResponseData(
@@ -86,7 +86,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                     new DomainTransferResponse.Builder()
                         .setFullyQualifiedDomainName("test.example")
                         .setTransferStatus(TransferStatus.SERVER_APPROVED)
-                        .setGainingRegistrarId(getClientIdForFlow())
+                        .setGainingRegistrarId(getRegistrarIdForFlow())
                         .setTransferRequestTime(clock.nowUtc().minusDays(5))
                         .setLosingRegistrarId("TheRegistrar")
                         .setPendingTransferExpirationTime(clock.nowUtc().minusDays(1))
@@ -117,7 +117,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
     persistResource(
         new PollMessage.OneTime.Builder()
             .setId(3L)
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(5))
             .setMsg("Transfer requested.")
             .setResponseData(
@@ -125,7 +125,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
                     new ContactTransferResponse.Builder()
                         .setContactId("sh8013")
                         .setTransferStatus(TransferStatus.PENDING)
-                        .setGainingRegistrarId(getClientIdForFlow())
+                        .setGainingRegistrarId(getRegistrarIdForFlow())
                         .setTransferRequestTime(clock.nowUtc().minusDays(5))
                         .setLosingRegistrarId("NewRegistrar")
                         .setPendingTransferExpirationTime(clock.nowUtc())
@@ -140,7 +140,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   void testSuccess_domainPendingActionComplete() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Domain deleted.")
             .setResponseData(
@@ -160,7 +160,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   void testSuccess_domainAutorenewMessage() throws Exception {
     persistResource(
         new PollMessage.Autorenew.Builder()
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().minusDays(1))
             .setMsg("Domain was auto-renewed.")
             .setTargetId("test.example")
@@ -191,7 +191,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   void testSuccess_futurePollMessage() throws Exception {
     persistResource(
         new PollMessage.OneTime.Builder()
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().plusDays(1))
             .setMsg("Poll message")
             .setParent(createHistoryEntryForEppResource(domain))
@@ -203,7 +203,7 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   void testSuccess_futureAutorenew() throws Exception {
     persistResource(
         new PollMessage.Autorenew.Builder()
-            .setRegistrarId(getClientIdForFlow())
+            .setRegistrarId(getRegistrarIdForFlow())
             .setEventTime(clock.nowUtc().plusDays(1))
             .setMsg("Domain was auto-renewed.")
             .setTargetId("target.example")

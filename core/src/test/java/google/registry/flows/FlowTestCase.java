@@ -151,12 +151,12 @@ public abstract class FlowTestCase<F extends Flow> {
     return eppLoader.getEpp().getCommandWrapper().getClTrid().orElse(null);
   }
 
-  /** Gets the client ID that the flow will run as. */
-  protected String getClientIdForFlow() {
+  /** Gets the ID of the registrar that the flow will run as. */
+  protected String getRegistrarIdForFlow() {
     return sessionMetadata.getRegistrarId();
   }
 
-  /** Sets the client ID that the flow will run as. */
+  /** Sets the ID of the registrar that the flow will run as. */
   protected void setRegistrarIdForFlow(String registrarId) {
     sessionMetadata.setRegistrarId(registrarId);
   }

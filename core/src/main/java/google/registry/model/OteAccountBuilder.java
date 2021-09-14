@@ -63,7 +63,7 @@ import org.joda.time.Duration;
  * <p>Usage example:
  *
  * <pre>{@code
- * OteAccountBuilder.forClientId("example")
+ * OteAccountBuilder.forRegistrarId("example")
  *     .addContact("contact@email.com") // OPTIONAL
  *     .setPassword("password") // OPTIONAL
  *     .setCertificateHash(certificateHash) // OPTIONAL
@@ -111,7 +111,7 @@ public final class OteAccountBuilder {
           DateTime.parse("2030-03-01T00:00:00Z"),
           Money.of(CurrencyUnit.USD, 0));
 
-  private final ImmutableMap<String, String> clientIdToTld;
+  private final ImmutableMap<String, String> registrarIdToTld;
   private final Registry sunriseTld;
   private final Registry gaTld;
   private final Registry eapTld;
@@ -121,16 +121,16 @@ public final class OteAccountBuilder {
   private ImmutableList<Registrar> registrars;
   private boolean replaceExisting = false;
 
-  private OteAccountBuilder(String baseClientId) {
+  private OteAccountBuilder(String baseRegistrarId) {
     checkState(
         RegistryEnvironment.get() != RegistryEnvironment.PRODUCTION,
         "Can't setup OT&E in production");
-    clientIdToTld = createRegistrarIdToTldMap(baseClientId);
-    sunriseTld = createTld(baseClientId + "-sunrise", START_DATE_SUNRISE, false, 0);
-    gaTld = createTld(baseClientId + "-ga", GENERAL_AVAILABILITY, false, 2);
-    eapTld = createTld(baseClientId + "-eap", GENERAL_AVAILABILITY, true, 3);
+    registrarIdToTld = createRegistrarIdToTldMap(baseRegistrarId);
+    sunriseTld = createTld(baseRegistrarId + "-sunrise", START_DATE_SUNRISE, false, 0);
+    gaTld = createTld(baseRegistrarId + "-ga", GENERAL_AVAILABILITY, false, 2);
+    eapTld = createTld(baseRegistrarId + "-eap", GENERAL_AVAILABILITY, true, 3);
     registrars =
-        clientIdToTld.keySet().stream()
+        registrarIdToTld.keySet().stream()
             .map(OteAccountBuilder::createRegistrar)
             .collect(toImmutableList());
   }
@@ -138,11 +138,11 @@ public final class OteAccountBuilder {
   /**
    * Creates an OteAccountBuilder for the given base client ID.
    *
-   * @param baseClientId the base clientId which will help name all the entities we create. Normally
-   * is the same as the "prod" clientId designated for this registrar.
+   * @param baseRegistrarId the base registrar ID which will help name all the entities we create.
+   *     Normally is the same as the "prod" ID designated for this registrar.
    */
-  public static OteAccountBuilder forClientId(String baseClientId) {
-    return new OteAccountBuilder(baseClientId);
+  public static OteAccountBuilder forRegistrarId(String baseRegistrarId) {
+    return new OteAccountBuilder(baseRegistrarId);
   }
 
   /**
@@ -232,14 +232,15 @@ public final class OteAccountBuilder {
    */
   public ImmutableMap<String, String> buildAndPersist() {
     saveAllEntities();
-    return clientIdToTld;
+    return registrarIdToTld;
   }
 
   /**
-   * Return map from the OT&amp;E clientIds we will create to the new TLDs they will have access to.
+   * Return map from the OT&amp;E registrarIds we will create to the new TLDs they will have access
+   * to.
    */
-  public ImmutableMap<String, String> getClientIdToTldMap() {
-    return clientIdToTld;
+  public ImmutableMap<String, String> getRegistrarIdToTldMap() {
+    return registrarIdToTld;
   }
 
   /** Saves all the OT&amp;E entities we created. */
@@ -279,7 +280,7 @@ public final class OteAccountBuilder {
   }
 
   private Registrar addAllowedTld(Registrar registrar) {
-    String tld = clientIdToTld.get(registrar.getRegistrarId());
+    String tld = registrarIdToTld.get(registrar.getRegistrarId());
     if (registrar.getAllowedTlds().contains(tld)) {
       return registrar;
     }
@@ -361,7 +362,7 @@ public final class OteAccountBuilder {
         .build();
   }
 
-  /** Returns the base client ID that correspond to a given OT&amp;E registrar ID. */
+  /** Returns the base registrar ID that corresponds to a given OT&amp;E registrar ID. */
   public static String getBaseRegistrarId(String oteRegistrarId) {
     int index = oteRegistrarId.lastIndexOf('-');
     checkArgument(index > 0, "Invalid OT&E registrar ID: %s", oteRegistrarId);
