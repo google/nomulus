@@ -200,10 +200,7 @@ class WipeOutContactHistoryPiiActionTest {
             });
   }
 
-  /**
-   * persists a number of hitory entries with the same set up, same contact info but different
-   * modification time
-   */
+  /** persists a number of ContactHistory entities for load and query testing. */
   ImmutableList<ContactHistory> persistLotsOfContactHistoryEntities(
       int numOfEntities, int minusMonths, int minusDays, ContactResource contact) {
     ImmutableList.Builder<ContactHistory> expectedEntitesBuilder = new ImmutableList.Builder<>();
@@ -223,7 +220,6 @@ class WipeOutContactHistoryPiiActionTest {
 
   @TestSqlOnly
   void wipeOutContactHistoryPii_success() {
-    ImmutableList.Builder<ContactHistory> data = new ImmutableList.Builder<>();
     ContactHistory contactHistory =
         persistResource(
             new ContactHistory()
@@ -234,7 +230,7 @@ class WipeOutContactHistoryPiiActionTest {
                 .setType(ContactHistory.Type.CONTACT_DELETE)
                 .build());
 
-    jpaTm().transact(() -> action.wipeOutContactHistoryPii(data.add(contactHistory).build()));
+    jpaTm().transact(() -> action.wipeOutContactHistoryPii(contactHistory));
 
     jpaTm()
         .transact(
