@@ -36,7 +36,7 @@ public interface JpaTransactionManager extends TransactionManager {
   <T> TypedQuery<T> query(String sqlString, Class<T> resultClass);
 
   /** Creates a JPA SQU query for the given criteria query. */
-  <T> TypedQuery<T> query(CriteriaQuery<T> criteriaQuery);
+  <T> TypedQuery<T> criteriaQuery(CriteriaQuery<T> criteriaQuery);
 
   /**
    * Creates a JPA SQL query for the given query string.

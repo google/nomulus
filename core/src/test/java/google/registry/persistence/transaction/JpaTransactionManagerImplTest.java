@@ -623,7 +623,7 @@ class JpaTransactionManagerImplTest {
                             .getEntityManager()
                             .contains(
                                 jpaTm()
-                                    .query(
+                                    .criteriaQuery(
                                         CriteriaQueryBuilder.create(TestEntity.class)
                                             .where(
                                                 "name",

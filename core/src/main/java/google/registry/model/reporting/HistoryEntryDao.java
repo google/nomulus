@@ -24,6 +24,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Streams;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactHistory;
@@ -48,6 +49,25 @@ import org.joda.time.DateTime;
  * is currently considered the primary database.
  */
 public class HistoryEntryDao {
+
+  public static ImmutableMap<Class<? extends EppResource>, Class<? extends HistoryEntry>>
+      RESOURCE_TYPES_TO_HISTORY_TYPES =
+          ImmutableMap.of(
+              ContactResource.class,
+              ContactHistory.class,
+              DomainBase.class,
+              DomainHistory.class,
+              HostResource.class,
+              HostHistory.class);
+
+  public static ImmutableMap<Class<? extends HistoryEntry>, String> REPO_ID_FIELD_NAMES =
+      ImmutableMap.of(
+          ContactHistory.class,
+          "contactRepoId",
+          DomainHistory.class,
+          "domainRepoId",
+          HostHistory.class,
+          "hostRepoId");
 
   /** Loads all history objects in the times specified, including all types. */
   public static ImmutableList<HistoryEntry> loadAllHistoryObjects(
@@ -164,7 +184,7 @@ public class HistoryEntryDao {
   private static <T extends HistoryEntry> Stream<T> loadHistoryObjectFromSqlByRegistrars(
       Class<T> historyClass, ImmutableCollection<String> registrarIds) {
     return jpaTm()
-        .query(
+        .criteriaQuery(
             CriteriaQueryBuilder.create(historyClass)
                 .whereFieldIsIn("clientId", registrarIds)
                 .build())
@@ -188,34 +208,32 @@ public class HistoryEntryDao {
 
     return ImmutableList.sortedCopyOf(
         Comparator.comparing(HistoryEntry::getModificationTime),
-        jpaTm().query(criteriaQuery).getResultList());
+        jpaTm().criteriaQuery(criteriaQuery).getResultList());
   }
 
   private static Class<? extends HistoryEntry> getHistoryClassFromParent(
       Class<? extends EppResource> parent) {
-    if (parent.equals(ContactResource.class)) {
-      return ContactHistory.class;
-    } else if (parent.equals(DomainBase.class)) {
-      return DomainHistory.class;
-    } else if (parent.equals(HostResource.class)) {
-      return HostHistory.class;
+    if (!RESOURCE_TYPES_TO_HISTORY_TYPES.containsKey(parent)) {
+      throw new IllegalArgumentException(
+          String.format("Unknown history type for parent %s", parent.getName()));
     }
-    throw new IllegalArgumentException(
-        String.format("Unknown history type for parent %s", parent.getName()));
+    return RESOURCE_TYPES_TO_HISTORY_TYPES.get(parent);
   }
 
   private static String getRepoIdFieldNameFromHistoryClass(
       Class<? extends HistoryEntry> historyClass) {
-    return historyClass.equals(ContactHistory.class)
-        ? "contactRepoId"
-        : historyClass.equals(DomainHistory.class) ? "domainRepoId" : "hostRepoId";
+    if (!REPO_ID_FIELD_NAMES.containsKey(historyClass)) {
+      throw new IllegalArgumentException(
+          String.format("Unknown history type %s", historyClass.getName()));
+    }
+    return REPO_ID_FIELD_NAMES.get(historyClass);
   }
 
   private static <T extends HistoryEntry> List<T> loadAllHistoryObjectsFromSql(
       Class<T> historyClass, DateTime afterTime, DateTime beforeTime) {
     CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
     return jpaTm()
-        .query(
+        .criteriaQuery(
             CriteriaQueryBuilder.create(historyClass)
                 .where("modificationTime", criteriaBuilder::greaterThanOrEqualTo, afterTime)
                 .where("modificationTime", criteriaBuilder::lessThanOrEqualTo, beforeTime)
