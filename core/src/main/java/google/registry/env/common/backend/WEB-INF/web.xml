@@ -391,8 +391,8 @@
     <url-pattern>/_dr/task/relockDomain</url-pattern>
   </servlet-mapping>
 
-  <!-- Background action to wipe out fields on contact entities in history
-entries that are at least 18 months old. -->
+  <!-- Background action to wipe out pii fields of ContactHistory entities that
+have been in the database for a certain period of time. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>
     <url-pattern>/_dr/task/wipeOutContactHistoryPii</url-pattern>

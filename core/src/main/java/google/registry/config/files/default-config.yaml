@@ -444,10 +444,11 @@ registryTool:
 
 # Configuration options for handling contact history.
 contactHistory:
-  # The number of months that a ContactHistory record should be stored in the database.
+  # The number of months that a ContactHistory entity should be stored in the database.
   minMonthsBeforeWipeOut: 18
   # The batch size for querying ContactHistory table in the database.
-  wipeOutQueryBatchSize: 100
+  wipeOutQueryBatchSize: 500
+
 # Configuration options for checking SSL certificates.
 sslCertificateValidation:
   # A map specifying the maximum amount of days the certificate can be valid.
