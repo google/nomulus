@@ -240,5 +240,6 @@ public class RegistryConfigSettings {
   public static class ContactHistory {
     public int minMonthsBeforeWipeOut;
     public int wipeOutQueryBatchSize;
+    public int numOfEntitiesToWipeOutPerTransaction;
   }
 }

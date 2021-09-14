@@ -1318,6 +1318,12 @@ public final class RegistryConfig {
     public static int provideWipeOutQueryBatchSize(RegistryConfigSettings config) {
       return config.contactHistory.wipeOutQueryBatchSize;
     }
+
+    @Provides
+    @Config("numOfEntitiesToWipeOutPerTransaction")
+    public static int provideNumOfEntitiesToWipeOutPerTransaction(RegistryConfigSettings config) {
+      return config.contactHistory.numOfEntitiesToWipeOutPerTransaction;
+    }
   }
 
   /** Returns the App Engine project ID, which is based off the environment name. */

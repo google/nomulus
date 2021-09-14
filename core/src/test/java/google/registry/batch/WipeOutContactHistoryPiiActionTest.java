@@ -1,4 +1,4 @@
-// Copyright 2017 The Nomulus Authors. All Rights Reserved.
+// Copyright 2021 The Nomulus Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 package google.registry.batch;
 
+import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -31,36 +32,35 @@ import google.registry.model.contact.PostalInfo;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.eppcommon.PresenceMarker;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.request.Response;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
+import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestSqlOnly;
-import org.hibernate.ScrollableResults;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link WipeOutContactHistoryPiiAction}. */
 @DualDatabaseTest
 class WipeOutContactHistoryPiiActionTest {
-  @RegisterExtension
-  public final AppEngineExtension appEngine =
-      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
-
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
-  private final FakeClock clock = new FakeClock(DateTime.parse("2021-08-26T20:21:22Z"));
-  private final int minMonthsBeforeWipedOut = 18;
-  private final int batchSize = 100;
-  private Response response;
-  private WipeOutContactHistoryPiiAction action =
-      new WipeOutContactHistoryPiiAction(clock, minMonthsBeforeWipedOut, batchSize, response);
-  private ContactResource defaultContactResource =
+  private static final int MIN_MONTHS_BEFORE_WIPE_OUT = 18;
+  private static final int BATCH_SIZE = 100;
+  private static final int NUM_OF_ENTITIES_PER_TRANSACTION = 50;
+  private static final ContactResource defaultContactResource =
       new ContactResource.Builder()
           .setContactId("sh8013")
           .setRepoId("2FF-ROID")
           .setStatusValues(ImmutableSet.of(StatusValue.CLIENT_DELETE_PROHIBITED))
+          .setLocalizedPostalInfo(
+              new PostalInfo.Builder()
+                  .setType(PostalInfo.Type.LOCALIZED)
+                  .setAddress(
+                      new ContactAddress.Builder()
+                          .setStreet(ImmutableList.of("123 Grand Ave"))
+                          .build())
+                  .build())
           .setInternationalizedPostalInfo(
               new PostalInfo.Builder()
                   .setType(PostalInfo.Type.INTERNATIONALIZED)
@@ -82,9 +82,9 @@ class WipeOutContactHistoryPiiActionTest {
                   .build())
           .setFaxNumber(new ContactPhoneNumber.Builder().setPhoneNumber("+1.7035555556").build())
           .setEmailAddress("jdoe@example.com")
-          .setPersistedCurrentSponsorClientId("TheRegistrar")
-          .setCreationClientId("NewRegistrar")
-          .setLastEppUpdateClientId("NewRegistrar")
+          .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
+          .setCreationRegistrarId("NewRegistrar")
+          .setLastEppUpdateRegistrarId("NewRegistrar")
           .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
           .setLastEppUpdateTime(DateTime.parse("1999-12-03T09:00:00.0Z"))
           .setLastTransferTime(DateTime.parse("2000-04-08T09:00:00.0Z"))
@@ -97,113 +97,196 @@ class WipeOutContactHistoryPiiActionTest {
                   .build())
           .build();
 
-  @TestSqlOnly
-  void getAllHistoryEntries_returnsEmptyList() {
-    // -1 means there is no current row
-    jpaTm()
-        .transact(
-            () ->
-                assertThat(
-                        action
-                            .getAllHistoryEntriesOlderThan(minMonthsBeforeWipedOut)
-                            .getRowNumber())
-                    .isEqualTo(-1));
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
+
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+  private final FakeClock clock = new FakeClock(DateTime.parse("2021-08-26T20:21:22Z"));
+
+  private FakeResponse response;
+  private WipeOutContactHistoryPiiAction action;
+
+  @BeforeEach
+  void beforeEach() {
+    response = new FakeResponse();
+    action =
+        new WipeOutContactHistoryPiiAction(
+            clock,
+            MIN_MONTHS_BEFORE_WIPE_OUT,
+            BATCH_SIZE,
+            NUM_OF_ENTITIES_PER_TRANSACTION,
+            response);
   }
 
   @TestSqlOnly
-  void getAllHistoryEntries_persistOnlyEntitiesThatShouldBeWiped() {
+  void getAllHistoryEntitiesOlderThan_returnsEmptyList() {
+    assertThat(
+            jpaTm()
+                .transact(
+                    () ->
+                        action
+                            .getAllHistoryEntitiesOlderThan(MIN_MONTHS_BEFORE_WIPE_OUT)
+                            .collect(toImmutableList())))
+        .isEmpty();
+  }
+
+  @TestSqlOnly
+  void getAllHistoryEntitiesOlderThan_returnsAllPersistedEntities() {
     ImmutableList<ContactHistory> expectedToBeWipedOut =
         persistLotsOfContactHistoryEntities(
-            20, minMonthsBeforeWipedOut + 1, 0, defaultContactResource);
-
-    jpaTm()
-        .transact(
-            () -> {
-              ScrollableResults data =
-                  action.getAllHistoryEntriesOlderThan(minMonthsBeforeWipedOut);
-              int actualNumOfOldEntities = 0;
-              while (data.next()) {
-                ContactHistory contactHistory = (ContactHistory) data.get(0);
-                assertThat(expectedToBeWipedOut.contains(contactHistory)).isTrue();
-                actualNumOfOldEntities++;
-              }
-              assertThat(actualNumOfOldEntities).isEqualTo(expectedToBeWipedOut.size());
-            });
+            20, MIN_MONTHS_BEFORE_WIPE_OUT + 1, 0, defaultContactResource);
+    assertThat(
+            jpaTm()
+                .transact(
+                    () ->
+                        action
+                            .getAllHistoryEntitiesOlderThan(MIN_MONTHS_BEFORE_WIPE_OUT)
+                            .collect(toImmutableList())))
+        .isEqualTo(expectedToBeWipedOut);
   }
 
   @TestSqlOnly
-  void getAllHistoryEntries_persistOnlyEntitiesThatShouldNotBeWiped() {
+  void getAllHistoryEntitiesOlderThan_returnsNoEntity() {
     ImmutableList<ContactHistory> expectedNotToBeWiped =
-        persistLotsOfContactHistoryEntities(20, minMonthsBeforeWipedOut, 0, defaultContactResource);
-    jpaTm()
-        .transact(
-            () -> {
-              ScrollableResults data =
-                  action.getAllHistoryEntriesOlderThan(minMonthsBeforeWipedOut);
-              int actualNumOfOldEntities = 0;
-              while (data.next()) {
-                ContactHistory contactHistory = (ContactHistory) data.get(0);
-                assertThat(expectedNotToBeWiped.contains(contactHistory)).isFalse();
-                actualNumOfOldEntities++;
-              }
-              assertThat(actualNumOfOldEntities).isEqualTo(0);
-            });
+        persistLotsOfContactHistoryEntities(
+            20, MIN_MONTHS_BEFORE_WIPE_OUT, 0, defaultContactResource);
+
+    ImmutableList<ContactHistory> returnedEntities =
+        jpaTm()
+            .transact(
+                () ->
+                    action
+                        .getAllHistoryEntitiesOlderThan(MIN_MONTHS_BEFORE_WIPE_OUT)
+                        .collect(toImmutableList()));
+
+    assertThat(returnedEntities).isEmpty();
   }
 
   @TestSqlOnly
-  void getAllHistoryEntries_persistLotsOfEntities_returnsOnlyPartOfTheEntities() {
+  void getAllHistoryEntitiesOlderThan_returnsOnlyPartOfThePersistedEntities() {
     ImmutableList<ContactHistory> expectedToBeWipedOut =
         persistLotsOfContactHistoryEntities(40, 20, 0, defaultContactResource);
     ImmutableList<ContactHistory> expectedNotToBeWiped =
         persistLotsOfContactHistoryEntities(15, 17, 5, defaultContactResource);
-    jpaTm()
-        .transact(
-            () -> {
-              ScrollableResults data =
-                  action.getAllHistoryEntriesOlderThan(minMonthsBeforeWipedOut);
-              int actualNumOfOldEntities = 0;
-              while (data.next()) {
-                ContactHistory contactHistory = (ContactHistory) data.get(0);
-                assertThat(expectedToBeWipedOut.contains(contactHistory)).isTrue();
-                assertThat(expectedNotToBeWiped.contains(contactHistory)).isFalse();
-                actualNumOfOldEntities++;
-              }
-              assertThat(actualNumOfOldEntities).isEqualTo(expectedToBeWipedOut.size());
-            });
+
+    ImmutableList<ContactHistory> returnedEntities =
+        jpaTm()
+            .transact(
+                () ->
+                    action
+                        .getAllHistoryEntitiesOlderThan(MIN_MONTHS_BEFORE_WIPE_OUT)
+                        .collect(toImmutableList()));
+
+    assertThat(returnedEntities).isEqualTo(expectedToBeWipedOut);
+    for (ContactHistory returnedEntity : returnedEntities) {
+      assertThat(expectedNotToBeWiped).doesNotContain(returnedEntity);
+    }
   }
 
   @TestSqlOnly
-  void processData_testSmallDataSet_Success() {
+  void run_withOneBatch_success() {
+    int expectedMonthsFromNow = 20;
     ImmutableList<ContactHistory> expectedToBeWipedOut =
-        persistLotsOfContactHistoryEntities(450, 20, 0, defaultContactResource);
-    jpaTm()
-        .transact(
-            () -> {
-              ScrollableResults data =
-                  action.getAllHistoryEntriesOlderThan(minMonthsBeforeWipedOut);
-              assertThat(action.processData(data)).isEqualTo(expectedToBeWipedOut.size());
-              ;
-            });
+        persistLotsOfContactHistoryEntities(20, expectedMonthsFromNow, 0, defaultContactResource);
+
+    // The query should return a stream of all persisted entities.
+    assertThat(
+            jpaTm()
+                .transact(
+                    () ->
+                        action.getAllHistoryEntitiesOlderThan(MIN_MONTHS_BEFORE_WIPE_OUT).count()))
+        .isEqualTo(expectedToBeWipedOut.size());
+
+    // All pii fields of the contact history entities are not null.
+    for (ContactHistory originalEntity : expectedToBeWipedOut) {
+      assertThat(checksAllPiiFields(originalEntity.getContactBase().get(), false)).isTrue();
+    }
+
+    action.run();
+
+    // The query should return an empty stream after the wipe out action.
+    assertThat(
+            jpaTm()
+                .transact(
+                    () ->
+                        action.getAllHistoryEntitiesOlderThan(MIN_MONTHS_BEFORE_WIPE_OUT).count()))
+        .isEqualTo(0);
+
+    for (ContactHistory originalEntity : expectedToBeWipedOut) {
+      ContactHistory wipedEntity = jpaTm().transact(() -> jpaTm().loadByEntity(originalEntity));
+      assertThat(wipedEntity.getModificationTime())
+          .isEqualTo(clock.nowUtc().minusMonths(expectedMonthsFromNow));
+      assertThat(checksAllPiiFields(wipedEntity.getContactBase().get(), true)).isTrue();
+    }
   }
 
   @TestSqlOnly
-  void processData_testLargeDataSet_Success() {
+  void run_withMultipleBatches_success() {
+    int expectedMonthsFromNow = 20;
     ImmutableList<ContactHistory> expectedToBeWipedOut =
-        persistLotsOfContactHistoryEntities(10000, 25, 3, defaultContactResource);
+        persistLotsOfContactHistoryEntities(2000, expectedMonthsFromNow, 0, defaultContactResource);
+
+    // The query should return a subset of all persisted data.
+    assertThat(
+            jpaTm()
+                .transact(
+                    () ->
+                        action.getAllHistoryEntitiesOlderThan(MIN_MONTHS_BEFORE_WIPE_OUT).count()))
+        .isEqualTo(NUM_OF_ENTITIES_PER_TRANSACTION);
+
+    action.run();
+
+    // The query should return an empty stream after the wipe out action.
+    assertThat(
+            jpaTm()
+                .transact(
+                    () ->
+                        action.getAllHistoryEntitiesOlderThan(MIN_MONTHS_BEFORE_WIPE_OUT).count()))
+        .isEqualTo(0);
+
+    for (ContactHistory originalEntity : expectedToBeWipedOut) {
+      ContactHistory wipedEntity = jpaTm().transact(() -> jpaTm().loadByEntity(originalEntity));
+      assertThat(wipedEntity.getModificationTime())
+          .isEqualTo(clock.nowUtc().minusMonths(expectedMonthsFromNow));
+      assertThat(checksAllPiiFields(wipedEntity.getContactBase().get(), true)).isTrue();
+    }
+  }
+
+  @TestSqlOnly
+  void wipeOutContactHistoryData_wipesOutMultipleEntities() {
+    int expectedMonthsFromNow = 25;
+    ImmutableList<ContactHistory> expectedToBeWipedOut =
+        persistLotsOfContactHistoryEntities(20, expectedMonthsFromNow, 0, defaultContactResource);
+
+    // assert that each of the contact history entity in the db contains data in all pii fields.
+    expectedToBeWipedOut.forEach(
+        originalEntity -> {
+          ContactHistory toBeWiped = jpaTm().transact(() -> jpaTm().loadByEntity(originalEntity));
+          assertThat(toBeWiped.getModificationTime())
+              .isEqualTo(clock.nowUtc().minusMonths(expectedMonthsFromNow));
+          assertThat(checksAllPiiFields(toBeWiped.getContactBase().get(), false)).isTrue();
+        });
+
     jpaTm()
         .transact(
             () -> {
-              ScrollableResults data =
-                  action.getAllHistoryEntriesOlderThan(minMonthsBeforeWipedOut);
-              assertThat(action.processData(data)).isEqualTo(expectedToBeWipedOut.size());
-              ;
+              action.wipeOutContactHistoryData(
+                  action.getAllHistoryEntitiesOlderThan(MIN_MONTHS_BEFORE_WIPE_OUT));
             });
+
+    // verify that all pii fields of the old contact history entities are wiped out.
+    // assert that each of the contact history entity in the db contains data in all pii fields.
+    expectedToBeWipedOut.forEach(
+        originalEntity -> {
+          ContactHistory wipedEntity = jpaTm().transact(() -> jpaTm().loadByEntity(originalEntity));
+          assertThat(wipedEntity.getModificationTime())
+              .isEqualTo(clock.nowUtc().minusMonths(expectedMonthsFromNow));
+          assertThat(checksAllPiiFields(wipedEntity.getContactBase().get(), true)).isTrue();
+        });
   }
 
-  /**
-   * persists a number of hitory entries with the same set up, same contact info but different
-   * modification time
-   */
+  /** persists a number of ContactHistory entities for load and query testing. */
   ImmutableList<ContactHistory> persistLotsOfContactHistoryEntities(
       int numOfEntities, int minusMonths, int minusDays, ContactResource contact) {
     ImmutableList.Builder<ContactHistory> expectedEntitesBuilder = new ImmutableList.Builder<>();
@@ -212,7 +295,7 @@ class WipeOutContactHistoryPiiActionTest {
           persistResource(
               new ContactHistory()
                   .asBuilder()
-                  .setClientId("NewRegistrar")
+                  .setRegistrarId("NewRegistrar")
                   .setModificationTime(clock.nowUtc().minusMonths(minusMonths).minusDays(minusDays))
                   .setType(ContactHistory.Type.CONTACT_DELETE)
                   .setContact(persistResource(contact))
@@ -221,33 +304,20 @@ class WipeOutContactHistoryPiiActionTest {
     return expectedEntitesBuilder.build();
   }
 
-  @TestSqlOnly
-  void wipeOutContactHistoryPii_success() {
-    ImmutableList.Builder<ContactHistory> data = new ImmutableList.Builder<>();
-    ContactHistory contactHistory =
-        persistResource(
-            new ContactHistory()
-                .asBuilder()
-                .setClientId("NewRegistrar")
-                .setModificationTime(clock.nowUtc().minusMonths(minMonthsBeforeWipedOut + 1))
-                .setContact(persistResource(defaultContactResource))
-                .setType(ContactHistory.Type.CONTACT_DELETE)
-                .build());
-
-    jpaTm().transact(() -> action.wipeOutContactHistoryPii(data.add(contactHistory).build()));
-
-    jpaTm()
-        .transact(
-            () -> {
-              ContactHistory contactHistoryFromDb = jpaTm().loadByKey(contactHistory.createVKey());
-              assertThat(contactHistoryFromDb.getParentVKey())
-                  .isEqualTo(contactHistory.getParentVKey());
-              ContactBase contactResourceFromDb = contactHistoryFromDb.getContactBase().get();
-              assertThat(contactResourceFromDb.getEmailAddress()).isNull();
-              assertThat(contactResourceFromDb.getFaxNumber()).isNull();
-              assertThat(contactResourceFromDb.getInternationalizedPostalInfo()).isNull();
-              assertThat(contactResourceFromDb.getLocalizedPostalInfo()).isNull();
-              assertThat(contactResourceFromDb.getVoiceNumber()).isNull();
-            });
+  /** verifies all pii fields are either null or not null. */
+  Boolean checksAllPiiFields(ContactBase contactBase, Boolean allNull) {
+    if (allNull) {
+      return contactBase.getEmailAddress() == null
+          && contactBase.getFaxNumber() == null
+          && contactBase.getInternationalizedPostalInfo() == null
+          && contactBase.getLocalizedPostalInfo() == null
+          && contactBase.getVoiceNumber() == null;
+    } else {
+      return contactBase.getEmailAddress() != null
+          && contactBase.getFaxNumber() != null
+          && contactBase.getInternationalizedPostalInfo() != null
+          && contactBase.getLocalizedPostalInfo() != null
+          && contactBase.getVoiceNumber() != null;
+    }
   }
 }

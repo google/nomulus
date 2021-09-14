@@ -19,7 +19,6 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
@@ -29,99 +28,119 @@ import google.registry.request.Action.Service;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import javax.inject.Inject;
+import javax.persistence.TypedQuery;
 import org.hibernate.CacheMode;
-import org.hibernate.ScrollMode;
-import org.hibernate.ScrollableResults;
 import org.hibernate.query.Query;
 
+/**
+ * An action that wipes out Personal Identifiable Information (PII) fields of {@link ContactHistory}
+ * entities.
+ *
+ * <p>ContactHistory entities should be retained in the database for only certain amount of time.
+ * This periodic wipe out action only applies to SQL.
+ */
 @Action(
     service = Service.BACKEND,
     path = WipeOutContactHistoryPiiAction.PATH,
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
-/**
- * An action that wipes out the pii fields of ContactHistory entities that are older than a certain
- * amount of time. This periodic wipe out action only applies to SQL.
- */
 public class WipeOutContactHistoryPiiAction implements Runnable {
+
   public static final String PATH = "/_dr/task/wipeOutContactHistoryPii";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private final Clock clock;
   private final Response response;
   private final int minMonthsBeforeWipeOut;
   private final int wipeOutQueryBatchSize;
+  private final int numOfEntitiesToWipeOutPerTransaction;
 
   @Inject
   public WipeOutContactHistoryPiiAction(
       Clock clock,
       @Config("minMonthsBeforeWipeOut") int minMonthsBeforeWipeOut,
       @Config("wipeOutQueryBatchSize") int wipeOutQueryBatchSize,
+      @Config("numOfEntitiesToWipeOutPerTransaction") int numOfEntitiesToWipeOutPerTransaction,
       Response response) {
     this.clock = clock;
     this.response = response;
     this.minMonthsBeforeWipeOut = minMonthsBeforeWipeOut;
+    // the number of entities to buffer in memory
     this.wipeOutQueryBatchSize = wipeOutQueryBatchSize;
+    // the maximum returned number of entities per transaction
+    this.numOfEntitiesToWipeOutPerTransaction = numOfEntitiesToWipeOutPerTransaction;
   }
 
   @Override
   public void run() {
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
+    int totalNumOfProcessedEntities = 0;
     try {
-      jpaTm().transact(() -> processData(getAllHistoryEntriesOlderThan(minMonthsBeforeWipeOut)));
+      while (true) {
+        int numOfProcessedEntities =
+            jpaTm()
+                .transact(
+                    () ->
+                        wipeOutContactHistoryData(
+                            getAllHistoryEntitiesOlderThan(minMonthsBeforeWipeOut)));
+        totalNumOfProcessedEntities += numOfProcessedEntities;
+        // If the set of data contains less than the default number of entities to process, it means
+        // the last set of data has been processed.
+        if (numOfProcessedEntities < numOfEntitiesToWipeOutPerTransaction) {
+          break;
+        }
+      }
+      logger.atInfo().log(
+          "Processed total number of %d ContactHistory entities.", totalNumOfProcessedEntities);
       response.setStatus(SC_OK);
     } catch (Exception e) {
       logger.atWarning().withCause(e).log(
-          "Exception thrown when wiping out contact history " + "pii");
+          "Exception thrown during the process of wiping out contact history PII.");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload(
-          String.format("Exception thrown when wiping out contact history pii with cause: %s", e));
+          String.format(
+              "Exception thrown during the process of wiping out contact history PII with cause"
+                  + ": %s",
+              e));
     }
   }
-  /** Returns a list of ContactHistory entities that are @param numOfMonths from now. */
+
+  /**
+   * Returns a stream of up to {@link #numOfEntitiesToWipeOutPerTransaction} {@link ContactHistory}
+   * entities that are older than @param numOfMonths from now.
+   */
   @VisibleForTesting
-  ScrollableResults getAllHistoryEntriesOlderThan(int numOfMonths) {
-    return jpaTm()
-        .query(
-            "FROM ContactHistory WHERE modificationTime < :date AND email IS NOT NULL "
-                + "ORDER BY modificationTime ASC",
-            ContactHistory.class)
-        .setParameter("date", clock.nowUtc().minusMonths(numOfMonths))
+  Stream<ContactHistory> getAllHistoryEntitiesOlderThan(int numOfMonths) {
+    // Email is one of the required fields in EPP, meaning it's initially not null.
+    // Therefore, checking if it's null is one way to avoid processing contact history entities
+    // that have been processed previously. Refer to RFC 5733 for more information.
+    TypedQuery<ContactHistory> query =
+        jpaTm()
+            .query(
+                "FROM ContactHistory WHERE modificationTime < :wipeOutTime "
+                    + "AND email IS NOT NULL ORDER BY modificationTime ASC",
+                ContactHistory.class)
+            .setParameter("wipeOutTime", clock.nowUtc().minusMonths(numOfMonths));
+    query
         .unwrap(Query.class)
         .setCacheMode(CacheMode.IGNORE)
         .setFetchSize(wipeOutQueryBatchSize)
-        .scroll(ScrollMode.FORWARD_ONLY);
+        .setMaxResults(numOfEntitiesToWipeOutPerTransaction);
+    return query.getResultStream();
   }
 
+  /** Wipes out the PII of each of the {@link ContactHistory} entities of the stream. */
   @VisibleForTesting
-  int processData(ScrollableResults oldContactHistoryData) {
-    int numOfProcessedEntities = 0;
-    ImmutableList.Builder<ContactHistory> batchBuilder = new ImmutableList.Builder<>();
-    for (int i = 1; oldContactHistoryData.next(); i = (i + 1) % wipeOutQueryBatchSize) {
-      batchBuilder.add((ContactHistory) oldContactHistoryData.get(0));
-      if (i == 0) {
-        // process a full batch of entities
-        wipeOutContactHistoryPii(batchBuilder.build());
-        numOfProcessedEntities += wipeOutQueryBatchSize;
-        // reset batch builder and flush the session to avoid OOM issue
-        jpaTm().getEntityManager().flush();
-        jpaTm().getEntityManager().clear();
-        batchBuilder = new ImmutableList.Builder<>();
-      }
-    }
-    // process the last batch of data
-    ImmutableList<ContactHistory> lastBatch = batchBuilder.build();
-    wipeOutContactHistoryPii(lastBatch);
-    numOfProcessedEntities += lastBatch.size();
+  int wipeOutContactHistoryData(Stream<ContactHistory> contactHistoryEntities) {
+    AtomicInteger numOfEntities = new AtomicInteger(0);
+    contactHistoryEntities.forEach(
+        contactHistoryEntity -> {
+          jpaTm().update(contactHistoryEntity.asBuilder().wipeOutPii().build());
+          numOfEntities.incrementAndGet();
+        });
     logger.atInfo().log(
-        "Wiped out pii fields of %d ContactHistory entities", numOfProcessedEntities);
-    return numOfProcessedEntities;
-  }
-
-  /** Wipes out the Pii of a contact history entry and updates the record in the database. */
-  @VisibleForTesting
-  void wipeOutContactHistoryPii(ImmutableList<ContactHistory> contactHistoryData) {
-    for (ContactHistory contactHistory : contactHistoryData) {
-      jpaTm().update(contactHistory.asBuilder().wipeOutPii().build());
-    }
+        "Wiped out all PII fields of %d ContactHistory entities.", numOfEntities.get());
+    return numOfEntities.get();
   }
 }
