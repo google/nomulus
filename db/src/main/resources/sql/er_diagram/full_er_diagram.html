@@ -261,15 +261,11 @@ td.section {
     </tr> 
     <tr> 
      <td class="property_name">generated on</td> 
-<<<<<<< HEAD
-     <td class="property_value">2021-08-10 20:50:07.996141</td> 
-=======
-     <td class="property_value">2021-08-11 23:54:54.724849</td> 
->>>>>>> 475839855 (Add the domain DNS refresh request time field to the DB schema)
+     <td class="property_value">2021-09-14 16:11:19.580097</td> 
     </tr> 
     <tr>
      <td class="property_name">last flyway file</td>
-     <td id="lastFlywayFile" class="property_value">V101__domain_add_dns_refresh_request_time.sql</td>
+     <td id="lastFlywayFile" class="property_value">V102__add_indexes_to_domain_history_sub_tables.sql</td>
     </tr>
    </tbody>
   </table> 
@@ -288,11 +284,7 @@ td.section {
      generated on
     </text> 
     <text text-anchor="start" x="4755.52" y="-10.8" font-family="Helvetica,sans-Serif" font-size="14.00">
-<<<<<<< HEAD
-     2021-08-10 20:50:07.996141
-=======
-     2021-08-11 23:54:54.724849
->>>>>>> 475839855 (Add the domain DNS refresh request time field to the DB schema)
+     2021-09-14 16:11:19.580097
     </text> 
     <polygon fill="none" stroke="#888888" points="4668.02,-4 4668.02,-44 4933.02,-44 4933.02,-4 4668.02,-4" /> <!-- allocationtoken_a08ccbef --> 
     <g id="node1" class="node"> 
@@ -9732,6 +9724,23 @@ td.section {
      <td class="minwidth">ds_data_history_revision_id</td> 
      <td class="minwidth">ascending</td> 
     </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="2" class="name">domain_history_to_ds_data_history_idx</td> 
+     <td class="description right">[non-unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">domain_repo_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">domain_history_revision_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
    </tbody>
   </table> 
   <p>&nbsp;</p> 
@@ -10625,6 +10634,23 @@ td.section {
     <tr> 
      <td class="spacer"></td> 
      <td class="minwidth">id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td colspan="3"></td> 
+    </tr> 
+    <tr> 
+     <td colspan="2" class="name">domain_history_to_transaction_record_idx</td> 
+     <td class="description right">[non-unique index]</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">domain_repo_id</td> 
+     <td class="minwidth">ascending</td> 
+    </tr> 
+    <tr> 
+     <td class="spacer"></td> 
+     <td class="minwidth">history_revision_id</td> 
      <td class="minwidth">ascending</td> 
     </tr> 
    </tbody>

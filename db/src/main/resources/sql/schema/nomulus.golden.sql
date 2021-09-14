@@ -1490,6 +1490,20 @@ CREATE INDEX domain_dns_refresh_request_time_idx ON public."Domain" USING btree 
 
 
 --
+-- Name: domain_history_to_ds_data_history_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domain_history_to_ds_data_history_idx ON public."DomainDsDataHistory" USING btree (domain_repo_id, domain_history_revision_id);
+
+
+--
+-- Name: domain_history_to_transaction_record_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domain_history_to_transaction_record_idx ON public."DomainTransactionRecord" USING btree (domain_repo_id, history_revision_id);
+
+
+--
 -- Name: idx1iy7njgb7wjmj9piml4l2g0qi; Type: INDEX; Schema: public; Owner: -
 --
 
