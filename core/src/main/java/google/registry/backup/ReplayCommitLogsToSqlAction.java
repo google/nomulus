@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.gcs.GcsUtils;
+import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
@@ -222,8 +223,11 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
       // Load and process the Datastore transactions one at a time
       ImmutableList<ImmutableList<VersionedEntity>> allTransactions =
           CommitLogImports.loadEntitiesByTransaction(input);
-      allTransactions.forEach(
-          transaction -> jpaTm().transact(() -> replayTransaction(transaction)));
+      try (UpdateAutoTimestamp.DisableAutoUpdateResource disabler =
+          UpdateAutoTimestamp.disableAutoUpdate()) {
+        allTransactions.forEach(
+            transaction -> jpaTm().transact(() -> replayTransaction(transaction)));
+      }
       // if we succeeded, set the last-seen time
       DateTime checkpoint = DateTime.parse(metadata.getName().substring(DIFF_FILE_PREFIX.length()));
       jpaTm().transact(() -> SqlReplayCheckpoint.set(checkpoint));

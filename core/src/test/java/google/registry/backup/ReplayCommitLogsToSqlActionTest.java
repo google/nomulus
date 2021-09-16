@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.backup.RestoreCommitLogsActionTest.createCheckpoint;
 import static google.registry.backup.RestoreCommitLogsActionTest.saveDiffFile;
 import static google.registry.backup.RestoreCommitLogsActionTest.saveDiffFileNotToRestore;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.common.DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP;
 import static google.registry.model.common.EntityGroupRoot.getCrossTldKey;
 import static google.registry.model.ofy.CommitLogBucket.getBucketKey;
@@ -55,6 +56,7 @@ import google.registry.model.index.ForeignKeyIndex;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.CommitLogManifest;
 import google.registry.model.ofy.CommitLogMutation;
+import google.registry.model.ofy.Ofy;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.model.rde.RdeRevision;
@@ -72,6 +74,7 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
+import google.registry.testing.InjectExtension;
 import google.registry.testing.TestObject;
 import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
@@ -114,6 +117,8 @@ public class ReplayCommitLogsToSqlActionTest {
               TestObject.class)
           .build();
 
+  @RegisterExtension public final InjectExtension inject = new InjectExtension();
+
   /** Local GCS service. */
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
@@ -128,6 +133,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
   @BeforeEach
   void beforeEach() {
+    inject.setStaticField(Ofy.class, "clock", fakeClock);
     action.gcsUtils = gcsUtils;
     action.response = response;
     action.requestStatusChecker = requestStatusChecker;
@@ -285,7 +291,7 @@ public class ReplayCommitLogsToSqlActionTest {
   }
 
   @Test
-  void wtestReplay_mutateExistingEntity() throws Exception {
+  void testReplay_mutateExistingEntity() throws Exception {
     DateTime now = fakeClock.nowUtc();
     jpaTm().transact(() -> jpaTm().put(TestObject.create("existing", "a")));
     Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(getBucketKey(1), now);
@@ -318,6 +324,31 @@ public class ReplayCommitLogsToSqlActionTest {
             ImmutableSet.of(Key.create(TestObject.create("previous to delete")))));
     action.run();
     assertExpectedIds("previous to keep");
+  }
+
+  @Test
+  void testReplay_doesNotChangeUpdateTime() throws Exception {
+    // Save the contact with an earlier updateTimestamp
+    ContactResource contactResource = persistActiveContact("contactfoobar");
+    DateTime persistenceTime = fakeClock.nowUtc();
+    Key<CommitLogBucket> bucketKey = getBucketKey(1);
+    Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(bucketKey, persistenceTime);
+    CommitLogMutation mutation =
+        tm().transact(() -> CommitLogMutation.create(manifestKey, contactResource));
+    jpaTm().transact(() -> SqlReplayCheckpoint.set(persistenceTime.minusMinutes(1).minusMillis(1)));
+
+    // Replay the contact-save an hour later; the updateTimestamp should be unchanged
+    fakeClock.advanceBy(Duration.standardHours(1));
+    saveDiffFile(
+        gcsUtils,
+        createCheckpoint(persistenceTime.minusMinutes(1)),
+        CommitLogManifest.create(
+            getBucketKey(1), persistenceTime.minusMinutes(1), ImmutableSet.of()),
+        mutation);
+    runAndAssertSuccess(persistenceTime.minusMinutes(1), 1, 1);
+    assertAboutImmutableObjects()
+        .that(jpaTm().transact((() -> jpaTm().loadByEntity(contactResource))))
+        .isEqualExceptFields(contactResource, "revisions");
   }
 
   @Test
