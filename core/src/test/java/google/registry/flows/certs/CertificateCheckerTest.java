@@ -262,7 +262,7 @@ class CertificateCheckerTest {
                 DateTime.parse("2021-10-01T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    assertThat(certificateChecker.shouldReceiveExpiringNotification(null, certificateStr))
+    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_OF_TIME, certificateStr))
         .isFalse();
   }
 
@@ -276,7 +276,7 @@ class CertificateCheckerTest {
                 DateTime.parse("2021-10-01T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    assertThat(certificateChecker.shouldReceiveExpiringNotification(null, certificateStr))
+    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_OF_TIME, certificateStr))
         .isFalse();
   }
 
@@ -307,12 +307,14 @@ class CertificateCheckerTest {
                 DateTime.parse("2021-01-30T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    assertThat(certificateChecker.shouldReceiveExpiringNotification(null, certificateStr)).isTrue();
+    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_OF_TIME, certificateStr))
+        .isTrue();
   }
 
   @Test
-  void test_shouldReceiveExpiringNotification_returnsFalse_between30and15_lastSentDateIsNotNull()
-      throws Exception {
+  void
+      test_shouldReceiveExpiringNotification_returnsFalse_between30and15_lastSentDateIsNotStartOfTime()
+          throws Exception {
     fakeClock.setTo(DateTime.parse("2021-07-05T00:00:00Z"));
     X509Certificate certificate =
         SelfSignedCaCertificate.create(
@@ -329,7 +331,7 @@ class CertificateCheckerTest {
   }
 
   @Test
-  void test_shouldReceiveExpiringNotification_returnsTrue_between30and15_lastSentDateIsNull()
+  void test_shouldReceiveExpiringNotification_returnsTrue_between30and15_lastSentDateIsStartOfTime()
       throws Exception {
     fakeClock.setTo(DateTime.parse("2021-07-05T00:00:00Z"));
     X509Certificate certificate =
@@ -339,7 +341,8 @@ class CertificateCheckerTest {
                 DateTime.parse("2021-07-25T00:00:00Z"))
             .cert();
     String certificateStr = certificateChecker.serializeCertificate(certificate);
-    assertThat(certificateChecker.shouldReceiveExpiringNotification(null, certificateStr)).isTrue();
+    assertThat(certificateChecker.shouldReceiveExpiringNotification(START_OF_TIME, certificateStr))
+        .isTrue();
   }
 
   @Test

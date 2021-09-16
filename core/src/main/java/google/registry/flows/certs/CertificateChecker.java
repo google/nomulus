@@ -33,7 +33,6 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -228,7 +227,7 @@ public class CertificateChecker {
 
   /** Returns whether the client should receive a notification email. */
   public boolean shouldReceiveExpiringNotification(
-      @Nullable DateTime lastExpiringNotificationSentDate, String certificateStr) {
+      DateTime lastExpiringNotificationSentDate, String certificateStr) {
     X509Certificate certificate = getCertificate(certificateStr);
     DateTime now = clock.nowUtc();
     // expiration date is one day after lastValidDate
@@ -238,13 +237,13 @@ public class CertificateChecker {
     }
     /*
      * Client should receive a notification if :
-     *    1) client has never received notification and the certificate has entered
-     *    the expiring period, OR
+     *    1) client has never received notification (lastExpiringNotificationSentDate is initially
+     *    set to START_OF_TIME) and the certificate has entered the expiring period, OR
      *    2) client has received notification but the interval between now and
      *    lastExpiringNotificationSentDate is greater than expirationWarningIntervalDays.
      */
     return !lastValidDate.after(now.plusDays(expirationWarningDays).toDate())
-        && (lastExpiringNotificationSentDate == null
+        && (lastExpiringNotificationSentDate == START_OF_TIME
             || !lastExpiringNotificationSentDate
                 .plusDays(expirationWarningIntervalDays)
                 .toDate()
