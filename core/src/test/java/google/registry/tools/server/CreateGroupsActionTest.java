@@ -45,12 +45,12 @@ class CreateGroupsActionTest {
   private final DirectoryGroupsConnection connection = mock(DirectoryGroupsConnection.class);
   private final Response response = mock(Response.class);
 
-  private void runAction(String clientId) {
+  private void runAction(String registrarId) {
     CreateGroupsAction action = new CreateGroupsAction();
     action.response = response;
     action.groupsConnection = connection;
     action.gSuiteDomainName = "domain-registry.example";
-    action.clientId = Optional.ofNullable(clientId);
+    action.clientId = Optional.ofNullable(registrarId);
     action.run();
   }
 

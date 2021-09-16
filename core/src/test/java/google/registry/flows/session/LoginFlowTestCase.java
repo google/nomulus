@@ -28,7 +28,7 @@ import google.registry.flows.EppException.UnimplementedProtocolVersionException;
 import google.registry.flows.FlowTestCase;
 import google.registry.flows.TransportCredentials.BadRegistrarPasswordException;
 import google.registry.flows.session.LoginFlow.AlreadyLoggedInException;
-import google.registry.flows.session.LoginFlow.BadRegistrarClientIdException;
+import google.registry.flows.session.LoginFlow.BadRegistrarIdException;
 import google.registry.flows.session.LoginFlow.PasswordChangesNotSupportedException;
 import google.registry.flows.session.LoginFlow.RegistrarAccountNotActiveException;
 import google.registry.flows.session.LoginFlow.TooManyFailedLoginsException;
@@ -47,7 +47,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
 
   @BeforeEach
   void beforeEachLoginFlowTestCase() {
-    sessionMetadata.setClientId(null); // Don't implicitly log in (all other flows need to).
+    sessionMetadata.setRegistrarId(null); // Don't implicitly log in (all other flows need to).
     registrar = loadRegistrar("NewRegistrar");
     registrarBuilder = registrar.asBuilder();
   }
@@ -124,7 +124,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
   @Test
   void testFailure_unknownRegistrar() {
     deleteResource(getRegistrarBuilder().build());
-    doFailingTest("login_valid.xml", BadRegistrarClientIdException.class);
+    doFailingTest("login_valid.xml", BadRegistrarIdException.class);
   }
 
   @Test
@@ -156,7 +156,7 @@ public abstract class LoginFlowTestCase extends FlowTestCase<LoginFlow> {
 
   @Test
   void testFailure_alreadyLoggedIn() {
-    sessionMetadata.setClientId("something");
+    sessionMetadata.setRegistrarId("something");
     doFailingTest("login_valid.xml", AlreadyLoggedInException.class);
   }
 }

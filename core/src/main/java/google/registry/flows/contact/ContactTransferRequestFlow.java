@@ -15,7 +15,7 @@
 package google.registry.flows.contact;
 
 import static google.registry.flows.FlowUtils.createHistoryKey;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyAuthInfo;
 import static google.registry.flows.ResourceFlowUtils.verifyAuthInfoPresentForResourceTransfer;
@@ -32,7 +32,7 @@ import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
@@ -80,7 +80,7 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String gainingClientId;
+  @Inject @RegistrarId String gainingClientId;
   @Inject @TargetId String targetId;
   @Inject @Config("contactAutomaticTransferLength") Duration automaticTransferLength;
 
@@ -93,7 +93,7 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(gainingClientId);
+    validateRegistrarIsLoggedIn(gainingClientId);
     DateTime now = tm().getTransactionTime();
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     verifyAuthInfoPresentForResourceTransfer(authInfo);
@@ -102,7 +102,7 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
     if (TransferStatus.PENDING.equals(existingContact.getTransferData().getTransferStatus())) {
       throw new AlreadyPendingTransferException(targetId);
     }
-    String losingClientId = existingContact.getCurrentSponsorClientId();
+    String losingClientId = existingContact.getCurrentSponsorRegistrarId();
     // Verify that this client doesn't already sponsor this resource.
     if (gainingClientId.equals(losingClientId)) {
       throw new ObjectAlreadySponsoredException();
@@ -114,8 +114,8 @@ public final class ContactTransferRequestFlow implements TransactionalFlow {
         new ContactTransferData.Builder()
             .setTransferRequestTime(now)
             .setTransferRequestTrid(trid)
-            .setGainingClientId(gainingClientId)
-            .setLosingClientId(losingClientId)
+            .setGainingRegistrarId(gainingClientId)
+            .setLosingRegistrarId(losingClientId)
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.SERVER_APPROVED)
             .build();

@@ -71,7 +71,7 @@ public final class LordnTaskUtils {
             domain.getRepoId(),
             domain.getDomainName(),
             domain.getSmdId(),
-            getIanaIdentifier(domain.getCreationClientId()),
+            getIanaIdentifier(domain.getCreationRegistrarId()),
             transactionTime); // Used as creation time.
   }
 
@@ -82,15 +82,15 @@ public final class LordnTaskUtils {
             domain.getRepoId(),
             domain.getDomainName(),
             domain.getLaunchNotice().getNoticeId().getTcnId(),
-            getIanaIdentifier(domain.getCreationClientId()),
+            getIanaIdentifier(domain.getCreationRegistrarId()),
             transactionTime, // Used as creation time.
             domain.getLaunchNotice().getAcceptedTime());
   }
 
-  /** Retrieves the IANA identifier for a registrar based on the client id. */
-  private static String getIanaIdentifier(String clientId) {
-    Optional<Registrar> registrar = Registrar.loadByClientIdCached(clientId);
-    checkState(registrar.isPresent(), "No registrar found for client id: %s", clientId);
+  /** Retrieves the IANA identifier for a registrar by its ID. */
+  private static String getIanaIdentifier(String registrarId) {
+    Optional<Registrar> registrar = Registrar.loadByRegistrarIdCached(registrarId);
+    checkState(registrar.isPresent(), "No registrar found with ID: %s", registrarId);
     // Return the string "null" for null identifiers, since some Registrar.Types such as OTE will
     // have null iana ids.
     return String.valueOf(registrar.get().getIanaIdentifier());

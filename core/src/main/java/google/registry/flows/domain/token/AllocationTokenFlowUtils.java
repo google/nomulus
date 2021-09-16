@@ -58,12 +58,19 @@ public class AllocationTokenFlowUtils {
    *     for this request.
    */
   public AllocationToken loadTokenAndValidateDomainCreate(
-      DomainCommand.Create command, String token, Registry registry, String clientId, DateTime now)
+      DomainCommand.Create command,
+      String token,
+      Registry registry,
+      String registrarId,
+      DateTime now)
       throws EppException {
     AllocationToken tokenEntity = loadToken(token);
     validateToken(
-        InternetDomainName.from(command.getFullyQualifiedDomainName()), tokenEntity, clientId, now);
-    return tokenCustomLogic.validateToken(command, tokenEntity, registry, clientId, now);
+        InternetDomainName.from(command.getFullyQualifiedDomainName()),
+        tokenEntity,
+        registrarId,
+        now);
+    return tokenCustomLogic.validateToken(command, tokenEntity, registry, registrarId, now);
   }
 
   /**
@@ -74,7 +81,7 @@ public class AllocationTokenFlowUtils {
    *     validate have blank messages (i.e. no error).
    */
   public AllocationTokenDomainCheckResults checkDomainsWithToken(
-      List<InternetDomainName> domainNames, String token, String clientId, DateTime now) {
+      List<InternetDomainName> domainNames, String token, String registrarId, DateTime now) {
     // If the token is completely invalid, return the error message for all domain names
     AllocationToken tokenEntity;
     try {
@@ -91,7 +98,7 @@ public class AllocationTokenFlowUtils {
     ImmutableMap.Builder<InternetDomainName, String> resultsBuilder = new ImmutableMap.Builder<>();
     for (InternetDomainName domainName : domainNames) {
       try {
-        validateToken(domainName, tokenEntity, clientId, now);
+        validateToken(domainName, tokenEntity, registrarId, now);
         validDomainNames.add(domainName);
       } catch (EppException e) {
         resultsBuilder.put(domainName, e.getMessage());
@@ -101,7 +108,7 @@ public class AllocationTokenFlowUtils {
     // For all valid domain names, run the custom logic and include the results
     resultsBuilder.putAll(
         tokenCustomLogic.checkDomainsWithToken(
-            validDomainNames.build(), tokenEntity, clientId, now));
+            validDomainNames.build(), tokenEntity, registrarId, now));
     return AllocationTokenDomainCheckResults.create(
         Optional.of(tokenEntity), resultsBuilder.build());
   }
@@ -123,10 +130,10 @@ public class AllocationTokenFlowUtils {
    * @throws EppException if the token is invalid in any way
    */
   private void validateToken(
-      InternetDomainName domainName, AllocationToken token, String clientId, DateTime now)
+      InternetDomainName domainName, AllocationToken token, String registrarId, DateTime now)
       throws EppException {
     if (!token.getAllowedRegistrarIds().isEmpty()
-        && !token.getAllowedRegistrarIds().contains(clientId)) {
+        && !token.getAllowedRegistrarIds().contains(registrarId)) {
       throw new AllocationTokenNotValidForRegistrarException();
     }
     if (!token.getAllowedTlds().isEmpty()

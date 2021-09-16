@@ -165,23 +165,23 @@ public class RegistryJpaReadTest {
     Registrar registrar =
         makeRegistrar1()
             .asBuilder()
-            .setClientId("registrar1")
+            .setRegistrarId("registrar1")
             .setEmailAddress("me@google.com")
             .build();
     ContactResource contact =
         new ContactResource.Builder()
             .setRepoId("contactid_1")
-            .setCreationClientId(registrar.getClientId())
+            .setCreationRegistrarId(registrar.getRegistrarId())
             .setTransferData(new ContactTransferData.Builder().build())
-            .setPersistedCurrentSponsorClientId(registrar.getClientId())
+            .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
             .build();
     DomainBase domain =
         new DomainBase.Builder()
             .setDomainName("example.com")
             .setRepoId("4-COM")
-            .setCreationClientId(registrar.getClientId())
+            .setCreationRegistrarId(registrar.getRegistrarId())
             .setLastEppUpdateTime(fakeClock.nowUtc())
-            .setLastEppUpdateClientId(registrar.getClientId())
+            .setLastEppUpdateRegistrarId(registrar.getRegistrarId())
             .setLastTransferTime(fakeClock.nowUtc())
             .setStatusValues(
                 ImmutableSet.of(
@@ -194,7 +194,7 @@ public class RegistryJpaReadTest {
             .setRegistrant(contact.createVKey())
             .setContacts(ImmutableSet.of())
             .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
-            .setPersistedCurrentSponsorClientId(registrar.getClientId())
+            .setPersistedCurrentSponsorRegistrarId(registrar.getRegistrarId())
             .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
             .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
@@ -206,7 +206,7 @@ public class RegistryJpaReadTest {
                     GracePeriodStatus.ADD,
                     "4-COM",
                     END_OF_TIME,
-                    registrar.getClientId(),
+                    registrar.getRegistrarId(),
                     null,
                     100L))
             .build();

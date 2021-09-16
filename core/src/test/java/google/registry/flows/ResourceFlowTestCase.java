@@ -122,7 +122,7 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
 
   @Test
   void testRequiresLogin() {
-    sessionMetadata.setClientId(null);
+    sessionMetadata.setRegistrarId(null);
     EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
@@ -166,12 +166,12 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
     assertTasksEnqueued("async-delete-pull", expected);
   }
 
-
-  protected void assertClientIdFieldLogged(String clientId) {
-    assertAboutLogs().that(logHandler)
+  protected void assertClientIdFieldLogged(String registrarId) {
+    assertAboutLogs()
+        .that(logHandler)
         .hasLogAtLevelWithMessage(Level.INFO, "FLOW-LOG-SIGNATURE-METADATA")
         .which()
-        .contains("\"clientId\":" + JSONValue.toJSONString(clientId));
+        .contains("\"clientId\":" + JSONValue.toJSONString(registrarId));
   }
 
   protected void assertTldsFieldLogged(String... tlds) {

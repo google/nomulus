@@ -290,7 +290,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   /** Public factory for first Registrar to allow comparison against stored value in unit tests. */
   public static Registrar makeRegistrar1() {
     return makeRegistrarCommon()
-        .setClientId("NewRegistrar")
+        .setRegistrarId("NewRegistrar")
         .setRegistrarName("New Registrar")
         .setEmailAddress("new.registrar@example.com")
         .setIanaIdentifier(8L)
@@ -304,7 +304,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   /** Public factory for second Registrar to allow comparison against stored value in unit tests. */
   public static Registrar makeRegistrar2() {
     return makeRegistrarCommon()
-        .setClientId("TheRegistrar")
+        .setRegistrarId("TheRegistrar")
         .setRegistrarName("The Registrar")
         .setEmailAddress("the.registrar@example.com")
         .setIanaIdentifier(1L)

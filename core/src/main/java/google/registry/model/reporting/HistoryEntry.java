@@ -260,11 +260,11 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
     return modificationTime;
   }
 
-  public String getClientId() {
+  public String getRegistrarId() {
     return clientId;
   }
 
-  public String getOtherClientId() {
+  public String getOtherRegistrarId() {
     return otherClientId;
   }
 
@@ -489,13 +489,13 @@ public class HistoryEntry extends ImmutableObject implements Buildable, Datastor
       return thisCastToDerived();
     }
 
-    public B setClientId(String clientId) {
-      getInstance().clientId = clientId;
+    public B setRegistrarId(String registrarId) {
+      getInstance().clientId = registrarId;
       return thisCastToDerived();
     }
 
-    public B setOtherClientId(String otherClientId) {
-      getInstance().otherClientId = otherClientId;
+    public B setOtherRegistrarId(String otherRegistrarId) {
+      getInstance().otherClientId = otherRegistrarId;
       return thisCastToDerived();
     }
 

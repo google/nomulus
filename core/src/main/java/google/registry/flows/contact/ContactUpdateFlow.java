@@ -15,7 +15,7 @@
 package google.registry.flows.contact;
 
 import static com.google.common.collect.Sets.union;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.checkSameValuesNotAddedAndRemoved;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyAllStatusesAreClientSettable;
@@ -30,7 +30,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
@@ -79,7 +79,7 @@ public final class ContactUpdateFlow implements TransactionalFlow {
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject ContactHistory.Builder historyBuilder;
@@ -90,7 +90,7 @@ public final class ContactUpdateFlow implements TransactionalFlow {
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     Update command = (Update) resourceCommand;
     DateTime now = tm().getTransactionTime();
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
@@ -98,7 +98,7 @@ public final class ContactUpdateFlow implements TransactionalFlow {
     ImmutableSet<StatusValue> statusToRemove = command.getInnerRemove().getStatusValues();
     ImmutableSet<StatusValue> statusesToAdd = command.getInnerAdd().getStatusValues();
     if (!isSuperuser) {  // The superuser can update any contact and set any status.
-      verifyResourceOwnership(clientId, existingContact);
+      verifyResourceOwnership(registrarId, existingContact);
       verifyAllStatusesAreClientSettable(union(statusesToAdd, statusToRemove));
     }
     verifyNoDisallowedStatuses(existingContact, DISALLOWED_STATUSES);
@@ -125,17 +125,18 @@ public final class ContactUpdateFlow implements TransactionalFlow {
         builder.setInternationalizedPostalInfo(null);
       }
     }
-    ContactResource newContact = builder
-        .setLastEppUpdateTime(now)
-        .setLastEppUpdateClientId(clientId)
-        .setAuthInfo(preferFirst(change.getAuthInfo(), existingContact.getAuthInfo()))
-        .setDisclose(preferFirst(change.getDisclose(), existingContact.getDisclose()))
-        .setEmailAddress(preferFirst(change.getEmail(), existingContact.getEmailAddress()))
-        .setFaxNumber(preferFirst(change.getFax(), existingContact.getFaxNumber()))
-        .setVoiceNumber(preferFirst(change.getVoice(), existingContact.getVoiceNumber()))
-        .addStatusValues(statusesToAdd)
-        .removeStatusValues(statusToRemove)
-        .build();
+    ContactResource newContact =
+        builder
+            .setLastEppUpdateTime(now)
+            .setLastEppUpdateRegistrarId(registrarId)
+            .setAuthInfo(preferFirst(change.getAuthInfo(), existingContact.getAuthInfo()))
+            .setDisclose(preferFirst(change.getDisclose(), existingContact.getDisclose()))
+            .setEmailAddress(preferFirst(change.getEmail(), existingContact.getEmailAddress()))
+            .setFaxNumber(preferFirst(change.getFax(), existingContact.getFaxNumber()))
+            .setVoiceNumber(preferFirst(change.getVoice(), existingContact.getVoiceNumber()))
+            .addStatusValues(statusesToAdd)
+            .removeStatusValues(statusToRemove)
+            .build();
     // If the resource is marked with clientUpdateProhibited, and this update did not clear that
     // status, then the update must be disallowed (unless a superuser is requesting the change).
     if (!isSuperuser

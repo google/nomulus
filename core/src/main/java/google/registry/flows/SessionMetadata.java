@@ -26,13 +26,13 @@ public interface SessionMetadata {
    */
   void invalidate();
 
-  String getClientId();
+  String getRegistrarId();
 
   Set<String> getServiceExtensionUris();
 
   int getFailedLoginAttempts();
 
-  void setClientId(String clientId);
+  void setRegistrarId(String registrarId);
 
   void setServiceExtensionUris(Set<String> serviceExtensionUris);
 

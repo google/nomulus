@@ -285,8 +285,8 @@ public class DomainFlowUtils {
   }
 
   /** Check if the registrar running the flow has access to the TLD in question. */
-  public static void checkAllowedAccessToTld(String clientId, String tld) throws EppException {
-    if (!Registrar.loadByClientIdCached(clientId).get().getAllowedTlds().contains(tld)) {
+  public static void checkAllowedAccessToTld(String registrarId, String tld) throws EppException {
+    if (!Registrar.loadByRegistrarIdCached(registrarId).get().getAllowedTlds().contains(tld)) {
       throw new DomainFlowUtils.NotAuthorizedForTldException(tld);
     }
   }
@@ -464,10 +464,10 @@ public class DomainFlowUtils {
    * where it would not be allowed is if domain name is premium, and premium names are blocked by
    * this registrar.
    */
-  static void verifyPremiumNameIsNotBlocked(String domainName, DateTime priceTime, String clientId)
-      throws EppException {
+  static void verifyPremiumNameIsNotBlocked(
+      String domainName, DateTime priceTime, String registrarId) throws EppException {
     if (isDomainPremium(domainName, priceTime)) {
-      if (Registrar.loadByClientIdCached(clientId).get().getBlockPremiumNames()) {
+      if (Registrar.loadByRegistrarIdCached(registrarId).get().getBlockPremiumNames()) {
         throw new PremiumNameBlockedException();
       }
     }
@@ -495,7 +495,7 @@ public class DomainFlowUtils {
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())
-        .setClientId(domain.getCurrentSponsorClientId())
+        .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(domain.getRegistrationExpirationTime());
   }
 
@@ -506,7 +506,7 @@ public class DomainFlowUtils {
   public static PollMessage.Autorenew.Builder newAutorenewPollMessage(DomainBase domain) {
     return new PollMessage.Autorenew.Builder()
         .setTargetId(domain.getDomainName())
-        .setClientId(domain.getCurrentSponsorClientId())
+        .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(domain.getRegistrationExpirationTime())
         .setMsg("Domain was auto-renewed.");
   }
@@ -896,9 +896,9 @@ public class DomainFlowUtils {
    * <p>Non-active registrars are not allowed to run operations that cost money, like domain creates
    * or renews.
    */
-  static void verifyRegistrarIsActive(String clientId)
+  static void verifyRegistrarIsActive(String registrarId)
       throws RegistrarMustBeActiveForThisOperationException {
-    Registrar registrar = Registrar.loadByClientIdCached(clientId).get();
+    Registrar registrar = Registrar.loadByRegistrarIdCached(registrarId).get();
     if (registrar.getState() != State.ACTIVE) {
       throw new RegistrarMustBeActiveForThisOperationException();
     }

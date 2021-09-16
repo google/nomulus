@@ -75,7 +75,7 @@ class ContactTransferRequestFlowTest
   @BeforeEach
   void beforeEach() {
     setEppInput("contact_transfer_request.xml");
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
     contact = persistActiveContact("sh8013");
     clock.advanceOneMilli();
   }
@@ -91,8 +91,10 @@ class ContactTransferRequestFlowTest
 
     // Transfer should have been requested. Verify correct fields were set.
     contact = reloadResourceByForeignKey();
-    assertAboutContacts().that(contact)
-        .hasCurrentSponsorClientId("TheRegistrar").and()
+    assertAboutContacts()
+        .that(contact)
+        .hasCurrentSponsorRegistrarId("TheRegistrar")
+        .and()
         .hasOnlyOneHistoryEntryWhich()
         .hasType(HistoryEntry.Type.CONTACT_TRANSFER_REQUEST);
     Trid expectedTrid =
@@ -104,8 +106,8 @@ class ContactTransferRequestFlowTest
             new ContactTransferData.Builder()
                 .setTransferRequestTrid(expectedTrid)
                 .setTransferRequestTime(clock.nowUtc())
-                .setGainingClientId("NewRegistrar")
-                .setLosingClientId("TheRegistrar")
+                .setGainingRegistrarId("NewRegistrar")
+                .setLosingRegistrarId("TheRegistrar")
                 .setTransferStatus(TransferStatus.PENDING)
                 .setPendingTransferExpirationTime(afterTransfer)
                 // Make the server-approve entities field a no-op comparison; it's easier to
@@ -119,8 +121,9 @@ class ContactTransferRequestFlowTest
         getOnlyElement(getPollMessages("TheRegistrar", clock.nowUtc()));
 
     // If we fast forward AUTOMATIC_TRANSFER_DAYS the transfer should have happened.
-    assertAboutContacts().that(contact.cloneProjectedAtTime(afterTransfer))
-        .hasCurrentSponsorClientId("NewRegistrar");
+    assertAboutContacts()
+        .that(contact.cloneProjectedAtTime(afterTransfer))
+        .hasCurrentSponsorRegistrarId("NewRegistrar");
     assertThat(getPollMessages("NewRegistrar", afterTransfer)).hasSize(1);
     assertThat(getPollMessages("TheRegistrar", afterTransfer)).hasSize(2);
     PollMessage gainingApproveMessage =
@@ -236,7 +239,7 @@ class ContactTransferRequestFlowTest
 
   @TestOfyAndSql
   void testFailure_sponsoringClient() {
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     EppException thrown =
         assertThrows(
             ObjectAlreadySponsoredException.class,

@@ -58,7 +58,8 @@ abstract class ContactTransferFlowTestCase<F extends Flow, R extends EppResource
   void beforeEachContactTransferFlowTestCase() {
     // Registrar ClientZ is used in tests that need another registrar that definitely doesn't own
     // the resources in question.
-    persistResource(AppEngineExtension.makeRegistrar1().asBuilder().setClientId("ClientZ").build());
+    persistResource(
+        AppEngineExtension.makeRegistrar1().asBuilder().setRegistrarId("ClientZ").build());
   }
 
   /** Adds a contact that has a pending transfer on it from TheRegistrar to NewRegistrar. */
@@ -82,7 +83,7 @@ abstract class ContactTransferFlowTestCase<F extends Flow, R extends EppResource
 
   /** Changes the client ID that the flow will run as. */
   @Override
-  protected void setClientIdForFlow(String clientId) {
-    sessionMetadata.setClientId(clientId);
+  protected void setRegistrarIdForFlow(String registrarId) {
+    sessionMetadata.setRegistrarId(registrarId);
   }
 }

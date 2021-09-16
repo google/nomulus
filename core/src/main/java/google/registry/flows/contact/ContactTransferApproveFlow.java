@@ -14,7 +14,7 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyHasPendingTransfer;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
@@ -29,7 +29,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
@@ -64,7 +64,7 @@ public final class ContactTransferApproveFlow implements TransactionalFlow {
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject Optional<AuthInfo> authInfo;
   @Inject ContactHistory.Builder historyBuilder;
@@ -79,12 +79,12 @@ public final class ContactTransferApproveFlow implements TransactionalFlow {
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     DateTime now = tm().getTransactionTime();
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingContact);
     verifyHasPendingTransfer(existingContact);
-    verifyResourceOwnership(clientId, existingContact);
+    verifyResourceOwnership(registrarId, existingContact);
     ContactResource newContact =
         approvePendingTransfer(existingContact, TransferStatus.CLIENT_APPROVED, now);
     ContactHistory contactHistory =

@@ -30,7 +30,7 @@ import google.registry.flows.EppException.UnimplementedObjectServiceException;
 import google.registry.flows.EppException.UnimplementedOptionException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.SessionMetadata;
 import google.registry.flows.TransportCredentials;
 import google.registry.model.eppcommon.ProtocolDefinition;
@@ -56,7 +56,7 @@ import javax.inject.Inject;
  * @error {@link google.registry.flows.TlsCredentials.MissingRegistrarCertificateException}
  * @error {@link google.registry.flows.TransportCredentials.BadRegistrarPasswordException}
  * @error {@link LoginFlow.AlreadyLoggedInException}
- * @error {@link LoginFlow.BadRegistrarClientIdException}
+ * @error {@link BadRegistrarIdException}
  * @error {@link LoginFlow.TooManyFailedLoginsException}
  * @error {@link LoginFlow.PasswordChangesNotSupportedException}
  * @error {@link LoginFlow.RegistrarAccountNotActiveException}
@@ -73,8 +73,9 @@ public class LoginFlow implements Flow {
   @Inject EppInput eppInput;
   @Inject SessionMetadata sessionMetadata;
   @Inject TransportCredentials credentials;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject EppResponse.Builder responseBuilder;
+
   @Inject LoginFlow() {}
 
   /** Run the flow and log errors. */
@@ -92,7 +93,7 @@ public class LoginFlow implements Flow {
   public final EppResponse runWithoutLogging() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
     Login login = (Login) eppInput.getCommandWrapper().getCommand();
-    if (!clientId.isEmpty()) {
+    if (!registrarId.isEmpty()) {
       throw new AlreadyLoggedInException();
     }
     Options options = login.getOptions();
@@ -114,9 +115,9 @@ public class LoginFlow implements Flow {
       }
       serviceExtensionUrisBuilder.add(uri);
     }
-    Optional<Registrar> registrar = Registrar.loadByClientIdCached(login.getClientId());
+    Optional<Registrar> registrar = Registrar.loadByRegistrarIdCached(login.getClientId());
     if (!registrar.isPresent()) {
-      throw new BadRegistrarClientIdException(login.getClientId());
+      throw new BadRegistrarIdException(login.getClientId());
     }
 
     // AuthenticationErrorExceptions will propagate up through here.
@@ -139,15 +140,15 @@ public class LoginFlow implements Flow {
 
     // We are in!
     sessionMetadata.resetFailedLoginAttempts();
-    sessionMetadata.setClientId(login.getClientId());
+    sessionMetadata.setRegistrarId(login.getClientId());
     sessionMetadata.setServiceExtensionUris(serviceExtensionUrisBuilder.build());
     return responseBuilder.setIsLoginResponse().build();
   }
 
-  /** Registrar with this client ID could not be found. */
-  static class BadRegistrarClientIdException extends AuthenticationErrorException {
-    public BadRegistrarClientIdException(String clientId) {
-      super("Registrar with this client ID could not be found: " + clientId);
+  /** Registrar with this ID could not be found. */
+  static class BadRegistrarIdException extends AuthenticationErrorException {
+    public BadRegistrarIdException(String registrarId) {
+      super("Registrar with this ID could not be found: " + registrarId);
     }
   }
 

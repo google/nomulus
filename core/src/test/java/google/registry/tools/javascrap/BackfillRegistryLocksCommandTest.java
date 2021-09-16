@@ -130,7 +130,7 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
     persistResource(
         new DomainHistory.Builder()
             .setBySuperuser(true)
-            .setClientId("adminreg")
+            .setRegistrarId("adminreg")
             .setModificationTime(ursTime)
             .setDomain(ursDomain)
             .setReason("Uniform Rapid Suspension")
@@ -141,7 +141,7 @@ class BackfillRegistryLocksCommandTest extends CommandTestCase<BackfillRegistryL
     persistResource(
         new DomainHistory.Builder()
             .setBySuperuser(true)
-            .setClientId("adminreg")
+            .setRegistrarId("adminreg")
             .setDomain(nonUrsDomain)
             .setType(HistoryEntry.Type.DOMAIN_UPDATE)
             .setRequestedByRegistrar(false)

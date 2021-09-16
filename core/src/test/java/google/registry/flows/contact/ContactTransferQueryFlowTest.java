@@ -52,7 +52,7 @@ class ContactTransferQueryFlowTest
   void setUp() {
     setEppInput("contact_transfer_query.xml");
     clock.setTo(DateTime.parse("2000-06-10T22:00:00.0Z"));
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
     setupContactWithPendingTransfer();
   }
 
@@ -88,13 +88,13 @@ class ContactTransferQueryFlowTest
 
   @TestOfyAndSql
   void testSuccess_sponsoringClient() throws Exception {
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     doSuccessfulTest("contact_transfer_query.xml", "contact_transfer_query_response.xml");
   }
 
   @TestOfyAndSql
   void testSuccess_withAuthinfo() throws Exception {
-    setClientIdForFlow("ClientZ");
+    setRegistrarIdForFlow("ClientZ");
     doSuccessfulTest("contact_transfer_query_with_authinfo.xml",
         "contact_transfer_query_response.xml");
   }
@@ -183,7 +183,7 @@ class ContactTransferQueryFlowTest
 
   @TestOfyAndSql
   void testFailure_unrelatedClient() {
-    setClientIdForFlow("ClientZ");
+    setRegistrarIdForFlow("ClientZ");
     EppException thrown =
         assertThrows(
             NotAuthorizedToViewTransferException.class,

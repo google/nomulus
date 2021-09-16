@@ -528,7 +528,7 @@ public final class DomainLockUtilsTest {
                     new BillingEvent.OneTime.Builder()
                         .setReason(Reason.SERVER_STATUS)
                         .setTargetId(domain.getForeignKey())
-                        .setClientId(domain.getCurrentSponsorClientId())
+                        .setRegistrarId(domain.getCurrentSponsorRegistrarId())
                         .setCost(Registry.get(domain.getTld()).getRegistryLockOrUnlockBillingCost())
                         .setEventTime(clock.nowUtc())
                         .setBillingTime(clock.nowUtc())

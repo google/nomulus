@@ -197,7 +197,8 @@ public class RelockDomainActionTest {
 
   @TestOfyAndSql
   void testFailure_domainTransferred() throws Exception {
-    persistResource(domain.asBuilder().setPersistedCurrentSponsorClientId("NewRegistrar").build());
+    persistResource(
+        domain.asBuilder().setPersistedCurrentSponsorRegistrarId("NewRegistrar").build());
     action.run();
     String expectedFailureMessage =
         "Domain example.tld has been transferred from registrar TheRegistrar to registrar "

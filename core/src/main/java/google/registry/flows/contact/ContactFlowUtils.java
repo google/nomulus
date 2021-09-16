@@ -73,7 +73,7 @@ public class ContactFlowUtils {
       DateTime now,
       Key<ContactHistory> contactHistoryKey) {
     return new PollMessage.OneTime.Builder()
-        .setClientId(transferData.getGainingClientId())
+        .setRegistrarId(transferData.getGainingRegistrarId())
         .setEventTime(transferData.getPendingTransferExpirationTime())
         .setMsg(transferData.getTransferStatus().getMessage())
         .setResponseData(
@@ -92,7 +92,7 @@ public class ContactFlowUtils {
   static PollMessage createLosingTransferPollMessage(
       String targetId, TransferData transferData, Key<ContactHistory> contactHistoryKey) {
     return new PollMessage.OneTime.Builder()
-        .setClientId(transferData.getLosingClientId())
+        .setRegistrarId(transferData.getLosingRegistrarId())
         .setEventTime(transferData.getPendingTransferExpirationTime())
         .setMsg(transferData.getTransferStatus().getMessage())
         .setResponseData(ImmutableList.of(createTransferResponse(targetId, transferData)))
@@ -105,8 +105,8 @@ public class ContactFlowUtils {
       String targetId, TransferData transferData) {
     return new ContactTransferResponse.Builder()
         .setContactId(targetId)
-        .setGainingClientId(transferData.getGainingClientId())
-        .setLosingClientId(transferData.getLosingClientId())
+        .setGainingRegistrarId(transferData.getGainingRegistrarId())
+        .setLosingRegistrarId(transferData.getLosingRegistrarId())
         .setPendingTransferExpirationTime(transferData.getPendingTransferExpirationTime())
         .setTransferRequestTime(transferData.getTransferRequestTime())
         .setTransferStatus(transferData.getTransferStatus())

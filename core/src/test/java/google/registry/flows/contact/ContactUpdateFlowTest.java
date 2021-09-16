@@ -302,7 +302,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
 
   @TestOfyAndSql
   void testFailure_unauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -310,7 +310,7 @@ class ContactUpdateFlowTest extends ResourceFlowTestCase<ContactUpdateFlow, Cont
 
   @TestOfyAndSql
   void testSuccess_superuserUnauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveContact(getUniqueIdFromCommand());
     clock.advanceOneMilli();
     runFlowAssertResponse(

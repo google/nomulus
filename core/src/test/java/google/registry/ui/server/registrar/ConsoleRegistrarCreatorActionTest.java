@@ -17,7 +17,7 @@ package google.registry.ui.server.registrar;
 import static com.google.common.net.HttpHeaders.LOCATION;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.common.GaeUserIdConverter.convertEmailAddressToGaeUserId;
-import static google.registry.model.registrar.Registrar.loadByClientId;
+import static google.registry.model.registrar.Registrar.loadByRegistrarId;
 import static google.registry.testing.DatabaseHelper.persistPremiumList;
 import static javax.servlet.http.HttpServletResponse.SC_MOVED_TEMPORARILY;
 import static org.joda.money.CurrencyUnit.USD;
@@ -196,9 +196,9 @@ final class ConsoleRegistrarCreatorActionTest {
                 + "    referralEmail: icann@example.com\n"
                 + "    driveId: drive-id\n"
                 + "Gave user myclientid@registry.example web access to the registrar\n");
-    Registrar registrar = loadByClientId("myclientid").orElse(null);
+    Registrar registrar = loadByRegistrarId("myclientid").orElse(null);
     assertThat(registrar).isNotNull();
-    assertThat(registrar.getClientId()).isEqualTo("myclientid");
+    assertThat(registrar.getRegistrarId()).isEqualTo("myclientid");
     assertThat(registrar.getBillingAccountMap()).containsExactly(USD, "billing-account");
 
     assertThat(registrar.getDriveFolderId()).isEqualTo("drive-id");
@@ -253,7 +253,7 @@ final class ConsoleRegistrarCreatorActionTest {
         .contains("<h1>Successfully created Registrar myclientid</h1>");
     assertThat(response.getPayload()).contains("gtag('config', 'sampleId')");
 
-    Registrar registrar = loadByClientId("myclientid").orElse(null);
+    Registrar registrar = loadByRegistrarId("myclientid").orElse(null);
     assertThat(registrar).isNotNull();
     assertThat(registrar.getLocalizedAddress()).isEqualTo(new RegistrarAddress.Builder()
         .setStreet(ImmutableList.of("my street", "more street", "final street"))
@@ -292,7 +292,7 @@ final class ConsoleRegistrarCreatorActionTest {
     assertThat(response.getPayload())
         .contains("<h1>Successfully created Registrar myclientid</h1>");
 
-    Registrar registrar = loadByClientId("myclientid").orElse(null);
+    Registrar registrar = loadByRegistrarId("myclientid").orElse(null);
     assertThat(registrar).isNotNull();
     assertThat(registrar.getBillingAccountMap())
         .containsExactly(
@@ -411,7 +411,7 @@ final class ConsoleRegistrarCreatorActionTest {
     assertThat(response.getPayload())
         .contains("<h1>Successfully created Registrar myclientid</h1>");
 
-    Registrar registrar = loadByClientId("myclientid").orElse(null);
+    Registrar registrar = loadByRegistrarId("myclientid").orElse(null);
     assertThat(registrar).isNotNull();
     assertThat(registrar.verifyPassword("SomePassword")).isTrue();
     assertThat(registrar.getPhonePasscode()).isEqualTo("10203");

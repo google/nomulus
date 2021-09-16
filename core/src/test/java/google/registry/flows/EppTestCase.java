@@ -136,13 +136,13 @@ public class EppTestCase {
     return new CommandAsserter(inputFilename, inputSubstitutions);
   }
 
-  CommandAsserter assertThatLogin(String clientId, String password) {
-    return assertThatCommand("login.xml", ImmutableMap.of("CLID", clientId, "PW", password))
+  CommandAsserter assertThatLogin(String registrarId, String password) {
+    return assertThatCommand("login.xml", ImmutableMap.of("CLID", registrarId, "PW", password))
         .atTime(clock.nowUtc());
   }
 
-  protected void assertThatLoginSucceeds(String clientId, String password) throws Exception {
-    assertThatLogin(clientId, password).atTime(clock.nowUtc()).hasSuccessfulLogin();
+  protected void assertThatLoginSucceeds(String registrarId, String password) throws Exception {
+    assertThatLogin(registrarId, password).atTime(clock.nowUtc()).hasSuccessfulLogin();
   }
 
   protected void assertThatLogoutSucceeds() throws Exception {
@@ -320,7 +320,7 @@ public class EppTestCase {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.CREATE)
         .setTargetId(domain.getDomainName())
-        .setClientId(domain.getCurrentSponsorClientId())
+        .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setCost(Money.parse("USD 26.00"))
         .setPeriodYears(2)
         .setEventTime(createTime)
@@ -334,7 +334,7 @@ public class EppTestCase {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.RENEW)
         .setTargetId(domain.getDomainName())
-        .setClientId(domain.getCurrentSponsorClientId())
+        .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setCost(Money.parse("USD 33.00"))
         .setPeriodYears(3)
         .setEventTime(renewTime)
@@ -370,7 +370,7 @@ public class EppTestCase {
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId(domain.getDomainName())
-        .setClientId(domain.getCurrentSponsorClientId())
+        .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(eventTime)
         .setRecurrenceEndTime(endTime)
         .setParent(historyEntry)
@@ -382,7 +382,7 @@ public class EppTestCase {
       DomainBase domain, OneTime billingEventToCancel, DateTime createTime, DateTime deleteTime) {
     return new BillingEvent.Cancellation.Builder()
         .setTargetId(domain.getDomainName())
-        .setClientId(domain.getCurrentSponsorClientId())
+        .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(deleteTime)
         .setOneTimeEventKey(VKey.from(findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
         .setBillingTime(createTime.plus(Registry.get(domain.getTld()).getAddGracePeriodLength()))
@@ -396,7 +396,7 @@ public class EppTestCase {
       DomainBase domain, OneTime billingEventToCancel, DateTime renewTime, DateTime deleteTime) {
     return new BillingEvent.Cancellation.Builder()
         .setTargetId(domain.getDomainName())
-        .setClientId(domain.getCurrentSponsorClientId())
+        .setRegistrarId(domain.getCurrentSponsorRegistrarId())
         .setEventTime(deleteTime)
         .setOneTimeEventKey(VKey.from(findKeyToActualOneTimeBillingEvent(billingEventToCancel)))
         .setBillingTime(renewTime.plus(Registry.get(domain.getTld()).getRenewGracePeriodLength()))

@@ -142,8 +142,8 @@ public abstract class TransferData<
     newBuilder
         .setTransferRequestTrid(this.transferRequestTrid)
         .setTransferRequestTime(this.transferRequestTime)
-        .setGainingClientId(this.gainingClientId)
-        .setLosingClientId(this.losingClientId);
+        .setGainingRegistrarId(this.gainingClientId)
+        .setLosingRegistrarId(this.losingClientId);
     return newBuilder;
   }
 

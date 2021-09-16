@@ -91,12 +91,12 @@ final class DomainBaseToXjcConverter {
 
     // o  A <clID> element that contains the identifier of the sponsoring
     //    registrar.
-    bean.setClID(model.getCurrentSponsorClientId());
+    bean.setClID(model.getCurrentSponsorRegistrarId());
 
     // o  A <crRr> element that contains the identifier of the registrar
     //    that created the domain name object.  An OPTIONAL client attribute
     //    is used to specify the client that performed the operation.
-    bean.setCrRr(RdeAdapter.convertRr(model.getCreationClientId(), null));
+    bean.setCrRr(RdeAdapter.convertRr(model.getCreationRegistrarId(), null));
 
     // o  An OPTIONAL <crDate> element that contains the date and time of
     //    the domain name object creation.  This element MUST be present if
@@ -120,7 +120,7 @@ final class DomainBaseToXjcConverter {
     //    MUST NOT be present if the domain has never been modified.  An
     //    OPTIONAL client attribute is used to specify the client that
     //    performed the operation.
-    bean.setUpRr(RdeAdapter.convertRr(model.getLastEppUpdateClientId(), null));
+    bean.setUpRr(RdeAdapter.convertRr(model.getLastEppUpdateRegistrarId(), null));
 
     // o  An OPTIONAL <trDate> element that contains the date and time of
     //    the most recent domain object successful transfer.  This element
@@ -254,9 +254,8 @@ final class DomainBaseToXjcConverter {
   }
 
   private static boolean hasGainingAndLosingRegistrars(DomainBase model) {
-    return
-        !Strings.isNullOrEmpty(model.getTransferData().getGainingClientId())
-        && !Strings.isNullOrEmpty(model.getTransferData().getLosingClientId());
+    return !Strings.isNullOrEmpty(model.getTransferData().getGainingRegistrarId())
+        && !Strings.isNullOrEmpty(model.getTransferData().getLosingRegistrarId());
   }
 
   /** Converts {@link TransferData} to {@link XjcRdeDomainTransferDataType}. */
@@ -264,8 +263,8 @@ final class DomainBaseToXjcConverter {
     XjcRdeDomainTransferDataType bean = new XjcRdeDomainTransferDataType();
     bean.setTrStatus(
         XjcEppcomTrStatusType.fromValue(model.getTransferStatus().getXmlName()));
-    bean.setReRr(RdeUtil.makeXjcRdeRrType(model.getGainingClientId()));
-    bean.setAcRr(RdeUtil.makeXjcRdeRrType(model.getLosingClientId()));
+    bean.setReRr(RdeUtil.makeXjcRdeRrType(model.getGainingRegistrarId()));
+    bean.setAcRr(RdeUtil.makeXjcRdeRrType(model.getLosingRegistrarId()));
     bean.setReDate(model.getTransferRequestTime());
     bean.setAcDate(model.getPendingTransferExpirationTime());
     bean.setExDate(model.getTransferredRegistrationExpirationTime());

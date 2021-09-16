@@ -59,20 +59,20 @@ public class HostResourceToXjcConverterTest {
     DomainBase domain =
         newDomainBase("love.foobar")
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("LeisureDog")
+            .setPersistedCurrentSponsorRegistrarId("LeisureDog")
             .setLastTransferTime(DateTime.parse("2010-01-01T00:00:00Z"))
             .addStatusValue(StatusValue.PENDING_TRANSFER)
             .build();
     XjcRdeHost bean =
         HostResourceToXjcConverter.convertSubordinateHost(
             new HostResource.Builder()
-                .setCreationClientId("LawyerCat")
+                .setCreationRegistrarId("LawyerCat")
                 .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-                .setPersistedCurrentSponsorClientId("BusinessCat")
+                .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.foobar")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                 .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-                .setLastEppUpdateClientId("CeilingCat")
+                .setLastEppUpdateRegistrarId("CeilingCat")
                 .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-roid")
                 .setStatusValues(ImmutableSet.of(StatusValue.OK))
@@ -122,13 +122,13 @@ public class HostResourceToXjcConverterTest {
     XjcRdeHost bean =
         HostResourceToXjcConverter.convertExternalHost(
             new HostResource.Builder()
-                .setCreationClientId("LawyerCat")
+                .setCreationRegistrarId("LawyerCat")
                 .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-                .setPersistedCurrentSponsorClientId("BusinessCat")
+                .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.lol")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                 .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-                .setLastEppUpdateClientId("CeilingCat")
+                .setLastEppUpdateRegistrarId("CeilingCat")
                 .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-roid")
                 .setStatusValues(ImmutableSet.of(StatusValue.OK))
@@ -171,13 +171,13 @@ public class HostResourceToXjcConverterTest {
     XjcRdeHost bean =
         HostResourceToXjcConverter.convertExternalHost(
             new HostResource.Builder()
-                .setCreationClientId("LawyerCat")
+                .setCreationRegistrarId("LawyerCat")
                 .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-                .setPersistedCurrentSponsorClientId("BusinessCat")
+                .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.lol")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
                 .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-                .setLastEppUpdateClientId("CeilingCat")
+                .setLastEppUpdateRegistrarId("CeilingCat")
                 .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-LOL")
                 .setStatusValues(ImmutableSet.of(StatusValue.OK))
@@ -194,13 +194,13 @@ public class HostResourceToXjcConverterTest {
         () ->
             HostResourceToXjcConverter.convertExternalHost(
                 new HostResource.Builder()
-                    .setCreationClientId("LawyerCat")
+                    .setCreationRegistrarId("LawyerCat")
                     .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-                    .setPersistedCurrentSponsorClientId("BusinessCat")
+                    .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                     .setHostName("ns1.love.lol")
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
                     .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-                    .setLastEppUpdateClientId("CeilingCat")
+                    .setLastEppUpdateRegistrarId("CeilingCat")
                     .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
                     .setRepoId("2-LOL")
                     .setStatusValues(ImmutableSet.of(StatusValue.SERVER_HOLD)) // <-- OOPS
@@ -213,13 +213,13 @@ public class HostResourceToXjcConverterTest {
     XjcRdeHostElement bean =
         HostResourceToXjcConverter.convertExternal(
             new HostResource.Builder()
-                .setCreationClientId("LawyerCat")
+                .setCreationRegistrarId("LawyerCat")
                 .setCreationTimeForTest(DateTime.parse("1900-01-01T00:00:00Z"))
-                .setPersistedCurrentSponsorClientId("BusinessCat")
+                .setPersistedCurrentSponsorRegistrarId("BusinessCat")
                 .setHostName("ns1.love.lol")
                 .setInetAddresses(ImmutableSet.of(InetAddresses.forString("cafe::abba")))
                 .setLastTransferTime(DateTime.parse("1910-01-01T00:00:00Z"))
-                .setLastEppUpdateClientId("CeilingCat")
+                .setLastEppUpdateRegistrarId("CeilingCat")
                 .setLastEppUpdateTime(DateTime.parse("1920-01-01T00:00:00Z"))
                 .setRepoId("2-LOL")
                 .setStatusValues(ImmutableSet.of(StatusValue.OK))

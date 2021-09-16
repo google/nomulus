@@ -68,7 +68,7 @@ final class GetHistoryEntriesCommand implements CommandWithRemoteApi {
     for (HistoryEntry entry : historyEntries) {
       System.out.printf(
           "Client: %s\nTime: %s\nClient TRID: %s\nServer TRID: %s\n%s\n",
-          entry.getClientId(),
+          entry.getRegistrarId(),
           entry.getModificationTime(),
           (entry.getTrid() == null) ? null : entry.getTrid().getClientTransactionId().orElse(null),
           (entry.getTrid() == null) ? null : entry.getTrid().getServerTransactionId(),

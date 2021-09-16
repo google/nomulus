@@ -179,8 +179,8 @@ public class WhoisActionTest {
             .asBuilder()
             .setTransferData(
                 new DomainTransferData.Builder()
-                    .setGainingClientId("TheRegistrar")
-                    .setLosingClientId("NewRegistrar")
+                    .setGainingRegistrarId("TheRegistrar")
+                    .setLosingRegistrarId("NewRegistrar")
                     .setTransferRequestTime(DateTime.parse("2009-05-29T20:13:00Z"))
                     .setPendingTransferExpirationTime(DateTime.parse("2010-03-01T00:00:00Z"))
                     .setTransferStatus(TransferStatus.PENDING)

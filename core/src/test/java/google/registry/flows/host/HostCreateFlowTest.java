@@ -230,7 +230,7 @@ class HostCreateFlowTest extends ResourceFlowTestCase<HostCreateFlow, HostResour
     persistResource(
         newHostResource(targetId)
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("NewRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
             .build());
     ResourceCreateContentionException thrown =
         assertThrows(ResourceCreateContentionException.class, this::runFlow);

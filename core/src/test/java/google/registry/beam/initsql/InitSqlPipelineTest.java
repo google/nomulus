@@ -147,24 +147,24 @@ class InitSqlPipelineTest {
                   .setHostName("ns1.example.com")
                   .setSuperordinateDomain(VKey.from(domainKey))
                   .setRepoId("1-COM")
-                  .setCreationClientId(registrar1.getClientId())
-                  .setPersistedCurrentSponsorClientId(registrar2.getClientId())
+                  .setCreationRegistrarId(registrar1.getRegistrarId())
+                  .setPersistedCurrentSponsorRegistrarId(registrar2.getRegistrarId())
                   .build());
       contact1 =
           persistResource(
               new ContactResource.Builder()
                   .setContactId("contact_id1")
                   .setRepoId("2-COM")
-                  .setCreationClientId(registrar1.getClientId())
-                  .setPersistedCurrentSponsorClientId(registrar2.getClientId())
+                  .setCreationRegistrarId(registrar1.getRegistrarId())
+                  .setPersistedCurrentSponsorRegistrarId(registrar2.getRegistrarId())
                   .build());
       contact2 =
           persistResource(
               new ContactResource.Builder()
                   .setContactId("contact_id2")
                   .setRepoId("3-COM")
-                  .setCreationClientId(registrar1.getClientId())
-                  .setPersistedCurrentSponsorClientId(registrar1.getClientId())
+                  .setCreationRegistrarId(registrar1.getRegistrarId())
+                  .setPersistedCurrentSponsorRegistrarId(registrar1.getRegistrarId())
                   .build());
       persistSimpleResource(
           new RegistrarContact.Builder()
@@ -182,7 +182,7 @@ class InitSqlPipelineTest {
               new DomainHistory.Builder()
                   .setDomainRepoId(domainKey.getName())
                   .setModificationTime(fakeClock.nowUtc())
-                  .setClientId(registrar1.getClientId())
+                  .setRegistrarId(registrar1.getRegistrarId())
                   .setType(HistoryEntry.Type.DOMAIN_CREATE)
                   .build());
       persistResource(
@@ -193,7 +193,7 @@ class InitSqlPipelineTest {
               .setId(1)
               .setReason(Reason.RENEW)
               .setTargetId("example.com")
-              .setClientId("TheRegistrar")
+              .setRegistrarId("TheRegistrar")
               .setCost(Money.parse("USD 44.00"))
               .setPeriodYears(4)
               .setEventTime(fakeClock.nowUtc())
@@ -208,7 +208,7 @@ class InitSqlPipelineTest {
               .setReason(Reason.RENEW)
               .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
               .setTargetId("example.com")
-              .setClientId("TheRegistrar")
+              .setRegistrarId("TheRegistrar")
               .setEventTime(fakeClock.nowUtc())
               .setRecurrenceEndTime(END_OF_TIME)
               .setParent(historyEntryKey)
@@ -219,7 +219,7 @@ class InitSqlPipelineTest {
           new PollMessage.Autorenew.Builder()
               .setId(3L)
               .setTargetId("example.com")
-              .setClientId("TheRegistrar")
+              .setRegistrarId("TheRegistrar")
               .setEventTime(fakeClock.nowUtc())
               .setMsg("Domain was auto-renewed.")
               .setParent(historyEntry)
@@ -231,7 +231,7 @@ class InitSqlPipelineTest {
               .setId(1L)
               .setParent(historyEntry)
               .setEventTime(fakeClock.nowUtc())
-              .setClientId("TheRegistrar")
+              .setRegistrarId("TheRegistrar")
               .setMsg(DomainFlowUtils.COLLISION_MESSAGE)
               .build();
       persistResource(oneTimePollMessage);
@@ -241,9 +241,9 @@ class InitSqlPipelineTest {
               new DomainBase.Builder()
                   .setDomainName("example.com")
                   .setRepoId("4-COM")
-                  .setCreationClientId(registrar1.getClientId())
+                  .setCreationRegistrarId(registrar1.getRegistrarId())
                   .setLastEppUpdateTime(fakeClock.nowUtc())
-                  .setLastEppUpdateClientId(registrar2.getClientId())
+                  .setLastEppUpdateRegistrarId(registrar2.getRegistrarId())
                   .setLastTransferTime(fakeClock.nowUtc())
                   .setStatusValues(
                       ImmutableSet.of(
@@ -260,7 +260,7 @@ class InitSqlPipelineTest {
                               DesignatedContact.Type.ADMIN, contact2.createVKey())))
                   .setNameservers(ImmutableSet.of(hostResource.createVKey()))
                   .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
-                  .setPersistedCurrentSponsorClientId(registrar2.getClientId())
+                  .setPersistedCurrentSponsorRegistrarId(registrar2.getRegistrarId())
                   .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
                   .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
                   .setDsData(
@@ -269,8 +269,8 @@ class InitSqlPipelineTest {
                       LaunchNotice.create("tcnid", "validatorId", START_OF_TIME, START_OF_TIME))
                   .setTransferData(
                       new DomainTransferData.Builder()
-                          .setGainingClientId(registrar1.getClientId())
-                          .setLosingClientId(registrar2.getClientId())
+                          .setGainingRegistrarId(registrar1.getRegistrarId())
+                          .setLosingRegistrarId(registrar2.getRegistrarId())
                           .setPendingTransferExpirationTime(fakeClock.nowUtc())
                           .setServerApproveEntities(
                               ImmutableSet.of(
@@ -298,7 +298,7 @@ class InitSqlPipelineTest {
           new BillingEvent.Cancellation.Builder()
               .setReason(Reason.RENEW)
               .setTargetId(domain.getDomainName())
-              .setClientId(domain.getCurrentSponsorClientId())
+              .setRegistrarId(domain.getCurrentSponsorRegistrarId())
               .setEventTime(fakeClock.nowUtc())
               .setBillingTime(fakeClock.nowUtc())
               .setRecurringEventKey(recurringBillEvent.createVKey())

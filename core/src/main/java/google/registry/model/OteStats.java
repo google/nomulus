@@ -196,7 +196,7 @@ public class OteStats {
    */
   private OteStats recordRegistrarHistory(String registrarName) {
     ImmutableCollection<String> registrarIds =
-        OteAccountBuilder.createClientIdToTldMap(registrarName).keySet();
+        OteAccountBuilder.createRegistrarIdToTldMap(registrarName).keySet();
 
     for (HistoryEntry historyEntry : HistoryEntryDao.loadHistoryObjectsByRegistrars(registrarIds)) {
       try {

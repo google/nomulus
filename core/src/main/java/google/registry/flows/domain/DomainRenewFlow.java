@@ -16,7 +16,7 @@ package google.registry.flows.domain;
 
 import static google.registry.flows.FlowUtils.createHistoryKey;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
@@ -39,7 +39,7 @@ import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValueRangeErrorException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
@@ -123,7 +123,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
@@ -137,8 +137,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
     extensionManager.register(FeeRenewCommandExtension.class, MetadataExtension.class);
     flowCustomLogic.beforeValidation();
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
-    verifyRegistrarIsActive(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
+    verifyRegistrarIsActive(registrarId);
     DateTime now = tm().getTransactionTime();
     Renew command = (Renew) resourceCommand;
     // Loads the target resource if it exists
@@ -182,7 +182,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
         existingDomain
             .asBuilder()
             .setLastEppUpdateTime(now)
-            .setLastEppUpdateClientId(clientId)
+            .setLastEppUpdateRegistrarId(registrarId)
             .setRegistrationExpirationTime(newExpirationTime)
             .setAutorenewBillingEvent(newAutorenewEvent.createVKey())
             .setAutorenewPollMessage(newAutorenewPollMessage.createVKey())
@@ -250,8 +250,8 @@ public final class DomainRenewFlow implements TransactionalFlow {
     verifyOptionalAuthInfo(authInfo, existingDomain);
     verifyNoDisallowedStatuses(existingDomain, RENEW_DISALLOWED_STATUSES);
     if (!isSuperuser) {
-      verifyResourceOwnership(clientId, existingDomain);
-      checkAllowedAccessToTld(clientId, existingDomain.getTld());
+      verifyResourceOwnership(registrarId, existingDomain);
+      checkAllowedAccessToTld(registrarId, existingDomain.getTld());
     }
     verifyUnitIsYears(command.getPeriod());
     // If the date they specify doesn't match the expiration, fail. (This is an idempotence check).
@@ -266,7 +266,7 @@ public final class DomainRenewFlow implements TransactionalFlow {
     return new BillingEvent.OneTime.Builder()
         .setReason(Reason.RENEW)
         .setTargetId(targetId)
-        .setClientId(clientId)
+        .setRegistrarId(registrarId)
         .setPeriodYears(years)
         .setCost(renewCost)
         .setEventTime(now)

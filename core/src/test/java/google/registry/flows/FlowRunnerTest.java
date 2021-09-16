@@ -80,7 +80,7 @@ class FlowRunnerTest {
   @BeforeEach
   void beforeEach() {
     LoggerConfig.getConfig(FlowRunner.class).addHandler(handler);
-    flowRunner.clientId = "TheRegistrar";
+    flowRunner.registrarId = "TheRegistrar";
     flowRunner.credentials = new PasswordOnlyTransportCredentials();
     flowRunner.eppRequestSource = EppRequestSource.UNIT_TEST;
     flowRunner.flowProvider = TestCommandFlow::new;
@@ -143,7 +143,7 @@ class FlowRunnerTest {
   @Test
   void testRun_loggingStatement_httpSessionMetadata() throws Exception {
     flowRunner.sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
-    flowRunner.sessionMetadata.setClientId("TheRegistrar");
+    flowRunner.sessionMetadata.setRegistrarId("TheRegistrar");
     flowRunner.run(eppMetricBuilder);
     assertThat(Splitter.on("\n\t").split(findFirstLogMessageByPrefix(handler, "EPP Command\n\t")))
         .contains(

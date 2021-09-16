@@ -291,7 +291,7 @@ public class DeleteProberDataAction implements Runnable {
             .setModificationTime(tm().getTransactionTime())
             .setBySuperuser(true)
             .setReason("Deletion of prober data")
-            .setClientId(registryAdminRegistrarId)
+            .setRegistrarId(registryAdminRegistrarId)
             .build();
     // Note that we don't bother handling grace periods, billing events, pending transfers, poll
     // messages, or auto-renews because those will all be hard-deleted the next time the job runs

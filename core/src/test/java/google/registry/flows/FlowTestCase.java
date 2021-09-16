@@ -111,7 +111,7 @@ public abstract class FlowTestCase<F extends Flow> {
   @BeforeEach
   public void beforeEachFlowTestCase() {
     sessionMetadata = new HttpSessionMetadata(new FakeHttpSession());
-    sessionMetadata.setClientId("TheRegistrar");
+    sessionMetadata.setRegistrarId("TheRegistrar");
     sessionMetadata.setServiceExtensionUris(ProtocolDefinition.getVisibleServiceExtensionUris());
   }
 
@@ -151,14 +151,14 @@ public abstract class FlowTestCase<F extends Flow> {
     return eppLoader.getEpp().getCommandWrapper().getClTrid().orElse(null);
   }
 
-  /** Gets the client ID that the flow will run as. */
-  protected String getClientIdForFlow() {
-    return sessionMetadata.getClientId();
+  /** Gets the ID of the registrar that the flow will run as. */
+  protected String getRegistrarIdForFlow() {
+    return sessionMetadata.getRegistrarId();
   }
 
-  /** Sets the client ID that the flow will run as. */
-  protected void setClientIdForFlow(String clientId) {
-    sessionMetadata.setClientId(clientId);
+  /** Sets the ID of the registrar that the flow will run as. */
+  protected void setRegistrarIdForFlow(String registrarId) {
+    sessionMetadata.setRegistrarId(registrarId);
   }
 
   public void assertTransactionalFlow(boolean isTransactional) throws Exception {
@@ -192,7 +192,7 @@ public abstract class FlowTestCase<F extends Flow> {
               entry.getKey().getType(),
               entry.getKey().getDomainRepoId(),
               entry.getKey().getExpirationTime(),
-              entry.getKey().getClientId(),
+              entry.getKey().getRegistrarId(),
               null,
               1L),
           stripBillingEventId(entry.getValue()));

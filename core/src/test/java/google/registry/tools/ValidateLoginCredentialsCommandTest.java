@@ -83,7 +83,7 @@ class ValidateLoginCredentialsCommandTest extends CommandTestCase<ValidateLoginC
   @Test
   void testFailure_registrarIsDisabled() {
     persistResource(
-        Registrar.loadByClientId("NewRegistrar")
+        Registrar.loadByRegistrarId("NewRegistrar")
             .get()
             .asBuilder()
             .setState(State.DISABLED)

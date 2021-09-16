@@ -91,7 +91,7 @@ public class GracePeriodBase extends ImmutableObject {
     return expirationTime;
   }
 
-  public String getClientId() {
+  public String getRegistrarId() {
     return clientId;
   }
 

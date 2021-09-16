@@ -55,7 +55,7 @@ public class RegistrarDaoTest {
     testRegistrar =
         new Registrar.Builder()
             .setType(Registrar.Type.TEST)
-            .setClientId("registrarId")
+            .setRegistrarId("registrarId")
             .setRegistrarName("registrarName")
             .setLocalizedAddress(
                 new RegistrarAddress.Builder()
@@ -104,7 +104,7 @@ public class RegistrarDaoTest {
     jpaTm().transact(() -> jpaTm().insert(testRegistrar));
     Registrar persisted = jpaTm().transact(() -> jpaTm().loadByKey(registrarKey));
 
-    assertThat(persisted.getClientId()).isEqualTo("registrarId");
+    assertThat(persisted.getRegistrarId()).isEqualTo("registrarId");
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
     assertThat(persisted.getCreationTime()).isEqualTo(fakeClock.nowUtc());
     assertThat(persisted.getLocalizedAddress())

@@ -71,8 +71,8 @@ class HostResourceTest extends EntityTestCase {
                 .setRepoId("1-COM")
                 .setTransferData(
                     new DomainTransferData.Builder()
-                        .setGainingClientId("gaining")
-                        .setLosingClientId("losing")
+                        .setGainingRegistrarId("gaining")
+                        .setLosingRegistrarId("losing")
                         .setPendingTransferExpirationTime(fakeClock.nowUtc())
                         .setTransferRequestTime(fakeClock.nowUtc())
                         .setTransferStatus(TransferStatus.SERVER_APPROVED)
@@ -85,9 +85,9 @@ class HostResourceTest extends EntityTestCase {
                 new HostResource.Builder()
                     .setRepoId("DEADBEEF-COM")
                     .setHostName("ns1.example.com")
-                    .setCreationClientId("thisRegistrar")
+                    .setCreationRegistrarId("thisRegistrar")
                     .setLastEppUpdateTime(fakeClock.nowUtc())
-                    .setLastEppUpdateClientId("thatRegistrar")
+                    .setLastEppUpdateRegistrarId("thatRegistrar")
                     .setLastTransferTime(fakeClock.nowUtc())
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                     .setStatusValues(ImmutableSet.of(StatusValue.OK))
@@ -134,21 +134,21 @@ class HostResourceTest extends EntityTestCase {
   void testEmptyStringsBecomeNull() {
     assertThat(
             new HostResource.Builder()
-                .setPersistedCurrentSponsorClientId(null)
+                .setPersistedCurrentSponsorRegistrarId(null)
                 .build()
-                .getPersistedCurrentSponsorClientId())
+                .getPersistedCurrentSponsorRegistrarId())
         .isNull();
     assertThat(
             new HostResource.Builder()
-                .setPersistedCurrentSponsorClientId("")
+                .setPersistedCurrentSponsorRegistrarId("")
                 .build()
-                .getPersistedCurrentSponsorClientId())
+                .getPersistedCurrentSponsorRegistrarId())
         .isNull();
     assertThat(
             new HostResource.Builder()
-                .setPersistedCurrentSponsorClientId(" ")
+                .setPersistedCurrentSponsorRegistrarId(" ")
                 .build()
-                .getPersistedCurrentSponsorClientId())
+                .getPersistedCurrentSponsorRegistrarId())
         .isNotNull();
   }
 
@@ -247,9 +247,9 @@ class HostResourceTest extends EntityTestCase {
                     .setCreationTime(day2)
                     .setRepoId("DEADBEEF-COM")
                     .setHostName("ns1.example.com")
-                    .setCreationClientId("thisRegistrar")
+                    .setCreationRegistrarId("thisRegistrar")
                     .setLastEppUpdateTime(fakeClock.nowUtc())
-                    .setLastEppUpdateClientId("thatRegistrar")
+                    .setLastEppUpdateRegistrarId("thatRegistrar")
                     .setInetAddresses(ImmutableSet.of(InetAddresses.forString("127.0.0.1")))
                     .setStatusValues(ImmutableSet.of(StatusValue.OK))
                     .setSuperordinateDomain(domain.createVKey())

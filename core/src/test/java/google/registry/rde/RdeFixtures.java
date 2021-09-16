@@ -72,7 +72,7 @@ final class RdeFixtures {
                 .setDomain(domain)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setModificationTime(clock.nowUtc())
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .build());
     clock.advanceOneMilli();
     BillingEvent.OneTime billingEvent =
@@ -80,7 +80,7 @@ final class RdeFixtures {
             new BillingEvent.OneTime.Builder()
                 .setReason(Reason.CREATE)
                 .setTargetId("example." + tld)
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setCost(Money.of(USD, 26))
                 .setPeriodYears(2)
                 .setEventTime(DateTime.parse("1990-01-01T00:00:00Z"))
@@ -109,15 +109,15 @@ final class RdeFixtures {
                                 "bird or fiend!? i shrieked upstarting",
                                 "bog@cat.みんな")
                             .createVKey())))
-            .setCreationClientId("TheRegistrar")
-            .setPersistedCurrentSponsorClientId("TheRegistrar")
+            .setCreationRegistrarId("TheRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("TheRegistrar")
             .setCreationTimeForTest(clock.nowUtc())
             .setDsData(
                 ImmutableSet.of(
                     DelegationSignerData.create(123, 200, 230, base16().decode("1234567890"))))
             .setDomainName(Idn.toASCII("love." + tld))
             .setLastTransferTime(DateTime.parse("1990-01-01T00:00:00Z"))
-            .setLastEppUpdateClientId("IntoTheTempest")
+            .setLastEppUpdateRegistrarId("IntoTheTempest")
             .setLastEppUpdateTime(clock.nowUtc())
             .setIdnTableName("extended_latin")
             .setNameservers(
@@ -134,7 +134,7 @@ final class RdeFixtures {
                             new BillingEvent.OneTime.Builder()
                                 .setReason(Reason.RENEW)
                                 .setTargetId("love." + tld)
-                                .setClientId("TheRegistrar")
+                                .setRegistrarId("TheRegistrar")
                                 .setCost(Money.of(USD, 456))
                                 .setPeriodYears(2)
                                 .setEventTime(DateTime.parse("1992-01-01T00:00:00Z"))
@@ -160,7 +160,7 @@ final class RdeFixtures {
                             .setReason(Reason.RENEW)
                             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                             .setTargetId(tld)
-                            .setClientId("TheRegistrar")
+                            .setRegistrarId("TheRegistrar")
                             .setEventTime(END_OF_TIME)
                             .setRecurrenceEndTime(END_OF_TIME)
                             .setParent(historyEntry)
@@ -170,7 +170,7 @@ final class RdeFixtures {
                 persistSimpleResource(
                         new PollMessage.Autorenew.Builder()
                             .setTargetId(tld)
-                            .setClientId("TheRegistrar")
+                            .setRegistrarId("TheRegistrar")
                             .setEventTime(END_OF_TIME)
                             .setAutorenewEndTime(END_OF_TIME)
                             .setMsg("Domain was auto-renewed.")
@@ -179,8 +179,8 @@ final class RdeFixtures {
                     .createVKey())
             .setTransferData(
                 new DomainTransferData.Builder()
-                    .setGainingClientId("gaining")
-                    .setLosingClientId("losing")
+                    .setGainingRegistrarId("gaining")
+                    .setLosingRegistrarId("losing")
                     .setPendingTransferExpirationTime(DateTime.parse("1993-04-20T00:00:00Z"))
                     .setServerApproveBillingEvent(billingEvent.createVKey())
                     .setServerApproveAutorenewEvent(
@@ -189,7 +189,7 @@ final class RdeFixtures {
                                     .setReason(Reason.RENEW)
                                     .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                                     .setTargetId("example." + tld)
-                                    .setClientId("TheRegistrar")
+                                    .setRegistrarId("TheRegistrar")
                                     .setEventTime(END_OF_TIME)
                                     .setRecurrenceEndTime(END_OF_TIME)
                                     .setParent(historyEntry)
@@ -199,7 +199,7 @@ final class RdeFixtures {
                         persistResource(
                                 new Autorenew.Builder()
                                     .setTargetId("example." + tld)
-                                    .setClientId("TheRegistrar")
+                                    .setRegistrarId("TheRegistrar")
                                     .setEventTime(END_OF_TIME)
                                     .setAutorenewEndTime(END_OF_TIME)
                                     .setMsg("Domain was auto-renewed.")
@@ -227,8 +227,8 @@ final class RdeFixtures {
             .setRepoId(generateNewContactHostRoid())
             .setEmailAddress(email)
             .setStatusValues(ImmutableSet.of(StatusValue.OK))
-            .setPersistedCurrentSponsorClientId("GetTheeBack")
-            .setCreationClientId("GetTheeBack")
+            .setPersistedCurrentSponsorRegistrarId("GetTheeBack")
+            .setCreationRegistrarId("GetTheeBack")
             .setCreationTimeForTest(clock.nowUtc())
             .setInternationalizedPostalInfo(
                 new PostalInfo.Builder()
@@ -255,13 +255,13 @@ final class RdeFixtures {
     return persistResourceWithCommitLog(
         new HostResource.Builder()
             .setRepoId(generateNewContactHostRoid())
-            .setCreationClientId("LawyerCat")
+            .setCreationRegistrarId("LawyerCat")
             .setCreationTimeForTest(clock.nowUtc())
-            .setPersistedCurrentSponsorClientId("BusinessCat")
+            .setPersistedCurrentSponsorRegistrarId("BusinessCat")
             .setHostName(Idn.toASCII(fqhn))
             .setInetAddresses(ImmutableSet.of(InetAddresses.forString(ip)))
             .setLastTransferTime(DateTime.parse("1990-01-01T00:00:00Z"))
-            .setLastEppUpdateClientId("CeilingCat")
+            .setLastEppUpdateRegistrarId("CeilingCat")
             .setLastEppUpdateTime(clock.nowUtc())
             .setStatusValues(ImmutableSet.of(StatusValue.OK))
             .build());

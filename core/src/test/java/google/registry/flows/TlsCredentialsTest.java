@@ -76,7 +76,7 @@ final class TlsCredentialsTest {
             .build());
     assertThrows(
         MissingRegistrarCertificateException.class,
-        () -> tls.validateCertificateHash(Registrar.loadByClientId("TheRegistrar").get()));
+        () -> tls.validateCertificateHash(Registrar.loadByRegistrarId("TheRegistrar").get()));
   }
 
   @Test
@@ -91,7 +91,7 @@ final class TlsCredentialsTest {
             .build());
     assertThrows(
         BadRegistrarIpAddressException.class,
-        () -> tls.validate(Registrar.loadByClientId("TheRegistrar").get(), "password"));
+        () -> tls.validate(Registrar.loadByRegistrarId("TheRegistrar").get(), "password"));
   }
 
   @Test
@@ -102,7 +102,7 @@ final class TlsCredentialsTest {
     persistResource(loadRegistrar("TheRegistrar").asBuilder().build());
     assertThrows(
         RegistrarCertificateNotConfiguredException.class,
-        () -> tls.validateCertificateHash(Registrar.loadByClientId("TheRegistrar").get()));
+        () -> tls.validateCertificateHash(Registrar.loadByRegistrarId("TheRegistrar").get()));
   }
 
   @Test
@@ -117,6 +117,6 @@ final class TlsCredentialsTest {
             .setFailoverClientCertificate(null, clock.nowUtc())
             .build());
     // This would throw a RegistrarCertificateNotConfiguredException if cert hashes wren't bypassed.
-    tls.validateCertificateHash(Registrar.loadByClientId("TheRegistrar").get());
+    tls.validateCertificateHash(Registrar.loadByRegistrarId("TheRegistrar").get());
   }
 }

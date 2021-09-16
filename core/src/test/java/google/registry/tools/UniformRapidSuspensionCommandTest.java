@@ -45,7 +45,7 @@ class UniformRapidSuspensionCommandTest
   void beforeEach() {
     // Since the command's history client ID must be CharlestonRoad, resave TheRegistrar that way.
     persistResource(
-        loadRegistrar("TheRegistrar").asBuilder().setClientId("CharlestonRoad").build());
+        loadRegistrar("TheRegistrar").asBuilder().setRegistrarId("CharlestonRoad").build());
     ns1 = persistActiveHost("ns1.example.com");
     ns2 = persistActiveHost("ns2.example.com");
     urs1 = persistActiveHost("urs1.example.com");
@@ -73,7 +73,7 @@ class UniformRapidSuspensionCommandTest
         "--hosts=urs1.example.com,urs2.example.com",
         "--dsdata=1 1 1 abcd");
     eppVerifier
-        .expectClientId("CharlestonRoad")
+        .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
         .verifySent("uniform_rapid_suspension.xml");
     assertInStdout("uniform_rapid_suspension --undo");
@@ -89,7 +89,7 @@ class UniformRapidSuspensionCommandTest
     persistDomainWithHosts(urs2, ns1);
     runCommandForced("--domain_name=evil.tld", "--hosts=urs1.example.com,urs2.example.com");
     eppVerifier
-        .expectClientId("CharlestonRoad")
+        .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
         .verifySent("uniform_rapid_suspension_existing_host.xml");
     assertInStdout("uniform_rapid_suspension --undo ");
@@ -135,7 +135,7 @@ class UniformRapidSuspensionCommandTest
         "--hosts=urs1.example.com,urs2.example.com",
         "--dsdata=1 1 1 abcd");
     eppVerifier
-        .expectClientId("CharlestonRoad")
+        .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
         .verifySent("uniform_rapid_suspension_with_client_hold.xml");
     assertInStdout("uniform_rapid_suspension --undo");
@@ -150,7 +150,7 @@ class UniformRapidSuspensionCommandTest
     runCommandForced(
         "--domain_name=evil.tld", "--undo", "--hosts=ns1.example.com,ns2.example.com");
     eppVerifier
-        .expectClientId("CharlestonRoad")
+        .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
         .verifySent("uniform_rapid_suspension_undo.xml");
     assertNotInStdout("--undo");  // Undo shouldn't print a new undo command.
@@ -165,7 +165,7 @@ class UniformRapidSuspensionCommandTest
         "--locks_to_preserve=serverDeleteProhibited",
         "--hosts=ns1.example.com,ns2.example.com");
     eppVerifier
-        .expectClientId("CharlestonRoad")
+        .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
         .verifySent("uniform_rapid_suspension_undo_preserve.xml");
     assertNotInStdout("--undo");  // Undo shouldn't print a new undo command.
@@ -180,7 +180,7 @@ class UniformRapidSuspensionCommandTest
         "--hosts=ns1.example.com,ns2.example.com",
         "--restore_client_hold");
     eppVerifier
-        .expectClientId("CharlestonRoad")
+        .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
         .verifySent("uniform_rapid_suspension_undo_client_hold.xml");
     assertNotInStdout("--undo"); // Undo shouldn't print a new undo command.

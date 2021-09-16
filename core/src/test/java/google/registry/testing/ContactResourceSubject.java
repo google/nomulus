@@ -131,8 +131,9 @@ public final class ContactResourceSubject
     return doesNotHaveValue(lastTransferTime, actual.getLastTransferTime(), "lastTransferTime");
   }
 
-  public And<ContactResourceSubject> hasCurrentSponsorClientId(String clientId) {
-    return hasValue(clientId, actual.getCurrentSponsorClientId(), "has currentSponsorClientId");
+  public And<ContactResourceSubject> hasCurrentSponsorRegistrarId(String registrarId) {
+    return hasValue(
+        registrarId, actual.getCurrentSponsorRegistrarId(), "has currentSponsorRegistrarId");
   }
 
   public static SimpleSubjectBuilder<ContactResourceSubject, ContactResource>

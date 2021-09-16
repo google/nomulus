@@ -240,7 +240,7 @@ public final class EppResourceUtils {
         .removeStatusValue(StatusValue.PENDING_TRANSFER)
         .setTransferData((T) transferDataBuilder.build())
         .setLastTransferTime(transferData.getPendingTransferExpirationTime())
-        .setPersistedCurrentSponsorClientId(transferData.getGainingClientId());
+        .setPersistedCurrentSponsorRegistrarId(transferData.getGainingRegistrarId());
   }
 
   /**

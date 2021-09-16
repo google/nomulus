@@ -73,7 +73,7 @@ class CheckDomainClaimsCommandTest extends EppToolCommandTestCase<CheckDomainCla
   @Test
   void testSuccess_unspecifiedClientId_defaultsToRegistryRegistrar() throws Exception {
     runCommand("example.tld");
-    eppVerifier.expectDryRun().expectClientId("adminreg").verifySent("domain_check_claims.xml");
+    eppVerifier.expectDryRun().expectRegistrarId("adminreg").verifySent("domain_check_claims.xml");
   }
 
   @Test

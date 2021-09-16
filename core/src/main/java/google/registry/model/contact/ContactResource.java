@@ -88,7 +88,7 @@ public class ContactResource extends ContactBase
     public Builder copyFrom(ContactBase contactBase) {
       return this.setAuthInfo(contactBase.getAuthInfo())
           .setContactId(contactBase.getContactId())
-          .setCreationClientId(contactBase.getCreationClientId())
+          .setCreationRegistrarId(contactBase.getCreationRegistrarId())
           .setCreationTime(contactBase.getCreationTime())
           .setDeletionTime(contactBase.getDeletionTime())
           .setDisclose(contactBase.getDisclose())
@@ -96,10 +96,11 @@ public class ContactResource extends ContactBase
           .setFaxNumber(contactBase.getFaxNumber())
           .setInternationalizedPostalInfo(contactBase.getInternationalizedPostalInfo())
           .setLastTransferTime(contactBase.getLastTransferTime())
-          .setLastEppUpdateClientId(contactBase.getLastEppUpdateClientId())
+          .setLastEppUpdateRegistrarId(contactBase.getLastEppUpdateRegistrarId())
           .setLastEppUpdateTime(contactBase.getLastEppUpdateTime())
           .setLocalizedPostalInfo(contactBase.getLocalizedPostalInfo())
-          .setPersistedCurrentSponsorClientId(contactBase.getPersistedCurrentSponsorClientId())
+          .setPersistedCurrentSponsorRegistrarId(
+              contactBase.getPersistedCurrentSponsorRegistrarId())
           .setRepoId(contactBase.getRepoId())
           .setStatusValues(contactBase.getStatusValues())
           .setTransferData(contactBase.getTransferData())

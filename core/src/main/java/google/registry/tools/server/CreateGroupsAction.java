@@ -76,7 +76,7 @@ public class CreateGroupsAction implements Runnable {
               try {
                 String groupKey =
                     getGroupEmailAddressForContactType(
-                        registrar.getClientId(), type, gSuiteDomainName);
+                        registrar.getRegistrarId(), type, gSuiteDomainName);
                 String parentGroup =
                     getGroupEmailAddressForContactType("registrar", type, gSuiteDomainName);
                 // Creates the group, then adds it as a member to the global registrar group for
@@ -118,7 +118,7 @@ public class CreateGroupsAction implements Runnable {
     if (!clientId.isPresent()) {
       respondToBadRequest("Error creating Google Groups, missing parameter: clientId");
     }
-    Optional<Registrar> registrar = Registrar.loadByClientId(clientId.get());
+    Optional<Registrar> registrar = Registrar.loadByRegistrarId(clientId.get());
     if (!registrar.isPresent()) {
       respondToBadRequest(String.format(
           "Error creating Google Groups; could not find registrar with id %s", clientId.get()));

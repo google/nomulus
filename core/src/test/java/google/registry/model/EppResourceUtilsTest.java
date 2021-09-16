@@ -86,17 +86,18 @@ class EppResourceUtilsTest {
     persistNewRegistrars("OLD", "NEW");
     clock.advanceOneMilli();
     // Save resource with a commit log that we can read in later as a revisions map value.
-    HostResource oldHost = persistResourceWithCommitLog(
-        newHostResource("ns1.cat.tld").asBuilder()
-            .setCreationTimeForTest(START_OF_TIME)
-            .setPersistedCurrentSponsorClientId("OLD")
-            .build());
+    HostResource oldHost =
+        persistResourceWithCommitLog(
+            newHostResource("ns1.cat.tld")
+                .asBuilder()
+                .setCreationTimeForTest(START_OF_TIME)
+                .setPersistedCurrentSponsorRegistrarId("OLD")
+                .build());
     // Advance a day so that the next created revision entry doesn't overwrite the existing one.
     clock.advanceBy(Duration.standardDays(1));
     // Overwrite the current host with one that has different data.
-    HostResource currentHost = persistResource(oldHost.asBuilder()
-            .setPersistedCurrentSponsorClientId("NEW")
-            .build());
+    HostResource currentHost =
+        persistResource(oldHost.asBuilder().setPersistedCurrentSponsorRegistrarId("NEW").build());
     // Load at the point in time just before the latest update; the floor entry of the revisions
     // map should point to the manifest for the first save, so we should get the old host.
     assertThat(loadAtPointInTime(currentHost, clock.nowUtc().minusMillis(1))).isEqualTo(oldHost);
@@ -105,17 +106,18 @@ class EppResourceUtilsTest {
   @TestOfyOnly
   void testLoadAtPointInTime_brokenRevisionHistory_returnsResourceAsIs() {
     // Don't save a commit log since we want to test the handling of a broken revisions key.
-    HostResource oldHost = persistResource(
-        newHostResource("ns1.cat.tld").asBuilder()
-            .setCreationTimeForTest(START_OF_TIME)
-            .setPersistedCurrentSponsorClientId("OLD")
-            .build());
+    HostResource oldHost =
+        persistResource(
+            newHostResource("ns1.cat.tld")
+                .asBuilder()
+                .setCreationTimeForTest(START_OF_TIME)
+                .setPersistedCurrentSponsorRegistrarId("OLD")
+                .build());
     // Advance a day so that the next created revision entry doesn't overwrite the existing one.
     clock.advanceBy(Duration.standardDays(1));
     // Overwrite the existing resource to force revisions map use.
-    HostResource host = persistResource(oldHost.asBuilder()
-        .setPersistedCurrentSponsorClientId("NEW")
-        .build());
+    HostResource host =
+        persistResource(oldHost.asBuilder().setPersistedCurrentSponsorRegistrarId("NEW").build());
     // Load at the point in time just before the latest update; the old host is not recoverable
     // (revisions map link is broken, and guessing using the oldest revision map entry finds the
     // same broken link), so just returns the current host.
@@ -126,17 +128,18 @@ class EppResourceUtilsTest {
   void testLoadAtPointInTime_fallback_returnsMutationValueForOldestRevision() {
     clock.advanceOneMilli();
     // Save a commit log that we can fall back to.
-    HostResource oldHost = persistResourceWithCommitLog(
-        newHostResource("ns1.cat.tld").asBuilder()
-            .setCreationTimeForTest(START_OF_TIME)
-            .setPersistedCurrentSponsorClientId("OLD")
-            .build());
+    HostResource oldHost =
+        persistResourceWithCommitLog(
+            newHostResource("ns1.cat.tld")
+                .asBuilder()
+                .setCreationTimeForTest(START_OF_TIME)
+                .setPersistedCurrentSponsorRegistrarId("OLD")
+                .build());
     // Advance a day so that the next created revision entry doesn't overwrite the existing one.
     clock.advanceBy(Duration.standardDays(1));
     // Overwrite the current host with one that has different data.
-    HostResource currentHost = persistResource(oldHost.asBuilder()
-        .setPersistedCurrentSponsorClientId("NEW")
-        .build());
+    HostResource currentHost =
+        persistResource(oldHost.asBuilder().setPersistedCurrentSponsorRegistrarId("NEW").build());
     // Load at the point in time before the first update; there will be no floor entry for the
     // revisions map, so give up and return the oldest revision entry's mutation value (the old host
     // data).
@@ -147,11 +150,13 @@ class EppResourceUtilsTest {
   void testLoadAtPointInTime_ultimateFallback_onlyOneRevision_returnsCurrentResource() {
     clock.advanceOneMilli();
     // Don't save a commit log; we want to test that we load from the current resource.
-    HostResource host = persistResource(
-        newHostResource("ns1.cat.tld").asBuilder()
-            .setCreationTimeForTest(START_OF_TIME)
-            .setPersistedCurrentSponsorClientId("OLD")
-            .build());
+    HostResource host =
+        persistResource(
+            newHostResource("ns1.cat.tld")
+                .asBuilder()
+                .setCreationTimeForTest(START_OF_TIME)
+                .setPersistedCurrentSponsorRegistrarId("OLD")
+                .build());
     // Load at the point in time before the first save; there will be no floor entry for the
     // revisions map.  Since the oldest revision entry is the only (i.e. current) revision, return
     // the resource.

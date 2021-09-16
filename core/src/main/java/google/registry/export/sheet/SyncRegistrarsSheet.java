@@ -82,7 +82,7 @@ class SyncRegistrarsSheet {
         new Ordering<Registrar>() {
           @Override
           public int compare(Registrar left, Registrar right) {
-            return left.getClientId().compareTo(right.getClientId());
+            return left.getRegistrarId().compareTo(right.getRegistrarId());
           }
         }.immutableSortedCopy(Registrar.loadAllCached()).stream()
             .filter(
@@ -116,7 +116,7 @@ class SyncRegistrarsSheet {
                   // and you'll need to remove deleted columns probably like a week after
                   // deployment.
                   //
-                  builder.put("clientIdentifier", convert(registrar.getClientId()));
+                  builder.put("clientIdentifier", convert(registrar.getRegistrarId()));
                   builder.put("registrarName", convert(registrar.getRegistrarName()));
                   builder.put("state", convert(registrar.getState()));
                   builder.put("ianaIdentifier", convert(registrar.getIanaIdentifier()));

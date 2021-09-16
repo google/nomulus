@@ -42,7 +42,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistActiveDomain("xn--abc-873b2e7eb1k8a4lpjvv.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_idn.xml"))
             .setModificationTime(now)
@@ -50,7 +50,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistActiveDomain("example.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_RESTORE)
             .setXmlBytes(getBytes("domain_restore.xml"))
             .setModificationTime(now)
@@ -58,7 +58,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new HostHistory.Builder()
             .setHostRepoId(persistDeletedHost("ns1.example.tld", now).getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.HOST_DELETE)
             .setXmlBytes(getBytes("host_delete.xml"))
             .setModificationTime(now)
@@ -79,13 +79,15 @@ public final class OteStatsTestHelper {
   public static void setupIncompleteOte(String baseClientId) throws IOException {
     createTld("tld");
     persistPremiumList("default_sandbox_list", USD, "sandbox,USD 1000");
-    OteAccountBuilder.forClientId(baseClientId).addContact("email@example.com").buildAndPersist();
+    OteAccountBuilder.forRegistrarId(baseClientId)
+        .addContact("email@example.com")
+        .buildAndPersist();
     String oteAccount1 = String.format("%s-1", baseClientId);
     DateTime now = DateTime.now(DateTimeZone.UTC);
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistActiveDomain("exampleone.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_sunrise.xml"))
             .setModificationTime(now)
@@ -93,7 +95,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistActiveDomain("example-one.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_claim_notice.xml"))
             .setModificationTime(now)
@@ -101,7 +103,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistActiveDomain("example.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_anchor_tenant_fee_standard.xml"))
             .setModificationTime(now)
@@ -109,7 +111,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistActiveDomain("example.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_CREATE)
             .setXmlBytes(getBytes("domain_create_dsdata.xml"))
             .setModificationTime(now)
@@ -117,7 +119,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistDeletedDomain("example.tld", now).getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_DELETE)
             .setXmlBytes(getBytes("domain_delete.xml"))
             .setModificationTime(now)
@@ -125,7 +127,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistActiveDomain("example.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_APPROVE)
             .setXmlBytes(getBytes("domain_transfer_approve.xml"))
             .setModificationTime(now)
@@ -133,7 +135,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistActiveDomain("example.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_CANCEL)
             .setXmlBytes(getBytes("domain_transfer_cancel.xml"))
             .setModificationTime(now)
@@ -141,7 +143,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistActiveDomain("example.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_REJECT)
             .setXmlBytes(getBytes("domain_transfer_reject.xml"))
             .setModificationTime(now)
@@ -149,7 +151,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistActiveDomain("example.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_TRANSFER_REQUEST)
             .setXmlBytes(getBytes("domain_transfer_request.xml"))
             .setModificationTime(now)
@@ -157,7 +159,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new DomainHistory.Builder()
             .setDomainRepoId(persistActiveDomain("example.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.DOMAIN_UPDATE)
             .setXmlBytes(getBytes("domain_update_with_secdns.xml"))
             .setModificationTime(now)
@@ -165,7 +167,7 @@ public final class OteStatsTestHelper {
     persistResource(
         new HostHistory.Builder()
             .setHostRepoId(persistActiveHost("example.tld").getRepoId())
-            .setClientId(oteAccount1)
+            .setRegistrarId(oteAccount1)
             .setType(Type.HOST_CREATE)
             .setXmlBytes(getBytes("host_create_complete.xml"))
             .setModificationTime(now)
@@ -177,7 +179,7 @@ public final class OteStatsTestHelper {
       persistResource(
           new HostHistory.Builder()
               .setHostRepoId(persistActiveHost("example.tld").getRepoId())
-              .setClientId(oteAccount1)
+              .setRegistrarId(oteAccount1)
               .setType(Type.HOST_UPDATE)
               .setXmlBytes(getBytes("host_update.xml"))
               .setTrid(Trid.create(null, String.format("blahtrid-%d", i)))

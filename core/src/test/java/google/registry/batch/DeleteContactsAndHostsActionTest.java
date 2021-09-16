@@ -890,14 +890,14 @@ public class DeleteContactsAndHostsActionTest
    */
   private static void assertPollMessageFor(
       HistoryEntry historyEntry,
-      String clientId,
+      String registrarId,
       String msg,
       boolean expectedActionResult,
       EppResource resource,
       Optional<String> clientTrid) {
     PollMessage.OneTime pollMessage = (OneTime) getOnlyPollMessageForHistoryEntry(historyEntry);
     assertThat(pollMessage.getMsg()).isEqualTo(msg);
-    assertThat(pollMessage.getClientId()).isEqualTo(clientId);
+    assertThat(pollMessage.getRegistrarId()).isEqualTo(registrarId);
 
     ImmutableList<ResponseData> pollResponses = pollMessage.getResponseData();
     assertThat(pollResponses).hasSize(1);

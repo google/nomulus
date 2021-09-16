@@ -923,7 +923,7 @@ An EPP flow for login.
     *   Registrar IP address is not in stored allow list.
     *   Registrar certificate not present.
     *   Registrar password is incorrect.
-    *   Registrar with this client ID could not be found.
+    *   Registrar with this ID could not be found.
 *   2201
     *   Registrar account is not active.
 *   2306

@@ -109,7 +109,7 @@ public class DomainBaseTest extends EntityTestCase {
                     .setDomainRepoId(domainKey.getOfyKey().getName())
                     .setModificationTime(fakeClock.nowUtc())
                     .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                    .setClientId("aregistrar")
+                    .setRegistrarId("aregistrar")
                     .build()));
     oneTimeBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.OneTime.class, 1));
     recurringBillKey = VKey.from(Key.create(historyEntryKey, BillingEvent.Recurring.class, 2));
@@ -124,9 +124,9 @@ public class DomainBaseTest extends EntityTestCase {
                 new DomainBase.Builder()
                     .setDomainName("example.com")
                     .setRepoId("4-COM")
-                    .setCreationClientId("aregistrar")
+                    .setCreationRegistrarId("aregistrar")
                     .setLastEppUpdateTime(fakeClock.nowUtc())
-                    .setLastEppUpdateClientId("AnotherRegistrar")
+                    .setLastEppUpdateRegistrarId("AnotherRegistrar")
                     .setLastTransferTime(fakeClock.nowUtc())
                     .setStatusValues(
                         ImmutableSet.of(
@@ -140,7 +140,7 @@ public class DomainBaseTest extends EntityTestCase {
                     .setContacts(ImmutableSet.of(DesignatedContact.create(Type.ADMIN, contact2Key)))
                     .setNameservers(ImmutableSet.of(hostKey))
                     .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
-                    .setPersistedCurrentSponsorClientId("losing")
+                    .setPersistedCurrentSponsorRegistrarId("losing")
                     .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
                     .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
                     .setDsData(
@@ -149,8 +149,8 @@ public class DomainBaseTest extends EntityTestCase {
                         LaunchNotice.create("tcnid", "validatorId", START_OF_TIME, START_OF_TIME))
                     .setTransferData(
                         new DomainTransferData.Builder()
-                            .setGainingClientId("gaining")
-                            .setLosingClientId("losing")
+                            .setGainingRegistrarId("gaining")
+                            .setLosingRegistrarId("losing")
                             .setPendingTransferExpirationTime(fakeClock.nowUtc())
                             .setServerApproveEntities(
                                 ImmutableSet.of(oneTimeBillKey, recurringBillKey, autorenewPollKey))
@@ -224,23 +224,23 @@ public class DomainBaseTest extends EntityTestCase {
     assertThat(
             newDomainBase("example.com")
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId(null)
+                .setPersistedCurrentSponsorRegistrarId(null)
                 .build()
-                .getCurrentSponsorClientId())
+                .getCurrentSponsorRegistrarId())
         .isNull();
     assertThat(
             newDomainBase("example.com")
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId("")
+                .setPersistedCurrentSponsorRegistrarId("")
                 .build()
-                .getCurrentSponsorClientId())
+                .getCurrentSponsorRegistrarId())
         .isNull();
     assertThat(
             newDomainBase("example.com")
                 .asBuilder()
-                .setPersistedCurrentSponsorClientId(" ")
+                .setPersistedCurrentSponsorRegistrarId(" ")
                 .build()
-                .getCurrentSponsorClientId())
+                .getCurrentSponsorRegistrarId())
         .isNotNull();
   }
 
@@ -369,7 +369,7 @@ public class DomainBaseTest extends EntityTestCase {
       VKey<BillingEvent.Recurring> newAutorenewEvent) {
     assertThat(domain.getTransferData().getTransferStatus())
         .isEqualTo(TransferStatus.SERVER_APPROVED);
-    assertThat(domain.getCurrentSponsorClientId()).isEqualTo("winner");
+    assertThat(domain.getCurrentSponsorRegistrarId()).isEqualTo("winner");
     assertThat(domain.getLastTransferTime()).isEqualTo(fakeClock.nowUtc().plusDays(1));
     assertThat(domain.getRegistrationExpirationTime()).isEqualTo(newExpirationTime);
     assertThat(domain.getAutorenewBillingEvent()).isEqualTo(newAutorenewEvent);
@@ -380,14 +380,14 @@ public class DomainBaseTest extends EntityTestCase {
         new DomainHistory.Builder()
             .setDomain(domain)
             .setModificationTime(fakeClock.nowUtc())
-            .setClientId(domain.getCurrentSponsorClientId())
+            .setRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setType(HistoryEntry.Type.DOMAIN_TRANSFER_REQUEST)
             .build();
     BillingEvent.OneTime transferBillingEvent =
         persistResource(
             new BillingEvent.OneTime.Builder()
                 .setReason(Reason.TRANSFER)
-                .setClientId("winner")
+                .setRegistrarId("winner")
                 .setTargetId("example.com")
                 .setEventTime(fakeClock.nowUtc())
                 .setBillingTime(
@@ -410,7 +410,7 @@ public class DomainBaseTest extends EntityTestCase {
                     .setTransferStatus(TransferStatus.PENDING)
                     .setTransferRequestTime(fakeClock.nowUtc().minusDays(4))
                     .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1))
-                    .setGainingClientId("winner")
+                    .setGainingRegistrarId("winner")
                     .setServerApproveBillingEvent(transferBillingEvent.createVKey())
                     .setServerApproveEntities(ImmutableSet.of(transferBillingEvent.createVKey()))
                     .build())
@@ -480,7 +480,7 @@ public class DomainBaseTest extends EntityTestCase {
                     .setPendingTransferExpirationTime(transferSuccessTime)
                     .build())
             .setLastEppUpdateTime(transferRequestTime)
-            .setLastEppUpdateClientId(domain.getTransferData().getGainingClientId())
+            .setLastEppUpdateRegistrarId(domain.getTransferData().getGainingRegistrarId())
             .build();
   }
 
@@ -494,13 +494,13 @@ public class DomainBaseTest extends EntityTestCase {
 
     DomainBase beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
     assertThat(beforeAutoRenew.getLastEppUpdateTime()).isEqualTo(transferRequestDateTime);
-    assertThat(beforeAutoRenew.getLastEppUpdateClientId()).isEqualTo("gaining");
+    assertThat(beforeAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("gaining");
 
     // If autorenew happens before transfer succeeds(before transfer grace period starts as well),
     // lastEppUpdateClientId should still be the current sponsor client id
     DomainBase afterAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.plusDays(1));
     assertThat(afterAutoRenew.getLastEppUpdateTime()).isEqualTo(autorenewDateTime);
-    assertThat(afterAutoRenew.getLastEppUpdateClientId()).isEqualTo("losing");
+    assertThat(afterAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("losing");
   }
 
   @Test
@@ -513,12 +513,12 @@ public class DomainBaseTest extends EntityTestCase {
 
     DomainBase beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
     assertThat(beforeAutoRenew.getLastEppUpdateTime()).isEqualTo(transferRequestDateTime);
-    assertThat(beforeAutoRenew.getLastEppUpdateClientId()).isEqualTo("gaining");
+    assertThat(beforeAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("gaining");
 
     DomainBase afterTransferSuccess =
         domain.cloneProjectedAtTime(transferSuccessDateTime.plusDays(1));
     assertThat(afterTransferSuccess.getLastEppUpdateTime()).isEqualTo(transferSuccessDateTime);
-    assertThat(afterTransferSuccess.getLastEppUpdateClientId()).isEqualTo("gaining");
+    assertThat(afterTransferSuccess.getLastEppUpdateRegistrarId()).isEqualTo("gaining");
   }
 
   private void setupUnmodifiedDomain(DateTime oldExpirationTime) {
@@ -529,7 +529,7 @@ public class DomainBaseTest extends EntityTestCase {
             .setTransferData(DomainTransferData.EMPTY)
             .setGracePeriods(ImmutableSet.of())
             .setLastEppUpdateTime(null)
-            .setLastEppUpdateClientId(null)
+            .setLastEppUpdateRegistrarId(null)
             .build();
   }
 
@@ -541,11 +541,11 @@ public class DomainBaseTest extends EntityTestCase {
 
     DomainBase beforeAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.minusDays(1));
     assertThat(beforeAutoRenew.getLastEppUpdateTime()).isEqualTo(null);
-    assertThat(beforeAutoRenew.getLastEppUpdateClientId()).isEqualTo(null);
+    assertThat(beforeAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo(null);
 
     DomainBase afterAutoRenew = domain.cloneProjectedAtTime(autorenewDateTime.plusDays(1));
     assertThat(afterAutoRenew.getLastEppUpdateTime()).isEqualTo(autorenewDateTime);
-    assertThat(afterAutoRenew.getLastEppUpdateClientId()).isEqualTo("losing");
+    assertThat(afterAutoRenew.getLastEppUpdateRegistrarId()).isEqualTo("losing");
   }
 
   @Test
@@ -679,7 +679,7 @@ public class DomainBaseTest extends EntityTestCase {
                 oldExpirationTime
                     .plusYears(2)
                     .plus(Registry.get("com").getAutoRenewGracePeriodLength()),
-                renewedThreeTimes.getCurrentSponsorClientId(),
+                renewedThreeTimes.getCurrentSponsorRegistrarId(),
                 renewedThreeTimes.autorenewBillingEvent,
                 renewedThreeTimes.getGracePeriods().iterator().next().getGracePeriodId()));
   }
@@ -751,7 +751,7 @@ public class DomainBaseTest extends EntityTestCase {
         new DomainTransferData.Builder()
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
-            .setGainingClientId("TheRegistrar")
+            .setGainingRegistrarId("TheRegistrar")
             .build();
     Period extensionPeriod = transferData.getTransferPeriod();
     DateTime newExpiration = previousExpiration.plusYears(extensionPeriod.getValue());
@@ -779,7 +779,7 @@ public class DomainBaseTest extends EntityTestCase {
         new DomainTransferData.Builder()
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
-            .setGainingClientId("TheRegistrar")
+            .setGainingRegistrarId("TheRegistrar")
             .build();
     Period extensionPeriod = transferData.getTransferPeriod();
     DateTime newExpiration = previousExpiration.plusYears(extensionPeriod.getValue());
@@ -806,7 +806,7 @@ public class DomainBaseTest extends EntityTestCase {
         new DomainTransferData.Builder()
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
-            .setGainingClientId("TheRegistrar")
+            .setGainingRegistrarId("TheRegistrar")
             .build();
     domain =
         persistResource(
@@ -832,7 +832,7 @@ public class DomainBaseTest extends EntityTestCase {
         new DomainTransferData.Builder()
             .setPendingTransferExpirationTime(transferExpirationTime)
             .setTransferStatus(TransferStatus.PENDING)
-            .setGainingClientId("TheRegistrar")
+            .setGainingRegistrarId("TheRegistrar")
             .setServerApproveAutorenewEvent(recurringBillKey)
             .setServerApproveBillingEvent(oneTimeBillKey)
             .build();

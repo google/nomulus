@@ -1138,8 +1138,8 @@ public final class RegistryConfig {
     }
 
     /**
-     * Returns the clientId of the registrar that admins are automatically logged in as if they
-     * aren't otherwise associated with one.
+     * Returns the ID of the registrar that admins are automatically logged in as if they aren't
+     * otherwise associated with one.
      */
     @Provides
     @Config("registryAdminClientId")

@@ -106,7 +106,7 @@ class WhoisCommandFactoryTest {
             () ->
                 tm().put(
                         host.asBuilder()
-                            .setPersistedCurrentSponsorClientId("OtherRegistrar")
+                            .setPersistedCurrentSponsorRegistrarId("OtherRegistrar")
                             .build()));
     response =
         noncachedFactory
@@ -129,7 +129,7 @@ class WhoisCommandFactoryTest {
             () ->
                 tm().put(
                         host.asBuilder()
-                            .setPersistedCurrentSponsorClientId("OtherRegistrar")
+                            .setPersistedCurrentSponsorRegistrarId("OtherRegistrar")
                             .build()));
     response =
         cachedFactory
@@ -153,7 +153,7 @@ class WhoisCommandFactoryTest {
                 tm().put(
                         domain
                             .asBuilder()
-                            .setPersistedCurrentSponsorClientId("OtherRegistrar")
+                            .setPersistedCurrentSponsorRegistrarId("OtherRegistrar")
                             .build()));
     response =
         noncachedFactory
@@ -177,7 +177,7 @@ class WhoisCommandFactoryTest {
                 tm().put(
                         domain
                             .asBuilder()
-                            .setPersistedCurrentSponsorClientId("OtherRegistrar")
+                            .setPersistedCurrentSponsorRegistrarId("OtherRegistrar")
                             .build()));
     response =
         cachedFactory
@@ -230,7 +230,7 @@ class WhoisCommandFactoryTest {
             () ->
                 tm().put(
                         host.asBuilder()
-                            .setPersistedCurrentSponsorClientId("OtherRegistrar")
+                            .setPersistedCurrentSponsorRegistrarId("OtherRegistrar")
                             .build()));
     response =
         noncachedFactory

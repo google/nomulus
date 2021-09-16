@@ -14,7 +14,7 @@
 
 package google.registry.flows.contact;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.checkLinkedDomains;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyNoDisallowedStatuses;
@@ -31,7 +31,7 @@ import com.google.common.collect.ImmutableSet;
 import google.registry.batch.AsyncTaskEnqueuer;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
@@ -75,7 +75,7 @@ public final class ContactDeleteFlow implements TransactionalFlow {
           StatusValue.SERVER_DELETE_PROHIBITED);
 
   @Inject ExtensionManager extensionManager;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject Trid trid;
   @Inject @Superuser boolean isSuperuser;
@@ -91,21 +91,21 @@ public final class ContactDeleteFlow implements TransactionalFlow {
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     DateTime now = tm().getTransactionTime();
     checkLinkedDomains(targetId, now, ContactResource.class, DomainBase::getReferencedContacts);
     ContactResource existingContact = loadAndVerifyExistence(ContactResource.class, targetId, now);
     verifyNoDisallowedStatuses(existingContact, DISALLOWED_STATUSES);
     verifyOptionalAuthInfo(authInfo, existingContact);
     if (!isSuperuser) {
-      verifyResourceOwnership(clientId, existingContact);
+      verifyResourceOwnership(registrarId, existingContact);
     }
     Type historyEntryType;
     Code resultCode;
     ContactResource newContact;
     if (tm().isOfy()) {
       asyncTaskEnqueuer.enqueueAsyncDelete(
-          existingContact, tm().getTransactionTime(), clientId, trid, isSuperuser);
+          existingContact, tm().getTransactionTime(), registrarId, trid, isSuperuser);
       newContact = existingContact.asBuilder().addStatusValue(StatusValue.PENDING_DELETE).build();
       historyEntryType = Type.CONTACT_PENDING_DELETE;
       resultCode = SUCCESS_WITH_ACTION_PENDING;
@@ -113,7 +113,7 @@ public final class ContactDeleteFlow implements TransactionalFlow {
       // Handle pending transfers on contact deletion.
       newContact =
           existingContact.getStatusValues().contains(StatusValue.PENDING_TRANSFER)
-              ? denyPendingTransfer(existingContact, SERVER_CANCELLED, now, clientId)
+              ? denyPendingTransfer(existingContact, SERVER_CANCELLED, now, registrarId)
               : existingContact;
       // Wipe out PII on contact deletion.
       newContact =

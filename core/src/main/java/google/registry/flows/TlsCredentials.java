@@ -97,7 +97,7 @@ public class TlsCredentials implements TransportCredentials {
     if (ipAddressAllowList.isEmpty()) {
       logger.atInfo().log(
           "Skipping IP allow list check because %s doesn't have an IP allow list.",
-          registrar.getClientId());
+          registrar.getRegistrarId());
       return;
     }
     // In the rare unexpected case that the client inet address wasn't passed along at all, then
@@ -113,7 +113,7 @@ public class TlsCredentials implements TransportCredentials {
     logger.atInfo().log(
         "Authentication error: IP address %s is not allow-listed for registrar %s; allow list is:"
             + " %s",
-        clientInetAddr, registrar.getClientId(), ipAddressAllowList);
+        clientInetAddr, registrar.getRegistrarId(), ipAddressAllowList);
     throw new BadRegistrarIpAddressException();
   }
 
@@ -132,7 +132,8 @@ public class TlsCredentials implements TransportCredentials {
     // Check that the request included the certificate hash
     if (!clientCertificateHash.isPresent()) {
       logger.atInfo().log(
-          "Request from registrar %s did not include X-SSL-Certificate.", registrar.getClientId());
+          "Request from registrar %s did not include X-SSL-Certificate.",
+          registrar.getRegistrarId());
       throw new MissingRegistrarCertificateException();
     }
     // Check if the certificate hash is equal to the one on file for the registrar.
@@ -141,7 +142,7 @@ public class TlsCredentials implements TransportCredentials {
       logger.atWarning().log(
           "Non-matching certificate hash (%s) for %s, wanted either %s or %s.",
           clientCertificateHash,
-          registrar.getClientId(),
+          registrar.getRegistrarId(),
           registrar.getClientCertificateHash(),
           registrar.getFailoverClientCertificateHash());
       throw new BadRegistrarCertificateException();
@@ -156,7 +157,7 @@ public class TlsCredentials implements TransportCredentials {
       } catch (InsecureCertificateException e) {
         logger.atWarning().log(
             "Registrar certificate used for %s does not meet certificate requirements: %s",
-            registrar.getClientId(), e.getMessage());
+            registrar.getRegistrarId(), e.getMessage());
         throw new CertificateContainsSecurityViolationsException(e);
       }
     }

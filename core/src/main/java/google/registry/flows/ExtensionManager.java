@@ -26,7 +26,7 @@ import com.google.common.flogger.FluentLogger;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.EppException.SyntaxErrorException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.exceptions.OnlyToolCanPassMetadataException;
 import google.registry.flows.exceptions.UnauthorizedForSuperuserExtensionException;
@@ -55,7 +55,7 @@ public final class ExtensionManager {
 
   @Inject EppInput eppInput;
   @Inject SessionMetadata sessionMetadata;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @Superuser boolean isSuperuser;
   @Inject Class<? extends Flow> flowClass;
   @Inject EppRequestSource eppRequestSource;
@@ -101,7 +101,7 @@ public final class ExtensionManager {
     }
     logger.atInfo().log(
         "Client %s is attempting to run %s without declaring URIs %s on login",
-        clientId, flowClass.getSimpleName(), undeclaredUris);
+        registrarId, flowClass.getSimpleName(), undeclaredUris);
   }
 
   private static final ImmutableSet<EppRequestSource> ALLOWED_METADATA_EPP_REQUEST_SOURCES =

@@ -52,7 +52,7 @@ public class GracePeriodTest {
         new BillingEvent.OneTime.Builder()
             .setEventTime(now)
             .setBillingTime(now.plusDays(1))
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setCost(Money.of(CurrencyUnit.USD, 42))
             .setParent(
                 Key.create(Key.create(DomainBase.class, "domain"), DomainHistory.class, 12345))
@@ -77,7 +77,7 @@ public class GracePeriodTest {
     assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
     assertThat(gracePeriod.getOneTimeBillingEvent()).isEqualTo(onetime.createVKey());
     assertThat(gracePeriod.getRecurringBillingEvent()).isNull();
-    assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
+    assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
     assertThat(gracePeriod.hasBillingEvent()).isTrue();
   }
@@ -91,7 +91,7 @@ public class GracePeriodTest {
     assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
     assertThat(gracePeriod.getOneTimeBillingEvent()).isNull();
     assertThat(gracePeriod.getRecurringBillingEvent()).isEqualTo(recurringKey);
-    assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
+    assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now.plusDays(1));
     assertThat(gracePeriod.hasBillingEvent()).isTrue();
   }
@@ -105,7 +105,7 @@ public class GracePeriodTest {
     assertThat(gracePeriod.getDomainRepoId()).isEqualTo("1-TEST");
     assertThat(gracePeriod.getOneTimeBillingEvent()).isNull();
     assertThat(gracePeriod.getRecurringBillingEvent()).isNull();
-    assertThat(gracePeriod.getClientId()).isEqualTo("TheRegistrar");
+    assertThat(gracePeriod.getRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(gracePeriod.getExpirationTime()).isEqualTo(now);
     assertThat(gracePeriod.hasBillingEvent()).isFalse();
   }

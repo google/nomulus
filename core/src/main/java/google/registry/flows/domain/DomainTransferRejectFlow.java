@@ -15,7 +15,7 @@
 package google.registry.flows.domain;
 
 import static google.registry.flows.FlowUtils.createHistoryKey;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyHasPendingTransfer;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
@@ -37,7 +37,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
@@ -78,7 +78,7 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
@@ -89,23 +89,23 @@ public final class DomainTransferRejectFlow implements TransactionalFlow {
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
     Registry registry = Registry.get(existingDomain.getTld());
     Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
     historyBuilder
         .setId(domainHistoryKey.getId())
-        .setOtherClientId(existingDomain.getTransferData().getGainingClientId());
+        .setOtherRegistrarId(existingDomain.getTransferData().getGainingRegistrarId());
 
     verifyOptionalAuthInfo(authInfo, existingDomain);
     verifyHasPendingTransfer(existingDomain);
-    verifyResourceOwnership(clientId, existingDomain);
+    verifyResourceOwnership(registrarId, existingDomain);
     if (!isSuperuser) {
-      checkAllowedAccessToTld(clientId, existingDomain.getTld());
+      checkAllowedAccessToTld(registrarId, existingDomain.getTld());
     }
     DomainBase newDomain =
-        denyPendingTransfer(existingDomain, TransferStatus.CLIENT_REJECTED, now, clientId);
+        denyPendingTransfer(existingDomain, TransferStatus.CLIENT_REJECTED, now, registrarId);
     DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now);
     tm().putAll(
             newDomain,

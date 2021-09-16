@@ -51,7 +51,9 @@ public class CreateRegistrarGroupsCommand extends ConfirmingCommand
     for (String clientId : clientIds) {
       Registrar registrar =
           checkArgumentPresent(
-              Registrar.loadByClientId(clientId), "Could not load registrar with id %s", clientId);
+              Registrar.loadByRegistrarId(clientId),
+              "Could not load registrar with id %s",
+              clientId);
       registrars.add(registrar);
     }
   }
@@ -77,7 +79,7 @@ public class CreateRegistrarGroupsCommand extends ConfirmingCommand
     for (Registrar registrar : registrars) {
       connection.sendPostRequest(
           CreateGroupsAction.PATH,
-          ImmutableMap.of(CreateGroupsAction.CLIENT_ID_PARAM, registrar.getClientId()),
+          ImmutableMap.of(CreateGroupsAction.CLIENT_ID_PARAM, registrar.getRegistrarId()),
           MediaType.PLAIN_TEXT_UTF_8,
           new byte[0]);
     }

@@ -47,14 +47,14 @@ final class NameserverWhoisResponse extends WhoisResponseImpl {
     BasicEmitter emitter = new BasicEmitter();
     for (int i = 0; i < hosts.size(); i++) {
       HostResource host = hosts.get(i);
-      String clientId =
+      String registrarId =
           host.isSubordinate()
               ? tm().loadByKey(host.getSuperordinateDomain())
                   .cloneProjectedAtTime(getTimestamp())
-                  .getCurrentSponsorClientId()
-              : host.getPersistedCurrentSponsorClientId();
-      Optional<Registrar> registrar = Registrar.loadByClientIdCached(clientId);
-      checkState(registrar.isPresent(), "Could not load registrar %s", clientId);
+                  .getCurrentSponsorRegistrarId()
+              : host.getPersistedCurrentSponsorRegistrarId();
+      Optional<Registrar> registrar = Registrar.loadByRegistrarIdCached(registrarId);
+      checkState(registrar.isPresent(), "Could not load registrar %s", registrarId);
       emitter
           .emitField("Server Name", maybeFormatHostname(host.getHostName(), preferUnicode))
           .emitSet("IP Address", host.getInetAddresses(), InetAddresses::toAddrString)

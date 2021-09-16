@@ -220,36 +220,36 @@ public class AuthenticatedRegistrarAccessor {
    * <p>Throws a {@link RegistrarAccessDeniedException} if the user is not logged in, or not
    * authorized to access the requested registrar.
    *
-   * @param clientId ID of the registrar we request
+   * @param registrarId ID of the registrar we request
    */
-  public Registrar getRegistrar(String clientId) throws RegistrarAccessDeniedException {
+  public Registrar getRegistrar(String registrarId) throws RegistrarAccessDeniedException {
     Registrar registrar =
-        Registrar.loadByClientId(clientId)
+        Registrar.loadByRegistrarId(registrarId)
             .orElseThrow(
                 () ->
                     new RegistrarAccessDeniedException(
-                        String.format("Registrar %s does not exist", clientId)));
-    verifyAccess(clientId);
+                        String.format("Registrar %s does not exist", registrarId)));
+    verifyAccess(registrarId);
 
-    if (!clientId.equals(registrar.getClientId())) {
+    if (!registrarId.equals(registrar.getRegistrarId())) {
       logger.atSevere().log(
           "registrarLoader.apply(clientId) returned a Registrar with a different clientId. "
               + "Requested: %s, returned: %s.",
-          clientId, registrar.getClientId());
+          registrarId, registrar.getRegistrarId());
       throw new RegistrarAccessDeniedException("Internal error - please check logs");
     }
 
     return registrar;
   }
 
-  public void verifyAccess(String clientId) throws RegistrarAccessDeniedException {
-    ImmutableSet<Role> roles = getAllClientIdWithRoles().get(clientId);
+  public void verifyAccess(String registrarId) throws RegistrarAccessDeniedException {
+    ImmutableSet<Role> roles = getAllClientIdWithRoles().get(registrarId);
 
     if (roles.isEmpty()) {
       throw new RegistrarAccessDeniedException(
-          String.format("%s doesn't have access to registrar %s", userIdForLogging, clientId));
+          String.format("%s doesn't have access to registrar %s", userIdForLogging, registrarId));
     }
-    logger.atInfo().log("%s has %s access to registrar %s.", userIdForLogging, roles, clientId);
+    logger.atInfo().log("%s has %s access to registrar %s.", userIdForLogging, roles, registrarId);
   }
 
   public String userIdForLogging() {
@@ -331,7 +331,7 @@ public class AuthenticatedRegistrarAccessor {
       // Filter out disabled registrars (note that pending registrars still allow console login).
       auditedOfy().load().keys(accessibleClientIds).values().stream()
           .filter(registrar -> registrar.getState() != State.DISABLED)
-          .forEach(registrar -> builder.put(registrar.getClientId(), Role.OWNER));
+          .forEach(registrar -> builder.put(registrar.getRegistrarId(), Role.OWNER));
     } else {
       jpaTm()
           .transact(
@@ -345,7 +345,7 @@ public class AuthenticatedRegistrarAccessor {
                       .setParameter("gaeUserId", user.getUserId())
                       .setParameter("state", State.DISABLED)
                       .getResultStream()
-                      .forEach(registrar -> builder.put(registrar.getClientId(), Role.OWNER)));
+                      .forEach(registrar -> builder.put(registrar.getRegistrarId(), Role.OWNER)));
     }
 
     // Admins have ADMIN access to all registrars, and also OWNER access to the registry registrar
@@ -358,10 +358,10 @@ public class AuthenticatedRegistrarAccessor {
                       registrar -> {
                         if (registrar.getType() != Registrar.Type.REAL
                             || !registrar.isLive()
-                            || registrar.getClientId().equals(registryAdminClientId)) {
-                          builder.put(registrar.getClientId(), Role.OWNER);
+                            || registrar.getRegistrarId().equals(registryAdminClientId)) {
+                          builder.put(registrar.getRegistrarId(), Role.OWNER);
                         }
-                        builder.put(registrar.getClientId(), Role.ADMIN);
+                        builder.put(registrar.getRegistrarId(), Role.ADMIN);
                       }));
     }
 

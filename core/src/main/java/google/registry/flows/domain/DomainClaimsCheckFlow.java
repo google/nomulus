@@ -14,7 +14,7 @@
 
 package google.registry.flows.domain;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 import static google.registry.flows.domain.DomainFlowUtils.checkAllowedAccessToTld;
 import static google.registry.flows.domain.DomainFlowUtils.validateDomainName;
@@ -31,7 +31,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.CommandUseErrorException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.domain.DomainCommand.Check;
@@ -69,7 +69,7 @@ public final class DomainClaimsCheckFlow implements Flow {
   @Inject ExtensionManager extensionManager;
   @Inject EppInput eppInput;
   @Inject ResourceCommand resourceCommand;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @Superuser boolean isSuperuser;
   @Inject Clock clock;
   @Inject @Config("maxChecks") int maxChecks;
@@ -82,7 +82,7 @@ public final class DomainClaimsCheckFlow implements Flow {
   public EppResponse run() throws EppException {
     extensionManager.register(LaunchCheckExtension.class, AllocationTokenExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     if (eppInput.getSingleExtension(AllocationTokenExtension.class).isPresent()) {
       throw new DomainClaimsCheckNotAllowedWithAllocationTokens();
     }
@@ -97,7 +97,7 @@ public final class DomainClaimsCheckFlow implements Flow {
       // Only validate access to a TLD the first time it is encountered.
       if (seenTlds.add(tld)) {
         if (!isSuperuser) {
-          checkAllowedAccessToTld(clientId, tld);
+          checkAllowedAccessToTld(registrarId, tld);
           Registry registry = Registry.get(tld);
           DateTime now = clock.nowUtc();
           verifyNotInPredelegation(registry, now);

@@ -23,8 +23,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.flogger.FluentLogger;
-import google.registry.flows.FlowModule.ClientId;
 import google.registry.flows.FlowModule.InputXml;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppinput.EppInput;
@@ -45,7 +45,7 @@ public class FlowReporter {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject Trid trid;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @InputXml byte[] inputXmlBytes;
   @Inject EppInput eppInput;
   @Inject Class<? extends Flow> flowClass;
@@ -64,7 +64,7 @@ public class FlowReporter {
         JSONValue.toJSONString(
             new ImmutableMap.Builder<String, Object>()
                 .put("serverTrid", trid.getServerTransactionId())
-                .put("clientId", clientId)
+                .put("clientId", registrarId)
                 .put("commandType", eppInput.getCommandType())
                 .put("resourceType", eppInput.getResourceType().orElse(""))
                 .put("flowClassName", flowClass.getSimpleName())

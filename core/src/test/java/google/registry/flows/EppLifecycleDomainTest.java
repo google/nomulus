@@ -545,7 +545,7 @@ class EppLifecycleDomainTest extends EppTestCase {
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.FEE_EARLY_ACCESS)
             .setTargetId("example.tld")
-            .setClientId("NewRegistrar")
+            .setRegistrarId("NewRegistrar")
             .setPeriodYears(1)
             .setCost(Money.parse("USD 100.00"))
             .setEventTime(createTime)

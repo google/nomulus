@@ -131,7 +131,7 @@ public final class ConsoleOteSetupAction extends HtmlAction {
 
       String password = optionalPassword.orElse(passwordGenerator.createString(PASSWORD_LENGTH));
       ImmutableMap<String, String> clientIdToTld =
-          OteAccountBuilder.forClientId(clientId.get())
+          OteAccountBuilder.forRegistrarId(clientId.get())
               .addContact(email.get())
               .setPassword(password)
               .buildAndPersist();

@@ -180,7 +180,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                 .setType(DOMAIN_CREATE)
                 .setDomain(domain)
                 .setModificationTime(clock.nowUtc())
-                .setClientId(domain.getCreationClientId())
+                .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
   }
 
@@ -244,7 +244,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         new BillingEvent.Cancellation.Builder()
             .setReason(graceBillingEvent.getReason())
             .setTargetId("example.tld")
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(eventTime)
             .setBillingTime(TIME_BEFORE_FLOW.plusDays(1))
             .setOneTimeEventKey(graceBillingEvent.createVKey())
@@ -252,18 +252,18 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .build());
   }
 
-  private void assertOnlyBillingEventIsClosedAutorenew(String clientId) {
+  private void assertOnlyBillingEventIsClosedAutorenew(String registrarId) {
     // There should be no billing events (even timed to when the transfer would have expired) except
     // for the now closed autorenew one.
     assertBillingEvents(
-        createAutorenewBillingEvent(clientId).setRecurrenceEndTime(clock.nowUtc()).build());
+        createAutorenewBillingEvent(registrarId).setRecurrenceEndTime(clock.nowUtc()).build());
   }
 
   private BillingEvent.OneTime createBillingEvent(Reason reason, Money cost) {
     return new BillingEvent.OneTime.Builder()
         .setReason(reason)
         .setTargetId("example.tld")
-        .setClientId("TheRegistrar")
+        .setRegistrarId("TheRegistrar")
         .setCost(cost)
         .setPeriodYears(2)
         .setEventTime(TIME_BEFORE_FLOW.minusDays(4))
@@ -272,21 +272,21 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .build();
   }
 
-  private BillingEvent.Recurring.Builder createAutorenewBillingEvent(String clientId) {
+  private BillingEvent.Recurring.Builder createAutorenewBillingEvent(String registrarId) {
     return new BillingEvent.Recurring.Builder()
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId("example.tld")
-        .setClientId(clientId)
+        .setRegistrarId(registrarId)
         .setEventTime(A_MONTH_FROM_NOW)
         .setRecurrenceEndTime(END_OF_TIME)
         .setParent(earlierHistoryEntry);
   }
 
-  private PollMessage.Autorenew.Builder createAutorenewPollMessage(String clientId) {
+  private PollMessage.Autorenew.Builder createAutorenewPollMessage(String registrarId) {
     return new PollMessage.Autorenew.Builder()
         .setTargetId("example.tld")
-        .setClientId(clientId)
+        .setRegistrarId(registrarId)
         .setEventTime(A_MONTH_FROM_NOW)
         .setAutorenewEndTime(END_OF_TIME)
         .setParent(earlierHistoryEntry);
@@ -374,7 +374,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setRedemptionGracePeriodLength(standardDays(3))
             .setPendingDeleteLength(standardDays(2))
             .build());
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     setUpSuccessfulTest();
     clock.advanceOneMilli();
 
@@ -633,7 +633,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   @TestOfyAndSql
   void testSuccess_noPendingTransfer_deletedAndHasNoTransferData() throws Exception {
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     setUpSuccessfulTest();
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("domain_delete_response_pending.xml"));
@@ -643,7 +643,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   @TestOfyAndSql
   void testSuccess_pendingTransfer() throws Exception {
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     setUpSuccessfulTest();
     // Modify the domain we are testing to include a pending transfer.
     DomainTransferData oldTransferData =
@@ -823,7 +823,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   @TestOfyAndSql
   void testFailure_unauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistActiveDomain(getUniqueIdFromCommand());
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -831,7 +831,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   @TestOfyAndSql
   void testSuccess_superuserUnauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     setUpSuccessfulTest();
     clock.advanceOneMilli();
     runFlowAssertResponse(
@@ -840,7 +840,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
     HistoryEntry deleteHistoryEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
     assertPollMessages(
         new PollMessage.OneTime.Builder()
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setParent(deleteHistoryEntry)
             .setEventTime(clock.nowUtc())
             .setMsg(
@@ -848,7 +848,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
                     + " effective: 2000-07-11T22:00:00.013Z")
             .build(),
         new PollMessage.OneTime.Builder()
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setParent(deleteHistoryEntry)
             .setEventTime(DateTime.parse("2000-07-11T22:00:00.013Z"))
             .setMsg("Deleted by registry administrator.")
@@ -1118,7 +1118,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             .setType(DOMAIN_CREATE)
             .setDomain(domain)
             .setModificationTime(TIME_BEFORE_FLOW.minusDays(1))
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setDomainTransactionRecords(ImmutableSet.of(existingRecord))
             .build());
     runFlow();
@@ -1224,7 +1224,7 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
 
   @TestOfyAndSql
   void testSuccess_immediateDelete_withSuperuserAndMetadataExtension() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     eppRequestSource = EppRequestSource.TOOL;
     setEppInput(
         "domain_delete_superuser_and_metadata_extension.xml",

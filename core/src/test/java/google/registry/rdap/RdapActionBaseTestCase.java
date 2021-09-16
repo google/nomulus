@@ -89,8 +89,8 @@ abstract class RdapActionBaseTestCase<A extends RdapActionBase> {
     logout();
   }
 
-  protected void login(String clientId) {
-    action.rdapAuthorization = RdapAuthorization.create(REGISTRAR, clientId);
+  protected void login(String registrarId) {
+    action.rdapAuthorization = RdapAuthorization.create(REGISTRAR, registrarId);
     action.rdapJsonFormatter.rdapAuthorization = action.rdapAuthorization;
     metricRole = REGISTRAR;
   }

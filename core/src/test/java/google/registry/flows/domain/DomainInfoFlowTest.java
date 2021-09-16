@@ -111,9 +111,10 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
   @BeforeEach
   void setup() {
     setEppInput("domain_info.xml");
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     createTld("tld");
-    persistResource(AppEngineExtension.makeRegistrar1().asBuilder().setClientId("ClientZ").build());
+    persistResource(
+        AppEngineExtension.makeRegistrar1().asBuilder().setRegistrarId("ClientZ").build());
   }
 
   private void persistTestEntities(String domainName, boolean inactive) {
@@ -126,9 +127,9 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             new DomainBase.Builder()
                 .setDomainName(domainName)
                 .setRepoId("2FF-TLD")
-                .setPersistedCurrentSponsorClientId("NewRegistrar")
-                .setCreationClientId("TheRegistrar")
-                .setLastEppUpdateClientId("NewRegistrar")
+                .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
+                .setCreationRegistrarId("TheRegistrar")
+                .setLastEppUpdateRegistrarId("NewRegistrar")
                 .setCreationTimeForTest(DateTime.parse("1999-04-03T22:00:00.0Z"))
                 .setLastEppUpdateTime(DateTime.parse("1999-12-03T09:00:00.0Z"))
                 .setLastTransferTime(DateTime.parse("2000-04-08T09:00:00.0Z"))
@@ -274,14 +275,14 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
 
   @TestOfyAndSql
   void testSuccess_unauthorized() throws Exception {
-    sessionMetadata.setClientId("ClientZ");
+    sessionMetadata.setRegistrarId("ClientZ");
     doSuccessfulTest("domain_info_response_unauthorized.xml");
   }
 
   @TestOfyAndSql
   void testSuccess_differentRegistrarWithAuthInfo() throws Exception {
     setEppInput("domain_info_with_auth.xml");
-    sessionMetadata.setClientId("ClientZ");
+    sessionMetadata.setRegistrarId("ClientZ");
     doSuccessfulTest("domain_info_response.xml");
   }
 
@@ -290,7 +291,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
     persistTestEntities(false);
     setEppInput("domain_info_with_contact_auth.xml");
     eppLoader.replaceAll("JD1234-REP", registrant.getRepoId());
-    sessionMetadata.setClientId("ClientZ");
+    sessionMetadata.setRegistrarId("ClientZ");
     doSuccessfulTest("domain_info_response.xml", false);
   }
 
@@ -299,7 +300,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
     persistTestEntities(false);
     setEppInput("domain_info_with_contact_auth.xml");
     eppLoader.replaceAll("JD1234-REP", registrant.getRepoId());
-    sessionMetadata.setClientId("ClientZ");
+    sessionMetadata.setRegistrarId("ClientZ");
     doSuccessfulTest("domain_info_response.xml", false);
   }
 
@@ -343,12 +344,12 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                     clock.nowUtc().plusDays(1),
                     "TheRegistrar",
                     null))
-            .setCreationClientId("NewRegistrar")
+            .setCreationRegistrarId("NewRegistrar")
             .setCreationTimeForTest(DateTime.parse("2003-11-26T22:00:00.0Z"))
             .setRegistrationExpirationTime(DateTime.parse("2005-11-26T22:00:00.0Z"))
             .setLastTransferTime(null)
             .setLastEppUpdateTime(null)
-            .setLastEppUpdateClientId(null)
+            .setLastEppUpdateRegistrarId(null)
             .build());
     doSuccessfulTest("domain_info_response_addperiod.xml", false);
   }
@@ -367,7 +368,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                 .setDomain(domain)
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setModificationTime(clock.nowUtc())
-                .setClientId(domain.getCreationClientId())
+                .setRegistrarId(domain.getCreationRegistrarId())
                 .build());
     BillingEvent.Recurring renewEvent =
         persistResource(
@@ -375,7 +376,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                 .setReason(Reason.RENEW)
                 .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                 .setTargetId(getUniqueIdFromCommand())
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setEventTime(clock.nowUtc())
                 .setRecurrenceEndTime(END_OF_TIME)
                 .setParent(historyEntry)
@@ -562,7 +563,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
             .asBuilder()
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("diffpw")))
             .build());
-    sessionMetadata.setClientId("ClientZ");
+    sessionMetadata.setRegistrarId("ClientZ");
     setEppInput("domain_info_with_auth.xml");
     EppException thrown = assertThrows(BadAuthInfoForResourceException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -592,7 +593,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                 .asBuilder()
                 .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("diffpw")))
                 .build());
-    sessionMetadata.setClientId("ClientZ");
+    sessionMetadata.setRegistrarId("ClientZ");
     setEppInput("domain_info_with_contact_auth.xml");
     // Replace the ROID in the xml file with the one for our registrant.
     eppLoader.replaceAll("JD1234-REP", registrant.getRepoId());
@@ -627,7 +628,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
                 .asBuilder()
                 .setAuthInfo(ContactAuthInfo.create(PasswordAuth.create("diffpw")))
                 .build());
-    sessionMetadata.setClientId("ClientZ");
+    sessionMetadata.setRegistrarId("ClientZ");
     setEppInput("domain_info_with_contact_auth.xml");
     // Replace the ROID in the xml file with the one for our contact.
     eppLoader.replaceAll("JD1234-REP", contact.getRepoId());
@@ -656,7 +657,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
   void testFailure_differentRegistrarUnrelatedContactAuthInfo() {
     persistTestEntities(false);
     ContactResource unrelatedContact = persistActiveContact("foo1234");
-    sessionMetadata.setClientId("ClientZ");
+    sessionMetadata.setRegistrarId("ClientZ");
     setEppInput("domain_info_with_contact_auth.xml");
     // Replace the ROID in the xml file with the one for our unrelated contact.
     eppLoader.replaceAll("JD1234-REP", unrelatedContact.getRepoId());

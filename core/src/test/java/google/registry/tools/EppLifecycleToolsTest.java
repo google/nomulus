@@ -145,7 +145,7 @@ class EppLifecycleToolsTest extends EppTestCase {
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.RENEW)
             .setTargetId(domain.getDomainName())
-            .setClientId(domain.getCurrentSponsorClientId())
+            .setRegistrarId(domain.getCurrentSponsorRegistrarId())
             .setCost(Money.parse("USD 44.00"))
             .setPeriodYears(4)
             .setEventTime(DateTime.parse("2000-06-07T00:00:00Z"))

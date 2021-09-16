@@ -14,7 +14,7 @@
 
 package google.registry.flows.host;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyResourceDoesNotExist;
 import static google.registry.flows.host.HostFlowUtils.lookupSuperordinateDomain;
 import static google.registry.flows.host.HostFlowUtils.validateHostName;
@@ -34,7 +34,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.ParameterValueRangeErrorException;
 import google.registry.flows.EppException.RequiredParameterMissingException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
 import google.registry.flows.annotations.ReportingSpec;
@@ -84,7 +84,7 @@ public final class HostCreateFlow implements TransactionalFlow {
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject HostHistory.Builder historyBuilder;
   @Inject DnsQueue dnsQueue;
@@ -101,17 +101,17 @@ public final class HostCreateFlow implements TransactionalFlow {
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     Create command = (Create) resourceCommand;
     DateTime now = tm().getTransactionTime();
-    verifyResourceDoesNotExist(HostResource.class, targetId, now, clientId);
+    verifyResourceDoesNotExist(HostResource.class, targetId, now, registrarId);
     // The superordinate domain of the host object if creating an in-bailiwick host, or null if
     // creating an external host. This is looked up before we actually create the Host object so
     // we can detect error conditions earlier.
     Optional<DomainBase> superordinateDomain =
         lookupSuperordinateDomain(validateHostName(targetId), now);
     verifySuperordinateDomainNotInPendingDelete(superordinateDomain.orElse(null));
-    verifySuperordinateDomainOwnership(clientId, superordinateDomain.orElse(null));
+    verifySuperordinateDomainOwnership(registrarId, superordinateDomain.orElse(null));
     boolean willBeSubordinate = superordinateDomain.isPresent();
     boolean hasIpAddresses = !isNullOrEmpty(command.getInetAddresses());
     if (willBeSubordinate != hasIpAddresses) {
@@ -122,8 +122,8 @@ public final class HostCreateFlow implements TransactionalFlow {
     }
     HostResource newHost =
         new HostResource.Builder()
-            .setCreationClientId(clientId)
-            .setPersistedCurrentSponsorClientId(clientId)
+            .setCreationRegistrarId(registrarId)
+            .setPersistedCurrentSponsorRegistrarId(registrarId)
             .setHostName(targetId)
             .setInetAddresses(command.getInetAddresses())
             .setRepoId(createRepoId(allocateId(), roidSuffix))

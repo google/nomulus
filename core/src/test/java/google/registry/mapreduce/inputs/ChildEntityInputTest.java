@@ -85,7 +85,7 @@ class ChildEntityInputTest {
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setDomain(domainA)
                 .setModificationTime(now)
-                .setClientId(domainA.getCreationClientId())
+                .setRegistrarId(domainA.getCreationRegistrarId())
                 .build());
     contactHistoryEntry =
         persistResource(
@@ -94,7 +94,7 @@ class ChildEntityInputTest {
                 .setType(HistoryEntry.Type.CONTACT_CREATE)
                 .setContact(contact)
                 .setModificationTime(now)
-                .setClientId(contact.getCreationClientId())
+                .setRegistrarId(contact.getCreationRegistrarId())
                 .build());
     oneTimeA =
         persistResource(
@@ -106,7 +106,7 @@ class ChildEntityInputTest {
                 .setCost(Money.of(USD, 1))
                 .setEventTime(now)
                 .setBillingTime(now.plusDays(5))
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setTargetId("a.tld")
                 .build());
     recurringA =
@@ -116,7 +116,7 @@ class ChildEntityInputTest {
                 .setReason(Reason.RENEW)
                 .setEventTime(now.plusYears(1))
                 .setRecurrenceEndTime(END_OF_TIME)
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setTargetId("a.tld")
                 .build());
   }
@@ -130,7 +130,7 @@ class ChildEntityInputTest {
                 .setType(HistoryEntry.Type.DOMAIN_CREATE)
                 .setDomain(domainB)
                 .setModificationTime(now)
-                .setClientId(domainB.getCreationClientId())
+                .setRegistrarId(domainB.getCreationRegistrarId())
                 .build());
     oneTimeB =
         persistResource(
@@ -142,7 +142,7 @@ class ChildEntityInputTest {
                 .setCost(Money.of(USD, 1))
                 .setEventTime(now)
                 .setBillingTime(now.plusDays(5))
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setTargetId("a.tld")
                 .build());
     recurringB =
@@ -152,7 +152,7 @@ class ChildEntityInputTest {
                 .setReason(Reason.RENEW)
                 .setEventTime(now.plusYears(1))
                 .setRecurrenceEndTime(END_OF_TIME)
-                .setClientId("TheRegistrar")
+                .setRegistrarId("TheRegistrar")
                 .setTargetId("a.tld")
                 .build());
   }
@@ -315,7 +315,7 @@ class ChildEntityInputTest {
                       .setDomain(domain)
                       .setType(HistoryEntry.Type.DOMAIN_CREATE)
                       .setModificationTime(now)
-                      .setClientId(domain.getCreationClientId())
+                      .setRegistrarId(domain.getCreationRegistrarId())
                       .build())
               .asHistoryEntry());
       persistResource(EppResourceIndex.create(getBucketKey(i), Key.create(domain)));

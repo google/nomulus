@@ -14,7 +14,7 @@
 
 package google.registry.flows.host;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyTargetIdCount;
 import static google.registry.model.EppResourceUtils.checkResourcesExist;
 
@@ -24,7 +24,7 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.CheckData.HostCheck;
@@ -47,7 +47,7 @@ import javax.inject.Inject;
 public final class HostCheckFlow implements Flow {
 
   @Inject ResourceCommand resourceCommand;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject ExtensionManager extensionManager;
   @Inject @Config("maxChecks") int maxChecks;
   @Inject Clock clock;
@@ -57,7 +57,7 @@ public final class HostCheckFlow implements Flow {
   @Override
   public final EppResponse run() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     ImmutableList<String> hostnames = ((Check) resourceCommand).getTargetIds();
     verifyTargetIdCount(hostnames, maxChecks);
     ImmutableSet<String> existingIds =

@@ -142,7 +142,7 @@ public abstract class PollMessage extends ImmutableObject
     return id;
   }
 
-  public String getClientId() {
+  public String getRegistrarId() {
     return clientId;
   }
 
@@ -219,8 +219,8 @@ public abstract class PollMessage extends ImmutableObject
       return thisCastToDerived();
     }
 
-    public B setClientId(String clientId) {
-      getInstance().clientId = clientId;
+    public B setRegistrarId(String registrarId) {
+      getInstance().clientId = registrarId;
       return thisCastToDerived();
     }
 
@@ -441,8 +441,8 @@ public abstract class PollMessage extends ImmutableObject
           transferResponse =
               new ContactTransferResponse.Builder()
                   .setContactId(contactId)
-                  .setGainingClientId(transferResponse.getGainingClientId())
-                  .setLosingClientId(transferResponse.getLosingClientId())
+                  .setGainingRegistrarId(transferResponse.getGainingRegistrarId())
+                  .setLosingRegistrarId(transferResponse.getLosingRegistrarId())
                   .setTransferStatus(transferResponse.getTransferStatus())
                   .setTransferRequestTime(transferResponse.getTransferRequestTime())
                   .setPendingTransferExpirationTime(
@@ -453,8 +453,8 @@ public abstract class PollMessage extends ImmutableObject
           transferResponse =
               new DomainTransferResponse.Builder()
                   .setFullyQualifiedDomainName(fullyQualifiedDomainName)
-                  .setGainingClientId(transferResponse.getGainingClientId())
-                  .setLosingClientId(transferResponse.getLosingClientId())
+                  .setGainingRegistrarId(transferResponse.getGainingRegistrarId())
+                  .setLosingRegistrarId(transferResponse.getLosingRegistrarId())
                   .setTransferStatus(transferResponse.getTransferStatus())
                   .setTransferRequestTime(transferResponse.getTransferRequestTime())
                   .setPendingTransferExpirationTime(

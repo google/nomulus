@@ -78,7 +78,7 @@ class DomainTransferRejectFlowTest
   @BeforeEach
   void setUp() {
     setEppInput("domain_transfer_reject.xml");
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     setupDomainWithPendingTransfer("example", "tld");
     clock.advanceOneMilli();
   }
@@ -295,7 +295,7 @@ class DomainTransferRejectFlowTest
 
   @TestOfyAndSql
   void testFailure_gainingClient() {
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
     EppException thrown =
         assertThrows(
             ResourceNotOwnedException.class, () -> doFailingTest("domain_transfer_reject.xml"));
@@ -304,7 +304,7 @@ class DomainTransferRejectFlowTest
 
   @TestOfyAndSql
   void testFailure_unrelatedClient() {
-    setClientIdForFlow("ClientZ");
+    setRegistrarIdForFlow("ClientZ");
     EppException thrown =
         assertThrows(
             ResourceNotOwnedException.class, () -> doFailingTest("domain_transfer_reject.xml"));
@@ -372,7 +372,7 @@ class DomainTransferRejectFlowTest
             .setType(DOMAIN_TRANSFER_REQUEST)
             .setDomain(domain)
             .setModificationTime(clock.nowUtc().minusDays(4))
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setDomainTransactionRecords(
                 ImmutableSet.of(previousSuccessRecord, notCancellableRecord))
             .build());

@@ -147,13 +147,13 @@ public final class RegistryLockGetAction implements JsonGetAction {
     return registrar;
   }
 
-  private ImmutableMap<String, ?> getLockedDomainsMap(String clientId)
+  private ImmutableMap<String, ?> getLockedDomainsMap(String registrarId)
       throws RegistrarAccessDeniedException {
     // Note: admins always have access to the locks page
     checkArgument(authResult.userAuthInfo().isPresent(), "User auth info must be present");
 
     boolean isAdmin = registrarAccessor.isAdmin();
-    Registrar registrar = getRegistrarAndVerifyLockAccess(registrarAccessor, clientId, isAdmin);
+    Registrar registrar = getRegistrarAndVerifyLockAccess(registrarAccessor, registrarId, isAdmin);
     User user = authResult.userAuthInfo().get().user();
 
     Optional<RegistrarContact> contactOptional = getContactMatchingLogin(user, registrar);
@@ -171,17 +171,17 @@ public final class RegistryLockGetAction implements JsonGetAction {
         EMAIL_PARAM,
         relevantEmail,
         PARAM_CLIENT_ID,
-        registrar.getClientId(),
+        registrar.getRegistrarId(),
         LOCKS_PARAM,
-        getLockedDomains(clientId, isAdmin));
+        getLockedDomains(registrarId, isAdmin));
   }
 
   private ImmutableList<ImmutableMap<String, ?>> getLockedDomains(
-      String clientId, boolean isAdmin) {
+      String registrarId, boolean isAdmin) {
     return jpaTm()
         .transact(
             () ->
-                RegistryLockDao.getLocksByRegistrarId(clientId).stream()
+                RegistryLockDao.getLocksByRegistrarId(registrarId).stream()
                     .filter(lock -> !lock.isLockRequestExpired(jpaTm().getTransactionTime()))
                     .map(lock -> lockToMap(lock, isAdmin))
                     .collect(toImmutableList()));

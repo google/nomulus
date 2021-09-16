@@ -171,9 +171,9 @@ class RdapJsonFormatterTest {
                                 .setTransferData(
                                     new DomainTransferData.Builder()
                                         .setTransferStatus(TransferStatus.PENDING)
-                                        .setGainingClientId("NewRegistrar")
+                                        .setGainingRegistrarId("NewRegistrar")
                                         .setTransferRequestTime(clock.nowUtc().minusDays(1))
-                                        .setLosingClientId("TheRegistrar")
+                                        .setLosingRegistrarId("TheRegistrar")
                                         .setPendingTransferExpirationTime(
                                             clock.nowUtc().plusYears(100))
                                         .setTransferredRegistrationExpirationTime(

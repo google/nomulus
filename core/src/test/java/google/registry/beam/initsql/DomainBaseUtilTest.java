@@ -106,7 +106,7 @@ public class DomainBaseUtilTest {
                 new DomainHistory.Builder()
                     .setDomainRepoId(domainKey.getName())
                     .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                    .setClientId("TheRegistrar")
+                    .setRegistrarId("TheRegistrar")
                     .setModificationTime(fakeClock.nowUtc().minusYears(1))
                     .build()));
     oneTimeBillKey = Key.create(historyEntryKey, BillingEvent.OneTime.class, 1);
@@ -122,9 +122,9 @@ public class DomainBaseUtilTest {
                 new DomainBase.Builder()
                     .setDomainName("example.com")
                     .setRepoId("4-COM")
-                    .setCreationClientId("a registrar")
+                    .setCreationRegistrarId("a registrar")
                     .setLastEppUpdateTime(fakeClock.nowUtc())
-                    .setLastEppUpdateClientId("AnotherRegistrar")
+                    .setLastEppUpdateRegistrarId("AnotherRegistrar")
                     .setLastTransferTime(fakeClock.nowUtc())
                     .setStatusValues(
                         ImmutableSet.of(
@@ -140,7 +140,7 @@ public class DomainBaseUtilTest {
                             DesignatedContact.create(DesignatedContact.Type.ADMIN, contact2Key)))
                     .setNameservers(ImmutableSet.of(hostKey))
                     .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
-                    .setPersistedCurrentSponsorClientId("losing")
+                    .setPersistedCurrentSponsorRegistrarId("losing")
                     .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
                     .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
                     .setDsData(
@@ -149,8 +149,8 @@ public class DomainBaseUtilTest {
                         LaunchNotice.create("tcnid", "validatorId", START_OF_TIME, START_OF_TIME))
                     .setTransferData(
                         new DomainTransferData.Builder()
-                            .setGainingClientId("gaining")
-                            .setLosingClientId("losing")
+                            .setGainingRegistrarId("gaining")
+                            .setLosingRegistrarId("losing")
                             .setPendingTransferExpirationTime(fakeClock.nowUtc())
                             .setServerApproveEntities(
                                 ImmutableSet.of(

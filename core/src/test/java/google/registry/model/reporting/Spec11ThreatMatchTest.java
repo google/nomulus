@@ -66,8 +66,8 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
     domain =
         new DomainBase()
             .asBuilder()
-            .setCreationClientId(REGISTRAR_ID)
-            .setPersistedCurrentSponsorClientId(REGISTRAR_ID)
+            .setCreationRegistrarId(REGISTRAR_ID)
+            .setPersistedCurrentSponsorRegistrarId(REGISTRAR_ID)
             .setDomainName("foo.tld")
             .setRepoId(domainRepoId)
             .setNameservers(hostVKey)
@@ -79,9 +79,9 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
     registrantContact =
         new ContactResource.Builder()
             .setRepoId("contact_id")
-            .setCreationClientId(REGISTRAR_ID)
+            .setCreationRegistrarId(REGISTRAR_ID)
             .setTransferData(new ContactTransferData.Builder().build())
-            .setPersistedCurrentSponsorClientId(REGISTRAR_ID)
+            .setPersistedCurrentSponsorRegistrarId(REGISTRAR_ID)
             .build();
 
     /** Create a host for the purpose of testing a foreign key reference in the Domain table. */
@@ -89,8 +89,8 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
         new HostResource.Builder()
             .setRepoId("host")
             .setHostName("ns1.example.com")
-            .setCreationClientId(REGISTRAR_ID)
-            .setPersistedCurrentSponsorClientId(REGISTRAR_ID)
+            .setCreationRegistrarId(REGISTRAR_ID)
+            .setPersistedCurrentSponsorRegistrarId(REGISTRAR_ID)
             .build();
 
     threat =

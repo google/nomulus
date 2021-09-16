@@ -237,8 +237,8 @@ public class ContactBase extends EppResource implements ResourceWithTransferData
     return disclose;
   }
 
-  public String getCurrentSponsorClientId() {
-    return getPersistedCurrentSponsorClientId();
+  public String getCurrentSponsorRegistrarId() {
+    return getPersistedCurrentSponsorRegistrarId();
   }
 
   @Override

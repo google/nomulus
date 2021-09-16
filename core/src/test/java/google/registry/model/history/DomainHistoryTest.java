@@ -200,13 +200,13 @@ public class DomainHistoryTest extends EntityTestCase {
             .setType(HistoryEntry.Type.DOMAIN_CREATE)
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .setModificationTime(fakeClock.nowUtc())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setTrid(Trid.create("ABC-123", "server-trid"))
             .setBySuperuser(false)
             .setReason("reason")
             .setRequestedByRegistrar(true)
             .setDomainRepoId(domain.getRepoId())
-            .setOtherClientId("otherClient")
+            .setOtherRegistrarId("otherClient")
             .setPeriod(Period.create(1, Period.Unit.YEARS))
             .build();
     jpaTm()
@@ -216,7 +216,7 @@ public class DomainHistoryTest extends EntityTestCase {
                   .put(
                       domain
                           .asBuilder()
-                          .setPersistedCurrentSponsorClientId("NewRegistrar")
+                          .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
                           .build());
               historyWithoutResource.beforeSqlSaveOnReplay();
               jpaTm().put(historyWithoutResource);
@@ -290,7 +290,7 @@ public class DomainHistoryTest extends EntityTestCase {
         .setType(HistoryEntry.Type.DOMAIN_CREATE)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
         .setModificationTime(fakeClock.nowUtc())
-        .setClientId("TheRegistrar")
+        .setRegistrarId("TheRegistrar")
         .setTrid(Trid.create("ABC-123", "server-trid"))
         .setBySuperuser(false)
         .setReason("reason")
@@ -298,7 +298,7 @@ public class DomainHistoryTest extends EntityTestCase {
         .setDomain(domain)
         .setDomainRepoId(domain.getRepoId())
         .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
-        .setOtherClientId("otherClient")
+        .setOtherRegistrarId("otherClient")
         .setPeriod(Period.create(1, Period.Unit.YEARS))
         .build();
   }

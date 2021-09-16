@@ -201,8 +201,8 @@ public abstract class RdapActionBase implements Runnable {
    * eligible to see deleted information. Admins can see all deleted information, while
    * authenticated registrars can see only their own deleted information. Note that if this method
    * returns true, it just means that some deleted information might be viewable. If this is a
-   * registrar request, the caller must still verify that the registrar can see each particular
-   * item by calling {@link RdapAuthorization#isAuthorizedForClientId}.
+   * registrar request, the caller must still verify that the registrar can see each particular item
+   * by calling {@link RdapAuthorization#isAuthorizedForRegistrar}.
    */
   boolean shouldIncludeDeleted() {
     // If includeDeleted is not specified, or set to false, we don't need to go any further.
@@ -212,7 +212,7 @@ public abstract class RdapActionBase implements Runnable {
     // Return true if we *might* be allowed to view any deleted info, meaning we're either an admin
     // or have access to at least one registrar's data
     return rdapAuthorization.role() == RdapAuthorization.Role.ADMINISTRATOR
-        || !rdapAuthorization.clientIds().isEmpty();
+        || !rdapAuthorization.registrarIds().isEmpty();
   }
 
   DeletedItemHandling getDeletedItemHandling() {
@@ -228,8 +228,8 @@ public abstract class RdapActionBase implements Runnable {
   boolean isAuthorized(EppResource eppResource) {
     return getRequestTime().isBefore(eppResource.getDeletionTime())
         || (shouldIncludeDeleted()
-            && rdapAuthorization.isAuthorizedForClientId(
-                eppResource.getPersistedCurrentSponsorClientId()));
+            && rdapAuthorization.isAuthorizedForRegistrar(
+                eppResource.getPersistedCurrentSponsorRegistrarId()));
   }
 
   /**
@@ -240,8 +240,8 @@ public abstract class RdapActionBase implements Runnable {
    */
   boolean isAuthorized(Registrar registrar) {
     return (registrar.isLiveAndPubliclyVisible()
-            || (shouldIncludeDeleted()
-                && rdapAuthorization.isAuthorizedForClientId(registrar.getClientId())));
+        || (shouldIncludeDeleted()
+            && rdapAuthorization.isAuthorizedForRegistrar(registrar.getRegistrarId())));
   }
 
   String canonicalizeName(String name) {

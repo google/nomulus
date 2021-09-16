@@ -39,7 +39,7 @@ public class PopulateNullRegistrarFieldsCommand extends MutatingCommand {
     for (Registrar registrar : Registrar.loadAll()) {
       Registrar.Builder changeBuilder = registrar.asBuilder();
       changeBuilder.setRegistrarName(
-          firstNonNull(registrar.getRegistrarName(), registrar.getClientId()));
+          firstNonNull(registrar.getRegistrarName(), registrar.getRegistrarId()));
 
       RegistrarAddress address = registrar.getLocalizedAddress();
       if (address == null) {

@@ -195,7 +195,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     return historyEntryBuilderFor(domain)
         .setPeriod(Period.create(1, Period.Unit.YEARS))
         .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
-        .setOtherClientId("TheRegistrar")
+        .setOtherRegistrarId("TheRegistrar")
         .build();
   }
 
@@ -204,7 +204,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
         .setType(HistoryEntry.Type.DOMAIN_CREATE)
         .setXmlBytes("<xml></xml>".getBytes(UTF_8))
         .setModificationTime(fakeClock.nowUtc())
-        .setClientId("TheRegistrar")
+        .setRegistrarId("TheRegistrar")
         .setTrid(Trid.create("ABC-123", "server-trid"))
         .setBySuperuser(false)
         .setReason("reason")

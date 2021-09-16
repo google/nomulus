@@ -14,7 +14,7 @@
 
 package google.registry.flows.domain;
 
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.verifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyOptionalAuthInfo;
 import static google.registry.flows.domain.DomainFlowUtils.addSecDnsExtensionIfPresent;
@@ -30,7 +30,7 @@ import com.google.common.net.InternetDomainName;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
 import google.registry.flows.Flow;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.annotations.ReportingSpec;
 import google.registry.flows.custom.DomainInfoFlowCustomLogic;
@@ -79,7 +79,7 @@ public final class DomainInfoFlow implements Flow {
   @Inject ResourceCommand resourceCommand;
   @Inject EppInput eppInput;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject Clock clock;
   @Inject EppResponse.Builder responseBuilder;
@@ -94,7 +94,7 @@ public final class DomainInfoFlow implements Flow {
     extensionManager.register(FeeInfoCommandExtensionV06.class);
     flowCustomLogic.beforeValidation();
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     DateTime now = clock.nowUtc();
     DomainBase domain = verifyExistence(
         DomainBase.class, targetId, loadByForeignKey(DomainBase.class, targetId, now));
@@ -112,12 +112,12 @@ public final class DomainInfoFlow implements Flow {
         DomainInfoData.newBuilder()
             .setFullyQualifiedDomainName(domain.getDomainName())
             .setRepoId(domain.getRepoId())
-            .setCurrentSponsorClientId(domain.getCurrentSponsorClientId())
+            .setCurrentSponsorClientId(domain.getCurrentSponsorRegistrarId())
             .setRegistrant(
                 transactIfJpaTm(() -> tm().loadByKey(domain.getRegistrant())).getContactId());
     // If authInfo is non-null, then the caller is authorized to see the full information since we
     // will have already verified the authInfo is valid.
-    if (clientId.equals(domain.getCurrentSponsorClientId()) || authInfo.isPresent()) {
+    if (registrarId.equals(domain.getCurrentSponsorRegistrarId()) || authInfo.isPresent()) {
       HostsRequest hostsRequest = ((Info) resourceCommand).getHostsRequest();
       infoBuilder
           .setStatusValues(domain.getStatusValues())
@@ -126,9 +126,9 @@ public final class DomainInfoFlow implements Flow {
           .setNameservers(hostsRequest.requestDelegated() ? domain.loadNameserverHostNames() : null)
           .setSubordinateHosts(
               hostsRequest.requestSubordinate() ? domain.getSubordinateHosts() : null)
-          .setCreationClientId(domain.getCreationClientId())
+          .setCreationClientId(domain.getCreationRegistrarId())
           .setCreationTime(domain.getCreationTime())
-          .setLastEppUpdateClientId(domain.getLastEppUpdateClientId())
+          .setLastEppUpdateClientId(domain.getLastEppUpdateRegistrarId())
           .setLastEppUpdateTime(domain.getLastEppUpdateTime())
           .setRegistrationExpirationTime(domain.getRegistrationExpirationTime())
           .setLastTransferTime(domain.getLastTransferTime())

@@ -16,7 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static google.registry.flows.FlowUtils.createHistoryKey;
-import static google.registry.flows.FlowUtils.validateClientIsLoggedIn;
+import static google.registry.flows.FlowUtils.validateRegistrarIsLoggedIn;
 import static google.registry.flows.ResourceFlowUtils.computeExDateForApprovalTime;
 import static google.registry.flows.ResourceFlowUtils.loadAndVerifyExistence;
 import static google.registry.flows.ResourceFlowUtils.verifyHasPendingTransfer;
@@ -40,7 +40,7 @@ import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.ExtensionManager;
-import google.registry.flows.FlowModule.ClientId;
+import google.registry.flows.FlowModule.RegistrarId;
 import google.registry.flows.FlowModule.Superuser;
 import google.registry.flows.FlowModule.TargetId;
 import google.registry.flows.TransactionalFlow;
@@ -89,7 +89,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
 
   @Inject ExtensionManager extensionManager;
   @Inject Optional<AuthInfo> authInfo;
-  @Inject @ClientId String clientId;
+  @Inject @RegistrarId String registrarId;
   @Inject @TargetId String targetId;
   @Inject @Superuser boolean isSuperuser;
   @Inject DomainHistory.Builder historyBuilder;
@@ -104,18 +104,18 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
   public final EppResponse run() throws EppException {
     extensionManager.register(MetadataExtension.class);
     extensionManager.validate();
-    validateClientIsLoggedIn(clientId);
+    validateRegistrarIsLoggedIn(registrarId);
     DateTime now = tm().getTransactionTime();
     DomainBase existingDomain = loadAndVerifyExistence(DomainBase.class, targetId, now);
     verifyOptionalAuthInfo(authInfo, existingDomain);
     verifyHasPendingTransfer(existingDomain);
-    verifyResourceOwnership(clientId, existingDomain);
+    verifyResourceOwnership(registrarId, existingDomain);
     String tld = existingDomain.getTld();
     if (!isSuperuser) {
-      checkAllowedAccessToTld(clientId, tld);
+      checkAllowedAccessToTld(registrarId, tld);
     }
     DomainTransferData transferData = existingDomain.getTransferData();
-    String gainingClientId = transferData.getGainingClientId();
+    String gainingRegistrarId = transferData.getGainingRegistrarId();
     // Create a transfer billing event for 1 year, unless the superuser extension was used to set
     // the transfer period to zero. There is not a transfer cost if the transfer period is zero.
     Key<DomainHistory> domainHistoryKey = createHistoryKey(existingDomain, DomainHistory.class);
@@ -127,7 +127,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                 new BillingEvent.OneTime.Builder()
                     .setReason(Reason.TRANSFER)
                     .setTargetId(targetId)
-                    .setClientId(gainingClientId)
+                    .setRegistrarId(gainingRegistrarId)
                     .setPeriodYears(1)
                     .setCost(getDomainRenewCost(targetId, transferData.getTransferRequestTime(), 1))
                     .setEventTime(now)
@@ -162,7 +162,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId(targetId)
-            .setClientId(gainingClientId)
+            .setRegistrarId(gainingRegistrarId)
             .setEventTime(newExpirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
             .setParent(domainHistoryKey)
@@ -171,7 +171,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
     PollMessage.Autorenew gainingClientAutorenewPollMessage =
         new PollMessage.Autorenew.Builder()
             .setTargetId(targetId)
-            .setClientId(gainingClientId)
+            .setRegistrarId(gainingRegistrarId)
             .setEventTime(newExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
@@ -206,10 +206,10 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
                                     oneTime)))
                     .orElseGet(ImmutableSet::of))
             .setLastEppUpdateTime(now)
-            .setLastEppUpdateClientId(clientId)
+            .setLastEppUpdateRegistrarId(registrarId)
             .build();
     Registry registry = Registry.get(existingDomain.getTld());
-    DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now, gainingClientId);
+    DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now, gainingRegistrarId);
     // Create a poll message for the gaining client.
     PollMessage gainingClientPollMessage =
         createGainingTransferPollMessage(
@@ -232,7 +232,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
   }
 
   private DomainHistory buildDomainHistory(
-      DomainBase newDomain, Registry registry, DateTime now, String gainingClientId) {
+      DomainBase newDomain, Registry registry, DateTime now, String gainingRegistrarId) {
     ImmutableSet<DomainTransactionRecord> cancelingRecords =
         createCancelingRecords(
             newDomain,
@@ -241,7 +241,7 @@ public final class DomainTransferApproveFlow implements TransactionalFlow {
             ImmutableSet.of(TRANSFER_SUCCESSFUL));
     return historyBuilder
         .setType(DOMAIN_TRANSFER_APPROVE)
-        .setOtherClientId(gainingClientId)
+        .setOtherRegistrarId(gainingRegistrarId)
         .setDomain(newDomain)
         .setDomainTransactionRecords(
             union(

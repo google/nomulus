@@ -135,7 +135,7 @@ public class DeleteLoadTestDataAction implements Runnable {
   }
 
   private void deleteContact(ContactResource contact) {
-    if (!LOAD_TEST_REGISTRARS.contains(contact.getPersistedCurrentSponsorClientId())) {
+    if (!LOAD_TEST_REGISTRARS.contains(contact.getPersistedCurrentSponsorRegistrarId())) {
       return;
     }
     // We cannot remove contacts from domains in the general case, so we cannot delete contacts
@@ -150,7 +150,7 @@ public class DeleteLoadTestDataAction implements Runnable {
   }
 
   private void deleteHost(HostResource host) {
-    if (!LOAD_TEST_REGISTRARS.contains(host.getPersistedCurrentSponsorClientId())) {
+    if (!LOAD_TEST_REGISTRARS.contains(host.getPersistedCurrentSponsorRegistrarId())) {
       return;
     }
     VKey<HostResource> hostVKey = host.createVKey();
@@ -198,7 +198,7 @@ public class DeleteLoadTestDataAction implements Runnable {
 
     @Override
     public final void map(EppResource resource) {
-      if (LOAD_TEST_REGISTRARS.contains(resource.getPersistedCurrentSponsorClientId())) {
+      if (LOAD_TEST_REGISTRARS.contains(resource.getPersistedCurrentSponsorRegistrarId())) {
         deleteResource(resource);
         getContext()
             .incrementCounter(

@@ -58,7 +58,7 @@ class ContactTransferRejectFlowTest
   @BeforeEach
   void setUp() {
     setEppInput("contact_transfer_reject.xml");
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     setupContactWithPendingTransfer();
     clock.advanceOneMilli();
   }
@@ -80,12 +80,14 @@ class ContactTransferRejectFlowTest
 
     // Transfer should have failed. Verify correct fields were set.
     contact = reloadResourceByForeignKey();
-    assertAboutContacts().that(contact)
-        .hasCurrentSponsorClientId("TheRegistrar").and()
-        .hasLastTransferTimeNotEqualTo(clock.nowUtc()).and()
+    assertAboutContacts()
+        .that(contact)
+        .hasCurrentSponsorRegistrarId("TheRegistrar")
+        .and()
+        .hasLastTransferTimeNotEqualTo(clock.nowUtc())
+        .and()
         .hasOneHistoryEntryEachOfTypes(
-            HistoryEntry.Type.CONTACT_TRANSFER_REQUEST,
-            HistoryEntry.Type.CONTACT_TRANSFER_REJECT);
+            HistoryEntry.Type.CONTACT_TRANSFER_REQUEST, HistoryEntry.Type.CONTACT_TRANSFER_REJECT);
     assertThat(contact.getTransferData())
         .isEqualTo(
             originalTransferData.copyConstantFieldsToBuilder()
@@ -218,7 +220,7 @@ class ContactTransferRejectFlowTest
 
   @TestOfyAndSql
   void testFailure_gainingClient() {
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
     EppException thrown =
         assertThrows(
             ResourceNotOwnedException.class, () -> doFailingTest("contact_transfer_reject.xml"));
@@ -227,7 +229,7 @@ class ContactTransferRejectFlowTest
 
   @TestOfyAndSql
   void testFailure_unrelatedClient() {
-    setClientIdForFlow("ClientZ");
+    setRegistrarIdForFlow("ClientZ");
     EppException thrown =
         assertThrows(
             ResourceNotOwnedException.class, () -> doFailingTest("contact_transfer_reject.xml"));

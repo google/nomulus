@@ -181,7 +181,7 @@ class DeleteExpiredDomainsActionTest {
                 .setType(DOMAIN_CREATE)
                 .setDomain(pendingExpirationDomain)
                 .setModificationTime(clock.nowUtc().minusMonths(9))
-                .setClientId(pendingExpirationDomain.getCreationClientId())
+                .setRegistrarId(pendingExpirationDomain.getCreationRegistrarId())
                 .build());
     BillingEvent.Recurring autorenewBillingEvent =
         persistResource(createAutorenewBillingEvent(createHistoryEntry).build());
@@ -205,7 +205,7 @@ class DeleteExpiredDomainsActionTest {
         .setReason(Reason.RENEW)
         .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
         .setTargetId("fizz.tld")
-        .setClientId("TheRegistrar")
+        .setRegistrarId("TheRegistrar")
         .setEventTime(clock.nowUtc().plusYears(1))
         .setRecurrenceEndTime(END_OF_TIME)
         .setParent(createHistoryEntry);
@@ -215,7 +215,7 @@ class DeleteExpiredDomainsActionTest {
       HistoryEntry createHistoryEntry) {
     return new PollMessage.Autorenew.Builder()
         .setTargetId("fizz.tld")
-        .setClientId("TheRegistrar")
+        .setRegistrarId("TheRegistrar")
         .setEventTime(clock.nowUtc().plusYears(1))
         .setAutorenewEndTime(END_OF_TIME)
         .setParent(createHistoryEntry);

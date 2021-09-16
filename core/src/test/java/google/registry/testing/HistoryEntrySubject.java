@@ -51,12 +51,12 @@ public class HistoryEntrySubject extends Subject {
     return hasValue(type, actual.getType(), "getType()");
   }
 
-  public And<HistoryEntrySubject> hasClientId(String clientId) {
-    return hasValue(clientId, actual.getClientId(), "getClientId()");
+  public And<HistoryEntrySubject> hasRegistrarId(String registrarId) {
+    return hasValue(registrarId, actual.getRegistrarId(), "getRegistrarId()");
   }
 
   public And<HistoryEntrySubject> hasOtherClientId(String otherClientId) {
-    return hasValue(otherClientId, actual.getOtherClientId(), "getOtherClientId()");
+    return hasValue(otherClientId, actual.getOtherRegistrarId(), "getOtherRegistrarId()");
   }
 
   public And<HistoryEntrySubject> hasModificationTime(DateTime modificationTime) {

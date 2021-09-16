@@ -100,7 +100,7 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
     persistResource(
         newContactResource(targetId)
             .asBuilder()
-            .setPersistedCurrentSponsorClientId("NewRegistrar")
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
             .build());
     ResourceCreateContentionException thrown =
         assertThrows(ResourceCreateContentionException.class, this::runFlow);

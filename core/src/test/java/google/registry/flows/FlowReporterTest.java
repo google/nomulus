@@ -60,7 +60,7 @@ class FlowReporterTest {
   void beforeEach() {
     LoggerConfig.getConfig(FlowReporter.class).addHandler(handler);
     flowReporter.trid = Trid.create("client-123", "server-456");
-    flowReporter.clientId = "TheRegistrar";
+    flowReporter.registrarId = "TheRegistrar";
     flowReporter.inputXmlBytes = "<xml/>".getBytes(UTF_8);
     flowReporter.flowClass = TestCommandFlow.class;
     flowReporter.eppInput = mock(EppInput.class);
@@ -101,7 +101,7 @@ class FlowReporterTest {
 
   @Test
   void testRecordToLogs_metadata_noClientId() throws Exception {
-    flowReporter.clientId = "";
+    flowReporter.registrarId = "";
     flowReporter.recordToLogs();
     Map<String, Object> json =
         parseJsonMap(findFirstLogMessageByPrefix(handler, "FLOW-LOG-SIGNATURE-METADATA: "));

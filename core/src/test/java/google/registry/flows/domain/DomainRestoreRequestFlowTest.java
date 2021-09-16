@@ -117,7 +117,7 @@ class DomainRestoreRequestFlowTest
             new DomainHistory.Builder()
                 .setType(HistoryEntry.Type.DOMAIN_DELETE)
                 .setModificationTime(clock.nowUtc())
-                .setClientId(domain.getCurrentSponsorClientId())
+                .setRegistrarId(domain.getCurrentSponsorRegistrarId())
                 .setDomain(domain)
                 .build());
     persistResource(
@@ -136,7 +136,7 @@ class DomainRestoreRequestFlowTest
             .setDeletePollMessage(
                 persistResource(
                         new PollMessage.OneTime.Builder()
-                            .setClientId("TheRegistrar")
+                            .setRegistrarId("TheRegistrar")
                             .setEventTime(clock.nowUtc().plusDays(5))
                             .setParent(historyEntry)
                             .build())
@@ -190,7 +190,7 @@ class DomainRestoreRequestFlowTest
         "TheRegistrar",
         new PollMessage.Autorenew.Builder()
             .setTargetId("example.tld")
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
@@ -203,7 +203,7 @@ class DomainRestoreRequestFlowTest
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId("example.tld")
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(expirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
             .setParent(historyEntryDomainRestore)
@@ -211,7 +211,7 @@ class DomainRestoreRequestFlowTest
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.RESTORE)
             .setTargetId("example.tld")
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setCost(Money.of(USD, 17))
             .setPeriodYears(1)
             .setEventTime(clock.nowUtc())
@@ -259,7 +259,7 @@ class DomainRestoreRequestFlowTest
         "TheRegistrar",
         new PollMessage.Autorenew.Builder()
             .setTargetId("example.tld")
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(domain.getRegistrationExpirationTime())
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
@@ -272,7 +272,7 @@ class DomainRestoreRequestFlowTest
             .setReason(Reason.RENEW)
             .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
             .setTargetId("example.tld")
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(newExpirationTime)
             .setRecurrenceEndTime(END_OF_TIME)
             .setParent(historyEntryDomainRestore)
@@ -280,7 +280,7 @@ class DomainRestoreRequestFlowTest
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.RESTORE)
             .setTargetId("example.tld")
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setCost(Money.of(USD, 17))
             .setPeriodYears(1)
             .setEventTime(clock.nowUtc())
@@ -290,7 +290,7 @@ class DomainRestoreRequestFlowTest
         new BillingEvent.OneTime.Builder()
             .setReason(Reason.RENEW)
             .setTargetId("example.tld")
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setCost(Money.of(USD, 11))
             .setPeriodYears(1)
             .setEventTime(clock.nowUtc())
@@ -498,7 +498,7 @@ class DomainRestoreRequestFlowTest
   @TestOfyAndSql
   void testFailure_suspendedRegistrarCantRestoreDomain() {
     persistResource(
-        Registrar.loadByClientId("TheRegistrar")
+        Registrar.loadByRegistrarId("TheRegistrar")
             .get()
             .asBuilder()
             .setState(State.SUSPENDED)
@@ -511,7 +511,7 @@ class DomainRestoreRequestFlowTest
   @TestOfyAndSql
   void testFailure_pendingRegistrarCantRestoreDomain() {
     persistResource(
-        Registrar.loadByClientId("TheRegistrar")
+        Registrar.loadByRegistrarId("TheRegistrar")
             .get()
             .asBuilder()
             .setState(State.PENDING)
@@ -668,7 +668,7 @@ class DomainRestoreRequestFlowTest
 
   @TestOfyAndSql
   void testFailure_unauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistPendingDeleteDomain();
     EppException thrown = assertThrows(ResourceNotOwnedException.class, this::runFlow);
     assertAboutEppExceptions().that(thrown).marshalsToXml();
@@ -676,7 +676,7 @@ class DomainRestoreRequestFlowTest
 
   @TestOfyAndSql
   void testSuccess_superuserUnauthorizedClient() throws Exception {
-    sessionMetadata.setClientId("NewRegistrar");
+    sessionMetadata.setRegistrarId("NewRegistrar");
     persistPendingDeleteDomain();
     EppException thrown =
         assertThrows(

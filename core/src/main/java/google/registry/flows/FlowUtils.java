@@ -47,8 +47,8 @@ public final class FlowUtils {
   private FlowUtils() {}
 
   /** Validate that there is a logged in client. */
-  public static void validateClientIsLoggedIn(String clientId) throws EppException {
-    if (clientId.isEmpty()) {
+  public static void validateRegistrarIsLoggedIn(String registrarId) throws EppException {
+    if (registrarId.isEmpty()) {
       throw new NotLoggedInException();
     }
   }

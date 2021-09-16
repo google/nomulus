@@ -114,14 +114,14 @@ class AuthenticatedRegistrarAccessorTest {
     persistResource(
         loadRegistrar(REAL_CLIENT_ID_WITHOUT_CONTACT)
             .asBuilder()
-            .setClientId(OTE_CLIENT_ID_WITHOUT_CONTACT)
+            .setRegistrarId(OTE_CLIENT_ID_WITHOUT_CONTACT)
             .setType(Registrar.Type.OTE)
             .setIanaIdentifier(null)
             .build());
     persistResource(
         loadRegistrar(REAL_CLIENT_ID_WITHOUT_CONTACT)
             .asBuilder()
-            .setClientId(ADMIN_CLIENT_ID)
+            .setRegistrarId(ADMIN_CLIENT_ID)
             .setType(Registrar.Type.OTE)
             .setIanaIdentifier(null)
             .build());
@@ -261,7 +261,7 @@ class AuthenticatedRegistrarAccessorTest {
   @TestOfyAndSql
   void testGetRegistrarForUser_registrarIsDisabled_isNotAdmin() {
     persistResource(
-        Registrar.loadByClientId("TheRegistrar")
+        Registrar.loadByRegistrarId("TheRegistrar")
             .get()
             .asBuilder()
             .setState(State.DISABLED)
@@ -326,7 +326,7 @@ class AuthenticatedRegistrarAccessorTest {
   @TestOfyAndSql
   void testGetRegistrarForUser_registrarIsDisabled_isAdmin() throws Exception {
     persistResource(
-        Registrar.loadByClientId("NewRegistrar")
+        Registrar.loadByRegistrarId("NewRegistrar")
             .get()
             .asBuilder()
             .setState(State.DISABLED)
@@ -358,19 +358,19 @@ class AuthenticatedRegistrarAccessorTest {
     verifyNoInteractions(lazyGroupsConnection);
   }
 
-  private void expectGetRegistrarSuccess(String clientId, AuthResult authResult, String message)
+  private void expectGetRegistrarSuccess(String registrarId, AuthResult authResult, String message)
       throws Exception {
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             authResult, ADMIN_CLIENT_ID, SUPPORT_GROUP, lazyGroupsConnection);
 
     // make sure loading the registrar succeeds and returns a value
-    assertThat(registrarAccessor.getRegistrar(clientId)).isNotNull();
+    assertThat(registrarAccessor.getRegistrar(registrarId)).isNotNull();
     assertAboutLogs().that(testLogHandler).hasLogAtLevelWithMessage(Level.INFO, message);
   }
 
   private void expectGetRegistrarFailure(
-      String clientId, AuthResult authResult, String message) {
+      String registrarId, AuthResult authResult, String message) {
     AuthenticatedRegistrarAccessor registrarAccessor =
         new AuthenticatedRegistrarAccessor(
             authResult, ADMIN_CLIENT_ID, SUPPORT_GROUP, lazyGroupsConnection);
@@ -378,7 +378,8 @@ class AuthenticatedRegistrarAccessorTest {
     // make sure getRegistrar fails
     RegistrarAccessDeniedException exception =
         assertThrows(
-            RegistrarAccessDeniedException.class, () -> registrarAccessor.getRegistrar(clientId));
+            RegistrarAccessDeniedException.class,
+            () -> registrarAccessor.getRegistrar(registrarId));
 
     assertThat(exception).hasMessageThat().contains(message);
   }

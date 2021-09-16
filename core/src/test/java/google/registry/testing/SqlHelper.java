@@ -60,8 +60,8 @@ public class SqlHelper {
     return jpaTm().transact(() -> RegistryLockDao.getByRevisionId(revisionId));
   }
 
-  public static Registrar saveRegistrar(String clientId) {
-    Registrar registrar = makeRegistrar1().asBuilder().setClientId(clientId).build();
+  public static Registrar saveRegistrar(String registrarId) {
+    Registrar registrar = makeRegistrar1().asBuilder().setRegistrarId(registrarId).build();
     jpaTm().transact(() -> jpaTm().insert(registrar));
     return jpaTm().transact(() -> jpaTm().loadByKey(registrar.createVKey()));
   }

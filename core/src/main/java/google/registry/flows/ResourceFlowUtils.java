@@ -69,10 +69,10 @@ public final class ResourceFlowUtils {
    */
   private static final int FAILFAST_CHECK_COUNT = 5;
 
-  /** Check that the given clientId corresponds to the owner of given resource. */
-  public static void verifyResourceOwnership(String myClientId, EppResource resource)
+  /** Check that the given registrarId corresponds to the owner of given resource. */
+  public static void verifyResourceOwnership(String myRegistrarId, EppResource resource)
       throws EppException {
-    if (!myClientId.equals(resource.getPersistedCurrentSponsorClientId())) {
+    if (!myRegistrarId.equals(resource.getPersistedCurrentSponsorRegistrarId())) {
       throw new ResourceNotOwnedException();
     }
   }
@@ -138,8 +138,8 @@ public final class ResourceFlowUtils {
   }
 
   public static <R extends EppResource & ResourceWithTransferData> void verifyTransferInitiator(
-      String clientId, R resource) throws NotTransferInitiatorException {
-    if (!resource.getTransferData().getGainingClientId().equals(clientId)) {
+      String registrarId, R resource) throws NotTransferInitiatorException {
+    if (!resource.getTransferData().getGainingRegistrarId().equals(registrarId)) {
       throw new NotTransferInitiatorException();
     }
   }
@@ -155,12 +155,12 @@ public final class ResourceFlowUtils {
   }
 
   public static <R extends EppResource> void verifyResourceDoesNotExist(
-      Class<R> clazz, String targetId, DateTime now, String clientId) throws EppException {
+      Class<R> clazz, String targetId, DateTime now, String registrarId) throws EppException {
     VKey<R> key = loadAndGetKey(clazz, targetId, now);
     if (key != null) {
       R resource = tm().loadByKey(key);
       // These are similar exceptions, but we can track them internally as log-based metrics.
-      if (Objects.equals(clientId, resource.getPersistedCurrentSponsorClientId())) {
+      if (Objects.equals(registrarId, resource.getPersistedCurrentSponsorRegistrarId())) {
         throw new ResourceAlreadyExistsForThisClientException(targetId);
       } else {
         throw new ResourceCreateContentionException(targetId);

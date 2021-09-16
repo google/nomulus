@@ -97,9 +97,9 @@ public class DomainBaseSqlTest {
         new DomainBase.Builder()
             .setDomainName("example.com")
             .setRepoId("4-COM")
-            .setCreationClientId("registrar1")
+            .setCreationRegistrarId("registrar1")
             .setLastEppUpdateTime(fakeClock.nowUtc())
-            .setLastEppUpdateClientId("registrar2")
+            .setLastEppUpdateRegistrarId("registrar2")
             .setLastTransferTime(fakeClock.nowUtc())
             .setNameservers(host1VKey)
             .setStatusValues(
@@ -113,7 +113,7 @@ public class DomainBaseSqlTest {
             .setRegistrant(contactKey)
             .setContacts(ImmutableSet.of(DesignatedContact.create(Type.ADMIN, contact2Key)))
             .setSubordinateHosts(ImmutableSet.of("ns1.example.com"))
-            .setPersistedCurrentSponsorClientId("registrar3")
+            .setPersistedCurrentSponsorRegistrarId("registrar3")
             .setRegistrationExpirationTime(fakeClock.nowUtc().plusYears(1))
             .setAuthInfo(DomainAuthInfo.create(PasswordAuth.create("password")))
             .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
@@ -129,8 +129,8 @@ public class DomainBaseSqlTest {
         new HostResource.Builder()
             .setRepoId("host1")
             .setHostName("ns1.example.com")
-            .setCreationClientId("registrar1")
-            .setPersistedCurrentSponsorClientId("registrar2")
+            .setCreationRegistrarId("registrar1")
+            .setPersistedCurrentSponsorRegistrarId("registrar2")
             .build();
     contact = makeContact("contact_id1");
     contact2 = makeContact("contact_id2");
@@ -402,9 +402,9 @@ public class DomainBaseSqlTest {
   static ContactResource makeContact(String repoId) {
     return new ContactResource.Builder()
         .setRepoId(repoId)
-        .setCreationClientId("registrar1")
+        .setCreationRegistrarId("registrar1")
         .setTransferData(new ContactTransferData.Builder().build())
-        .setPersistedCurrentSponsorClientId("registrar1")
+        .setPersistedCurrentSponsorRegistrarId("registrar1")
         .build();
   }
 
@@ -442,7 +442,7 @@ public class DomainBaseSqlTest {
                       .setPeriod(Period.create(1, Period.Unit.YEARS))
                       .setModificationTime(DateTime.now(UTC))
                       .setDomainRepoId("4-COM")
-                      .setClientId("registrar1")
+                      .setRegistrarId("registrar1")
                       // These are non-null, but I don't think some tests set them.
                       .setReason("felt like it")
                       .setRequestedByRegistrar(false)
@@ -454,7 +454,7 @@ public class DomainBaseSqlTest {
                       .setReason(Reason.RENEW)
                       .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                       .setTargetId("example.com")
-                      .setClientId("registrar1")
+                      .setRegistrarId("registrar1")
                       .setDomainRepoId("4-COM")
                       .setDomainHistoryRevisionId(1L)
                       .setEventTime(DateTime.now(UTC).plusYears(1))
@@ -464,14 +464,14 @@ public class DomainBaseSqlTest {
               PollMessage.Autorenew autorenewPollMessage =
                   new PollMessage.Autorenew.Builder()
                       .setId(300L)
-                      .setClientId("registrar1")
+                      .setRegistrarId("registrar1")
                       .setEventTime(DateTime.now(UTC).plusYears(1))
                       .setParent(historyEntry)
                       .build();
               PollMessage.OneTime deletePollMessage =
                   new PollMessage.OneTime.Builder()
                       .setId(400L)
-                      .setClientId("registrar1")
+                      .setRegistrarId("registrar1")
                       .setEventTime(DateTime.now(UTC).plusYears(1))
                       .setParent(historyEntry)
                       .build();
@@ -481,7 +481,7 @@ public class DomainBaseSqlTest {
                       // Use SERVER_STATUS so we don't have to add a period.
                       .setReason(Reason.SERVER_STATUS)
                       .setTargetId("example.com")
-                      .setClientId("registrar1")
+                      .setRegistrarId("registrar1")
                       .setDomainRepoId("4-COM")
                       .setBillingTime(DateTime.now(UTC))
                       .setCost(Money.of(USD, 100))
@@ -572,7 +572,7 @@ public class DomainBaseSqlTest {
                       .setPeriod(Period.create(1, Period.Unit.YEARS))
                       .setModificationTime(DateTime.now(UTC))
                       .setDomainRepoId("4-COM")
-                      .setClientId("registrar1")
+                      .setRegistrarId("registrar1")
                       // These are non-null, but I don't think some tests set them.
                       .setReason("felt like it")
                       .setRequestedByRegistrar(false)
@@ -584,7 +584,7 @@ public class DomainBaseSqlTest {
                       .setReason(Reason.RENEW)
                       .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
                       .setTargetId("example.com")
-                      .setClientId("registrar1")
+                      .setRegistrarId("registrar1")
                       .setDomainRepoId("4-COM")
                       .setDomainHistoryRevisionId(1L)
                       .setEventTime(DateTime.now(UTC).plusYears(1))
@@ -594,14 +594,14 @@ public class DomainBaseSqlTest {
               PollMessage.Autorenew autorenewPollMessage =
                   new PollMessage.Autorenew.Builder()
                       .setId(300L)
-                      .setClientId("registrar1")
+                      .setRegistrarId("registrar1")
                       .setEventTime(DateTime.now(UTC).plusYears(1))
                       .setParent(historyEntry)
                       .build();
               PollMessage.OneTime deletePollMessage =
                   new PollMessage.OneTime.Builder()
                       .setId(400L)
-                      .setClientId("registrar1")
+                      .setRegistrarId("registrar1")
                       .setEventTime(DateTime.now(UTC).plusYears(1))
                       .setParent(historyEntry)
                       .build();
@@ -611,7 +611,7 @@ public class DomainBaseSqlTest {
                       // Use SERVER_STATUS so we don't have to add a period.
                       .setReason(Reason.SERVER_STATUS)
                       .setTargetId("example.com")
-                      .setClientId("registrar1")
+                      .setRegistrarId("registrar1")
                       .setDomainRepoId("4-COM")
                       .setBillingTime(DateTime.now(UTC))
                       .setCost(Money.of(USD, 100))
@@ -623,8 +623,8 @@ public class DomainBaseSqlTest {
                       new DomainTransferData.Builder()
                           .setTransferRequestTrid(Trid.create("foo", "bar"))
                           .setTransferRequestTime(fakeClock.nowUtc())
-                          .setGainingClientId("registrar2")
-                          .setLosingClientId("registrar1")
+                          .setGainingRegistrarId("registrar2")
+                          .setLosingRegistrarId("registrar1")
                           .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1)),
                       ImmutableSet.of(oneTimeBillingEvent, billEvent, autorenewPollMessage),
                       Period.create(0, Unit.YEARS));

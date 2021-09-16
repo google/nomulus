@@ -303,7 +303,7 @@ class AllocationTokenFlowUtilsTest {
         DomainCommand.Create command,
         AllocationToken token,
         Registry registry,
-        String clientId,
+        String registrarId,
         DateTime now) {
       throw new IllegalStateException("failed for tests");
     }
@@ -312,7 +312,7 @@ class AllocationTokenFlowUtilsTest {
     public ImmutableMap<InternetDomainName, String> checkDomainsWithToken(
         ImmutableList<InternetDomainName> domainNames,
         AllocationToken tokenEntity,
-        String clientId,
+        String registrarId,
         DateTime now) {
       throw new IllegalStateException("failed for tests");
     }
@@ -325,7 +325,7 @@ class AllocationTokenFlowUtilsTest {
     public ImmutableMap<InternetDomainName, String> checkDomainsWithToken(
         ImmutableList<InternetDomainName> domainNames,
         AllocationToken tokenEntity,
-        String clientId,
+        String registrarId,
         DateTime now) {
       return Maps.toMap(domainNames, domain -> domain.toString().contains("bunny") ? "fufu" : "");
     }

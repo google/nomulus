@@ -53,7 +53,7 @@ class DomainTransferQueryFlowTest
   @BeforeEach
   void beforeEach() {
     setEppInput("domain_transfer_query.xml");
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
     setupDomainWithPendingTransfer("example", "tld");
   }
 
@@ -95,20 +95,20 @@ class DomainTransferQueryFlowTest
 
   @TestOfyAndSql
   void testSuccess_sponsoringClient() throws Exception {
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     doSuccessfulTest("domain_transfer_query.xml", "domain_transfer_query_response.xml", 1);
   }
 
   @TestOfyAndSql
   void testSuccess_domainAuthInfo() throws Exception {
-    setClientIdForFlow("ClientZ");
+    setRegistrarIdForFlow("ClientZ");
     doSuccessfulTest(
         "domain_transfer_query_domain_authinfo.xml", "domain_transfer_query_response.xml", 1);
   }
 
   @TestOfyAndSql
   void testSuccess_contactAuthInfo() throws Exception {
-    setClientIdForFlow("ClientZ");
+    setRegistrarIdForFlow("ClientZ");
     doSuccessfulTest(
         "domain_transfer_query_contact_authinfo.xml", "domain_transfer_query_response.xml", 1);
   }
@@ -214,7 +214,7 @@ class DomainTransferQueryFlowTest
 
   @TestOfyAndSql
   void testFailure_unrelatedClient() {
-    setClientIdForFlow("ClientZ");
+    setRegistrarIdForFlow("ClientZ");
     EppException thrown =
         assertThrows(
             NotAuthorizedToViewTransferException.class,

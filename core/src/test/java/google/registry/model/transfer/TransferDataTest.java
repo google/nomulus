@@ -84,8 +84,8 @@ public class TransferDataTest {
         new DomainTransferData.Builder()
             .setTransferRequestTrid(Trid.create("server-trid", "client-trid"))
             .setTransferRequestTime(now)
-            .setGainingClientId("NewRegistrar")
-            .setLosingClientId("TheRegistrar")
+            .setGainingRegistrarId("NewRegistrar")
+            .setLosingRegistrarId("TheRegistrar")
             // Test must use a non-1-year period, since that's the default value.
             .setTransferPeriod(Period.create(5, Period.Unit.YEARS))
             .build();

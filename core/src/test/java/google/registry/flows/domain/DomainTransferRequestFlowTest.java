@@ -166,7 +166,7 @@ class DomainTransferRequestFlowTest
   @BeforeEach
   void setUp() {
     setEppInput("domain_transfer_request.xml");
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
   }
 
   private void assertTransferRequested(
@@ -177,7 +177,7 @@ class DomainTransferRequestFlowTest
       throws Exception {
     assertAboutDomains()
         .that(domain)
-        .hasCurrentSponsorClientId("TheRegistrar")
+        .hasCurrentSponsorRegistrarId("TheRegistrar")
         .and()
         .hasStatusValue(StatusValue.PENDING_TRANSFER)
         .and()
@@ -196,8 +196,8 @@ class DomainTransferRequestFlowTest
             domain
                 .getTransferData()
                 .asBuilder()
-                .setGainingClientId("NewRegistrar")
-                .setLosingClientId("TheRegistrar")
+                .setGainingRegistrarId("NewRegistrar")
+                .setLosingRegistrarId("TheRegistrar")
                 .setTransferRequestTrid(expectedTrid)
                 .setTransferRequestTime(clock.nowUtc())
                 .setTransferPeriod(expectedPeriod)
@@ -214,7 +214,7 @@ class DomainTransferRequestFlowTest
       throws Exception {
     assertAboutDomains()
         .that(domain)
-        .hasCurrentSponsorClientId("NewRegistrar")
+        .hasCurrentSponsorRegistrarId("NewRegistrar")
         .and()
         .hasLastTransferTime(automaticTransferTime)
         .and()
@@ -226,8 +226,8 @@ class DomainTransferRequestFlowTest
     assertThat(domain.getTransferData())
         .isEqualTo(
             new DomainTransferData.Builder()
-                .setGainingClientId("NewRegistrar")
-                .setLosingClientId("TheRegistrar")
+                .setGainingRegistrarId("NewRegistrar")
+                .setLosingRegistrarId("TheRegistrar")
                 .setTransferRequestTrid(expectedTrid)
                 .setTransferRequestTime(clock.nowUtc())
                 .setTransferPeriod(expectedPeriod)
@@ -268,7 +268,7 @@ class DomainTransferRequestFlowTest
                   .setEventTime(implicitTransferTime)
                   .setBillingTime(
                       implicitTransferTime.plus(registry.getTransferGracePeriodLength()))
-                  .setClientId("NewRegistrar")
+                  .setRegistrarId("NewRegistrar")
                   .setCost(transferCost.orElse(Money.of(USD, 11)))
                   .setPeriodYears(1)
                   .setParent(historyEntryTransferRequest)
@@ -323,7 +323,7 @@ class DomainTransferRequestFlowTest
         Sets.union(expectedServeApproveBillingEvents, extraBillingEvents));
     // The domain's autorenew billing event should still point to the losing client's event.
     BillingEvent.Recurring domainAutorenewEvent = loadByKey(domain.getAutorenewBillingEvent());
-    assertThat(domainAutorenewEvent.getClientId()).isEqualTo("TheRegistrar");
+    assertThat(domainAutorenewEvent.getRegistrarId()).isEqualTo("TheRegistrar");
     assertThat(domainAutorenewEvent.getRecurrenceEndTime()).isEqualTo(implicitTransferTime);
     // The original grace periods should remain untouched.
     assertThat(domain.getGracePeriods()).containsExactlyElementsIn(originalGracePeriods);
@@ -804,7 +804,7 @@ class DomainTransferRequestFlowTest
     setupDomain("example", "tld");
     clock.advanceOneMilli();
     persistResource(
-        Registrar.loadByClientId("NewRegistrar")
+        Registrar.loadByRegistrarId("NewRegistrar")
             .get()
             .asBuilder()
             .setState(State.SUSPENDED)
@@ -821,7 +821,7 @@ class DomainTransferRequestFlowTest
     setupDomain("example", "tld");
     clock.advanceOneMilli();
     persistResource(
-        Registrar.loadByClientId("NewRegistrar")
+        Registrar.loadByRegistrarId("NewRegistrar")
             .get()
             .asBuilder()
             .setState(State.PENDING)
@@ -868,7 +868,7 @@ class DomainTransferRequestFlowTest
     setupDomain("example", "tld");
     clock.advanceOneMilli();
     persistResource(
-        Registrar.loadByClientId("TheRegistrar")
+        Registrar.loadByRegistrarId("TheRegistrar")
             .get()
             .asBuilder()
             .setState(State.SUSPENDED)
@@ -1129,7 +1129,7 @@ class DomainTransferRequestFlowTest
         new BillingEvent.Cancellation.Builder()
             .setReason(Reason.RENEW)
             .setTargetId("example.tld")
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             // The cancellation happens at the moment of transfer.
             .setEventTime(clock.nowUtc().plus(Registry.get("tld").getAutomaticTransferLength()))
             .setBillingTime(autorenewTime.plus(Registry.get("tld").getAutoRenewGracePeriodLength()))
@@ -1156,7 +1156,7 @@ class DomainTransferRequestFlowTest
         new BillingEvent.Cancellation.Builder()
             .setReason(Reason.RENEW)
             .setTargetId("example.tld")
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             // The cancellation happens at the moment of transfer.
             .setEventTime(clock.nowUtc().plus(Registry.get("tld").getAutomaticTransferLength()))
             .setBillingTime(
@@ -1421,7 +1421,7 @@ class DomainTransferRequestFlowTest
   @TestOfyAndSql
   void testFailure_sponsoringClient() {
     setupDomain("example", "tld");
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     EppException thrown =
         assertThrows(
             ObjectAlreadySponsoredException.class,

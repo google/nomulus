@@ -57,32 +57,35 @@ public class RegistrarToXjcConverterTest {
 
   @BeforeEach
   void beforeEach() {
-    registrar = new Registrar.Builder()
-        .setClientId("GoblinMarket")
-        .setRegistrarName("Maids heard the goblins cry: Come buy, come buy:")
-        .setType(Registrar.Type.REAL)
-        .setIanaIdentifier(8L)
-        .setState(Registrar.State.ACTIVE)
-        .setInternationalizedAddress(new RegistrarAddress.Builder()
-            .setStreet(ImmutableList.of("123 Detonation Boulevard"))
-            .setCity("Williamsburg")
-            .setState("NY")
-            .setZip("11211")
-            .setCountryCode("US")
-            .build())
-        .setLocalizedAddress(new RegistrarAddress.Builder()
-            .setStreet(ImmutableList.of("123 Example Boulevard."))
-            .setCity("Hipsterville")
-            .setState("NY")
-            .setZip("11211")
-            .setCountryCode("US")
-            .build())
-        .setPhoneNumber("+1.2125551212")
-        .setFaxNumber("+1.2125551213")
-        .setEmailAddress("contact-us@goblinmen.example")
-        .setWhoisServer("whois.goblinmen.example")
-        .setUrl("http://www.goblinmen.example")
-        .build();
+    registrar =
+        new Registrar.Builder()
+            .setRegistrarId("GoblinMarket")
+            .setRegistrarName("Maids heard the goblins cry: Come buy, come buy:")
+            .setType(Registrar.Type.REAL)
+            .setIanaIdentifier(8L)
+            .setState(Registrar.State.ACTIVE)
+            .setInternationalizedAddress(
+                new RegistrarAddress.Builder()
+                    .setStreet(ImmutableList.of("123 Detonation Boulevard"))
+                    .setCity("Williamsburg")
+                    .setState("NY")
+                    .setZip("11211")
+                    .setCountryCode("US")
+                    .build())
+            .setLocalizedAddress(
+                new RegistrarAddress.Builder()
+                    .setStreet(ImmutableList.of("123 Example Boulevard."))
+                    .setCity("Hipsterville")
+                    .setState("NY")
+                    .setZip("11211")
+                    .setCountryCode("US")
+                    .build())
+            .setPhoneNumber("+1.2125551212")
+            .setFaxNumber("+1.2125551213")
+            .setEmailAddress("contact-us@goblinmen.example")
+            .setWhoisServer("whois.goblinmen.example")
+            .setUrl("http://www.goblinmen.example")
+            .build();
     FakeClock clock = new FakeClock(DateTime.parse("2013-01-01T00:00:00Z"));
     inject.setStaticField(Ofy.class, "clock", clock);
     registrar = cloneAndSetAutoTimestamps(registrar);  // Set the creation time in 2013.

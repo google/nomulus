@@ -63,7 +63,7 @@ class RegistrarTest extends EntityTestCase {
     registrar =
         cloneAndSetAutoTimestamps(
             new Registrar.Builder()
-                .setClientId("registrar")
+                .setRegistrarId("registrar")
                 .setRegistrarName("full registrar name")
                 .setType(Type.REAL)
                 .setState(State.PENDING)
@@ -167,22 +167,23 @@ class RegistrarTest extends EntityTestCase {
 
   @TestOfyAndSql
   void testSuccess_clientId_bounds() {
-    registrar = registrar.asBuilder().setClientId("abc").build();
-    assertThat(registrar.getClientId()).isEqualTo("abc");
-    registrar = registrar.asBuilder().setClientId("abcdefghijklmnop").build();
-    assertThat(registrar.getClientId()).isEqualTo("abcdefghijklmnop");
+    registrar = registrar.asBuilder().setRegistrarId("abc").build();
+    assertThat(registrar.getRegistrarId()).isEqualTo("abc");
+    registrar = registrar.asBuilder().setRegistrarId("abcdefghijklmnop").build();
+    assertThat(registrar.getRegistrarId()).isEqualTo("abcdefghijklmnop");
   }
 
   @TestOfyAndSql
   void testFailure_clientId_tooShort() {
-    assertThrows(IllegalArgumentException.class, () -> new Registrar.Builder().setClientId("ab"));
+    assertThrows(
+        IllegalArgumentException.class, () -> new Registrar.Builder().setRegistrarId("ab"));
   }
 
   @TestOfyAndSql
   void testFailure_clientId_tooLong() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new Registrar.Builder().setClientId("abcdefghijklmnopq"));
+        () -> new Registrar.Builder().setRegistrarId("abcdefghijklmnopq"));
   }
 
   @TestOfyAndSql
@@ -329,7 +330,10 @@ class RegistrarTest extends EntityTestCase {
         assertThrows(
             IllegalArgumentException.class,
             () ->
-                new Registrar.Builder().setClientId("blahid").setType(Registrar.Type.TEST).build());
+                new Registrar.Builder()
+                    .setRegistrarId("blahid")
+                    .setType(Registrar.Type.TEST)
+                    .build());
     assertThat(thrown).hasMessageThat().contains("Registrar name cannot be null");
   }
 
@@ -340,7 +344,7 @@ class RegistrarTest extends EntityTestCase {
             IllegalArgumentException.class,
             () ->
                 new Registrar.Builder()
-                    .setClientId("blahid")
+                    .setRegistrarId("blahid")
                     .setType(Registrar.Type.TEST)
                     .setRegistrarName("Blah Co")
                     .build());
@@ -625,7 +629,7 @@ class RegistrarTest extends EntityTestCase {
   void testLoadByClientIdCached_isTransactionless() {
     tm().transact(
             () -> {
-              assertThat(Registrar.loadByClientIdCached("registrar")).isPresent();
+              assertThat(Registrar.loadByRegistrarIdCached("registrar")).isPresent();
               // Load something as a control to make sure we are seeing loaded keys in the
               // session cache.
               auditedOfy().load().entity(abuseAdminContact).now();
@@ -634,35 +638,35 @@ class RegistrarTest extends EntityTestCase {
             });
     tm().clearSessionCache();
     // Conversely, loads outside of a transaction should end up in the session cache.
-    assertThat(Registrar.loadByClientIdCached("registrar")).isPresent();
+    assertThat(Registrar.loadByRegistrarIdCached("registrar")).isPresent();
     assertThat(auditedOfy().getSessionKeys()).contains(Key.create(registrar));
   }
 
   @TestOfyAndSql
   void testFailure_loadByClientId_clientIdIsNull() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Registrar.loadByClientId(null));
-    assertThat(thrown).hasMessageThat().contains("clientId must be specified");
+        assertThrows(IllegalArgumentException.class, () -> Registrar.loadByRegistrarId(null));
+    assertThat(thrown).hasMessageThat().contains("registrarId must be specified");
   }
 
   @TestOfyAndSql
   void testFailure_loadByClientId_clientIdIsEmpty() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Registrar.loadByClientId(""));
-    assertThat(thrown).hasMessageThat().contains("clientId must be specified");
+        assertThrows(IllegalArgumentException.class, () -> Registrar.loadByRegistrarId(""));
+    assertThat(thrown).hasMessageThat().contains("registrarId must be specified");
   }
 
   @TestOfyAndSql
   void testFailure_loadByClientIdCached_clientIdIsNull() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Registrar.loadByClientIdCached(null));
-    assertThat(thrown).hasMessageThat().contains("clientId must be specified");
+        assertThrows(IllegalArgumentException.class, () -> Registrar.loadByRegistrarIdCached(null));
+    assertThat(thrown).hasMessageThat().contains("registrarId must be specified");
   }
 
   @TestOfyAndSql
   void testFailure_loadByClientIdCached_clientIdIsEmpty() {
     IllegalArgumentException thrown =
-        assertThrows(IllegalArgumentException.class, () -> Registrar.loadByClientIdCached(""));
-    assertThat(thrown).hasMessageThat().contains("clientId must be specified");
+        assertThrows(IllegalArgumentException.class, () -> Registrar.loadByRegistrarIdCached(""));
+    assertThat(thrown).hasMessageThat().contains("registrarId must be specified");
   }
 }

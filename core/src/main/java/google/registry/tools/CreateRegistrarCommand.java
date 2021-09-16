@@ -23,7 +23,7 @@ import static google.registry.tools.RegistryToolEnvironment.PRODUCTION;
 import static google.registry.tools.RegistryToolEnvironment.SANDBOX;
 import static google.registry.tools.RegistryToolEnvironment.UNITTEST;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
-import static google.registry.util.RegistrarUtils.normalizeClientId;
+import static google.registry.util.RegistrarUtils.normalizeRegistrarId;
 import static java.util.stream.Collectors.toCollection;
 
 import com.beust.jcommander.Parameter;
@@ -76,21 +76,23 @@ final class CreateRegistrarCommand extends CreateOrUpdateRegistrarCommand
     checkArgument(clientId.length() <= 16, "Client identifier (%s) is too long", clientId);
     if (Registrar.Type.REAL.equals(registrarType)) {
       checkArgument(
-          clientId.equals(normalizeClientId(clientId)),
+          clientId.equals(normalizeRegistrarId(clientId)),
           "Client identifier (%s) can only contain lowercase letters, numbers, and hyphens",
           clientId);
     }
     checkState(
-        !Registrar.loadByClientId(clientId).isPresent(), "Registrar %s already exists", clientId);
+        !Registrar.loadByRegistrarId(clientId).isPresent(),
+        "Registrar %s already exists",
+        clientId);
     List<Registrar> collisions =
         Streams.stream(Registrar.loadAll())
-            .filter(registrar -> normalizeClientId(registrar.getClientId()).equals(clientId))
+            .filter(registrar -> normalizeRegistrarId(registrar.getRegistrarId()).equals(clientId))
             .collect(toCollection(ArrayList::new));
     if (!collisions.isEmpty()) {
       throw new IllegalArgumentException(
           String.format(
               "The registrar client identifier %s normalizes identically to existing registrar %s",
-              clientId, collisions.get(0).getClientId()));
+              clientId, collisions.get(0).getRegistrarId()));
     }
     return null;
   }

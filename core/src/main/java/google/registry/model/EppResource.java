@@ -175,7 +175,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     return creationTime.getTimestamp();
   }
 
-  public String getCreationClientId() {
+  public String getCreationRegistrarId() {
     return creationClientId;
   }
 
@@ -183,7 +183,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     return lastEppUpdateTime;
   }
 
-  public String getLastEppUpdateClientId() {
+  public String getLastEppUpdateRegistrarId() {
     return lastEppUpdateClientId;
   }
 
@@ -193,7 +193,7 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * <p>For subordinate hosts, this value may not represent the actual current client id, which is
    * the client id of the superordinate host. For all other resources this is the true client id.
    */
-  public final String getPersistedCurrentSponsorClientId() {
+  public final String getPersistedCurrentSponsorRegistrarId() {
     return currentSponsorClientId;
   }
 
@@ -294,14 +294,14 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     }
 
     /** Set the current sponsoring registrar. */
-    public B setPersistedCurrentSponsorClientId(String currentSponsorClientId) {
-      getInstance().currentSponsorClientId = currentSponsorClientId;
+    public B setPersistedCurrentSponsorRegistrarId(String currentSponsorRegistrarId) {
+      getInstance().currentSponsorClientId = currentSponsorRegistrarId;
       return thisCastToDerived();
     }
 
     /** Set the registrar that created this resource. */
-    public B setCreationClientId(String creationClientId) {
-      getInstance().creationClientId = creationClientId;
+    public B setCreationRegistrarId(String creationRegistrarId) {
+      getInstance().creationClientId = creationRegistrarId;
       return thisCastToDerived();
     }
 
@@ -312,8 +312,8 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
     }
 
     /** Set the registrar who last performed a {@literal <update>} on this resource. */
-    public B setLastEppUpdateClientId(String lastEppUpdateClientId) {
-      getInstance().lastEppUpdateClientId = lastEppUpdateClientId;
+    public B setLastEppUpdateRegistrarId(String lastEppUpdateRegistrarId) {
+      getInstance().lastEppUpdateClientId = lastEppUpdateRegistrarId;
       return thisCastToDerived();
     }
 

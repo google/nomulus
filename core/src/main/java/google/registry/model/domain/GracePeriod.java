@@ -58,7 +58,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
       GracePeriodStatus type,
       String domainRepoId,
       DateTime expirationTime,
-      String clientId,
+      String registrarId,
       @Nullable VKey<BillingEvent.OneTime> billingEventOneTime,
       @Nullable VKey<BillingEvent.Recurring> billingEventRecurring,
       @Nullable Long gracePeriodId) {
@@ -72,7 +72,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
     instance.type = checkArgumentNotNull(type);
     instance.domainRepoId = checkArgumentNotNull(domainRepoId);
     instance.expirationTime = checkArgumentNotNull(expirationTime);
-    instance.clientId = checkArgumentNotNull(clientId);
+    instance.clientId = checkArgumentNotNull(registrarId);
     instance.billingEventOneTime = BillingEventVKey.create(billingEventOneTime);
     instance.billingEventRecurring = BillingRecurrenceVKey.create(billingEventRecurring);
     return instance;
@@ -89,10 +89,10 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
       GracePeriodStatus type,
       String domainRepoId,
       DateTime expirationTime,
-      String clientId,
+      String registrarId,
       @Nullable VKey<BillingEvent.OneTime> billingEventOneTime) {
     return createInternal(
-        type, domainRepoId, expirationTime, clientId, billingEventOneTime, null, null);
+        type, domainRepoId, expirationTime, registrarId, billingEventOneTime, null, null);
   }
 
   /**
@@ -108,11 +108,11 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
       GracePeriodStatus type,
       String domainRepoId,
       DateTime expirationTime,
-      String clientId,
+      String registrarId,
       @Nullable VKey<BillingEvent.OneTime> billingEventOneTime,
       @Nullable Long gracePeriodId) {
     return createInternal(
-        type, domainRepoId, expirationTime, clientId, billingEventOneTime, null, gracePeriodId);
+        type, domainRepoId, expirationTime, registrarId, billingEventOneTime, null, gracePeriodId);
   }
 
   public static GracePeriod createFromHistory(GracePeriodHistory history) {
@@ -131,11 +131,11 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
       GracePeriodStatus type,
       String domainRepoId,
       DateTime expirationTime,
-      String clientId,
+      String registrarId,
       VKey<Recurring> billingEventRecurring) {
     checkArgumentNotNull(billingEventRecurring, "billingEventRecurring cannot be null");
     return createInternal(
-        type, domainRepoId, expirationTime, clientId, null, billingEventRecurring, null);
+        type, domainRepoId, expirationTime, registrarId, null, billingEventRecurring, null);
   }
 
   /** Creates a GracePeriod for a Recurring billing event and a given {@link #gracePeriodId}. */
@@ -144,18 +144,24 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
       GracePeriodStatus type,
       String domainRepoId,
       DateTime expirationTime,
-      String clientId,
+      String registrarId,
       VKey<Recurring> billingEventRecurring,
       @Nullable Long gracePeriodId) {
     checkArgumentNotNull(billingEventRecurring, "billingEventRecurring cannot be null");
     return createInternal(
-        type, domainRepoId, expirationTime, clientId, null, billingEventRecurring, gracePeriodId);
+        type,
+        domainRepoId,
+        expirationTime,
+        registrarId,
+        null,
+        billingEventRecurring,
+        gracePeriodId);
   }
 
   /** Creates a GracePeriod with no billing event. */
   public static GracePeriod createWithoutBillingEvent(
-      GracePeriodStatus type, String domainRepoId, DateTime expirationTime, String clientId) {
-    return createInternal(type, domainRepoId, expirationTime, clientId, null, null, null);
+      GracePeriodStatus type, String domainRepoId, DateTime expirationTime, String registrarId) {
+    return createInternal(type, domainRepoId, expirationTime, registrarId, null, null, null);
   }
 
   /** Constructs a GracePeriod of the given type from the provided one-time BillingEvent. */
@@ -165,7 +171,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
         type,
         domainRepoId,
         billingEvent.getBillingTime(),
-        billingEvent.getClientId(),
+        billingEvent.getRegistrarId(),
         billingEvent.createVKey());
   }
 
@@ -175,7 +181,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
    *
    * <p>TODO(b/162739503): Remove this function after fully migrating to Cloud SQL.
    */
-  public GracePeriod cloneAfterOfyLoad(String domainRepoId) {
+  GracePeriod cloneAfterOfyLoad(String domainRepoId) {
     GracePeriod clone = clone(this);
     clone.domainRepoId = checkArgumentNotNull(domainRepoId);
     return clone;

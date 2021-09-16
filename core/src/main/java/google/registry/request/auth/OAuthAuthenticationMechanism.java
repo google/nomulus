@@ -87,7 +87,7 @@ public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
     // authentication result, so we can call them one by one.
     User currentUser;
     boolean isUserAdmin;
-    String clientId;
+    String oauthClientId;
     ImmutableSet<String> authorizedScopes;
     try {
       String[] availableOauthScopeArray = availableOauthScopes.toArray(new String[0]);
@@ -95,8 +95,8 @@ public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
       isUserAdmin = oauthService.isUserAdmin(availableOauthScopeArray);
       logger.atInfo().log(
           "current user: %s (%s)", currentUser, isUserAdmin ? "admin" : "not admin");
-      clientId = oauthService.getClientId(availableOauthScopeArray);
-      logger.atInfo().log("client ID: %s", clientId);
+      oauthClientId = oauthService.getClientId(availableOauthScopeArray);
+      logger.atInfo().log("client ID: %s", oauthClientId);
       authorizedScopes =
           ImmutableSet.copyOf(oauthService.getAuthorizedScopes(availableOauthScopeArray));
       logger.atInfo().log("authorized scope(s): %s", authorizedScopes);
@@ -104,13 +104,13 @@ public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
       logger.atInfo().withCause(e).log("unable to get OAuth information");
       return AuthResult.create(NONE);
     }
-    if ((currentUser == null) || (clientId == null) || (authorizedScopes == null)) {
+    if ((currentUser == null) || (oauthClientId == null) || (authorizedScopes == null)) {
       return AuthResult.create(NONE);
     }
 
     // Make sure that the client ID matches, to avoid a confused deputy attack; see:
     // http://stackoverflow.com/a/17439317/1179226
-    if (!allowedOauthClientIds.contains(clientId)) {
+    if (!allowedOauthClientIds.contains(oauthClientId)) {
       logger.atInfo().log("client ID is not allowed");
       return AuthResult.create(NONE);
     }
@@ -128,8 +128,6 @@ public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
             currentUser,
             isUserAdmin,
             OAuthTokenInfo.create(
-                ImmutableSet.copyOf(authorizedScopes),
-                clientId,
-                rawAccessToken)));
+                ImmutableSet.copyOf(authorizedScopes), oauthClientId, rawAccessToken)));
   }
 }

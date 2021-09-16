@@ -216,12 +216,12 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
                           if (registrar.getRdapBaseUrls().equals(baseUrls)) {
                             logger.atInfo().log(
                                 "No change in RdapBaseUrls for registrar %s (ianaId %s)",
-                                registrar.getClientId(), ianaId);
+                                registrar.getRegistrarId(), ianaId);
                             return;
                           }
                           logger.atInfo().log(
                               "Updating RdapBaseUrls for registrar %s (ianaId %s) from %s to %s",
-                              registrar.getClientId(),
+                              registrar.getRegistrarId(),
                               ianaId,
                               registrar.getRdapBaseUrls(),
                               baseUrls);

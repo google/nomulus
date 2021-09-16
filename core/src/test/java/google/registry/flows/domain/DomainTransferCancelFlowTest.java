@@ -76,7 +76,7 @@ class DomainTransferCancelFlowTest
   @BeforeEach
   void setUp() {
     setEppInput("domain_transfer_cancel.xml");
-    setClientIdForFlow("NewRegistrar");
+    setRegistrarIdForFlow("NewRegistrar");
     setupDomainWithPendingTransfer("example", "tld");
   }
 
@@ -99,7 +99,7 @@ class DomainTransferCancelFlowTest
         "NewRegistrar",
         new PollMessage.Autorenew.Builder()
             .setTargetId(getUniqueIdFromCommand())
-            .setClientId("NewRegistrar")
+            .setRegistrarId("NewRegistrar")
             .setEventTime(EXTENDED_REGISTRATION_EXPIRATION_TIME)
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
@@ -151,7 +151,7 @@ class DomainTransferCancelFlowTest
         getOnlyHistoryEntryOfType(domain, DOMAIN_TRANSFER_CANCEL);
     assertAboutHistoryEntries()
         .that(historyEntryTransferCancel)
-        .hasClientId("NewRegistrar")
+        .hasRegistrarId("NewRegistrar")
         .and()
         .hasOtherClientId("TheRegistrar");
     // The only billing event left should be the original autorenew event, now reopened.
@@ -166,14 +166,14 @@ class DomainTransferCancelFlowTest
         "TheRegistrar",
         new PollMessage.Autorenew.Builder()
             .setTargetId(getUniqueIdFromCommand())
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(originalExpirationTime)
             .setAutorenewEndTime(END_OF_TIME)
             .setMsg("Domain was auto-renewed.")
             .setParent(getOnlyHistoryEntryOfType(domain, DOMAIN_CREATE))
             .build(),
         new PollMessage.OneTime.Builder()
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setEventTime(clock.nowUtc())
             .setResponseData(
                 ImmutableList.of(
@@ -181,8 +181,8 @@ class DomainTransferCancelFlowTest
                         .setFullyQualifiedDomainName(getUniqueIdFromCommand())
                         .setTransferStatus(TransferStatus.CLIENT_CANCELLED)
                         .setTransferRequestTime(TRANSFER_REQUEST_TIME)
-                        .setGainingClientId("NewRegistrar")
-                        .setLosingClientId("TheRegistrar")
+                        .setGainingRegistrarId("NewRegistrar")
+                        .setLosingRegistrarId("TheRegistrar")
                         .setPendingTransferExpirationTime(clock.nowUtc())
                         .build()))
             .setMsg("Transfer cancelled.")
@@ -312,7 +312,7 @@ class DomainTransferCancelFlowTest
 
   @TestOfyAndSql
   void testFailure_sponsoringClient() {
-    setClientIdForFlow("TheRegistrar");
+    setRegistrarIdForFlow("TheRegistrar");
     EppException thrown =
         assertThrows(
             NotTransferInitiatorException.class, () -> doFailingTest("domain_transfer_cancel.xml"));
@@ -321,7 +321,7 @@ class DomainTransferCancelFlowTest
 
   @TestOfyAndSql
   void testFailure_unrelatedClient() {
-    setClientIdForFlow("ClientZ");
+    setRegistrarIdForFlow("ClientZ");
     EppException thrown =
         assertThrows(
             NotTransferInitiatorException.class, () -> doFailingTest("domain_transfer_cancel.xml"));
@@ -406,7 +406,7 @@ class DomainTransferCancelFlowTest
             .setType(DOMAIN_TRANSFER_REQUEST)
             .setDomain(domain)
             .setModificationTime(clock.nowUtc().minusDays(4))
-            .setClientId("TheRegistrar")
+            .setRegistrarId("TheRegistrar")
             .setDomainTransactionRecords(
                 ImmutableSet.of(previousSuccessRecord, notCancellableRecord))
             .build());
