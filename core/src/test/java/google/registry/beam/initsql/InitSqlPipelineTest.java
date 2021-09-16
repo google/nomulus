@@ -17,6 +17,8 @@ package google.registry.beam.initsql;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
+import static google.registry.model.common.Cursor.CursorType.BRDA;
+import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.newRegistry;
@@ -34,6 +36,7 @@ import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
+import google.registry.model.common.Cursor;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DesignatedContact;
 import google.registry.model.domain.DomainAuthInfo;
@@ -86,6 +89,7 @@ class InitSqlPipelineTest {
   private static final ImmutableList<Class<?>> ALL_KINDS =
       ImmutableList.of(
           Registry.class,
+          Cursor.class,
           Registrar.class,
           ContactResource.class,
           RegistrarContact.class,
@@ -130,6 +134,9 @@ class InitSqlPipelineTest {
   private transient HostResource hostResource;
 
   private transient DomainHistory historyEntry;
+
+  private transient Cursor globalCursor;
+  private transient Cursor tldCursor;
 
   @BeforeEach
   void beforeEach() throws Exception {
@@ -304,6 +311,8 @@ class InitSqlPipelineTest {
               .setRecurringEventKey(recurringBillEvent.createVKey())
               .setParent(historyEntryKey)
               .build());
+      globalCursor = persistResource(Cursor.createGlobal(RECURRING_BILLING, fakeClock.nowUtc()));
+      tldCursor = persistResource(Cursor.create(BRDA, fakeClock.nowUtc(), Registry.get("com")));
       exportDir = store.export(exportRootDir.getAbsolutePath(), ALL_KINDS, ImmutableSet.of());
       commitLogDir = Files.createDirectory(tmpDir.resolve("commits")).toFile();
       fakeClock.advanceOneMilli();
@@ -332,6 +341,9 @@ class InitSqlPipelineTest {
           .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
           .containsExactly(contact1, contact2);
       assertDomainEquals(jpaTm().transact(() -> jpaTm().loadByKey(domain.createVKey())), domain);
+      assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Cursor.class)))
+          .comparingElementsUsing(immutableObjectCorrespondence())
+          .containsExactly(globalCursor, tldCursor);
     }
   }
 

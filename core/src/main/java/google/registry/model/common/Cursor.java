@@ -223,7 +223,9 @@ public class Cursor extends ImmutableObject implements DatastoreAndSqlEntity {
     // The "parent" is always the crossTldKey; in order to find the scope (either Registry or
     // cross-tld-key) we have to parse the part of the ID
     Key<?> scopeKey = Key.valueOf(idSplit.get(0));
-    return scopeKey.equals(getCrossTldKey()) ? GLOBAL : scopeKey.getName();
+    return scopeKey.getKind().equals(EntityGroupRoot.class.getSimpleName())
+        ? GLOBAL
+        : scopeKey.getName();
   }
 
   private static CursorType getTypeFromId(String id) {

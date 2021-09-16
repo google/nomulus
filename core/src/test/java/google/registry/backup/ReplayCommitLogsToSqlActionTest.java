@@ -347,7 +347,7 @@ public class ReplayCommitLogsToSqlActionTest {
         mutation);
     runAndAssertSuccess(persistenceTime.minusMinutes(1), 1, 1);
     assertAboutImmutableObjects()
-        .that(jpaTm().transact((() -> jpaTm().loadByEntity(contactResource))))
+        .that(jpaTm().transact(() -> jpaTm().loadByEntity(contactResource)))
         .isEqualExceptFields(contactResource, "revisions");
   }
 
