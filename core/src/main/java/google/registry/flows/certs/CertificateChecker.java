@@ -243,7 +243,7 @@ public class CertificateChecker {
      *    lastExpiringNotificationSentDate is greater than expirationWarningIntervalDays.
      */
     return !lastValidDate.after(now.plusDays(expirationWarningDays).toDate())
-        && (lastExpiringNotificationSentDate == START_OF_TIME
+        && (lastExpiringNotificationSentDate.equals(START_OF_TIME)
             || !lastExpiringNotificationSentDate
                 .plusDays(expirationWarningIntervalDays)
                 .toDate()
