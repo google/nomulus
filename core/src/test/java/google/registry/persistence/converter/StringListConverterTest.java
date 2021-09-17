@@ -16,6 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
@@ -40,7 +41,7 @@ public class StringListConverterTest {
   void roundTripConversion_returnsSameStringList() {
     List<String> tlds = ImmutableList.of("app", "dev", "how");
     TestEntity testEntity = new TestEntity(tlds);
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(testEntity);
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).containsExactly("app", "dev", "how");
@@ -50,7 +51,7 @@ public class StringListConverterTest {
   void testMerge_succeeds() {
     List<String> tlds = ImmutableList.of("app", "dev", "how");
     TestEntity testEntity = new TestEntity(tlds);
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(testEntity);
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     persisted.tlds = ImmutableList.of("com", "gov");
@@ -63,7 +64,7 @@ public class StringListConverterTest {
   @Test
   void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(testEntity);
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).isNull();
@@ -72,7 +73,7 @@ public class StringListConverterTest {
   @Test
   void testEmptyCollection_writesAndReadsEmptyCollectionSuccessfully() {
     TestEntity testEntity = new TestEntity(ImmutableList.of());
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(testEntity);
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.tlds).isEmpty();

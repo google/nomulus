@@ -16,6 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.replay.EntityTest;
@@ -54,7 +55,7 @@ public class LocalDateConverterTest {
 
   private LocalDateConverterTestEntity persistAndLoadTestEntity(LocalDate date) {
     LocalDateConverterTestEntity entity = new LocalDateConverterTestEntity(date);
-    jpaTm().transact(() -> jpaTm().insert(entity));
+    insertInDb(entity);
     return jpaTm()
         .transact(
             () -> jpaTm().loadByKey(VKey.createSql(LocalDateConverterTestEntity.class, "id")));

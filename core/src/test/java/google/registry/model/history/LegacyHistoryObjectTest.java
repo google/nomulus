@@ -19,6 +19,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
 import static google.registry.util.CollectionUtils.nullToEmpty;
@@ -128,7 +129,7 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     DomainHistory legacyDomainHistory = (DomainHistory) fromObjectify;
 
     // Next, save that from-Datastore object in SQL and verify we can load it back in
-    jpaTm().transact(() -> jpaTm().insert(legacyDomainHistory));
+    insertInDb(legacyDomainHistory);
     jpaTm()
         .transact(
             () -> {

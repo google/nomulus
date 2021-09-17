@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -92,14 +93,14 @@ public class PollMessageTest extends EntityTestCase {
 
   @TestSqlOnly
   void testCloudSqlSupportForPolymorphicVKey() {
-    jpaTm().transact(() -> jpaTm().insert(oneTime));
+    insertInDb(oneTime);
     PollMessage persistedOneTime =
         jpaTm()
             .transact(() -> jpaTm().loadByKey(VKey.createSql(PollMessage.class, oneTime.getId())));
     assertThat(persistedOneTime).isInstanceOf(PollMessage.OneTime.class);
     assertThat(persistedOneTime).isEqualTo(oneTime);
 
-    jpaTm().transact(() -> jpaTm().insert(autoRenew));
+    insertInDb(autoRenew);
     PollMessage persistedAutoRenew =
         jpaTm()
             .transact(

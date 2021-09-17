@@ -15,6 +15,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
@@ -71,7 +72,7 @@ public class JodaMoneyConverterTest {
   void roundTripConversion() {
     Money money = Money.of(CurrencyUnit.USD, 100);
     TestEntity entity = new TestEntity(money);
-    jpaTm().transact(() -> jpaTm().insert(entity));
+    insertInDb(entity);
     List<?> result =
         jpaTm()
             .transact(
@@ -101,7 +102,7 @@ public class JodaMoneyConverterTest {
             "dos", Money.ofMajor(CurrencyUnit.JPY, 2000),
             "tres", Money.of(CurrencyUnit.GBP, 20));
     ComplexTestEntity entity = new ComplexTestEntity(moneyMap, myMoney, yourMoney);
-    jpaTm().transact(() -> jpaTm().insert(entity));
+    insertInDb(entity);
     List<?> result =
         jpaTm()
             .transact(

@@ -22,6 +22,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar2;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
@@ -74,7 +75,7 @@ public class DomainHistoryTest extends EntityTestCase {
   void testPersistence() {
     DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
     DomainHistory domainHistory = createDomainHistory(domain);
-    jpaTm().transact(() -> jpaTm().insert(domainHistory));
+    insertInDb(domainHistory);
 
     jpaTm()
         .transact(
@@ -89,7 +90,7 @@ public class DomainHistoryTest extends EntityTestCase {
   void testLegacyPersistence_nullResource() {
     DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
     DomainHistory domainHistory = createDomainHistory(domain).asBuilder().setDomain(null).build();
-    jpaTm().transact(() -> jpaTm().insert(domainHistory));
+    insertInDb(domainHistory);
 
     jpaTm()
         .transact(
@@ -175,7 +176,7 @@ public class DomainHistoryTest extends EntityTestCase {
             .setNameservers(host.createVKey())
             .build();
     tm().transact(() -> tm().insert(domain));
-    jpaTm().transact(() -> jpaTm().insert(domain));
+    insertInDb(domain);
 
     DomainHistory domainHistory = createDomainHistory(domain);
     tm().transact(() -> tm().insert(domainHistory));
@@ -185,7 +186,7 @@ public class DomainHistoryTest extends EntityTestCase {
     DomainHistory domainHistoryFromDb = tm().transact(() -> tm().loadByKey(domainHistoryVKey));
 
     // attempt to write to SQL.
-    jpaTm().transact(() -> jpaTm().insert(domainHistoryFromDb));
+    insertInDb(domainHistoryFromDb);
 
     // Reload and rewrite.
     DomainHistory domainHistoryFromDb2 = tm().transact(() -> tm().loadByKey(domainHistoryVKey));
@@ -249,7 +250,7 @@ public class DomainHistoryTest extends EntityTestCase {
             .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .setDnsRefreshRequestTime(Optional.of(DateTime.parse("2020-03-09T16:40:00Z")))
             .build();
-    jpaTm().transact(() -> jpaTm().insert(domain));
+    insertInDb(domain);
     return domain;
   }
 

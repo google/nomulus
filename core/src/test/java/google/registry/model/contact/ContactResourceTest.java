@@ -22,6 +22,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -136,7 +137,7 @@ public class ContactResourceTest extends EntityTestCase {
 
   @Test
   void testCloudSqlPersistence_failWhenViolateForeignKeyConstraint() {
-    assertThrowForeignKeyViolation(() -> jpaTm().transact(() -> jpaTm().insert(originalContact)));
+    assertThrowForeignKeyViolation(() -> insertInDb(originalContact));
   }
 
   @Test
@@ -146,7 +147,7 @@ public class ContactResourceTest extends EntityTestCase {
     saveRegistrar("registrar3");
     saveRegistrar("gaining");
     saveRegistrar("losing");
-    jpaTm().transact(() -> jpaTm().insert(originalContact));
+    insertInDb(originalContact);
     ContactResource persisted =
         jpaTm()
             .transact(

@@ -16,6 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
@@ -45,7 +46,7 @@ public class CidrAddressBlockListConverterTest {
             CidrAddressBlock.create("8000::/1"),
             CidrAddressBlock.create("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"));
     TestEntity testEntity = new TestEntity(addresses);
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(testEntity);
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.addresses).isEqualTo(addresses);

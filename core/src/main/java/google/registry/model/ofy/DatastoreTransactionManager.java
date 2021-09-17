@@ -32,6 +32,7 @@ import com.google.common.collect.Streams;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.Result;
 import com.googlecode.objectify.cmd.Query;
+import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainHistory;
@@ -128,6 +129,11 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
+  public void insertAll(ImmutableObject... entities) {
+    putAll(entities);
+  }
+
+  @Override
   public void insertWithoutBackup(Object entity) {
     putWithoutBackup(entity);
   }
@@ -143,7 +149,7 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public void putAll(Object... entities) {
+  public void putAll(ImmutableObject... entities) {
     syncIfTransactionless(
         getOfy().save().entities(toDatastoreEntities(ImmutableList.copyOf(entities))));
   }

@@ -16,6 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
@@ -47,7 +48,7 @@ public class CurrencyToBillingConverterTest {
             CurrencyUnit.of("CNY"),
             new BillingAccountEntry(CurrencyUnit.of("CNY"), "accountId2"));
     TestEntity testEntity = new TestEntity(currencyToBilling);
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(testEntity);
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.currencyToBilling).containsExactlyEntriesIn(currencyToBilling);

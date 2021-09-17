@@ -16,7 +16,9 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
+import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithLongVKey;
 import google.registry.testing.AppEngineExtension;
@@ -46,7 +48,7 @@ public class LongVKeyConverterTest {
         new TestLongEntity(
             VKey.createSql(TestLongEntity.class, 10L),
             VKey.createSql(CompositeKeyTestLongEntity.class, 20L));
-    jpaTm().transact(() -> jpaTm().insert(original));
+    insertInDb(original);
 
     TestLongEntity retrieved =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestLongEntity.class, "id"));
@@ -60,7 +62,7 @@ public class LongVKeyConverterTest {
   @Entity(name = "TestLongEntity")
   @com.googlecode.objectify.annotation.Entity
   @WithLongVKey(classNameSuffix = "LongType")
-  static class TestLongEntity {
+  static class TestLongEntity extends ImmutableObject {
     @com.googlecode.objectify.annotation.Id @Id String id = "id";
 
     VKey<TestLongEntity> number;

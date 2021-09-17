@@ -68,6 +68,7 @@ import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
 import google.registry.model.EppResourceUtils;
+import google.registry.model.ImmutableObject;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -1373,6 +1374,16 @@ public class DatabaseHelper {
   /** Returns whether or not the given entity exists in the database. */
   public static boolean existsInDatabase(Object object) {
     return transactIfJpaTm(() -> tm().exists(object));
+  }
+
+  /** Inserts the given entity/entities into Cloud SQL in a single transaction. */
+  public static <T extends ImmutableObject> void insertInDb(T... entities) {
+    jpaTm().transact(() -> jpaTm().insertAll(entities));
+  }
+
+  /** Inserts the given entities into Cloud SQL in a single transaction. */
+  public static <T extends ImmutableObject> void insertInDb(ImmutableCollection<T> entities) {
+    jpaTm().transact(() -> jpaTm().insertAll(entities));
   }
 
   /**

@@ -16,6 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
@@ -66,7 +67,7 @@ public class ZonedDateTimeConverterTest {
   void converter_generatesTimestampWithNormalizedZone() {
     ZonedDateTime zdt = ZonedDateTime.parse("2019-09-01T01:01:01Z");
     TestEntity entity = new TestEntity("normalized_utc_time", zdt);
-    jpaTm().transact(() -> jpaTm().insert(entity));
+    insertInDb(entity);
     TestEntity retrievedEntity =
         jpaTm()
             .transact(
@@ -79,7 +80,7 @@ public class ZonedDateTimeConverterTest {
     ZonedDateTime zdt = ZonedDateTime.parse("2019-09-01T01:01:01Z[UTC]");
     TestEntity entity = new TestEntity("non_normalized_utc_time", zdt);
 
-    jpaTm().transact(() -> jpaTm().insert(entity));
+    insertInDb(entity);
     TestEntity retrievedEntity =
         jpaTm()
             .transact(
@@ -92,7 +93,7 @@ public class ZonedDateTimeConverterTest {
     ZonedDateTime zdt = ZonedDateTime.parse("2019-09-01T01:01:01+05:00");
     TestEntity entity = new TestEntity("new_york_time", zdt);
 
-    jpaTm().transact(() -> jpaTm().insert(entity));
+    insertInDb(entity);
     TestEntity retrievedEntity =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "new_york_time"));
     assertThat(retrievedEntity.zdt.toString()).isEqualTo("2019-08-31T20:01:01Z");
