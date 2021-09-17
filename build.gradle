@@ -457,8 +457,6 @@ task javaIncrementalFormatApply {
 task javadoc(type: Javadoc) {
   source javadocSource
   classpath = files(javadocClasspath)
-  // Exclude the misbehaving generated-by-Soy Java files
-  exclude "**/*SoyInfo.java"
   destinationDir = file("${buildDir}/docs/javadoc")
   options.encoding = "UTF-8"
   // In a lot of places we don't write @return so suppress warnings about that.
@@ -483,3 +481,15 @@ task coreDev {
 }
 
 javadocDependentTasks.each { tasks.javadoc.dependsOn(it) }
+
+// disable javadoc in subprojects, these will break because they don't have
+// the correct classpath (see above).
+gradle.taskGraph.whenReady { graph ->
+  graph.getAllTasks().each { task ->
+    def subprojectJavadoc = (task.path =~ /:.+:javadoc/)
+    if (subprojectJavadoc) {
+        println "Skipping ${task.path} for javadoc (only root javadoc works)"
+        task.enabled = false
+    }
+  }
+}
