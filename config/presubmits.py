@@ -206,15 +206,12 @@ PRESUBMITS = {
          "RegistryJpaIO.java",
          # TODO(b/179158393): Remove everything below, which should be done
          # using Criteria
-         "ForeignKeyIndex.java",
-         "HistoryEntryDao.java",
          "JpaTransactionManager.java",
          "JpaTransactionManagerImpl.java",
          # CriteriaQueryBuilder is a false positive
          "CriteriaQueryBuilder.java",
          "RdapDomainSearchAction.java",
          "RdapNameserverSearchAction.java",
-         "RdapSearchActionBase.java",
          "ReadOnlyCheckingEntityManager.java",
          "RegistryQuery",
          },

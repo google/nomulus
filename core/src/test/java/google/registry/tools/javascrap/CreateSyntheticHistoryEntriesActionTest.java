@@ -15,12 +15,15 @@
 package google.registry.tools.javascrap;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.loadByKey;
+import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistDomainAsDeleted;
 import static google.registry.testing.DatabaseHelper.persistDomainWithDependentResources;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
@@ -30,9 +33,11 @@ import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.reporting.HistoryEntryDao;
+import google.registry.model.tld.Registry;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.mapreduce.MapreduceTestCase;
 import org.joda.time.DateTime;
@@ -94,6 +99,38 @@ public class CreateSyntheticHistoryEntriesActionTest
         HistoryEntryDao.loadHistoryObjectsForResource(withHistoryEntry.createVKey());
     assertThat(historyEntries).hasSize(2);
     assertThat(Iterables.getLast(historyEntries).getType()).isEqualTo(HistoryEntry.Type.SYNTHETIC);
+  }
+
+  @Test
+  void testDoesntSave_ifAlreadyReplayed() throws Exception {
+    DateTime now = DateTime.parse("1999-04-03T22:00:00.0Z");
+    DomainHistory domainHistoryWithoutDomain =
+        persistResource(
+            new DomainHistory.Builder()
+                .setType(HistoryEntry.Type.DOMAIN_CREATE)
+                .setModificationTime(now)
+                .setDomain(domain)
+                .setRegistrarId(domain.getCreationRegistrarId())
+                .build());
+    DomainHistory domainHistoryWithDomain =
+        domainHistoryWithoutDomain.asBuilder().setDomain(domain).build();
+    // Simulate having replayed the domain and history to SQL
+    jpaTm()
+        .transact(
+            () ->
+                jpaTm()
+                    .putAll(
+                        Registry.get("tld"),
+                        loadRegistrar("TheRegistrar"),
+                        contact,
+                        domain,
+                        domainHistoryWithDomain));
+    runMapreduce();
+
+    // Since we already had a DomainHistory with the domain in SQL, we shouldn't create a synthetic
+    // history entry
+    assertThat(HistoryEntryDao.loadHistoryObjectsForResource(domain.createVKey()))
+        .containsExactly(domainHistoryWithoutDomain);
   }
 
   @Test

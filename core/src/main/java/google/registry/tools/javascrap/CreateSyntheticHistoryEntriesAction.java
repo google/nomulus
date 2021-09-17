@@ -15,7 +15,10 @@
 package google.registry.tools.javascrap;
 
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.model.reporting.HistoryEntryDao.REPO_ID_FIELD_NAMES;
+import static google.registry.model.reporting.HistoryEntryDao.RESOURCE_TYPES_TO_HISTORY_TYPES;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 
 import com.google.appengine.tools.mapreduce.Mapper;
 import com.google.common.collect.ImmutableList;
@@ -26,12 +29,16 @@ import google.registry.mapreduce.inputs.EppResourceInputs;
 import google.registry.model.EppResource;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.reporting.HistoryEntry;
+import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.rde.RdeStagingAction;
 import google.registry.request.Action;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.tools.server.GenerateZoneFilesAction;
+import java.util.Optional;
 import javax.inject.Inject;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
 
 /**
  * A mapreduce that creates synthetic history objects in SQL for all {@link EppResource} objects.
@@ -60,6 +67,9 @@ import javax.inject.Inject;
     path = "/_dr/task/createSyntheticHistoryEntries",
     auth = Auth.AUTH_INTERNAL_OR_ADMIN)
 public class CreateSyntheticHistoryEntriesAction implements Runnable {
+
+  private static final String HISTORY_REASON =
+      "Backfill EppResource history objects during Cloud SQL migration";
 
   private final MapreduceRunner mrRunner;
   private final Response response;
@@ -97,6 +107,50 @@ public class CreateSyntheticHistoryEntriesAction implements Runnable {
         .sendLinkToMapreduceConsole(response);
   }
 
+  // Lifted from HistoryEntryDao
+  private static Optional<? extends HistoryEntry> mostRecentHistoryFromSql(EppResource resource) {
+    return jpaTm()
+        .transact(
+            () -> {
+              // The class we're searching from is based on which parent type (e.g. Domain) we have
+              Class<? extends HistoryEntry> historyClass =
+                  getHistoryClassFromParent(resource.getClass());
+              // The field representing repo ID unfortunately varies by history class
+              String repoIdFieldName = getRepoIdFieldNameFromHistoryClass(historyClass);
+              CriteriaBuilder criteriaBuilder = jpaTm().getEntityManager().getCriteriaBuilder();
+              CriteriaQuery<? extends HistoryEntry> criteriaQuery =
+                  CriteriaQueryBuilder.create(historyClass)
+                      .where(repoIdFieldName, criteriaBuilder::equal, resource.getRepoId())
+                      .orderByDesc("modificationTime")
+                      .build();
+              return jpaTm()
+                  .criteriaQuery(criteriaQuery)
+                  .setMaxResults(1)
+                  .getResultStream()
+                  .findFirst();
+            });
+  }
+
+  // Lifted from HistoryEntryDao
+  private static Class<? extends HistoryEntry> getHistoryClassFromParent(
+      Class<? extends EppResource> parent) {
+    if (!RESOURCE_TYPES_TO_HISTORY_TYPES.containsKey(parent)) {
+      throw new IllegalArgumentException(
+          String.format("Unknown history type for parent %s", parent.getName()));
+    }
+    return RESOURCE_TYPES_TO_HISTORY_TYPES.get(parent);
+  }
+
+  // Lifted from HistoryEntryDao
+  private static String getRepoIdFieldNameFromHistoryClass(
+      Class<? extends HistoryEntry> historyClass) {
+    if (!REPO_ID_FIELD_NAMES.containsKey(historyClass)) {
+      throw new IllegalArgumentException(
+          String.format("Unknown history type %s", historyClass.getName()));
+    }
+    return REPO_ID_FIELD_NAMES.get(historyClass);
+  }
+
   /** Mapper to re-save all EPP resources. */
   public static class CreateSyntheticHistoryEntriesMapper
       extends Mapper<Key<EppResource>, Void, Void> {
@@ -109,20 +163,27 @@ public class CreateSyntheticHistoryEntriesAction implements Runnable {
 
     @Override
     public final void map(final Key<EppResource> resourceKey) {
-      tm().transact(
-              () -> {
-                EppResource eppResource = auditedOfy().load().key(resourceKey).now();
-                tm().put(
-                        HistoryEntry.createBuilderForResource(eppResource)
-                            .setRegistrarId(registryAdminRegistrarId)
-                            .setBySuperuser(true)
-                            .setRequestedByRegistrar(false)
-                            .setModificationTime(tm().getTransactionTime())
-                            .setReason(
-                                "Backfill EppResource history objects during Cloud SQL migration")
-                            .setType(HistoryEntry.Type.SYNTHETIC)
-                            .build());
-              });
+      EppResource eppResource = auditedOfy().load().key(resourceKey).now();
+      // Only save new history entries if the most recent history for this object in SQL does not
+      // have the resource at that point in time already
+      Optional<? extends HistoryEntry> maybeHistory = mostRecentHistoryFromSql(eppResource);
+      if (maybeHistory
+          .map(history -> !history.getResourceAtPointInTime().isPresent())
+          .orElse(true)) {
+        ofyTm()
+            .transact(
+                () ->
+                    ofyTm()
+                        .put(
+                            HistoryEntry.createBuilderForResource(eppResource)
+                                .setRegistrarId(registryAdminRegistrarId)
+                                .setBySuperuser(true)
+                                .setRequestedByRegistrar(false)
+                                .setModificationTime(ofyTm().getTransactionTime())
+                                .setReason(HISTORY_REASON)
+                                .setType(HistoryEntry.Type.SYNTHETIC)
+                                .build()));
+      }
     }
   }
 }
