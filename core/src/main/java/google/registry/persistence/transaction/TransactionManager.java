@@ -17,6 +17,7 @@ package google.registry.persistence.transaction;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import google.registry.model.ImmutableObject;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.persistence.VKey;
 import java.util.NoSuchElementException;
@@ -97,6 +98,9 @@ public interface TransactionManager {
   /** Persists all new entities in the database, throws exception if any entity already exists. */
   void insertAll(ImmutableCollection<?> entities);
 
+  /** Persists all new entities in the database, throws exception if any entity already exists. */
+  void insertAll(ImmutableObject... entities);
+
   /**
    * Persists a new entity in the database without writing any backup if the underlying database is
    * Datastore.
@@ -125,7 +129,7 @@ public interface TransactionManager {
   void put(Object entity);
 
   /** Persists all new entities or updates the existing entities in the database. */
-  void putAll(Object... entities);
+  void putAll(ImmutableObject... entities);
 
   /** Persists all new entities or updates the existing entities in the database. */
   void putAll(ImmutableCollection<?> entities);

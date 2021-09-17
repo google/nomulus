@@ -16,6 +16,7 @@ package google.registry.beam.common;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -210,7 +211,6 @@ public class RegistryJpaReadTest {
                     null,
                     100L))
             .build();
-    jpaTm()
-        .transact(() -> jpaTm().insertAll(ImmutableList.of(registry, registrar, contact, domain)));
+    insertInDb(registry, registrar, contact, domain);
   }
 }

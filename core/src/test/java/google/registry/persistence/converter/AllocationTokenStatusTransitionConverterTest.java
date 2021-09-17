@@ -19,6 +19,7 @@ import static google.registry.model.domain.token.AllocationToken.TokenStatus.END
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.NOT_STARTED;
 import static google.registry.model.domain.token.AllocationToken.TokenStatus.VALID;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 
 import com.google.common.collect.ImmutableSortedMap;
@@ -58,7 +59,7 @@ public class AllocationTokenStatusTransitionConverterTest {
         TimedTransitionProperty.fromValueMap(values, TokenStatusTransition.class);
     AllocationTokenStatusTransitionConverterTestEntity testEntity =
         new AllocationTokenStatusTransitionConverterTestEntity(timedTransitionProperty);
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(testEntity);
     AllocationTokenStatusTransitionConverterTestEntity persisted =
         jpaTm()
             .transact(

@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -45,12 +46,12 @@ public class HostHistoryTest extends EntityTestCase {
     saveRegistrar("TheRegistrar");
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
-    jpaTm().transact(() -> jpaTm().insert(host));
+    insertInDb(host);
     VKey<HostResource> hostVKey =
         VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().loadByKey(hostVKey));
     HostHistory hostHistory = createHostHistory(hostFromDb);
-    jpaTm().transact(() -> jpaTm().insert(hostHistory));
+    insertInDb(hostHistory);
     jpaTm()
         .transact(
             () -> {
@@ -64,11 +65,11 @@ public class HostHistoryTest extends EntityTestCase {
   void testLegacyPersistence_nullHostBase() {
     saveRegistrar("TheRegistrar");
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
-    jpaTm().transact(() -> jpaTm().insert(host));
+    insertInDb(host);
 
     HostResource hostFromDb = jpaTm().transact(() -> jpaTm().loadByKey(host.createVKey()));
     HostHistory hostHistory = createHostHistory(hostFromDb).asBuilder().setHost(null).build();
-    jpaTm().transact(() -> jpaTm().insert(hostHistory));
+    insertInDb(hostHistory);
 
     jpaTm()
         .transact(

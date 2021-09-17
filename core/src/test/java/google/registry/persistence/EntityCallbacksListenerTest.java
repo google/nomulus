@@ -18,8 +18,10 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.ImmutableObject;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
 import java.lang.reflect.Method;
@@ -49,7 +51,7 @@ class EntityCallbacksListenerTest {
   @Test
   void verifyAllCallbacks_executedExpectedTimes() {
     TestEntity testPersist = new TestEntity();
-    jpaTm().transact(() -> jpaTm().insert(testPersist));
+    insertInDb(testPersist);
     checkAll(testPersist, 1, 0, 0, 0);
 
     TestEntity testUpdate = new TestEntity();
@@ -100,8 +102,7 @@ class EntityCallbacksListenerTest {
 
   @Test
   void verifyCallbacksNotCalledOnCommit() {
-    TestEntity testEntity = new TestEntity();
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(new TestEntity());
 
     TestEntity testLoad =
         jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestEntity.class, "id")));
@@ -263,7 +264,7 @@ class EntityCallbacksListenerTest {
   }
 
   @MappedSuperclass
-  private static class ParentEntity {
+  private static class ParentEntity extends ImmutableObject {
     @Embedded ParentEmbedded parentEmbedded = new ParentEmbedded();
     @Transient int parentPostLoad = 0;
     @Transient int parentPrePersist = 0;

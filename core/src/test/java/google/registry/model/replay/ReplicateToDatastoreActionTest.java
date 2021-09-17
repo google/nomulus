@@ -17,6 +17,7 @@ package google.registry.model.replay;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.Assert.assertThrows;
@@ -118,7 +119,7 @@ public class ReplicateToDatastoreActionTest {
     TestObject bar = TestObject.create("bar");
 
     // Write a transaction containing "foo".
-    jpaTm().transact(() -> jpaTm().insert(foo));
+    insertInDb(foo);
     task.run();
 
     // Verify that it propagated to datastore, then remove "foo" directly from datastore.
@@ -126,7 +127,7 @@ public class ReplicateToDatastoreActionTest {
     ofyTm().transact(() -> ofyTm().delete(foo.key()));
 
     // Write "bar"
-    jpaTm().transact(() -> jpaTm().insert(bar));
+    insertInDb(bar);
     task.run();
 
     // If we replayed only the most recent transaction, we should have "bar" but not "foo".
@@ -140,12 +141,12 @@ public class ReplicateToDatastoreActionTest {
     TestObject bar = TestObject.create("bar");
 
     // Write a transaction and run just the batch fetch.
-    jpaTm().transact(() -> jpaTm().insert(foo));
+    insertInDb(foo);
     List<TransactionEntity> txns1 = task.getTransactionBatch();
     assertThat(txns1).hasSize(1);
 
     // Write a second transaction and do another batch fetch.
-    jpaTm().transact(() -> jpaTm().insert(bar));
+    insertInDb(bar);
     List<TransactionEntity> txns2 = task.getTransactionBatch();
     assertThat(txns2).hasSize(2);
 
@@ -173,7 +174,7 @@ public class ReplicateToDatastoreActionTest {
   void testMissingTransactions() {
     // Write a transaction (should have a transaction id of 1).
     TestObject foo = TestObject.create("foo");
-    jpaTm().transact(() -> jpaTm().insert(foo));
+    insertInDb(foo);
 
     // Force the last transaction id back to -1 so that we look for transaction 0.
     ofyTm().transact(() -> ofyTm().insert(new LastSqlTransaction(-1)));
@@ -189,7 +190,7 @@ public class ReplicateToDatastoreActionTest {
   void testMissingTransactions_fullTask() {
     // Write a transaction (should have a transaction id of 1).
     TestObject foo = TestObject.create("foo");
-    jpaTm().transact(() -> jpaTm().insert(foo));
+    insertInDb(foo);
 
     // Force the last transaction id back to -1 so that we look for transaction 0.
     ofyTm().transact(() -> ofyTm().insert(new LastSqlTransaction(-1)));
@@ -229,7 +230,7 @@ public class ReplicateToDatastoreActionTest {
                         .build()));
     fakeClock.advanceBy(Duration.standardDays(1));
 
-    jpaTm().transact(() -> jpaTm().insert(TestObject.create("foo")));
+    insertInDb(TestObject.create("foo"));
     task.run();
     // Replication shouldn't have happened
     assertThat(ofyTm().loadAllOf(TestObject.class)).isEmpty();

@@ -313,6 +313,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public void insertAll(ImmutableObject... entities) {
+    insertAll(ImmutableSet.copyOf(entities));
+  }
+
+  @Override
   public void insertWithoutBackup(Object entity) {
     insert(entity);
   }
@@ -335,7 +340,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void putAll(Object... entities) {
+  public void putAll(ImmutableObject... entities) {
     checkArgumentNotNull(entities, "entities must be specified");
     assertInTransaction();
     for (Object entity : entities) {

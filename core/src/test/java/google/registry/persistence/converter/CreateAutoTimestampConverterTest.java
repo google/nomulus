@@ -15,6 +15,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
@@ -45,7 +46,7 @@ public class CreateAutoTimestampConverterTest {
     CreateAutoTimestamp ts = CreateAutoTimestamp.create(DateTime.parse("2019-09-9T11:39:00Z"));
     TestEntity ent = new TestEntity("myinst", ts);
 
-    jpaTm().transact(() -> jpaTm().insert(ent));
+    insertInDb(ent);
     TestEntity result =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "myinst"));
     assertThat(result).isEqualTo(new TestEntity("myinst", ts));
@@ -56,7 +57,7 @@ public class CreateAutoTimestampConverterTest {
     CreateAutoTimestamp ts = CreateAutoTimestamp.create(null);
     TestEntity ent = new TestEntity("autoinit", ts);
 
-    jpaTm().transact(() -> jpaTm().insert(ent));
+    insertInDb(ent);
 
     TestEntity result =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "autoinit"));

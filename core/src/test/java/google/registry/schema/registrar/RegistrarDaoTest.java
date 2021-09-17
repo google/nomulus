@@ -16,6 +16,7 @@ package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -71,13 +72,13 @@ public class RegistrarDaoTest {
   @Test
   void saveNew_worksSuccessfully() {
     assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isFalse();
-    jpaTm().transact(() -> jpaTm().insert(testRegistrar));
+    insertInDb(testRegistrar);
     assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isTrue();
   }
 
   @Test
   void update_worksSuccessfully() {
-    jpaTm().transact(() -> jpaTm().insert(testRegistrar));
+    insertInDb(testRegistrar);
     Registrar persisted = jpaTm().transact(() -> jpaTm().loadByKey(registrarKey));
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
     jpaTm()
@@ -101,7 +102,7 @@ public class RegistrarDaoTest {
   @Test
   void load_worksSuccessfully() {
     assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isFalse();
-    jpaTm().transact(() -> jpaTm().insert(testRegistrar));
+    insertInDb(testRegistrar);
     Registrar persisted = jpaTm().transact(() -> jpaTm().loadByKey(registrarKey));
 
     assertThat(persisted.getRegistrarId()).isEqualTo("registrarId");

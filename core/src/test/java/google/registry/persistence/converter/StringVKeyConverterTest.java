@@ -16,7 +16,9 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
+import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
 import google.registry.testing.AppEngineExtension;
@@ -47,7 +49,7 @@ public class StringVKeyConverterTest {
             "TheRealSpartacus",
             VKey.createSql(TestStringEntity.class, "ImSpartacus!"),
             VKey.createSql(CompositeKeyTestStringEntity.class, "NoImSpartacus!"));
-    jpaTm().transact(() -> jpaTm().insert(original));
+    insertInDb(original);
 
     TestStringEntity retrieved =
         jpaTm()
@@ -63,7 +65,7 @@ public class StringVKeyConverterTest {
   @Entity(name = "TestStringEntity")
   @com.googlecode.objectify.annotation.Entity
   @WithStringVKey(classNameSuffix = "StringType")
-  static class TestStringEntity {
+  static class TestStringEntity extends ImmutableObject {
     @com.googlecode.objectify.annotation.Id @Id String id;
 
     VKey<TestStringEntity> other;

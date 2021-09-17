@@ -16,6 +16,7 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.ImmutableObject;
@@ -66,7 +67,7 @@ public class JpaTransactionManagerRuleTest {
     // This test verifies that 1) withEntityClass() has registered TestEntity and 2) The table
     // has been created, implying withProperty(HBM2DDL_AUTO, "update") worked.
     TestEntity original = new TestEntity("key", "value");
-    jpaTm().transact(() -> jpaTm().insert(original));
+    insertInDb(original);
     TestEntity retrieved =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "key"));
     assertThat(retrieved).isEqualTo(original);

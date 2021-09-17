@@ -16,6 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
@@ -63,7 +64,7 @@ public class InetAddressSetConverterTest {
 
   private void verifySaveAndLoad(@Nullable Set<InetAddress> inetAddresses) {
     InetAddressSetTestEntity testEntity = new InetAddressSetTestEntity(inetAddresses);
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(testEntity);
     InetAddressSetTestEntity persisted =
         jpaTm()
             .transact(

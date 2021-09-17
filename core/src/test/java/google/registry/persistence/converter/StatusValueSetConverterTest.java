@@ -16,8 +16,10 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
@@ -39,14 +41,14 @@ public class StatusValueSetConverterTest {
     Set<StatusValue> enums = ImmutableSet.of(StatusValue.INACTIVE, StatusValue.PENDING_DELETE);
     TestEntity obj = new TestEntity("foo", enums);
 
-    jpaTm().transact(() -> jpaTm().insert(obj));
+    insertInDb(obj);
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "foo"));
     assertThat(persisted.data).isEqualTo(enums);
   }
 
   @Entity(name = "TestEntity")
-  static class TestEntity {
+  static class TestEntity extends ImmutableObject {
     @Id String name;
 
     Set<StatusValue> data;

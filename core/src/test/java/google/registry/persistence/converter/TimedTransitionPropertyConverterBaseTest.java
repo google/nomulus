@@ -16,6 +16,7 @@ package google.registry.persistence.converter;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -59,7 +60,7 @@ class TimedTransitionPropertyConverterBaseTest {
   @Test
   void roundTripConversion_returnsSameTimedTransitionProperty() {
     TestEntity testEntity = new TestEntity(TIMED_TRANSITION_PROPERTY);
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(testEntity);
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).containsExactlyEntriesIn(TIMED_TRANSITION_PROPERTY);
@@ -68,7 +69,7 @@ class TimedTransitionPropertyConverterBaseTest {
   @Test
   void testUpdateColumn_succeeds() {
     TestEntity testEntity = new TestEntity(TIMED_TRANSITION_PROPERTY);
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(testEntity);
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).containsExactlyEntriesIn(TIMED_TRANSITION_PROPERTY);
@@ -83,7 +84,7 @@ class TimedTransitionPropertyConverterBaseTest {
   @Test
   void testNullValue_writesAndReadsNullSuccessfully() {
     TestEntity testEntity = new TestEntity(null);
-    jpaTm().transact(() -> jpaTm().insert(testEntity));
+    insertInDb(testEntity);
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.property).isNull();
