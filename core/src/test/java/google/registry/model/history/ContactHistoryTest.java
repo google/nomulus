@@ -19,6 +19,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.newContactResource;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -48,7 +49,7 @@ public class ContactHistoryTest extends EntityTestCase {
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
     insertInDb(contact);
     VKey<ContactResource> contactVKey = contact.createVKey();
-    ContactResource contactFromDb = jpaTm().transact(() -> jpaTm().loadByKey(contactVKey));
+    ContactResource contactFromDb = loadByKey(contactVKey);
     ContactHistory contactHistory = createContactHistory(contactFromDb);
     insertInDb(contactHistory);
     jpaTm()
@@ -67,7 +68,7 @@ public class ContactHistoryTest extends EntityTestCase {
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
     insertInDb(contact);
     VKey<ContactResource> contactVKey = contact.createVKey();
-    ContactResource contactFromDb = jpaTm().transact(() -> jpaTm().loadByKey(contactVKey));
+    ContactResource contactFromDb = loadByKey(contactVKey);
     ContactHistory contactHistory =
         createContactHistory(contactFromDb).asBuilder().setContact(null).build();
     insertInDb(contactHistory);

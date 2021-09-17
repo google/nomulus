@@ -17,12 +17,13 @@ package google.registry.model.contact;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.ContactResourceSubject.assertAboutContacts;
 import static google.registry.testing.DatabaseHelper.cloneAndSetAutoTimestamps;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -33,7 +34,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
-import google.registry.model.ImmutableObjectSubject;
 import google.registry.model.contact.Disclose.PostalInfoChoice;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -130,7 +130,7 @@ public class ContactResourceTest extends EntityTestCase {
 
   @Test
   void testContactBaseToContactResource() {
-    ImmutableObjectSubject.assertAboutImmutableObjects()
+    assertAboutImmutableObjects()
         .that(new ContactResource.Builder().copyFrom(contactResource).build())
         .isEqualExceptFields(contactResource, "updateTimestamp", "revisions");
   }
@@ -149,13 +149,7 @@ public class ContactResourceTest extends EntityTestCase {
     saveRegistrar("losing");
     insertInDb(originalContact);
     ContactResource persisted =
-        jpaTm()
-            .transact(
-                () ->
-                    jpaTm()
-                        .loadByKey(
-                            VKey.createSql(ContactResource.class, originalContact.getRepoId())));
-
+        loadByKey(VKey.createSql(ContactResource.class, originalContact.getRepoId()));
     ContactResource fixed =
         originalContact
             .asBuilder()
@@ -167,9 +161,7 @@ public class ContactResourceTest extends EntityTestCase {
                     .setServerApproveEntities(null)
                     .build())
             .build();
-    ImmutableObjectSubject.assertAboutImmutableObjects()
-        .that(persisted)
-        .isEqualExceptFields(fixed, "updateTimestamp");
+    assertAboutImmutableObjects().that(persisted).isEqualExceptFields(fixed, "updateTimestamp");
   }
 
   @Test

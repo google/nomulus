@@ -15,10 +15,10 @@
 package google.registry.model.poll;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -94,17 +94,13 @@ public class PollMessageTest extends EntityTestCase {
   @TestSqlOnly
   void testCloudSqlSupportForPolymorphicVKey() {
     insertInDb(oneTime);
-    PollMessage persistedOneTime =
-        jpaTm()
-            .transact(() -> jpaTm().loadByKey(VKey.createSql(PollMessage.class, oneTime.getId())));
+    PollMessage persistedOneTime = loadByKey(VKey.createSql(PollMessage.class, oneTime.getId()));
     assertThat(persistedOneTime).isInstanceOf(PollMessage.OneTime.class);
     assertThat(persistedOneTime).isEqualTo(oneTime);
 
     insertInDb(autoRenew);
     PollMessage persistedAutoRenew =
-        jpaTm()
-            .transact(
-                () -> jpaTm().loadByKey(VKey.createSql(PollMessage.class, autoRenew.getId())));
+        loadByKey(VKey.createSql(PollMessage.class, autoRenew.getId()));
     assertThat(persistedAutoRenew).isInstanceOf(PollMessage.Autorenew.class);
     assertThat(persistedAutoRenew).isEqualTo(autoRenew);
   }

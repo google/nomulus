@@ -22,6 +22,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.reporting.spec11.Spec11RegistrarThreatMatchesParserTest.sampleThreatMatches;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.deleteResource;
+import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.loadAllOf;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistResource;
@@ -175,11 +177,10 @@ public class BackfillSpec11ThreatMatchesCommandTest
             .setRegistrarId("TheRegistrar")
             .setThreatTypes(ImmutableSet.of(ThreatType.MALWARE))
             .build();
-    jpaTm().transact(() -> jpaTm().put(previous));
+    insertInDb(previous);
 
     runCommandForced();
-    ImmutableList<Spec11ThreatMatch> threatMatches =
-        jpaTm().transact(() -> jpaTm().loadAllOf(Spec11ThreatMatch.class));
+    ImmutableList<Spec11ThreatMatch> threatMatches = loadAllOf(Spec11ThreatMatch.class);
     assertAboutImmutableObjects()
         .that(Iterables.getOnlyElement(threatMatches))
         .isEqualExceptFields(previous, "id");
@@ -197,7 +198,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
             .setRegistrarId("TheRegistrar")
             .setThreatTypes(ImmutableSet.of(ThreatType.MALWARE))
             .build();
-    jpaTm().transact(() -> jpaTm().put(previous));
+    insertInDb(previous);
 
     runCommandForced("--overwrite_existing_dates");
     verifyExactlyThreeEntriesInDbFromLastDay();
@@ -214,7 +215,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
         assertThrows(RuntimeException.class, this::runCommandForced);
     assertThat(runtimeException.getCause().getClass()).isEqualTo(IOException.class);
     assertThat(runtimeException).hasCauseThat().hasMessageThat().isEqualTo("hi");
-    jpaTm().transact(() -> assertThat(jpaTm().loadAllOf(Spec11ThreatMatch.class)).isEmpty());
+    assertThat(loadAllOf(Spec11ThreatMatch.class)).isEmpty();
   }
 
   @TestOfyAndSql

@@ -165,7 +165,7 @@ public interface TransactionManager {
   void updateAll(ImmutableCollection<?> entities);
 
   /** Updates all entities in the database, throws exception if any entity does not exist. */
-  void updateAll(Object... entities);
+  void updateAll(ImmutableObject... entities);
 
   /**
    * Updates an entity in the database without writing commit logs if the underlying database is

@@ -157,28 +157,27 @@ public class PremiumListDao {
   }
 
   public static PremiumList save(PremiumList premiumList) {
-    jpaTm().transact(() -> jpaTm().insert(premiumList));
-    premiumListCache.invalidate(premiumList.getName());
-    jpaTm()
+    return jpaTm()
         .transact(
             () -> {
+              jpaTm().insert(premiumList);
+              premiumListCache.invalidate(premiumList.getName());
               if (premiumList.getLabelsToPrices() != null) {
                 Optional<PremiumList> savedPremiumList =
                     PremiumListDao.getLatestRevision(premiumList.getName());
                 ImmutableSet.Builder<PremiumEntry> entries = new ImmutableSet.Builder<>();
-                premiumList.getLabelsToPrices().entrySet().stream()
+                premiumList
+                    .getLabelsToPrices()
                     .forEach(
-                        entry ->
+                        (key, value) ->
                             entries.add(
                                 PremiumEntry.create(
-                                    savedPremiumList.get().getRevisionId(),
-                                    entry.getValue(),
-                                    entry.getKey())));
+                                    savedPremiumList.get().getRevisionId(), value, key)));
                 jpaTm().insertAll(entries.build());
               }
+              premiumListCache.invalidate(premiumList.getName());
+              return premiumList;
             });
-    premiumListCache.invalidate(premiumList.getName());
-    return premiumList;
   }
 
   public static void delete(PremiumList premiumList) {

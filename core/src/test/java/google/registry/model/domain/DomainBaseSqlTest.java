@@ -19,6 +19,10 @@ import static google.registry.flows.domain.DomainTransferUtils.createPendingTran
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
+import static google.registry.testing.DatabaseHelper.loadByKey;
+import static google.registry.testing.DatabaseHelper.updateInDb;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
@@ -139,40 +143,19 @@ public class DomainBaseSqlTest {
   @TestSqlOnly
   void testDomainBasePersistence() {
     persistDomain();
-
-    jpaTm()
-        .transact(
-            () -> {
-              DomainBase result = jpaTm().loadByKey(domain.createVKey());
-              assertEqualDomainExcept(result);
-            });
+    assertEqualDomainExcept(loadByKey(domain.createVKey()));
   }
 
   @TestSqlOnly
   void testHostForeignKeyConstraints() {
-    assertThrowForeignKeyViolation(
-        () ->
-            jpaTm()
-                .transact(
-                    () -> {
-                      // Persist the domain without the associated host object.
-                      jpaTm().insert(contact);
-                      jpaTm().insert(contact2);
-                      jpaTm().insert(domain);
-                    }));
+    // Persist the domain without the associated host object.
+    assertThrowForeignKeyViolation(() -> insertInDb(contact, contact2, domain));
   }
 
   @TestSqlOnly
   void testContactForeignKeyConstraints() {
-    assertThrowForeignKeyViolation(
-        () ->
-            jpaTm()
-                .transact(
-                    () -> {
-                      // Persist the domain without the associated contact objects.
-                      jpaTm().insert(domain);
-                      jpaTm().insert(host);
-                    }));
+    // Persist the domain without the associated contact objects.
+    assertThrowForeignKeyViolation(() -> insertInDb(domain, host));
   }
 
   @TestSqlOnly
@@ -184,13 +167,8 @@ public class DomainBaseSqlTest {
               DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
               jpaTm().put(persisted.asBuilder().build());
             });
-    jpaTm()
-        .transact(
-            () -> {
-              // Load the domain in its entirety.
-              DomainBase result = jpaTm().loadByKey(domain.createVKey());
-              assertEqualDomainExcept(result);
-            });
+    // Load the domain in its entirety.
+    assertEqualDomainExcept(loadByKey(domain.createVKey()));
   }
 
   @TestSqlOnly
@@ -379,24 +357,12 @@ public class DomainBaseSqlTest {
   @TestSqlOnly
   void testUpdates() {
     createTld("com");
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm().insert(contact);
-              jpaTm().insert(contact2);
-              jpaTm().insert(domain);
-              jpaTm().insert(host);
-            });
+    insertInDb(contact, contact2, domain, host);
     domain = domain.asBuilder().setNameservers(ImmutableSet.of()).build();
-    jpaTm().transact(() -> jpaTm().put(domain));
-    jpaTm()
-        .transact(
-            () -> {
-              DomainBase result = jpaTm().loadByKey(domain.createVKey());
-              assertAboutImmutableObjects()
-                  .that(result)
-                  .isEqualExceptFields(domain, "updateTimestamp", "creationTime");
-            });
+    updateInDb(domain);
+    assertAboutImmutableObjects()
+        .that(loadByEntity(domain))
+        .isEqualExceptFields(domain, "updateTimestamp", "creationTime");
   }
 
   static ContactResource makeContact(String repoId) {
@@ -509,9 +475,7 @@ public class DomainBaseSqlTest {
                           "registrar1",
                           billEvent.createVKey()));
 
-              jpaTm().insert(contact);
-              jpaTm().insert(contact2);
-              jpaTm().insert(host);
+              jpaTm().insertAll(contact, contact2, host);
               domain =
                   domain
                       .asBuilder()
@@ -522,16 +486,18 @@ public class DomainBaseSqlTest {
                       .setGracePeriods(gracePeriods)
                       .build();
               historyEntry = historyEntry.asBuilder().setDomain(domain).build();
-              jpaTm().insert(historyEntry);
-              jpaTm().insert(autorenewPollMessage);
-              jpaTm().insert(billEvent);
-              jpaTm().insert(deletePollMessage);
-              jpaTm().insert(oneTimeBillingEvent);
-              jpaTm().insert(domain);
+              jpaTm()
+                  .insertAll(
+                      historyEntry,
+                      autorenewPollMessage,
+                      billEvent,
+                      deletePollMessage,
+                      oneTimeBillingEvent,
+                      domain);
             });
 
     // Store the existing BillingRecurrence VKey.  This happens after the event has been persisted.
-    DomainBase persisted = jpaTm().transact(() -> jpaTm().loadByKey(domain.createVKey()));
+    DomainBase persisted = loadByKey(domain.createVKey());
 
     // Verify that the domain data has been persisted.
     // dsData still isn't persisted.  gracePeriods appears to have the same values but for some
@@ -539,8 +505,7 @@ public class DomainBaseSqlTest {
     assertEqualDomainExcept(persisted, "creationTime", "dsData", "gracePeriods");
 
     // Verify that the DomainContent object from the history record sets the fields correctly.
-    DomainHistory persistedHistoryEntry =
-        jpaTm().transact(() -> jpaTm().loadByKey(historyEntry.createVKey()));
+    DomainHistory persistedHistoryEntry = loadByKey(historyEntry.createVKey());
     assertThat(persistedHistoryEntry.getDomainContent().get().getAutorenewPollMessage())
         .isEqualTo(domain.getAutorenewPollMessage());
     assertThat(persistedHistoryEntry.getDomainContent().get().getAutorenewBillingEvent())
@@ -669,7 +634,7 @@ public class DomainBaseSqlTest {
             });
 
     // Store the existing BillingRecurrence VKey.  This happens after the event has been persisted.
-    DomainBase persisted = jpaTm().transact(() -> jpaTm().loadByKey(domain.createVKey()));
+    DomainBase persisted = loadByKey(domain.createVKey());
 
     // Verify that the domain data has been persisted.
     // dsData still isn't persisted.  gracePeriods appears to have the same values but for some
@@ -677,8 +642,7 @@ public class DomainBaseSqlTest {
     assertEqualDomainExcept(persisted, "creationTime", "dsData", "gracePeriods");
 
     // Verify that the DomainContent object from the history record sets the fields correctly.
-    DomainHistory persistedHistoryEntry =
-        jpaTm().transact(() -> jpaTm().loadByKey(historyEntry.createVKey()));
+    DomainHistory persistedHistoryEntry = loadByKey(historyEntry.createVKey());
     assertThat(persistedHistoryEntry.getDomainContent().get().getAutorenewPollMessage())
         .isEqualTo(domain.getAutorenewPollMessage());
     assertThat(persistedHistoryEntry.getDomainContent().get().getAutorenewBillingEvent())

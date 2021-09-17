@@ -1372,7 +1372,7 @@ public class DatabaseHelper {
   }
 
   /** Returns whether or not the given entity exists in the database. */
-  public static boolean existsInDatabase(Object object) {
+  public static boolean existsInDb(Object object) {
     return transactIfJpaTm(() -> tm().exists(object));
   }
 
@@ -1384,6 +1384,26 @@ public class DatabaseHelper {
   /** Inserts the given entities into Cloud SQL in a single transaction. */
   public static <T extends ImmutableObject> void insertInDb(ImmutableCollection<T> entities) {
     jpaTm().transact(() -> jpaTm().insertAll(entities));
+  }
+
+  /** Puts the given entity/entities into Cloud SQL in a single transaction. */
+  public static <T extends ImmutableObject> void putInDb(T... entities) {
+    jpaTm().transact(() -> jpaTm().putAll(entities));
+  }
+
+  /** Puts the given entities into Cloud SQL in a single transaction. */
+  public static <T extends ImmutableObject> void putInDb(ImmutableCollection<T> entities) {
+    jpaTm().transact(() -> jpaTm().putAll(entities));
+  }
+
+  /** Updates the given entities in Cloud SQL in a single transaction. */
+  public static <T extends ImmutableObject> void updateInDb(T... entities) {
+    jpaTm().transact(() -> jpaTm().updateAll(entities));
+  }
+
+  /** Updates the given entities in Cloud SQL in a single transaction. */
+  public static <T extends ImmutableObject> void updateInDb(ImmutableCollection<T> entities) {
+    jpaTm().transact(() -> jpaTm().updateAll(entities));
   }
 
   /**

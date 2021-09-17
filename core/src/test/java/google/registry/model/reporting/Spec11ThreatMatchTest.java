@@ -19,6 +19,7 @@ import static google.registry.model.reporting.Spec11ThreatMatch.ThreatType.MALWA
 import static google.registry.model.reporting.Spec11ThreatMatch.ThreatType.UNWANTED_SOFTWARE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.SqlHelper.assertThrowForeignKeyViolation;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -107,15 +108,7 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
   void testPersistence() {
     createTld("tld");
     saveRegistrar(REGISTRAR_ID);
-
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm().insert(registrantContact);
-              jpaTm().insert(domain);
-              jpaTm().insert(host);
-              jpaTm().insert(threat);
-            });
+    insertInDb(registrantContact, domain, host, threat);
 
     VKey<Spec11ThreatMatch> threatVKey = VKey.createSql(Spec11ThreatMatch.class, threat.getId());
     Spec11ThreatMatch persistedThreat = jpaTm().transact(() -> jpaTm().loadByKey(threatVKey));
@@ -128,32 +121,13 @@ public final class Spec11ThreatMatchTest extends EntityTestCase {
   @TestSqlOnly
   @Disabled("We can't rely on foreign keys until we've migrated to SQL")
   void testThreatForeignKeyConstraints() {
-    assertThrowForeignKeyViolation(
-        () -> {
-          jpaTm()
-              .transact(
-                  () -> {
-                    // Persist the threat without the associated registrar.
-                    jpaTm().insert(host);
-                    jpaTm().insert(registrantContact);
-                    jpaTm().insert(domain);
-                    jpaTm().insert(threat);
-                  });
-        });
+    // Persist the threat without the associated registrar.
+    assertThrowForeignKeyViolation(() -> insertInDb(host, registrantContact, domain, threat));
 
     saveRegistrar(REGISTRAR_ID);
 
-    assertThrowForeignKeyViolation(
-        () -> {
-          jpaTm()
-              .transact(
-                  () -> {
-                    // Persist the threat without the associated domain.
-                    jpaTm().insert(registrantContact);
-                    jpaTm().insert(host);
-                    jpaTm().insert(threat);
-                  });
-        });
+    // Persist the threat without the associated domain.
+    assertThrowForeignKeyViolation(() -> insertInDb(registrantContact, host, threat));
   }
 
   @TestOfyAndSql

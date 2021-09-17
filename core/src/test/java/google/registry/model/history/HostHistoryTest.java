@@ -19,6 +19,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -49,7 +50,7 @@ public class HostHistoryTest extends EntityTestCase {
     insertInDb(host);
     VKey<HostResource> hostVKey =
         VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
-    HostResource hostFromDb = jpaTm().transact(() -> jpaTm().loadByKey(hostVKey));
+    HostResource hostFromDb = loadByKey(hostVKey);
     HostHistory hostHistory = createHostHistory(hostFromDb);
     insertInDb(hostHistory);
     jpaTm()
@@ -67,7 +68,7 @@ public class HostHistoryTest extends EntityTestCase {
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     insertInDb(host);
 
-    HostResource hostFromDb = jpaTm().transact(() -> jpaTm().loadByKey(host.createVKey()));
+    HostResource hostFromDb = loadByKey(host.createVKey());
     HostHistory hostHistory = createHostHistory(hostFromDb).asBuilder().setHost(null).build();
     insertInDb(hostHistory);
 

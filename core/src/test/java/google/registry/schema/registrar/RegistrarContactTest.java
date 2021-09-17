@@ -16,8 +16,8 @@ package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.SqlHelper.saveRegistrar;
 
 import com.google.common.collect.ImmutableSet;
@@ -67,8 +67,6 @@ class RegistrarContactTest {
   @Test
   void testPersistence_succeeds() {
     insertInDb(testRegistrarPoc);
-    RegistrarContact persisted =
-        jpaTm().transact(() -> jpaTm().loadByKey(testRegistrarPoc.createVKey()));
-    assertThat(persisted).isEqualTo(testRegistrarPoc);
+    assertThat(loadByEntity(testRegistrarPoc)).isEqualTo(testRegistrarPoc);
   }
 }

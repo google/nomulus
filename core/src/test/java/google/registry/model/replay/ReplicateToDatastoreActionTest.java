@@ -89,12 +89,7 @@ public class ReplicateToDatastoreActionTest {
     TestObject bar = TestObject.create("bar");
     TestObject baz = TestObject.create("baz");
 
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm().insert(foo);
-              jpaTm().insert(bar);
-            });
+    insertInDb(foo, bar);
     task.run();
 
     assertThat(ofyTm().transact(() -> ofyTm().loadByKey(foo.key()))).isEqualTo(foo);
@@ -205,7 +200,7 @@ public class ReplicateToDatastoreActionTest {
   @Test
   void testBeforeDatastoreSaveCallback() {
     TestObject testObject = TestObject.create("foo");
-    jpaTm().transact(() -> jpaTm().put(testObject));
+    insertInDb(testObject);
     task.run();
     assertThat(ofyTm().loadAllOf(TestObject.class)).containsExactly(testObject);
     assertThat(TestObject.beforeDatastoreSaveCallCount).isEqualTo(1);

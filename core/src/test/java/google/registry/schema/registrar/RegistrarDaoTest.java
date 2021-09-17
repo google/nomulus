@@ -15,8 +15,10 @@
 package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.existsInDb;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.loadByKey;
+import static google.registry.testing.DatabaseHelper.updateInDb;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -71,39 +73,32 @@ public class RegistrarDaoTest {
 
   @Test
   void saveNew_worksSuccessfully() {
-    assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isFalse();
+    assertThat(existsInDb(testRegistrar)).isFalse();
     insertInDb(testRegistrar);
-    assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isTrue();
+    assertThat(existsInDb(testRegistrar)).isTrue();
   }
 
   @Test
   void update_worksSuccessfully() {
     insertInDb(testRegistrar);
-    Registrar persisted = jpaTm().transact(() -> jpaTm().loadByKey(registrarKey));
+    Registrar persisted = loadByKey(registrarKey);
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");
-    jpaTm()
-        .transact(
-            () ->
-                jpaTm()
-                    .update(
-                        persisted.asBuilder().setRegistrarName("changedRegistrarName").build()));
-    Registrar updated = jpaTm().transact(() -> jpaTm().loadByKey(registrarKey));
+    updateInDb(persisted.asBuilder().setRegistrarName("changedRegistrarName").build());
+    Registrar updated = loadByKey(registrarKey);
     assertThat(updated.getRegistrarName()).isEqualTo("changedRegistrarName");
   }
 
   @Test
   void update_throwsExceptionWhenEntityDoesNotExist() {
-    assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isFalse();
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> jpaTm().transact(() -> jpaTm().update(testRegistrar)));
+    assertThat(existsInDb(testRegistrar)).isFalse();
+    assertThrows(IllegalArgumentException.class, () -> updateInDb(testRegistrar));
   }
 
   @Test
   void load_worksSuccessfully() {
-    assertThat(jpaTm().transact(() -> jpaTm().exists(testRegistrar))).isFalse();
+    assertThat(existsInDb(testRegistrar)).isFalse();
     insertInDb(testRegistrar);
-    Registrar persisted = jpaTm().transact(() -> jpaTm().loadByKey(registrarKey));
+    Registrar persisted = loadByKey(registrarKey);
 
     assertThat(persisted.getRegistrarId()).isEqualTo("registrarId");
     assertThat(persisted.getRegistrarName()).isEqualTo("registrarName");

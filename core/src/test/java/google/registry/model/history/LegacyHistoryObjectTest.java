@@ -20,6 +20,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
 import static google.registry.util.CollectionUtils.nullToEmpty;
@@ -79,14 +80,8 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     ContactHistory legacyContactHistory = (ContactHistory) fromObjectify;
 
     // Next, save that from-Datastore object in SQL and verify we can load it back in
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm().insert(contact);
-              jpaTm().insert(legacyContactHistory);
-            });
-    ContactHistory legacyHistoryFromSql =
-        jpaTm().transact(() -> jpaTm().loadByKey(legacyContactHistory.createVKey()));
+    insertInDb(contact, legacyContactHistory);
+    ContactHistory legacyHistoryFromSql = loadByKey(legacyContactHistory.createVKey());
     assertAboutImmutableObjects()
         .that(legacyContactHistory)
         .isEqualExceptFields(legacyHistoryFromSql);
@@ -171,14 +166,8 @@ public class LegacyHistoryObjectTest extends EntityTestCase {
     HostHistory legacyHostHistory = (HostHistory) fromObjectify;
 
     // Next, save that from-Datastore object in SQL and verify we can load it back in
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm().insert(host);
-              jpaTm().insert(legacyHostHistory);
-            });
-    HostHistory legacyHistoryFromSql =
-        jpaTm().transact(() -> jpaTm().loadByKey(legacyHostHistory.createVKey()));
+    insertInDb(host, legacyHostHistory);
+    HostHistory legacyHistoryFromSql = loadByKey(legacyHostHistory.createVKey());
     assertAboutImmutableObjects().that(legacyHostHistory).isEqualExceptFields(legacyHistoryFromSql);
     // can't compare hostRepoId directly since it doesn't save the ofy key in SQL
     assertThat(legacyHostHistory.getParentVKey().getSqlKey())

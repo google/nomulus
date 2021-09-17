@@ -18,7 +18,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.loadAllOf;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
@@ -323,15 +324,14 @@ class InitSqlPipelineTest {
     InitSqlPipeline initSqlPipeline = new InitSqlPipeline(options);
     initSqlPipeline.run(testPipeline).waitUntilFinish();
     try (AppEngineEnvironment env = new AppEngineEnvironment("test")) {
-      assertHostResourceEquals(
-          jpaTm().transact(() -> jpaTm().loadByKey(hostResource.createVKey())), hostResource);
-      assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Registrar.class)))
+      assertHostResourceEquals(loadByKey(hostResource.createVKey()), hostResource);
+      assertThat(loadAllOf(Registrar.class))
           .comparingElementsUsing(immutableObjectCorrespondence("lastUpdateTime"))
           .containsExactly(registrar1, registrar2);
-      assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class)))
+      assertThat(loadAllOf(ContactResource.class))
           .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
           .containsExactly(contact1, contact2);
-      assertDomainEquals(jpaTm().transact(() -> jpaTm().loadByKey(domain.createVKey())), domain);
+      assertDomainEquals(loadByKey(domain.createVKey()), domain);
     }
   }
 
