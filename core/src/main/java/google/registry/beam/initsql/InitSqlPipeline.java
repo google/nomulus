@@ -25,6 +25,7 @@ import google.registry.backup.VersionedEntity;
 import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.initsql.Transforms.RemoveDomainBaseForeignKeys;
 import google.registry.model.billing.BillingEvent;
+import google.registry.model.common.Cursor;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken;
@@ -62,6 +63,7 @@ import org.joda.time.DateTime;
  * <ol>
  *   <li>{@link Registry}: Assumes that {@code PremiumList} and {@code ReservedList} have been set
  *       up in the SQL database.
+ *   <li>{@link Cursor}: Logically can depend on {@code Registry}, but without foreign key.
  *   <li>{@link Registrar}: Logically depends on {@code Registry}, Foreign key not modeled yet.
  *   <li>{@link ContactResource}: references {@code Registrar}
  *   <li>{@link RegistrarContact}: references {@code Registrar}.
@@ -101,7 +103,11 @@ public class InitSqlPipeline implements Serializable {
    */
   private static final ImmutableList<Class<?>> PHASE_ONE_ORDERED =
       ImmutableList.of(
-          Registry.class, Registrar.class, ContactResource.class, RegistrarContact.class);
+          Registry.class,
+          Cursor.class,
+          Registrar.class,
+          ContactResource.class,
+          RegistrarContact.class);
 
   /**
    * Datastore kinds to be written to the SQL database after the cleansed version of {@link
