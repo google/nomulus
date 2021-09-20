@@ -134,7 +134,7 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public void insertWithoutBackup(Object entity) {
+  public void insertWithoutBackup(ImmutableObject entity) {
     putWithoutBackup(entity);
   }
 
@@ -160,7 +160,7 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public void putWithoutBackup(Object entity) {
+  public void putWithoutBackup(ImmutableObject entity) {
     syncIfTransactionless(getOfy().saveWithoutBackup().entities(toDatastoreEntity(entity)));
   }
 
@@ -185,7 +185,7 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public void updateWithoutBackup(Object entity) {
+  public void updateWithoutBackup(ImmutableObject entity) {
     putWithoutBackup(entity);
   }
 
