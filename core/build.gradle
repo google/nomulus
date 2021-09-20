@@ -457,6 +457,22 @@ task soyToJava {
               "--srcs", "${soyFiles.join(',')}",
               "--compileTimeGlobalsFile", "${resourcesSourceDir}/google/registry/ui/globals.txt"
     }
+
+    // Replace the "@link" tags after the "@deprecated" tags in the generated
+    // files.  The soy compiler doesn't generate imports for these, causing
+    // us to get warnings when we generate javadocs.
+    // TODO(b/200296387): To be fair, the deprecations are accurate: we're
+    // using the old "SoyInfo" classes instead of the new "Templates" files.
+    // When we convert to the new classes, this hack can go away.
+    def outputs = fileTree(outputDirectory) {
+      include '**/*.java'
+    }
+
+    outputs.each { file ->
+      exec {
+        commandLine 'sed', '-i', 's/@link/LINK/g', file.getCanonicalPath()
+      }
+    }
   }
 
   doLast {
