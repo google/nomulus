@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.persistence.FlushModeType;
 import javax.persistence.LockModeType;
 import javax.persistence.Parameter;
@@ -39,6 +40,11 @@ class ReadOnlyCheckingQuery implements Query {
   @Override
   public List getResultList() {
     return delegate.getResultList();
+  }
+
+  @Override
+  public Stream getResultStream() {
+    return delegate.getResultStream();
   }
 
   @Override
