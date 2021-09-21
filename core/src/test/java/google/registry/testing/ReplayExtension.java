@@ -38,6 +38,7 @@ import google.registry.persistence.transaction.Transaction.Delete;
 import google.registry.persistence.transaction.Transaction.Mutation;
 import google.registry.persistence.transaction.Transaction.Update;
 import google.registry.persistence.transaction.TransactionEntity;
+import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +46,7 @@ import javax.annotation.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.mockito.Mockito;
 
 /**
  * A JUnit extension that replays datastore transactions against postgresql.
@@ -81,7 +83,11 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
    * Create a replay extension that replays from SQL to cloud datastore when running in SQL mode.
    */
   public static ReplayExtension createWithDoubleReplay(FakeClock clock) {
-    return new ReplayExtension(clock, true, new ReplicateToDatastoreAction(clock));
+    return new ReplayExtension(
+        clock,
+        true,
+        new ReplicateToDatastoreAction(
+            clock, Mockito.mock(RequestStatusChecker.class), new FakeResponse()));
   }
 
   @Override

@@ -15,6 +15,7 @@
 package google.registry.model.server;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isAtOrAfter;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -35,6 +36,7 @@ import google.registry.util.RequestStatusChecker;
 import google.registry.util.RequestStatusCheckerImpl;
 import java.io.Serializable;
 import java.util.Optional;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.IdClass;
@@ -215,45 +217,45 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
     // It's important to use transactNew rather than transact, because a Lock can be used to control
     // access to resources like GCS that can't be transactionally rolled back. Therefore, the lock
     // must be definitively acquired before it is used, even when called inside another transaction.
+    Supplier<AcquireResult> lockAcquirer =
+        () -> {
+          DateTime now = tm().getTransactionTime();
+
+          // Checking if an unexpired lock still exists - if so, the lock can't be acquired.
+          Lock lock =
+              tm().loadByKeyIfPresent(
+                      VKey.create(
+                          Lock.class,
+                          new LockId(resourceName, scope),
+                          Key.create(Lock.class, lockId)))
+                  .orElse(null);
+          if (lock != null) {
+            logger.atInfo().log(
+                "Loaded existing lock: %s for request: %s", lock.lockId, lock.requestLogId);
+          }
+          LockState lockState;
+          if (lock == null) {
+            lockState = LockState.FREE;
+          } else if (isAtOrAfter(now, lock.expirationTime)) {
+            lockState = LockState.TIMED_OUT;
+          } else if (checkThreadRunning && !requestStatusChecker.isRunning(lock.requestLogId)) {
+            lockState = LockState.OWNER_DIED;
+          } else {
+            lockState = LockState.IN_USE;
+            return AcquireResult.create(now, lock, null, lockState);
+          }
+
+          Lock newLock =
+              create(resourceName, scope, requestStatusChecker.getLogId(), now, leaseLength);
+          // Locks are not parented under an EntityGroupRoot (so as to avoid write
+          // contention) and don't need to be backed up.
+          tm().putIgnoringReadOnly(newLock);
+
+          return AcquireResult.create(now, lock, newLock, lockState);
+        };
+    // In ofy, backup is determined per-action, but in SQL it's determined per-transaction
     AcquireResult acquireResult =
-        tm().transactNew(
-                () -> {
-                  DateTime now = tm().getTransactionTime();
-
-                  // Checking if an unexpired lock still exists - if so, the lock can't be acquired.
-                  Lock lock =
-                      tm().loadByKeyIfPresent(
-                              VKey.create(
-                                  Lock.class,
-                                  new LockId(resourceName, scope),
-                                  Key.create(Lock.class, lockId)))
-                          .orElse(null);
-                  if (lock != null) {
-                    logger.atInfo().log(
-                        "Loaded existing lock: %s for request: %s", lock.lockId, lock.requestLogId);
-                  }
-                  LockState lockState;
-                  if (lock == null) {
-                    lockState = LockState.FREE;
-                  } else if (isAtOrAfter(now, lock.expirationTime)) {
-                    lockState = LockState.TIMED_OUT;
-                  } else if (checkThreadRunning
-                      && !requestStatusChecker.isRunning(lock.requestLogId)) {
-                    lockState = LockState.OWNER_DIED;
-                  } else {
-                    lockState = LockState.IN_USE;
-                    return AcquireResult.create(now, lock, null, lockState);
-                  }
-
-                  Lock newLock =
-                      create(
-                          resourceName, scope, requestStatusChecker.getLogId(), now, leaseLength);
-                  // Locks are not parented under an EntityGroupRoot (so as to avoid write
-                  // contention) and don't need to be backed up.
-                  tm().putIgnoringReadOnly(newLock);
-
-                  return AcquireResult.create(now, lock, newLock, lockState);
-                });
+        tm().isOfy() ? tm().transactNew(lockAcquirer) : jpaTm().transactWithoutBackup(lockAcquirer);
 
     logAcquireResult(acquireResult);
     lockMetrics.recordAcquire(resourceName, scope, acquireResult.lockState());
@@ -263,34 +265,41 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
   /** Release the lock. */
   public void release() {
     // Just use the default clock because we aren't actually doing anything that will use the clock.
-    tm().transact(
-            () -> {
-              // To release a lock, check that no one else has already obtained it and if not
-              // delete it. If the lock in Datastore was different then this lock is gone already;
-              // this can happen if release() is called around the expiration time and the lock
-              // expires underneath us.
-              VKey<Lock> key =
-                  VKey.create(
-                      Lock.class, new LockId(resourceName, tld), Key.create(Lock.class, lockId));
-              Lock loadedLock = tm().loadByKeyIfPresent(key).orElse(null);
-              if (Lock.this.equals(loadedLock)) {
-                // Use deleteWithoutBackup() so that we don't create a commit log entry for deleting
-                // the lock.
-                logger.atInfo().log("Deleting lock: %s", lockId);
-                tm().deleteIgnoringReadOnly(key);
+    Supplier<Void> lockReleaser =
+        () -> {
+          // To release a lock, check that no one else has already obtained it and if not
+          // delete it. If the lock in Datastore was different then this lock is gone already;
+          // this can happen if release() is called around the expiration time and the lock
+          // expires underneath us.
+          VKey<Lock> key =
+              VKey.create(
+                  Lock.class, new LockId(resourceName, tld), Key.create(Lock.class, lockId));
+          Lock loadedLock = tm().loadByKeyIfPresent(key).orElse(null);
+          if (Lock.this.equals(loadedLock)) {
+            // Use deleteIgnoringReadOnly() so that we don't create a commit log entry for deleting
+            // the lock.
+            logger.atInfo().log("Deleting lock: %s", lockId);
+            tm().deleteIgnoringReadOnly(key);
 
-                lockMetrics.recordRelease(
-                    resourceName, tld, new Duration(acquiredTime, tm().getTransactionTime()));
-              } else {
-                logger.atSevere().log(
-                    "The lock we acquired was transferred to someone else before we"
-                        + " released it! Did action take longer than lease length?"
-                        + " Our lock: %s, current lock: %s",
-                    Lock.this, loadedLock);
-                logger.atInfo().log(
-                    "Not deleting lock: %s - someone else has it: %s", lockId, loadedLock);
-              }
-            });
+            lockMetrics.recordRelease(
+                resourceName, tld, new Duration(acquiredTime, tm().getTransactionTime()));
+          } else {
+            logger.atSevere().log(
+                "The lock we acquired was transferred to someone else before we"
+                    + " released it! Did action take longer than lease length?"
+                    + " Our lock: %s, current lock: %s",
+                Lock.this, loadedLock);
+            logger.atInfo().log(
+                "Not deleting lock: %s - someone else has it: %s", lockId, loadedLock);
+          }
+          return null;
+        };
+    // In ofy, backup is determined per-action, but in SQL it's determined per-transaction
+    if (tm().isOfy()) {
+      tm().transact(lockReleaser);
+    } else {
+      jpaTm().transactWithoutBackup(lockReleaser);
+    }
   }
 
   static class LockId extends ImmutableObject implements Serializable {
