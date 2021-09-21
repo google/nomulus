@@ -95,7 +95,7 @@ public final class RegistryTest extends EntityTestCase {
 
   @TestOfyOnly
   void testIndexing() throws Exception {
-    verifyIndexing(Registry.get("tld"));
+    verifyDatastoreIndexing(Registry.get("tld"));
   }
 
   @TestOfyAndSql

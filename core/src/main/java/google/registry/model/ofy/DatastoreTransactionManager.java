@@ -181,7 +181,7 @@ public class DatastoreTransactionManager implements TransactionManager {
 
   @Override
   public void updateAll(ImmutableObject... entities) {
-    updateAll(ImmutableList.of(entities));
+    updateAll(ImmutableList.copyOf(entities));
   }
 
   @Override

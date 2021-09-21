@@ -145,6 +145,6 @@ public class PollMessageTest extends EntityTestCase {
                 .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
                 .setTargetId("foobar.foo")
                 .build());
-    verifyIndexing(pollMessage);
+    verifyDatastoreIndexing(pollMessage);
   }
 }

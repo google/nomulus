@@ -15,6 +15,7 @@
 package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.existsInDb;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByKey;
@@ -28,6 +29,7 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestRules;
 import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
+import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
@@ -55,6 +57,7 @@ public class RegistrarDaoTest {
 
   @BeforeEach
   void setUp() {
+    TransactionManagerFactory.setTmForTest(jpaTm());
     testRegistrar =
         new Registrar.Builder()
             .setType(Registrar.Type.TEST)

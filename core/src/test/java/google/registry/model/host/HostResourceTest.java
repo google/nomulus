@@ -121,7 +121,7 @@ class HostResourceTest extends EntityTestCase {
   void testIndexing() throws Exception {
     // Clone it and save it before running the indexing test so that its transferData fields are
     // populated from the superordinate domain.
-    verifyIndexing(
+    verifyDatastoreIndexing(
         persistResource(host),
         "deletionTime",
         "fullyQualifiedHostName",

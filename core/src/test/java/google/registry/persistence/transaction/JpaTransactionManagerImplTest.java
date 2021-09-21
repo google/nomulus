@@ -48,6 +48,7 @@ import javax.persistence.IdClass;
 import javax.persistence.OptimisticLockException;
 import javax.persistence.RollbackException;
 import org.hibernate.exception.JDBCConnectionException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -81,6 +82,11 @@ class JpaTransactionManagerImplTest {
           .withEntityClass(
               TestEntity.class, TestCompoundIdEntity.class, TestNamedCompoundIdEntity.class)
           .buildUnitTestRule();
+
+  @BeforeEach
+  void setUp() {
+    TransactionManagerFactory.setTmForTest(jpaTm());
+  }
 
   @Test
   void transact_succeeds() {

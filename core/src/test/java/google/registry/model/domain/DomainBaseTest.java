@@ -208,7 +208,7 @@ public class DomainBaseTest extends EntityTestCase {
 
   @Test
   void testIndexing() throws Exception {
-    verifyIndexing(
+    verifyDatastoreIndexing(
         domain,
         "allContacts.contact",
         "fullyQualifiedDomainName",

@@ -79,7 +79,7 @@ class ForeignKeyIndexTest extends EntityTestCase {
   void testIndexing() throws Exception {
     // Persist a host and implicitly persist a ForeignKeyIndex for it.
     persistActiveHost("ns1.example.com");
-    verifyIndexing(
+    verifyDatastoreIndexing(
         ForeignKeyIndex.load(HostResource.class, "ns1.example.com", fakeClock.nowUtc()),
         "deletionTime");
   }

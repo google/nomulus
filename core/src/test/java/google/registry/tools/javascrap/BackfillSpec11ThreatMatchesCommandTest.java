@@ -180,7 +180,8 @@ public class BackfillSpec11ThreatMatchesCommandTest
     insertInDb(previous);
 
     runCommandForced();
-    ImmutableList<Spec11ThreatMatch> threatMatches = loadAllOf(Spec11ThreatMatch.class);
+    ImmutableList<Spec11ThreatMatch> threatMatches =
+        jpaTm().transact(() -> jpaTm().loadAllOf(Spec11ThreatMatch.class));
     assertAboutImmutableObjects()
         .that(Iterables.getOnlyElement(threatMatches))
         .isEqualExceptFields(previous, "id");
@@ -215,7 +216,7 @@ public class BackfillSpec11ThreatMatchesCommandTest
         assertThrows(RuntimeException.class, this::runCommandForced);
     assertThat(runtimeException.getCause().getClass()).isEqualTo(IOException.class);
     assertThat(runtimeException).hasCauseThat().hasMessageThat().isEqualTo("hi");
-    assertThat(loadAllOf(Spec11ThreatMatch.class)).isEmpty();
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Spec11ThreatMatch.class))).isEmpty();
   }
 
   @TestOfyAndSql

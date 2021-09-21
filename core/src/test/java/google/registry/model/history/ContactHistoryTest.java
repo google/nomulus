@@ -19,10 +19,9 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
-import static google.registry.testing.DatabaseHelper.loadByKey;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newContactResource;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
-import static google.registry.testing.SqlHelper.saveRegistrar;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.googlecode.objectify.Key;
@@ -33,23 +32,23 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import org.junit.jupiter.api.Test;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 
 /** Tests for {@link ContactHistory}. */
+@DualDatabaseTest
 public class ContactHistoryTest extends EntityTestCase {
 
   ContactHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
-  @Test
+  @TestSqlOnly
   void testPersistence() {
-    saveRegistrar("TheRegistrar");
-
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
     insertInDb(contact);
-    VKey<ContactResource> contactVKey = contact.createVKey();
-    ContactResource contactFromDb = loadByKey(contactVKey);
+    ContactResource contactFromDb = loadByEntity(contact);
     ContactHistory contactHistory = createContactHistory(contactFromDb);
     insertInDb(contactHistory);
     jpaTm()
@@ -61,14 +60,11 @@ public class ContactHistoryTest extends EntityTestCase {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testLegacyPersistence_nullContactBase() {
-    saveRegistrar("TheRegistrar");
-
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
     insertInDb(contact);
-    VKey<ContactResource> contactVKey = contact.createVKey();
-    ContactResource contactFromDb = loadByKey(contactVKey);
+    ContactResource contactFromDb = loadByEntity(contact);
     ContactHistory contactHistory =
         createContactHistory(contactFromDb).asBuilder().setContact(null).build();
     insertInDb(contactHistory);
@@ -82,10 +78,8 @@ public class ContactHistoryTest extends EntityTestCase {
             });
   }
 
-  @Test
+  @TestOfyOnly
   void testOfyPersistence() {
-    saveRegistrar("TheRegistrar");
-
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
     tm().transact(() -> tm().insert(contact));
     VKey<ContactResource> contactVKey = contact.createVKey();
@@ -106,9 +100,8 @@ public class ContactHistoryTest extends EntityTestCase {
     assertThat(hostHistoryFromDb).isEqualTo(historyEntryFromDb);
   }
 
-  @Test
+  @TestSqlOnly
   void testBeforeSqlSave_afterContactPersisted() {
-    saveRegistrar("TheRegistrar");
     ContactResource contactResource = newContactResource("contactId");
     ContactHistory contactHistory =
         new ContactHistory.Builder()

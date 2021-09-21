@@ -1373,9 +1373,9 @@ public class DatabaseHelper {
     return transactIfJpaTm(() -> tm().loadByEntitiesIfPresent(entities));
   }
 
-  /** Returns whether or not the given entity exists in the database. */
-  public static boolean existsInDb(Object object) {
-    return transactIfJpaTm(() -> tm().exists(object));
+  /** Returns whether or not the given entity exists in Cloud SQL. */
+  public static boolean existsInDb(ImmutableObject object) {
+    return jpaTm().transact(() -> jpaTm().exists(object));
   }
 
   /** Inserts the given entity/entities into Cloud SQL in a single transaction. */
