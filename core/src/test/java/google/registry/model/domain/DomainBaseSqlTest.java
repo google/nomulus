@@ -376,125 +376,106 @@ public class DomainBaseSqlTest {
 
   private void persistDomain() {
     createTld("com");
-    jpaTm()
-        .transact(
-            () -> {
-              // Persist the contacts.  Note that these need to be persisted before the domain
-              // otherwise we get a foreign key constraint error.  If we ever decide to defer the
-              // relevant foreign key checks to commit time, then the order would not matter.
-              jpaTm().insert(contact);
-              jpaTm().insert(contact2);
-
-              // Persist the domain.
-              jpaTm().insert(domain);
-
-              // Persist the host.  This does _not_ need to be persisted before the domain,
-              // because only the row in the join table (DomainHost) is subject to foreign key
-              // constraints, and Hibernate knows to insert it after domain and host.
-              jpaTm().insert(host);
-            });
+    insertInDb(contact, contact2, domain, host);
   }
 
   @TestSqlOnly
   void persistDomainWithCompositeVKeys() {
     createTld("com");
-    jpaTm()
-        .transact(
-            () -> {
-              historyEntry =
-                  new DomainHistory.Builder()
-                      .setId(100L)
-                      .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                      .setPeriod(Period.create(1, Period.Unit.YEARS))
-                      .setModificationTime(DateTime.now(UTC))
-                      .setDomainRepoId("4-COM")
-                      .setRegistrarId("registrar1")
-                      // These are non-null, but I don't think some tests set them.
-                      .setReason("felt like it")
-                      .setRequestedByRegistrar(false)
-                      .setXmlBytes(new byte[0])
-                      .build();
-              BillingEvent.Recurring billEvent =
-                  new BillingEvent.Recurring.Builder()
-                      .setId(200L)
-                      .setReason(Reason.RENEW)
-                      .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-                      .setTargetId("example.com")
-                      .setRegistrarId("registrar1")
-                      .setDomainRepoId("4-COM")
-                      .setDomainHistoryRevisionId(1L)
-                      .setEventTime(DateTime.now(UTC).plusYears(1))
-                      .setRecurrenceEndTime(END_OF_TIME)
-                      .setParent(historyEntry)
-                      .build();
-              PollMessage.Autorenew autorenewPollMessage =
-                  new PollMessage.Autorenew.Builder()
-                      .setId(300L)
-                      .setRegistrarId("registrar1")
-                      .setEventTime(DateTime.now(UTC).plusYears(1))
-                      .setParent(historyEntry)
-                      .build();
-              PollMessage.OneTime deletePollMessage =
-                  new PollMessage.OneTime.Builder()
-                      .setId(400L)
-                      .setRegistrarId("registrar1")
-                      .setEventTime(DateTime.now(UTC).plusYears(1))
-                      .setParent(historyEntry)
-                      .build();
-              BillingEvent.OneTime oneTimeBillingEvent =
-                  new BillingEvent.OneTime.Builder()
-                      .setId(500L)
-                      // Use SERVER_STATUS so we don't have to add a period.
-                      .setReason(Reason.SERVER_STATUS)
-                      .setTargetId("example.com")
-                      .setRegistrarId("registrar1")
-                      .setDomainRepoId("4-COM")
-                      .setBillingTime(DateTime.now(UTC))
-                      .setCost(Money.of(USD, 100))
-                      .setEventTime(DateTime.now(UTC).plusYears(1))
-                      .setParent(historyEntry)
-                      .build();
-              DomainTransferData transferData =
-                  new DomainTransferData.Builder()
-                      .setServerApproveBillingEvent(oneTimeBillingEvent.createVKey())
-                      .setServerApproveAutorenewEvent(billEvent.createVKey())
-                      .setServerApproveAutorenewPollMessage(autorenewPollMessage.createVKey())
-                      .build();
-              gracePeriods =
-                  ImmutableSet.of(
-                      GracePeriod.create(
-                          GracePeriodStatus.ADD,
-                          "4-COM",
-                          END_OF_TIME,
-                          "registrar1",
-                          oneTimeBillingEvent.createVKey()),
-                      GracePeriod.createForRecurring(
-                          GracePeriodStatus.AUTO_RENEW,
-                          "4-COM",
-                          END_OF_TIME,
-                          "registrar1",
-                          billEvent.createVKey()));
+    historyEntry =
+        new DomainHistory.Builder()
+            .setId(100L)
+            .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .setPeriod(Period.create(1, Period.Unit.YEARS))
+            .setModificationTime(DateTime.now(UTC))
+            .setDomainRepoId("4-COM")
+            .setRegistrarId("registrar1")
+            // These are non-null, but I don't think some tests set them.
+            .setReason("felt like it")
+            .setRequestedByRegistrar(false)
+            .setXmlBytes(new byte[0])
+            .build();
+    BillingEvent.Recurring billEvent =
+        new BillingEvent.Recurring.Builder()
+            .setId(200L)
+            .setReason(Reason.RENEW)
+            .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+            .setTargetId("example.com")
+            .setRegistrarId("registrar1")
+            .setDomainRepoId("4-COM")
+            .setDomainHistoryRevisionId(1L)
+            .setEventTime(DateTime.now(UTC).plusYears(1))
+            .setRecurrenceEndTime(END_OF_TIME)
+            .setParent(historyEntry)
+            .build();
+    PollMessage.Autorenew autorenewPollMessage =
+        new PollMessage.Autorenew.Builder()
+            .setId(300L)
+            .setRegistrarId("registrar1")
+            .setEventTime(DateTime.now(UTC).plusYears(1))
+            .setParent(historyEntry)
+            .build();
+    PollMessage.OneTime deletePollMessage =
+        new PollMessage.OneTime.Builder()
+            .setId(400L)
+            .setRegistrarId("registrar1")
+            .setEventTime(DateTime.now(UTC).plusYears(1))
+            .setParent(historyEntry)
+            .build();
+    BillingEvent.OneTime oneTimeBillingEvent =
+        new BillingEvent.OneTime.Builder()
+            .setId(500L)
+            // Use SERVER_STATUS so we don't have to add a period.
+            .setReason(Reason.SERVER_STATUS)
+            .setTargetId("example.com")
+            .setRegistrarId("registrar1")
+            .setDomainRepoId("4-COM")
+            .setBillingTime(DateTime.now(UTC))
+            .setCost(Money.of(USD, 100))
+            .setEventTime(DateTime.now(UTC).plusYears(1))
+            .setParent(historyEntry)
+            .build();
+    DomainTransferData transferData =
+        new DomainTransferData.Builder()
+            .setServerApproveBillingEvent(oneTimeBillingEvent.createVKey())
+            .setServerApproveAutorenewEvent(billEvent.createVKey())
+            .setServerApproveAutorenewPollMessage(autorenewPollMessage.createVKey())
+            .build();
+    gracePeriods =
+        ImmutableSet.of(
+            GracePeriod.create(
+                GracePeriodStatus.ADD,
+                "4-COM",
+                END_OF_TIME,
+                "registrar1",
+                oneTimeBillingEvent.createVKey()),
+            GracePeriod.createForRecurring(
+                GracePeriodStatus.AUTO_RENEW,
+                "4-COM",
+                END_OF_TIME,
+                "registrar1",
+                billEvent.createVKey()));
 
-              jpaTm().insertAll(contact, contact2, host);
-              domain =
-                  domain
-                      .asBuilder()
-                      .setAutorenewBillingEvent(billEvent.createVKey())
-                      .setAutorenewPollMessage(autorenewPollMessage.createVKey())
-                      .setDeletePollMessage(deletePollMessage.createVKey())
-                      .setTransferData(transferData)
-                      .setGracePeriods(gracePeriods)
-                      .build();
-              historyEntry = historyEntry.asBuilder().setDomain(domain).build();
-              jpaTm()
-                  .insertAll(
-                      historyEntry,
-                      autorenewPollMessage,
-                      billEvent,
-                      deletePollMessage,
-                      oneTimeBillingEvent,
-                      domain);
-            });
+    domain =
+        domain
+            .asBuilder()
+            .setAutorenewBillingEvent(billEvent.createVKey())
+            .setAutorenewPollMessage(autorenewPollMessage.createVKey())
+            .setDeletePollMessage(deletePollMessage.createVKey())
+            .setTransferData(transferData)
+            .setGracePeriods(gracePeriods)
+            .build();
+    historyEntry = historyEntry.asBuilder().setDomain(domain).build();
+    insertInDb(
+        contact,
+        contact2,
+        host,
+        historyEntry,
+        autorenewPollMessage,
+        billEvent,
+        deletePollMessage,
+        oneTimeBillingEvent,
+        domain);
 
     // Store the existing BillingRecurrence VKey.  This happens after the event has been persisted.
     DomainBase persisted = loadByKey(domain.createVKey());
@@ -527,111 +508,107 @@ public class DomainBaseSqlTest {
   @TestSqlOnly
   void persistDomainWithLegacyVKeys() {
     createTld("com");
-    jpaTm()
-        .transact(
-            () -> {
-              historyEntry =
-                  new DomainHistory.Builder()
-                      .setId(100L)
-                      .setType(HistoryEntry.Type.DOMAIN_CREATE)
-                      .setPeriod(Period.create(1, Period.Unit.YEARS))
-                      .setModificationTime(DateTime.now(UTC))
-                      .setDomainRepoId("4-COM")
-                      .setRegistrarId("registrar1")
-                      // These are non-null, but I don't think some tests set them.
-                      .setReason("felt like it")
-                      .setRequestedByRegistrar(false)
-                      .setXmlBytes(new byte[0])
-                      .build();
-              BillingEvent.Recurring billEvent =
-                  new BillingEvent.Recurring.Builder()
-                      .setId(200L)
-                      .setReason(Reason.RENEW)
-                      .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
-                      .setTargetId("example.com")
-                      .setRegistrarId("registrar1")
-                      .setDomainRepoId("4-COM")
-                      .setDomainHistoryRevisionId(1L)
-                      .setEventTime(DateTime.now(UTC).plusYears(1))
-                      .setRecurrenceEndTime(END_OF_TIME)
-                      .setParent(historyEntry)
-                      .build();
-              PollMessage.Autorenew autorenewPollMessage =
-                  new PollMessage.Autorenew.Builder()
-                      .setId(300L)
-                      .setRegistrarId("registrar1")
-                      .setEventTime(DateTime.now(UTC).plusYears(1))
-                      .setParent(historyEntry)
-                      .build();
-              PollMessage.OneTime deletePollMessage =
-                  new PollMessage.OneTime.Builder()
-                      .setId(400L)
-                      .setRegistrarId("registrar1")
-                      .setEventTime(DateTime.now(UTC).plusYears(1))
-                      .setParent(historyEntry)
-                      .build();
-              BillingEvent.OneTime oneTimeBillingEvent =
-                  new BillingEvent.OneTime.Builder()
-                      .setId(500L)
-                      // Use SERVER_STATUS so we don't have to add a period.
-                      .setReason(Reason.SERVER_STATUS)
-                      .setTargetId("example.com")
-                      .setRegistrarId("registrar1")
-                      .setDomainRepoId("4-COM")
-                      .setBillingTime(DateTime.now(UTC))
-                      .setCost(Money.of(USD, 100))
-                      .setEventTime(DateTime.now(UTC).plusYears(1))
-                      .setParent(historyEntry)
-                      .build();
-              DomainTransferData transferData =
-                  createPendingTransferData(
-                      new DomainTransferData.Builder()
-                          .setTransferRequestTrid(Trid.create("foo", "bar"))
-                          .setTransferRequestTime(fakeClock.nowUtc())
-                          .setGainingRegistrarId("registrar2")
-                          .setLosingRegistrarId("registrar1")
-                          .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1)),
-                      ImmutableSet.of(oneTimeBillingEvent, billEvent, autorenewPollMessage),
-                      Period.create(0, Unit.YEARS));
-              gracePeriods =
-                  ImmutableSet.of(
-                      GracePeriod.create(
-                          GracePeriodStatus.ADD,
-                          "4-COM",
-                          END_OF_TIME,
-                          "registrar1",
-                          oneTimeBillingEvent.createVKey()),
-                      GracePeriod.createForRecurring(
-                          GracePeriodStatus.AUTO_RENEW,
-                          "4-COM",
-                          END_OF_TIME,
-                          "registrar1",
-                          billEvent.createVKey()));
+    historyEntry =
+        new DomainHistory.Builder()
+            .setId(100L)
+            .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .setPeriod(Period.create(1, Period.Unit.YEARS))
+            .setModificationTime(DateTime.now(UTC))
+            .setDomainRepoId("4-COM")
+            .setRegistrarId("registrar1")
+            // These are non-null, but I don't think some tests set them.
+            .setReason("felt like it")
+            .setRequestedByRegistrar(false)
+            .setXmlBytes(new byte[0])
+            .build();
+    BillingEvent.Recurring billEvent =
+        new BillingEvent.Recurring.Builder()
+            .setId(200L)
+            .setReason(Reason.RENEW)
+            .setFlags(ImmutableSet.of(Flag.AUTO_RENEW))
+            .setTargetId("example.com")
+            .setRegistrarId("registrar1")
+            .setDomainRepoId("4-COM")
+            .setDomainHistoryRevisionId(1L)
+            .setEventTime(DateTime.now(UTC).plusYears(1))
+            .setRecurrenceEndTime(END_OF_TIME)
+            .setParent(historyEntry)
+            .build();
+    PollMessage.Autorenew autorenewPollMessage =
+        new PollMessage.Autorenew.Builder()
+            .setId(300L)
+            .setRegistrarId("registrar1")
+            .setEventTime(DateTime.now(UTC).plusYears(1))
+            .setParent(historyEntry)
+            .build();
+    PollMessage.OneTime deletePollMessage =
+        new PollMessage.OneTime.Builder()
+            .setId(400L)
+            .setRegistrarId("registrar1")
+            .setEventTime(DateTime.now(UTC).plusYears(1))
+            .setParent(historyEntry)
+            .build();
+    BillingEvent.OneTime oneTimeBillingEvent =
+        new BillingEvent.OneTime.Builder()
+            .setId(500L)
+            // Use SERVER_STATUS so we don't have to add a period.
+            .setReason(Reason.SERVER_STATUS)
+            .setTargetId("example.com")
+            .setRegistrarId("registrar1")
+            .setDomainRepoId("4-COM")
+            .setBillingTime(DateTime.now(UTC))
+            .setCost(Money.of(USD, 100))
+            .setEventTime(DateTime.now(UTC).plusYears(1))
+            .setParent(historyEntry)
+            .build();
+    DomainTransferData transferData =
+        createPendingTransferData(
+            new DomainTransferData.Builder()
+                .setTransferRequestTrid(Trid.create("foo", "bar"))
+                .setTransferRequestTime(fakeClock.nowUtc())
+                .setGainingRegistrarId("registrar2")
+                .setLosingRegistrarId("registrar1")
+                .setPendingTransferExpirationTime(fakeClock.nowUtc().plusDays(1)),
+            ImmutableSet.of(oneTimeBillingEvent, billEvent, autorenewPollMessage),
+            Period.create(0, Unit.YEARS));
+    gracePeriods =
+        ImmutableSet.of(
+            GracePeriod.create(
+                GracePeriodStatus.ADD,
+                "4-COM",
+                END_OF_TIME,
+                "registrar1",
+                oneTimeBillingEvent.createVKey()),
+            GracePeriod.createForRecurring(
+                GracePeriodStatus.AUTO_RENEW,
+                "4-COM",
+                END_OF_TIME,
+                "registrar1",
+                billEvent.createVKey()));
 
-              jpaTm().insert(contact);
-              jpaTm().insert(contact2);
-              jpaTm().insert(host);
-              domain =
-                  domain
-                      .asBuilder()
-                      .setAutorenewBillingEvent(
-                          createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId()))
-                      .setAutorenewPollMessage(
-                          createLegacyVKey(
-                              PollMessage.Autorenew.class, autorenewPollMessage.getId()))
-                      .setDeletePollMessage(
-                          createLegacyVKey(PollMessage.OneTime.class, deletePollMessage.getId()))
-                      .setTransferData(transferData)
-                      .setGracePeriods(gracePeriods)
-                      .build();
-              historyEntry = historyEntry.asBuilder().setDomain(domain).build();
-              jpaTm().insert(historyEntry);
-              jpaTm().insert(autorenewPollMessage);
-              jpaTm().insert(billEvent);
-              jpaTm().insert(deletePollMessage);
-              jpaTm().insert(oneTimeBillingEvent);
-              jpaTm().insert(domain);
-            });
+    domain =
+        domain
+            .asBuilder()
+            .setAutorenewBillingEvent(
+                createLegacyVKey(BillingEvent.Recurring.class, billEvent.getId()))
+            .setAutorenewPollMessage(
+                createLegacyVKey(PollMessage.Autorenew.class, autorenewPollMessage.getId()))
+            .setDeletePollMessage(
+                createLegacyVKey(PollMessage.OneTime.class, deletePollMessage.getId()))
+            .setTransferData(transferData)
+            .setGracePeriods(gracePeriods)
+            .build();
+    historyEntry = historyEntry.asBuilder().setDomain(domain).build();
+    insertInDb(
+        contact,
+        contact2,
+        host,
+        historyEntry,
+        autorenewPollMessage,
+        billEvent,
+        deletePollMessage,
+        oneTimeBillingEvent,
+        domain);
 
     // Store the existing BillingRecurrence VKey.  This happens after the event has been persisted.
     DomainBase persisted = loadByKey(domain.createVKey());
