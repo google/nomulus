@@ -14,6 +14,8 @@
 
 package google.registry.reporting.icann;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.reporting.icann.IcannReportingModule.CLOUD_SQL_ICANN_REPORTING_DATASET;
 import static google.registry.reporting.icann.IcannReportingModule.DATASTORE_EXPORT_DATA_SET;
 import static google.registry.reporting.icann.IcannReportingModule.ICANN_REPORTING_DATA_SET;
 import static google.registry.reporting.icann.QueryBuilderUtils.getQueryFromFile;
@@ -53,7 +55,9 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
   public String getReportQuery(YearMonth yearMonth) {
     return String.format(
         "#standardSQL\nSELECT * FROM `%s.%s.%s`",
-        projectId, ICANN_REPORTING_DATA_SET, getTableName(ACTIVITY_REPORT_AGGREGATION, yearMonth));
+        projectId,
+        tm().isOfy() ? ICANN_REPORTING_DATA_SET : CLOUD_SQL_ICANN_REPORTING_DATASET,
+        getTableName(ACTIVITY_REPORT_AGGREGATION, yearMonth));
   }
 
   /** Sets the month we're doing activity reporting for, and returns the view query map. */
@@ -65,12 +69,20 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
     LocalDate lastDayOfMonth = yearMonth.toLocalDate(1).plusMonths(1).minusDays(1);
 
     ImmutableMap.Builder<String, String> queriesBuilder = ImmutableMap.builder();
-    String operationalRegistrarsQuery =
-        SqlTemplate.create(getQueryFromFile("registrar_operating_status.sql"))
-            .put("PROJECT_ID", projectId)
-            .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-            .put("REGISTRAR_TABLE", "Registrar")
-            .build();
+    String operationalRegistrarsQuery;
+    if (tm().isOfy()) {
+      operationalRegistrarsQuery =
+          SqlTemplate.create(getQueryFromFile("registrar_operating_status.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
+              .put("REGISTRAR_TABLE", "Registrar")
+              .build();
+    } else {
+      operationalRegistrarsQuery =
+          SqlTemplate.create(getQueryFromFile("cloud_sql_registrar_operating_status.sql"))
+              .put("PROJECT_ID", projectId)
+              .build();
+    }
     queriesBuilder.put(
         getTableName(REGISTRAR_OPERATING_STATUS, yearMonth), operationalRegistrarsQuery);
 
@@ -110,20 +122,34 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
             .build();
     queriesBuilder.put(getTableName(WHOIS_COUNTS, yearMonth), whoisQuery);
 
-    String aggregateQuery =
-        SqlTemplate.create(getQueryFromFile("activity_report_aggregation.sql"))
+    SqlTemplate aggregateQuery =
+        SqlTemplate.create(
+                getQueryFromFile(
+                    tm().isOfy()
+                        ? "activity_report_aggregation.sql"
+                        : "cloud_sql_activity_report_aggregation.sql"))
             .put("PROJECT_ID", projectId)
-            .put("ICANN_REPORTING_DATA_SET", ICANN_REPORTING_DATA_SET)
             .put(
                 "REGISTRAR_OPERATING_STATUS_TABLE",
                 getTableName(REGISTRAR_OPERATING_STATUS, yearMonth))
+            .put("ICANN_REPORTING_DATA_SET", ICANN_REPORTING_DATA_SET)
             .put("DNS_COUNTS_TABLE", getTableName(DNS_COUNTS, yearMonth))
             .put("EPP_METRICS_TABLE", getTableName(EPP_METRICS, yearMonth))
-            .put("WHOIS_COUNTS_TABLE", getTableName(WHOIS_COUNTS, yearMonth))
-            .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-            .put("REGISTRY_TABLE", "Registry")
-            .build();
-    queriesBuilder.put(getTableName(ACTIVITY_REPORT_AGGREGATION, yearMonth), aggregateQuery);
+            .put("WHOIS_COUNTS_TABLE", getTableName(WHOIS_COUNTS, yearMonth));
+
+    if (tm().isOfy()) {
+      aggregateQuery =
+          aggregateQuery
+              .put("REGISTRY_TABLE", "Registry")
+              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET);
+    } else {
+      aggregateQuery =
+          aggregateQuery.put(
+              "CLOUD_SQL_ICANN_REPORTING_DATA_SET", CLOUD_SQL_ICANN_REPORTING_DATASET);
+    }
+
+    queriesBuilder.put(
+        getTableName(ACTIVITY_REPORT_AGGREGATION, yearMonth), aggregateQuery.build());
 
     return queriesBuilder.build();
   }
