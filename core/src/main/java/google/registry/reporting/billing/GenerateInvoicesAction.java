@@ -92,7 +92,6 @@ public class GenerateInvoicesAction implements Runnable {
     this.projectId = projectId;
     this.jobRegion = jobRegion;
     this.stagingBucketUrl = stagingBucketUrl;
-    this.database = database;
     // When generating the invoices using Cloud SQL before database cutover, save the reports in a
     // separate bucket so that it does not overwrite the Datastore invoices.
     if (tm().isOfy() && database.equals(CLOUD_SQL)) {
@@ -101,6 +100,7 @@ public class GenerateInvoicesAction implements Runnable {
     this.billingBucketUrl = billingBucketUrl;
     this.invoiceFilePrefix = invoiceFilePrefix;
     this.shouldPublish = shouldPublish;
+    this.database = database;
     this.yearMonth = yearMonth;
     this.emailUtils = emailUtils;
     this.clock = clock;

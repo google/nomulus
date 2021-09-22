@@ -88,13 +88,13 @@ public class GenerateSpec11ReportAction implements Runnable {
     this.projectId = projectId;
     this.jobRegion = jobRegion;
     this.stagingBucketUrl = stagingBucketUrl;
-    this.database = database;
     if (tm().isOfy() && database.equals(PrimaryDatabase.CLOUD_SQL)) {
       reportingBucketUrl = reportingBucketUrl.concat("-sql");
     }
     this.reportingBucketUrl = reportingBucketUrl;
     this.apiKey = apiKey;
     this.date = date;
+    this.database = database;
     this.clock = clock;
     this.response = response;
     this.dataflow = dataflow;
