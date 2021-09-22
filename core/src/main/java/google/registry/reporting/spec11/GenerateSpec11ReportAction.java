@@ -140,7 +140,7 @@ public class GenerateSpec11ReportAction implements Runnable {
       response.setStatus(SC_OK);
       response.setPayload(String.format("Launched Spec11 pipeline: %s", jobId));
     } catch (IOException e) {
-      logger.atWarning().withCause(e).log("Pipeline Launch failed");
+      logger.atWarning().withCause(e).log("Template Launch failed.");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload(String.format("Pipeline launch failed: %s", e.getMessage()));
     }

@@ -139,7 +139,7 @@ public abstract class RdapActionBase implements Runnable {
           pathProper.startsWith(getActionPath()),
           "%s doesn't start with %s", pathProper, getActionPath());
       String pathSearchString = pathProper.substring(getActionPath().length());
-      logger.atInfo().log("path search string: '%s'", pathSearchString);
+      logger.atInfo().log("path search string: '%s'.", pathSearchString);
 
       ReplyPayloadBase replyObject =
           getJsonObjectForResource(pathSearchString, requestMethod == Action.Method.HEAD);
@@ -153,14 +153,14 @@ public abstract class RdapActionBase implements Runnable {
       setPayload(replyObject);
       metricInformationBuilder.setStatusCode(SC_OK);
     } catch (HttpException e) {
-      logger.atInfo().withCause(e).log("Error in RDAP");
+      logger.atInfo().withCause(e).log("Error in RDAP.");
       setError(e.getResponseCode(), e.getResponseCodeString(), e.getMessage());
     } catch (URISyntaxException | IllegalArgumentException e) {
-      logger.atInfo().withCause(e).log("Bad request in RDAP");
+      logger.atInfo().withCause(e).log("Bad request in RDAP.");
       setError(SC_BAD_REQUEST, "Bad Request", "Not a valid " + getHumanReadableObjectTypeName());
     } catch (RuntimeException e) {
       setError(SC_INTERNAL_SERVER_ERROR, "Internal Server Error", "An error was encountered");
-      logger.atSevere().withCause(e).log("Exception encountered while processing RDAP command");
+      logger.atSevere().withCause(e).log("Exception encountered while processing RDAP command.");
     }
     rdapMetrics.updateMetrics(metricInformationBuilder.build());
   }

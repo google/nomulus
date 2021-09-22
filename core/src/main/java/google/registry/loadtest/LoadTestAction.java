@@ -256,7 +256,7 @@ public class LoadTestAction implements Runnable {
     }
     ImmutableList<TaskOptions> taskOptions = tasks.build();
     enqueue(taskOptions);
-    logger.atInfo().log("Added %d total load test tasks", taskOptions.size());
+    logger.atInfo().log("Added %d total load test tasks.", taskOptions.size());
   }
 
   private void validateAndLogRequest() {

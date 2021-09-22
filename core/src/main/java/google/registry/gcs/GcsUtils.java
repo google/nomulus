@@ -141,7 +141,7 @@ public class GcsUtils implements Serializable {
       Blob blob = storage().get(blobId);
       return blob != null && blob.getSize() > 0;
     } catch (StorageException e) {
-      logger.atWarning().withCause(e).log("Failed to check if GCS file exists");
+      logger.atWarning().withCause(e).log("Failure while checking if GCS file exists.");
       return false;
     }
   }

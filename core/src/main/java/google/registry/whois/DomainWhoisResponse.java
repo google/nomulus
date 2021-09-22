@@ -157,7 +157,7 @@ final class DomainWhoisResponse extends WhoisResponseImpl {
       ContactResource contactResource = EppResource.loadCached(contact.get());
       if (contactResource == null) {
         logger.atSevere().log(
-            "(BUG) Broken reference found from domain %s to contact %s",
+            "(BUG) Broken reference found from domain %s to contact %s.",
             domain.getDomainName(), contact);
         return this;
       }

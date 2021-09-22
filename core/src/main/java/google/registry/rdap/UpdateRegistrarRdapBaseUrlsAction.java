@@ -92,7 +92,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
   UpdateRegistrarRdapBaseUrlsAction() {}
 
   private String loginAndGetId(HttpRequestFactory requestFactory, String tld) throws IOException {
-    logger.atInfo().log("Logging in to MoSAPI");
+    logger.atInfo().log("Logging in to MoSAPI.");
     HttpRequest request =
         requestFactory.buildGetRequest(new GenericUrl(String.format(LOGIN_URL, tld)));
     request.getHeaders().setBasicAuthentication(String.format("%s_ry", tld), password);
@@ -176,15 +176,14 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
       } catch (Throwable e) {
         // Login failures are bad but not unexpected for certain TLDs. We shouldn't store those
         // but rather should only store useful Throwables.
-        logger.atWarning().log("Error logging in to MoSAPI server: " + e.getMessage());
+        logger.atWarning().withCause(e).log("Error logging in to MoSAPI server.");
         continue;
       }
       try {
         return getRdapBaseUrlsPerIanaIdWithTld(tld, id, requestFactory);
       } catch (Throwable throwable) {
-        logger.atWarning().log(
-            String.format(
-                "Error retrieving RDAP urls with TLD %s: %s", tld, throwable.getMessage()));
+        logger.atWarning().withCause(throwable).log(
+            "Error retrieving RDAP URLs for TLD '%s'.", tld);
         finalThrowable = throwable;
       }
     }
@@ -215,7 +214,7 @@ public final class UpdateRegistrarRdapBaseUrlsAction implements Runnable {
                           // If this registrar already has these values, skip it
                           if (registrar.getRdapBaseUrls().equals(baseUrls)) {
                             logger.atInfo().log(
-                                "No change in RdapBaseUrls for registrar %s (ianaId %s)",
+                                "No change in RdapBaseUrls for registrar %s (ianaId %s).",
                                 registrar.getRegistrarId(), ianaId);
                             return;
                           }

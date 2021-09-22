@@ -109,10 +109,11 @@ public final class RegistryLockGetAction implements JsonGetAction {
       response.setPayload(GSON.toJson(payload));
     } catch (RegistrarAccessDeniedException e) {
       logger.atWarning().withCause(e).log(
-          "User %s doesn't have access to this registrar", authResult.userIdForLogging());
+          "User %s doesn't have access to this registrar.", authResult.userIdForLogging());
       response.setStatus(SC_FORBIDDEN);
     } catch (Exception e) {
-      logger.atWarning().withCause(e).log("Unexpected error when retrieving locks for a registrar");
+      logger.atWarning().withCause(e).log(
+          "Unexpected error when retrieving locks for a registrar.");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
     }
   }

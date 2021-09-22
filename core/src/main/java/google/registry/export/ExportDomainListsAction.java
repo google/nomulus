@@ -85,7 +85,7 @@ public class ExportDomainListsAction implements Runnable {
   @Override
   public void run() {
     ImmutableSet<String> realTlds = getTldsOfType(TldType.REAL);
-    logger.atInfo().log("Exporting domain lists for tlds %s", realTlds);
+    logger.atInfo().log("Exporting domain lists for TLDs %s.", realTlds);
     if (tm().isOfy()) {
       mrRunner
           .setJobName("Export domain lists")
@@ -145,7 +145,7 @@ public class ExportDomainListsAction implements Runnable {
       Registry registry = Registry.get(tld);
       if (registry.getDriveFolderId() == null) {
         logger.atInfo().log(
-            "Skipping registered domains export for TLD %s because Drive folder isn't specified",
+            "Skipping registered domains export for TLD %s because Drive folder isn't specified.",
             tld);
       } else {
         String resultMsg =

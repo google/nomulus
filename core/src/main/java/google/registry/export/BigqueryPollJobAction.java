@@ -118,10 +118,10 @@ public class BigqueryPollJobAction implements Runnable {
 
     // Check if the job ended with an error.
     if (job.getStatus().getErrorResult() != null) {
-      logger.atSevere().log("Bigquery job failed - %s - %s", jobRefString, job);
+      logger.atSevere().log("Bigquery job failed - %s - %s.", jobRefString, job);
       return false;
     }
-    logger.atInfo().log("Bigquery job succeeded - %s", jobRefString);
+    logger.atInfo().log("Bigquery job succeeded - %s.", jobRefString);
     return true;
   }
 

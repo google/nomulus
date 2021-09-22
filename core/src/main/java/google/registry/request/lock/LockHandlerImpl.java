@@ -132,7 +132,7 @@ public class LockHandlerImpl implements LockHandler {
         for (String lockName : lockNames) {
           Optional<Lock> lock = acquire(lockName, tld, leaseLength);
           if (!lock.isPresent()) {
-            logger.atInfo().log("Couldn't acquire lock named: %s for TLD: %s", lockName, tld);
+            logger.atInfo().log("Couldn't acquire lock named: %s for TLD %s.", lockName, tld);
             return false;
           }
           logger.atInfo().log("Acquired lock: %s", lock);

@@ -100,7 +100,7 @@ public final class ExtensionManager {
       throw new UndeclaredServiceExtensionException(undeclaredUrisThatError);
     }
     logger.atInfo().log(
-        "Client %s is attempting to run %s without declaring URIs %s on login",
+        "Client %s is attempting to run %s without declaring URIs %s on login.",
         registrarId, flowClass.getSimpleName(), undeclaredUris);
   }
 

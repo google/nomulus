@@ -343,7 +343,7 @@ class WhoisReaderTest {
     assertAboutLogs()
         .that(testLogHandler)
         .hasLogAtLevelWithMessage(
-            Level.INFO, "Attempting domain lookup command using domain name example.tld");
+            Level.INFO, "Attempting domain lookup command using domain name 'example.tld'.");
   }
 
   @TestOfyAndSql
@@ -352,7 +352,8 @@ class WhoisReaderTest {
     assertAboutLogs()
         .that(testLogHandler)
         .hasLogAtLevelWithMessage(
-            Level.INFO, "Attempting nameserver lookup command using 43.34.12.213 as an IP address");
+            Level.INFO,
+            "Attempting nameserver lookup command using 43.34.12.213 as an IP address.");
   }
 
   @TestOfyAndSql
@@ -361,7 +362,7 @@ class WhoisReaderTest {
     assertAboutLogs()
         .that(testLogHandler)
         .hasLogAtLevelWithMessage(
-            Level.INFO, "Attempting nameserver lookup command using ns.example.tld as a hostname");
+            Level.INFO, "Attempting nameserver lookup command using ns.example.tld as a hostname.");
   }
 
   @TestOfyAndSql
@@ -380,7 +381,7 @@ class WhoisReaderTest {
     assertAboutLogs()
         .that(testLogHandler)
         .hasLogAtLevelWithMessage(
-            Level.INFO, "Attempting nameserver lookup using 43.34.12.213 as an IP address");
+            Level.INFO, "Attempting nameserver lookup using 43.34.12.213 as an IP address.");
   }
 
   @TestOfyAndSql
@@ -389,7 +390,7 @@ class WhoisReaderTest {
     assertAboutLogs()
         .that(testLogHandler)
         .hasLogAtLevelWithMessage(
-            Level.INFO, "Attempting registrar lookup using test as a registrar");
+            Level.INFO, "Attempting registrar lookup using test as a registrar.");
   }
 
   @TestOfyAndSql
@@ -398,7 +399,7 @@ class WhoisReaderTest {
     assertAboutLogs()
         .that(testLogHandler)
         .hasLogAtLevelWithMessage(
-            Level.INFO, "Attempting domain lookup using example.tld as a domain name");
+            Level.INFO, "Attempting domain lookup using example.tld as a domain name.");
   }
 
   @TestOfyAndSql
@@ -407,7 +408,7 @@ class WhoisReaderTest {
     assertAboutLogs()
         .that(testLogHandler)
         .hasLogAtLevelWithMessage(
-            Level.INFO, "Attempting nameserver lookup using ns.example.tld as a hostname");
+            Level.INFO, "Attempting nameserver lookup using ns.example.tld as a hostname.");
   }
 
   @TestOfyAndSql
@@ -417,6 +418,6 @@ class WhoisReaderTest {
         .that(testLogHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "Attempting registrar lookup employing Example Registrar, Inc. as a registrar");
+            "Attempting registrar lookup employing Example Registrar, Inc. as a registrar.");
   }
 }

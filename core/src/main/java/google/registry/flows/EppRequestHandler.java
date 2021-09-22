@@ -84,7 +84,7 @@ public class EppRequestHandler {
         response.setHeader(ProxyHttpHeaders.LOGGED_IN, "true");
       }
     } catch (Exception e) {
-      logger.atWarning().withCause(e).log("handleEppCommand general exception");
+      logger.atWarning().withCause(e).log("handleEppCommand general exception.");
       response.setStatus(SC_BAD_REQUEST);
     }
   }

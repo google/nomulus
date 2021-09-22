@@ -167,7 +167,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
 
   /** Runs the actual domain delete flow and returns whether the deletion was successful. */
   private boolean runDomainDeleteFlow(DomainBase domain) {
-    logger.atInfo().log("Attempting to delete domain %s", domain.getDomainName());
+    logger.atInfo().log("Attempting to delete domain '%s'.", domain.getDomainName());
     // Create a new transaction that the flow's execution will be enlisted in that loads the domain
     // transactionally. This way we can ensure that nothing else has modified the domain in question
     // in the intervening period since the query above found it.
@@ -203,7 +203,7 @@ public class DeleteExpiredDomainsAction implements Runnable {
 
     if (eppOutput.isPresent()) {
       if (eppOutput.get().isSuccess()) {
-        logger.atInfo().log("Successfully deleted domain %s", domain.getDomainName());
+        logger.atInfo().log("Successfully deleted domain '%s'.", domain.getDomainName());
       } else {
         logger.atSevere().log(
             "Failed to delete domain %s; EPP response:\n\n%s",

@@ -58,7 +58,7 @@ public final class TmchDnlAction implements Runnable {
     ClaimsList claims = ClaimsListParser.parse(lines);
     ClaimsListDao.save(claims);
     logger.atInfo().log(
-        "Inserted %,d claims into the DB(s), created at %s",
+        "Inserted %,d claims into the DB(s), created at %s.",
         claims.size(), claims.getTmdbGenerationTime());
   }
 }

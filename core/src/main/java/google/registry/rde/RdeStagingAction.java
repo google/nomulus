@@ -225,7 +225,7 @@ public final class RdeStagingAction implements Runnable {
     ImmutableSetMultimap<String, PendingDeposit> pendings =
         manual ? getManualPendingDeposits() : getStandardPendingDeposits();
     if (pendings.isEmpty()) {
-      String message = "Nothing needs to be deposited";
+      String message = "Nothing needs to be deposited.";
       logger.atInfo().log(message);
       response.setStatus(SC_NO_CONTENT);
       response.setPayload(message);

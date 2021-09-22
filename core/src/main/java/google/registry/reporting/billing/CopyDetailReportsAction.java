@@ -91,7 +91,7 @@ public final class CopyDetailReportsAction implements Runnable {
               .filter(objectName -> objectName.startsWith(BillingModule.DETAIL_REPORT_PREFIX))
               .collect(ImmutableList.toImmutableList());
     } catch (IOException e) {
-      logger.atSevere().withCause(e).log("Copying registrar detail report failed");
+      logger.atSevere().withCause(e).log("Copying registrar detail report failed.");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
       response.setPayload(String.format("Failure, encountered %s", e.getMessage()));
@@ -106,12 +106,12 @@ public final class CopyDetailReportsAction implements Runnable {
       Optional<Registrar> registrar = Registrar.loadByRegistrarId(registrarId);
       if (!registrar.isPresent()) {
         logger.atWarning().log(
-            "Registrar %s not found in database for file %s", registrar, detailReportName);
+            "Registrar %s not found in database for file '%s'.", registrar, detailReportName);
         continue;
       }
       String driveFolderId = registrar.get().getDriveFolderId();
       if (driveFolderId == null) {
-        logger.atWarning().log("Drive folder id not found for registrar %s", registrarId);
+        logger.atWarning().log("Drive folder id not found for registrar '%s'.", registrarId);
         continue;
       }
       // Attempt to copy each detail report to its associated registrar's drive folder.

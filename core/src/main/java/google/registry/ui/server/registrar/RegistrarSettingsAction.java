@@ -204,8 +204,8 @@ public class RegistrarSettingsAction implements Runnable, JsonActionRunner.JsonA
                   RegistrarFormFields.LAST_UPDATE_TIME.extractUntyped(args).get();
               if (!latestFromArgs.equals(latest)) {
                 logger.atWarning().log(
-                    "registrar changed since reading the data! "
-                        + " Last updated at %s, but args data last updated at %s",
+                    "Registrar changed since reading the data! "
+                        + " Last updated at %s, but args data last updated at %s.",
                     latest, latestFromArgs);
                 throw new IllegalStateException(
                     "registrar has been changed by someone else. Please reload and retry.");

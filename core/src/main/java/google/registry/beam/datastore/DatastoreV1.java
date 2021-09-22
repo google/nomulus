@@ -169,14 +169,15 @@ public class DatastoreV1 {
       int numSplits;
       try {
         long estimatedSizeBytes = getEstimatedSizeBytes(datastore, query, namespace);
-        logger.atInfo().log("Estimated size bytes for the query is: %s", estimatedSizeBytes);
+        logger.atInfo().log("Estimated size for the query is %d bytes.", estimatedSizeBytes);
         numSplits =
             (int)
                 Math.min(
                     NUM_QUERY_SPLITS_MAX,
                     Math.round(((double) estimatedSizeBytes) / DEFAULT_BUNDLE_SIZE_BYTES));
       } catch (Exception e) {
-        logger.atWarning().log("Failed the fetch estimatedSizeBytes for query: %s", query, e);
+        logger.atWarning().withCause(e).log(
+            "Failed the fetch estimatedSizeBytes for query: %s", query);
         // Fallback in case estimated size is unavailable.
         numSplits = NUM_QUERY_SPLITS_MIN;
       }
@@ -215,7 +216,7 @@ public class DatastoreV1 {
     private static Entity getLatestTableStats(
         String ourKind, @Nullable String namespace, Datastore datastore) throws DatastoreException {
       long latestTimestamp = queryLatestStatisticsTimestamp(datastore, namespace);
-      logger.atInfo().log("Latest stats timestamp for kind %s is %s", ourKind, latestTimestamp);
+      logger.atInfo().log("Latest stats timestamp for kind %s is %s.", ourKind, latestTimestamp);
 
       Query.Builder queryBuilder = Query.newBuilder();
       if (Strings.isNullOrEmpty(namespace)) {
@@ -234,7 +235,7 @@ public class DatastoreV1 {
       long now = System.currentTimeMillis();
       RunQueryResponse response = datastore.runQuery(request);
       logger.atFine().log(
-          "Query for per-kind statistics took %sms", System.currentTimeMillis() - now);
+          "Query for per-kind statistics took %d ms.", System.currentTimeMillis() - now);
 
       QueryResultBatch batch = response.getBatch();
       if (batch.getEntityResultsCount() == 0) {
@@ -330,7 +331,7 @@ public class DatastoreV1 {
           logger.atWarning().log(
               "Failed to translate Gql query '%s': %s", gqlQueryWithZeroLimit, e.getMessage());
           logger.atWarning().log(
-              "User query might have a limit already set, so trying without zero limit");
+              "User query might have a limit already set, so trying without zero limit.");
           // Retry without the zero limit.
           return translateGqlQuery(gql, datastore, namespace);
         } else {
@@ -514,10 +515,10 @@ public class DatastoreV1 {
       @ProcessElement
       public void processElement(ProcessContext c) throws Exception {
         String gqlQuery = c.element();
-        logger.atInfo().log("User query: '%s'", gqlQuery);
+        logger.atInfo().log("User query: '%s'.", gqlQuery);
         Query query =
             translateGqlQueryWithLimitCheck(gqlQuery, datastore, v1Options.getNamespace());
-        logger.atInfo().log("User gql query translated to Query(%s)", query);
+        logger.atInfo().log("User gql query translated to Query(%s).", query);
         c.output(query);
       }
     }
@@ -573,7 +574,7 @@ public class DatastoreV1 {
           estimatedNumSplits = numSplits;
         }
 
-        logger.atInfo().log("Splitting the query into %s splits", estimatedNumSplits);
+        logger.atInfo().log("Splitting the query into %d splits.", estimatedNumSplits);
         List<Query> querySplits;
         try {
           querySplits =
@@ -647,7 +648,7 @@ public class DatastoreV1 {
               throw exception;
             }
             if (!BackOffUtils.next(sleeper, backoff)) {
-              logger.atSevere().log("Aborting after %s retries.", MAX_RETRIES);
+              logger.atSevere().log("Aborting after %d retries.", MAX_RETRIES);
               throw exception;
             }
           }

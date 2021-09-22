@@ -141,7 +141,7 @@ public final class TldFanoutAction implements Runnable {
     StringBuilder outputPayload =
         new StringBuilder(
             String.format("OK: Launched the following %d tasks in queue %s\n", tlds.size(), queue));
-    logger.atInfo().log("Launching %d tasks in queue %s", tlds.size(), queue);
+    logger.atInfo().log("Launching %d tasks in queue %s.", tlds.size(), queue);
     if (tlds.isEmpty()) {
       logger.atWarning().log("No TLDs to fan-out!");
     }
@@ -153,7 +153,7 @@ public final class TldFanoutAction implements Runnable {
               "- Task: '%s', tld: '%s', endpoint: '%s'\n",
               createdTask.getName(), tld, createdTask.getAppEngineHttpRequest().getRelativeUri()));
       logger.atInfo().log(
-          "Task: '%s', tld: '%s', endpoint: '%s'",
+          "Task: '%s', tld: '%s', endpoint: '%s'.",
           createdTask.getName(), tld, createdTask.getAppEngineHttpRequest().getRelativeUri());
     }
     response.setContentType(PLAIN_TEXT_UTF_8);
