@@ -81,7 +81,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
-    assertThat(response.getPayload()).isEqualTo("Launched Spec11 pipeline: jobid.");
+    assertThat(response.getPayload()).isEqualTo("Launched Spec11 pipeline: jobid");
     TaskMatcher matcher =
         new TaskMatcher()
             .url("/_dr/task/publishSpec11")

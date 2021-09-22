@@ -150,7 +150,7 @@ public class GenerateInvoicesAction implements Runnable {
         enqueueBeamReportingTask(PublishInvoicesAction.PATH, beamTaskParameters);
       }
       response.setStatus(SC_OK);
-      response.setPayload(String.format("Launched invoicing pipeline: %s.", jobId));
+      response.setPayload(String.format("Launched invoicing pipeline: %s", jobId));
     } catch (IOException e) {
       logger.atWarning().withCause(e).log("Pipeline Launch failed");
       emailUtils.sendAlertEmail(String.format("Pipeline Launch failed due to %s", e.getMessage()));

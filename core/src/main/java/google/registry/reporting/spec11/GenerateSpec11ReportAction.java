@@ -135,13 +135,10 @@ public class GenerateSpec11ReportAction implements Runnable {
       String jobId = launchResponse.getJob().getId();
       Map<String, String> beamTaskParameters =
           ImmutableMap.of(
-              ReportingModule.PARAM_JOB_ID,
-              jobId,
-              ReportingModule.PARAM_DATE,
-              date.toString());
+              ReportingModule.PARAM_JOB_ID, jobId, ReportingModule.PARAM_DATE, date.toString());
       enqueueBeamReportingTask(PublishSpec11ReportAction.PATH, beamTaskParameters);
       response.setStatus(SC_OK);
-      response.setPayload(String.format("Launched Spec11 pipeline: %s.", jobId));
+      response.setPayload(String.format("Launched Spec11 pipeline: %s", jobId));
     } catch (IOException e) {
       logger.atWarning().withCause(e).log("Pipeline Launch failed");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);

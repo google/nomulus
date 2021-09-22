@@ -66,7 +66,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
     action.run();
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    assertThat(response.getPayload()).isEqualTo("Launched invoicing pipeline: jobid.");
+    assertThat(response.getPayload()).isEqualTo("Launched invoicing pipeline: jobid");
 
     TaskMatcher matcher =
         new TaskMatcher()
@@ -96,7 +96,7 @@ class GenerateInvoicesActionTest extends BeamActionTestBase {
     action.run();
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
     assertThat(response.getStatus()).isEqualTo(SC_OK);
-    assertThat(response.getPayload()).isEqualTo("Launched invoicing pipeline: jobid.");
+    assertThat(response.getPayload()).isEqualTo("Launched invoicing pipeline: jobid");
     assertNoTasksEnqueued("beam-reporting");
   }
 
