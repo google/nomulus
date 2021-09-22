@@ -142,7 +142,7 @@ public class DeleteLoadTestDataAction implements Runnable {
     // that are linked to domains (since it would break the foreign keys)
     if (EppResourceUtils.isLinked(contact.createVKey(), clock.nowUtc())) {
       logger.atWarning().log(
-          "Cannot delete contact with repo ID %s since it is referenced from a domain",
+          "Cannot delete contact with repo ID %s since it is referenced from a domain.",
           contact.getRepoId());
       return;
     }
@@ -177,7 +177,7 @@ public class DeleteLoadTestDataAction implements Runnable {
         HistoryEntryDao.loadHistoryObjectsForResource(eppResource.createVKey());
     if (isDryRun) {
       logger.atInfo().log(
-          "Would delete repo ID %s along with %d history objects",
+          "Would delete repo ID %s along with %d history objects.",
           eppResource.getRepoId(), historyObjects.size());
     } else {
       historyObjects.forEach(tm()::delete);

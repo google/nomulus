@@ -104,7 +104,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
         new Duration(enqueuedTime, now));
     logger.atInfo().log(
         "publishDnsWriter latency statistics: TLD: %s, dnsWriter: %s, actionStatus: %s, "
-            + "numItems: %d, timeSinceCreation: %s, timeInQueue: %s",
+            + "numItems: %d, timeSinceCreation: %s, timeInQueue: %s.",
         tld,
         dnsWriter,
         status,
@@ -144,7 +144,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
 
   /** Adds all the domains and hosts in the batch back to the queue to be processed later. */
   private void requeueBatch() {
-    logger.atInfo().log("Requeueing batch for retry");
+    logger.atInfo().log("Requeueing batch for retry.");
     for (String domain : nullToEmpty(domains)) {
       dnsQueue.addDomainRefreshTask(domain);
     }
@@ -158,14 +158,14 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     // LockIndex should always be within [1, numPublishLocks]
     if (lockIndex > numPublishLocks || lockIndex <= 0) {
       logger.atSevere().log(
-          "Lock index should be within [1,%d], got %d instead", numPublishLocks, lockIndex);
+          "Lock index should be within [1,%d], got %d instead.", numPublishLocks, lockIndex);
       return false;
     }
     // Check if the Registry object's num locks has changed since this task was batched
     int registryNumPublishLocks = Registry.get(tld).getNumDnsPublishLocks();
     if (registryNumPublishLocks != numPublishLocks) {
       logger.atWarning().log(
-          "Registry numDnsPublishLocks %d out of sync with parameter %d",
+          "Registry numDnsPublishLocks %d out of sync with parameter %d.",
           registryNumPublishLocks, numPublishLocks);
       return false;
     }
@@ -179,7 +179,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     DnsWriter writer = dnsWriterProxy.getByClassNameForTld(dnsWriter, tld);
 
     if (writer == null) {
-      logger.atWarning().log("Couldn't get writer %s for TLD %s", dnsWriter, tld);
+      logger.atWarning().log("Couldn't get writer %s for TLD %s.", dnsWriter, tld);
       recordActionResult(ActionStatus.BAD_WRITER);
       requeueBatch();
       return;
@@ -190,11 +190,11 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     for (String domain : nullToEmpty(domains)) {
       if (!DomainNameUtils.isUnder(
           InternetDomainName.from(domain), InternetDomainName.from(tld))) {
-        logger.atSevere().log("%s: skipping domain %s not under tld", tld, domain);
+        logger.atSevere().log("%s: skipping domain %s not under TLD.", tld, domain);
         domainsRejected += 1;
       } else {
         writer.publishDomain(domain);
-        logger.atInfo().log("%s: published domain %s", tld, domain);
+        logger.atInfo().log("%s: published domain %s.", tld, domain);
         domainsPublished += 1;
       }
     }
@@ -206,11 +206,11 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
     for (String host : nullToEmpty(hosts)) {
       if (!DomainNameUtils.isUnder(
           InternetDomainName.from(host), InternetDomainName.from(tld))) {
-        logger.atSevere().log("%s: skipping host %s not under tld", tld, host);
+        logger.atSevere().log("%s: skipping host %s not under TLD.", tld, host);
         hostsRejected += 1;
       } else {
         writer.publishHost(host);
-        logger.atInfo().log("%s: published host %s", tld, host);
+        logger.atInfo().log("%s: published host %s.", tld, host);
         hostsPublished += 1;
       }
     }
@@ -233,7 +233,7 @@ public final class PublishDnsUpdatesAction implements Runnable, Callable<Void> {
           tld, dnsWriter, commitStatus, duration, domainsPublished, hostsPublished);
       logger.atInfo().log(
           "writer.commit() statistics: TLD: %s, dnsWriter: %s, commitStatus: %s, duration: %s, "
-              + "domainsPublished: %d, domainsRejected: %d, hostsPublished: %d, hostsRejected: %d",
+              + "domainsPublished: %d, domainsRejected: %d, hostsPublished: %d, hostsRejected: %d.",
           tld,
           dnsWriter,
           commitStatus,

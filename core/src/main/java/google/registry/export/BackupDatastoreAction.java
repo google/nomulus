@@ -75,12 +75,12 @@ public class BackupDatastoreAction implements Runnable {
       enqueuePollTask(backupName, AnnotatedEntities.getReportingKinds());
       String message =
           String.format(
-              "Datastore backup started with name: %s\nSaving to %s",
+              "Datastore backup started with name: %s\nSaving to %s.",
               backupName, backup.getExportFolderUrl());
       logger.atInfo().log(message);
       response.setPayload(message);
     } catch (Throwable e) {
-      throw new InternalServerErrorException("Exception occurred while backing up datastore.", e);
+      throw new InternalServerErrorException("Exception occurred while backing up Datastore.", e);
     }
   }
 }

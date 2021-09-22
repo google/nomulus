@@ -109,7 +109,7 @@ public class UploadDatastoreBackupAction implements Runnable {
       String message = uploadBackup(backupId, backupFolderUrl, Splitter.on(',').split(backupKinds));
       logger.atInfo().log("Loaded backup successfully: %s", message);
     } catch (Throwable e) {
-      logger.atSevere().withCause(e).log("Error loading backup");
+      logger.atSevere().withCause(e).log("Error loading backup.");
       if (e instanceof IllegalArgumentException) {
         throw new BadRequestException("Error calling load backup: " + e.getMessage(), e);
       } else {
@@ -148,12 +148,12 @@ public class UploadDatastoreBackupAction implements Runnable {
           getQueue(UpdateSnapshotViewAction.QUEUE));
 
       builder.append(String.format(" - %s:%s\n", projectId, jobId));
-      logger.atInfo().log("Submitted load job %s:%s", projectId, jobId);
+      logger.atInfo().log("Submitted load job %s:%s.", projectId, jobId);
     }
     return builder.toString();
   }
 
-  static String sanitizeForBigquery(String backupId) {
+  private static String sanitizeForBigquery(String backupId) {
     return backupId.replaceAll("[^a-zA-Z0-9_]", "_");
   }
 

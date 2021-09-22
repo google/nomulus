@@ -68,7 +68,8 @@ public class AppEngineServiceUtilsImpl implements AppEngineServiceUtils {
   public String convertToSingleSubdomain(String hostname) {
     Matcher matcher = APPSPOT_HOSTNAME_PATTERN.matcher(hostname);
     if (!matcher.matches()) {
-      logger.atWarning().log("Skipping conversion because hostname can't be parsed: %s", hostname);
+      logger.atWarning().log(
+          "Skipping conversion because hostname '%s' can't be parsed.", hostname);
       return hostname;
     }
     return matcher.group(1).replace(".", "-dot-") + ".appspot.com";

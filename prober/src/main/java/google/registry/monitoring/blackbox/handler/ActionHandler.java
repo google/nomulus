@@ -97,7 +97,7 @@ public abstract class ActionHandler extends SimpleChannelInboundHandler<InboundM
 
       // As this was an ERROR in performing the action, we must close the channel
       ChannelFuture closedFuture = ctx.channel().close();
-      closedFuture.addListener(f -> logger.atInfo().log("Unsuccessful channel connection closed"));
+      closedFuture.addListener(f -> logger.atInfo().log("Unsuccessful channel connection closed."));
     }
   }
 }

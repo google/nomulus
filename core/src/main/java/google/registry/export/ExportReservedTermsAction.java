@@ -65,11 +65,11 @@ public class ExportReservedTermsAction implements Runnable {
       String resultMsg;
       if (registry.getReservedListNames().isEmpty() && isNullOrEmpty(registry.getDriveFolderId())) {
         resultMsg = "No reserved lists configured";
-        logger.atInfo().log("No reserved terms to export for TLD %s", tld);
+        logger.atInfo().log("No reserved terms to export for TLD '%s'.", tld);
       } else if (registry.getDriveFolderId() == null) {
         resultMsg = "Skipping export because no Drive folder is associated with this TLD";
         logger.atInfo().log(
-            "Skipping reserved terms export for TLD %s because Drive folder isn't specified", tld);
+            "Skipping reserved terms export for TLD %s because Drive folder isn't specified.", tld);
       } else {
         resultMsg = driveConnection.createOrUpdateFile(
             RESERVED_TERMS_FILENAME,

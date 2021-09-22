@@ -55,7 +55,7 @@ public final class JsonHttp {
   public static Map<String, ?> read(HttpServletRequest req) throws IOException {
     if (!"POST".equals(req.getMethod())
         && !"PUT".equals(req.getMethod())) {
-      logger.atWarning().log("JSON request payload only allowed for POST/PUT");
+      logger.atWarning().log("JSON request payload only allowed for POST/PUT.");
       return null;
     }
     if (!JSON_UTF_8.is(MediaType.parse(req.getContentType()))) {
@@ -66,7 +66,7 @@ public final class JsonHttp {
       try {
         return checkNotNull((Map<String, ?>) JSONValue.parseWithException(jsonReader));
       } catch (ParseException | NullPointerException | ClassCastException e) {
-        logger.atWarning().withCause(e).log("Malformed JSON");
+        logger.atWarning().withCause(e).log("Malformed JSON.");
         return null;
       }
     }

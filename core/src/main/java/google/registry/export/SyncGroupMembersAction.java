@@ -194,7 +194,7 @@ public final class SyncGroupMembersAction implements Runnable {
         }
       }
       logger.atInfo().log(
-          "Successfully synced contacts for registrar %s: added %d and removed %d",
+          "Successfully synced contacts for registrar %s: added %d and removed %d.",
           registrar.getRegistrarId(), totalAdded, totalRemoved);
     } catch (IOException e) {
       // Package up exception and re-throw with attached additional relevant info.

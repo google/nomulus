@@ -93,7 +93,7 @@ public final class DeleteOldCommitLogsAction implements Runnable {
   public void run() {
     DateTime deletionThreshold = clock.nowUtc().minus(maxAge);
     logger.atInfo().log(
-        "Processing asynchronous deletion of unreferenced CommitLogManifests older than %s",
+        "Processing asynchronous deletion of unreferenced CommitLogManifests older than %s.",
         deletionThreshold);
 
     mrRunner
@@ -208,7 +208,7 @@ public final class DeleteOldCommitLogsAction implements Runnable {
       getContext().incrementCounter("EPP resources missing pre-threshold revision (SEE LOGS)");
       logger.atSevere().log(
           "EPP resource missing old enough revision: "
-              + "%s (created on %s) has %d revisions between %s and %s, while threshold is %s",
+              + "%s (created on %s) has %d revisions between %s and %s, while threshold is %s.",
           Key.create(eppResource),
           eppResource.getCreationTime(),
           eppResource.getRevisions().size(),

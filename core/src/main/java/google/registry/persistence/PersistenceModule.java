@@ -303,7 +303,7 @@ public abstract class PersistenceModule {
       overrides.put(Environment.PASS, credential.password());
     } catch (Throwable e) {
       // TODO(b/184631990): after SQL becomes primary, throw an exception to fail fast
-      logger.atSevere().withCause(e).log("Failed to get SQL credential from Secret Manager");
+      logger.atSevere().withCause(e).log("Failed to get SQL credential from Secret Manager.");
     }
   }
 

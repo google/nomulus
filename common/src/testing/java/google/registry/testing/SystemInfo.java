@@ -39,7 +39,7 @@ public final class SystemInfo {
                     pid.getOutputStream().close();
                     pid.waitFor();
                   } catch (IOException e) {
-                    logger.atWarning().withCause(e).log("%s command not available", cmd);
+                    logger.atWarning().withCause(e).log("%s command not available.", cmd);
                     return false;
                   }
                   return true;

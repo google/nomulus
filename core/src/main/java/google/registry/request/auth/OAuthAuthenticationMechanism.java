@@ -74,7 +74,7 @@ public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
     String header = request.getHeader(AUTHORIZATION);
     if ((header == null) || !header.startsWith(BEARER_PREFIX)) {
       if (header != null) {
-        logger.atInfo().log("invalid authorization header");
+        logger.atInfo().log("Invalid authorization header.");
       }
       return AuthResult.create(NONE);
     }
@@ -94,14 +94,14 @@ public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
       currentUser = oauthService.getCurrentUser(availableOauthScopeArray);
       isUserAdmin = oauthService.isUserAdmin(availableOauthScopeArray);
       logger.atInfo().log(
-          "current user: %s (%s)", currentUser, isUserAdmin ? "admin" : "not admin");
+          "Current user: %s (%s).", currentUser, isUserAdmin ? "admin" : "not admin");
       oauthClientId = oauthService.getClientId(availableOauthScopeArray);
-      logger.atInfo().log("client ID: %s", oauthClientId);
+      logger.atInfo().log("OAuth client ID: %s", oauthClientId);
       authorizedScopes =
           ImmutableSet.copyOf(oauthService.getAuthorizedScopes(availableOauthScopeArray));
-      logger.atInfo().log("authorized scope(s): %s", authorizedScopes);
+      logger.atInfo().log("Authorized scope(s): %s", authorizedScopes);
     } catch (OAuthRequestException | OAuthServiceFailureException e) {
-      logger.atInfo().withCause(e).log("unable to get OAuth information");
+      logger.atInfo().withCause(e).log("Unable to get OAuth information.");
       return AuthResult.create(NONE);
     }
     if ((currentUser == null) || (oauthClientId == null) || (authorizedScopes == null)) {
@@ -111,13 +111,13 @@ public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
     // Make sure that the client ID matches, to avoid a confused deputy attack; see:
     // http://stackoverflow.com/a/17439317/1179226
     if (!allowedOauthClientIds.contains(oauthClientId)) {
-      logger.atInfo().log("client ID is not allowed");
+      logger.atInfo().log("OAuth client ID is not allowed.");
       return AuthResult.create(NONE);
     }
 
     // Make sure that all required scopes are present.
     if (!authorizedScopes.containsAll(requiredOauthScopes)) {
-      logger.atInfo().log("required scope(s) missing");
+      logger.atInfo().log("Required scope(s) missing.");
       return AuthResult.create(NONE);
     }
 

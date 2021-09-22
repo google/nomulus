@@ -140,7 +140,7 @@ public class GenerateSpec11ReportAction implements Runnable {
       enqueueBeamReportingTask(PublishSpec11ReportAction.PATH, beamTaskParameters);
       logger.atInfo().log("Got response: %s", launchResponse.getJob().toPrettyString());
     } catch (IOException e) {
-      logger.atWarning().withCause(e).log("Template Launch failed");
+      logger.atWarning().withCause(e).log("Template Launch failed.");
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload(String.format("Template launch failed: %s", e.getMessage()));
       return;

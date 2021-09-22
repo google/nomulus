@@ -448,7 +448,7 @@ public class RdapDomainSearchAction extends RdapSearchActionBase {
           if (hostKey != null) {
             builder.add(hostKey);
           } else {
-            logger.atWarning().log("Host key unexpectedly null");
+            logger.atWarning().log("Host key unexpectedly null.");
           }
         }
       }

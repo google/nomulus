@@ -95,7 +95,7 @@ public final class NordnVerifyAction implements Runnable {
    */
   @VisibleForTesting
   LordnLog verify() throws IOException {
-    logger.atInfo().log("LORDN verify task %s: Sending request to URL %s.", actionLogId, url);
+    logger.atInfo().log("LORDN verify task %s: Sending request to URL %s", actionLogId, url);
     HTTPRequest req = new HTTPRequest(url, GET, validateCertificate().setDeadline(60d));
     lordnRequestInitializer.initialize(req, tld);
     HTTPResponse rsp;
@@ -121,7 +121,7 @@ public final class NordnVerifyAction implements Runnable {
     LordnLog log =
         LordnLog.parse(ByteSource.wrap(rsp.getContent()).asCharSource(UTF_8).readLines());
     if (log.getStatus() == LordnLog.Status.ACCEPTED) {
-      logger.atInfo().log("LORDN verify task %s: Upload accepted", actionLogId);
+      logger.atInfo().log("LORDN verify task %s: Upload accepted.", actionLogId);
     } else {
       logger.atSevere().log(
           "LORDN verify task %s: Upload rejected with reason: %s", actionLogId, log);

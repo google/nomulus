@@ -150,7 +150,7 @@ public class CheckApiAction implements Runnable {
       return fail(e.getResult().getMsg());
     } catch (Exception e) {
       metricBuilder.status(UNKNOWN_ERROR);
-      logger.atWarning().withCause(e).log("Unknown error");
+      logger.atWarning().withCause(e).log("Unknown error.");
       return fail("Invalid request");
     }
   }

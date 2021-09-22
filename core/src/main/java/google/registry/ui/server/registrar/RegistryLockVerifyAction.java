@@ -77,7 +77,7 @@ public final class RegistryLockVerifyAction extends HtmlAction {
       data.put("domainName", resultLock.getDomainName());
     } catch (Throwable t) {
       logger.atWarning().withCause(t).log(
-          "Error when verifying verification code %s", lockVerificationCode);
+          "Error when verifying verification code '%s'.", lockVerificationCode);
       data.put("success", false);
       data.put("errorMessage", Throwables.getRootCause(t).getMessage());
     }

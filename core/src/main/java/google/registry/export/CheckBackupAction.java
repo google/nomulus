@@ -171,10 +171,10 @@ public class CheckBackupAction implements Runnable {
         ImmutableSet.copyOf(intersection(backup.getKinds(), kindsToLoad));
     String message = String.format("Datastore backup %s complete - ", backupName);
     if (exportedKindsToLoad.isEmpty()) {
-      message += "no kinds to load into BigQuery";
+      message += "no kinds to load into BigQuery.";
     } else {
       enqueueUploadBackupTask(backupId, backup.getExportFolderUrl(), exportedKindsToLoad);
-      message += "BigQuery load task enqueued";
+      message += "BigQuery load task enqueued.";
     }
     logger.atInfo().log(message);
     response.setPayload(message);

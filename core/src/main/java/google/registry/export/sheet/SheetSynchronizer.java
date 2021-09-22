@@ -117,7 +117,7 @@ class SheetSynchronizer {
       BatchUpdateValuesResponse response =
           sheetsService.spreadsheets().values().batchUpdate(spreadsheetId, updateRequest).execute();
       Integer cellsUpdated = response.getTotalUpdatedCells();
-      logger.atInfo().log("Updated %d originalVals", cellsUpdated != null ? cellsUpdated : 0);
+      logger.atInfo().log("Updated %d originalVals.", cellsUpdated != null ? cellsUpdated : 0);
     }
 
     // Append extra rows if necessary
@@ -140,7 +140,7 @@ class SheetSynchronizer {
           .setInsertDataOption("INSERT_ROWS")
           .execute();
       logger.atInfo().log(
-          "Appended %d rows to range %s",
+          "Appended %d rows to range %s.",
           data.size() - originalVals.size(), appendResponse.getTableRange());
     // Clear the extra rows if necessary
     } else if (data.size() < originalVals.size()) {
@@ -155,7 +155,7 @@ class SheetSynchronizer {
                   new ClearValuesRequest())
               .execute();
       logger.atInfo().log(
-          "Cleared %d rows from range %s",
+          "Cleared %d rows from range %s.",
           originalVals.size() - data.size(), clearResponse.getClearedRange());
     }
   }
