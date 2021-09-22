@@ -150,12 +150,12 @@ public class GenerateInvoicesAction implements Runnable {
         enqueueBeamReportingTask(PublishInvoicesAction.PATH, beamTaskParameters);
       }
       response.setStatus(SC_OK);
-      response.setPayload(String.format("Launched billing dataflow template: %s.", jobId));
+      response.setPayload(String.format("Launched invoicing pipeline: %s.", jobId));
     } catch (IOException e) {
-      logger.atWarning().withCause(e).log("Template Launch failed");
-      emailUtils.sendAlertEmail(String.format("Template Launch failed due to %s", e.getMessage()));
+      logger.atWarning().withCause(e).log("Pipeline Launch failed");
+      emailUtils.sendAlertEmail(String.format("Pipeline Launch failed due to %s", e.getMessage()));
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
-      response.setPayload(String.format("Template launch failed: %s", e.getMessage()));
+      response.setPayload(String.format("Pipeline launch failed: %s", e.getMessage()));
     }
   }
 }
