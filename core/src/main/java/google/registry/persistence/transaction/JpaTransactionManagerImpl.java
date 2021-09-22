@@ -186,10 +186,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             // Error is unchecked!
             try {
               txn.rollback();
-              logger.atWarning().log("Error during transaction; transaction rolled back");
+              logger.atWarning().log("Error during transaction; transaction rolled back.");
             } catch (Throwable rollbackException) {
               logger.atSevere().withCause(rollbackException).log(
-                  "Rollback failed; suppressing error");
+                  "Rollback failed; suppressing error.");
             }
             throw e;
           } finally {
@@ -218,9 +218,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       // Error is unchecked!
       try {
         txn.rollback();
-        logger.atWarning().log("Error during transaction; transaction rolled back");
+        logger.atWarning().log("Error during transaction; transaction rolled back.");
       } catch (Throwable rollbackException) {
-        logger.atSevere().withCause(rollbackException).log("Rollback failed; suppressing error");
+        logger.atSevere().withCause(rollbackException).log("Rollback failed; suppressing error.");
       }
       throw e;
     } finally {

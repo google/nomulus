@@ -58,14 +58,14 @@ public abstract class CreateOrUpdateReservedListCommand extends ConfirmingComman
   protected String execute() {
     String message =
         String.format(
-            "Saved reserved list %s with %d entries",
+            "Saved reserved list %s with %d entries.",
             name, reservedList.getReservedListEntries().size());
     try {
-      logger.atInfo().log("Saving reserved list for TLD %s", name);
+      logger.atInfo().log("Saving reserved list for TLD %s.", name);
       ReservedListDao.save(reservedList);
       logger.atInfo().log(message);
     } catch (Throwable e) {
-      message = "Unexpected error saving reserved list from nomulus tool command";
+      message = "Unexpected error saving reserved list from nomulus tool command.";
       logger.atSevere().withCause(e).log(message);
     }
     return message;

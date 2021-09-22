@@ -51,13 +51,14 @@ abstract class CreateOrUpdatePremiumListCommand extends ConfirmingCommand
 
   @Override
   public String execute() throws Exception {
-    String message = String.format("Saved premium list %s with %d entries", name, inputData.size());
+    String message =
+        String.format("Saved premium list %s with %d entries.", name, inputData.size());
     try {
-      logger.atInfo().log("Saving premium list for TLD %s", name);
+      logger.atInfo().log("Saving premium list for TLD %s.", name);
       PremiumListDao.save(name, currency, inputData);
       logger.atInfo().log(message);
     } catch (Throwable e) {
-      message = "Unexpected error saving premium list from nomulus tool command";
+      message = "Unexpected error saving premium list from nomulus tool command.";
       logger.atSevere().withCause(e).log(message);
     }
     return message;

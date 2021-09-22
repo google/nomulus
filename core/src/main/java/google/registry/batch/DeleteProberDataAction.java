@@ -228,7 +228,7 @@ public class DeleteProberDataAction implements Runnable {
     if (EppResourceUtils.isActive(domain, tm().getTransactionTime())) {
       if (isDryRun) {
         logger.atInfo().log(
-            "Would soft-delete the active domain: %s (%s)",
+            "Would soft-delete the active domain: %s (%s).",
             domain.getDomainName(), domain.getRepoId());
       } else {
         softDeleteDomain(domain, registryAdminRegistrarId, dnsQueue);
@@ -237,7 +237,7 @@ public class DeleteProberDataAction implements Runnable {
     } else {
       if (isDryRun) {
         logger.atInfo().log(
-            "Would hard-delete the non-active domain: %s (%s) and its dependents",
+            "Would hard-delete the non-active domain: %s (%s) and its dependents.",
             domain.getDomainName(), domain.getRepoId());
       } else {
         domainRepoIdsToHardDelete.add(domain.getRepoId());
@@ -331,7 +331,7 @@ public class DeleteProberDataAction implements Runnable {
           getContext().incrementCounter("skipped, non-prober data");
         }
       } catch (Throwable t) {
-        logger.atSevere().withCause(t).log("Error while deleting prober data for key %s", key);
+        logger.atSevere().withCause(t).log("Error while deleting prober data for key %s.", key);
         getContext().incrementCounter(String.format("error, kind %s", key.getKind()));
       }
     }
@@ -372,7 +372,7 @@ public class DeleteProberDataAction implements Runnable {
       if (EppResourceUtils.isActive(domain, now)) {
         if (isDryRun) {
           logger.atInfo().log(
-              "Would soft-delete the active domain: %s (%s)", domainName, domainKey);
+              "Would soft-delete the active domain: %s (%s).", domainName, domainKey);
         } else {
           tm().transact(() -> softDeleteDomain(domain, registryAdminRegistrarId, dnsQueue));
         }

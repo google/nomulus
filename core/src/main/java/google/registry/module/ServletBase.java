@@ -51,7 +51,7 @@ public class ServletBase extends HttpServlet {
     // registered if metric reporter starts up correctly.
     try {
       metricReporter.get().startAsync().awaitRunning(java.time.Duration.ofSeconds(10));
-      logger.atInfo().log("Started up MetricReporter");
+      logger.atInfo().log("Started up MetricReporter.");
       LifecycleManager.getInstance()
           .setShutdownHook(
               () -> {
@@ -60,7 +60,7 @@ public class ServletBase extends HttpServlet {
                       .get()
                       .stopAsync()
                       .awaitTerminated(java.time.Duration.ofSeconds(10));
-                  logger.atInfo().log("Shut down MetricReporter");
+                  logger.atInfo().log("Shut down MetricReporter.");
                 } catch (TimeoutException e) {
                   logger.atSevere().withCause(e).log("Failed to stop MetricReporter.");
                 }
@@ -72,13 +72,13 @@ public class ServletBase extends HttpServlet {
 
   @Override
   public void service(HttpServletRequest req, HttpServletResponse rsp) throws IOException {
-    logger.atInfo().log("Received %s request", getClass().getSimpleName());
+    logger.atInfo().log("Received %s request.", getClass().getSimpleName());
     DateTime startTime = clock.nowUtc();
     try {
       requestHandler.handleRequest(req, rsp);
     } finally {
       logger.atInfo().log(
-          "Finished %s request. Latency: %.3fs",
+          "Finished %s request. Latency: %.3fs.",
           getClass().getSimpleName(), (clock.nowUtc().getMillis() - startTime.getMillis()) / 1000d);
     }
   }

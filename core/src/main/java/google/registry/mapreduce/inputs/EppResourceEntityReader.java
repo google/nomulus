@@ -64,7 +64,7 @@ class EppResourceEntityReader<R extends EppResource> extends EppResourceBaseRead
       Key<? extends EppResource> key = nextQueryResult().getKey();
       EppResource resource = auditedOfy().load().key(key).now();
       if (resource == null) {
-        logger.atSevere().log("EppResourceIndex key %s points at a missing resource", key);
+        logger.atSevere().log("EppResourceIndex key %s points at a missing resource.", key);
         continue;
       }
       // Postfilter to distinguish polymorphic types (e.g. EppResources).

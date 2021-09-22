@@ -275,7 +275,7 @@ public class AuthenticatedRegistrarAccessor {
     } catch (RuntimeException e) {
       logger.atSevere().withCause(e).log(
           "Error checking whether email %s belongs to support group %s."
-              + " Skipping support role check",
+              + " Skipping support role check.",
           userEmail, gSuiteSupportGroupEmailAddress);
       return false;
     }
@@ -316,7 +316,7 @@ public class AuthenticatedRegistrarAccessor {
     UserAuthInfo userAuthInfo = authResult.userAuthInfo().get();
     User user = userAuthInfo.user();
     ImmutableSetMultimap.Builder<String, Role> builder = new ImmutableSetMultimap.Builder<>();
-    logger.atInfo().log("Checking registrar contacts for user ID %s", user.getUserId());
+    logger.atInfo().log("Checking registrar contacts for user ID %s.", user.getUserId());
 
     // Find all registrars that have a registrar contact with this user's ID.
     if (tm().isOfy()) {

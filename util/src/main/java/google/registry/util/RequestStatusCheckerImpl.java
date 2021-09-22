@@ -55,7 +55,7 @@ public class RequestStatusCheckerImpl implements RequestStatusChecker {
   public String getLogId() {
     String requestLogId =
         ApiProxy.getCurrentEnvironment().getAttributes().get(REQUEST_LOG_ID_KEY).toString();
-    logger.atInfo().log("Current requestLogId: %s", requestLogId);
+    logger.atInfo().log("Current requestLogId: %s.", requestLogId);
     // We want to make sure there actually is a log to query for this request, even if the request
     // dies right after this call.
     //
@@ -85,7 +85,7 @@ public class RequestStatusCheckerImpl implements RequestStatusChecker {
     // So we have to assume it's "running" in that case.
     if (requestLogs == null) {
       logger.atInfo().log(
-          "Queried an unrecognized requestLogId %s - assume it's running", requestLogId);
+          "Queried an unrecognized requestLogId %s - assume it's running.", requestLogId);
       return true;
     }
     logger.atInfo().log(

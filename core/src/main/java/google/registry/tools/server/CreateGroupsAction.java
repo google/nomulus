@@ -36,7 +36,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 /** Action that creates Google Groups for a registrar's mailing lists. */
@@ -98,7 +97,7 @@ public class CreateGroupsAction implements Runnable {
           responseWriter.append(types.get(i).getDisplayName()).append(" => ");
           e.get().printStackTrace(responseWriter);
           logger.atSevere().withCause(e.get()).log(
-              "Could not create Google Group for registrar %s for type %s",
+              "Could not create Google Group for registrar %s for type %s.",
               registrar.getRegistrarName(), types.get(i));
         } else {
           responseWriter.printf("%s => Success%n", types.get(i).getDisplayName());
@@ -109,11 +108,10 @@ public class CreateGroupsAction implements Runnable {
       response.setStatus(SC_OK);
       response.setPayload("Success!");
       logger.atInfo().log(
-          "Successfully created groups for registrar: %s", registrar.getRegistrarName());
+          "Successfully created groups for registrar %s.", registrar.getRegistrarName());
     }
   }
 
-  @Nullable
   private Registrar initAndLoadRegistrar() {
     if (!clientId.isPresent()) {
       respondToBadRequest("Error creating Google Groups, missing parameter: clientId");

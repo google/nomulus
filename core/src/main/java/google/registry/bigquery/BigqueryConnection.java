@@ -632,7 +632,7 @@ public class BigqueryConnection implements AutoCloseable {
   private static String summarizeCompletedJob(Job job) {
     JobStatistics stats = job.getStatistics();
     return String.format(
-        "Job took %,.3f seconds after a %,.3f second delay and processed %,d bytes (%s)",
+        "Job took %,.3f seconds after a %,.3f second delay and processed %,d bytes (%s).",
         (stats.getEndTime() - stats.getStartTime()) / 1000.0,
         (stats.getStartTime() - stats.getCreationTime()) / 1000.0,
         stats.getTotalBytesProcessed(),
@@ -706,17 +706,17 @@ public class BigqueryConnection implements AutoCloseable {
   }
 
   /**
-   * Helper that creates a dataset with this name if it doesn't already exist, and returns true
-   * if creation took place.
+   * Helper that creates a dataset with this name if it doesn't already exist, and returns true if
+   * creation took place.
    */
-  public boolean createDatasetIfNeeded(String datasetName) throws IOException {
+  private boolean createDatasetIfNeeded(String datasetName) throws IOException {
     if (!checkDatasetExists(datasetName)) {
       bigquery.datasets()
           .insert(getProjectId(), new Dataset().setDatasetReference(new DatasetReference()
               .setProjectId(getProjectId())
               .setDatasetId(datasetName)))
           .execute();
-      logger.atInfo().log("Created dataset: %s:%s\n", getProjectId(), datasetName);
+      logger.atInfo().log("Created dataset: %s: %s.", getProjectId(), datasetName);
       return true;
     }
     return false;
@@ -732,9 +732,8 @@ public class BigqueryConnection implements AutoCloseable {
                   .setDefaultDataset(getDataset())
                   .setDestinationTable(table))));
     } catch (BigqueryJobFailureException e) {
-      if (e.getReason().equals("duplicate")) {
-        // Table already exists.
-      } else {
+      if (!e.getReason().equals("duplicate")) {
+        // Throw if it failed for any reason other than table already existing.
         throw e;
       }
     }

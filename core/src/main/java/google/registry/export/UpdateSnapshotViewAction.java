@@ -150,8 +150,7 @@ public class UpdateSnapshotViewAction implements Runnable {
       if (e.getDetails() != null && e.getDetails().getCode() == 404) {
         bigquery.tables().insert(ref.getProjectId(), ref.getDatasetId(), table).execute();
       } else {
-        logger.atWarning().withCause(e).log(
-            "UpdateSnapshotViewAction failed, caught exception %s", e.getDetails());
+        logger.atWarning().withCause(e).log("UpdateSnapshotViewAction errored out.");
       }
     }
   }

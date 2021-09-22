@@ -316,7 +316,7 @@ public class ProxyServer implements Runnable {
       MetricReporter metricReporter = proxyComponent.metricReporter();
       try {
         metricReporter.startAsync().awaitRunning(java.time.Duration.ofSeconds(10));
-        logger.atInfo().log("Started up MetricReporter");
+        logger.atInfo().log("Started up MetricReporter.");
       } catch (TimeoutException timeoutException) {
         logger.atSevere().withCause(timeoutException).log(
             "Failed to initialize MetricReporter: %s", timeoutException);
@@ -327,7 +327,7 @@ public class ProxyServer implements Runnable {
                   () -> {
                     try {
                       metricReporter.stopAsync().awaitTerminated(java.time.Duration.ofSeconds(10));
-                      logger.atInfo().log("Shut down MetricReporter");
+                      logger.atInfo().log("Shut down MetricReporter.");
                     } catch (TimeoutException timeoutException) {
                       logger.atWarning().withCause(timeoutException).log(
                           "Failed to stop MetricReporter: %s", timeoutException);

@@ -107,7 +107,7 @@ public class ReplicateToDatastoreAction implements Runnable {
    */
   @VisibleForTesting
   public void applyTransaction(TransactionEntity txnEntity) {
-    logger.atInfo().log("Applying a single transaction Cloud SQL -> Cloud Datastore");
+    logger.atInfo().log("Applying a single transaction Cloud SQL -> Cloud Datastore.");
     try (UpdateAutoTimestamp.DisableAutoUpdateResource disabler =
         UpdateAutoTimestamp.disableAutoUpdate()) {
       ofyTm()
@@ -136,7 +136,7 @@ public class ReplicateToDatastoreAction implements Runnable {
                 }
 
                 logger.atInfo().log(
-                    "Applying transaction %s to Cloud Datastore", txnEntity.getId());
+                    "Applying transaction %s to Cloud Datastore.", txnEntity.getId());
 
                 // At this point, we know txnEntity is the correct next transaction, so write it
                 // to datastore.
@@ -150,7 +150,7 @@ public class ReplicateToDatastoreAction implements Runnable {
                 // transaction.
                 auditedOfy().save().entity(lastSqlTxn.cloneWithNewTransactionId(nextTxnId));
                 logger.atInfo().log(
-                    "Finished applying single transaction Cloud SQL -> Cloud Datastore");
+                    "Finished applying single transaction Cloud SQL -> Cloud Datastore.");
               });
     }
   }
@@ -180,16 +180,16 @@ public class ReplicateToDatastoreAction implements Runnable {
       return;
     }
     try {
-      logger.atInfo().log("Processing transaction replay batch Cloud SQL -> Cloud Datastore");
+      logger.atInfo().log("Processing transaction replay batch Cloud SQL -> Cloud Datastore.");
       int numTransactionsReplayed = replayAllTransactions();
       String resultMessage =
           String.format(
-              "Replayed %d transaction(s) from Cloud SQL -> Datastore", numTransactionsReplayed);
+              "Replayed %d transaction(s) from Cloud SQL -> Datastore.", numTransactionsReplayed);
       logger.atInfo().log(resultMessage);
       response.setPayload(resultMessage);
       response.setStatus(SC_OK);
     } catch (Throwable t) {
-      String message = "Errored out replaying files";
+      String message = "Errored out replaying files.";
       logger.atSevere().withCause(t).log(message);
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload(message);

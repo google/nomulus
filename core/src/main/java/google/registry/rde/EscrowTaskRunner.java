@@ -88,7 +88,7 @@ class EscrowTaskRunner {
       final Duration interval) {
     Callable<Void> lockRunner =
         () -> {
-          logger.atInfo().log("TLD: %s", registry.getTld());
+          logger.atInfo().log("Performing escrow for TLD '%s'.", registry.getTld());
           DateTime startOfToday = clock.nowUtc().withTimeAtStartOfDay();
           DateTime nextRequiredRun =
               transactIfJpaTm(
@@ -100,7 +100,7 @@ class EscrowTaskRunner {
           if (nextRequiredRun.isAfter(startOfToday)) {
             throw new NoContentException("Already completed");
           }
-          logger.atInfo().log("Current cursor is: %s", nextRequiredRun);
+          logger.atInfo().log("Current cursor is: %s.", nextRequiredRun);
           task.runWithLock(nextRequiredRun);
           DateTime nextRun = nextRequiredRun.plus(interval);
           logger.atInfo().log("Rolling cursor forward to %s.", nextRun);

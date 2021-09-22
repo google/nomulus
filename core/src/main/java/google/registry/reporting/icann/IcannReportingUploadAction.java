@@ -148,7 +148,7 @@ public final class IcannReportingUploadAction implements Runnable {
     String filename = getFileName(cursorType, cursorTime, tldStr);
     final BlobId gcsFilename =
         BlobId.of(reportingBucket, String.format("%s/%s", reportSubdir, filename));
-    logger.atInfo().log("Reading ICANN report %s from bucket %s", filename, reportingBucket);
+    logger.atInfo().log("Reading ICANN report %s from bucket '%s'.", filename, reportingBucket);
     // Check that the report exists
     try {
       verifyFileExists(gcsFilename);
@@ -177,7 +177,7 @@ public final class IcannReportingUploadAction implements Runnable {
               },
               IcannReportingUploadAction::isUploadFailureRetryable);
     } catch (RuntimeException e) {
-      logger.atWarning().withCause(e).log("Upload to %s failed", gcsFilename);
+      logger.atWarning().withCause(e).log("Upload to %s failed.", gcsFilename);
     }
     reportSummaryBuilder.put(filename, success);
 

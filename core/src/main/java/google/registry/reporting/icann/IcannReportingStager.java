@@ -105,7 +105,7 @@ public class IcannReportingStager {
   private void createIntermediaryTableView(String queryName, String query, ReportType reportType)
       throws ExecutionException, InterruptedException {
     // Later views depend on the results of earlier ones, so query everything synchronously
-    logger.atInfo().log("Generating intermediary view %s", queryName);
+    logger.atInfo().log("Generating intermediary view %s.", queryName);
     bigquery
         .startQuery(
             query,
@@ -262,7 +262,7 @@ public class IcannReportingStager {
     final BlobId gcsFilename =
         BlobId.of(reportingBucket, String.format("%s/%s", subdir, reportFilename));
     gcsUtils.createFromBytes(gcsFilename, reportBytes);
-    logger.atInfo().log("Wrote %d bytes to file location %s", reportBytes.length, gcsFilename);
+    logger.atInfo().log("Wrote %d bytes to file location '%s'.", reportBytes.length, gcsFilename);
     return reportFilename;
   }
 
@@ -273,6 +273,6 @@ public class IcannReportingStager {
     StringBuilder manifestString = new StringBuilder();
     filenames.forEach((filename) -> manifestString.append(filename).append("\n"));
     gcsUtils.createFromBytes(gcsFilename, manifestString.toString().getBytes(UTF_8));
-    logger.atInfo().log("Wrote %d filenames to manifest at %s", filenames.size(), gcsFilename);
+    logger.atInfo().log("Wrote %d filenames to manifest at '%s'.", filenames.size(), gcsFilename);
   }
 }

@@ -103,13 +103,13 @@ public class RestoreCommitLogsAction implements Runnable {
         !FORBIDDEN_ENVIRONMENTS.contains(RegistryEnvironment.get()),
         "DO NOT RUN IN PRODUCTION OR SANDBOX.");
     if (dryRun) {
-      logger.atInfo().log("Running in dryRun mode");
+      logger.atInfo().log("Running in dry-run mode.");
     }
     String gcsBucket = gcsBucketOverride.orElse(defaultGcsBucket);
     logger.atInfo().log("Restoring from %s.", gcsBucket);
     List<BlobInfo> diffFiles = diffLister.listDiffFiles(gcsBucket, fromTime, toTime);
     if (diffFiles.isEmpty()) {
-      logger.atInfo().log("Nothing to restore");
+      logger.atInfo().log("Nothing to restore.");
       return;
     }
     Map<Integer, DateTime> bucketTimestamps = new HashMap<>();
@@ -143,7 +143,7 @@ public class RestoreCommitLogsAction implements Runnable {
                                 .build()),
                 Stream.of(CommitLogCheckpointRoot.create(lastCheckpoint.getCheckpointTime())))
             .collect(toImmutableList()));
-    logger.atInfo().log("Restore complete");
+    logger.atInfo().log("Restore complete.");
   }
 
   /**

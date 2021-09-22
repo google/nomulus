@@ -98,7 +98,7 @@ public abstract class HtmlAction implements Runnable {
     data.put("xsrfToken", xsrfTokenManager.generateToken(user.getEmail()));
 
     logger.atInfo().log(
-        "User %s is accessing %s. Method= %s",
+        "User %s is accessing %s with method %s.",
         authResult.userIdForLogging(), getClass().getName(), method);
     runAfterLogin(data);
   }

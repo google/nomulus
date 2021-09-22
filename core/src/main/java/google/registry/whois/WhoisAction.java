@@ -111,7 +111,7 @@ public class WhoisAction implements Runnable {
       responseText = results.plainTextOutput();
       setWhoisMetrics(metricBuilder, 0, e.getStatus());
     } catch (Throwable t) {
-      logger.atSevere().withCause(t).log("WHOIS request crashed");
+      logger.atSevere().withCause(t).log("WHOIS request crashed.");
       responseText = "Internal Server Error";
       setWhoisMetrics(metricBuilder, 0, SC_INTERNAL_SERVER_ERROR);
     }

@@ -332,7 +332,7 @@ public class RdapJsonFormatter {
     builder.statusBuilder().addAll(status);
     if (status.isEmpty()) {
       logger.atWarning().log(
-          "Domain %s (ROID %s) doesn't have any status",
+          "Domain %s (ROID %s) doesn't have any status.",
           domainBase.getDomainName(), domainBase.getRepoId());
     }
     // RDAP Response Profile 2.6.3, must have a notice about statuses. That is in {@link
@@ -741,7 +741,7 @@ public class RdapJsonFormatter {
       if (registrarContacts.stream()
           .noneMatch(contact -> contact.roles().contains(RdapEntity.Role.ABUSE))) {
         logger.atWarning().log(
-            "Registrar '%s' (IANA ID %s) is missing ABUSE contact",
+            "Registrar '%s' (IANA ID %s) is missing ABUSE contact.",
             registrar.getRegistrarId(), registrar.getIanaIdentifier());
       }
       builder.entitiesBuilder().addAll(registrarContacts);

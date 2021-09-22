@@ -180,11 +180,11 @@ public class CloudDnsWriter extends BaseDnsWriter {
 
     desiredRecords.put(absoluteDomainName, domainRecords.build());
     logger.atFine().log(
-        "Will write %d records for domain %s", domainRecords.build().size(), absoluteDomainName);
+        "Will write %d records for domain '%s'.", domainRecords.build().size(), absoluteDomainName);
   }
 
   private void publishSubordinateHost(String hostName) {
-    logger.atInfo().log("Publishing glue records for %s", hostName);
+    logger.atInfo().log("Publishing glue records for host '%s'.", hostName);
     // Canonicalize name
     String absoluteHostName = getAbsoluteHostName(hostName);
 
@@ -250,7 +250,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
 
     // Host not managed by our registry, no need to update DNS.
     if (!tld.isPresent()) {
-      logger.atSevere().log("publishHost called for invalid host %s", hostName);
+      logger.atSevere().log("publishHost called for invalid host '%s'.", hostName);
       return;
     }
 
@@ -273,7 +273,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
     ImmutableMap<String, ImmutableSet<ResourceRecordSet>> desiredRecordsCopy =
         ImmutableMap.copyOf(desiredRecords);
     retrier.callWithRetry(() -> mutateZone(desiredRecordsCopy), ZoneStateException.class);
-    logger.atInfo().log("Wrote to Cloud DNS");
+    logger.atInfo().log("Wrote to Cloud DNS.");
   }
 
   /** Returns the glue records for in-bailiwick nameservers for the given domain+records. */
@@ -329,7 +329,7 @@ public class CloudDnsWriter extends BaseDnsWriter {
    */
   private Map<String, List<ResourceRecordSet>> getResourceRecordsForDomains(
       Set<String> domainNames) {
-    logger.atFine().log("Fetching records for %s", domainNames);
+    logger.atFine().log("Fetching records for domain '%s'.", domainNames);
     // As per Concurrent.transform() - if numThreads or domainNames.size() < 2, it will not use
     // threading.
     return ImmutableMap.copyOf(
@@ -381,11 +381,11 @@ public class CloudDnsWriter extends BaseDnsWriter {
     ImmutableSet<ResourceRecordSet> intersection =
         Sets.intersection(additions, deletions).immutableCopy();
     logger.atInfo().log(
-        "There are %d common items out of the %d items in 'additions' and %d items in 'deletions'",
+        "There are %d common items out of the %d items in 'additions' and %d items in 'deletions'.",
         intersection.size(), additions.size(), deletions.size());
     // Exit early if we have nothing to update - dnsConnection doesn't work on empty changes
     if (additions.equals(deletions)) {
-      logger.atInfo().log("Returning early because additions is the same as deletions");
+      logger.atInfo().log("Returning early because additions are the same as deletions.");
       return;
     }
     Change change =

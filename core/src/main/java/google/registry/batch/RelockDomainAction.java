@@ -313,7 +313,7 @@ public class RelockDomainAction implements Runnable {
         builder.add(new InternetAddress(registryLockEmailAddress));
       } catch (AddressException e) {
         // This shouldn't stop any other emails going out, so swallow it
-        logger.atWarning().log("Invalid email address %s", registryLockEmailAddress);
+        logger.atWarning().log("Invalid email address '%s'.", registryLockEmailAddress);
       }
     }
     return builder.build();

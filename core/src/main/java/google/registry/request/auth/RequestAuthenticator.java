@@ -114,13 +114,13 @@ public class RequestAuthenticator {
         break;
       case APP:
         if (!authResult.isAuthenticated()) {
-          logger.atWarning().log("Not authorized; no authentication found");
+          logger.atWarning().log("Not authorized; no authentication found.");
           return Optional.empty();
         }
         break;
       case USER:
         if (authResult.authLevel() != AuthLevel.USER) {
-          logger.atWarning().log("Not authorized; no authenticated user");
+          logger.atWarning().log("Not authorized; no authenticated user.");
           // TODO(mountford): change this so that the caller knows to return a more helpful error
           return Optional.empty();
         }
@@ -129,7 +129,7 @@ public class RequestAuthenticator {
     switch (auth.userPolicy()) {
       case IGNORED:
         if (authResult.authLevel() == AuthLevel.USER) {
-          logger.atWarning().log("Not authorized; user policy is IGNORED, but a user was found");
+          logger.atWarning().log("Not authorized; user policy is IGNORED, but a user was found.");
           return Optional.empty();
         }
         break;
@@ -140,7 +140,7 @@ public class RequestAuthenticator {
         if (authResult.userAuthInfo().isPresent()
             && !authResult.userAuthInfo().get().isUserAdmin()) {
           logger.atWarning().log(
-              "Not authorized; user policy is ADMIN, but the user was not an admin");
+              "Not authorized; user policy is ADMIN, but the user was not an admin.");
           return Optional.empty();
         }
         break;
@@ -192,7 +192,7 @@ public class RequestAuthenticator {
           break;
       }
     }
-    logger.atInfo().log("No authentication found");
+    logger.atInfo().log("No authentication found.");
     return AuthResult.NOT_AUTHENTICATED;
   }
 
