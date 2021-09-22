@@ -16,7 +16,7 @@ package google.registry.beam.common;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
-import static google.registry.testing.DatabaseHelper.loadAllOf;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.newContactResource;
 import static google.registry.testing.DatabaseHelper.putInDb;
 
@@ -107,7 +107,7 @@ class RegistryJpaWriteTest implements Serializable {
                 .withJpaConverter(Transforms::convertVersionedEntityToSqlEntity));
     testPipeline.run().waitUntilFinish();
 
-    assertThat(loadAllOf(ContactResource.class))
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class)))
         .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
         .containsExactlyElementsIn(
             contacts.stream()

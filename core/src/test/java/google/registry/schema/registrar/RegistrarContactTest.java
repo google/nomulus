@@ -16,6 +16,8 @@ package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.setTmForTest;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -48,6 +50,7 @@ class RegistrarContactTest {
 
   @BeforeEach
   public void beforeEach() {
+    setTmForTest(jpaTm());
     testRegistrar = saveRegistrar("registrarId");
     testRegistrarPoc =
         new RegistrarContact.Builder()

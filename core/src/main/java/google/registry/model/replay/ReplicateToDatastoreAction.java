@@ -18,6 +18,10 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.request.Action.Method.GET;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static org.joda.time.Duration.standardHours;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -26,15 +30,20 @@ import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.ReplayDirection;
+import google.registry.model.server.Lock;
 import google.registry.persistence.transaction.Transaction;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.request.Action;
+import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
+import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.persistence.NoResultException;
+import org.joda.time.Duration;
 
 /** Cron task to replicate from Cloud SQL to datastore. */
 @Action(
@@ -55,11 +64,18 @@ public class ReplicateToDatastoreAction implements Runnable {
    */
   public static final int BATCH_SIZE = 200;
 
+  private static final Duration LEASE_LENGTH = standardHours(1);
+
   private final Clock clock;
+  private final RequestStatusChecker requestStatusChecker;
+  private final Response response;
 
   @Inject
-  public ReplicateToDatastoreAction(Clock clock) {
+  public ReplicateToDatastoreAction(
+      Clock clock, RequestStatusChecker requestStatusChecker, Response response) {
     this.clock = clock;
+    this.requestStatusChecker = requestStatusChecker;
+    this.response = response;
   }
 
   @VisibleForTesting
@@ -143,24 +159,55 @@ public class ReplicateToDatastoreAction implements Runnable {
   public void run() {
     MigrationState state = DatabaseMigrationStateSchedule.getValueAtTime(clock.nowUtc());
     if (!state.getReplayDirection().equals(ReplayDirection.SQL_TO_DATASTORE)) {
-      logger.atInfo().log(
-          "Skipping ReplicateToDatastoreAction because we are in migration phase %s.", state);
+      String message =
+          String.format(
+              "Skipping ReplicateToDatastoreAction because we are in migration phase %s.", state);
+      logger.atInfo().log(message);
+      // App Engine will retry on any non-2xx status code, which we don't want in this case.
+      response.setStatus(SC_NO_CONTENT);
+      response.setPayload(message);
       return;
     }
-    // TODO(b/181758163): Deal with objects that don't exist in Cloud SQL, e.g. ForeignKeyIndex,
-    // EppResourceIndex.
-    logger.atInfo().log("Processing transaction replay batch Cloud SQL -> Cloud Datastore");
-    int numTransactionsReplayed = 0;
-    for (TransactionEntity txnEntity : getTransactionBatch()) {
-      try {
-        applyTransaction(txnEntity);
-      } catch (Throwable t) {
-        logger.atSevere().withCause(t).log("Errored out replaying files");
-        return;
-      }
-      numTransactionsReplayed++;
+    Optional<Lock> lock =
+        Lock.acquire(
+            this.getClass().getSimpleName(), null, LEASE_LENGTH, requestStatusChecker, false);
+    if (!lock.isPresent()) {
+      String message = "Can't acquire ReplicateToDatastoreAction lock, aborting.";
+      logger.atSevere().log(message);
+      // App Engine will retry on any non-2xx status code, which we don't want in this case.
+      response.setStatus(SC_NO_CONTENT);
+      response.setPayload(message);
+      return;
     }
-    logger.atInfo().log(
-        "Replayed %d transactions from Cloud SQL -> Datastore", numTransactionsReplayed);
+    try {
+      logger.atInfo().log("Processing transaction replay batch Cloud SQL -> Cloud Datastore");
+      int numTransactionsReplayed = replayAllTransactions();
+      String resultMessage =
+          String.format(
+              "Replayed %d transaction(s) from Cloud SQL -> Datastore", numTransactionsReplayed);
+      logger.atInfo().log(resultMessage);
+      response.setPayload(resultMessage);
+      response.setStatus(SC_OK);
+    } catch (Throwable t) {
+      String message = "Errored out replaying files";
+      logger.atSevere().withCause(t).log(message);
+      response.setStatus(SC_INTERNAL_SERVER_ERROR);
+      response.setPayload(message);
+    } finally {
+      lock.ifPresent(Lock::release);
+    }
+  }
+
+  private int replayAllTransactions() {
+    int numTransactionsReplayed = 0;
+    List<TransactionEntity> transactionBatch;
+    do {
+      transactionBatch = getTransactionBatch();
+      for (TransactionEntity transaction : transactionBatch) {
+        applyTransaction(transaction);
+        numTransactionsReplayed++;
+      }
+    } while (!transactionBatch.isEmpty());
+    return numTransactionsReplayed;
   }
 }

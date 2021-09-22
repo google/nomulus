@@ -28,8 +28,6 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.insertInDb;
-import static google.registry.testing.DatabaseHelper.loadAllOf;
-import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -296,7 +294,8 @@ public class ReplayCommitLogsToSqlActionTest {
         CommitLogManifest.create(getBucketKey(1), now, null),
         CommitLogMutation.create(manifestKey, TestObject.create("existing", "b")));
     action.run();
-    TestObject fromDatabase = loadByKey(VKey.createSql(TestObject.class, "existing"));
+    TestObject fromDatabase =
+        jpaTm().transact(() -> jpaTm().loadByKey(VKey.createSql(TestObject.class, "existing")));
     assertThat(fromDatabase.getField()).isEqualTo("b");
   }
 
@@ -562,7 +561,7 @@ public class ReplayCommitLogsToSqlActionTest {
             .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .build();
     insertInDb(domain);
-    assertThat(loadAllOf(DelegationSignerData.class)).isNotEmpty();
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(DelegationSignerData.class))).isNotEmpty();
 
     saveDiffFile(
         gcsUtils,
@@ -571,8 +570,8 @@ public class ReplayCommitLogsToSqlActionTest {
             getBucketKey(1), now.minusMinutes(3), ImmutableSet.of(Key.create(domain))));
     runAndAssertSuccess(now.minusMinutes(1), 1, 1);
 
-    assertThat(loadAllOf(DomainBase.class)).isEmpty();
-    assertThat(loadAllOf(DelegationSignerData.class)).isEmpty();
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(DomainBase.class))).isEmpty();
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(DelegationSignerData.class))).isEmpty();
   }
 
   @Test
@@ -663,7 +662,12 @@ public class ReplayCommitLogsToSqlActionTest {
 
   private void assertExpectedIds(String... expectedIds) {
     ImmutableList<String> actualIds =
-        loadAllOf(TestObject.class).stream().map(TestObject::getId).collect(toImmutableList());
+        jpaTm()
+            .transact(
+                () ->
+                    jpaTm().loadAllOf(TestObject.class).stream()
+                        .map(TestObject::getId)
+                        .collect(toImmutableList()));
     assertThat(actualIds).containsExactlyElementsIn(expectedIds);
   }
 }

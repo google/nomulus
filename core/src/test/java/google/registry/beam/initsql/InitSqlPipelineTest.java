@@ -21,8 +21,6 @@ import static google.registry.model.common.Cursor.CursorType.BRDA;
 import static google.registry.model.common.Cursor.CursorType.RECURRING_BILLING;
 import static google.registry.model.domain.token.AllocationToken.TokenType.SINGLE_USE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.testing.DatabaseHelper.loadAllOf;
-import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResource;
@@ -334,14 +332,15 @@ class InitSqlPipelineTest {
     InitSqlPipeline initSqlPipeline = new InitSqlPipeline(options);
     initSqlPipeline.run(testPipeline).waitUntilFinish();
     try (AppEngineEnvironment env = new AppEngineEnvironment("test")) {
-      assertHostResourceEquals(loadByKey(hostResource.createVKey()), hostResource);
+      assertHostResourceEquals(
+          jpaTm().transact(() -> jpaTm().loadByKey(hostResource.createVKey())), hostResource);
       assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Registrar.class)))
           .comparingElementsUsing(immutableObjectCorrespondence("lastUpdateTime"))
           .containsExactly(registrar1, registrar2);
       assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class)))
           .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
           .containsExactly(contact1, contact2);
-      assertDomainEquals(loadByKey(domain.createVKey()), domain);
+      assertDomainEquals(jpaTm().transact(() -> jpaTm().loadByKey(domain.createVKey())), domain);
       assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Cursor.class)))
           .comparingElementsUsing(immutableObjectCorrespondence())
           .containsExactly(globalCursor, tldCursor);
