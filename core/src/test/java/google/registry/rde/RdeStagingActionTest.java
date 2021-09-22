@@ -92,6 +92,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeStagingAction}. */
 public class RdeStagingActionTest extends MapreduceTestCase<RdeStagingAction> {
+
   private static final BlobId XML_FILE =
       BlobId.of("rde-bucket", "lol_2000-01-01_full_S1_R0.xml.ghostryde");
   private static final BlobId LENGTH_FILE =

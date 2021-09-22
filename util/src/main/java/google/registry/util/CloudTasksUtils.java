@@ -142,6 +142,9 @@ public class CloudTasksUtils implements Serializable {
   }
 
   public static class GcpCloudTasksClient extends SerializableCloudTasksClient {
+
+    private static final long serialVersionUID = -5959253033129154037L;
+
     // Use a supplier so that we can use try-with-resources with the client, which implements
     // Autocloseable.
     private final Supplier<CloudTasksClient> clientSupplier;

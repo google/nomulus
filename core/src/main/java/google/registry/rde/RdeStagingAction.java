@@ -237,9 +237,7 @@ public final class RdeStagingAction implements Runnable {
   @Inject @Parameter(RdeModule.PARAM_REVISION) Optional<Integer> revision;
   @Inject @Parameter(RdeModule.PARAM_LENIENT) boolean lenient;
   @Inject @Key("rdeStagingEncryptionKey") byte[] stagingKeyBytes;
-
   @Inject Dataflow dataflow;
-
   @Inject RdeStagingAction() {}
 
   @Override
