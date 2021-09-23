@@ -17,9 +17,11 @@ These aren't built in to the static code analysis tools we use (e.g. Checkstyle,
 Error Prone) so we must write them manually.
 """
 
+import json
 import os
 from typing import List, Tuple
 import sys
+import textwrap
 import re
 
 # We should never analyze any generated files
@@ -27,6 +29,13 @@ UNIVERSALLY_SKIPPED_PATTERNS = {"/build/", "cloudbuild-caches", "/out/", ".git/"
 # We can't rely on CI to have the Enum package installed so we do this instead.
 FORBIDDEN = 1
 REQUIRED = 2
+
+# The list of expected json packages and their licenses.
+# These should be one of the allowed licenses in:
+# config/dependency-license/allowed_licenses.json
+EXPECTED_JS_PACKAGES = [
+    'google-closure-library',   # Owned by Google, Apache 2.0
+]
 
 
 class PresubmitCheck:
@@ -308,6 +317,26 @@ def verify_flyway_index():
   return not success
 
 
+def verify_javascript_deps():
+  """Verifies that we haven't introduced any new javascript dependencies."""
+  with open('package.json') as f:
+    package = json.load(f)
+
+  deps = list(package['dependencies'].keys())
+  if deps != EXPECTED_JS_PACKAGES:
+    print('Unexpected javascript dependencies.  Was expecting '
+          f'{EXPECTED_JS_PACKAGES}, got {deps}.')
+    print(textwrap.dedent("""
+        * If the new dependencies are intentional, please verify that the
+        * license is one of the allowed licenses (see
+        * config/dependency-license/allowed_licenses.json) and add an entry
+        * for the package (with the license in a comment) to the
+        * EXPECTED_JS_PACKAGES variable in config/presubmits.py.
+        """))
+    return True
+  return False
+
+
 def get_files():
   for root, dirnames, filenames in os.walk("."):
     for filename in filenames:
@@ -330,6 +359,9 @@ if __name__ == "__main__":
   # index is up-to-date.  It's quicker to do it here than in the unit tests:
   # when we put it here it fails fast before all of the tests are run.
   failed |= verify_flyway_index()
+
+  # Make sure we haven't introduced any javascript dependencies.
+  failed |= verify_javascript_deps()
 
   if failed:
     sys.exit(1)
