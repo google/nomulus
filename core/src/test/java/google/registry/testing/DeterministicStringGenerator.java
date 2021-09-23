@@ -37,7 +37,7 @@ public class DeterministicStringGenerator extends StringGenerator {
   private final Rule rule;
   private int counter = 0;
 
-  /** String generation extensions. */
+  /** String generation rules. */
   public enum Rule {
 
     /**
