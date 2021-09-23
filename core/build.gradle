@@ -776,9 +776,9 @@ createUberJar(
     'beam_pipeline_common',
     '')
 
-// Create beam staging task if the environment is alpha. Production and sandbox
-// use formally released pipelines through CloudBuild, whereas crash and qa use
-// the pipelines staged on alpha deployment project.
+// Create beam staging task if the environment is alpha. Production, sandbox and
+// qa use formally released pipelines through CloudBuild, whereas crash and
+// alpha use the pipelines staged on alpha deployment project.
 //
 // User should install gcloud and login to GCP before invoking this tasks.
 if (environment == 'alpha') {
