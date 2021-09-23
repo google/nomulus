@@ -89,13 +89,13 @@ CROSS JOIN(
   `domain-registry-alpha.cloud_sql_icann_reporting.registrar_operating_status_201709`
   UNION ALL
   SELECT * FROM
-  `domain-registry-alpha.icann_reporting.dns_counts_201709`
+  `domain-registry-alpha.cloud_sql_icann_reporting.dns_counts_201709`
   UNION ALL
   SELECT * FROM
-  `domain-registry-alpha.icann_reporting.epp_metrics_201709`
+  `domain-registry-alpha.cloud_sql_icann_reporting.epp_metrics_201709`
   UNION ALL
   SELECT * FROM
-  `domain-registry-alpha.icann_reporting.whois_counts_201709`
+  `domain-registry-alpha.cloud_sql_icann_reporting.whois_counts_201709`
   -- END INTERMEDIARY DATA SOURCES --
   )) AS TldMetrics
 WHERE RealTlds.tld = TldMetrics.tld OR TldMetrics.tld IS NULL

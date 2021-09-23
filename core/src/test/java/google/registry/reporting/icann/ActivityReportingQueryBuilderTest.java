@@ -90,27 +90,18 @@ class ActivityReportingQueryBuilderTest {
 
   @TestSqlOnly
   void testIntermediaryQueryMatch_cloud_sql() {
-    ImmutableList<String> expectedQueryNamesBothDatabases =
+    ImmutableList<String> expectedQueryNames =
         ImmutableList.of(
+            ActivityReportingQueryBuilder.REGISTRAR_OPERATING_STATUS,
             ActivityReportingQueryBuilder.MONTHLY_LOGS,
             ActivityReportingQueryBuilder.DNS_COUNTS,
             ActivityReportingQueryBuilder.EPP_METRICS,
-            ActivityReportingQueryBuilder.WHOIS_COUNTS);
-
-    ImmutableList<String> expectedQueryNamesCloudSql =
-        ImmutableList.of(
-            ActivityReportingQueryBuilder.REGISTRAR_OPERATING_STATUS,
+            ActivityReportingQueryBuilder.WHOIS_COUNTS,
             ActivityReportingQueryBuilder.ACTIVITY_REPORT_AGGREGATION);
 
     ActivityReportingQueryBuilder queryBuilder = getQueryBuilder();
     ImmutableMap<String, String> actualQueries = queryBuilder.getViewQueryMap(yearMonth);
-    for (String queryName : expectedQueryNamesBothDatabases) {
-      String actualTableName = String.format("%s_201709", queryName);
-      String testFilename = String.format("%s_test.sql", queryName);
-      assertThat(actualQueries.get(actualTableName))
-          .isEqualTo(ReportingTestData.loadFile(testFilename));
-    }
-    for (String queryName : expectedQueryNamesCloudSql) {
+    for (String queryName : expectedQueryNames) {
       String actualTableName = String.format("%s_201709", queryName);
       String testFilename = String.format("%s_test_cloud_sql.sql", queryName);
       assertThat(actualQueries.get(actualTableName))
