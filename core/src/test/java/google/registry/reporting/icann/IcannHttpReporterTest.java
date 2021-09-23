@@ -49,7 +49,7 @@ class IcannHttpReporterTest {
   private MockLowLevelHttpRequest mockRequest;
 
   @RegisterExtension
-  AppEngineExtension appEngineRule =
+  AppEngineExtension appEngineExtension =
       new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
 
   private MockHttpTransport createMockTransport(

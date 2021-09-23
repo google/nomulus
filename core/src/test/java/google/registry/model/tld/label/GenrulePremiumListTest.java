@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Presubmit tests for {@link PremiumList} configuration files. */
-class GenrulePremiumListTest {
+class GenextensionPremiumListTest {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final String LISTS_DIRECTORY = "google/registry/config/files/premium/";

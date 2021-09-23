@@ -24,8 +24,8 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.Registry.TldStateTransition;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
@@ -37,9 +37,9 @@ class TldStateTransitionConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpa =
-      new JpaTestRules.Builder()
+      new JpaTestExtensions.Builder()
           .withEntityClass(TestEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   private static final ImmutableSortedMap<DateTime, TldState> values =
       ImmutableSortedMap.of(

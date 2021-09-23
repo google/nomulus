@@ -19,7 +19,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.FakeClock;
 import java.util.List;
 import javax.persistence.Entity;
@@ -42,10 +42,10 @@ class CriteriaQueryBuilderTest {
 
   @RegisterExtension
   final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder()
+      new JpaTestExtensions.Builder()
           .withClock(fakeClock)
           .withEntityClass(CriteriaQueryBuilderTestEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   @BeforeEach
   void beforeEach() {

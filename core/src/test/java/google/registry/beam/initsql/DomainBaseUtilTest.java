@@ -68,14 +68,14 @@ public class DomainBaseUtilTest {
   private Key<DomainBase> domainKey;
 
   @RegisterExtension
-  AppEngineExtension appEngineRule =
+  AppEngineExtension appEngineExtension =
       AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
 
-  @RegisterExtension InjectExtension injectRule = new InjectExtension();
+  @RegisterExtension InjectExtension injectExtension = new InjectExtension();
 
   @BeforeEach
   void beforeEach() {
-    injectRule.setStaticField(Ofy.class, "clock", fakeClock);
+    injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
     createTld("com");
     domainKey = Key.create(null, DomainBase.class, "4-COM");
     VKey<HostResource> hostKey =

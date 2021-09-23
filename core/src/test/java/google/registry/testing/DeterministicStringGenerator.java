@@ -34,11 +34,11 @@ import javax.inject.Named;
 public class DeterministicStringGenerator extends StringGenerator {
 
   private Iterator<Character> iterator;
-  private final Rule rule;
+  private final Extension extension;
   private int counter = 0;
 
-  /** String generation rules. */
-  public enum Rule {
+  /** String generation extensions. */
+  public enum Extension {
 
     /**
      * Simple string generation, cycling through sequential letters in the alphabet. May produce
@@ -47,7 +47,7 @@ public class DeterministicStringGenerator extends StringGenerator {
     DEFAULT,
 
     /**
-     * Same cyclical pattern as {@link Rule#DEFAULT}, prepending the iteration number and an
+     * Same cyclical pattern as {@link Extension#DEFAULT}, prepending the iteration number and an
      * underscore. Intended to avoid duplicates.
      */
     PREPEND_COUNTER
@@ -64,7 +64,7 @@ public class DeterministicStringGenerator extends StringGenerator {
     for (int i = 0; i < length; i++) {
       password.append(iterator.next());
     }
-    switch (rule) {
+    switch (extension) {
       case PREPEND_COUNTER:
         return String.format("%04d_%s", counter++, password.toString());
       case DEFAULT:
@@ -73,13 +73,13 @@ public class DeterministicStringGenerator extends StringGenerator {
     }
   }
 
-  public DeterministicStringGenerator(@Named("alphabetBase64") String alphabet, Rule rule) {
+  public DeterministicStringGenerator(@Named("alphabetBase64") String alphabet, Extension extension) {
     super(alphabet);
     iterator = Iterators.cycle(charactersOf(alphabet));
-    this.rule = rule;
+    this.extension = extension;
   }
 
   public DeterministicStringGenerator(@Named("alphabetBase64") String alphabet) {
-    this(alphabet, Rule.DEFAULT);
+    this(alphabet, Extension.DEFAULT);
   }
 }

@@ -35,17 +35,17 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * Holds specialized JUnit rules that start a test database server and provide {@link
+ * Holds specialized JUnit extensions that start a test database server and provide {@link
  * JpaTransactionManager} instances.
  */
-public class JpaTestRules {
+public class JpaTestExtensions {
 
   private static final String GOLDEN_SCHEMA_SQL_PATH = "sql/schema/nomulus.golden.sql";
   private static final String HSTORE_EXTENSION_SQL_PATH =
       "sql/flyway/V14__load_extension_for_hstore.sql";
 
   /**
-   * Junit rule for integration tests with JPA framework, when the underlying database is populated
+   * Junit extension for integration tests with JPA framework, when the underlying database is populated
    * with the Nomulus Cloud SQL schema.
    */
   public static class JpaIntegrationTestExtension extends JpaTransactionManagerExtension {
@@ -83,26 +83,26 @@ public class JpaTestRules {
       implements BeforeEachCallback, AfterEachCallback {
 
     private final JpaEntityCoverageExtension jpaEntityCoverage = new JpaEntityCoverageExtension();
-    private final JpaIntegrationTestExtension integrationTestRule;
+    private final JpaIntegrationTestExtension integrationTestExtension;
 
-    JpaIntegrationWithCoverageExtension(JpaIntegrationTestExtension integrationTestRule) {
-      this.integrationTestRule = integrationTestRule;
+    JpaIntegrationWithCoverageExtension(JpaIntegrationTestExtension integrationTestExtension) {
+      this.integrationTestExtension = integrationTestExtension;
     }
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
-      integrationTestRule.beforeEach(context);
+      integrationTestExtension.beforeEach(context);
       jpaEntityCoverage.beforeEach(context);
     }
 
     @Override
     public void afterEach(ExtensionContext context) {
       jpaEntityCoverage.afterEach(context);
-      integrationTestRule.afterEach(context);
+      integrationTestExtension.afterEach(context);
     }
   }
 
-  /** Builder of test rules that provide {@link JpaTransactionManager}. */
+  /** Builder of test extensions that provide {@link JpaTransactionManager}. */
   public static class Builder {
 
     private String initScript;
@@ -150,7 +150,7 @@ public class JpaTestRules {
     }
 
     /** Builds a {@link JpaIntegrationTestExtension} instance. */
-    public JpaIntegrationTestExtension buildIntegrationTestRule() {
+    public JpaIntegrationTestExtension buildIntegrationTestExtension() {
       return new JpaIntegrationTestExtension(
           clock == null ? new FakeClock(DateTime.now(UTC)) : clock,
           ImmutableList.copyOf(extraEntityClasses),
@@ -163,14 +163,14 @@ public class JpaTestRules {
      */
     public JpaIntegrationWithCoverageExtension buildIntegrationWithCoverageExtension() {
       checkState(initScript == null, "Integration tests do not accept initScript");
-      return new JpaIntegrationWithCoverageExtension(buildIntegrationTestRule());
+      return new JpaIntegrationWithCoverageExtension(buildIntegrationTestExtension());
     }
 
     /**
      * Builds a {@link JpaUnitTestExtension} instance that can also be used as an extension for
      * JUnit5.
      */
-    public JpaUnitTestExtension buildUnitTestRule() {
+    public JpaUnitTestExtension buildUnitTestExtension() {
       checkState(
           !Objects.equals(GOLDEN_SCHEMA_SQL_PATH, initScript),
           "Unit tests must not depend on the Nomulus schema.");

@@ -206,9 +206,9 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
   List<String> allowedNameservers;
 
   @Parameter(
-      names = {"-o", "--override_reserved_list_rules"},
+      names = {"-o", "--override_reserved_list_extensions"},
       description = "Override restrictions on reserved list naming")
-  boolean overrideReservedListRules;
+  boolean overrideReservedListExtensions;
 
   @Nullable
   @Parameter(
@@ -403,7 +403,7 @@ abstract class CreateOrUpdateTldCommand extends MutatingCommand {
       String errMsg = String.format("The reserved list(s) %s cannot be applied to the tld %s",
           Joiner.on(", ").join(invalidNames),
           tld);
-      if (overrideReservedListRules) {
+      if (overrideReservedListExtensions) {
         System.err.println("Error overridden: " + errMsg);
       } else {
         throw new IllegalArgumentException(errMsg);

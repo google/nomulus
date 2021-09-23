@@ -21,8 +21,8 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
 import google.registry.model.eppcommon.StatusValue;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.util.Set;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -34,7 +34,7 @@ public class StatusValueSetConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
+      new JpaTestExtensions.Builder().withEntityClass(TestEntity.class).buildUnitTestExtension();
 
   @Test
   void testRoundTrip() {

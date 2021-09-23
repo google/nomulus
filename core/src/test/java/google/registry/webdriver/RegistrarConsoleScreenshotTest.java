@@ -61,8 +61,8 @@ class RegistrarConsoleScreenshotTest extends WebDriverTestCase {
               route("/registry-lock-verify", FrontendServlet.class))
           .setFilters(ObjectifyFilter.class, OfyFilter.class)
           .setFixtures(BASIC)
-          .setEmail("Marla.Singer@crr.com") // from AppEngineRule.makeRegistrarContact3
-          .setGaeUserId("12345") // from AppEngineRule.makeRegistrarContact3
+          .setEmail("Marla.Singer@crr.com") // from AppEngineExtension.makeRegistrarContact3
+          .setGaeUserId("12345") // from AppEngineExtension.makeRegistrarContact3
           .build();
 
   @RetryingTest(3)

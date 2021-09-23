@@ -46,7 +46,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 /**
  * JUnit extension that sets up and tears down {@link TestServer}.
  *
- * <p><b>Warning:</b> App Engine testing environments are thread local. This rule will spawn that
+ * <p><b>Warning:</b> App Engine testing environments are thread local. This extension will spawn that
  * testing environment in a separate thread from your unit tests. Therefore any modifications you
  * need to make to that testing environment (e.g. Datastore interactions) must be done through the
  * {@link #runInAppEngineEnvironment(Callable)} method.
@@ -54,7 +54,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 public final class TestServerExtension implements BeforeEachCallback, AfterEachCallback {
 
   private final ImmutableList<Fixture> fixtures;
-  private final AppEngineExtension appEngineRule;
+  private final AppEngineExtension appEngineExtension;
   private final BlockingQueue<FutureTask<?>> jobs = new LinkedBlockingDeque<>();
   private final ImmutableMap<String, Path> runfiles;
   private final ImmutableList<Route> routes;
@@ -76,7 +76,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     this.fixtures = fixtures;
     // We create an GAE-Admin user, and then use AuthenticatedRegistrarAccessor.bypassAdminCheck to
     // choose whether the user is an admin or not.
-    this.appEngineRule =
+    this.appEngineExtension =
         AppEngineExtension.builder()
             .withDatastoreAndCloudSql()
             .withLocalModules()
@@ -177,12 +177,12 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
     public void run() {
       try {
         try {
-          appEngineRule.beforeEach(context);
+          appEngineExtension.beforeEach(context);
           this.runInner();
         } catch (InterruptedException e) {
           // This is what we expect to happen.
         } finally {
-          appEngineRule.afterEach(context);
+          appEngineExtension.afterEach(context);
         }
       } catch (Throwable e) {
         throw new RuntimeException(e);
@@ -194,7 +194,7 @@ public final class TestServerExtension implements BeforeEachCallback, AfterEachC
         fixture.load();
       }
       testServer.start();
-      System.out.printf("TestServerRule is listening on: %s\n", testServer.getUrl("/"));
+      System.out.printf("TestServerExtension is listening on: %s\n", testServer.getUrl("/"));
       synchronized (TestServerExtension.this) {
         isRunning = true;
         TestServerExtension.this.notify();

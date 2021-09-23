@@ -30,6 +30,6 @@ abstract class LanguageValidator {
     return Optional.ofNullable(LANGUAGE_VALIDATORS.get(language));
   }
 
-  /** Returns true if the label meets the context rules for this language. */
+  /** Returns true if the label meets the context extensions for this language. */
   abstract boolean isValidLabelForLanguage(String label);
 }

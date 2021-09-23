@@ -83,7 +83,7 @@ public class OfyTest {
             .setTrid(Trid.create("client", "server"))
             .setXmlBytes("<xml></xml>".getBytes(UTF_8))
             .build();
-    // This can't be initialized earlier because namespaces need the AppEngineRule to work.
+    // This can't be initialized earlier because namespaces need the AppEngineExtension to work.
   }
 
   private void doBackupGroupRootTimestampInversionTest(Runnable runnable) {

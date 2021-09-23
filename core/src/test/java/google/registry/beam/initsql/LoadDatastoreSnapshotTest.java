@@ -29,8 +29,8 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
@@ -86,11 +86,11 @@ class LoadDatastoreSnapshotTest {
   @TempDir
   transient Path tmpDir;
 
-  @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
+  @RegisterExtension final transient InjectExtension injectExtension = new InjectExtension();
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension jpaIntegrationTestExtension =
-      new JpaTestRules.Builder().buildIntegrationTestRule();
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @RegisterExtension
   @Order(value = 1)
@@ -119,7 +119,7 @@ class LoadDatastoreSnapshotTest {
   void beforeEach() throws Exception {
     fakeClock = new FakeClock(START_TIME);
     try (BackupTestStore store = new BackupTestStore(fakeClock)) {
-      injectRule.setStaticField(Ofy.class, "clock", fakeClock);
+      injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
 
       exportRootDir = Files.createDirectory(tmpDir.resolve("export_root")).toFile();
       commitLogsDir = Files.createDirectory(tmpDir.resolve("commit_logs")).toFile();

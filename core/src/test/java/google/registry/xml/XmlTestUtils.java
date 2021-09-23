@@ -188,7 +188,7 @@ public class XmlTestUtils {
             value = simpleEntry.getValue();
           }
           if (mappedKey == null) {
-            // Note that this does not follow the XML rules exactly. I read somewhere that attribute
+            // Note that this does not follow the XML extensions exactly. I read somewhere that attribute
             // names, unlike element names, never use the default namespace. But after
             // JSONification, we cannot distinguish between attributes and child elements, so we
             // apply the default namespace to everything. Hopefully that will not cause a problem.

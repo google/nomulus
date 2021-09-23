@@ -62,8 +62,8 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.rde.DepositFragment;
 import google.registry.rde.Ghostryde;
@@ -150,7 +150,7 @@ public class RdePipelineTest {
 
   @RegisterExtension
   final JpaIntegrationTestExtension database =
-      new JpaTestRules.Builder().withClock(clock).buildIntegrationTestRule();
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @RegisterExtension
   final TestPipelineExtension pipeline =

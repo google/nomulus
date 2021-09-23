@@ -29,7 +29,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class ModelUtilsTest {
 
   @RegisterExtension
-  public AppEngineExtension appEngineRule = new AppEngineExtension.Builder().build();
+  public AppEngineExtension appEngineExtension = new AppEngineExtension.Builder().build();
 
   /** Test class for reflection methods. */
   public static class TestClass extends ImmutableObject implements Buildable {

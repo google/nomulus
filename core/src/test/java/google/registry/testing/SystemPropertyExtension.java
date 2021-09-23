@@ -31,7 +31,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 /**
  * JUnit extension for overriding the values Java system properties during tests.
  *
- * <p>In most scenarios this class should be the last rule/extension to apply. In JUnit 5, apply
+ * <p>In most scenarios this class should be the last extension/extension to apply. In JUnit 5, apply
  * {@code @Order(value = Integer.MAX_VALUE)} to the extension.
  */
 public final class SystemPropertyExtension
@@ -66,7 +66,7 @@ public final class SystemPropertyExtension
    * <p>It's safe to call this method multiple times with the same {@code key} within a single test.
    * Only the truly original property value will be restored at the end.
    *
-   * <p>This method can be called fluently when declaring the Rule field, or within a Test method.
+   * <p>This method can be called fluently when declaring the Extension field, or within a Test method.
    *
    * @see java.lang.System#setProperty(String, String)
    */

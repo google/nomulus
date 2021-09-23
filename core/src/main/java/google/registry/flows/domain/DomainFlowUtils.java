@@ -184,7 +184,7 @@ public class DomainFlowUtils {
   private static final int MAX_LABEL_SIZE = 63;
 
   /**
-   * Returns parsed version of {@code name} if domain name label follows our naming rules and is
+   * Returns parsed version of {@code name} if domain name label follows our naming extensions and is
    * under one of the given allowed TLDs.
    *
    * <p><b>Note:</b> This method does not perform language validation with IDN tables.

@@ -89,82 +89,82 @@ class CreateReservedListCommandTest
   }
 
   @Test
-  void testNamingRules_commonReservedList() throws Exception {
+  void testNamingExtensions_commonReservedList() throws Exception {
     runCommandForced("--name=common_abuse-list", "--input=" + reservedTermsPath);
     assertThat(ReservedList.get("common_abuse-list")).isPresent();
   }
 
   @Test
-  void testNamingRules_tldThatDoesNotExist_succeedsWithOverride() throws Exception {
+  void testNamingExtensions_tldThatDoesNotExist_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("footld_reserved-list");
   }
 
   @Test
-  void testNamingRules_tldThatDoesNotExist_failsWithoutOverride() {
+  void testNamingExtensions_tldThatDoesNotExist_failsWithoutOverride() {
     runNameTestExpectedFailure(
         "footld_reserved-list",
         "The name must be in the format {tld|common}_list-name, yet TLD footld does not exist");
   }
 
   @Test
-  void testNamingRules_underscoreIsMissing_succeedsWithOverride() throws Exception {
+  void testNamingExtensions_underscoreIsMissing_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("random-reserved-list");
   }
 
   @Test
-  void testNamingRules_underscoreIsMissing_failsWithoutOverride() {
+  void testNamingExtensions_underscoreIsMissing_failsWithoutOverride() {
     runNameTestExpectedFailure("random-reserved-list", INVALID_FORMAT_ERROR_MESSAGE);
   }
 
   @Test
-  void testNamingRules_secondHalfOfNameIsMissing_succeedsWithOverride() throws Exception {
+  void testNamingExtensions_secondHalfOfNameIsMissing_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("soy_");
   }
 
   @Test
-  void testNamingRules_secondHalfOfNameIsMissing_failsWithoutOverride() {
+  void testNamingExtensions_secondHalfOfNameIsMissing_failsWithoutOverride() {
     runNameTestExpectedFailure("soy_", INVALID_FORMAT_ERROR_MESSAGE);
   }
 
   @Test
-  void testNamingRules_onlyTldIsSpecifiedAsName_succeedsWithOverride() throws Exception {
+  void testNamingExtensions_onlyTldIsSpecifiedAsName_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("soy");
   }
 
   @Test
-  void testNamingRules_onlyTldIsSpecifiedAsName_failsWithoutOverride() {
+  void testNamingExtensions_onlyTldIsSpecifiedAsName_failsWithoutOverride() {
     runNameTestExpectedFailure("soy", INVALID_FORMAT_ERROR_MESSAGE);
   }
 
   @Test
-  void testNamingRules_commonAsListName_succeedsWithOverride() throws Exception {
+  void testNamingExtensions_commonAsListName_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("invalidtld_common");
   }
 
   @Test
-  void testNamingRules_commonAsListName_failsWithoutOverride() {
+  void testNamingExtensions_commonAsListName_failsWithoutOverride() {
     runNameTestExpectedFailure(
         "invalidtld_common",
         "The name must be in the format {tld|common}_list-name, yet TLD invalidtld does not exist");
   }
 
   @Test
-  void testNamingRules_too_many_underscores_succeedsWithOverride() throws Exception {
+  void testNamingExtensions_too_many_underscores_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("soy_buffalo_buffalo_buffalo");
   }
 
   @Test
-  void testNamingRules_too_many_underscores_failsWithoutOverride() {
+  void testNamingExtensions_too_many_underscores_failsWithoutOverride() {
     runNameTestExpectedFailure("soy_buffalo_buffalo_buffalo", INVALID_FORMAT_ERROR_MESSAGE);
   }
 
   @Test
-  void testNamingRules_withWeirdCharacters_succeedsWithOverride() throws Exception {
+  void testNamingExtensions_withWeirdCharacters_succeedsWithOverride() throws Exception {
     runNameTestWithOverride("soy_$oy");
   }
 
   @Test
-  void testNamingRules_withWeirdCharacters_failsWithoutOverride() {
+  void testNamingExtensions_withWeirdCharacters_failsWithoutOverride() {
     runNameTestExpectedFailure("soy_$oy", INVALID_FORMAT_ERROR_MESSAGE);
   }
 

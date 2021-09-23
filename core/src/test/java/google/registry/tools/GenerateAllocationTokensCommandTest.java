@@ -42,7 +42,7 @@ import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DeterministicStringGenerator;
-import google.registry.testing.DeterministicStringGenerator.Rule;
+import google.registry.testing.DeterministicStringGenerator.Extension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -129,7 +129,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
   @TestOfyAndSql
   void testSuccess_largeNumberOfTokens() throws Exception {
     command.stringGenerator =
-        new DeterministicStringGenerator(Alphabets.BASE_58, Rule.PREPEND_COUNTER);
+        new DeterministicStringGenerator(Alphabets.BASE_58, Extension.PREPEND_COUNTER);
     runCommand("--prefix", "ooo", "--number", "100", "--length", "16");
     // The deterministic string generator makes it too much hassle to assert about each token, so
     // just assert total number.
@@ -194,7 +194,7 @@ class GenerateAllocationTokensCommandTest extends CommandTestCase<GenerateAlloca
   @TestOfyAndSql
   void testSuccess_specifyManyTokens() throws Exception {
     command.stringGenerator =
-        new DeterministicStringGenerator(Alphabets.BASE_58, Rule.PREPEND_COUNTER);
+        new DeterministicStringGenerator(Alphabets.BASE_58, Extension.PREPEND_COUNTER);
     Collection<String> sampleTokens = command.stringGenerator.createStrings(13, 100);
     runCommand("--tokens", Joiner.on(",").join(sampleTokens));
     assertInStdout(Iterables.toArray(sampleTokens, String.class));

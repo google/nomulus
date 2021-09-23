@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import google.registry.model.ImmutableObject;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.util.Map;
 import javax.persistence.Converter;
 import javax.persistence.Entity;
@@ -37,9 +37,9 @@ public class StringMapConverterBaseTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder()
+      new JpaTestExtensions.Builder()
           .withEntityClass(TestStringMapConverter.class, TestEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   private static final ImmutableMap<Key, Value> MAP =
       ImmutableMap.of(

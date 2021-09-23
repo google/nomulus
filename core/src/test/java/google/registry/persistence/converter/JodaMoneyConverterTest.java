@@ -20,8 +20,8 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.replay.EntityTest.EntityForTesting;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
@@ -64,9 +64,9 @@ public class JodaMoneyConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder()
+      new JpaTestExtensions.Builder()
           .withEntityClass(TestEntity.class, ComplexTestEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   @Test
   void roundTripConversion() {

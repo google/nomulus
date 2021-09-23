@@ -19,8 +19,8 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -34,7 +34,7 @@ public class ZonedDateTimeConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
+      new JpaTestExtensions.Builder().withEntityClass(TestEntity.class).buildUnitTestExtension();
 
   private final ZonedDateTimeConverter converter = new ZonedDateTimeConverter();
 

@@ -24,8 +24,8 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.tld.Registry.BillingCostTransition;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.money.Money;
@@ -38,9 +38,9 @@ public class BillingCostTransitionConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpa =
-      new JpaTestRules.Builder()
+      new JpaTestExtensions.Builder()
           .withEntityClass(TestEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   private static final ImmutableSortedMap<DateTime, Money> values =
       ImmutableSortedMap.of(

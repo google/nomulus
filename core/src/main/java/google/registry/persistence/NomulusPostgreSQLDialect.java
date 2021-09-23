@@ -21,7 +21,7 @@ import org.hibernate.boot.model.TypeContributions;
 import org.hibernate.dialect.PostgreSQL95Dialect;
 import org.hibernate.service.ServiceRegistry;
 
-/** Nomulus mapping rules for column types in Postgresql. */
+/** Nomulus mapping extensions for column types in Postgresql. */
 public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
   public NomulusPostgreSQLDialect() {
     super();

@@ -52,7 +52,7 @@ public final class IdnTable {
   /** {@link ImmutableRangeSet} containing the valid codepoints in this table. */
   private final ImmutableRangeSet<Integer> validCodepoints;
 
-  /** Validates the language rules associated with this IDN table. */
+  /** Validates the language extensions associated with this IDN table. */
   private final Optional<LanguageValidator> languageValidator;
 
   private IdnTable(

@@ -50,10 +50,10 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.util.Clock;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -106,7 +106,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   private LocalServiceTestHelper helper;
 
   /**
-   * A temporary directory for AppEngineRule's internal temp files that is different for each test.
+   * A temporary directory for AppEngineExtension's internal temp files that is different for each test.
    *
    * <p>Note that we can't use {@link TempDir} here because that only works in test classes, not
    * extensions.
@@ -117,7 +117,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
    * Sets up a SQL database. This is for test classes that are not a member of the {@code
    * SqlIntegrationTestSuite}.
    */
-  private JpaIntegrationTestExtension jpaIntegrationTestRule = null;
+  private JpaIntegrationTestExtension jpaIntegrationTestExtension = null;
 
   /**
    * Sets up a SQL database and records the JPA entities tested by each test class. This is for
@@ -125,7 +125,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
    */
   private JpaIntegrationWithCoverageExtension jpaIntegrationWithCoverageExtension = null;
 
-  private JpaUnitTestExtension jpaUnitTestRule;
+  private JpaUnitTestExtension jpaUnitTestExtension;
 
   private boolean withDatastore;
   private boolean withoutCannedData;
@@ -141,34 +141,34 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   private String taskQueueXml;
   private UserInfo userInfo;
 
-  // Test Objectify entity classes to be used with this AppEngineRule instance.
+  // Test Objectify entity classes to be used with this AppEngineExtension instance.
   private ImmutableList<Class<?>> ofyTestEntities;
   private ImmutableList<Class<?>> jpaTestEntities;
 
   /** Builder for {@link AppEngineExtension}. */
   public static class Builder {
 
-    private AppEngineExtension rule = new AppEngineExtension();
+    private AppEngineExtension extension = new AppEngineExtension();
     private ImmutableList.Builder<Class<?>> ofyTestEntities = new ImmutableList.Builder<>();
     private ImmutableList.Builder<Class<?>> jpaTestEntities = new ImmutableList.Builder<>();
 
     /** Turn on the Datastore service and the Cloud SQL service. */
     public Builder withDatastoreAndCloudSql() {
-      rule.withDatastore = true;
-      rule.withCloudSql = true;
+      extension.withDatastore = true;
+      extension.withCloudSql = true;
       return this;
     }
 
     /** Turns on Cloud SQL only, for use by test data generators. */
     public Builder withCloudSql() {
-      rule.withCloudSql = true;
-      rule.withDatastore = false;
+      extension.withCloudSql = true;
+      extension.withDatastore = false;
       return this;
     }
 
     /** Disables insertion of canned data. */
     public Builder withoutCannedData() {
-      rule.withoutCannedData = true;
+      extension.withoutCannedData = true;
       return this;
     }
 
@@ -177,13 +177,13 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
      * members of SqlIntegrationTestSuite.
      */
     public Builder enableJpaEntityCoverageCheck(boolean enabled) {
-      rule.enableJpaEntityCoverageCheck = enabled;
+      extension.enableJpaEntityCoverageCheck = enabled;
       return this;
     }
 
     /** Turn on the use of local modules. */
     public Builder withLocalModules() {
-      rule.withLocalModules = true;
+      extension.withLocalModules = true;
       return this;
     }
 
@@ -194,25 +194,25 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
 
     /** Turn on the task queue service with a specified set of queues. */
     public Builder withTaskQueue(String taskQueueXml) {
-      rule.withTaskQueue = true;
-      rule.taskQueueXml = taskQueueXml;
+      extension.withTaskQueue = true;
+      extension.taskQueueXml = taskQueueXml;
       return this;
     }
 
     /** Turn on the URL Fetch service. */
     public Builder withUrlFetch() {
-      rule.withUrlFetch = true;
+      extension.withUrlFetch = true;
       return this;
     }
 
     public Builder withClock(Clock clock) {
-      rule.clock = clock;
+      extension.clock = clock;
       return this;
     }
 
     public Builder withUserService(UserInfo userInfo) {
-      rule.withUserService = true;
-      rule.userInfo = userInfo;
+      extension.withUserService = true;
+      extension.userInfo = userInfo;
       return this;
     }
 
@@ -236,23 +236,23 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
 
     public Builder withJpaUnitTestEntities(Class<?>... entities) {
       jpaTestEntities.add(entities);
-      rule.withJpaUnitTest = true;
+      extension.withJpaUnitTest = true;
       return this;
     }
 
     public AppEngineExtension build() {
       checkState(
-          !rule.enableJpaEntityCoverageCheck || rule.withCloudSql,
+          !extension.enableJpaEntityCoverageCheck || extension.withCloudSql,
           "withJpaEntityCoverageCheck enabled without Cloud SQL");
       checkState(
-          !rule.withJpaUnitTest || rule.withCloudSql,
+          !extension.withJpaUnitTest || extension.withCloudSql,
           "withJpaUnitTestEntities enabled without Cloud SQL");
       checkState(
-          !rule.withJpaUnitTest || !rule.enableJpaEntityCoverageCheck,
+          !extension.withJpaUnitTest || !extension.enableJpaEntityCoverageCheck,
           "withJpaUnitTestEntities cannot be set when enableJpaEntityCoverageCheck");
-      rule.ofyTestEntities = this.ofyTestEntities.build();
-      rule.jpaTestEntities = this.jpaTestEntities.build();
-      return rule;
+      extension.ofyTestEntities = this.ofyTestEntities.build();
+      extension.jpaTestEntities = this.jpaTestEntities.build();
+      return extension;
     }
   }
 
@@ -366,8 +366,8 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     checkArgumentNotNull(context, "The ExtensionContext must not be null");
     setUp();
     if (withCloudSql) {
-      JpaTestRules.Builder builder =
-          new JpaTestRules.Builder().withEntityClass(jpaTestEntities.toArray(new Class[0]));
+      JpaTestExtensions.Builder builder =
+          new JpaTestExtensions.Builder().withEntityClass(jpaTestEntities.toArray(new Class[0]));
       if (clock != null) {
         builder.withClock(clock);
       }
@@ -375,11 +375,11 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
         jpaIntegrationWithCoverageExtension = builder.buildIntegrationWithCoverageExtension();
         jpaIntegrationWithCoverageExtension.beforeEach(context);
       } else if (withJpaUnitTest) {
-        jpaUnitTestRule = builder.buildUnitTestRule();
-        jpaUnitTestRule.beforeEach(context);
+        jpaUnitTestExtension = builder.buildUnitTestExtension();
+        jpaUnitTestExtension.beforeEach(context);
       } else {
-        jpaIntegrationTestRule = builder.buildIntegrationTestRule();
-        jpaIntegrationTestRule.beforeEach(context);
+        jpaIntegrationTestExtension = builder.buildIntegrationTestExtension();
+        jpaIntegrationTestExtension.beforeEach(context);
       }
     }
     if (isWithDatastoreAndCloudSql()) {
@@ -491,9 +491,9 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
         if (enableJpaEntityCoverageCheck) {
           jpaIntegrationWithCoverageExtension.afterEach(context);
         } else if (withJpaUnitTest) {
-          jpaUnitTestRule.afterEach(context);
+          jpaUnitTestExtension.afterEach(context);
         } else {
-          jpaIntegrationTestRule.afterEach(context);
+          jpaIntegrationTestExtension.afterEach(context);
         }
       }
       tearDown();

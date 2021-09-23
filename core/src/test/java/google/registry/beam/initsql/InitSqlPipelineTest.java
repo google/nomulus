@@ -60,8 +60,8 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
@@ -108,7 +108,7 @@ class InitSqlPipelineTest {
   @Order(Order.DEFAULT - 1)
   final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
 
-  @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
+  @RegisterExtension final transient InjectExtension injectExtension = new InjectExtension();
 
   @SuppressWarnings("WeakerAccess")
   @TempDir
@@ -120,7 +120,7 @@ class InitSqlPipelineTest {
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension database =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
   private File exportRootDir;
   private File exportDir;
@@ -141,7 +141,7 @@ class InitSqlPipelineTest {
   @BeforeEach
   void beforeEach() throws Exception {
     try (BackupTestStore store = new BackupTestStore(fakeClock)) {
-      injectRule.setStaticField(Ofy.class, "clock", fakeClock);
+      injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
       exportRootDir = Files.createDirectory(tmpDir.resolve("exports")).toFile();
 
       persistResource(newRegistry("com", "COM"));

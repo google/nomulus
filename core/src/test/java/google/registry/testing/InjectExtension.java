@@ -29,7 +29,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 /**
  * JUnit extension for overriding {@code private static} fields during a test.
  *
- * <p>This rule uses reflection to change the value of a field while your test is running and then
+ * <p>This extension uses reflection to change the value of a field while your test is running and then
  * restore it to its original value after it's done (even if the test fails). The injection will
  * work even if the field is marked {@code private} (but not if it's {@code final}). The downside is
  * that if you rename the field in the future, IDE refactoring won't be smart enough to update the

@@ -76,7 +76,7 @@ public final class DomainLockUtilsTest {
   private DomainLockUtils domainLockUtils;
 
   @RegisterExtension
-  public final AppEngineExtension appEngineRule =
+  public final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withClock(clock)

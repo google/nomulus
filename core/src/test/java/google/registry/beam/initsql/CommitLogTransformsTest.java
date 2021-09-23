@@ -26,8 +26,8 @@ import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
@@ -62,11 +62,11 @@ class CommitLogTransformsTest implements Serializable {
   @TempDir
   transient Path tmpDir;
 
-  @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
+  @RegisterExtension final transient InjectExtension injectExtension = new InjectExtension();
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension jpaIntegrationTestExtension =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
   @RegisterExtension
   @Order(value = 1)
@@ -89,7 +89,7 @@ class CommitLogTransformsTest implements Serializable {
   @BeforeEach
   void beforeEach() throws Exception {
     store = new BackupTestStore(fakeClock);
-    injectRule.setStaticField(Ofy.class, "clock", fakeClock);
+    injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
 
     registry = newRegistry("tld1", "TLD1");
     store.insertOrUpdate(registry);
