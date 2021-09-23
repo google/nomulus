@@ -18,7 +18,6 @@ import dagger.Component;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.cron.CronModule;
 import google.registry.dns.writer.VoidDnsWriterModule;
-import google.registry.module.backend.BackendModule;
 import google.registry.request.RequestModule;
 import google.registry.util.UtilsModule;
 import javax.inject.Singleton;
@@ -26,7 +25,6 @@ import javax.inject.Singleton;
 @Singleton
 @Component(
     modules = {
-      BackendModule.class,
       ConfigModule.class,
       CronModule.class,
       DnsModule.class,
