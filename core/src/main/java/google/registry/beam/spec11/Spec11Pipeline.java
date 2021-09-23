@@ -16,6 +16,7 @@ package google.registry.beam.spec11;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static google.registry.beam.BeamUtils.getQueryFromFile;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
@@ -27,9 +28,11 @@ import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.model.domain.DomainBase;
+import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
+import google.registry.persistence.VKey;
 import google.registry.util.Retrier;
 import google.registry.util.SqlTemplate;
 import google.registry.util.UtilsModule;
@@ -115,9 +118,9 @@ public class Spec11Pipeline implements Serializable {
   static PCollection<DomainNameInfo> readFromCloudSql(Pipeline pipeline) {
     Read<Object[], DomainNameInfo> read =
         RegistryJpaIO.read(
-            "select d, r.emailAddress from Domain d join Registrar r on"
-                + " d.currentSponsorClientId = r.clientIdentifier where r.type = 'REAL'"
-                + " and d.deletionTime > now()",
+            "select d.repoId, r.clientIdentifier from Domain d join Registrar r on"
+                + " d.currentSponsorClientId = r.clientIdentifier where r.type = 'REAL' and"
+                + " d.deletionTime > now()",
             false,
             Spec11Pipeline::parseRow);
 
@@ -143,8 +146,11 @@ public class Spec11Pipeline implements Serializable {
   }
 
   private static DomainNameInfo parseRow(Object[] row) {
-    DomainBase domainBase = (DomainBase) row[0];
-    String emailAddress = (String) row[1];
+    VKey<DomainBase> domainBaseVKey = VKey.createSql(DomainBase.class, (String) row[0]);
+    DomainBase domainBase = jpaTm().transact(() -> jpaTm().loadByKey(domainBaseVKey));
+    VKey<Registrar> registrarVKey = VKey.createSql(Registrar.class, (String) row[1]);
+    Registrar registrar = jpaTm().transact(() -> jpaTm().loadByKey(registrarVKey));
+    String emailAddress = registrar.getEmailAddress();
     if (emailAddress == null) {
       emailAddress = "";
     }
