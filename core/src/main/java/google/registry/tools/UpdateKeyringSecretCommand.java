@@ -27,17 +27,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.inject.Inject;
 
-/** Command to set and update {@code KmsKeyring} values. */
-@Parameters(
-  separators = " =",
-  commandDescription = "Update values of secrets in KmsKeyring."
-)
-final class UpdateKmsKeyringCommand implements CommandWithRemoteApi {
+/**
+ * Command to set and update ASCII-armored secret from the active {@code Keyring} implementation.
+ */
+@Parameters(separators = " =", commandDescription = "Update values of secret in the keyring.")
+final class UpdateKeyringSecretCommand implements CommandWithRemoteApi {
 
   @Inject KmsUpdater kmsUpdater;
 
   @Inject
-  UpdateKmsKeyringCommand() {}
+  UpdateKeyringSecretCommand() {}
 
   @Parameter(names  = "--keyname", description = "The secret to update", required = true)
   private KeyringKeyName keyringKeyName;

@@ -123,7 +123,7 @@ public final class RegistryTool {
           .put("update_allocation_tokens", UpdateAllocationTokensCommand.class)
           .put("update_cursors", UpdateCursorsCommand.class)
           .put("update_domain", UpdateDomainCommand.class)
-          .put("update_kms_keyring", UpdateKmsKeyringCommand.class)
+          .put("update_keyring_secret", UpdateKeyringSecretCommand.class)
           .put("update_premium_list", UpdatePremiumListCommand.class)
           .put("update_registrar", UpdateRegistrarCommand.class)
           .put("update_reserved_list", UpdateReservedListCommand.class)
