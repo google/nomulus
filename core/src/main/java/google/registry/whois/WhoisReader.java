@@ -37,7 +37,7 @@ import org.joda.time.DateTime;
 /**
  * The WhoisReader class understands how to read the WHOIS command from some source, parse it, and
  * produce a new WhoisCommand instance. The command syntax of WHOIS is generally undefined, so we
- * adopt the following extensions:
+ * adopt the following rules:
  *
  * <dl>
  * <dt>domain &lt;FQDN&gt;<dd>

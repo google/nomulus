@@ -34,7 +34,9 @@ public class DurationConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestExtensions.Builder().withEntityClass(DurationTestEntity.class).buildUnitTestExtension();
+      new JpaTestExtensions.Builder()
+          .withEntityClass(DurationTestEntity.class)
+          .buildUnitTestExtension();
 
   private final DurationConverter converter = new DurationConverter();
 

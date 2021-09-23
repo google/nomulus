@@ -35,9 +35,7 @@ public class CurrencyToBillingConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestExtensions.Builder()
-          .withEntityClass(TestEntity.class)
-          .buildUnitTestExtension();
+      new JpaTestExtensions.Builder().withEntityClass(TestEntity.class).buildUnitTestExtension();
 
   @Test
   void roundTripConversion_returnsSameCurrencyToBillingMap() {

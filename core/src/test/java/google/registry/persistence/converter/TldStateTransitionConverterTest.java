@@ -37,9 +37,7 @@ class TldStateTransitionConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpa =
-      new JpaTestExtensions.Builder()
-          .withEntityClass(TestEntity.class)
-          .buildUnitTestExtension();
+      new JpaTestExtensions.Builder().withEntityClass(TestEntity.class).buildUnitTestExtension();
 
   private static final ImmutableSortedMap<DateTime, TldState> values =
       ImmutableSortedMap.of(

@@ -256,7 +256,7 @@ public final class RegistryJpaIO {
      * <p>This value is a hint to the pipeline runner on the level of parallelism, and should be
      * significantly greater than the number of threads working on this transformation (see next
      * paragraph for more information). On the other hand, it should not be too large to the point
-     * that the number of elements per shard is lower than {@link #batchSize()}. As a extension of thumb,
+     * that the number of elements per shard is lower than {@link #batchSize()}. As a rule of thumb,
      * the following constraint should hold: {@code shards * batchSize * nThreads <=
      * inputElementCount}. Although it is not always possible to determine the number of threads
      * working on this transform, when the pipeline run is IO-bound, it most likely is close to the

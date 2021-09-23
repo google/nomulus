@@ -85,7 +85,7 @@ public abstract class EppToken extends Token {
   /** Return a fully qualified domain label to use, derived from the client transaction ID. */
   private String newDomainName(String clTrid) {
     String sld;
-    // not sure if the local hostname will stick to RFC validity extensions
+    // not sure if the local hostname will stick to RFC validity rules
     if (clTrid.length() > MAX_DOMAIN_PART_LENGTH) {
       sld = clTrid.substring(clTrid.length() - MAX_DOMAIN_PART_LENGTH);
     } else {

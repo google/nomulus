@@ -54,7 +54,7 @@ import org.joda.time.Duration;
  * which only admin users can do.
  *
  * <p>You must pass in a number of <code>smearMinutes</code> as a URL parameter so that the DNS
- * queue doesn't get overloaded. A rough extension of thumb for Cloud DNS is 1 minute per every 1,000
+ * queue doesn't get overloaded. A rough rule of thumb for Cloud DNS is 1 minute per every 1,000
  * domains. This smears the updates out over the next N minutes. For small TLDs consisting of fewer
  * than 1,000 domains, passing in 1 is fine (which will execute all the updates immediately).
  */

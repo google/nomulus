@@ -105,7 +105,8 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   // Hash of the ORM entity names requested by this extension instance.
   private final int entityHash;
 
-  // Whether to create nomulus tables in the test db. Right now, only the JpaTestExtensions set this to
+  // Whether to create nomulus tables in the test db. Right now, only the JpaTestExtensions set this
+  // to
   // false.
   private boolean includeNomulusSchema = true;
 

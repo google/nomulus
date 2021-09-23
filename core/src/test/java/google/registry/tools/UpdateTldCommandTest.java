@@ -947,7 +947,7 @@ class UpdateTldCommandTest extends CommandTestCase<UpdateTldCommand> {
   }
 
   private void runReservedListsTestOverride(String reservedLists) throws Exception {
-    runCommandForced("--override_reserved_list_extensions",
+    runCommandForced("--override_reserved_list_rules",
         "--reserved_lists",
         reservedLists,
         "xn--q9jyb4c");

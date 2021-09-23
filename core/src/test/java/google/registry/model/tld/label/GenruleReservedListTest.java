@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Presubmit tests for {@link ReservedList} configuration files. */
-class GenextensionReservedListTest {
+class GenruleReservedListTest {
 
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final String LISTS_DIRECTORY = "google/registry/config/files/reserved/";

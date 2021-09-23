@@ -106,7 +106,8 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   private LocalServiceTestHelper helper;
 
   /**
-   * A temporary directory for AppEngineExtension's internal temp files that is different for each test.
+   * A temporary directory for AppEngineExtension's internal temp files that is different for each
+   * test.
    *
    * <p>Note that we can't use {@link TempDir} here because that only works in test classes, not
    * extensions.

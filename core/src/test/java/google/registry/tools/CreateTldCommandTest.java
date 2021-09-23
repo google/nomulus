@@ -579,7 +579,7 @@ class CreateTldCommandTest extends CommandTestCase<CreateTldCommand> {
 
   private void runReservedListsTestOverride(String reservedLists) throws Exception {
     runCommandForced(
-        "--override_reserved_list_extensions",
+        "--override_reserved_list_rules",
         "--reserved_lists",
         reservedLists,
         "--roid_suffix=Q9JYB4C",

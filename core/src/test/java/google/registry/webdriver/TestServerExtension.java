@@ -46,10 +46,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 /**
  * JUnit extension that sets up and tears down {@link TestServer}.
  *
- * <p><b>Warning:</b> App Engine testing environments are thread local. This extension will spawn that
- * testing environment in a separate thread from your unit tests. Therefore any modifications you
- * need to make to that testing environment (e.g. Datastore interactions) must be done through the
- * {@link #runInAppEngineEnvironment(Callable)} method.
+ * <p><b>Warning:</b> App Engine testing environments are thread local. This extension will spawn
+ * that testing environment in a separate thread from your unit tests. Therefore any modifications
+ * you need to make to that testing environment (e.g. Datastore interactions) must be done through
+ * the {@link #runInAppEngineEnvironment(Callable)} method.
  */
 public final class TestServerExtension implements BeforeEachCallback, AfterEachCallback {
 

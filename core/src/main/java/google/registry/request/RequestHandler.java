@@ -51,7 +51,7 @@ import org.joda.time.Duration;
  *   HelloAction helloAction();
  * }</pre>
  *
- * <p>The extensions for component methods are as follows:
+ * <p>The rules for component methods are as follows:
  * <ol>
  * <li>Methods whose raw return type does not implement {@code Runnable} will be ignored
  * <li>Methods whose raw return type does not have an {@code @Action} annotation are ignored
