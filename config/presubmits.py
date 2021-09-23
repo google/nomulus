@@ -325,7 +325,7 @@ def verify_javascript_deps():
   deps = list(package['dependencies'].keys())
   if deps != EXPECTED_JS_PACKAGES:
     print('Unexpected javascript dependencies.  Was expecting '
-          f'{EXPECTED_JS_PACKAGES}, got {deps}.')
+          '%s, got %s.' % (EXPECTED_JS_PACKAGES, deps))
     print(textwrap.dedent("""
         * If the new dependencies are intentional, please verify that the
         * license is one of the allowed licenses (see
@@ -344,6 +344,7 @@ def get_files():
 
 
 if __name__ == "__main__":
+  print('python version is %s' % sys.version)
   failed = False
   for file in get_files():
     error_messages = []
