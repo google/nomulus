@@ -72,7 +72,7 @@ public class IcannReportingStager {
   /**
    * Creates and stores reports of a given type on GCS.
    *
-   * <p>This is factored out to facilitate choosing which reports to upload,
+   * <p>This is factored out to facilitate choosing which reports to upload.
    */
   ImmutableList<String> stageReports(YearMonth yearMonth, String subdir, ReportType reportType)
       throws Exception {
@@ -90,11 +90,11 @@ public class IcannReportingStager {
       createIntermediaryTableView(entry.getKey(), entry.getValue(), reportType);
     }
 
-    // Get an in-memory table of the aggregate query's result
+    // Get an in-memory table of the aggregate query's result.
     ImmutableTable<Integer, TableFieldSchema, Object> reportTable =
         bigquery.queryToLocalTableSync(queryBuilder.getReportQuery(yearMonth));
 
-    // Get report headers from the table schema and convert into CSV format
+    // Get report headers from the table schema and convert into CSV format.
     String headerRow = constructRow(getHeaders(reportTable.columnKeySet()));
 
     return (reportType == ReportType.ACTIVITY)
@@ -104,7 +104,7 @@ public class IcannReportingStager {
 
   private void createIntermediaryTableView(String queryName, String query, ReportType reportType)
       throws ExecutionException, InterruptedException {
-    // Later views depend on the results of earlier ones, so query everything synchronously
+    // Later views depend on the results of earlier ones, so query everything synchronously.
     logger.atInfo().log("Generating intermediary view %s.", queryName);
     bigquery
         .startQuery(

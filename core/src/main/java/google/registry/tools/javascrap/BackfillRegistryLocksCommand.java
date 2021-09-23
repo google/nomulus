@@ -114,6 +114,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
                 } catch (Throwable t) {
                   logger.atSevere().withCause(t).log(
                       "Error when creating lock object for domain '%s'.",
+                      domainBase.getDomainName());
                   failedDomainsBuilder.add(domainBase.getDomainName());
                 }
               }

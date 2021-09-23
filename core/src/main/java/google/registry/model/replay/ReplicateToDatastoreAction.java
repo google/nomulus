@@ -139,14 +139,14 @@ public class ReplicateToDatastoreAction implements Runnable {
                     "Applying transaction %s to Cloud Datastore.", txnEntity.getId());
 
                 // At this point, we know txnEntity is the correct next transaction, so write it
-                // to datastore.
+                // to Datastore.
                 try {
                   Transaction.deserialize(txnEntity.getContents()).writeToDatastore();
                 } catch (IOException e) {
-                  throw new RuntimeException("Error during transaction deserialization.", e);
+                  throw new RuntimeException("Error during transaction deserialization", e);
                 }
 
-                // Write the updated last transaction id to datastore as part of this datastore
+                // Write the updated last transaction id to Datastore as part of this Datastore
                 // transaction.
                 auditedOfy().save().entity(lastSqlTxn.cloneWithNewTransactionId(nextTxnId));
                 logger.atInfo().log(

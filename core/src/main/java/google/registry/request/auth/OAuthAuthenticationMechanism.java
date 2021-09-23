@@ -117,7 +117,7 @@ public class OAuthAuthenticationMechanism implements AuthenticationMechanism {
 
     // Make sure that all required scopes are present.
     if (!authorizedScopes.containsAll(requiredOauthScopes)) {
-      logger.atInfo().log("Required scope(s) missing.");
+      logger.atInfo().log("Missing required scope(s).");
       return AuthResult.create(NONE);
     }
 

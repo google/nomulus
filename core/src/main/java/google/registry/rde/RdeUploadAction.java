@@ -237,7 +237,7 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
         byte[] signature = sigOut.toByteArray();
         gcsUtils.createFromBytes(BlobId.of(bucket, sigFilename), signature);
         ftpChan.get().put(new ByteArrayInputStream(signature), sigFilename);
-        logger.atInfo().log("uploaded %,d bytes to path '%s'.", signature.length, sigFilename);
+        logger.atInfo().log("Uploaded %,d bytes to path '%s'.", signature.length, sigFilename);
       }
     }
   }
