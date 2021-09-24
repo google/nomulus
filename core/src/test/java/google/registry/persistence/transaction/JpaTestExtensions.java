@@ -45,7 +45,7 @@ public class JpaTestExtensions {
       "sql/flyway/V14__load_extension_for_hstore.sql";
 
   /**
-   * Junit extension for integration tests with JPA framework, when the underlying database is
+   * JUnit extension for integration tests with JPA framework, when the underlying database is
    * populated with the Nomulus Cloud SQL schema.
    */
   public static class JpaIntegrationTestExtension extends JpaTransactionManagerExtension {
