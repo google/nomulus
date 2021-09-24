@@ -38,7 +38,7 @@ import google.registry.model.tld.label.ReservedListDaoTest;
 import google.registry.model.tmch.ClaimsListDaoTest;
 import google.registry.model.tmch.TmchCrlTest;
 import google.registry.persistence.transaction.JpaEntityCoverageExtension;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.schema.integration.SqlIntegrationTestSuite.AfterSuiteTest;
 import google.registry.schema.integration.SqlIntegrationTestSuite.BeforeSuiteTest;
 import google.registry.schema.registrar.RegistrarDaoTest;

@@ -78,7 +78,7 @@ public final class UpdateRegistrarRdapBaseUrlsActionTest {
           + "\"version\":\"1.0\"}";
 
   @RegisterExtension
-  public AppEngineExtension appEngineRule =
+  public AppEngineExtension appEngineExtension =
       new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
 
   private static class TestHttpTransport extends MockHttpTransport {

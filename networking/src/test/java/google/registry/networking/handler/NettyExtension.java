@@ -117,7 +117,7 @@ public final class NettyExtension implements AfterEachCallback {
   }
 
   void checkReady() {
-    checkState(clientChannel != null, "Must call setUpClient to finish NettyRule setup");
+    checkState(clientChannel != null, "Must call setUpClient to finish NettyExtension setup");
   }
 
   /**

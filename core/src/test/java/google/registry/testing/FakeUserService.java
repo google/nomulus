@@ -19,7 +19,7 @@ import com.google.appengine.api.users.UserService;
 import java.util.Set;
 import javax.annotation.Nullable;
 
-// TODO: Consider reconciling this with AppEngineRule.withUserService()
+// TODO: Consider reconciling this with AppEngineExtension.withUserService()
 
 /** Fake implementation of {@link UserService} for testing. */
 public class FakeUserService implements UserService {

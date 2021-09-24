@@ -25,8 +25,8 @@ import com.google.common.collect.Maps;
 import google.registry.model.ImmutableObject;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.util.Map;
 import javax.persistence.Converter;
 import javax.persistence.Entity;
@@ -41,9 +41,9 @@ class TimedTransitionPropertyConverterBaseTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpa =
-      new JpaTestRules.Builder()
+      new JpaTestExtensions.Builder()
           .withEntityClass(TestTimedTransitionPropertyConverter.class, TestEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   private static final DateTime DATE_1 = DateTime.parse("2001-01-01T00:00:00.000Z");
   private static final DateTime DATE_2 = DateTime.parse("2002-01-01T00:00:00.000Z");

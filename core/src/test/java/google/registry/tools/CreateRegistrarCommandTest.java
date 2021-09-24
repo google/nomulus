@@ -1705,7 +1705,7 @@ class CreateRegistrarCommandTest extends CommandTestCase<CreateRegistrarCommand>
   @TestOfyAndSql
   void testFailure_registrarNameSimilarToExisting() {
     // Note that "tHeRe GiStRaR" normalizes identically to "The Registrar", which is created by
-    // AppEngineRule.
+    // AppEngineExtension.
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,

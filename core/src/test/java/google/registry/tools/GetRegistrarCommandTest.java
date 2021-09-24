@@ -25,13 +25,13 @@ class GetRegistrarCommandTest extends CommandTestCase<GetRegistrarCommand> {
 
   @Test
   void testSuccess() throws Exception {
-    // This registrar is created by AppEngineRule.
+    // This registrar is created by AppEngineExtension.
     runCommand("NewRegistrar");
   }
 
   @Test
   void testSuccess_multipleArguments() throws Exception {
-    // Registrars are created by AppEngineRule.
+    // Registrars are created by AppEngineExtension.
     runCommand("NewRegistrar", "TheRegistrar");
   }
 

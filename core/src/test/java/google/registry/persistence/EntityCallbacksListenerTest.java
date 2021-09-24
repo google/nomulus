@@ -22,8 +22,8 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.ImmutableObject;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.lang.reflect.Method;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
@@ -46,7 +46,7 @@ class EntityCallbacksListenerTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
+      new JpaTestExtensions.Builder().withEntityClass(TestEntity.class).buildUnitTestExtension();
 
   @Test
   void verifyAllCallbacks_executedExpectedTimes() {

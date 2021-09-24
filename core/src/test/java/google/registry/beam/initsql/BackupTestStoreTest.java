@@ -34,8 +34,8 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
@@ -62,14 +62,14 @@ public class BackupTestStoreTest {
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension jpaIntegrationTestExtension =
-      new JpaTestRules.Builder().buildIntegrationTestRule();
+      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
 
   @RegisterExtension
   @Order(value = 1)
   final transient DatastoreEntityExtension datastoreEntityExtension =
       new DatastoreEntityExtension();
 
-  @RegisterExtension InjectExtension injectRule = new InjectExtension();
+  @RegisterExtension InjectExtension injectExtension = new InjectExtension();
 
   private FakeClock fakeClock;
   private BackupTestStore store;
@@ -83,7 +83,7 @@ public class BackupTestStoreTest {
   void beforeEach() throws Exception {
     fakeClock = new FakeClock(START_TIME);
     store = new BackupTestStore(fakeClock);
-    injectRule.setStaticField(Ofy.class, "clock", fakeClock);
+    injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
 
     registry = newRegistry("tld1", "TLD1");
     store.insertOrUpdate(registry);

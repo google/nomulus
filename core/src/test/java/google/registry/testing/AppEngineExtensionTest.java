@@ -123,7 +123,7 @@ class AppEngineExtensionTest {
 
   @Test
   void testRegisterOfyEntities_duplicateEntitiesWithSameName_fails() throws Exception {
-    AppEngineExtension appEngineRule =
+    AppEngineExtension appEngineExtension =
         AppEngineExtension.builder()
             .withDatastoreAndCloudSql()
             .withOfyTestEntities(google.registry.testing.TestObject.class, TestObject.class)
@@ -131,7 +131,7 @@ class AppEngineExtensionTest {
     // Thrown before JPA is set up, therefore no need to call afterEach.
     IllegalStateException thrown =
         assertThrows(
-            IllegalStateException.class, () -> appEngineRule.beforeEach(context.getContext()));
+            IllegalStateException.class, () -> appEngineExtension.beforeEach(context.getContext()));
     assertThat(thrown)
         .hasMessageThat()
         .isEqualTo(
@@ -167,7 +167,7 @@ class AppEngineExtensionTest {
               .collect(entriesToImmutableMap());
       assertWithMessage(
               "Conflicting Ofy kinds found. Tests will break if they are registered with "
-                  + " AppEngineRule in the same test executor.")
+                  + " AppEngineExtension in the same test executor.")
           .that(conflictingKinds)
           .isEmpty();
     }

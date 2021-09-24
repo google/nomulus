@@ -54,14 +54,14 @@ class RdeStagingMapperTest {
       ArgumentCaptor.forClass(DepositFragment.class);
 
   @RegisterExtension
-  AppEngineExtension appEngineRule =
+  AppEngineExtension appEngineExtension =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private RdeStagingMapper rdeStagingMapper;
 
   @BeforeEach
   void beforeEach() {
-    // Two real registrars have been created by AppEngineRule, named "New Registrar" and "The
+    // Two real registrars have been created by AppEngineExtension, named "New Registrar" and "The
     // Registrar". Create one included registrar (external_monitoring) and two excluded ones.
     Registrar monitoringRegistrar =
         persistNewRegistrar("monitoring", "monitoring", Registrar.Type.MONITORING, null);

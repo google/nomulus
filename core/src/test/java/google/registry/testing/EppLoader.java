@@ -23,7 +23,7 @@ import google.registry.flows.EppException;
 import google.registry.model.eppinput.EppInput;
 import java.util.Map;
 
-/** Test rule that loads an Epp object from a file. */
+/** Test extension that loads an Epp object from a file. */
 public class EppLoader {
 
   private String eppXml;

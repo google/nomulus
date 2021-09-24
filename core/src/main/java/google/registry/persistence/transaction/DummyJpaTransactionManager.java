@@ -20,11 +20,11 @@ import java.lang.reflect.Proxy;
  * A dummy implementation for {@link JpaTransactionManager} which throws exception when any of its
  * method is invoked.
  *
- * <p>This is used to initialize the {@link TransactionManagerFactory#jpaTm} when running unit
+ * <p>This is used to initialize the {@link TransactionManagerFactory#jpaTm()} when running unit
  * tests, because obviously we cannot connect to the actual Cloud SQL backend in a unit test.
  *
- * <p>If a unit test needs to access the Cloud SQL database, it must add JpaTransactionManagerRule
- * as a JUnit rule in the test class.
+ * <p>If a unit test needs to access the Cloud SQL database, it must add {@code
+ * JpaTransactionManagerExtension} as a JUnit extension in the test class.
  */
 public class DummyJpaTransactionManager {
 
@@ -37,7 +37,7 @@ public class DummyJpaTransactionManager {
             (proxy, method, args) -> {
               throw new UnsupportedOperationException(
                   "JpaTransactionManager was not initialized as the runtime is detected as"
-                      + " Unittest. Add JpaTransactionManagerRule in the unit test for"
+                      + " Unittest. Add JpaTransactionManagerExtension in the unit test for"
                       + " initialization.");
             });
   }

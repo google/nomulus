@@ -877,7 +877,7 @@ class UpdateRegistrarCommandTest extends CommandTestCase<UpdateRegistrarCommand>
   @Test
   void testFailure_registrarNameSimilarToExisting() {
     // Note that "tHeRe GiStRaR" normalizes identically to "The Registrar", which is created by
-    // AppEngineRule.
+    // AppEngineExtension.
     assertThrows(
         IllegalArgumentException.class,
         () -> runCommand("--name tHeRe GiStRaR", "--force", "NewRegistrar"));

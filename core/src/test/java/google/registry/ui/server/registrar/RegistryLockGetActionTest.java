@@ -58,7 +58,7 @@ final class RegistryLockGetActionTest {
   private final FakeClock fakeClock = new FakeClock();
 
   @RegisterExtension
-  final AppEngineExtension appEngineRule =
+  final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder().withDatastoreAndCloudSql().withClock(fakeClock).build();
 
   private final FakeResponse response = new FakeResponse();

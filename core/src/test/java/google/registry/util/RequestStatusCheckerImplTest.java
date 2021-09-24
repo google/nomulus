@@ -58,7 +58,7 @@ final class RequestStatusCheckerImplTest {
         });
   }
 
-  @RegisterExtension AppEngineExtension appEngineRule = AppEngineExtension.builder().build();
+  @RegisterExtension AppEngineExtension appEngineExtension = AppEngineExtension.builder().build();
 
   @BeforeEach
   void beforeEach() {

@@ -46,7 +46,7 @@ public class CommitLogMutationTest {
 
   @BeforeEach
   void before() {
-    // Initialize this late to avoid dependency on NamespaceManager prior to AppEngineRule.
+    // Initialize this late to avoid dependency on NamespaceManager prior to AppEngineExtension.
     manifestKey = CommitLogManifest.createKey(CommitLogBucket.getBucketKey(1), NOW);
     createTld("tld");
     someObject = Registry.get("tld");

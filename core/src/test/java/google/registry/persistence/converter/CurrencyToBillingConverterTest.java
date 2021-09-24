@@ -21,8 +21,8 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
 import google.registry.model.registrar.Registrar.BillingAccountEntry;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.util.Map;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -35,9 +35,7 @@ public class CurrencyToBillingConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder()
-          .withEntityClass(TestEntity.class)
-          .buildUnitTestRule();
+      new JpaTestExtensions.Builder().withEntityClass(TestEntity.class).buildUnitTestExtension();
 
   @Test
   void roundTripConversion_returnsSameCurrencyToBillingMap() {

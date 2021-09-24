@@ -104,7 +104,7 @@ public abstract class RegistrarSettingsActionTestCase {
     disallowRegistrarAccess(CLIENT_ID, "newtld");
 
     // Add a technical contact to the registrar (in addition to the default admin contact created by
-    // AppEngineRule).
+    // AppEngineExtension).
     techContact =
         getOnlyElement(loadRegistrar(CLIENT_ID).getContactsOfType(RegistrarContact.Type.TECH));
 

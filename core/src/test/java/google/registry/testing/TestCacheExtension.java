@@ -29,8 +29,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 /**
  * A JUnit extension that overloads cache expiry for tests.
  *
- * <p>This rule is necessary because many caches in the system are singleton and referenced through
- * static fields.
+ * <p>This extension is necessary because many caches in the system are singleton and referenced
+ * through static fields.
  */
 public class TestCacheExtension implements BeforeEachCallback, AfterEachCallback {
 

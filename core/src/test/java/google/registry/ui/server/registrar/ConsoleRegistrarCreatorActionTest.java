@@ -66,7 +66,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 final class ConsoleRegistrarCreatorActionTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngineRule =
+  final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension

@@ -20,7 +20,7 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.ImmutableObject;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -32,14 +32,14 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  * JUnit test for {@link JpaTransactionManagerExtension}, with {@link JpaUnitTestExtension} as
  * proxy.
  */
-public class JpaTransactionManagerRuleTest {
+public class JpaTransactionManagerExtensionTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder().withEntityClass(TestEntity.class).buildUnitTestRule();
+      new JpaTestExtensions.Builder().withEntityClass(TestEntity.class).buildUnitTestExtension();
 
   @Test
-  void verifiesRuleWorks() {
+  void verifiesExtensionWorks() {
     assertThrows(
         PersistenceException.class,
         () ->

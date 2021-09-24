@@ -67,7 +67,7 @@ class ResaveEnvironmentEntitiesCommandTest
         loadRegistrar("TheRegistrar").getContacts();
     assertThat(savedEntities)
         .containsExactly(
-            // The Registrars and RegistrarContacts are created by AppEngineRule.
+            // The Registrars and RegistrarContacts are created by AppEngineExtension.
             loadRegistrar("TheRegistrar"),
             loadRegistrar("NewRegistrar"),
             Registry.get("tld"),
