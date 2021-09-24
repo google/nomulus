@@ -40,13 +40,13 @@ public abstract class BeamActionTestBase {
   protected Dataflow dataflow = mock(Dataflow.class);
   private Projects projects = mock(Projects.class);
   private Locations locations = mock(Locations.class);
-  private FlexTemplates templates = mock(FlexTemplates.class);
+  protected FlexTemplates templates = mock(FlexTemplates.class);
   protected Launch launch = mock(Launch.class);
   private LaunchFlexTemplateResponse launchResponse =
       new LaunchFlexTemplateResponse().setJob(new Job().setId("jobid"));
 
   @BeforeEach
-  void beforeEach() throws Exception {
+  protected void beforeEach() throws Exception {
     when(dataflow.projects()).thenReturn(projects);
     when(projects.locations()).thenReturn(locations);
     when(locations.flexTemplates()).thenReturn(templates);

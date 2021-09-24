@@ -209,7 +209,7 @@ public class RdePipeline implements Serializable {
             String.class,
             // TODO: consider adding coders for entities and pass them directly instead of using
             // VKeys.
-            x -> VKey.create(clazz, x)));
+            x -> VKey.createSql(clazz, x)));
   }
 
   <T extends EppResource>

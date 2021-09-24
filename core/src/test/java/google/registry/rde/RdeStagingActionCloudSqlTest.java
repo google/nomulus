@@ -21,7 +21,13 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TaskQueueHelper.assertAtLeastOneTaskIsEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableSet;
@@ -41,6 +47,7 @@ import google.registry.xjc.rde.XjcRdeContentType;
 import google.registry.xjc.rde.XjcRdeDeposit;
 import google.registry.xml.XmlException;
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -74,9 +81,14 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
 
 
   @BeforeEach
-  void beforeEach() {
+  @Override
+  public void beforeEach() throws Exception {
+    super.beforeEach();
     action.clock = clock;
     action.lenient = false;
+    action.projectId = "projectId";
+    action.jobRegion = "jobRegion";
+    action.rdeBucket = "rde-bucket";
     action.pendingDepositChecker = new PendingDepositChecker();
     action.pendingDepositChecker.brdaDayOfWeek = DateTimeConstants.TUESDAY;
     action.pendingDepositChecker.brdaInterval = Duration.standardDays(7);
@@ -85,11 +97,13 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     action.gcsUtils = gcsUtils;
     action.response = response;
     action.transactionCooldown = Duration.ZERO;
+    action.stagingKeyBytes = "ABCE".getBytes(StandardCharsets.UTF_8);
     action.directory = Optional.empty();
     action.modeStrings = ImmutableSet.of();
     action.tlds = ImmutableSet.of();
     action.watermarks = ImmutableSet.of();
     action.revision = Optional.empty();
+    action.dataflow = dataflow;
   }
 
   @TestSqlOnly
@@ -98,6 +112,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.modeStrings = ImmutableSet.of("full");
     assertThrows(BadRequestException.class, action::run);
+    verifyNoMoreInteractions(dataflow);
   }
 
   @TestSqlOnly
@@ -106,6 +121,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.tlds = ImmutableSet.of("tld");
     assertThrows(BadRequestException.class, action::run);
+    verifyNoMoreInteractions(dataflow);
   }
 
   @TestSqlOnly
@@ -114,6 +130,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.watermarks = ImmutableSet.of(clock.nowUtc());
     assertThrows(BadRequestException.class, action::run);
+    verifyNoMoreInteractions(dataflow);
   }
 
   @TestSqlOnly
@@ -122,13 +139,14 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.revision = Optional.of(42);
     assertThrows(BadRequestException.class, action::run);
+    verifyNoMoreInteractions(dataflow);
   }
 
   @TestSqlOnly
   void testRun_noTlds_returns204() {
     action.run();
     assertThat(response.getStatus()).isEqualTo(204);
-    assertNoTasksEnqueued("mapreduce");
+    verifyNoMoreInteractions(dataflow);
   }
 
   @TestSqlOnly
@@ -138,17 +156,18 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(204);
-    assertNoTasksEnqueued("mapreduce");
+    verifyNoMoreInteractions(dataflow);
   }
 
   @TestSqlOnly
-  void testRun_tldWithEscrowEnabled_runsMapReduce() {
+  void testRun_tldWithEscrowEnabled_launchesPipeline() throws Exception {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.getPayload()).contains("/_ah/pipeline/status.html?root=");
-    assertAtLeastOneTaskIsEnqueued("mapreduce");
+    assertThat(response.getPayload()).contains("Launched RDE pipeline: jobid");
+    verify(templates, times(1))
+        .launch(eq("projectId"), eq("jobRegion"), any(LaunchFlexTemplateRequest.class));
   }
 
   @TestSqlOnly

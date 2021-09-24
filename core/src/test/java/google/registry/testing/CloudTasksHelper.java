@@ -29,7 +29,6 @@ import com.google.cloud.tasks.v2.Task;
 import com.google.common.base.Ascii;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.LinkedListMultimap;
@@ -46,6 +45,7 @@ import google.registry.util.Retrier;
 import java.io.Serializable;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -104,8 +104,8 @@ public class CloudTasksHelper implements Serializable {
     return cloudTasksUtils;
   }
 
-  public ImmutableList<Task> getTestTasksFor(String queue) {
-    return ImmutableList.copyOf(testTasks.get(instanceId).get(queue));
+  public List<Task> getTestTasksFor(String queue) {
+    return new ArrayList<>(testTasks.get(instanceId).get(queue));
   }
 
   /**
