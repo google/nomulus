@@ -15,11 +15,8 @@
 package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.TaskQueueHelper.assertAtLeastOneTaskIsEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,8 +30,6 @@ import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
 import com.google.common.collect.ImmutableSet;
 import google.registry.beam.BeamActionTestBase;
 import google.registry.gcs.GcsUtils;
-import google.registry.model.common.Cursor;
-import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Registry;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.testing.AppEngineExtension;
@@ -42,16 +37,11 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.TestSqlOnly;
-import google.registry.xjc.XjcXmlTransformer;
 import google.registry.xjc.rde.XjcRdeContentType;
-import google.registry.xjc.rde.XjcRdeDeposit;
-import google.registry.xml.XmlException;
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import javax.xml.bind.JAXBElement;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.Duration;
@@ -78,7 +68,6 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
       AppEngineExtension.builder().withClock(clock).withDatastoreAndCloudSql().build();
 
   private RdeStagingAction action = new RdeStagingAction();
-
 
   @BeforeEach
   @Override
@@ -177,16 +166,19 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     action.transactionCooldown = Duration.standardMinutes(5);
     action.run();
     assertThat(response.getStatus()).isEqualTo(204);
-    assertNoTasksEnqueued("mapreduce");
+    verifyNoMoreInteractions(dataflow);
   }
 
   @TestSqlOnly
-  void testRun_afterTransactionCooldown_runsMapReduce() {
+  void testRun_afterTransactionCooldown_runsMapReduce() throws Exception {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01T00:05:00Z"));
     action.transactionCooldown = Duration.standardMinutes(5);
     action.run();
-    assertAtLeastOneTaskIsEnqueued("mapreduce");
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.getPayload()).contains("Launched RDE pipeline: jobid");
+    verify(templates, times(1))
+        .launch(eq("projectId"), eq("jobRegion"), any(LaunchFlexTemplateRequest.class));
   }
 
   @TestSqlOnly
@@ -263,7 +255,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
   }
 
   @TestSqlOnly
-  void testManualRun_validParameters_runsMapReduce() {
+  void testManualRun_validParameters_runsMapReduce() throws Exception {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.manual = true;
@@ -273,34 +265,13 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     action.watermarks = ImmutableSet.of(DateTime.parse("2001-01-01TZ"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.getPayload()).contains("_ah/pipeline/status.html?root=");
-    assertAtLeastOneTaskIsEnqueued("mapreduce");
-  }
-
-  private <T extends XjcRdeContentType> T extractAndRemoveContentWithType(
-      Class<T> type, XjcRdeDeposit deposit) {
-    for (JAXBElement<? extends XjcRdeContentType> content : deposit.getContents().getContents()) {
-      XjcRdeContentType piece = content.getValue();
-      if (type.isInstance(piece) && !alreadyExtracted.contains(piece)) {
-        alreadyExtracted.add(piece);
-        return type.cast(piece);
-      }
-    }
-    throw new AssertionError("Expected deposit to contain another " + type.getSimpleName());
+    assertThat(response.getPayload()).contains("Launched RDE pipeline: jobid");
+    verify(templates, times(1))
+        .launch(eq("projectId"), eq("jobRegion"), any(LaunchFlexTemplateRequest.class));
   }
 
   private static void createTldWithEscrowEnabled(final String tld) {
     createTld(tld);
     persistResource(Registry.get(tld).asBuilder().setEscrowEnabled(true).build());
-  }
-
-  private void setCursor(
-      final Registry registry, final CursorType cursorType, final DateTime value) {
-    clock.advanceOneMilli();
-    tm().transact(() -> tm().put(Cursor.create(cursorType, value, registry)));
-  }
-
-  public static <T> T unmarshal(Class<T> clazz, byte[] xml) throws XmlException {
-    return XjcXmlTransformer.unmarshal(clazz, new ByteArrayInputStream(xml));
   }
 }
