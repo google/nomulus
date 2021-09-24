@@ -81,7 +81,7 @@ public class SyncRegistrarsSheetTest {
   void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", clock);
     createTld("example");
-    // Remove Registrar entities created by AppEngineRule (and RegistrarContact's, for jpa).
+    // Remove Registrar entities created by AppEngineExtension (and RegistrarContact's, for jpa).
     // We don't do this for ofy because ofy's loadAllOf() can't be called in a transaction but
     // _must_ be called in a transaction in JPA.
     if (!tm().isOfy()) {

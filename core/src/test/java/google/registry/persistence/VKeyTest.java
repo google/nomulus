@@ -33,7 +33,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class VKeyTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngineRule =
+  final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestObject.class)

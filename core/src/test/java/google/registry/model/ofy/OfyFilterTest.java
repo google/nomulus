@@ -38,7 +38,7 @@ class OfyFilterTest {
   private LocalServiceTestHelper helper;
   private ObjectifyFactory factory;
 
-  // We can't use AppEngineRule, because it triggers the precise behavior that we are testing.
+  // We can't use AppEngineExtension, because it triggers the precise behavior that we are testing.
 
   @BeforeEach
   void beforeEach() {

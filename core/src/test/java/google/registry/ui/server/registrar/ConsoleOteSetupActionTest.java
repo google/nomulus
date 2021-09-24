@@ -63,7 +63,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public final class ConsoleOteSetupActionTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngineRule =
+  public final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   @RegisterExtension

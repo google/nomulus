@@ -21,8 +21,8 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 import google.registry.model.ImmutableObject;
 import google.registry.model.replay.EntityTest;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.LocalDate;
@@ -35,9 +35,9 @@ public class LocalDateConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder()
+      new JpaTestExtensions.Builder()
           .withEntityClass(LocalDateConverterTestEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   private final LocalDate exampleDate = LocalDate.parse("2020-06-10", ISODateTimeFormat.date());
 

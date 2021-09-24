@@ -47,8 +47,8 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.Spec11ThreatMatch;
 import google.registry.model.reporting.Spec11ThreatMatch.ThreatType;
 import google.registry.model.reporting.Spec11ThreatMatchDao;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
@@ -126,7 +126,7 @@ class Spec11PipelineTest {
 
   @RegisterExtension
   final JpaIntegrationTestExtension database =
-      new JpaTestRules.Builder().withClock(new FakeClock()).buildIntegrationTestRule();
+      new JpaTestExtensions.Builder().withClock(new FakeClock()).buildIntegrationTestExtension();
 
   private final Spec11PipelineOptions options =
       PipelineOptionsFactory.create().as(Spec11PipelineOptions.class);

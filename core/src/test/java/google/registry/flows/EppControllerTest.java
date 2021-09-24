@@ -67,7 +67,7 @@ import org.mockito.quality.Strictness;
 class EppControllerTest {
 
   @RegisterExtension
-  AppEngineExtension appEngineRule =
+  AppEngineExtension appEngineExtension =
       new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
 
   @Mock SessionMetadata sessionMetadata;

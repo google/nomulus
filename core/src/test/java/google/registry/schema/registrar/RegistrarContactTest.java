@@ -25,8 +25,8 @@ import static google.registry.testing.SqlHelper.saveRegistrar;
 import com.google.common.collect.ImmutableSet;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
@@ -42,7 +42,7 @@ class RegistrarContactTest {
 
   @RegisterExtension
   JpaIntegrationWithCoverageExtension jpa =
-      new JpaTestRules.Builder().buildIntegrationWithCoverageExtension();
+      new JpaTestExtensions.Builder().buildIntegrationWithCoverageExtension();
 
   private Registrar testRegistrar;
 

@@ -39,8 +39,8 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.ContactTransferData;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
@@ -66,7 +66,7 @@ public class RegistryJpaReadTest {
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension database =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
   @RegisterExtension
   final transient TestPipelineExtension testPipeline =

@@ -15,10 +15,9 @@
 package google.registry.reporting.billing;
 
 import static google.registry.beam.BeamUtils.createJobName;
+import static google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase.CLOUD_SQL;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.reporting.ReportingModule.DATABASE;
 import static google.registry.reporting.ReportingUtils.enqueueBeamReportingTask;
-import static google.registry.reporting.billing.BillingModule.PARAM_SHOULD_PUBLISH;
 import static google.registry.request.Action.Method.POST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
@@ -31,9 +30,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
 import google.registry.request.Parameter;
+import google.registry.request.RequestParameters;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
@@ -72,7 +73,7 @@ public class GenerateInvoicesAction implements Runnable {
   private final Clock clock;
   private final Response response;
   private final Dataflow dataflow;
-  private final String database;
+  private final PrimaryDatabase database;
 
   @Inject
   GenerateInvoicesAction(
@@ -81,8 +82,8 @@ public class GenerateInvoicesAction implements Runnable {
       @Config("beamStagingBucketUrl") String stagingBucketUrl,
       @Config("billingBucketUrl") String billingBucketUrl,
       @Config("invoiceFilePrefix") String invoiceFilePrefix,
-      @Parameter(PARAM_SHOULD_PUBLISH) boolean shouldPublish,
-      @Parameter(DATABASE) String database,
+      @Parameter(BillingModule.PARAM_SHOULD_PUBLISH) boolean shouldPublish,
+      @Parameter(RequestParameters.PARAM_DATABASE) PrimaryDatabase database,
       YearMonth yearMonth,
       BillingEmailUtils emailUtils,
       Clock clock,
@@ -93,7 +94,7 @@ public class GenerateInvoicesAction implements Runnable {
     this.stagingBucketUrl = stagingBucketUrl;
     // When generating the invoices using Cloud SQL before database cutover, save the reports in a
     // separate bucket so that it does not overwrite the Datastore invoices.
-    if (tm().isOfy() && database.equals("CLOUD_SQL")) {
+    if (tm().isOfy() && database.equals(CLOUD_SQL)) {
       billingBucketUrl = billingBucketUrl.concat("-sql");
     }
     this.billingBucketUrl = billingBucketUrl;
@@ -124,7 +125,7 @@ public class GenerateInvoicesAction implements Runnable {
                       "invoiceFilePrefix",
                       invoiceFilePrefix,
                       "database",
-                      database,
+                      database.name(),
                       "billingBucketUrl",
                       billingBucketUrl));
       LaunchFlexTemplateResponse launchResponse =
@@ -148,14 +149,13 @@ public class GenerateInvoicesAction implements Runnable {
                 yearMonth.toString());
         enqueueBeamReportingTask(PublishInvoicesAction.PATH, beamTaskParameters);
       }
+      response.setStatus(SC_OK);
+      response.setPayload(String.format("Launched invoicing pipeline: %s", jobId));
     } catch (IOException e) {
-      logger.atWarning().withCause(e).log("Template Launch failed");
-      emailUtils.sendAlertEmail(String.format("Template Launch failed due to %s", e.getMessage()));
+      logger.atWarning().withCause(e).log("Pipeline Launch failed");
+      emailUtils.sendAlertEmail(String.format("Pipeline Launch failed due to %s", e.getMessage()));
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
-      response.setPayload(String.format("Template launch failed: %s", e.getMessage()));
-      return;
+      response.setPayload(String.format("Pipeline launch failed: %s", e.getMessage()));
     }
-    response.setStatus(SC_OK);
-    response.setPayload("Launched dataflow template.");
   }
 }

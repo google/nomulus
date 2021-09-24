@@ -43,8 +43,8 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestDataHelper;
@@ -235,7 +235,7 @@ class InvoicingPipelineTest {
 
   @RegisterExtension
   final JpaIntegrationTestExtension database =
-      new JpaTestRules.Builder().withClock(new FakeClock()).buildIntegrationTestRule();
+      new JpaTestExtensions.Builder().withClock(new FakeClock()).buildIntegrationTestExtension();
 
   @TempDir Path tmpDir;
 

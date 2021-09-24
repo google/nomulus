@@ -24,6 +24,7 @@ import static google.registry.batch.AsyncTaskEnqueuer.QUEUE_ASYNC_HOST_RENAME;
 import static google.registry.request.RequestParameters.extractIntParameter;
 import static google.registry.request.RequestParameters.extractLongParameter;
 import static google.registry.request.RequestParameters.extractOptionalBooleanParameter;
+import static google.registry.request.RequestParameters.extractOptionalDatetimeParameter;
 import static google.registry.request.RequestParameters.extractOptionalIntParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredDatetimeParameter;
@@ -104,6 +105,13 @@ public class BatchModule {
   @Parameter(RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM)
   static int providePreviousAttempts(HttpServletRequest req) {
     return extractIntParameter(req, RelockDomainAction.PREVIOUS_ATTEMPTS_PARAM);
+  }
+
+  @Provides
+  @Parameter(ExpandRecurringBillingEventsAction.PARAM_CURSOR_TIME)
+  static Optional<DateTime> provideCursorTime(HttpServletRequest req) {
+    return extractOptionalDatetimeParameter(
+        req, ExpandRecurringBillingEventsAction.PARAM_CURSOR_TIME);
   }
 
   @Provides

@@ -20,8 +20,8 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import google.registry.model.ImmutableObject;
 import google.registry.model.replay.EntityTest.EntityForTesting;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.Duration;
@@ -34,7 +34,9 @@ public class DurationConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder().withEntityClass(DurationTestEntity.class).buildUnitTestRule();
+      new JpaTestExtensions.Builder()
+          .withEntityClass(DurationTestEntity.class)
+          .buildUnitTestExtension();
 
   private final DurationConverter converter = new DurationConverter();
 

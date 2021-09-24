@@ -33,7 +33,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import google.registry.model.ImmutableObject;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import java.io.Serializable;
@@ -76,12 +76,12 @@ class JpaTransactionManagerImplTest {
 
   @RegisterExtension
   final JpaUnitTestExtension jpaExtension =
-      new JpaTestRules.Builder()
+      new JpaTestExtensions.Builder()
           .withInitScript(fileClassPath(getClass(), "test_schema.sql"))
           .withClock(fakeClock)
           .withEntityClass(
               TestEntity.class, TestCompoundIdEntity.class, TestNamedCompoundIdEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   @BeforeEach
   void setUp() {

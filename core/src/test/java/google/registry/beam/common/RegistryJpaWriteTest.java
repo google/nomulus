@@ -31,8 +31,8 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.registrar.Registrar;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
@@ -57,11 +57,11 @@ class RegistryJpaWriteTest implements Serializable {
   @Order(Order.DEFAULT - 1)
   final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
 
-  @RegisterExtension final transient InjectExtension injectRule = new InjectExtension();
+  @RegisterExtension final transient InjectExtension injectExtension = new InjectExtension();
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension database =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationTestRule();
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationTestExtension();
 
   @RegisterExtension
   final transient TestPipelineExtension testPipeline =
@@ -72,7 +72,7 @@ class RegistryJpaWriteTest implements Serializable {
   @BeforeEach
   void beforeEach() throws Exception {
     try (BackupTestStore store = new BackupTestStore(fakeClock)) {
-      injectRule.setStaticField(Ofy.class, "clock", fakeClock);
+      injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
 
       // Required for contacts created below.
       Registrar ofyRegistrar = AppEngineExtension.makeRegistrar2();

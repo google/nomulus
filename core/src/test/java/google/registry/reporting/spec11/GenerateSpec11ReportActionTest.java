@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.net.MediaType;
 import google.registry.beam.BeamActionTestBase;
+import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
@@ -51,7 +52,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
             clock.nowUtc().toLocalDate(),
-            "DATASTORE",
+            PrimaryDatabase.DATASTORE,
             clock,
             response,
             dataflow);
@@ -73,13 +74,14 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "gs://reporting-project/reporting-bucket/",
             "api_key/a",
             clock.nowUtc().toLocalDate(),
-            "DATASTORE",
+            PrimaryDatabase.DATASTORE,
             clock,
             response,
             dataflow);
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
+    assertThat(response.getPayload()).isEqualTo("Launched Spec11 pipeline: jobid");
     TaskMatcher matcher =
         new TaskMatcher()
             .url("/_dr/task/publishSpec11")

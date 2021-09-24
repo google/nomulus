@@ -48,7 +48,7 @@ public class AppEngineEnvironment implements Closeable {
 
   public AppEngineEnvironment(String appId) {
     isPlaceHolderNeeded = ApiProxy.getCurrentEnvironment() == null;
-    // isPlaceHolderNeeded may be true when we are invoked in a test with AppEngineRule.
+    // isPlaceHolderNeeded may be true when we are invoked in a test with AppEngineExtension.
     if (isPlaceHolderNeeded) {
       ApiProxy.setEnvironmentForCurrentThread(createAppEngineEnvironment(appId));
     }

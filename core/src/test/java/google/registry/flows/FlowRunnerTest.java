@@ -51,7 +51,7 @@ import org.mockito.Mockito;
 class FlowRunnerTest {
 
   @RegisterExtension
-  final AppEngineExtension appEngineRule =
+  final AppEngineExtension appEngineExtension =
       new AppEngineExtension.Builder().withDatastoreAndCloudSql().build();
 
   private final FlowRunner flowRunner = new FlowRunner();

@@ -64,7 +64,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class RdeStagingReducerTest {
 
   @RegisterExtension
-  AppEngineExtension appEngineRule =
+  AppEngineExtension appEngineExtension =
       AppEngineExtension.builder().withDatastoreAndCloudSql().withTaskQueue().build();
 
   private static final String GCS_BUCKET = "test-rde-bucket";

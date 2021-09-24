@@ -19,7 +19,7 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.HostAndPort;
-import google.registry.persistence.transaction.JpaTestRules;
+import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.UserInfo;
 import google.registry.tools.params.HostAndPortParameter;
@@ -134,7 +134,7 @@ public final class RegistryTestServerMain {
 
     final RegistryTestServer server = new RegistryTestServer(address);
 
-    System.out.printf("%sLoading SQL fixtures and AppEngineRule...%s\n", BLUE, RESET);
+    System.out.printf("%sLoading SQL fixtures and AppEngineExtension...%s\n", BLUE, RESET);
     AppEngineExtension appEngine =
         AppEngineExtension.builder()
             .withDatastoreAndCloudSql()
@@ -148,7 +148,7 @@ public final class RegistryTestServerMain {
             .build();
     appEngine.setUp();
     AppEngineExtension.loadInitialData();
-    new JpaTestRules.Builder().buildIntegrationTestRule().beforeEach(null);
+    new JpaTestExtensions.Builder().buildIntegrationTestExtension().beforeEach(null);
     System.out.printf("%sLoading Datastore fixtures...%s\n", BLUE, RESET);
     for (Fixture fixture : fixtures) {
       fixture.load();

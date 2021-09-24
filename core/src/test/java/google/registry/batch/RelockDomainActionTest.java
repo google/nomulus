@@ -86,7 +86,7 @@ public class RelockDomainActionTest {
               mock(AppEngineServiceUtils.class), clock, Duration.ZERO));
 
   @RegisterExtension
-  public final AppEngineExtension appEngineRule =
+  public final AppEngineExtension appEngineExtension =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withTaskQueue()

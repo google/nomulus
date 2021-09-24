@@ -37,9 +37,9 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 /**
  * GnuPG system command JUnit extension.
  *
- * <p>This rule creates a isolated environment for running the {@code gpg} command inside system
- * integration tests. It reduces a lot of the boilerplate of setting up the shell environment and
- * importing your keyrings into a temporary config folder.
+ * <p>This extension creates a isolated environment for running the {@code gpg} command inside
+ * system integration tests. It reduces a lot of the boilerplate of setting up the shell environment
+ * and importing your keyrings into a temporary config folder.
  */
 public final class GpgSystemCommandExtension implements BeforeEachCallback, AfterEachCallback {
 

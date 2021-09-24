@@ -27,8 +27,8 @@ import com.google.common.collect.ImmutableList;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaIntegrationWithCoverageExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
@@ -49,7 +49,7 @@ public class RegistrarDaoTest {
 
   @RegisterExtension
   JpaIntegrationWithCoverageExtension jpa =
-      new JpaTestRules.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
+      new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
   private final VKey<Registrar> registrarKey = VKey.createSql(Registrar.class, "registrarId");
 

@@ -115,9 +115,9 @@ class DualDatabaseTestInvocationContextProvider implements TestTemplateInvocatio
                 appEngineExtensionFields.size()));
       }
       appEngineExtensionFields.get(0).setAccessible(true);
-      AppEngineExtension appEngineRule =
+      AppEngineExtension appEngineExtension =
           (AppEngineExtension) appEngineExtensionFields.get(0).get(testInstance);
-      if (!appEngineRule.isWithDatastoreAndCloudSql()) {
+      if (!appEngineExtension.isWithDatastoreAndCloudSql()) {
         throw new IllegalStateException(
             "AppEngineExtension in @DualDatabaseTest test must set withDatastoreAndCloudSql()");
       }

@@ -24,8 +24,8 @@ import google.registry.model.ImmutableObject;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationStateTransition;
 import google.registry.model.common.TimedTransitionProperty;
-import google.registry.persistence.transaction.JpaTestRules;
-import google.registry.persistence.transaction.JpaTestRules.JpaUnitTestExtension;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import org.joda.time.DateTime;
@@ -37,9 +37,9 @@ public class DatabaseMigrationScheduleTransitionConverterTest {
 
   @RegisterExtension
   public final JpaUnitTestExtension jpa =
-      new JpaTestRules.Builder()
+      new JpaTestExtensions.Builder()
           .withEntityClass(DatabaseMigrationScheduleTransitionConverterTestEntity.class)
-          .buildUnitTestRule();
+          .buildUnitTestExtension();
 
   private static final ImmutableSortedMap<DateTime, MigrationState> values =
       ImmutableSortedMap.of(
