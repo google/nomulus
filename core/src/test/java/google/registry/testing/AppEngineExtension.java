@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.io.Files.asCharSink;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
-import static google.registry.testing.DatabaseHelper.persistSimpleResources;
+import static google.registry.testing.DatabaseHelper.insertSimpleResources;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.injectTmForDualDatabaseTest;
 import static google.registry.testing.DualDatabaseTestInvocationContextProvider.restoreTmAfterDualDatabaseTest;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
@@ -629,7 +629,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
 
   /** Create some fake registrars. */
   public static void loadInitialData() {
-    persistSimpleResources(
+    insertSimpleResources(
         ImmutableList.of(
             makeRegistrar1(),
             makeRegistrarContact1(),

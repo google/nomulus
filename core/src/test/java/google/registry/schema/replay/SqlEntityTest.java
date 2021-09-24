@@ -38,7 +38,8 @@ public class SqlEntityTest {
   final DatastoreEntityExtension datastoreEntityExtension = new DatastoreEntityExtension();
 
   @RegisterExtension
-  final AppEngineExtension database = new AppEngineExtension.Builder().withCloudSql().build();
+  final AppEngineExtension database =
+      new AppEngineExtension.Builder().withCloudSql().withoutCannedData().build();
 
   @BeforeEach
   void setup() throws Exception {
@@ -54,9 +55,10 @@ public class SqlEntityTest {
   @Test
   void getPrimaryKeyString_oneIdColumn() {
     // AppEngineExtension canned data: Registrar1
-    VKey<Registrar> key = Registrar.createVKey("NewRegistrar");
-    String expected = "NewRegistrar";
-    assertThat(tm().transact(() -> tm().loadByKey(key)).getPrimaryKeyString()).contains(expected);
+    assertThat(
+            tm().transact(() -> tm().loadByKey(Registrar.createVKey("NewRegistrar")))
+                .getPrimaryKeyString())
+        .contains("NewRegistrar");
   }
 
   @Test
