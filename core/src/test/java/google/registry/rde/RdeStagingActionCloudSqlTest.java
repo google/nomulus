@@ -15,56 +15,44 @@
 package google.registry.rde;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.TaskQueueHelper.assertAtLeastOneTaskIsEnqueued;
 import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.beam.BeamActionTestBase;
 import google.registry.gcs.GcsUtils;
-import google.registry.keyring.api.Keyring;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
 import google.registry.model.tld.Registry;
-import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.request.HttpException.BadRequestException;
+import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
-import google.registry.testing.FakeKeyringModule;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.InjectExtension;
+import google.registry.testing.TestSqlOnly;
 import google.registry.xjc.XjcXmlTransformer;
 import google.registry.xjc.rde.XjcRdeContentType;
 import google.registry.xjc.rde.XjcRdeDeposit;
-import google.registry.xjc.rdeheader.XjcRdeHeader;
-import google.registry.xjc.rdeheader.XjcRdeHeaderCount;
 import google.registry.xml.XmlException;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.xml.bind.JAXBElement;
-import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.PGPPrivateKey;
-import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.Duration;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link RdeStagingAction} in Cloud SQL. */
+@DualDatabaseTest
 public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
 
   private static final BlobId XML_FILE =
@@ -72,31 +60,18 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
   private static final BlobId LENGTH_FILE =
       BlobId.of("rde-bucket", "lol_2000-01-01_full_S1_R0.xml.length");
 
-  @RegisterExtension public final InjectExtension inject = new InjectExtension();
-
   private final FakeClock clock = new FakeClock();
+
   private final FakeResponse response = new FakeResponse();
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
   private final List<? super XjcRdeContentType> alreadyExtracted = new ArrayList<>();
 
-  private static PGPPublicKey encryptKey;
-  private static PGPPrivateKey decryptKey;
+  @RegisterExtension
+  public final AppEngineExtension extension =
+      AppEngineExtension.builder().withClock(clock).withDatastoreAndCloudSql().build();
 
   private RdeStagingAction action = new RdeStagingAction();
 
-  @BeforeAll
-  static void beforeAll() {
-    try (Keyring keyring = new FakeKeyringModule().get()) {
-      encryptKey = keyring.getRdeStagingEncryptionKey();
-      decryptKey = keyring.getRdeStagingDecryptionKey();
-    }
-    TransactionManagerFactory.setTmForTest(jpaTm());
-  }
-
-  @AfterAll
-  static void afterAll() {
-    TransactionManagerFactory.removeTmOverrideForTest();
-  }
 
   @BeforeEach
   void beforeEach() {
@@ -117,7 +92,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     action.revision = Optional.empty();
   }
 
-  @Test
+  @TestSqlOnly
   void testRun_modeInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -125,7 +100,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @Test
+  @TestSqlOnly
   void testRun_tldInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -133,7 +108,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @Test
+  @TestSqlOnly
   void testRun_watermarkInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -141,7 +116,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @Test
+  @TestSqlOnly
   void testRun_revisionInNonManualMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -149,14 +124,14 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @Test
+  @TestSqlOnly
   void testRun_noTlds_returns204() {
     action.run();
     assertThat(response.getStatus()).isEqualTo(204);
     assertNoTasksEnqueued("mapreduce");
   }
 
-  @Test
+  @TestSqlOnly
   void testRun_tldWithoutEscrowEnabled_returns204() {
     createTld("lol");
     persistResource(Registry.get("lol").asBuilder().setEscrowEnabled(false).build());
@@ -166,7 +141,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertNoTasksEnqueued("mapreduce");
   }
 
-  @Test
+  @TestSqlOnly
   void testRun_tldWithEscrowEnabled_runsMapReduce() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -176,7 +151,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertAtLeastOneTaskIsEnqueued("mapreduce");
   }
 
-  @Test
+  @TestSqlOnly
   void testRun_withinTransactionCooldown_getsExcludedAndReturns204() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01T00:04:59Z"));
@@ -186,7 +161,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertNoTasksEnqueued("mapreduce");
   }
 
-  @Test
+  @TestSqlOnly
   void testRun_afterTransactionCooldown_runsMapReduce() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01T00:05:00Z"));
@@ -195,7 +170,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertAtLeastOneTaskIsEnqueued("mapreduce");
   }
 
-  @Test
+  @TestSqlOnly
   void testManualRun_emptyMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -207,7 +182,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @Test
+  @TestSqlOnly
   void testManualRun_invalidMode_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -219,7 +194,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @Test
+  @TestSqlOnly
   void testManualRun_emptyTld_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -231,7 +206,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @Test
+  @TestSqlOnly
   void testManualRun_emptyWatermark_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -243,7 +218,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @Test
+  @TestSqlOnly
   void testManualRun_nonDayStartWatermark_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -255,7 +230,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @Test
+  @TestSqlOnly
   void testManualRun_invalidRevision_throwsException() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -268,7 +243,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertThrows(BadRequestException.class, action::run);
   }
 
-  @Test
+  @TestSqlOnly
   void testManualRun_validParameters_runsMapReduce() {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
@@ -283,13 +258,8 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     assertAtLeastOneTaskIsEnqueued("mapreduce");
   }
 
-  private String readXml(String objectName) throws IOException, PGPException {
-    BlobId file = BlobId.of("rde-bucket", objectName);
-    return new String(Ghostryde.decode(gcsUtils.readBytesFrom(file), decryptKey), UTF_8);
-  }
-
-  private <T extends XjcRdeContentType>
-      T extractAndRemoveContentWithType(Class<T> type, XjcRdeDeposit deposit) {
+  private <T extends XjcRdeContentType> T extractAndRemoveContentWithType(
+      Class<T> type, XjcRdeDeposit deposit) {
     for (JAXBElement<? extends XjcRdeContentType> content : deposit.getContents().getContents()) {
       XjcRdeContentType piece = content.getValue();
       if (type.isInstance(piece) && !alreadyExtracted.contains(piece)) {
@@ -303,14 +273,6 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
   private static void createTldWithEscrowEnabled(final String tld) {
     createTld(tld);
     persistResource(Registry.get(tld).asBuilder().setEscrowEnabled(true).build());
-  }
-
-  private static ImmutableMap<String, Long> mapifyCounts(XjcRdeHeader header) {
-    ImmutableMap.Builder<String, Long> builder = new ImmutableMap.Builder<>();
-    for (XjcRdeHeaderCount count : header.getCounts()) {
-      builder.put(count.getUri(), count.getValue());
-    }
-    return builder.build();
   }
 
   private void setCursor(
