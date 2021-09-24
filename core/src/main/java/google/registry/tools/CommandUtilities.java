@@ -53,7 +53,8 @@ class CommandUtilities {
   /** Prompts for yes/no input using promptText, defaulting to no. */
   static boolean promptForYes(String promptText) {
     checkState(
-        System.console() != null, "Unable to access stdin (are you running with bazel run?)");
+        System.console() != null,
+        "Unable to access stdin (are you running with `gradle registryTool`?), try using -f.");
     String input = System.console().readLine(promptText + " (y/N): ");
     // Null represents end-of-file (e.g. ^-D) so interpret that as a negative response.
     return input != null && Ascii.toUpperCase(input).startsWith("Y");
