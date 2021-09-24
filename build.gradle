@@ -209,6 +209,9 @@ rootProject.ext {
 
 task runPresubmits(type: Exec) {
 
+  // XXX hack to view available versions.
+  println "XXX pyenv versions: ${ext.execInBash("pyenv versions")}"
+
   // Find a python version greater than 3.7.3 (this is somewhat arbitrary, we
   // know we'd like at least 3.6, but 3.7.3 is the latest that ships with
   // Debian so it seems like that should be available anywhere).
