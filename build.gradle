@@ -196,8 +196,31 @@ allprojects {
   }
 }
 
+rootProject.ext {
+  pyver = { exe ->
+    try {
+      ext.execInBash(
+          exe + " -c 'import sys; print(sys.hexversion)'", "/") as Integer
+    } catch (org.gradle.process.internal.ExecException e) {
+      return -1;
+    }
+  }
+}
+
 task runPresubmits(type: Exec) {
-  executable '/usr/bin/python3'
+
+  // Find a python version greater than 3.7.3 (this is somewhat arbitrary, we
+  // know we'd like at least 3.6, but 3.7.3 is the latest that ships with
+  // Debian so it seems like that should be available anywhere).
+  def MIN_PY_VER = 0x3070300
+  if (pyver('python') >= MIN_PY_VER) {
+    executable 'python'
+  } else if (pyver('/usr/bin/python3') >= MIN_PY_VER) {
+    executable '/usr/bin/python3'
+  } else {
+    throw new GradleException("No usable Python version found (build " +
+                              "requires at least python 3.7.3)");
+  }
   args('config/presubmits.py')
 }
 

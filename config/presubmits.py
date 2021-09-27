@@ -344,6 +344,7 @@ def get_files():
 
 
 if __name__ == "__main__":
+  print('python version is %s' % sys.version)
   failed = False
   for file in get_files():
     error_messages = []
