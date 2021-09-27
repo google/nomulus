@@ -270,8 +270,8 @@ class RegistrarTest extends EntityTestCase {
     persistSimpleResource(
         new RegistrarContact.Builder()
             .setParent(registrar)
-            .setName("John Abused")
-            .setEmailAddress("johnabuse@example.com")
+            .setName("John Abussy")
+            .setEmailAddress("johnabussy@example.com")
             .setPhoneNumber("+1.2125551213")
             .setFaxNumber("+1.2125551213")
             // No setTypes(...)

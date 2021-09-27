@@ -15,8 +15,12 @@
 package google.registry.model;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.joda.time.DateTimeZone.UTC;
 
+import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.OnLoad;
 import google.registry.model.translators.UpdateAutoTimestampTranslatorFactory;
@@ -40,6 +44,8 @@ import org.joda.time.DateTime;
 @Embeddable
 public class UpdateAutoTimestamp extends ImmutableObject {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   // When set to true, database converters/translators should do the auto update.  When set to
   // false, auto update should be suspended (this exists to allow us to preserve the original value
   // during a replay).
@@ -57,7 +63,16 @@ public class UpdateAutoTimestamp extends ImmutableObject {
   @PrePersist
   @PreUpdate
   void setTimestamp() {
-    if (autoUpdateEnabled() || lastUpdateTime == null) {
+    // On the off chance that this is called outside of a transaction, log it instead of failing
+    // with an exception from attempting to call jpaTm().getTransactionTime(), and then fall back
+    // to DateTime.now(UTC).
+    if (!jpaTm().inTransaction()) {
+      logger.atSevere().withStackTrace(StackSize.MEDIUM).log(
+          "Failed to update automatic timestamp because this wasn't called in a JPA transaction%s.",
+          ofyTm().inTransaction() ? " (but there is an open Ofy transaction)" : "");
+      timestamp = DateTime.now(UTC);
+      lastUpdateTime = DateTimeUtils.toZonedDateTime(timestamp);
+    } else if (autoUpdateEnabled() || lastUpdateTime == null) {
       timestamp = jpaTm().getTransactionTime();
       lastUpdateTime = DateTimeUtils.toZonedDateTime(timestamp);
     }
