@@ -20,6 +20,7 @@ import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.testing.DatabaseHelper.persistSimpleResources;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -35,10 +36,10 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarAddress;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registrar.RegistrarContact.Type;
-import google.registry.request.Response;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
+import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.util.SelfSignedCaCertificate;
@@ -112,10 +113,12 @@ class SendExpiringCertificateNotificationEmailActionTest {
   private CertificateChecker certificateChecker;
   private SendExpiringCertificateNotificationEmailAction action;
   private Registrar sampleRegistrar;
-  private Response response;
+  private FakeResponse response;
 
   @BeforeEach
   void beforeEach() throws Exception {
+    response = new FakeResponse();
+
     certificateChecker =
         new CertificateChecker(
             ImmutableSortedMap.of(START_OF_TIME, 825, DateTime.parse("2020-09-01T00:00:00Z"), 398),
@@ -136,46 +139,6 @@ class SendExpiringCertificateNotificationEmailActionTest {
 
     sampleRegistrar =
         persistResource(createRegistrar("clientId", "sampleRegistrar", null, null).build());
-  }
-
-  /** Returns a sample registrar with a customized registrar name, client id and certificate* */
-  private Registrar.Builder createRegistrar(
-      String registrarId,
-      String registrarName,
-      @Nullable X509Certificate certificate,
-      @Nullable X509Certificate failOverCertificate)
-      throws Exception {
-    // set up only required fields sample test data
-    Registrar.Builder builder =
-        new Registrar.Builder()
-            .setRegistrarId(registrarId)
-            .setRegistrarName(registrarName)
-            .setType(Registrar.Type.REAL)
-            .setIanaIdentifier(8L)
-            .setState(Registrar.State.ACTIVE)
-            .setInternationalizedAddress(
-                new RegistrarAddress.Builder()
-                    .setStreet(ImmutableList.of("very fake street"))
-                    .setCity("city")
-                    .setState("state")
-                    .setZip("99999")
-                    .setCountryCode("US")
-                    .build())
-            .setPhoneNumber("+0.000000000")
-            .setFaxNumber("+9.999999999")
-            .setEmailAddress("contact-us@test.example")
-            .setWhoisServer("whois.registrar.example")
-            .setUrl("http://www.test.example");
-
-    if (failOverCertificate != null) {
-      builder.setFailoverClientCertificate(
-          certificateChecker.serializeCertificate(failOverCertificate), clock.nowUtc());
-    }
-    if (certificate != null) {
-      builder.setClientCertificate(
-          certificateChecker.serializeCertificate(certificate), clock.nowUtc());
-    }
-    return builder;
   }
 
   @TestOfyAndSql
@@ -673,5 +636,51 @@ class SendExpiringCertificateNotificationEmailActionTest {
                     DateTime.parse("2021-06-15").toDate(),
                     null));
     assertThat(thrown).hasMessageThat().contains("Registrar Id cannot be null");
+  }
+
+  @TestOfyAndSql
+  void run_responseStatusIs200() {
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+  }
+
+  /** Returns a sample registrar with a customized registrar name, client id and certificate* */
+  private Registrar.Builder createRegistrar(
+      String registrarId,
+      String registrarName,
+      @Nullable X509Certificate certificate,
+      @Nullable X509Certificate failOverCertificate)
+      throws Exception {
+    // set up only required fields sample test data
+    Registrar.Builder builder =
+        new Registrar.Builder()
+            .setRegistrarId(registrarId)
+            .setRegistrarName(registrarName)
+            .setType(Registrar.Type.REAL)
+            .setIanaIdentifier(8L)
+            .setState(Registrar.State.ACTIVE)
+            .setInternationalizedAddress(
+                new RegistrarAddress.Builder()
+                    .setStreet(ImmutableList.of("very fake street"))
+                    .setCity("city")
+                    .setState("state")
+                    .setZip("99999")
+                    .setCountryCode("US")
+                    .build())
+            .setPhoneNumber("+0.000000000")
+            .setFaxNumber("+9.999999999")
+            .setEmailAddress("contact-us@test.example")
+            .setWhoisServer("whois.registrar.example")
+            .setUrl("http://www.test.example");
+
+    if (failOverCertificate != null) {
+      builder.setFailoverClientCertificate(
+          certificateChecker.serializeCertificate(failOverCertificate), clock.nowUtc());
+    }
+    if (certificate != null) {
+      builder.setClientCertificate(
+          certificateChecker.serializeCertificate(certificate), clock.nowUtc());
+    }
+    return builder;
   }
 }
