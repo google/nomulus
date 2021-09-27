@@ -145,7 +145,7 @@ public class WebWhoisActionHandler extends ActionHandler {
       future.addListener(
           f -> {
             if (f.isSuccess()) {
-              logger.atInfo().log("Successfully Closed Connection.");
+              logger.atInfo().log("Successfully closed connection.");
             } else {
               logger.atWarning().log("Channel was unsuccessfully closed.");
             }

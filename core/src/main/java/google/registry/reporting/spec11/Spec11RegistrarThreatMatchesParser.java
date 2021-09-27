@@ -85,7 +85,7 @@ public class Spec11RegistrarThreatMatchesParser {
     if (gcsUtils.existsAndNotEmpty(gcsFilename)) {
       return Optional.of(yesterday);
     }
-    logger.atWarning().log("Could not find previous file from date %s", yesterday);
+    logger.atWarning().log("Could not find previous file from date %s.", yesterday);
 
     for (LocalDate dateToCheck = yesterday.minusDays(1);
         !dateToCheck.isBefore(date.minusMonths(1));

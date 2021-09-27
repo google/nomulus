@@ -90,7 +90,7 @@ public class LoginFlow implements Flow {
   }
 
   /** Run the flow without bothering to log errors. The {@link #run} method will do that for us. */
-  public final EppResponse runWithoutLogging() throws EppException {
+  private final EppResponse runWithoutLogging() throws EppException {
     extensionManager.validate();  // There are no legal extensions for this flow.
     Login login = (Login) eppInput.getCommandWrapper().getCommand();
     if (!registrarId.isEmpty()) {

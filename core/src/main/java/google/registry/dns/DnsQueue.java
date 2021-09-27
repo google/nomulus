@@ -107,7 +107,7 @@ public class DnsQueue {
   private TaskHandle addToQueue(
       TargetType targetType, String targetName, String tld, Duration countdown) {
     logger.atInfo().log(
-        "Adding task type=%s, target=%s, tld=%s to pull queue %s (%d tasks currently on queue)",
+        "Adding task type=%s, target=%s, tld=%s to pull queue %s (%d tasks currently on queue).",
         targetType, targetName, tld, DNS_PULL_QUEUE_NAME, queue.fetchStatistics().getNumTasks());
     return queue.add(
         TaskOptions.Builder.withDefaults()
@@ -166,7 +166,7 @@ public class DnsQueue {
           "There are %d tasks in the DNS queue '%s'.", numTasks, DNS_PULL_QUEUE_NAME);
       return queue.leaseTasks(leaseDuration.getMillis(), MILLISECONDS, leaseTasksBatchSize);
     } catch (TransientFailureException | DeadlineExceededException e) {
-      logger.atSevere().withCause(e).log("Failed leasing tasks too fast");
+      logger.atSevere().withCause(e).log("Failed leasing tasks too fast.");
       return ImmutableList.of();
     }
   }
@@ -176,7 +176,7 @@ public class DnsQueue {
     try {
       queue.deleteTask(tasks);
     } catch (TransientFailureException | DeadlineExceededException e) {
-      logger.atSevere().withCause(e).log("Failed deleting tasks too fast");
+      logger.atSevere().withCause(e).log("Failed deleting tasks too fast.");
     }
   }
 }

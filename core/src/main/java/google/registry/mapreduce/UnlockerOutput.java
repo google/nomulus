@@ -58,7 +58,7 @@ public class UnlockerOutput<O> extends Output<O, Lock> {
 
   @Override
   public Lock finish(Collection<? extends OutputWriter<O>> writers) {
-    logger.atInfo().log("Mapreduce finished; releasing lock: %s", lock);
+    logger.atInfo().log("Mapreduce finished; releasing lock '%s'.", lock);
     lock.release();
     return lock;
   }

@@ -80,7 +80,7 @@ public class BackupDatastoreAction implements Runnable {
       logger.atInfo().log(message);
       response.setPayload(message);
     } catch (Throwable e) {
-      throw new InternalServerErrorException("Exception occurred while backing up datastore.", e);
+      throw new InternalServerErrorException("Exception occurred while backing up Datastore", e);
     }
   }
 }

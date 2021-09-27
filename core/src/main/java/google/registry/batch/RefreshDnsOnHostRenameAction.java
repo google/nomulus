@@ -173,7 +173,7 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
                     retrier.callWithRetry(
                         () -> dnsQueue.addDomainRefreshTask(domainName),
                         TransientFailureException.class);
-                    logger.atInfo().log("Enqueued DNS refresh for domain %s.", domainName);
+                    logger.atInfo().log("Enqueued DNS refresh for domain '%s'.", domainName);
                   });
           deleteTasksWithRetry(
               refreshRequests,

@@ -208,7 +208,7 @@ public class ReplicateToDatastoreActionTest {
             new IllegalStateException(
                 "Missing transaction: last txn id = -1, next available txn = 1"));
     assertThat(response.getStatus()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
-    assertThat(response.getPayload()).isEqualTo("Errored out replaying files");
+    assertThat(response.getPayload()).isEqualTo("Errored out replaying files.");
   }
 
   @Test
@@ -282,7 +282,7 @@ public class ReplicateToDatastoreActionTest {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
     assertThat(response.getPayload())
-        .isEqualTo("Replayed 1 transaction(s) from Cloud SQL -> Datastore");
+        .isEqualTo("Replayed 1 transaction(s) from Cloud SQL -> Datastore.");
   }
 
   private void resetAction() {

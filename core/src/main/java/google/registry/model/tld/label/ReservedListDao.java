@@ -30,10 +30,10 @@ public class ReservedListDao {
   /** Persist a new reserved list to Cloud SQL. */
   public static void save(ReservedList reservedList) {
     checkArgumentNotNull(reservedList, "Must specify reservedList");
-    logger.atInfo().log("Saving reserved list %s to Cloud SQL", reservedList.getName());
+    logger.atInfo().log("Saving reserved list %s to Cloud SQL.", reservedList.getName());
     jpaTm().transact(() -> jpaTm().insert(reservedList));
     logger.atInfo().log(
-        "Saved reserved list %s with %d entries to Cloud SQL",
+        "Saved reserved list %s with %d entries to Cloud SQL.",
         reservedList.getName(), reservedList.getReservedListEntries().size());
   }
 

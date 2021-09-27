@@ -172,7 +172,7 @@ public class RdeIO {
 
       // Write a gigantic XML file to GCS. We'll start by opening encrypted out/err file handles.
 
-      logger.atInfo().log("Writing %s and %s", xmlFilename, xmlLengthFilename);
+      logger.atInfo().log("Writing files '%s' and '%s'.", xmlFilename, xmlLengthFilename);
       try (OutputStream gcsOutput = gcsUtils.openOutputStream(xmlFilename);
           OutputStream lengthOutput = gcsUtils.openOutputStream(xmlLengthFilename);
           OutputStream ghostrydeEncoder = Ghostryde.encoder(gcsOutput, stagingKey, lengthOutput);
@@ -219,7 +219,7 @@ public class RdeIO {
       //
       // This will be sent to ICANN once we're done uploading the big XML to the escrow provider.
       if (mode == RdeMode.FULL) {
-        logger.atInfo().log("Writing %s", reportFilename);
+        logger.atInfo().log("Writing file '%s'.", reportFilename);
         try (OutputStream gcsOutput = gcsUtils.openOutputStream(reportFilename);
             OutputStream ghostrydeEncoder = Ghostryde.encoder(gcsOutput, stagingKey)) {
           counter.makeReport(id, watermark, header, revision).marshal(ghostrydeEncoder, UTF_8);
@@ -229,7 +229,7 @@ public class RdeIO {
       }
       // Now that we're done, output roll the cursor forward.
       if (key.manual()) {
-        logger.atInfo().log("Manual operation; not advancing cursor or enqueuing upload task");
+        logger.atInfo().log("Manual operation; not advancing cursor or enqueuing upload task.");
       } else {
         outputReceiver.output(KV.of(key, revision));
       }
@@ -265,7 +265,7 @@ public class RdeIO {
                     key);
                 tm().put(Cursor.create(key.cursor(), newPosition, registry));
                 logger.atInfo().log(
-                    "Rolled forward %s on %s cursor to %s", key.cursor(), key.tld(), newPosition);
+                    "Rolled forward %s on %s cursor to %s.", key.cursor(), key.tld(), newPosition);
                 RdeRevision.saveRevision(key.tld(), key.watermark(), key.mode(), revision);
               });
     }

@@ -1207,19 +1207,27 @@ public class DatabaseHelper {
    * ForeignKeyedEppResources.
    */
   public static <R> ImmutableList<R> persistSimpleResources(final Iterable<R> resources) {
+    insertSimpleResources(resources);
+    return transactIfJpaTm(() -> tm().loadByEntities(resources));
+  }
+
+  /**
+   * Like {@link #persistSimpleResources(Iterable)} but without reloading/returning the saved
+   * entities.
+   */
+  public static <R> void insertSimpleResources(final Iterable<R> resources) {
     tm().transact(
             () -> {
               if (alwaysSaveWithBackup) {
-                tm().putAll(ImmutableList.copyOf(resources));
+                tm().insertAll(ImmutableList.copyOf(resources));
               } else {
-                tm().putAllWithoutBackup(ImmutableList.copyOf(resources));
+                tm().insertAllWithoutBackup(ImmutableList.copyOf(resources));
               }
             });
     maybeAdvanceClock();
     // Force the session to be cleared so that when we read it back, we read from Datastore
     // and not from the transaction's session cache.
     tm().clearSessionCache();
-    return transactIfJpaTm(() -> tm().loadByEntities(resources));
   }
 
   public static void deleteResource(final Object resource) {

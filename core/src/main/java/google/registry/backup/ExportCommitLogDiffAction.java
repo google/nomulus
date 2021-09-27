@@ -100,7 +100,7 @@ public final class ExportCommitLogDiffAction implements Runnable {
 
     // Load the keys of all the manifests to include in this diff.
     List<Key<CommitLogManifest>> sortedKeys = loadAllDiffKeys(lowerCheckpoint, upperCheckpoint);
-    logger.atInfo().log("Found %d manifests to export", sortedKeys.size());
+    logger.atInfo().log("Found %d manifests to export.", sortedKeys.size());
     // Open an output channel to GCS, wrapped in a stream for convenience.
     try (OutputStream gcsStream =
         gcsUtils.openOutputStream(
@@ -124,7 +124,7 @@ public final class ExportCommitLogDiffAction implements Runnable {
       for (int i = 0; i < keyChunks.size(); i++) {
         // Force the async load to finish.
         Collection<CommitLogManifest> chunkValues = nextChunkToExport.values();
-        logger.atInfo().log("Loaded %d manifests", chunkValues.size());
+        logger.atInfo().log("Loaded %d manifests.", chunkValues.size());
         // Since there is no hard bound on how much data this might be, take care not to let the
         // Objectify session cache fill up and potentially run out of memory. This is the only safe
         // point to do this since at this point there is no async load in progress.
@@ -134,12 +134,12 @@ public final class ExportCommitLogDiffAction implements Runnable {
           nextChunkToExport = auditedOfy().load().keys(keyChunks.get(i + 1));
         }
         exportChunk(gcsStream, chunkValues);
-        logger.atInfo().log("Exported %d manifests", chunkValues.size());
+        logger.atInfo().log("Exported %d manifests.", chunkValues.size());
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    logger.atInfo().log("Exported %d manifests in total", sortedKeys.size());
+    logger.atInfo().log("Exported %d total manifests.", sortedKeys.size());
   }
 
   /**

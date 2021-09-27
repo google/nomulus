@@ -117,7 +117,7 @@ public class Spec11EmailUtils {
       for (int i = 1; i < failedMatches.size(); i++) {
         logger.atSevere().withCause(failedMatchesList.get(i).getValue()).log(
             "Additional exception thrown when sending email to registrar %s, in addition to the"
-                + " re-thrown exception",
+                + " re-thrown exception.",
             failedMatchesList.get(i).getKey().clientId());
       }
       throw new RuntimeException(

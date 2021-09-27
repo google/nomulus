@@ -94,14 +94,14 @@ class GcsDiffFileLister {
           logger.atInfo().log(
               "Gap discovered in sequence terminating at %s, missing file: %s",
               sequence.lastKey(), filename);
-          logger.atInfo().log("Found sequence from %s to %s", checkpointTime, lastTime);
+          logger.atInfo().log("Found sequence from %s to %s.", checkpointTime, lastTime);
           return false;
         }
       }
       sequence.put(checkpointTime, blobInfo);
       checkpointTime = getLowerBoundTime(blobInfo);
     }
-    logger.atInfo().log("Found sequence from %s to %s", checkpointTime, lastTime);
+    logger.atInfo().log("Found sequence from %s to %s.", checkpointTime, lastTime);
     return true;
   }
 
@@ -140,7 +140,7 @@ class GcsDiffFileLister {
         }
       }
       if (upperBoundTimesToBlobInfo.isEmpty()) {
-        logger.atInfo().log("No files found");
+        logger.atInfo().log("No files found.");
         return ImmutableList.of();
       }
 
@@ -185,7 +185,7 @@ class GcsDiffFileLister {
 
     logger.atInfo().log(
         "Actual restore from time: %s", getLowerBoundTime(sequence.firstEntry().getValue()));
-    logger.atInfo().log("Found %d files to restore", sequence.size());
+    logger.atInfo().log("Found %d files to restore.", sequence.size());
     return ImmutableList.copyOf(sequence.values());
   }
 

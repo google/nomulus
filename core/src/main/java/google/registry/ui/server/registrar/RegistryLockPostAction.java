@@ -147,7 +147,7 @@ public class RegistryLockPostAction implements Runnable, JsonActionRunner.JsonAc
       String action = postInput.isLock ? "lock" : "unlock";
       return JsonResponseHelper.create(SUCCESS, String.format("Successful %s", action));
     } catch (Throwable e) {
-      logger.atWarning().withCause(e).log("Failed to lock/unlock domain");
+      logger.atWarning().withCause(e).log("Failed to lock/unlock domain.");
       return JsonResponseHelper.create(
           ERROR,
           Optional.ofNullable(Throwables.getRootCause(e).getMessage()).orElse("Unspecified error"));

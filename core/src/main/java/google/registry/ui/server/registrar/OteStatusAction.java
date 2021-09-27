@@ -92,7 +92,7 @@ public final class OteStatusAction implements Runnable, JsonActionRunner.JsonAct
           SUCCESS, "OT&E check completed successfully", convertOteStats(baseClientId, oteStats));
     } catch (Throwable e) {
       logger.atWarning().withCause(e).log(
-          "Failed to verify OT&E status for registrar with input %s", input);
+          "Failed to verify OT&E status for registrar with input: %s", input);
       return JsonResponseHelper.create(
           ERROR, Optional.ofNullable(e.getMessage()).orElse("Unspecified error"));
     }

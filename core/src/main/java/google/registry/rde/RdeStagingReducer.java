@@ -99,12 +99,12 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
         };
     String lockName = String.format("RdeStaging %s", key.mode());
     if (!lockHandler.executeWithLocks(lockRunner, key.tld(), lockTimeout, lockName)) {
-      logger.atWarning().log("Lock in use: %s", lockName);
+      logger.atWarning().log("Lock '%s' in use.", lockName);
     }
   }
 
   private void reduceWithLock(final PendingDeposit key, Iterator<DepositFragment> fragments) {
-    logger.atInfo().log("RdeStagingReducer %s", key);
+    logger.atInfo().log("RdeStagingReducer %s.", key);
 
     // Normally this is done by BackendServlet but it's not present in MapReduceServlet.
     Security.addProvider(new BouncyCastleProvider());
@@ -140,8 +140,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
     XjcRdeHeader header;
 
     // Write a gigantic XML file to GCS. We'll start by opening encrypted out/err file handles.
-
-    logger.atInfo().log("Writing %s and %s", xmlFilename, xmlLengthFilename);
+    logger.atInfo().log("Writing files '%s' and '%s'.", xmlFilename, xmlLengthFilename);
     try (OutputStream gcsOutput = gcsUtils.openOutputStream(xmlFilename);
         OutputStream lengthOutput = gcsUtils.openOutputStream(xmlLengthFilename);
         OutputStream ghostrydeEncoder = Ghostryde.encoder(gcsOutput, stagingKey, lengthOutput);
@@ -189,7 +188,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
     //
     // This will be sent to ICANN once we're done uploading the big XML to the escrow provider.
     if (mode == RdeMode.FULL) {
-      logger.atInfo().log("Writing %s", reportFilename);
+      logger.atInfo().log("Writing report file '%s'.", reportFilename);
       try (OutputStream gcsOutput = gcsUtils.openOutputStream(reportFilename);
           OutputStream ghostrydeEncoder = Ghostryde.encoder(gcsOutput, stagingKey)) {
         counter.makeReport(id, watermark, header, revision).marshal(ghostrydeEncoder, UTF_8);
@@ -200,7 +199,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
 
     // Now that we're done, kick off RdeUploadAction and roll the cursor forward.
     if (key.manual()) {
-      logger.atInfo().log("Manual operation; not advancing cursor or enqueuing upload task");
+      logger.atInfo().log("Manual operation; not advancing cursor or enqueuing upload task.");
       return;
     }
     tm().transact(
@@ -225,7 +224,7 @@ public final class RdeStagingReducer extends Reducer<PendingDeposit, DepositFrag
                   key);
               tm().put(Cursor.create(key.cursor(), newPosition, registry));
               logger.atInfo().log(
-                  "Rolled forward %s on %s cursor to %s", key.cursor(), tld, newPosition);
+                  "Rolled forward %s on %s cursor to %s.", key.cursor(), tld, newPosition);
               RdeRevision.saveRevision(tld, watermark, mode, revision);
               if (mode == RdeMode.FULL) {
                 taskQueueUtils.enqueue(

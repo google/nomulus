@@ -94,7 +94,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
 
   @Override
   protected String execute() {
-    ImmutableSet.Builder<DomainBase> failedDomainsBuilder = new ImmutableSet.Builder<>();
+    ImmutableSet.Builder<String> failedDomainsBuilder = new ImmutableSet.Builder<>();
     jpaTm()
         .transact(
             () -> {
@@ -113,12 +113,13 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
                           .build());
                 } catch (Throwable t) {
                   logger.atSevere().withCause(t).log(
-                      "Error when creating lock object for domain %s.", domainBase.getDomainName());
-                  failedDomainsBuilder.add(domainBase);
+                      "Error when creating lock object for domain '%s'.",
+                      domainBase.getDomainName());
+                  failedDomainsBuilder.add(domainBase.getDomainName());
                 }
               }
             });
-    ImmutableSet<DomainBase> failedDomains = failedDomainsBuilder.build();
+    ImmutableSet<String> failedDomains = failedDomainsBuilder.build();
     if (failedDomains.isEmpty()) {
       return String.format(
           "Successfully created lock objects for %d domains.", lockedDomains.size());
@@ -126,7 +127,7 @@ public class BackfillRegistryLocksCommand extends ConfirmingCommand
       return String.format(
           "Successfully created lock objects for %d domains. We failed to create locks "
               + "for the following domains: %s",
-          lockedDomains.size() - failedDomains.size(), lockedDomains);
+          lockedDomains.size() - failedDomains.size(), failedDomains);
     }
   }
 

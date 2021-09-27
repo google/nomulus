@@ -173,6 +173,6 @@ public class Retrier implements Serializable {
 
   private static void reportFailure(Throwable thrown, int failures, int maxAttempts) {
     logger.atInfo().withCause(thrown).log(
-        "Retrying transient error, attempt %d/%d", failures, maxAttempts);
+        "Retrying transient error, attempt %d/%d.", failures, maxAttempts);
   }
 }

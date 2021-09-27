@@ -273,7 +273,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
             ofyPojo.getClass());
       }
     } catch (Throwable t) {
-      logger.atSevere().log("Error when replaying object %s", ofyPojo);
+      logger.atSevere().log("Error when replaying object %s.", ofyPojo);
       throw t;
     }
   }
@@ -300,7 +300,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
         jpaTm().deleteIgnoringReadOnly(entityVKey);
       }
     } catch (Throwable t) {
-      logger.atSevere().log("Error when deleting key %s", entityVKey);
+      logger.atSevere().log("Error when deleting key %s.", entityVKey);
       throw t;
     }
   }

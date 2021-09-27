@@ -82,7 +82,7 @@ class ExtensionManagerTest {
     assertThat(logMessages.build())
         .contains(
             "Client clientId is attempting to run HelloFlow without declaring "
-                + "URIs [urn:google:params:xml:ns:metadata-1.0] on login");
+                + "URIs [urn:google:params:xml:ns:metadata-1.0] on login.");
   }
 
   @Test
