@@ -212,7 +212,7 @@ task runPresubmits(type: Exec) {
   // Find a python version greater than 3.7.3 (this is somewhat arbitrary, we
   // know we'd like at least 3.6, but 3.7.3 is the latest that ships with
   // Debian so it seems like that should be available anywhere).
-  def MIN_PY_VER = 0x3060000 // should be 0x3070300
+  def MIN_PY_VER = 0x3070300
   if (pyver('python') >= MIN_PY_VER) {
     executable 'python'
   } else if (pyver('/usr/bin/python3') >= MIN_PY_VER) {
