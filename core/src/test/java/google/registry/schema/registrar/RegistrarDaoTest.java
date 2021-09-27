@@ -33,6 +33,7 @@ import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -56,7 +57,7 @@ public class RegistrarDaoTest {
   private Registrar testRegistrar;
 
   @BeforeEach
-  void setUp() {
+  void beforeEach() {
     TransactionManagerFactory.setTmForTest(jpaTm());
     testRegistrar =
         new Registrar.Builder()
@@ -72,6 +73,11 @@ public class RegistrarDaoTest {
                     .setCountryCode("US")
                     .build())
             .build();
+  }
+
+  @AfterEach
+  void afterEach() {
+    TransactionManagerFactory.removeTmOverrideForTest();
   }
 
   @Test
