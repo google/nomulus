@@ -14,6 +14,7 @@
 
 package google.registry.reporting.icann;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfEnumParameters;
@@ -41,7 +42,8 @@ public final class IcannReportingModule {
 
   static final String PARAM_SUBDIR = "subdir";
   static final String PARAM_REPORT_TYPES = "reportTypes";
-  static final String ICANN_REPORTING_DATA_SET = "icann_reporting";
+  static final String ICANN_REPORTING_DATA_SET =
+      tm().isOfy() ? "icann_reporting" : "cloud_sql_icann_reporting";
   static final String DATASTORE_EXPORT_DATA_SET = "latest_datastore_export";
   static final String MANIFEST_FILE_NAME = "MANIFEST.txt";
 
