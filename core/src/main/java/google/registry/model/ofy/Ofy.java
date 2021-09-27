@@ -283,7 +283,7 @@ public class Ofy {
         }
         sleeper.sleepUninterruptibly(Duration.millis(sleepMillis));
         logger.atInfo().withCause(e).log(
-            "Retrying %s, attempt %d", e.getClass().getSimpleName(), attempt);
+            "Retrying %s, attempt %d.", e.getClass().getSimpleName(), attempt);
       }
     }
   }

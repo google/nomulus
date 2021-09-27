@@ -110,11 +110,11 @@ public class ExportPremiumTermsAction implements Runnable {
   private Optional<String> checkConfig(Registry registry) {
     if (isNullOrEmpty(registry.getDriveFolderId())) {
       logger.atInfo().log(
-          "Skipping premium terms export for TLD %s because Drive folder isn't specified", tld);
+          "Skipping premium terms export for TLD %s because Drive folder isn't specified.", tld);
       return Optional.of("Skipping export because no Drive folder is associated with this TLD");
     }
     if (!registry.getPremiumListName().isPresent()) {
-      logger.atInfo().log("No premium terms to export for TLD %s", tld);
+      logger.atInfo().log("No premium terms to export for TLD '%s'.", tld);
       return Optional.of("No premium lists configured");
     }
     return Optional.empty();

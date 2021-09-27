@@ -92,7 +92,7 @@ public final class BrdaCopyAction implements Runnable {
 
     long xmlLength = readXmlLength(xmlLengthFilename);
 
-    logger.atInfo().log("Writing %s and %s", rydeFile, sigFile);
+    logger.atInfo().log("Writing files '%s' and '%s'.", rydeFile, sigFile);
     try (InputStream gcsInput = gcsUtils.openInputStream(xmlFilename);
         InputStream ghostrydeDecoder = Ghostryde.decoder(gcsInput, stagingDecryptionKey);
         OutputStream rydeOut = gcsUtils.openOutputStream(rydeFile);

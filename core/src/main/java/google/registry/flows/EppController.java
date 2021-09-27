@@ -130,12 +130,12 @@ public final class EppController {
     } catch (EppException | EppExceptionInProviderException e) {
       // The command failed. Send the client an error message, but only log at INFO since many of
       // these failures are innocuous or due to client error, so there's nothing we have to change.
-      logger.atInfo().withCause(e).log("Flow returned failure response");
+      logger.atInfo().withCause(e).log("Flow returned failure response.");
       EppException eppEx = (EppException) (e instanceof EppException ? e : e.getCause());
       return getErrorResponse(eppEx.getResult(), flowComponent.trid());
     } catch (Throwable e) {
       // Something bad and unexpected happened. Send the client a generic error, and log at SEVERE.
-      logger.atSevere().withCause(e).log("Unexpected failure in flow execution");
+      logger.atSevere().withCause(e).log("Unexpected failure in flow execution.");
       return getErrorResponse(Result.create(Code.COMMAND_FAILED), flowComponent.trid());
     }
   }

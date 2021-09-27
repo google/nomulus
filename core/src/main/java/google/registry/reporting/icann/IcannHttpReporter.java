@@ -86,7 +86,8 @@ public class IcannHttpReporter {
 
     HttpResponse response = null;
     logger.atInfo().log(
-        "Sending report to %s with content length %d", uploadUrl, request.getContent().getLength());
+        "Sending report to %s with content length %d.",
+        uploadUrl, request.getContent().getLength());
     boolean success = true;
     try {
       response = request.execute();

@@ -60,7 +60,7 @@ class RequestMetrics {
         String.valueOf(authLevel),
         String.valueOf(success));
     logger.atInfo().log(
-        "Action called for path=%s, method=%s, authLevel=%s, success=%s. Took: %.3fs",
+        "Action called for path=%s, method=%s, authLevel=%s, success=%s. Took: %.3fs.",
         path, method, authLevel, success, duration.getMillis() / 1000d);
   }
 

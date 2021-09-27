@@ -148,9 +148,9 @@ public class ExpandRecurringBillingEventsAction implements Runnable {
               .reduce(0, Integer::sum);
 
       if (!isDryRun) {
-        logger.atInfo().log("Saved OneTime billing events", numBillingEventsSaved);
+        logger.atInfo().log("Saved OneTime billing events.", numBillingEventsSaved);
       } else {
-        logger.atInfo().log("Generated OneTime billing events (dry run)", numBillingEventsSaved);
+        logger.atInfo().log("Generated OneTime billing events (dry run).", numBillingEventsSaved);
       }
       logger.atInfo().log(
           "Recurring event expansion %s complete for billing event range [%s, %s).",

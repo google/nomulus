@@ -82,7 +82,7 @@ public class TaskQueueUtils implements Serializable {
         () -> {
           for (TaskOptions task : tasks) {
             logger.atInfo().log(
-                "Enqueuing queue='%s' endpoint='%s'", queue.getQueueName(), task.getUrl());
+                "Enqueuing queue='%s' endpoint='%s'.", queue.getQueueName(), task.getUrl());
           }
           return queue.add(tasks);
         },

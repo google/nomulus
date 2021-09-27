@@ -218,7 +218,7 @@ public class SafeBrowsingTransforms {
         throws JSONException, IOException {
       int statusCode = response.getStatusLine().getStatusCode();
       if (statusCode != SC_OK) {
-        logger.atWarning().log("Got unexpected status code %s from response", statusCode);
+        logger.atWarning().log("Got unexpected status code %s from response.", statusCode);
       } else {
         // Unpack the response body
         JSONObject responseBody =
@@ -227,7 +227,7 @@ public class SafeBrowsingTransforms {
                     new InputStreamReader(response.getEntity().getContent(), UTF_8)));
         logger.atInfo().log("Got response: %s", responseBody.toString());
         if (responseBody.length() == 0) {
-          logger.atInfo().log("Response was empty, no threats detected");
+          logger.atInfo().log("Response was empty, no threats detected.");
         } else {
           // Emit all DomainNameInfos with their API results.
           JSONArray threatMatches = responseBody.getJSONArray("matches");

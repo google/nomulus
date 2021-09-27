@@ -57,7 +57,7 @@ public final class TmchSmdrlAction implements Runnable {
     SignedMarkRevocationList smdrl = SmdrlCsvParser.parse(lines);
     smdrl.save();
     logger.atInfo().log(
-        "Inserted %,d smd revocations into the database, created at %s",
+        "Inserted %,d smd revocations into the database, created at %s.",
         smdrl.size(), smdrl.getCreationTime());
   }
 }

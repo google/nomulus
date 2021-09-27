@@ -281,7 +281,7 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
               || clearDsRecords);
 
       if (!add && !remove && !change && !secDns && autorenews == null) {
-        logger.atInfo().log("No changes need to be made to domain %s", domain);
+        logger.atInfo().log("No changes need to be made to domain '%s'.", domain);
         continue;
       }
 

@@ -118,7 +118,7 @@ public final class IcannReportingStagingAction implements Runnable {
             response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
             response.setPayload("Completed staging action.");
 
-            logger.atInfo().log("Enqueueing report upload :");
+            logger.atInfo().log("Enqueueing report upload.");
             TaskOptions uploadTask =
                 TaskOptions.Builder.withUrl(IcannReportingUploadAction.PATH)
                     .method(Method.POST)

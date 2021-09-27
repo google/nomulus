@@ -311,7 +311,7 @@ public class DeleteContactsAndHostsAction implements Runnable {
     @Override
     public void reduce(final DeletionRequest deletionRequest, ReducerInput<Boolean> values) {
       final boolean hasNoActiveReferences = !Iterators.contains(values, true);
-      logger.atInfo().log("Processing async deletion request for %s", deletionRequest.key());
+      logger.atInfo().log("Processing async deletion request for %s.", deletionRequest.key());
       DeletionResult result =
           tm()
               .transactNew(
@@ -605,12 +605,12 @@ public class DeleteContactsAndHostsAction implements Runnable {
   static boolean doesResourceStateAllowDeletion(EppResource resource, DateTime now) {
     Key<EppResource> key = Key.create(resource);
     if (isDeleted(resource, now)) {
-      logger.atWarning().log("Cannot asynchronously delete %s because it is already deleted", key);
+      logger.atWarning().log("Cannot asynchronously delete %s because it is already deleted.", key);
       return false;
     }
     if (!resource.getStatusValues().contains(PENDING_DELETE)) {
       logger.atWarning().log(
-          "Cannot asynchronously delete %s because it is not in PENDING_DELETE", key);
+          "Cannot asynchronously delete %s because it is not in PENDING_DELETE.", key);
       return false;
     }
     return true;

@@ -116,7 +116,7 @@ public class CheckedBigquery {
           .setTableReference(table))
           .execute();
       logger.atInfo().log(
-          "Created BigQuery table %s:%s.%s",
+          "Created BigQuery table %s:%s.%s.",
           table.getProjectId(), table.getDatasetId(), table.getTableId());
     } catch (IOException e) {
       // Swallow errors about a table that exists, and throw any other ones.

@@ -231,13 +231,13 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
                     .setFileMetadata(name, xmlLength, watermark)
                     .build()) {
             long bytesCopied = ByteStreams.copy(ghostrydeDecoder, rydeEncoder);
-            logger.atInfo().log("uploaded %,d bytes: %s", bytesCopied, rydeFilename);
+          logger.atInfo().log("Uploaded %,d bytes to path '%s'.", bytesCopied, rydeFilename);
           }
         String sigFilename = name + ".sig";
         byte[] signature = sigOut.toByteArray();
         gcsUtils.createFromBytes(BlobId.of(bucket, sigFilename), signature);
         ftpChan.get().put(new ByteArrayInputStream(signature), sigFilename);
-        logger.atInfo().log("uploaded %,d bytes: %s", signature.length, sigFilename);
+        logger.atInfo().log("Uploaded %,d bytes to path '%s'.", signature.length, sigFilename);
       }
     }
   }

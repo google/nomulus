@@ -43,7 +43,7 @@ public class RegistryPipelineWorkerInitializer implements JvmInitializer {
     if (environment == null || environment.equals(RegistryEnvironment.UNITTEST)) {
       return;
     }
-    logger.atInfo().log("Setting up RegistryEnvironment: %s", environment);
+    logger.atInfo().log("Setting up RegistryEnvironment %s.", environment);
     environment.setup();
     Lazy<JpaTransactionManager> transactionManagerLazy =
         toRegistryPipelineComponent(registryOptions).getJpaTransactionManager();
