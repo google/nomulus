@@ -18,11 +18,24 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import google.registry.testing.AppEngineExtension;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 import org.joda.time.YearMonth;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ActivityReportingQueryBuilder}. */
+@DualDatabaseTest
 class ActivityReportingQueryBuilderTest {
+
+  @RegisterExtension
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder()
+          .withDatastoreAndCloudSql()
+          .withLocalModules()
+          .withTaskQueue()
+          .build();
 
   private final YearMonth yearMonth = new YearMonth(2017, 9);
 
@@ -35,8 +48,8 @@ class ActivityReportingQueryBuilderTest {
     return queryBuilder;
   }
 
-  @Test
-  void testAggregateQueryMatch() {
+  @TestOfyOnly
+  void testAggregateQueryMatch_datastore() {
     ActivityReportingQueryBuilder queryBuilder = getQueryBuilder();
     assertThat(queryBuilder.getReportQuery(yearMonth))
         .isEqualTo(
@@ -44,8 +57,18 @@ class ActivityReportingQueryBuilderTest {
                 + "`domain-registry-alpha.icann_reporting.activity_report_aggregation_201709`");
   }
 
-  @Test
-  void testIntermediaryQueryMatch() {
+  @TestSqlOnly
+  void testAggregateQueryMatch_cloud_sql() {
+    ActivityReportingQueryBuilder queryBuilder = getQueryBuilder();
+    assertThat(queryBuilder.getReportQuery(yearMonth))
+        .isEqualTo(
+            "#standardSQL\n"
+                + "SELECT * FROM "
+                + "`domain-registry-alpha.cloud_sql_icann_reporting.activity_report_aggregation_201709`");
+  }
+
+  @TestOfyOnly
+  void testIntermediaryQueryMatch_datastore() {
     ImmutableList<String> expectedQueryNames =
         ImmutableList.of(
             ActivityReportingQueryBuilder.REGISTRAR_OPERATING_STATUS,
@@ -60,6 +83,27 @@ class ActivityReportingQueryBuilderTest {
     for (String queryName : expectedQueryNames) {
       String actualTableName = String.format("%s_201709", queryName);
       String testFilename = String.format("%s_test.sql", queryName);
+      assertThat(actualQueries.get(actualTableName))
+          .isEqualTo(ReportingTestData.loadFile(testFilename));
+    }
+  }
+
+  @TestSqlOnly
+  void testIntermediaryQueryMatch_cloud_sql() {
+    ImmutableList<String> expectedQueryNames =
+        ImmutableList.of(
+            ActivityReportingQueryBuilder.REGISTRAR_OPERATING_STATUS,
+            ActivityReportingQueryBuilder.MONTHLY_LOGS,
+            ActivityReportingQueryBuilder.DNS_COUNTS,
+            ActivityReportingQueryBuilder.EPP_METRICS,
+            ActivityReportingQueryBuilder.WHOIS_COUNTS,
+            ActivityReportingQueryBuilder.ACTIVITY_REPORT_AGGREGATION);
+
+    ActivityReportingQueryBuilder queryBuilder = getQueryBuilder();
+    ImmutableMap<String, String> actualQueries = queryBuilder.getViewQueryMap(yearMonth);
+    for (String queryName : expectedQueryNames) {
+      String actualTableName = String.format("%s_201709", queryName);
+      String testFilename = String.format("%s_test_cloud_sql.sql", queryName);
       assertThat(actualQueries.get(actualTableName))
           .isEqualTo(ReportingTestData.loadFile(testFilename));
     }
