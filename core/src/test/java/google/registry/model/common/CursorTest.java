@@ -75,7 +75,7 @@ public class CursorTest extends EntityTestCase {
     final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
     tm().transact(() -> tm().put(Cursor.createGlobal(RECURRING_BILLING, time)));
     Cursor cursor = tm().transact(() -> tm().loadByKey(Cursor.createGlobalVKey(RECURRING_BILLING)));
-    verifyIndexing(cursor);
+    verifyDatastoreIndexing(cursor);
   }
 
   @TestOfyAndSql

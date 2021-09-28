@@ -986,18 +986,18 @@ public class DatabaseHelper {
    * <p><b>Note:</b> Your resource will not be enrolled in a commit log. If you want backups, use
    * {@link #persistResourceWithCommitLog(Object)}.
    */
-  public static <R> R persistResource(final R resource) {
+  public static <R extends ImmutableObject> R persistResource(final R resource) {
     return persistResource(resource, false);
   }
 
   /** Same as {@link #persistResource(Object)} with backups enabled. */
-  public static <R> R persistResourceWithCommitLog(final R resource) {
+  public static <R extends ImmutableObject> R persistResourceWithCommitLog(final R resource) {
     return persistResource(resource, true);
   }
 
-  private static <R> void saveResource(R resource, boolean wantBackup) {
+  private static <R extends ImmutableObject> void saveResource(R resource, boolean wantBackup) {
     if (tm().isOfy()) {
-      Consumer<Object> saver =
+      Consumer<ImmutableObject> saver =
           wantBackup || alwaysSaveWithBackup ? tm()::put : tm()::putWithoutBackup;
       saver.accept(resource);
       if (resource instanceof EppResource) {
@@ -1011,7 +1011,7 @@ public class DatabaseHelper {
   }
 
   private static <R extends EppResource> void persistEppResourceExtras(
-      R resource, EppResourceIndex index, Consumer<Object> saver) {
+      R resource, EppResourceIndex index, Consumer<ImmutableObject> saver) {
     assertWithMessage("Cannot persist an EppResource with a missing repoId in tests")
         .that(resource.getRepoId())
         .isNotEmpty();
@@ -1021,7 +1021,8 @@ public class DatabaseHelper {
     }
   }
 
-  private static <R> R persistResource(final R resource, final boolean wantBackup) {
+  private static <R extends ImmutableObject> R persistResource(
+      final R resource, final boolean wantBackup) {
     assertWithMessage("Attempting to persist a Builder is almost certainly an error in test code")
         .that(resource)
         .isNotInstanceOf(Buildable.Builder.class);
@@ -1042,7 +1043,7 @@ public class DatabaseHelper {
     tm().transact(
             () -> {
               if (tm().isOfy()) {
-                Consumer<Object> saver = tm()::put;
+                Consumer<ImmutableObject> saver = tm()::put;
                 saver.accept(resource);
                 persistEppResourceExtras(resource, eppResourceIndex, saver);
               } else {
@@ -1054,11 +1055,12 @@ public class DatabaseHelper {
     return transactIfJpaTm(() -> tm().loadByEntity(resource));
   }
 
-  public static <R> void persistResources(final Iterable<R> resources) {
+  public static <R extends ImmutableObject> void persistResources(final Iterable<R> resources) {
     persistResources(resources, false);
   }
 
-  private static <R> void persistResources(final Iterable<R> resources, final boolean wantBackup) {
+  private static <R extends ImmutableObject> void persistResources(
+      final Iterable<R> resources, final boolean wantBackup) {
     for (R resource : resources) {
       assertWithMessage("Attempting to persist a Builder is almost certainly an error in test code")
           .that(resource)
@@ -1379,9 +1381,9 @@ public class DatabaseHelper {
     return transactIfJpaTm(() -> tm().loadByEntitiesIfPresent(entities));
   }
 
-  /** Returns whether or not the given entity exists in the database. */
-  public static boolean existsInDatabase(Object object) {
-    return transactIfJpaTm(() -> tm().exists(object));
+  /** Returns whether or not the given entity exists in Cloud SQL. */
+  public static boolean existsInDb(ImmutableObject object) {
+    return jpaTm().transact(() -> jpaTm().exists(object));
   }
 
   /** Inserts the given entity/entities into Cloud SQL in a single transaction. */
@@ -1392,6 +1394,26 @@ public class DatabaseHelper {
   /** Inserts the given entities into Cloud SQL in a single transaction. */
   public static <T extends ImmutableObject> void insertInDb(ImmutableCollection<T> entities) {
     jpaTm().transact(() -> jpaTm().insertAll(entities));
+  }
+
+  /** Puts the given entity/entities into Cloud SQL in a single transaction. */
+  public static <T extends ImmutableObject> void putInDb(T... entities) {
+    jpaTm().transact(() -> jpaTm().putAll(entities));
+  }
+
+  /** Puts the given entities into Cloud SQL in a single transaction. */
+  public static <T extends ImmutableObject> void putInDb(ImmutableCollection<T> entities) {
+    jpaTm().transact(() -> jpaTm().putAll(entities));
+  }
+
+  /** Updates the given entities in Cloud SQL in a single transaction. */
+  public static <T extends ImmutableObject> void updateInDb(T... entities) {
+    jpaTm().transact(() -> jpaTm().updateAll(entities));
+  }
+
+  /** Updates the given entities in Cloud SQL in a single transaction. */
+  public static <T extends ImmutableObject> void updateInDb(ImmutableCollection<T> entities) {
+    jpaTm().transact(() -> jpaTm().updateAll(entities));
   }
 
   /**

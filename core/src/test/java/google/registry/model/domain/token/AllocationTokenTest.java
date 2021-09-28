@@ -97,7 +97,7 @@ public class AllocationTokenTest extends EntityTestCase {
   void testIndexing() throws Exception {
     DomainBase domain = persistActiveDomain("blahdomain.foo");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
-    verifyIndexing(
+    verifyDatastoreIndexing(
         persistResource(
             new AllocationToken.Builder()
                 .setToken("abc123")

@@ -18,7 +18,9 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.assertDetachedFromEntityManager;
+import static google.registry.testing.DatabaseHelper.existsInDb;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.TestDataHelper.fileClassPath;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,6 +48,8 @@ import javax.persistence.IdClass;
 import javax.persistence.OptimisticLockException;
 import javax.persistence.RollbackException;
 import org.hibernate.exception.JDBCConnectionException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -79,6 +83,16 @@ class JpaTransactionManagerImplTest {
           .withEntityClass(
               TestEntity.class, TestCompoundIdEntity.class, TestNamedCompoundIdEntity.class)
           .buildUnitTestExtension();
+
+  @BeforeEach
+  void beforeEach() {
+    TransactionManagerFactory.setTmForTest(jpaTm());
+  }
+
+  @AfterEach
+  void afterEach() {
+    TransactionManagerFactory.removeTmOverrideForTest();
+  }
 
   @Test
   void transact_succeeds() {
@@ -139,10 +153,10 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void insert_succeeds() {
-    assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isFalse();
-    insertInDb(theEntity);
-    assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isTrue();
-    assertThat(jpaTm().transact(() -> jpaTm().loadByKey(theEntityKey))).isEqualTo(theEntity);
+    assertThat(existsInDb(theEntity)).isFalse();
+    jpaTm().transact(() -> jpaTm().insert(theEntity));
+    assertThat(existsInDb(theEntity)).isTrue();
+    assertThat(loadByKey(theEntityKey)).isEqualTo(theEntity);
   }
 
   @Test
@@ -258,17 +272,17 @@ class JpaTransactionManagerImplTest {
 
   @Test
   void insert_throwsExceptionIfEntityExists() {
-    assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isFalse();
-    insertInDb(theEntity);
-    assertThat(jpaTm().transact(() -> jpaTm().exists(theEntity))).isTrue();
-    assertThat(jpaTm().transact(() -> jpaTm().loadByKey(theEntityKey))).isEqualTo(theEntity);
-    assertThrows(RollbackException.class, () -> insertInDb(theEntity));
+    assertThat(existsInDb(theEntity)).isFalse();
+    jpaTm().transact(() -> jpaTm().insert(theEntity));
+    assertThat(existsInDb(theEntity)).isTrue();
+    assertThat(loadByKey(theEntityKey)).isEqualTo(theEntity);
+    assertThrows(RollbackException.class, () -> jpaTm().transact(() -> jpaTm().insert(theEntity)));
   }
 
   @Test
   void createCompoundIdEntity_succeeds() {
     assertThat(jpaTm().transact(() -> jpaTm().exists(compoundIdEntity))).isFalse();
-    insertInDb(compoundIdEntity);
+    jpaTm().transact(() -> jpaTm().insert(compoundIdEntity));
     assertThat(jpaTm().transact(() -> jpaTm().exists(compoundIdEntity))).isTrue();
     assertThat(jpaTm().transact(() -> jpaTm().loadByKey(compoundIdEntityKey)))
         .isEqualTo(compoundIdEntity);
@@ -278,18 +292,12 @@ class JpaTransactionManagerImplTest {
   void createNamedCompoundIdEntity_succeeds() {
     // Compound IDs should also work even if the field names don't match up exactly
     TestNamedCompoundIdEntity entity = new TestNamedCompoundIdEntity("foo", 1);
-    insertInDb(entity);
-    jpaTm()
-        .transact(
-            () -> {
-              assertThat(jpaTm().exists(entity)).isTrue();
-              assertThat(
-                      jpaTm()
-                          .loadByKey(
-                              VKey.createSql(
-                                  TestNamedCompoundIdEntity.class, new NamedCompoundId("foo", 1))))
-                  .isEqualTo(entity);
-            });
+    jpaTm().transact(() -> jpaTm().insert(entity));
+    assertThat(existsInDb(entity)).isTrue();
+    assertThat(
+            loadByKey(
+                VKey.createSql(TestNamedCompoundIdEntity.class, new NamedCompoundId("foo", 1))))
+        .isEqualTo(entity);
   }
 
   @Test

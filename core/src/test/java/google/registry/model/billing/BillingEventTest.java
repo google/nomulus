@@ -236,24 +236,24 @@ public class BillingEventTest extends EntityTestCase {
 
   @TestOfyOnly
   void testIndexing() throws Exception {
-    verifyIndexing(
+    verifyDatastoreIndexing(
         oneTime,
         "clientId",
         "eventTime",
         "billingTime",
         "syntheticCreationTime",
         "allocationToken");
-    verifyIndexing(
+    verifyDatastoreIndexing(
         oneTimeSynthetic,
         "clientId",
         "eventTime",
         "billingTime",
         "syntheticCreationTime",
         "allocationToken");
-    verifyIndexing(
+    verifyDatastoreIndexing(
         recurring, "clientId", "eventTime", "recurrenceEndTime", "recurrenceTimeOfYear.timeString");
-    verifyIndexing(cancellationOneTime, "clientId", "eventTime", "billingTime");
-    verifyIndexing(modification, "clientId", "eventTime");
+    verifyDatastoreIndexing(cancellationOneTime, "clientId", "eventTime", "billingTime");
+    verifyDatastoreIndexing(modification, "clientId", "eventTime");
   }
 
   @TestOfyAndSql

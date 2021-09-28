@@ -16,6 +16,7 @@ package google.registry.persistence.transaction;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.model.ImmutableObject;
@@ -49,7 +50,7 @@ class CriteriaQueryBuilderTest {
 
   @BeforeEach
   void beforeEach() {
-    jpaTm().transact(() -> jpaTm().putAll(ImmutableList.of(entity1, entity2, entity3)));
+    insertInDb(entity1, entity2, entity3);
   }
 
   @Test

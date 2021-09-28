@@ -132,7 +132,9 @@ public class TransactionManagerFactory {
   /**
    * Sets the return of {@link #tm()} to the given instance of {@link TransactionManager}.
    *
-   * <p>Used when overriding the per-test transaction manager for dual-database tests.
+   * <p>Used when overriding the per-test transaction manager for dual-database tests. Should be
+   * matched with a corresponding invocation of {@link #removeTmOverrideForTest()} either at the end
+   * of the test or in an <code>@AfterEach</code> handler.
    */
   @VisibleForTesting
   public static void setTmForTest(TransactionManager newTm) {

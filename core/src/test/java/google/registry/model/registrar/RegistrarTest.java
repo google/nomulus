@@ -137,7 +137,7 @@ class RegistrarTest extends EntityTestCase {
 
   @TestOfyOnly
   void testIndexing() throws Exception {
-    verifyIndexing(registrar, "registrarName", "ianaIdentifier");
+    verifyDatastoreIndexing(registrar, "registrarName", "ianaIdentifier");
   }
 
   @TestOfyAndSql

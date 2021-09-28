@@ -111,7 +111,7 @@ public interface TransactionManager {
    * "WithoutBackup" in its method name because it is not necessary to have the backup mechanism in
    * SQL.
    */
-  void insertWithoutBackup(Object entity);
+  void insertWithoutBackup(ImmutableObject entity);
 
   /**
    * Persists all new entities in the database without writing any backup if the underlying database
@@ -144,7 +144,7 @@ public interface TransactionManager {
    * "WithoutBackup" in its method name because it is not necessary to have the backup mechanism in
    * SQL.
    */
-  void putWithoutBackup(Object entity);
+  void putWithoutBackup(ImmutableObject entity);
 
   /**
    * Persists all new entities or update the existing entities in the database without writing
@@ -165,7 +165,7 @@ public interface TransactionManager {
   void updateAll(ImmutableCollection<?> entities);
 
   /** Updates all entities in the database, throws exception if any entity does not exist. */
-  void updateAll(Object... entities);
+  void updateAll(ImmutableObject... entities);
 
   /**
    * Updates an entity in the database without writing commit logs if the underlying database is
@@ -177,7 +177,7 @@ public interface TransactionManager {
    * "WithoutBackup" in its method name because it is not necessary to have the backup mechanism in
    * SQL.
    */
-  void updateWithoutBackup(Object entity);
+  void updateWithoutBackup(ImmutableObject entity);
 
   /**
    * Updates all entities in the database without writing any backup if the underlying database is

@@ -17,6 +17,8 @@ package google.registry.beam.common;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.testing.DatabaseHelper.newContactResource;
+import static google.registry.testing.DatabaseHelper.putInDb;
 
 import com.google.appengine.api.datastore.Entity;
 import com.google.common.collect.ImmutableList;
@@ -32,7 +34,6 @@ import google.registry.model.registrar.Registrar;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.InjectExtension;
@@ -76,12 +77,12 @@ class RegistryJpaWriteTest implements Serializable {
       // Required for contacts created below.
       Registrar ofyRegistrar = AppEngineExtension.makeRegistrar2();
       store.insertOrUpdate(ofyRegistrar);
-      jpaTm().transact(() -> jpaTm().put(store.loadAsOfyEntity(ofyRegistrar)));
+      putInDb(store.loadAsOfyEntity(ofyRegistrar));
 
       ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
 
       for (int i = 0; i < 3; i++) {
-        ContactResource contact = DatabaseHelper.newContactResource("contact_" + i);
+        ContactResource contact = newContactResource("contact_" + i);
         store.insertOrUpdate(contact);
         builder.add(store.loadAsDatastoreEntity(contact));
       }
@@ -106,8 +107,7 @@ class RegistryJpaWriteTest implements Serializable {
                 .withJpaConverter(Transforms::convertVersionedEntityToSqlEntity));
     testPipeline.run().waitUntilFinish();
 
-    ImmutableList<?> sqlContacts = jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class));
-    assertThat(sqlContacts)
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class)))
         .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
         .containsExactlyElementsIn(
             contacts.stream()

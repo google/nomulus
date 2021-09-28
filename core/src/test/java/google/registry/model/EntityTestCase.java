@@ -189,8 +189,8 @@ public abstract class EntityTestCase {
     return fields;
   }
 
-  /** Verify indexing for an entity. */
-  public void verifyIndexing(Object obj, String... indexed) throws Exception {
+  /** Verify Datastore indexing for an entity. */
+  public void verifyDatastoreIndexing(Object obj, String... indexed) throws Exception {
     Set<String> indexedSet = ImmutableSet.copyOf(indexed);
     Set<String> allSet = getAllPotentiallyIndexedFieldPaths(obj.getClass());
     // Sanity test that the indexed fields we listed were found.

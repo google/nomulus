@@ -318,7 +318,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void insertWithoutBackup(Object entity) {
+  public void insertWithoutBackup(ImmutableObject entity) {
     insert(entity);
   }
 
@@ -356,7 +356,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void putWithoutBackup(Object entity) {
+  public void putWithoutBackup(ImmutableObject entity) {
     put(entity);
   }
 
@@ -386,12 +386,12 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void updateAll(Object... entities) {
-    updateAll(ImmutableList.of(entities));
+  public void updateAll(ImmutableObject... entities) {
+    updateAll(ImmutableList.copyOf(entities));
   }
 
   @Override
-  public void updateWithoutBackup(Object entity) {
+  public void updateWithoutBackup(ImmutableObject entity) {
     update(entity);
   }
 

@@ -14,7 +14,6 @@
 
 package google.registry.beam.common;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newRegistry;
@@ -78,7 +77,7 @@ public class RegistryJpaReadTest {
   @BeforeEach
   void beforeEach() {
     Registrar ofyRegistrar = AppEngineExtension.makeRegistrar2();
-    jpaTm().transact(() -> jpaTm().put(ofyRegistrar));
+    insertInDb(ofyRegistrar);
 
     ImmutableList.Builder<ContactResource> builder = new ImmutableList.Builder<>();
 
@@ -87,7 +86,7 @@ public class RegistryJpaReadTest {
       builder.add(contact);
     }
     contacts = builder.build();
-    jpaTm().transact(() -> jpaTm().putAll(contacts));
+    insertInDb(contacts);
   }
 
   @Test

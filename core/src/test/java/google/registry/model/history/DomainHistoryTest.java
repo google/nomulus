@@ -26,6 +26,7 @@ import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
+import static google.registry.testing.DatabaseHelper.putInDb;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -146,14 +147,8 @@ public class DomainHistoryTest extends EntityTestCase {
             "tld", "TLD", ImmutableSortedMap.of(START_OF_TIME, GENERAL_AVAILABILITY));
     tm().transact(() -> tm().insert(registry));
     Registries.resetCache();
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm().insert(registry);
-              jpaTm()
-                  .insert(
-                      makeRegistrar2().asBuilder().setAllowedTlds(ImmutableSet.of("tld")).build());
-            });
+    insertInDb(
+        registry, makeRegistrar2().asBuilder().setAllowedTlds(ImmutableSet.of("tld")).build());
 
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
@@ -164,12 +159,7 @@ public class DomainHistoryTest extends EntityTestCase {
               tm().insert(host);
               tm().insert(contact);
             });
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm().insert(host);
-              jpaTm().insert(contact);
-            });
+    insertInDb(host, contact);
     DomainBase domain =
         newDomainBase("example.tld", "domainRepoId", contact)
             .asBuilder()
@@ -190,7 +180,7 @@ public class DomainHistoryTest extends EntityTestCase {
 
     // Reload and rewrite.
     DomainHistory domainHistoryFromDb2 = tm().transact(() -> tm().loadByKey(domainHistoryVKey));
-    jpaTm().transact(() -> jpaTm().put(domainHistoryFromDb2));
+    putInDb(domainHistoryFromDb2);
   }
 
   @TestSqlOnly

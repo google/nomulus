@@ -27,6 +27,7 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
+import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
@@ -163,12 +164,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
   @Test
   void testReplay_multipleDiffFiles() throws Exception {
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm().insertWithoutBackup(TestObject.create("previous to keep"));
-              jpaTm().insertWithoutBackup(TestObject.create("previous to delete"));
-            });
+    insertInDb(TestObject.create("previous to keep"), TestObject.create("previous to delete"));
     DateTime now = fakeClock.nowUtc();
     // Create 3 transactions, across two diff files.
     // Before: {"previous to keep", "previous to delete"}
@@ -216,7 +212,7 @@ public class ReplayCommitLogsToSqlActionTest {
   @Test
   void testReplay_noManifests() throws Exception {
     DateTime now = fakeClock.nowUtc();
-    jpaTm().transact(() -> jpaTm().insertWithoutBackup(TestObject.create("previous to keep")));
+    insertInDb(TestObject.create("previous to keep"));
     saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(1));
     saveDiffFile(gcsUtils, createCheckpoint(now.minusMillis(2)));
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMillis(1)));
@@ -228,7 +224,7 @@ public class ReplayCommitLogsToSqlActionTest {
   void testReplay_dryRun() throws Exception {
     action.dryRun = true;
     DateTime now = fakeClock.nowUtc();
-    jpaTm().transact(() -> jpaTm().insertWithoutBackup(TestObject.create("previous to keep")));
+    insertInDb(TestObject.create("previous to keep"));
     Key<CommitLogBucket> bucketKey = getBucketKey(1);
     Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(bucketKey, now);
     saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(2));
@@ -253,7 +249,7 @@ public class ReplayCommitLogsToSqlActionTest {
   @Test
   void testReplay_manifestWithNoDeletions() throws Exception {
     DateTime now = fakeClock.nowUtc();
-    jpaTm().transact(() -> jpaTm().insertWithoutBackup(TestObject.create("previous to keep")));
+    insertInDb(TestObject.create("previous to keep"));
     Key<CommitLogBucket> bucketKey = getBucketKey(1);
     Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(bucketKey, now);
     saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(2));
@@ -271,12 +267,7 @@ public class ReplayCommitLogsToSqlActionTest {
   @Test
   void testReplay_manifestWithNoMutations() throws Exception {
     DateTime now = fakeClock.nowUtc();
-    jpaTm()
-        .transact(
-            () -> {
-              jpaTm().insertWithoutBackup(TestObject.create("previous to keep"));
-              jpaTm().insertWithoutBackup(TestObject.create("previous to delete"));
-            });
+    insertInDb(TestObject.create("previous to keep"), TestObject.create("previous to delete"));
     saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(2));
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
     saveDiffFile(
@@ -293,7 +284,7 @@ public class ReplayCommitLogsToSqlActionTest {
   @Test
   void testReplay_mutateExistingEntity() throws Exception {
     DateTime now = fakeClock.nowUtc();
-    jpaTm().transact(() -> jpaTm().put(TestObject.create("existing", "a")));
+    insertInDb(TestObject.create("existing", "a"));
     Key<CommitLogManifest> manifestKey = CommitLogManifest.createKey(getBucketKey(1), now);
     saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(1).minusMillis(1));
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1)));
@@ -312,7 +303,7 @@ public class ReplayCommitLogsToSqlActionTest {
   @Test
   void testReplay_deleteMissingEntity() throws Exception {
     DateTime now = fakeClock.nowUtc();
-    jpaTm().transact(() -> jpaTm().put(TestObject.create("previous to keep", "a")));
+    insertInDb(TestObject.create("previous to keep", "a"));
     saveDiffFileNotToRestore(gcsUtils, now.minusMinutes(1).minusMillis(1));
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1)));
     saveDiffFile(
@@ -368,7 +359,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
     // Create and save to SQL a registrar contact that we will delete
     RegistrarContact toDelete = AppEngineExtension.makeRegistrarContact1();
-    jpaTm().transact(() -> jpaTm().put(toDelete));
+    insertInDb(toDelete);
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
 
     // spy the txn manager so we can see what order things were inserted/removed
@@ -569,8 +560,7 @@ public class ReplayCommitLogsToSqlActionTest {
             .asBuilder()
             .setDsData(ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {0, 1, 2})))
             .build();
-    jpaTm().transact(() -> jpaTm().put(domain));
-
+    insertInDb(domain);
     assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(DelegationSignerData.class))).isNotEmpty();
 
     saveDiffFile(
@@ -580,12 +570,8 @@ public class ReplayCommitLogsToSqlActionTest {
             getBucketKey(1), now.minusMinutes(3), ImmutableSet.of(Key.create(domain))));
     runAndAssertSuccess(now.minusMinutes(1), 1, 1);
 
-    jpaTm()
-        .transact(
-            () -> {
-              assertThat(jpaTm().loadAllOf(DomainBase.class)).isEmpty();
-              assertThat(jpaTm().loadAllOf(DelegationSignerData.class)).isEmpty();
-            });
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(DomainBase.class))).isEmpty();
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(DelegationSignerData.class))).isEmpty();
   }
 
   @Test
@@ -627,7 +613,7 @@ public class ReplayCommitLogsToSqlActionTest {
         ImmutableSet.of(DelegationSignerData.create(1, 2, 3, new byte[] {4, 5, 6}));
     DomainBase domainWithDsData =
         newDomainBase("example.tld").asBuilder().setDsData(dsData).build();
-    jpaTm().transact(() -> jpaTm().put(domainWithDsData));
+    insertInDb(domainWithDsData);
 
     // Replay a version of that domain without the dsData
     Key<CommitLogManifest> manifestKeyOne =
@@ -639,7 +625,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
     // Create an object (any object) to delete via replay to trigger Hibernate flush events
     TestObject testObject = TestObject.create("foo", "bar");
-    jpaTm().transact(() -> jpaTm().put(testObject));
+    insertInDb(testObject);
 
     // Replay the original domain, with the original dsData
     Key<CommitLogManifest> manifestKeyTwo =

@@ -49,7 +49,7 @@ class EppResourceIndexTest extends EntityTestCase {
 
   @Test
   void testIndexing() throws Exception {
-    verifyIndexing(Iterables.getOnlyElement(getEppResourceIndexObjects()), "kind");
+    verifyDatastoreIndexing(Iterables.getOnlyElement(getEppResourceIndexObjects()), "kind");
   }
 
   @Test

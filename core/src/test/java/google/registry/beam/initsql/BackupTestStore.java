@@ -25,6 +25,7 @@ import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.googlecode.objectify.Key;
 import google.registry.backup.CommitLogExports;
 import google.registry.backup.VersionedEntity;
+import google.registry.model.ImmutableObject;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
@@ -124,7 +125,7 @@ public final class BackupTestStore implements AutoCloseable {
    *
    * <p>See {@link #loadAsDatastoreEntity} and {@link VersionedEntity} for more information.
    */
-  public Object loadAsOfyEntity(Object ofyEntity) {
+  public ImmutableObject loadAsOfyEntity(ImmutableObject ofyEntity) {
     try {
       return auditedOfy().load().fromEntity(datastoreService.get(Key.create(ofyEntity).getRaw()));
     } catch (EntityNotFoundException e) {

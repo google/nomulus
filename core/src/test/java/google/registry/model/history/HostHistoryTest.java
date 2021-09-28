@@ -19,6 +19,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
+import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.DatabaseHelper.newHostResource;
 import static google.registry.testing.DatabaseHelper.newHostResourceWithRoid;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -32,24 +33,23 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
-import org.junit.jupiter.api.Test;
+import google.registry.testing.DualDatabaseTest;
+import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 
 /** Tests for {@link HostHistory}. */
+@DualDatabaseTest
 public class HostHistoryTest extends EntityTestCase {
 
   HostHistoryTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
-  @Test
+  @TestSqlOnly
   void testPersistence() {
-    saveRegistrar("TheRegistrar");
-
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     insertInDb(host);
-    VKey<HostResource> hostVKey =
-        VKey.create(HostResource.class, "host1", Key.create(HostResource.class, "host1"));
-    HostResource hostFromDb = jpaTm().transact(() -> jpaTm().loadByKey(hostVKey));
+    HostResource hostFromDb = loadByEntity(host);
     HostHistory hostHistory = createHostHistory(hostFromDb);
     insertInDb(hostHistory);
     jpaTm()
@@ -61,13 +61,12 @@ public class HostHistoryTest extends EntityTestCase {
             });
   }
 
-  @Test
+  @TestSqlOnly
   void testLegacyPersistence_nullHostBase() {
-    saveRegistrar("TheRegistrar");
     HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
     insertInDb(host);
 
-    HostResource hostFromDb = jpaTm().transact(() -> jpaTm().loadByKey(host.createVKey()));
+    HostResource hostFromDb = loadByEntity(host);
     HostHistory hostHistory = createHostHistory(hostFromDb).asBuilder().setHost(null).build();
     insertInDb(hostHistory);
 
@@ -80,7 +79,7 @@ public class HostHistoryTest extends EntityTestCase {
             });
   }
 
-  @Test
+  @TestOfyOnly
   void testOfySave() {
     saveRegistrar("registrar1");
 
@@ -105,9 +104,8 @@ public class HostHistoryTest extends EntityTestCase {
     assertThat(hostHistoryFromDb).isEqualTo(historyEntryFromDb);
   }
 
-  @Test
+  @TestSqlOnly
   void testBeforeSqlSave_afterHostPersisted() {
-    saveRegistrar("TheRegistrar");
     HostResource hostResource = newHostResource("ns1.example.tld");
     HostHistory hostHistory =
         new HostHistory.Builder()

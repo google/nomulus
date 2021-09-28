@@ -157,6 +157,6 @@ class HistoryEntryTest extends EntityTestCase {
 
   @TestOfyOnly
   void testIndexing() throws Exception {
-    verifyIndexing(domainHistory.asHistoryEntry(), "modificationTime", "clientId");
+    verifyDatastoreIndexing(domainHistory.asHistoryEntry(), "modificationTime", "clientId");
   }
 }
