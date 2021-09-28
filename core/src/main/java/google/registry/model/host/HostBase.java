@@ -196,7 +196,8 @@ public class HostBase extends EppResource {
     public B setHostName(String hostName) {
       checkArgument(
           hostName.equals(canonicalizeDomainName(hostName)),
-          "Host name must be in puny-coded, lower-case form");
+          "Host name %s not in puny-coded, lower-case form",
+          hostName);
       getInstance().fullyQualifiedHostName = hostName;
       return thisCastToDerived();
     }
