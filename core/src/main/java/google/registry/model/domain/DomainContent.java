@@ -865,7 +865,8 @@ public class DomainContent extends EppResource
     public B setDomainName(String domainName) {
       checkArgument(
           domainName.equals(canonicalizeDomainName(domainName)),
-          "Domain name must be in puny-coded, lower-case form");
+          "Domain name must be in puny-coded, lower-case form but was %s",
+          domainName);
       getInstance().fullyQualifiedDomainName = domainName;
       return thisCastToDerived();
     }
