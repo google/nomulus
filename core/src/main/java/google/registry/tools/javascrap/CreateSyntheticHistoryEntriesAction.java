@@ -88,12 +88,10 @@ public class CreateSyntheticHistoryEntriesAction implements Runnable {
   /**
    * The number of shards to run the map-only mapreduce on.
    *
-   * <p>This is less than the default of 100 because we can afford it being slower, but we don't
-   * want to write out lots of large commit logs in a short period of time. If we did so, the
-   * asynchronous replication action (run every few minutes) might fall behind which may make the
-   * migration tougher.
+   * <p>This is much lower than the default of 100, or even 10, because we can afford it being slow
+   * and we want to avoid overloading SQL.
    */
-  private static final int NUM_SHARDS = 10;
+  private static final int NUM_SHARDS = 3;
 
   @Override
   public void run() {
