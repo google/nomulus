@@ -19,7 +19,7 @@
 # 3. Google Cloud SDK for generating the WARs.
 # 4. Git to manipulate the private and the merged repos.
 # 5. Docker to build and push images.
-FROM marketplace.gcr.io/google/ubuntu1804
+FROM marketplace.gcr.io/google/debian10
 ENV DEBIAN_FRONTEND=noninteractive LANG=en_US.UTF-8
 ADD ./build.sh .
 RUN ["bash", "./build.sh"]

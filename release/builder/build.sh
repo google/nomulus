@@ -27,6 +27,8 @@ apt-get install python -y
 # (introduced in 3.7) for nom_build
 apt-get install python3-pip -y
 python3 -m pip install dataclasses
+# Install curl.
+apt-get install curl -y
 # Install Node
 curl -sL https://deb.nodesource.com/setup_current.x | bash -
 apt-get install -y nodejs
