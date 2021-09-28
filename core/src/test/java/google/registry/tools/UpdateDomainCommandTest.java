@@ -210,6 +210,11 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
   }
 
   @TestOfyAndSql
+  void testSuccess_autorenews_reasonAndRegistrarRequest() throws Exception {
+
+  }
+
+  @TestOfyAndSql
   void testSuccess_setNameservers() throws Exception {
     HostResource host1 = persistActiveHost("ns1.zdns.google");
     HostResource host2 = persistActiveHost("ns2.zdns.google");

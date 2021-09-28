@@ -187,6 +187,17 @@ class UniformRapidSuspensionCommandTest
   }
 
   @Test
+  void testAutorenews_setToFalsebyDefault() throws Exception {
+
+  }
+
+  @Test
+  void testAutorenews_setToTrueWhenUndo() throws Exception {
+    
+  }
+
+
+  @Test
   void testFailure_locksToPreserveWithoutUndo() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =

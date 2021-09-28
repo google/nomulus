@@ -319,6 +319,12 @@ final class UpdateDomainCommand extends CreateOrUpdateDomainCommand {
               "reason", reason);
       if (autorenews != null) {
         soyMapData.put("autorenews", autorenews.toString());
+        // we want to use metadata extension to set requestedByRegistrar to false and leave an
+        // appropriate reason
+        if (autorenews) {
+          requestedByRegistrar = false;
+          reason = "Auto-renewal enabled.";
+        }
       }
       if (requestedByRegistrar != null) {
         soyMapData.put("requestedByRegistrar", requestedByRegistrar.toString());
