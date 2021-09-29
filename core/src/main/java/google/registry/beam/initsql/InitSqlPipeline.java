@@ -20,7 +20,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
-import google.registry.backup.AppEngineEnvironment;
 import google.registry.backup.VersionedEntity;
 import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.initsql.Transforms.RemoveDomainBaseForeignKeys;
@@ -230,9 +229,7 @@ public class InitSqlPipeline implements Serializable {
   }
 
   private static ImmutableList<String> toKindStrings(Collection<Class<?>> entityClasses) {
-    try (AppEngineEnvironment env = new AppEngineEnvironment()) {
-      return entityClasses.stream().map(Key::getKind).collect(ImmutableList.toImmutableList());
-    }
+    return entityClasses.stream().map(Key::getKind).collect(ImmutableList.toImmutableList());
   }
 
   public static void main(String[] args) {

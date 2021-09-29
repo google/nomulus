@@ -116,7 +116,8 @@ class Spec11PipelineTest {
 
   @RegisterExtension
   @Order(Order.DEFAULT - 1)
-  final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
+  final transient DatastoreEntityExtension datastore =
+      new DatastoreEntityExtension().allThreads(true);
 
   @TempDir Path tmpDir;
 

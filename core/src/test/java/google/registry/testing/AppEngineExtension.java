@@ -460,7 +460,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
     if (withDatastore) {
       ObjectifyService.initOfy();
       // Reset id allocation in ObjectifyService so that ids are deterministic in tests.
-      IdService.resetNextTestId();
+      IdService.resetSelfAllocatedId();
       this.ofyTestEntities.forEach(AppEngineExtension::register);
     }
   }
