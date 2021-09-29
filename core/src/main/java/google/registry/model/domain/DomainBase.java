@@ -24,6 +24,7 @@ import google.registry.model.host.HostResource;
 import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.persistence.VKey;
 import google.registry.persistence.WithStringVKey;
+import google.registry.util.DomainNameUtils;
 import java.util.Set;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -162,6 +163,11 @@ public class DomainBase extends DomainContent
   @Override
   public DomainBase cloneProjectedAtTime(final DateTime now) {
     return cloneDomainProjectedAtTime(this, now);
+  }
+
+  @Override
+  public void beforeSqlSaveOnReplay() {
+    fullyQualifiedDomainName = DomainNameUtils.canonicalizeDomainName(fullyQualifiedDomainName);
   }
 
   @Override

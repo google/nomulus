@@ -921,6 +921,19 @@ public class DomainBaseTest extends EntityTestCase {
         .containsExactly(EppResourceIndex.create(Key.create(domain)));
   }
 
+  @Test
+  void testBeforeSqlSaveOnReplay_canonicalName() {
+    domain.fullyQualifiedDomainName = "EXAMPLE.COM";
+    assertThat(domain.getDomainName()).isEqualTo("EXAMPLE.COM");
+    domain.beforeSqlSaveOnReplay();
+    assertThat(domain.getDomainName()).isEqualTo("example.com");
+
+    domain.fullyQualifiedDomainName = "kittyçat.com";
+    assertThat(domain.getDomainName()).isEqualTo("kittyçat.com");
+    domain.beforeSqlSaveOnReplay();
+    assertThat(domain.getDomainName()).isEqualTo("xn--kittyat-yxa.com");
+  }
+
   static class BillEventInfo extends ImmutableObject {
     VKey<BillingEvent.Recurring> billingEventRecurring;
     Long billingEventRecurringHistoryId;

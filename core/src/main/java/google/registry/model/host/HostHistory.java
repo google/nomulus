@@ -26,6 +26,7 @@ import google.registry.model.replay.DatastoreEntity;
 import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.util.DomainNameUtils;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -141,6 +142,8 @@ public class HostHistory extends HistoryEntry implements SqlEntity, UnsafeSerial
   public void beforeSqlSaveOnReplay() {
     if (hostBase == null) {
       hostBase = jpaTm().getEntityManager().find(HostResource.class, getHostRepoId());
+      hostBase.fullyQualifiedHostName =
+          DomainNameUtils.canonicalizeDomainName(hostBase.fullyQualifiedHostName);
     }
   }
 

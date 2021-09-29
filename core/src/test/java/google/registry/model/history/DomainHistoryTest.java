@@ -56,6 +56,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
 import google.registry.util.SerializeUtils;
+import java.lang.reflect.Field;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -136,8 +137,7 @@ public class DomainHistoryTest extends EntityTestCase {
     DomainHistory domainHistory = createDomainHistory(domain);
     tm().transact(() -> tm().insert(domainHistory));
 
-    // retrieving a HistoryEntry or a DomainHistory with the same key should return the same
-    // object
+    // retrieving a HistoryEntry or a DomainHistory with the same key should return the same object
     // note: due to the @EntitySubclass annotation. all Keys for DomainHistory objects will have
     // type HistoryEntry
     VKey<DomainHistory> domainHistoryVKey = domainHistory.createVKey();
@@ -230,6 +230,66 @@ public class DomainHistoryTest extends EntityTestCase {
                     .that(jpaTm().loadByEntity(domain))
                     .hasFieldsEqualTo(
                         jpaTm().loadByEntity(historyWithoutResource).getDomainContent().get()));
+  }
+
+  @TestSqlOnly
+  void testBeforeSqlSave_canonicalNameUncapitalized() throws Exception {
+    Field domainNameField = DomainContent.class.getDeclaredField("fullyQualifiedDomainName");
+    // reflection hacks to get around visibility issues
+    domainNameField.setAccessible(true);
+    DomainBase domain = createDomainWithContactsAndHosts();
+    domainNameField.set(domain, "EXAMPLE.TLD");
+
+    DomainHistory historyWithoutResource =
+        new DomainHistory.Builder()
+            .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(fakeClock.nowUtc())
+            .setRegistrarId("TheRegistrar")
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason("reason")
+            .setRequestedByRegistrar(true)
+            .setDomainRepoId(domain.getRepoId())
+            .setOtherRegistrarId("otherClient")
+            .setPeriod(Period.create(1, Period.Unit.YEARS))
+            .build();
+
+    DatabaseHelper.putInDb(domain, historyWithoutResource);
+    jpaTm().transact(historyWithoutResource::beforeSqlSaveOnReplay);
+
+    assertThat(historyWithoutResource.getDomainContent().get().getDomainName())
+        .isEqualTo("example.tld");
+  }
+
+  @TestSqlOnly
+  void testBeforeSqlSave_canonicalNameUtf8() throws Exception {
+    Field domainNameField = DomainContent.class.getDeclaredField("fullyQualifiedDomainName");
+    // reflection hacks to get around visibility issues
+    domainNameField.setAccessible(true);
+    DomainBase domain = createDomainWithContactsAndHosts();
+    domainNameField.set(domain, "kittyçat.tld");
+
+    DomainHistory historyWithoutResource =
+        new DomainHistory.Builder()
+            .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(fakeClock.nowUtc())
+            .setRegistrarId("TheRegistrar")
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason("reason")
+            .setRequestedByRegistrar(true)
+            .setDomainRepoId(domain.getRepoId())
+            .setOtherRegistrarId("otherClient")
+            .setPeriod(Period.create(1, Period.Unit.YEARS))
+            .build();
+
+    DatabaseHelper.putInDb(domain, historyWithoutResource);
+    jpaTm().transact(historyWithoutResource::beforeSqlSaveOnReplay);
+
+    assertThat(historyWithoutResource.getDomainContent().get().getDomainName())
+        .isEqualTo("xn--kittyat-yxa.tld");
   }
 
   static DomainBase createDomainWithContactsAndHosts() {

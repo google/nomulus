@@ -33,10 +33,12 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
 import google.registry.util.SerializeUtils;
+import java.lang.reflect.Field;
 
 /** Tests for {@link HostHistory}. */
 @DualDatabaseTest
@@ -144,6 +146,58 @@ public class HostHistoryTest extends EntityTestCase {
                 assertAboutImmutableObjects()
                     .that(jpaTm().loadByEntity(hostResource))
                     .hasFieldsEqualTo(jpaTm().loadByEntity(hostHistory).getHostBase().get()));
+  }
+
+  @TestSqlOnly
+  void testBeforeSqlSave_canonicalNameUncapitalized() throws Exception {
+    Field hostNameField = HostBase.class.getDeclaredField("fullyQualifiedHostName");
+    // reflection hacks to get around visibility issues
+    hostNameField.setAccessible(true);
+    HostResource hostResource = newHostResource("ns1.example.tld");
+    hostNameField.set(hostResource, "NS1.EXAMPLE.TLD");
+    HostHistory hostHistory =
+        new HostHistory.Builder()
+            .setType(HistoryEntry.Type.HOST_CREATE)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(fakeClock.nowUtc())
+            .setRegistrarId("TheRegistrar")
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason("reason")
+            .setRequestedByRegistrar(true)
+            .setHostRepoId(hostResource.getRepoId())
+            .build();
+
+    DatabaseHelper.putInDb(hostResource, hostHistory);
+    jpaTm().transact(hostHistory::beforeSqlSaveOnReplay);
+
+    assertThat(hostHistory.getHostBase().get().getHostName()).isEqualTo("ns1.example.tld");
+  }
+
+  @TestSqlOnly
+  void testBeforeSqlSave_canonicalNameUtf8() throws Exception {
+    Field hostNameField = HostBase.class.getDeclaredField("fullyQualifiedHostName");
+    // reflection hacks to get around visibility issues
+    hostNameField.setAccessible(true);
+    HostResource hostResource = newHostResource("ns1.example.tld");
+    hostNameField.set(hostResource, "ns1.kittyçat.tld");
+    HostHistory hostHistory =
+        new HostHistory.Builder()
+            .setType(HistoryEntry.Type.HOST_CREATE)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(fakeClock.nowUtc())
+            .setRegistrarId("TheRegistrar")
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason("reason")
+            .setRequestedByRegistrar(true)
+            .setHostRepoId(hostResource.getRepoId())
+            .build();
+
+    DatabaseHelper.putInDb(hostResource, hostHistory);
+    jpaTm().transact(hostHistory::beforeSqlSaveOnReplay);
+
+    assertThat(hostHistory.getHostBase().get().getHostName()).isEqualTo("ns1.xn--kittyat-yxa.tld");
   }
 
   private void assertHostHistoriesEqual(HostHistory one, HostHistory two) {
