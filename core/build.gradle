@@ -772,50 +772,57 @@ createUberJar('nomulus', 'nomulus', 'google.registry.tools.RegistryTool')
 // This packages more code and dependency than necessary. However, without
 // restructuring the source tree it is difficult to generate leaner jars.
 createUberJar(
-    'beam_pipeline_common',
+    'beamPipelineCommon',
     'beam_pipeline_common',
     '')
 
-// Create beam staging task if environment is alpha or crash.
-// All other environments use formally released pipelines through CloudBuild.
+// Create beam staging task if the environment is alpha. Production, sandbox and
+// qa use formally released pipelines through CloudBuild, whereas crash and
+// alpha use the pipelines staged on alpha deployment project.
 //
 // User should install gcloud and login to GCP before invoking this tasks.
-if (environment in ['alpha', 'crash']) {
+if (environment == 'alpha') {
   def pipelines = [
-      [
-          mainClass: 'google.registry.beam.initsql.InitSqlPipeline',
-          metaData: 'google/registry/beam/init_sql_pipeline_metadata.json'
-      ],
-      [
-          mainClass: 'google.registry.beam.datastore.BulkDeleteDatastorePipeline',
-          metaData: 'google/registry/beam/bulk_delete_datastore_pipeline_metadata.json'
-      ],
-      [
-          mainClass: 'google.registry.beam.spec11.Spec11Pipeline',
-          metaData: 'google/registry/beam/spec11_pipeline_metadata.json'
-      ],
-      [
-          mainClass: 'google.registry.beam.invoicing.InvoicingPipeline',
-          metaData: 'google/registry/beam/invoicing_pipeline_metadata.json'
-      ],
-      [
-          mainClass: 'google.registry.beam.rde.RdePipeline',
-          metaData: 'google/registry/beam/rde_pipeline_metadata.json'
-      ],
+      InitSql            :
+          [
+              mainClass: 'google.registry.beam.initsql.InitSqlPipeline',
+              metaData : 'google/registry/beam/init_sql_pipeline_metadata.json'
+          ],
+      BulkDeleteDatastore:
+          [
+              mainClass: 'google.registry.beam.datastore.BulkDeleteDatastorePipeline',
+              metaData : 'google/registry/beam/bulk_delete_datastore_pipeline_metadata.json'
+          ],
+      Spec11             :
+          [
+              mainClass: 'google.registry.beam.spec11.Spec11Pipeline',
+              metaData : 'google/registry/beam/spec11_pipeline_metadata.json'
+          ],
+      Invoicing          :
+          [
+              mainClass: 'google.registry.beam.invoicing.InvoicingPipeline',
+              metaData : 'google/registry/beam/invoicing_pipeline_metadata.json'
+          ],
+      Rde                :
+          [
+              mainClass: 'google.registry.beam.rde.RdePipeline',
+              metaData : 'google/registry/beam/rde_pipeline_metadata.json'
+          ],
   ]
-  project.tasks.create("stage_beam_pipelines") {
+  project.tasks.create("stageBeamPipelines") {
     doLast {
       pipelines.each {
-        def mainClass = it['mainClass']
-        def metaData = it['metaData']
-        def pipelineName = CaseFormat.UPPER_CAMEL.to(
-                CaseFormat.LOWER_UNDERSCORE,
-                mainClass.substring(mainClass.lastIndexOf('.') + 1))
-        def imageName = "gcr.io/${gcpProject}/beam/${pipelineName}"
-        def metaDataBaseName = metaData.substring(metaData.lastIndexOf('/') + 1)
-        def uberJarName = tasks.beam_pipeline_common.outputs.files.asPath
+        if (rootProject.pipeline == ''|| rootProject.pipeline == it.key) {
+          def mainClass = it.value['mainClass']
+          def metaData = it.value['metaData']
+          def pipelineName = CaseFormat.UPPER_CAMEL.to(
+              CaseFormat.LOWER_UNDERSCORE,
+              mainClass.substring(mainClass.lastIndexOf('.') + 1))
+          def imageName = "gcr.io/${gcpProject}/beam/${pipelineName}"
+          def metaDataBaseName = metaData.substring(metaData.lastIndexOf('/') + 1)
+          def uberJarName = tasks.beamPipelineCommon.outputs.files.asPath
 
-        def command = "\
+          def command = "\
             gcloud dataflow flex-template build \
             gs://${gcpProject}-deploy/live/beam/${metaDataBaseName} \
             --image-gcr-path ${imageName}:live \
@@ -825,10 +832,11 @@ if (environment in ['alpha', 'crash']) {
             --jar ${uberJarName} \
             --env FLEX_TEMPLATE_JAVA_MAIN_CLASS=${mainClass} \
             --project ${gcpProject}".toString()
-        rootProject.ext.execInBash(command, '/tmp')
+          rootProject.ext.execInBash(command, '/tmp')
+        }
       }
     }
-  }.dependsOn(tasks.beam_pipeline_common)
+  }.dependsOn(tasks.beamPipelineCommon)
 }
 
 // A jar with classes and resources from main sourceSet, excluding internal

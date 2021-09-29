@@ -140,6 +140,8 @@ PROPERTIES = [
              'a BEAM pipeline to image. Setting this property to empty string '
              'will disable image generation.',
              '/usr/bin/dot'),
+    Property('pipeline',
+             'The name of the Beam pipeline being staged.')
 ]
 
 GRADLE_FLAGS = [
