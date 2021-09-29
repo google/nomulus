@@ -22,6 +22,7 @@ import static google.registry.beam.initsql.BackupPaths.getExportFilePatterns;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
+import static google.registry.util.DomainNameUtils.canonicalizeDomainName;
 import static java.util.Comparator.comparing;
 import static org.apache.beam.sdk.values.TypeDescriptors.kvs;
 import static org.apache.beam.sdk.values.TypeDescriptors.strings;
@@ -277,7 +278,7 @@ public final class Transforms {
 
   // Prober contacts referencing phantom registrars. They and their associated history entries can
   // be safely ignored.
-  private static final ImmutableSet IGNORED_CONTACTS =
+  private static final ImmutableSet<String> IGNORED_CONTACTS =
       ImmutableSet.of(
           "1_WJ0TEST-GOOGLE", "1_WJ1TEST-GOOGLE", "1_WJ2TEST-GOOGLE", "1_WJ3TEST-GOOGLE");
 
@@ -328,6 +329,17 @@ public final class Transforms {
       // instead of append. See b/185954992.
       entity.setUnindexedProperty("reason", Reason.RENEW.name());
       entity.setUnindexedProperty("flags", ImmutableList.of(Flag.AUTO_RENEW.name()));
+    }
+    // Canonicalize old domain/host names from 2016 and earlier before we were enforcing this.
+    else if (entity.getKind().equals("DomainBase")) {
+      entity.setIndexedProperty(
+          "fullyQualifiedDomainName",
+          canonicalizeDomainName((String) entity.getProperty("fullyQualifiedDomainName")));
+    }
+    else if (entity.getKind().equals("HostResource")) {
+      entity.setIndexedProperty(
+          "fullyQualifiedHostName",
+          canonicalizeDomainName((String) entity.getProperty("fullyQualifiedHostName")));
     }
     return entity;
   }
