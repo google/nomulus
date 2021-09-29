@@ -97,9 +97,6 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
       description = "Flag indicating that is is an undo command, which removes locks.")
   private boolean undo;
 
-  // set to false by default
-  private boolean autorenews = false;
-
   /** Set of existing locks that need to be preserved during undo, sorted for nicer output. */
   ImmutableSortedSet<String> existingLocks;
 
@@ -138,9 +135,6 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
           restoreClientHold
               ? ImmutableSet.of(StatusValue.CLIENT_HOLD.getXmlName())
               : ImmutableSet.of();
-
-      // when run in --undo mode, it will always set {@link #autorenews} to true
-      autorenews = true;
     } else {
       statusesToApply = URS_LOCKS;
     }
@@ -164,7 +158,11 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
             newDsData != null ? DsRecord.convertToSoy(newDsData) : new SoyListData(),
             "reason",
             (undo ? "Undo " : "") + "Uniform Rapid Suspension",
-            "autorenews", Boolean.toString(autorenews)));
+            // Domain auto-renewal is disabled as part of URS; and it's re-enabled if URS is undone.
+            // Therefore, autorenews is set to false by default and it's set to true only if the
+            // command is run in --undo mode
+            "autorenews",
+            Boolean.toString(undo)));
   }
 
   private ImmutableSortedSet<String> getExistingNameservers(DomainBase domain) {
