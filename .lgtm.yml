@@ -1,6 +1,8 @@
 extraction:
   java:
     prepare:
-      packages: "npm"
+      packages:
+        - "npm"
+        - "python"
     index:
       java_version: "11"
