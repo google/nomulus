@@ -27,6 +27,9 @@
           <secDNS:all>true</secDNS:all>
         </secDNS:rem>
       </secDNS:update>
+      <superuser:domainUpdate xmlns:superuser="urn:google:params:xml:ns:superuser-1.0">
+        <superuser:autorenews>true</superuser:autorenews>
+      </superuser:domainUpdate>
       <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
         <metadata:reason>Undo Uniform Rapid Suspension</metadata:reason>
         <metadata:requestedByRegistrar>false</metadata:requestedByRegistrar>
