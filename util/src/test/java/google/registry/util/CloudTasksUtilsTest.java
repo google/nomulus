@@ -17,18 +17,18 @@ package google.registry.util;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.cloud.tasks.v2.CloudTasksClient;
 import com.google.cloud.tasks.v2.HttpMethod;
-import com.google.cloud.tasks.v2.QueueName;
 import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.LinkedListMultimap;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
+import google.registry.util.CloudTasksUtils.SerializableCloudTasksClient;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,21 +37,18 @@ import org.junit.jupiter.api.Test;
 public class CloudTasksUtilsTest {
   // Use a LinkedListMultimap to preserve order of the inserted entries for assertion.
   private final LinkedListMultimap<String, String> params = LinkedListMultimap.create();
-  private final CloudTasksClient mockClient = mock(CloudTasksClient.class);
+  private final SerializableCloudTasksClient mockClient = mock(SerializableCloudTasksClient.class);
   private final CloudTasksUtils cloudTasksUtils =
       new CloudTasksUtils(
-          new Retrier(new FakeSleeper(new FakeClock()), 1),
-          "project",
-          "location",
-          () -> mockClient);
+          new Retrier(new FakeSleeper(new FakeClock()), 1), "project", "location", mockClient);
 
   @BeforeEach
   void beforeEach() {
     params.put("key1", "val1");
     params.put("key2", "val2");
     params.put("key1", "val3");
-    when(mockClient.createTask(any(QueueName.class), any(Task.class)))
-        .thenAnswer(invocation -> invocation.getArgument(1));
+    when(mockClient.enqueue(anyString(), anyString(), anyString(), any(Task.class)))
+        .thenAnswer(invocation -> invocation.getArgument(3));
   }
 
   @Test
@@ -94,7 +91,7 @@ public class CloudTasksUtilsTest {
   void testSuccess_enqueueTask() {
     Task task = CloudTasksUtils.createGetTask("/the/path", "myservice", params);
     cloudTasksUtils.enqueue("test-queue", task);
-    verify(mockClient).createTask(QueueName.of("project", "location", "test-queue"), task);
+    verify(mockClient).enqueue("project", "location", "test-queue", task);
   }
 
   @Test
@@ -102,8 +99,8 @@ public class CloudTasksUtilsTest {
     Task task1 = CloudTasksUtils.createGetTask("/the/path", "myservice", params);
     Task task2 = CloudTasksUtils.createGetTask("/other/path", "yourservice", params);
     cloudTasksUtils.enqueue("test-queue", task1, task2);
-    verify(mockClient).createTask(QueueName.of("project", "location", "test-queue"), task1);
-    verify(mockClient).createTask(QueueName.of("project", "location", "test-queue"), task2);
+    verify(mockClient).enqueue("project", "location", "test-queue", task1);
+    verify(mockClient).enqueue("project", "location", "test-queue", task2);
   }
 
   @Test
@@ -111,7 +108,7 @@ public class CloudTasksUtilsTest {
     Task task1 = CloudTasksUtils.createGetTask("/the/path", "myservice", params);
     Task task2 = CloudTasksUtils.createGetTask("/other/path", "yourservice", params);
     cloudTasksUtils.enqueue("test-queue", ImmutableList.of(task1, task2));
-    verify(mockClient).createTask(QueueName.of("project", "location", "test-queue"), task1);
-    verify(mockClient).createTask(QueueName.of("project", "location", "test-queue"), task2);
+    verify(mockClient).enqueue("project", "location", "test-queue", task1);
+    verify(mockClient).enqueue("project", "location", "test-queue", task2);
   }
 }

@@ -22,10 +22,13 @@ import dagger.Provides;
 import google.registry.config.CredentialModule.DefaultCredential;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.CloudTasksUtils;
+import google.registry.util.CloudTasksUtils.GcpCloudTasksClient;
+import google.registry.util.CloudTasksUtils.SerializableCloudTasksClient;
 import google.registry.util.GoogleCredentialsBundle;
 import google.registry.util.Retrier;
 import java.io.IOException;
-import javax.inject.Provider;
+import java.io.Serializable;
+import java.util.function.Supplier;
 import javax.inject.Singleton;
 
 /**
@@ -42,24 +45,35 @@ public abstract class CloudTasksUtilsModule {
   public static CloudTasksUtils provideCloudTasksUtils(
       @Config("projectId") String projectId,
       @Config("locationId") String locationId,
-      // Use a provider so that we can use try-with-resources with the client, which implements
-      // Autocloseable.
-      Provider<CloudTasksClient> clientProvider,
+      SerializableCloudTasksClient client,
       Retrier retrier) {
-    return new CloudTasksUtils(retrier, projectId, locationId, clientProvider);
+    return new CloudTasksUtils(retrier, projectId, locationId, client);
+  }
+
+  // Provides a supplier instead of using a Dagger @Provider because the latter is not serializable.
+  @Provides
+  public static Supplier<CloudTasksClient> provideCloudTasksClientSupplier(
+      @DefaultCredential GoogleCredentialsBundle credentials) {
+    return (Supplier<CloudTasksClient> & Serializable)
+        () -> {
+          CloudTasksClient client;
+          try {
+            client =
+                CloudTasksClient.create(
+                    CloudTasksSettings.newBuilder()
+                        .setCredentialsProvider(
+                            FixedCredentialsProvider.create(credentials.getGoogleCredentials()))
+                        .build());
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+          return client;
+        };
   }
 
   @Provides
-  public static CloudTasksClient provideCloudTasksClient(
-      @DefaultCredential GoogleCredentialsBundle credentials) {
-    try {
-      return CloudTasksClient.create(
-          CloudTasksSettings.newBuilder()
-              .setCredentialsProvider(
-                  FixedCredentialsProvider.create(credentials.getGoogleCredentials()))
-              .build());
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+  public static SerializableCloudTasksClient provideSerializableCloudTasksClient(
+      final Supplier<CloudTasksClient> clientSupplier) {
+    return new GcpCloudTasksClient(clientSupplier);
   }
 }

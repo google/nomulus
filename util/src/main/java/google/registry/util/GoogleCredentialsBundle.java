@@ -22,25 +22,23 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.GoogleCredentials;
+import java.io.Serializable;
 
 /**
  * Helper class to provide {@link HttpTransport}, {@link JsonFactory} and {@link
  * HttpRequestInitializer} for a given {@link GoogleCredentials}. These classes are normally needed
  * for creating the instance of a GCP client.
  */
-public class GoogleCredentialsBundle {
+public class GoogleCredentialsBundle implements Serializable {
+
+  private static final HttpTransport HTTP_TRANSPORT = Utils.getDefaultTransport();
+  private static final JsonFactory JSON_FACTORY = Utils.getDefaultJsonFactory();
 
   private GoogleCredentials googleCredentials;
-  private HttpTransport httpTransport;
-  private JsonFactory jsonFactory;
-  private HttpRequestInitializer httpRequestInitializer;
 
   private GoogleCredentialsBundle(GoogleCredentials googleCredentials) {
     checkNotNull(googleCredentials);
     this.googleCredentials = googleCredentials;
-    this.httpTransport = Utils.getDefaultTransport();
-    this.jsonFactory = Utils.getDefaultJsonFactory();
-    this.httpRequestInitializer = new HttpCredentialsAdapter(googleCredentials);
   }
 
   /** Creates a {@link GoogleCredentialsBundle} instance from given {@link GoogleCredentials}. */
@@ -55,16 +53,16 @@ public class GoogleCredentialsBundle {
 
   /** Returns the instance of {@link HttpTransport}. */
   public HttpTransport getHttpTransport() {
-    return httpTransport;
+    return HTTP_TRANSPORT;
   }
 
   /** Returns the instance of {@link JsonFactory}. */
   public JsonFactory getJsonFactory() {
-    return jsonFactory;
+    return JSON_FACTORY;
   }
 
   /** Returns the instance of {@link HttpRequestInitializer}. */
   public HttpRequestInitializer getHttpRequestInitializer() {
-    return httpRequestInitializer;
+    return new HttpCredentialsAdapter(googleCredentials);
   }
 }
