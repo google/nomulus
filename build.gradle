@@ -209,17 +209,16 @@ rootProject.ext {
 
 task runPresubmits(type: Exec) {
 
-  // Find a python version greater than 3.7.3 (this is somewhat arbitrary, we
-  // know we'd like at least 3.6, but 3.7.3 is the latest that ships with
-  // Debian so it seems like that should be available anywhere).
-  def MIN_PY_VER = 0x3070300
+  // Find a python version greater than 3.6.0. Some of our infrastructure (like
+  // LGTM) still runs on Ubuntu 18.04, which only has the Python 3.6 branch.
+  def MIN_PY_VER = 0x030600F0
   if (pyver('python') >= MIN_PY_VER) {
     executable 'python'
   } else if (pyver('/usr/bin/python3') >= MIN_PY_VER) {
     executable '/usr/bin/python3'
   } else {
     throw new GradleException("No usable Python version found (build " +
-                              "requires at least python 3.7.3)");
+                              "requires at least python 3.6.0)");
   }
   args('config/presubmits.py')
 }
