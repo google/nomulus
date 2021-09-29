@@ -20,11 +20,9 @@ import static org.apache.beam.sdk.values.TypeDescriptors.integers;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
-import google.registry.backup.AppEngineEnvironment;
 import google.registry.beam.common.RegistryQuery.CriteriaQuerySupplier;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.UpdateAutoTimestamp.DisableAutoUpdateResource;
-import google.registry.model.ofy.ObjectifyService;
 import google.registry.model.replay.SqlEntity;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
@@ -211,14 +209,9 @@ public final class RegistryJpaIO {
 
       @ProcessElement
       public void processElement(OutputReceiver<T> outputReceiver) {
-        // AppEngineEnvironment is need for handling VKeys, which involve Ofy keys. Unlike
-        // SqlBatchWriter, it is unnecessary to initialize ObjectifyService in this class.
-        try (AppEngineEnvironment env = new AppEngineEnvironment()) {
-          // TODO(b/187210388): JpaTransactionManager should support non-transactional query.
-          jpaTm()
-              .transactNoRetry(
-                  () -> query.stream().map(resultMapper::apply).forEach(outputReceiver::output));
-        }
+        jpaTm()
+            .transactNoRetry(
+                () -> query.stream().map(resultMapper::apply).forEach(outputReceiver::output));
       }
     }
   }
@@ -364,16 +357,6 @@ public final class RegistryJpaIO {
       this.withAutoTimestamp = withAutoTimestamp;
     }
 
-    @Setup
-    public void setup() {
-      // AppEngineEnvironment is needed as long as Objectify keys are still involved in the handling
-      // of SQL entities (e.g., in VKeys). ObjectifyService needs to be initialized when conversion
-      // between Ofy entity and Datastore entity is needed.
-      try (AppEngineEnvironment env = new AppEngineEnvironment()) {
-        ObjectifyService.initOfy();
-      }
-    }
-
     @ProcessElement
     public void processElement(@Element KV<ShardedKey<Integer>, Iterable<T>> kv) {
       if (withAutoTimestamp) {
@@ -386,19 +369,17 @@ public final class RegistryJpaIO {
     }
 
     private void actuallyProcessElement(@Element KV<ShardedKey<Integer>, Iterable<T>> kv) {
-      try (AppEngineEnvironment env = new AppEngineEnvironment()) {
-        ImmutableList<Object> entities =
-            Streams.stream(kv.getValue())
-                .map(this.jpaConverter::apply)
-                // TODO(b/177340730): post migration delete the line below.
-                .filter(Objects::nonNull)
-                .collect(ImmutableList.toImmutableList());
-        try {
-          jpaTm().transact(() -> jpaTm().putAll(entities));
-          counter.inc(entities.size());
-        } catch (RuntimeException e) {
-          processSingly(entities);
-        }
+      ImmutableList<Object> entities =
+          Streams.stream(kv.getValue())
+              .map(this.jpaConverter::apply)
+              // TODO(b/177340730): post migration delete the line below.
+              .filter(Objects::nonNull)
+              .collect(ImmutableList.toImmutableList());
+      try {
+        jpaTm().transact(() -> jpaTm().putAll(entities));
+        counter.inc(entities.size());
+      } catch (RuntimeException e) {
+        processSingly(entities);
       }
     }
 

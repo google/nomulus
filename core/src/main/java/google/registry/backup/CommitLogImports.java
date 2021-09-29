@@ -57,8 +57,7 @@ public final class CommitLogImports {
    */
   public static ImmutableList<ImmutableList<VersionedEntity>> loadEntitiesByTransaction(
       InputStream inputStream) {
-    try (AppEngineEnvironment appEngineEnvironment = new AppEngineEnvironment();
-        InputStream input = new BufferedInputStream(inputStream)) {
+    try (InputStream input = new BufferedInputStream(inputStream)) {
       Iterator<ImmutableObject> commitLogs = createDeserializingIterator(input, false);
       checkState(commitLogs.hasNext());
       checkState(commitLogs.next() instanceof CommitLogCheckpoint);

@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.backup;
+package google.registry.model;
 
 import com.google.apphosting.api.ApiProxy;
 import com.google.apphosting.api.ApiProxy.Environment;
 import com.google.common.collect.ImmutableMap;
-import java.io.Closeable;
+import google.registry.model.ofy.ObjectifyService;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
@@ -38,26 +39,39 @@ import java.lang.reflect.Proxy;
  * <p>Note that conversion from Objectify objects to Datastore {@code Entities} still requires the
  * Datastore service.
  */
-public class AppEngineEnvironment implements Closeable {
+public class AppEngineEnvironment {
 
-  private boolean isPlaceHolderNeeded;
+  private Environment environment;
 
   public AppEngineEnvironment() {
     this("PlaceholderAppId");
   }
 
   public AppEngineEnvironment(String appId) {
-    isPlaceHolderNeeded = ApiProxy.getCurrentEnvironment() == null;
-    // isPlaceHolderNeeded may be true when we are invoked in a test with AppEngineExtension.
-    if (isPlaceHolderNeeded) {
-      ApiProxy.setEnvironmentForCurrentThread(createAppEngineEnvironment(appId));
-    }
+    environment = createAppEngineEnvironment(appId);
   }
 
-  @Override
-  public void close() {
-    if (isPlaceHolderNeeded) {
-      ApiProxy.setEnvironmentForCurrentThread(null);
+  public void setEnvironmentForCurrentThread() {
+    ApiProxy.setEnvironmentForCurrentThread(environment);
+    ObjectifyService.initOfy();
+  }
+
+  public void setEnvironmentForAllThreads() {
+    setEnvironmentForCurrentThread();
+    ApiProxy.setEnvironmentFactory(() -> environment);
+  }
+
+  public void unsetEnvironmentForCurrentThread() {
+    ApiProxy.clearEnvironmentForCurrentThread();
+  }
+
+  public void unsetEnvironmentForAllThreads() {
+    try {
+      Method method = ApiProxy.class.getDeclaredMethod("clearEnvironmentFactory");
+      method.setAccessible(true);
+      method.invoke(null);
+    } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+      throw new RuntimeException(e);
     }
   }
 

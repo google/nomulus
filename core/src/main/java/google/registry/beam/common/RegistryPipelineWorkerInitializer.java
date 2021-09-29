@@ -20,6 +20,8 @@ import com.google.auto.service.AutoService;
 import com.google.common.flogger.FluentLogger;
 import dagger.Lazy;
 import google.registry.config.RegistryEnvironment;
+import google.registry.config.SystemPropertySetter;
+import google.registry.model.AppEngineEnvironment;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import org.apache.beam.sdk.harness.JvmInitializer;
@@ -35,18 +37,26 @@ import org.apache.beam.sdk.options.PipelineOptions;
 @AutoService(JvmInitializer.class)
 public class RegistryPipelineWorkerInitializer implements JvmInitializer {
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  public static final String PROPERTY = "google.registry.beam";
 
   @Override
   public void beforeProcessing(PipelineOptions options) {
     RegistryPipelineOptions registryOptions = options.as(RegistryPipelineOptions.class);
     RegistryEnvironment environment = registryOptions.getRegistryEnvironment();
-    if (environment == null || environment.equals(RegistryEnvironment.UNITTEST)) {
-      return;
+    if (environment == null || environment == RegistryEnvironment.UNITTEST) {
+      throw new RuntimeException(
+          "A registry environment must be specified in the pipeline options.");
     }
     logger.atInfo().log("Setting up RegistryEnvironment %s.", environment);
     environment.setup();
     Lazy<JpaTransactionManager> transactionManagerLazy =
         toRegistryPipelineComponent(registryOptions).getJpaTransactionManager();
     TransactionManagerFactory.setJpaTmOnBeamWorker(transactionManagerLazy::get);
+    // Masquarade all threads as App Engine threads so we can create Ofy keys in the pipeline. Also
+    // loads all ofy entities.
+    new AppEngineEnvironment("Beam").setEnvironmentForAllThreads();
+    // Set the system property so that we can call IdService.allocateId() without access to
+    // datastore.
+    SystemPropertySetter.PRODUCTION_IMPL.setProperty(PROPERTY, "true");
   }
 }

@@ -62,7 +62,8 @@ public class RegistryJpaReadTest {
 
   @RegisterExtension
   @Order(Order.DEFAULT - 1)
-  final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
+  final transient DatastoreEntityExtension datastore =
+      new DatastoreEntityExtension().allThreads(true);
 
   @RegisterExtension
   final transient JpaIntegrationTestExtension database =

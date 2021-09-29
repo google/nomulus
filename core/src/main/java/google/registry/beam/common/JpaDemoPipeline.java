@@ -17,7 +17,6 @@ package google.registry.beam.common;
 import static com.google.common.base.Verify.verify;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
-import google.registry.backup.AppEngineEnvironment;
 import google.registry.model.contact.ContactResource;
 import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -59,18 +58,16 @@ public class JpaDemoPipeline implements Serializable {
                   public void processElement() {
                     // AppEngineEnvironment is needed as long as JPA entity classes still depends
                     // on Objectify.
-                    try (AppEngineEnvironment allowOfyEntity = new AppEngineEnvironment()) {
-                      int result =
-                          (Integer)
-                              jpaTm()
-                                  .transact(
-                                      () ->
-                                          jpaTm()
-                                              .getEntityManager()
-                                              .createNativeQuery("select 1;")
-                                              .getSingleResult());
-                      verify(result == 1, "Expecting 1, got %s.", result);
-                    }
+                    int result =
+                        (Integer)
+                            jpaTm()
+                                .transact(
+                                    () ->
+                                        jpaTm()
+                                            .getEntityManager()
+                                            .createNativeQuery("select 1;")
+                                            .getSingleResult());
+                    verify(result == 1, "Expecting 1, got %s.", result);
                     counter.inc();
                   }
                 }));
