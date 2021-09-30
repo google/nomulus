@@ -391,6 +391,13 @@
     <url-pattern>/_dr/task/relockDomain</url-pattern>
   </servlet-mapping>
 
+  <!-- Background action to wipe out PII fields of ContactHistory entities that
+have been in the database for a certain period of time. -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/task/wipeOutContactHistoryPii</url-pattern>
+  </servlet-mapping>
+
   <!-- Action to wipeout Cloud SQL data -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>

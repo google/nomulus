@@ -227,5 +227,11 @@ public class ContactHistory extends HistoryEntry implements SqlEntity {
       getInstance().parent = Key.create(ContactResource.class, contactRepoId);
       return this;
     }
+
+    public Builder wipeOutPii() {
+      getInstance().contactBase =
+          getInstance().getContactBase().get().asBuilder().wipeOut().build();
+      return this;
+    }
   }
 }

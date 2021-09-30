@@ -442,6 +442,13 @@ registryTool:
   # OAuth client secret used by the tool.
   clientSecret: YOUR_CLIENT_SECRET
 
+# Configuration options for handling contact history.
+contactHistory:
+  # The number of months that a ContactHistory entity should be stored in the database.
+  minMonthsBeforeWipeOut: 18
+  # The batch size for querying ContactHistory table in the database.
+  wipeOutQueryBatchSize: 500
+
 # Configuration options for checking SSL certificates.
 sslCertificateValidation:
   # A map specifying the maximum amount of days the certificate can be valid.

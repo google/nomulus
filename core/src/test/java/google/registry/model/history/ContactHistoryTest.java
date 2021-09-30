@@ -24,11 +24,15 @@ import static google.registry.testing.DatabaseHelper.newContactResource;
 import static google.registry.testing.DatabaseHelper.newContactResourceWithRoid;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
+import google.registry.model.contact.ContactPhoneNumber;
 import google.registry.model.contact.ContactResource;
+import google.registry.model.contact.PostalInfo;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
@@ -128,6 +132,60 @@ public class ContactHistoryTest extends EntityTestCase {
                 assertAboutImmutableObjects()
                     .that(jpaTm().loadByEntity(contactResource))
                     .hasFieldsEqualTo(jpaTm().loadByEntity(contactHistory).getContactBase().get()));
+  }
+
+  @TestSqlOnly
+  void testWipeOutPii_assertsAllPiiFieldsAreNull() {
+    ContactHistory originalEntity =
+        createContactHistory(
+            new ContactResource.Builder()
+                .setRepoId("1-FOOBAR")
+                .setLocalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(PostalInfo.Type.LOCALIZED)
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
+                                .setCity("New York")
+                                .setState("NY")
+                                .setZip("10011")
+                                .setCountryCode("US")
+                                .build())
+                        .build())
+                .setInternationalizedPostalInfo(
+                    new PostalInfo.Builder()
+                        .setType(PostalInfo.Type.INTERNATIONALIZED)
+                        .setAddress(
+                            new ContactAddress.Builder()
+                                .setStreet(ImmutableList.of("111 8th Ave", "4th Floor"))
+                                .setCity("New York")
+                                .setState("NY")
+                                .setZip("10011")
+                                .setCountryCode("US")
+                                .build())
+                        .build())
+                .setVoiceNumber(new ContactPhoneNumber.Builder().setPhoneNumber("867-5309").build())
+                .setFaxNumber(
+                    new ContactPhoneNumber.Builder()
+                        .setPhoneNumber("867-5309")
+                        .setExtension("1000")
+                        .build())
+                .setEmailAddress("test@example.com")
+                .build());
+
+    assertThat(originalEntity.getContactBase().get().getEmailAddress()).isNotNull();
+    assertThat(originalEntity.getContactBase().get().getLocalizedPostalInfo()).isNotNull();
+    assertThat(originalEntity.getContactBase().get().getInternationalizedPostalInfo()).isNotNull();
+    assertThat(originalEntity.getContactBase().get().getVoiceNumber()).isNotNull();
+    assertThat(originalEntity.getContactBase().get().getFaxNumber()).isNotNull();
+
+    ContactHistory wipedEntity = originalEntity.asBuilder().wipeOutPii().build();
+
+    assertThat(wipedEntity.getContactBase().get().getEmailAddress()).isNull();
+    assertThat(wipedEntity.getContactBase().get().getLocalizedPostalInfo()).isNull();
+    assertThat(wipedEntity.getContactBase().get().getInternationalizedPostalInfo()).isNull();
+    assertThat(wipedEntity.getContactBase().get().getVoiceNumber()).isNull();
+    assertThat(wipedEntity.getContactBase().get().getFaxNumber()).isNull();
   }
 
   private ContactHistory createContactHistory(ContactBase contact) {
