@@ -152,10 +152,10 @@ public class TransactionManagerFactory {
     }
   }
 
-  /** Thrown when a write is attempted when the DB is in read-only mode. */
+  /** Registry is currently undergoing maintenance and is in read-only mode. */
   public static class ReadOnlyModeException extends IllegalStateException {
-    public ReadOnlyModeException() {
-      super("Registry is currently in read-only mode");
+    ReadOnlyModeException() {
+      super("Registry is currently undergoing maintenance and is in read-only mode");
     }
   }
 }
