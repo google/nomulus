@@ -4,3 +4,7 @@ extraction:
       packages: "npm"
     index:
       java_version: "11"
+      build_command:
+        # Just build normal classes and test classes, this speeds things up
+        # considerably and avoids problems with the installed python version.
+        - ./gradlew assemble testClasses
