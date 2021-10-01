@@ -25,6 +25,7 @@
 {@param statusesToRemove: list<string>}
 {@param newDsData: list<[keyTag:int, alg:int, digestType:int, digest:string]>}
 {@param reason: string}
+{@param autorenews: string}
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
@@ -75,6 +76,9 @@
         </secDNS:add>
         {/if}
       </secDNS:update>
+      <superuser:domainUpdate xmlns:superuser="urn:google:params:xml:ns:superuser-1.0">
+        <superuser:autorenews>{$autorenews}</superuser:autorenews>
+      </superuser:domainUpdate>
       <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
         <metadata:reason>{$reason}</metadata:reason>
         <metadata:requestedByRegistrar>false</metadata:requestedByRegistrar>

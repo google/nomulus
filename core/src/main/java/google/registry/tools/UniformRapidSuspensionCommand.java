@@ -157,7 +157,12 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
             "newDsData",
             newDsData != null ? DsRecord.convertToSoy(newDsData) : new SoyListData(),
             "reason",
-            (undo ? "Undo " : "") + "Uniform Rapid Suspension"));
+            (undo ? "Undo " : "") + "Uniform Rapid Suspension",
+            // Domain auto-renewal is disabled as part of URS, and it's re-enabled if URS is undone.
+            // Therefore, autorenews is set to false by default and it's set to true only if the
+            // command is run in --undo mode.
+            "autorenews",
+            Boolean.toString(undo)));
   }
 
   private ImmutableSortedSet<String> getExistingNameservers(DomainBase domain) {

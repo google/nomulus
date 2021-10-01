@@ -187,6 +187,34 @@ class UniformRapidSuspensionCommandTest
   }
 
   @Test
+  void testAutorenews_setToFalsebyDefault() throws Exception {
+    persistResource(
+        newDomainBase("evil.tld")
+            .asBuilder()
+            .addStatusValue(StatusValue.SERVER_DELETE_PROHIBITED)
+            .build());
+    runCommandForced("--domain_name=evil.tld");
+    eppVerifier.verifySentAny();
+    assertInStdout("<superuser:autorenews>false</superuser:autorenews>");
+  }
+
+  @Test
+  void testAutorenews_setToTrueWhenUndo() throws Exception {
+    persistResource(
+        newDomainBase("evil.tld")
+            .asBuilder()
+            .addStatusValue(StatusValue.SERVER_DELETE_PROHIBITED)
+            .build());
+    runCommandForced(
+        "--domain_name=evil.tld",
+        "--undo",
+        "--hosts=ns1.example.com,ns2.example.com",
+        "--restore_client_hold");
+    eppVerifier.verifySentAny();
+    assertInStdout("<superuser:autorenews>true</superuser:autorenews>");
+  }
+
+  @Test
   void testFailure_locksToPreserveWithoutUndo() {
     persistActiveDomain("evil.tld");
     IllegalArgumentException thrown =
