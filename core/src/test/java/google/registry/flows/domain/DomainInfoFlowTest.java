@@ -87,7 +87,7 @@ class DomainInfoFlowTest extends ResourceFlowTestCase<DomainInfoFlow, DomainBase
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   /**
    * The domain_info_fee.xml default substitutions common to most tests.

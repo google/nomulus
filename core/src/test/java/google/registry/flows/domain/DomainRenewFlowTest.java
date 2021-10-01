@@ -112,7 +112,7 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   @BeforeEach
   void initDomainTest() {

@@ -91,7 +91,7 @@ class DomainTransferApproveFlowTest
 
   @Order(value = Order.DEFAULT - 2)
   @RegisterExtension
-  final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
+  final ReplayExtension replayExtension = ReplayExtension.createWithCompare(clock);
 
   @BeforeEach
   void setUp() {

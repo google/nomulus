@@ -27,18 +27,14 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.testing.TestLogHandler;
 import com.google.common.truth.Truth8;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
-import google.registry.model.ofy.CommitLogBucket;
-import google.registry.model.ofy.Ofy;
 import google.registry.model.server.Lock;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
@@ -46,11 +42,11 @@ import google.registry.testing.TestObject;
 import google.registry.util.RequestStatusChecker;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
@@ -76,25 +72,28 @@ public class ReplicateToDatastoreActionTest {
 
   @BeforeEach
   void setUp() {
-    resetAction();
-    injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
-    // Use a single bucket to expose timestamp inversion problems.
-    injectExtension.setStaticField(
-        CommitLogBucket.class, "bucketIdSupplier", Suppliers.ofInstance(1));
-    fakeClock.setAutoIncrementByOneMilli();
-    DatabaseHelper.setMigrationScheduleToSqlPrimary(fakeClock);
-    Logger.getLogger(ReplicateToDatastoreAction.class.getCanonicalName()).addHandler(logHandler);
-    fakeClock.advanceBy(Duration.standardDays(1));
-    TestObject.beforeDatastoreSaveCallCount = 0;
+    // TODO(b/197534789): fix these tests
+    // resetAction();
+    // injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
+    // // Use a single bucket to expose timestamp inversion problems.
+    // injectExtension.setStaticField(
+    //     CommitLogBucket.class, "bucketIdSupplier", Suppliers.ofInstance(1));
+    // fakeClock.setAutoIncrementByOneMilli();
+    // DatabaseHelper.setMigrationScheduleToSqlPrimary(fakeClock);
+    // Logger.getLogger(ReplicateToDatastoreAction.class.getCanonicalName()).addHandler(logHandler);
+    // fakeClock.advanceBy(Duration.standardDays(1));
+    // TestObject.beforeDatastoreSaveCallCount = 0;
   }
 
   @AfterEach
   void tearDown() {
-    DatabaseHelper.removeDatabaseMigrationSchedule();
-    fakeClock.disableAutoIncrement();
+    // TODO(b/197534789): fix these tests
+    // DatabaseHelper.removeDatabaseMigrationSchedule();
+    // fakeClock.disableAutoIncrement();
   }
 
   @RetryingTest(4)
+  @Disabled("b/197534789")
   void testReplication() {
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
@@ -120,6 +119,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
+  @Disabled("b/197534789")
   void testReplayFromLastTxn() {
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
@@ -142,6 +142,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
+  @Disabled("b/197534789")
   void testUnintentionalConcurrency() {
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
@@ -177,6 +178,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
+  @Disabled("b/197534789")
   void testMissingTransactions() {
     // Write a transaction (should have a transaction id of 1).
     TestObject foo = TestObject.create("foo");
@@ -194,6 +196,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
+  @Disabled("b/197534789")
   void testMissingTransactions_fullTask() {
     // Write a transaction (should have a transaction id of 1).
     TestObject foo = TestObject.create("foo");
@@ -212,6 +215,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
+  @Disabled("b/197534789")
   void testBeforeDatastoreSaveCallback() {
     TestObject testObject = TestObject.create("foo");
     insertInDb(testObject);
@@ -221,6 +225,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
+  @Disabled("b/197534789")
   void testNotInMigrationState_doesNothing() {
     // set a schedule that backtracks the current status to DATASTORE_PRIMARY
     DateTime now = fakeClock.nowUtc();
@@ -257,6 +262,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
+  @Disabled("b/197534789")
   void testFailure_cannotAcquireLock() {
     RequestStatusChecker requestStatusChecker = mock(RequestStatusChecker.class);
     when(requestStatusChecker.getLogId()).thenReturn("logId");
