@@ -160,7 +160,7 @@ interface RegistryToolComponent {
 
   void inject(UpdateDomainCommand command);
 
-  void inject(UpdateKmsKeyringCommand command);
+  void inject(UpdateKeyringSecretCommand command);
 
   void inject(UpdateRegistrarCommand command);
 
