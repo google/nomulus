@@ -79,8 +79,8 @@ def fragileTestPatterns = [
     "google/registry/flows/host/HostInfoFlowTest.*",
 
     // Tests that have started exhibiting flakiness (IllegalStateException in
-    // JpaTransactionManager.  JPA apparently stops thinking we're in a
-    // transacti
+    // JpaTransactionManager. Somehow our "inTransaction" flag is being
+    // cleared prematurely.
     "google/registry/tools/UnlockDomainCommandTest.*",
     "google/registry/tools/UpdateServerLocksCommandTest.*",
     "google/registry/tools/GetClaimsListCommandTest.*",
@@ -88,6 +88,11 @@ def fragileTestPatterns = [
     "google/registry/tools/CreateRegistrarGroupsCommandTest.*",
     "google/registry/security/XsrfTokenManagerTest.*",
     "google/registry/reporting/icann/TransactionsReportingQueryBuilderTest.*",
+    "google/registry/request/auth/LegacyAuthenticationMechanismTest.*",
+    "google/registry/request/RequestHandlerTest.*",
+    "google/registry/tools/CheckDomainCommandTest.*",
+    "google/registry/tools/DeleteHostCommandTest.*",
+    "google/registry/tools/UpdateReservedListCommandTest.*",
 ] + dockerIncompatibleTestPatterns
 
 sourceSets {
