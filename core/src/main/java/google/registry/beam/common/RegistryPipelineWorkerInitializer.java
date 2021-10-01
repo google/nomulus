@@ -43,7 +43,7 @@ public class RegistryPipelineWorkerInitializer implements JvmInitializer {
   public void beforeProcessing(PipelineOptions options) {
     RegistryPipelineOptions registryOptions = options.as(RegistryPipelineOptions.class);
     RegistryEnvironment environment = registryOptions.getRegistryEnvironment();
-    if (environment == null || environment == RegistryEnvironment.UNITTEST) {
+    if (environment == null || environment.equals(RegistryEnvironment.UNITTEST)) {
       throw new RuntimeException(
           "A registry environment must be specified in the pipeline options.");
     }
