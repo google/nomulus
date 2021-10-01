@@ -18,11 +18,18 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import org.joda.time.YearMonth;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link ActivityReportingQueryBuilder}. */
 class TransactionsReportingQueryBuilderTest {
+
+  @RegisterExtension
+  public final JpaUnitTestExtension jpaExtension =
+      new JpaTestExtensions.Builder().buildUnitTestExtension();
 
   private final YearMonth yearMonth = new YearMonth(2017, 9);
 

@@ -193,6 +193,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             }
             throw e;
           } finally {
+            assertInTransaction();
             txnInfo.clear();
           }
         },
@@ -224,6 +225,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       }
       throw e;
     } finally {
+      assertInTransaction();
       txnInfo.clear();
     }
   }
