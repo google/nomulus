@@ -15,6 +15,7 @@
 package google.registry.tools;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.Sets.difference;
 import static google.registry.model.EppResourceUtils.checkResourcesExist;
@@ -36,6 +37,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +45,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 
 /** A command to suspend a domain for the Uniform Rapid Suspension process. */
 @Parameters(separators = " =",
@@ -97,6 +100,13 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
       description = "Flag indicating that is is an undo command, which removes locks.")
   private boolean undo;
 
+  @Parameter(
+      names = {"--renew_one_year"},
+      required = true,
+      description = "Flag indicating whether or not the domain will be renewed for a year.",
+      arity = 1)
+  private boolean renewOneYear;
+
   /** Set of existing locks that need to be preserved during undo, sorted for nicer output. */
   ImmutableSortedSet<String> existingLocks;
 
@@ -137,6 +147,21 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
               : ImmutableSet.of();
     } else {
       statusesToApply = URS_LOCKS;
+    }
+
+    if (renewOneYear) {
+      setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
+      DomainBase domainBase = domain.get();
+      addSoyRecord(
+          isNullOrEmpty(CLIENT_ID) ? domainBase.getCurrentSponsorRegistrarId() : CLIENT_ID,
+          new SoyMapData(
+              "domainName", domainBase.getDomainName(),
+              "expirationDate",
+                  domainBase
+                      .getRegistrationExpirationTime()
+                      .toString(DateTimeFormat.forPattern("YYYY-MM-dd")),
+              // period is the number of years to renew the registration for
+              "period", String.valueOf(1)));
     }
     setSoyTemplate(
         UniformRapidSuspensionSoyInfo.getInstance(),
