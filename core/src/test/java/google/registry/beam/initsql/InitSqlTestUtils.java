@@ -26,7 +26,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Streams;
 import com.google.common.truth.Truth;
 import com.google.storage.onestore.v3.OnestoreEntity.EntityProto;
-import google.registry.backup.AppEngineEnvironment;
 import google.registry.backup.VersionedEntity;
 import java.io.Serializable;
 import java.util.Collection;
@@ -124,20 +123,18 @@ public final class InitSqlTestUtils {
                       public void processElement(
                           @Element KV<String, Iterable<VersionedEntity>> input,
                           OutputReceiver<String> out) {
-                        try (AppEngineEnvironment env = new AppEngineEnvironment()) {
-                          ImmutableList<KV<Long, Object>> actual =
-                              Streams.stream(input.getValue())
-                                  .map(InitSqlTestUtils::rawEntityToOfyWithTimestamp)
-                                  .collect(ImmutableList.toImmutableList());
-                          try {
-                            Truth.assertThat(actual)
-                                .containsExactlyElementsIn(
-                                    Stream.of(expected)
-                                        .map(InitSqlTestUtils::expectedToOfyWithTimestamp)
-                                        .collect(ImmutableList.toImmutableList()));
-                          } catch (AssertionError e) {
-                            out.output(e.toString());
-                          }
+                        ImmutableList<KV<Long, Object>> actual =
+                            Streams.stream(input.getValue())
+                                .map(InitSqlTestUtils::rawEntityToOfyWithTimestamp)
+                                .collect(ImmutableList.toImmutableList());
+                        try {
+                          Truth.assertThat(actual)
+                              .containsExactlyElementsIn(
+                                  Stream.of(expected)
+                                      .map(InitSqlTestUtils::expectedToOfyWithTimestamp)
+                                      .collect(ImmutableList.toImmutableList()));
+                        } catch (AssertionError e) {
+                          out.output(e.toString());
                         }
                       }
                     }));

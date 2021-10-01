@@ -30,7 +30,6 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
-import google.registry.backup.AppEngineEnvironment;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.flows.domain.DomainFlowUtils;
 import google.registry.model.billing.BillingEvent;
@@ -106,7 +105,8 @@ class InitSqlPipelineTest {
 
   @RegisterExtension
   @Order(Order.DEFAULT - 1)
-  final transient DatastoreEntityExtension datastore = new DatastoreEntityExtension();
+  final transient DatastoreEntityExtension datastore =
+      new DatastoreEntityExtension("test").allThreads(true);
 
   @RegisterExtension final transient InjectExtension injectExtension = new InjectExtension();
 
@@ -331,20 +331,18 @@ class InitSqlPipelineTest {
             .as(InitSqlPipelineOptions.class);
     InitSqlPipeline initSqlPipeline = new InitSqlPipeline(options);
     initSqlPipeline.run(testPipeline).waitUntilFinish();
-    try (AppEngineEnvironment env = new AppEngineEnvironment("test")) {
-      assertHostResourceEquals(
-          jpaTm().transact(() -> jpaTm().loadByKey(hostResource.createVKey())), hostResource);
-      assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Registrar.class)))
-          .comparingElementsUsing(immutableObjectCorrespondence("lastUpdateTime"))
-          .containsExactly(registrar1, registrar2);
-      assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class)))
-          .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
-          .containsExactly(contact1, contact2);
-      assertDomainEquals(jpaTm().transact(() -> jpaTm().loadByKey(domain.createVKey())), domain);
-      assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Cursor.class)))
-          .comparingElementsUsing(immutableObjectCorrespondence())
-          .containsExactly(globalCursor, tldCursor);
-    }
+    assertHostResourceEquals(
+        jpaTm().transact(() -> jpaTm().loadByKey(hostResource.createVKey())), hostResource);
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Registrar.class)))
+        .comparingElementsUsing(immutableObjectCorrespondence("lastUpdateTime"))
+        .containsExactly(registrar1, registrar2);
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(ContactResource.class)))
+        .comparingElementsUsing(immutableObjectCorrespondence("revisions", "updateTimestamp"))
+        .containsExactly(contact1, contact2);
+    assertDomainEquals(jpaTm().transact(() -> jpaTm().loadByKey(domain.createVKey())), domain);
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Cursor.class)))
+        .comparingElementsUsing(immutableObjectCorrespondence())
+        .containsExactly(globalCursor, tldCursor);
   }
 
   private static void assertHostResourceEquals(HostResource actual, HostResource expected) {
