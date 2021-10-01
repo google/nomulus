@@ -13,9 +13,13 @@
 // limitations under the License.
 package google.registry.persistence.converter;
 
-import static com.google.common.base.MoreObjects.firstNonNull;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
+import static org.joda.time.DateTimeZone.UTC;
 
+import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
+import google.registry.config.RegistryEnvironment;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.util.DateTimeUtils;
 import java.sql.Timestamp;
@@ -31,13 +35,27 @@ import org.joda.time.DateTime;
 public class CreateAutoTimestampConverter
     implements AttributeConverter<CreateAutoTimestamp, Timestamp> {
 
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
   @Override
   @Nullable
   public Timestamp convertToDatabaseColumn(@Nullable CreateAutoTimestamp entity) {
     if (entity == null) {
       return null;
     }
-    DateTime dateTime = firstNonNull(entity.getTimestamp(), jpaTm().getTransactionTime());
+    DateTime dateTime = entity.getTimestamp();
+    if (dateTime == null) {
+      if (jpaTm().inTransaction() || RegistryEnvironment.get() != RegistryEnvironment.UNITTEST) {
+        dateTime = jpaTm().getTransactionTime();
+      } else {
+        // Non-transactional fallback for unit tests only.
+        logger.atSevere().withStackTrace(StackSize.MEDIUM).log(
+            "Failed to set automatic create timestamp because this wasn't called in a JPA"
+                + " transaction%s.",
+            ofyTm().inTransaction() ? " (but there is an open Ofy transaction)" : "");
+        dateTime = DateTime.now(UTC);
+      }
+    }
     return Timestamp.from(DateTimeUtils.toZonedDateTime(dateTime).toInstant());
   }
 
