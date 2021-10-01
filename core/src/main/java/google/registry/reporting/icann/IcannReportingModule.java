@@ -42,8 +42,6 @@ public final class IcannReportingModule {
 
   static final String PARAM_SUBDIR = "subdir";
   static final String PARAM_REPORT_TYPES = "reportTypes";
-  static final String ICANN_REPORTING_DATA_SET =
-      tm().isOfy() ? "icann_reporting" : "cloud_sql_icann_reporting";
   static final String DATASTORE_EXPORT_DATA_SET = "latest_datastore_export";
   static final String MANIFEST_FILE_NAME = "MANIFEST.txt";
 
@@ -92,7 +90,7 @@ public final class IcannReportingModule {
     try {
       return bigQueryConnectionBuilder
           .setExecutorService(MoreExecutors.newDirectExecutorService())
-          .setDatasetId(ICANN_REPORTING_DATA_SET)
+          .setDatasetId(tm().isOfy() ? "icann_reporting" : "cloud_sql_icann_reporting")
           .setOverwrite(true)
           .setPollInterval(Duration.standardSeconds(1))
           .build();
