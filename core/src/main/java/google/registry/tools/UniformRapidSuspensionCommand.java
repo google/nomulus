@@ -124,19 +124,20 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     superuser = true;
     DateTime now = DateTime.now(UTC);
     ImmutableSet<String> newHostsSet = ImmutableSet.copyOf(newHosts);
-    Optional<DomainBase> domain = loadByForeignKey(DomainBase.class, domainName, now);
-    checkArgumentPresent(domain, "Domain '%s' does not exist or is deleted", domainName);
+    Optional<DomainBase> domainOpt = loadByForeignKey(DomainBase.class, domainName, now);
+    checkArgumentPresent(domainOpt, "Domain '%s' does not exist or is deleted", domainName);
+    DomainBase domain = domainOpt.get();
     Set<String> missingHosts =
         difference(newHostsSet, checkResourcesExist(HostResource.class, newHosts, now));
     checkArgument(missingHosts.isEmpty(), "Hosts do not exist: %s", missingHosts);
     checkArgument(
         locksToPreserve.isEmpty() || undo,
         "Locks can only be preserved when running with --undo");
-    existingNameservers = getExistingNameservers(domain.get());
-    existingLocks = getExistingLocks(domain.get());
-    existingDsData = getExistingDsData(domain.get());
+    existingNameservers = getExistingNameservers(domain);
+    existingLocks = getExistingLocks(domain);
+    existingDsData = getExistingDsData(domain);
     removeStatuses =
-        (hasClientHold(domain.get()) && !undo)
+        (hasClientHold(domain) && !undo)
             ? ImmutableSet.of(StatusValue.CLIENT_HOLD.getXmlName())
             : ImmutableSet.of();
     ImmutableSet<String> statusesToApply;
@@ -151,17 +152,18 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
 
     if (renewOneYear) {
       setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
-      DomainBase domainBase = domain.get();
       addSoyRecord(
-          isNullOrEmpty(CLIENT_ID) ? domainBase.getCurrentSponsorRegistrarId() : CLIENT_ID,
+          isNullOrEmpty(CLIENT_ID) ? domain.getCurrentSponsorRegistrarId() : CLIENT_ID,
           new SoyMapData(
-              "domainName", domainBase.getDomainName(),
+              "domainName",
+              domain.getDomainName(),
               "expirationDate",
-                  domainBase
-                      .getRegistrationExpirationTime()
-                      .toString(DateTimeFormat.forPattern("YYYY-MM-dd")),
+              domain
+                  .getRegistrationExpirationTime()
+                  .toString(DateTimeFormat.forPattern("YYYY-MM-dd")),
               // period is the number of years to renew the registration for
-              "period", String.valueOf(1)));
+              "period",
+              String.valueOf(1)));
     }
     setSoyTemplate(
         UniformRapidSuspensionSoyInfo.getInstance(),
