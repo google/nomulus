@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableSet;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
-import google.registry.backup.AppEngineEnvironment;
 import google.registry.beam.common.RegistryJpaIO;
 import google.registry.beam.common.RegistryJpaIO.Read;
 import google.registry.beam.spec11.SafeBrowsingTransforms.EvaluateSafeBrowsingFn;
@@ -45,7 +44,6 @@ import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.DoFn;
-import org.apache.beam.sdk.transforms.DoFn.ProcessElement;
 import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -135,26 +133,24 @@ public class Spec11Pipeline implements Serializable {
                   @ProcessElement
                   public void processElement(
                       @Element KV<String, String> input, OutputReceiver<DomainNameInfo> output) {
-                    try (AppEngineEnvironment allowOfyEntity = new AppEngineEnvironment()) {
-                      DomainBase domainBase =
-                          jpaTm()
-                              .transact(
-                                  () ->
-                                      jpaTm()
-                                          .loadByKey(
-                                              VKey.createSql(DomainBase.class, input.getKey())));
-                      String emailAddress = input.getValue();
-                      if (emailAddress == null) {
-                        emailAddress = "";
-                      }
-                      DomainNameInfo domainNameInfo =
-                          DomainNameInfo.create(
-                              domainBase.getDomainName(),
-                              domainBase.getRepoId(),
-                              domainBase.getCurrentSponsorRegistrarId(),
-                              emailAddress);
-                      output.output(domainNameInfo);
+                    DomainBase domainBase =
+                        jpaTm()
+                            .transact(
+                                () ->
+                                    jpaTm()
+                                        .loadByKey(
+                                            VKey.createSql(DomainBase.class, input.getKey())));
+                    String emailAddress = input.getValue();
+                    if (emailAddress == null) {
+                      emailAddress = "";
                     }
+                    DomainNameInfo domainNameInfo =
+                        DomainNameInfo.create(
+                            domainBase.getDomainName(),
+                            domainBase.getRepoId(),
+                            domainBase.getCurrentSponsorRegistrarId(),
+                            emailAddress);
+                    output.output(domainNameInfo);
                   }
                 }));
   }
