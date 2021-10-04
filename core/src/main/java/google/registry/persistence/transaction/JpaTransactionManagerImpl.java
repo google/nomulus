@@ -100,11 +100,28 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   // EntityManagerFactory is thread safe.
   private final EntityManagerFactory emf;
   private final Clock clock;
+
+  static class MyThreadLocal {
+    Map<Long, TransactionInfo> perThread = new ConcurrentHashMap<>();
+
+    public synchronized TransactionInfo get() {
+      long tid = Thread.currentThread().getId();
+      TransactionInfo info = perThread.get(tid);
+      if (info != null) {
+        info = new TransactionInfo();
+        perThread.put(tid, info);
+      }
+      return info;
+    }
+  }
+
+  private static MyThreadLocal transactionInfo = new MyThreadLocal();
+
   // TODO(b/177588434): Investigate alternatives for managing transaction information. ThreadLocal
   // adds an unnecessary restriction that each request has to be processed by one thread
   // synchronously.
-  private final ThreadLocal<TransactionInfo> transactionInfo =
-      ThreadLocal.withInitial(TransactionInfo::new);
+  // private final ThreadLocal<TransactionInfo> transactionInfo =
+  //    ThreadLocal.withInitial(TransactionInfo::new);
   // If this value is present, use it to determine whether or not to replay SQL transactions to
   // Datastore, rather than using the schedule stored in Datastore.
   private static ThreadLocal<Optional<Boolean>> replaySqlToDatastoreOverrideForTest =
