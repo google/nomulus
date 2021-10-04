@@ -45,9 +45,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for {@link RdapDomainAction}.
+/**
+ * Unit tests for {@link RdapDomainAction}.
  *
- * TODO(b/26872828): The next time we do any work on RDAP, consider adding the APNIC RDAP
+ * <p>TODO(b/26872828): The next time we do any work on RDAP, consider adding the APNIC RDAP
  * conformance checker to the unit test suite.
  */
 class RdapDomainActionTest extends RdapActionBaseTestCase<RdapDomainAction> {
