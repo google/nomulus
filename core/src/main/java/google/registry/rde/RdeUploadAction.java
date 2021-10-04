@@ -112,7 +112,11 @@ public final class RdeUploadAction implements Runnable, EscrowTask {
   @Inject CloudTasksUtils cloudTasksUtils;
   @Inject Retrier retrier;
   @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
-  @Inject @Parameter(RdeModule.PARAM_PREFIX) Optional<String> prefix;
+
+  @Inject
+  @Parameter(RdeModule.PARAM_PREFIX)
+  Optional<String> prefix;
+
   @Inject @Config("rdeBucket") String bucket;
   @Inject @Config("rdeInterval") Duration interval;
   @Inject @Config("rdeUploadLockTimeout") Duration timeout;

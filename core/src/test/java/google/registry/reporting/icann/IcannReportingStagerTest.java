@@ -55,7 +55,8 @@ class IcannReportingStagerTest {
   private IcannReportingStager createStager() {
     IcannReportingStager action = new IcannReportingStager();
     ActivityReportingQueryBuilder activityBuilder =
-        new ActivityReportingQueryBuilder("test-project", new BasicDnsCountQueryCoordinator(null));
+        new ActivityReportingQueryBuilder(
+            "test-project", "icann_reporting", new BasicDnsCountQueryCoordinator(null));
     action.activityQueryBuilder = activityBuilder;
     action.transactionsQueryBuilder =
         new TransactionsReportingQueryBuilder("test-project", "icann_reporting");

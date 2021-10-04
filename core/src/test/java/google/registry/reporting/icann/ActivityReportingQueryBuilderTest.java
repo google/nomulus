@@ -39,16 +39,17 @@ class ActivityReportingQueryBuilderTest {
 
   private final YearMonth yearMonth = new YearMonth(2017, 9);
 
-  private ActivityReportingQueryBuilder createQueryBuilder() {
+  private ActivityReportingQueryBuilder createQueryBuilder(String datasetName) {
     return new ActivityReportingQueryBuilder(
         "domain-registry-alpha",
+        datasetName,
         new BasicDnsCountQueryCoordinator(
             new BasicDnsCountQueryCoordinator.Params(null, "domain-registry-alpha")));
   }
 
   @TestOfyOnly
   void testAggregateQueryMatch_datastore() {
-    ActivityReportingQueryBuilder queryBuilder = createQueryBuilder();
+    ActivityReportingQueryBuilder queryBuilder = createQueryBuilder("icann_reporting");
     assertThat(queryBuilder.getReportQuery(yearMonth))
         .isEqualTo(
             "#standardSQL\nSELECT * FROM "
@@ -56,8 +57,8 @@ class ActivityReportingQueryBuilderTest {
   }
 
   @TestSqlOnly
-  void testAggregateQueryMatch_cloud_sql() {
-    ActivityReportingQueryBuilder queryBuilder = createQueryBuilder();
+  void testAggregateQueryMatch_cloudSql() {
+    ActivityReportingQueryBuilder queryBuilder = createQueryBuilder("cloud_sql_icann_reporting");
     assertThat(queryBuilder.getReportQuery(yearMonth))
         .isEqualTo(
             "#standardSQL\n"
@@ -76,7 +77,7 @@ class ActivityReportingQueryBuilderTest {
             ActivityReportingQueryBuilder.WHOIS_COUNTS,
             ActivityReportingQueryBuilder.ACTIVITY_REPORT_AGGREGATION);
 
-    ActivityReportingQueryBuilder queryBuilder = createQueryBuilder();
+    ActivityReportingQueryBuilder queryBuilder = createQueryBuilder("icann_reporting");
     ImmutableMap<String, String> actualQueries = queryBuilder.getViewQueryMap(yearMonth);
     for (String queryName : expectedQueryNames) {
       String actualTableName = String.format("%s_201709", queryName);
@@ -97,7 +98,7 @@ class ActivityReportingQueryBuilderTest {
             ActivityReportingQueryBuilder.WHOIS_COUNTS,
             ActivityReportingQueryBuilder.ACTIVITY_REPORT_AGGREGATION);
 
-    ActivityReportingQueryBuilder queryBuilder = createQueryBuilder();
+    ActivityReportingQueryBuilder queryBuilder = createQueryBuilder("cloud_sql_icann_reporting");
     ImmutableMap<String, String> actualQueries = queryBuilder.getViewQueryMap(yearMonth);
     for (String queryName : expectedQueryNames) {
       String actualTableName = String.format("%s_201709", queryName);
