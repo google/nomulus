@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -108,6 +109,8 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   // Datastore, rather than using the schedule stored in Datastore.
   private static ThreadLocal<Optional<Boolean>> replaySqlToDatastoreOverrideForTest =
       ThreadLocal.withInitial(Optional::empty);
+
+  private static Map<Long, String> perThreadStatus = new ConcurrentHashMap<>();
 
   public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock) {
     this.emf = emf;
@@ -822,6 +825,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
     TransactionInfo() {
       System.err.println("Transaction info created for thread " + thread.getId());
+      if ("started".equals(perThreadStatus.get(thread.getId()))) {
+        throw new RuntimeException("nested transaction created!");
+      }
     }
 
     // Serializable representation of the transaction to be persisted in the Transaction table.
@@ -849,9 +855,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         contentsBuilder = new Transaction.Builder();
       }
       System.err.println("Transaction started on thread " + thread.getId());
+      perThreadStatus.put(thread.getId(), "started");
     }
 
     private void clear() {
+      perThreadStatus.put(thread.getId(), "cleared");
       System.err.println("Transaction cleared on thread " + thread.getId());
       inTransaction = false;
       transactionTime = null;
