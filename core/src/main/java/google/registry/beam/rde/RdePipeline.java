@@ -284,6 +284,10 @@ public class RdePipeline implements Serializable {
     PipelineOptionsFactory.register(RdePipelineOptions.class);
     RdePipelineOptions options =
         PipelineOptionsFactory.fromArgs(args).withValidation().as(RdePipelineOptions.class);
+    // RegistryPipelineWorkerInitializer only initializes before pipeline executions, after the
+    // main() function constructed the graph. We need the registry environment set up so that we
+    // can create a CloudTasksUtils which uses the environment-dependent config file.
+    options.getRegistryEnvironment().setup();
     options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
     DaggerRdePipeline_RdePipelineComponent.builder().options(options).build().rdePipeline().run();
   }

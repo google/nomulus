@@ -803,7 +803,7 @@ if (environment == 'alpha') {
               mainClass: 'google.registry.beam.invoicing.InvoicingPipeline',
               metaData : 'google/registry/beam/invoicing_pipeline_metadata.json'
           ],
-      Rde                :
+      rde                :
           [
               mainClass: 'google.registry.beam.rde.RdePipeline',
               metaData : 'google/registry/beam/rde_pipeline_metadata.json'
