@@ -15,6 +15,7 @@
 package google.registry.persistence.transaction;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
@@ -118,9 +119,15 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     emf.close();
   }
 
+  private TransactionInfo getTransactionInfo() {
+    TransactionInfo result = transactionInfo.get();
+    checkState(result.thread == Thread.currentThread(), "ThreadLocal is broken!");
+    return result;
+  }
+
   @Override
   public EntityManager getEntityManager() {
-    EntityManager entityManager = transactionInfo.get().entityManager;
+    EntityManager entityManager = getTransactionInfo().entityManager;
     if (entityManager == null) {
       throw new PersistenceException(
           "No EntityManager has been initialized. getEntityManager() must be invoked in the scope"
@@ -146,7 +153,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
 
   @Override
   public boolean inTransaction() {
-    return transactionInfo.get().inTransaction;
+    return getTransactionInfo().inTransaction;
   }
 
   @Override
@@ -172,7 +179,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
           if (inTransaction()) {
             return work.get();
           }
-          TransactionInfo txnInfo = transactionInfo.get();
+          TransactionInfo txnInfo = getTransactionInfo();
           txnInfo.entityManager = createReadOnlyCheckingEntityManager();
           EntityTransaction txn = txnInfo.entityManager.getTransaction();
           try {
@@ -205,7 +212,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     if (inTransaction()) {
       return work.get();
     }
-    TransactionInfo txnInfo = transactionInfo.get();
+    TransactionInfo txnInfo = getTransactionInfo();
     txnInfo.entityManager = createReadOnlyCheckingEntityManager();
     EntityTransaction txn = txnInfo.entityManager.getTransaction();
     try {
@@ -288,7 +295,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public DateTime getTransactionTime() {
     assertInTransaction();
-    TransactionInfo txnInfo = transactionInfo.get();
+    TransactionInfo txnInfo = getTransactionInfo();
     if (txnInfo.transactionTime == null) {
       throw new PersistenceException("In a transaction but transactionTime is null");
     }
@@ -304,7 +311,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     assertInTransaction();
     // Necessary due to the changes in HistoryEntry representation during the migration to SQL
     Object toPersist = toSqlEntity(entity);
-    transactionInfo.get().insertObject(toPersist);
+    getTransactionInfo().insertObject(toPersist);
   }
 
   @Override
@@ -338,7 +345,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     assertInTransaction();
     // Necessary due to the changes in HistoryEntry representation during the migration to SQL
     Object toPersist = toSqlEntity(entity);
-    transactionInfo.get().updateObject(toPersist);
+    getTransactionInfo().updateObject(toPersist);
   }
 
   @Override
@@ -377,7 +384,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     checkArgument(exists(entity), "Given entity does not exist");
     // Necessary due to the changes in HistoryEntry representation during the migration to SQL
     Object toPersist = toSqlEntity(entity);
-    transactionInfo.get().updateObject(toPersist);
+    getTransactionInfo().updateObject(toPersist);
   }
 
   @Override
@@ -553,7 +560,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
         String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
     Query query = query(sql);
     entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
-    transactionInfo.get().addDelete(key);
+    getTransactionInfo().addDelete(key);
     return query.executeUpdate();
   }
 
@@ -625,7 +632,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     assertInTransaction();
     // Necessary due to the changes in HistoryEntry representation during the migration to SQL
     Object toPersist = toSqlEntity(entity);
-    TransactionInfo txn = transactionInfo.get();
+    TransactionInfo txn = getTransactionInfo();
     Object merged = txn.entityManager.mergeIgnoringReadOnly(toPersist);
     txn.objectsToSave.add(merged);
     txn.addUpdate(toPersist);
@@ -642,9 +649,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     ImmutableSet<EntityId> entityIds = getEntityIdsFromSqlKey(entityType, key.getSqlKey());
     String sql =
         String.format("DELETE FROM %s WHERE %s", entityType.getName(), getAndClause(entityIds));
-    ReadOnlyCheckingQuery query = transactionInfo.get().entityManager.createQuery(sql);
+    ReadOnlyCheckingQuery query = getTransactionInfo().entityManager.createQuery(sql);
     entityIds.forEach(entityId -> query.setParameter(entityId.name, entityId.value));
-    transactionInfo.get().addDelete(key);
+    getTransactionInfo().addDelete(key);
     query.executeUpdateIgnoringReadOnly();
   }
 
@@ -787,7 +794,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     if (entity != null) {
 
       // If the entity was previously persisted or merged, we have to throw an exception.
-      if (transactionInfo.get().willSave(entity)) {
+      if (getTransactionInfo().willSave(entity)) {
         throw new IllegalStateException("Inserted/updated object reloaded: " + entity);
       }
 
@@ -810,6 +817,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     ReadOnlyCheckingEntityManager entityManager;
     boolean inTransaction = false;
     DateTime transactionTime;
+    Thread thread = Thread.currentThread();
 
     // Serializable representation of the transaction to be persisted in the Transaction table.
     Transaction.Builder contentsBuilder;
