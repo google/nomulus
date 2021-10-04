@@ -144,7 +144,7 @@ public class RdePipeline implements Serializable {
 
   void persistData(PCollection<KV<PendingDeposit, Iterable<DepositFragment>>> input) {
     input.apply(
-        "Write to GCS and update cursors",
+        "Write to GCS, update cursors, and enqueue upload tasks",
         RdeIO.Write.builder()
             .setRdeBucket(rdeBucket)
             .setGcsUtils(gcsUtils)
