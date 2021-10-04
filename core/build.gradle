@@ -77,7 +77,7 @@ def fragileTestPatterns = [
     // Currently changes a global configuration parameter that for some reason
     // results in timestamp inversions for other tests.  TODO(mmuller): fix.
     "google/registry/flows/host/HostInfoFlowTest.*",
-] + dockerIncompatibleTestPatterns
+] //+ dockerIncompatibleTestPatterns
 
 sourceSets {
   main {
@@ -1085,9 +1085,9 @@ task standardTest(type: FilteringTest) {
   // See SqlIntegrationTestSuite.java
   exclude '**/*BeforeSuiteTest.*', '**/*AfterSuiteTest.*'
 
-  if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
+  //if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
     exclude dockerIncompatibleTestPatterns
-  }
+  //}
 
   // Run every test class in its own process.
   // Uncomment to unblock build while troubleshooting inexplicable test errors.
