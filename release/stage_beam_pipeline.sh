@@ -40,19 +40,20 @@ set -e
 
 if (( "$#" < 5 ||  $(("$#" % 2)) == 0 ));
 then
-  echo "Usage: $0 uberjar_name  release_tag dev_project " \
+  echo "Usage: $0 uberjar_task uberjar_name  release_tag dev_project " \
        "main_class metadata_pathname [ main_class metadata_pathname ] ..."
   exit 1
 fi
 
-uberjar_name="$1"
-release_tag="$2"
-dev_project="$3"
-shift 3
+uberjar_task="$1"
+uberjar_name="$2"
+release_tag="$3"
+dev_project="$4"
+shift 4
 
 maven_gcs_prefix="gcs://domain-registry-maven-repository"
 nom_build_dir="$(dirname $0)/.."
-${nom_build_dir}/nom_build clean :core:"${uberjar_name}" \
+${nom_build_dir}/nom_build clean :core:"${uberjar_task}" \
     --mavenUrl="${maven_gcs_prefix}"/maven \
     --pluginsUrl="${maven_gcs_prefix}"/plugins
 

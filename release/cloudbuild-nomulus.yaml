@@ -84,6 +84,7 @@ steps:
   - |
     ./release/stage_beam_pipeline.sh \
       beamPipelineCommon \
+      beam_pipeline_common \
       ${TAG_NAME} \
       ${PROJECT_ID} \
       google.registry.beam.initsql.InitSqlPipeline \
