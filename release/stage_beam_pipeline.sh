@@ -38,9 +38,9 @@
 
 set -e
 
-if (( "$#" < 5 ||  $(("$#" % 2)) == 0 ));
+if (( "$#" < 6 ||  $(("$#" % 2)) == 1 ));
 then
-  echo "Usage: $0 uberjar_task uberjar_name  release_tag dev_project " \
+  echo "Usage: $0 uberjar_task uberjar_name release_tag dev_project " \
        "main_class metadata_pathname [ main_class metadata_pathname ] ..."
   exit 1
 fi
