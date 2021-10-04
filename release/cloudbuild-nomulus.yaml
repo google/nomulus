@@ -83,7 +83,7 @@ steps:
   - -c
   - |
     ./release/stage_beam_pipeline.sh \
-      beam_pipeline_common \
+      beamPipelineCommon \
       ${TAG_NAME} \
       ${PROJECT_ID} \
       google.registry.beam.initsql.InitSqlPipeline \
