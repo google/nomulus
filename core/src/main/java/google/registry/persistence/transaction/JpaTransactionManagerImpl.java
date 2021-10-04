@@ -101,7 +101,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   // TODO(b/177588434): Investigate alternatives for managing transaction information. ThreadLocal
   // adds an unnecessary restriction that each request has to be processed by one thread
   // synchronously.
-  private final ThreadLocal<TransactionInfo> transactionInfo =
+  private static ThreadLocal<TransactionInfo> transactionInfo =
       ThreadLocal.withInitial(TransactionInfo::new);
   // If this value is present, use it to determine whether or not to replay SQL transactions to
   // Datastore, rather than using the schedule stored in Datastore.

@@ -77,22 +77,6 @@ def fragileTestPatterns = [
     // Currently changes a global configuration parameter that for some reason
     // results in timestamp inversions for other tests.  TODO(mmuller): fix.
     "google/registry/flows/host/HostInfoFlowTest.*",
-
-    // Tests that have started exhibiting flakiness (IllegalStateException in
-    // JpaTransactionManager. Somehow our "inTransaction" flag is being
-    // cleared prematurely.
-    "google/registry/tools/UnlockDomainCommandTest.*",
-    "google/registry/tools/UpdateServerLocksCommandTest.*",
-    "google/registry/tools/GetClaimsListCommandTest.*",
-    "google/registry/tools/GetSchemaTreeCommandTest.*",
-    "google/registry/tools/CreateRegistrarGroupsCommandTest.*",
-    "google/registry/security/XsrfTokenManagerTest.*",
-    "google/registry/reporting/icann/TransactionsReportingQueryBuilderTest.*",
-    "google/registry/request/auth/LegacyAuthenticationMechanismTest.*",
-    "google/registry/request/RequestHandlerTest.*",
-    "google/registry/tools/CheckDomainCommandTest.*",
-    "google/registry/tools/DeleteHostCommandTest.*",
-    "google/registry/tools/UpdateReservedListCommandTest.*",
 ] + dockerIncompatibleTestPatterns
 
 sourceSets {
