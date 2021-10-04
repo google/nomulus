@@ -159,6 +159,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   @Override
   public void assertInTransaction() {
     if (!inTransaction()) {
+      System.err.println("Not in transaction for thread " + getTransactionInfo().thread.getId());
       throw new IllegalStateException("Not in a transaction");
     }
   }
@@ -819,6 +820,10 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     DateTime transactionTime;
     Thread thread = Thread.currentThread();
 
+    TransactionInfo() {
+      System.err.println("Transaction info created for thread " + thread.getId());
+    }
+
     // Serializable representation of the transaction to be persisted in the Transaction table.
     Transaction.Builder contentsBuilder;
 
@@ -843,9 +848,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
                           .equals(ReplayDirection.SQL_TO_DATASTORE))) {
         contentsBuilder = new Transaction.Builder();
       }
+      System.err.println("Transaction started on thread " + thread.getId());
     }
 
     private void clear() {
+      System.err.println("Transaction cleared on thread " + thread.getId());
       inTransaction = false;
       transactionTime = null;
       contentsBuilder = null;
