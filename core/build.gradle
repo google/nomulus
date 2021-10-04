@@ -1036,9 +1036,9 @@ task fragileTest(type: FilteringTest) {
   // Common exclude pattern. See README in parent directory for explanation.
   tests = fragileTestPatterns
 
-  if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
+  //if (rootProject.findProperty("skipDockerIncompatibleTests") == "true") {
     exclude dockerIncompatibleTestPatterns
-  }
+  //}
 
   // Run every test class in a freshly started process.
   forkEvery 1
