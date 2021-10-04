@@ -27,8 +27,8 @@ class TransactionsReportingQueryBuilderTest {
   private final YearMonth yearMonth = new YearMonth(2017, 9);
 
   private TransactionsReportingQueryBuilder getQueryBuilder() {
-    TransactionsReportingQueryBuilder queryBuilder = new TransactionsReportingQueryBuilder();
-    queryBuilder.projectId = "domain-registry-alpha";
+    TransactionsReportingQueryBuilder queryBuilder =
+        new TransactionsReportingQueryBuilder("domain-registry-alpha", "icann_reporting");
     return queryBuilder;
   }
 

@@ -57,9 +57,8 @@ class IcannReportingStagerTest {
     ActivityReportingQueryBuilder activityBuilder =
         new ActivityReportingQueryBuilder("test-project", new BasicDnsCountQueryCoordinator(null));
     action.activityQueryBuilder = activityBuilder;
-    TransactionsReportingQueryBuilder transactionsBuilder = new TransactionsReportingQueryBuilder();
-    transactionsBuilder.projectId = "test-project";
-    action.transactionsQueryBuilder = transactionsBuilder;
+    action.transactionsQueryBuilder =
+        new TransactionsReportingQueryBuilder("test-project", "icann_reporting");
     action.reportingBucket = "test-bucket";
     action.bigquery = bigquery;
     action.gcsUtils = gcsUtils;
