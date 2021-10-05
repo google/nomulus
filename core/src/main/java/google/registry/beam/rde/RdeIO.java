@@ -19,10 +19,13 @@ import static com.google.common.base.Verify.verify;
 import static google.registry.model.common.Cursor.getCursorTimeOrStartOfTime;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
+import static google.registry.rde.RdeModule.BRDA_QUEUE;
+import static google.registry.rde.RdeModule.RDE_UPLOAD_QUEUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.auto.value.AutoValue;
 import com.google.cloud.storage.BlobId;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.PgpHelper;
@@ -31,14 +34,20 @@ import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeNamingUtils;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.tld.Registry;
+import google.registry.rde.BrdaCopyAction;
 import google.registry.rde.DepositFragment;
 import google.registry.rde.Ghostryde;
 import google.registry.rde.PendingDeposit;
 import google.registry.rde.RdeCounter;
 import google.registry.rde.RdeMarshaller;
+import google.registry.rde.RdeModule;
 import google.registry.rde.RdeResourceType;
+import google.registry.rde.RdeUploadAction;
 import google.registry.rde.RdeUtil;
+import google.registry.request.Action.Service;
+import google.registry.request.RequestParameters;
 import google.registry.tldconfig.idn.IdnTableEnum;
+import google.registry.util.CloudTasksUtils;
 import google.registry.xjc.rdeheader.XjcRdeHeader;
 import google.registry.xjc.rdeheader.XjcRdeHeaderElement;
 import google.registry.xml.ValidationMode;
@@ -68,6 +77,8 @@ public class RdeIO {
 
     abstract GcsUtils gcsUtils();
 
+    abstract CloudTasksUtils cloudTasksUtils();
+
     abstract String rdeBucket();
 
     // It's OK to return a primitive array because we are only using it to construct the
@@ -83,7 +94,9 @@ public class RdeIO {
 
     @AutoValue.Builder
     abstract static class Builder {
-      abstract Builder setGcsUtils(GcsUtils gcsUtils);
+      abstract Builder setGcsUtils(GcsUtils value);
+
+      abstract Builder setCloudTasksUtils(CloudTasksUtils value);
 
       abstract Builder setRdeBucket(String value);
 
@@ -100,7 +113,8 @@ public class RdeIO {
           .apply(
               "Write to GCS",
               ParDo.of(new RdeWriter(gcsUtils(), rdeBucket(), stagingKeyBytes(), validationMode())))
-          .apply("Update cursors", ParDo.of(new CursorUpdater()));
+          .apply("Update cursors", ParDo.of(new CursorUpdater()))
+          .apply("Enqueue upload action", ParDo.of(new UploadEnqueuer(cloudTasksUtils())));
       return PDone.in(input.getPipeline());
     }
   }
@@ -236,11 +250,12 @@ public class RdeIO {
     }
   }
 
-  private static class CursorUpdater extends DoFn<KV<PendingDeposit, Integer>, Void> {
+  private static class CursorUpdater extends DoFn<KV<PendingDeposit, Integer>, PendingDeposit> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     @ProcessElement
-    public void processElement(@Element KV<PendingDeposit, Integer> input) {
+    public void processElement(
+        @Element KV<PendingDeposit, Integer> input, OutputReceiver<PendingDeposit> outputReceiver) {
       tm().transact(
               () -> {
                 PendingDeposit key = input.getKey();
@@ -268,6 +283,45 @@ public class RdeIO {
                     "Rolled forward %s on %s cursor to %s.", key.cursor(), key.tld(), newPosition);
                 RdeRevision.saveRevision(key.tld(), key.watermark(), key.mode(), revision);
               });
+      outputReceiver.output(input.getKey());
+    }
+  }
+
+  private static class UploadEnqueuer extends DoFn<PendingDeposit, Void> {
+
+    private final CloudTasksUtils cloudTasksUtils;
+
+    private UploadEnqueuer(CloudTasksUtils cloudTasksUtils) {
+      this.cloudTasksUtils = cloudTasksUtils;
+    }
+
+    @ProcessElement
+    public void processElement(@Element PendingDeposit input, PipelineOptions options) {
+      if (input.mode() == RdeMode.FULL) {
+        cloudTasksUtils.enqueue(
+            RDE_UPLOAD_QUEUE,
+            CloudTasksUtils.createPostTask(
+                RdeUploadAction.PATH,
+                Service.BACKEND.getServiceId(),
+                ImmutableMultimap.of(
+                    RequestParameters.PARAM_TLD,
+                    input.tld(),
+                    RdeModule.PARAM_PREFIX,
+                    options.getJobName() + '/')));
+      } else {
+        cloudTasksUtils.enqueue(
+            BRDA_QUEUE,
+            CloudTasksUtils.createPostTask(
+                BrdaCopyAction.PATH,
+                Service.BACKEND.getServiceId(),
+                ImmutableMultimap.of(
+                    RequestParameters.PARAM_TLD,
+                    input.tld(),
+                    RdeModule.PARAM_WATERMARK,
+                    input.watermark().toString(),
+                    RdeModule.PARAM_PREFIX,
+                    options.getJobName() + '/')));
+      }
     }
   }
 }

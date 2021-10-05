@@ -69,6 +69,8 @@ import google.registry.rde.DepositFragment;
 import google.registry.rde.Ghostryde;
 import google.registry.rde.PendingDeposit;
 import google.registry.rde.RdeResourceType;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
@@ -133,6 +135,8 @@ public class RdePipelineTest {
           DepositFragment.create(RdeResourceType.HOST, "<rdeHost:host/>\n", ""));
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
+
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
 
   private final PGPPublicKey encryptionKey =
       new FakeKeyringModule().get().getRdeStagingEncryptionKey();
@@ -212,9 +216,9 @@ public class RdePipelineTest {
     options.setValidationMode("LENIENT");
     options.setStagingKey(
         BaseEncoding.base64Url().encode(PgpHelper.convertPublicKeyToBytes(encryptionKey)));
-    options.setGcsBucket("gcs-bucket");
+    options.setRdeStagingBucket("gcs-bucket");
     options.setJobName("rde-job");
-    rdePipeline = new RdePipeline(options, gcsUtils);
+    rdePipeline = new RdePipeline(options, gcsUtils, cloudTasksHelper.getTestCloudTasksUtils());
   }
 
   @AfterEach
@@ -314,6 +318,21 @@ public class RdePipelineTest {
     assertThat(loadCursorTime(CursorType.RDE_STAGING))
         .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
     assertThat(loadRevision(now, FULL)).isEqualTo(1);
+    cloudTasksHelper.assertTasksEnqueued(
+        "brda",
+        new TaskMatcher()
+            .url("/_dr/task/brdaCopy")
+            .service("backend")
+            .param("tld", "soy")
+            .param("watermark", now.toString())
+            .param("prefix", "rde-job/"));
+    cloudTasksHelper.assertTasksEnqueued(
+        "rde-upload",
+        new TaskMatcher()
+            .url("/_dr/task/rdeUpload")
+            .service("backend")
+            .param("tld", "soy")
+            .param("prefix", "rde-job/"));
   }
 
   // The GCS folder listing can be a bit flaky, so retry if necessary
@@ -337,6 +356,7 @@ public class RdePipelineTest {
 
     assertThat(loadCursorTime(CursorType.RDE_STAGING)).isEquivalentAccordingToCompareTo(now);
     assertThat(loadRevision(now, FULL)).isEqualTo(0);
+    cloudTasksHelper.assertNoTasksEnqueued("brda", "rde-upload");
   }
 
   private void verifyFiles(

@@ -49,6 +49,10 @@ public abstract class RdeModule {
   public static final String PARAM_MODE = "mode";
   public static final String PARAM_REVISION = "revision";
   public static final String PARAM_LENIENT = "lenient";
+  public static final String PARAM_PREFIX = "prefix";
+  public static final String RDE_UPLOAD_QUEUE = "rde-upload";
+  public static final String RDE_REPORT_QUEUE = "rde-report";
+  public static final String BRDA_QUEUE = "brda";
 
   @Provides
   @Parameter(PARAM_WATERMARK)
@@ -92,10 +96,11 @@ public abstract class RdeModule {
     return extractBooleanParameter(req, PARAM_LENIENT);
   }
 
+  // TODO (jianglai): Make it a required parameter once we migrate to Cloud SQL.
   @Provides
-  @Named("brda")
-  static Queue provideQueueBrda() {
-    return getQueue("brda");
+  @Parameter(PARAM_PREFIX)
+  static Optional<String> providePrefix(HttpServletRequest req) {
+    return extractOptionalParameter(req, PARAM_PREFIX);
   }
 
   @Provides

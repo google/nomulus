@@ -14,20 +14,33 @@
 
 package google.registry.rde;
 
+import static google.registry.beam.BeamUtils.createJobName;
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.Action.Method.GET;
 import static google.registry.request.Action.Method.POST;
 import static google.registry.xml.ValidationMode.LENIENT;
 import static google.registry.xml.ValidationMode.STRICT;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 
+import com.google.api.services.dataflow.Dataflow;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateParameter;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
+import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
 import com.google.common.base.Ascii;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.io.BaseEncoding;
+import google.registry.beam.rde.RdePipeline;
 import google.registry.config.RegistryConfig.Config;
+import google.registry.config.RegistryEnvironment;
 import google.registry.gcs.GcsUtils;
+import google.registry.keyring.api.KeyModule.Key;
 import google.registry.mapreduce.MapreduceRunner;
 import google.registry.mapreduce.inputs.EppResourceInputs;
 import google.registry.mapreduce.inputs.NullInput;
@@ -47,6 +60,7 @@ import google.registry.request.Response;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import google.registry.xml.ValidationMode;
+import java.io.IOException;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
@@ -201,6 +215,7 @@ public final class RdeStagingAction implements Runnable {
 
   public static final String PATH = "/_dr/task/rdeStaging";
 
+  private static final String PIPELINE_NAME = "rde_pipeline";
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   @Inject Clock clock;
@@ -209,7 +224,11 @@ public final class RdeStagingAction implements Runnable {
   @Inject Response response;
   @Inject GcsUtils gcsUtils;
   @Inject MapreduceRunner mrRunner;
+  @Inject @Config("projectId") String projectId;
+  @Inject @Config("defaultJobRegion") String jobRegion;
   @Inject @Config("transactionCooldown") Duration transactionCooldown;
+  @Inject @Config("beamStagingBucketUrl") String stagingBucketUrl;
+  @Inject @Config("rdeBucket") String rdeBucket;
   @Inject @Parameter(RdeModule.PARAM_MANUAL) boolean manual;
   @Inject @Parameter(RdeModule.PARAM_DIRECTORY) Optional<String> directory;
   @Inject @Parameter(RdeModule.PARAM_MODE) ImmutableSet<String> modeStrings;
@@ -217,7 +236,8 @@ public final class RdeStagingAction implements Runnable {
   @Inject @Parameter(RdeModule.PARAM_WATERMARKS) ImmutableSet<DateTime> watermarks;
   @Inject @Parameter(RdeModule.PARAM_REVISION) Optional<Integer> revision;
   @Inject @Parameter(RdeModule.PARAM_LENIENT) boolean lenient;
-
+  @Inject @Key("rdeStagingEncryptionKey") byte[] stagingKeyBytes;
+  @Inject Dataflow dataflow;
   @Inject RdeStagingAction() {}
 
   @Override
@@ -228,27 +248,66 @@ public final class RdeStagingAction implements Runnable {
       String message = "Nothing needs to be deposited.";
       logger.atInfo().log(message);
       response.setStatus(SC_NO_CONTENT);
-      response.setPayload(message);
+      // No need to set payload as HTTP 204 response status code does not allow a payload.
       return;
     }
     for (PendingDeposit pending : pendings.values()) {
       logger.atInfo().log("Pending deposit: %s", pending);
     }
     ValidationMode validationMode = lenient ? LENIENT : STRICT;
-    RdeStagingMapper mapper = new RdeStagingMapper(validationMode, pendings);
-    RdeStagingReducer reducer = reducerFactory.create(validationMode, gcsUtils);
-
-    mrRunner
-        .setJobName("Stage escrow deposits for all TLDs")
-        .setModuleName("backend")
-        .setDefaultReduceShards(pendings.size())
-        .runMapreduce(
-            mapper,
-            reducer,
-            ImmutableList.of(
-                // Add an extra shard that maps over a null resource. See the mapper code for why.
-                new NullInput<>(), EppResourceInputs.createEntityInput(EppResource.class)))
-        .sendLinkToMapreduceConsole(response);
+    if (tm().isOfy()) {
+      RdeStagingMapper mapper = new RdeStagingMapper(validationMode, pendings);
+      RdeStagingReducer reducer = reducerFactory.create(validationMode, gcsUtils);
+      mrRunner
+          .setJobName("Stage escrow deposits for all TLDs")
+          .setModuleName("backend")
+          .setDefaultReduceShards(pendings.size())
+          .runMapreduce(
+              mapper,
+              reducer,
+              ImmutableList.of(
+                  // Add an extra shard that maps over a null resource. See the mapper code for why.
+                  new NullInput<>(), EppResourceInputs.createEntityInput(EppResource.class)))
+          .sendLinkToMapreduceConsole(response);
+    } else {
+      try {
+        LaunchFlexTemplateParameter parameter =
+            new LaunchFlexTemplateParameter()
+                .setJobName(createJobName("rde", clock))
+                .setContainerSpecGcsPath(
+                    String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
+                .setParameters(
+                    ImmutableMap.of(
+                        "pendings",
+                        RdePipeline.encodePendings(pendings),
+                        "validationMode",
+                        validationMode.name(),
+                        "rdeStagingBucket",
+                        rdeBucket,
+                        "stagingKey",
+                        BaseEncoding.base64Url().omitPadding().encode(stagingKeyBytes),
+                        "registryEnvironment",
+                        RegistryEnvironment.get().name()));
+        LaunchFlexTemplateResponse launchResponse =
+            dataflow
+                .projects()
+                .locations()
+                .flexTemplates()
+                .launch(
+                    projectId,
+                    jobRegion,
+                    new LaunchFlexTemplateRequest().setLaunchParameter(parameter))
+                .execute();
+        logger.atInfo().log("Got response: %s", launchResponse.getJob().toPrettyString());
+        response.setStatus(SC_OK);
+        response.setPayload(
+            String.format("Launched RDE pipeline: %s", launchResponse.getJob().getId()));
+      } catch (IOException e) {
+        logger.atWarning().withCause(e).log("Pipeline Launch failed");
+        response.setStatus(SC_INTERNAL_SERVER_ERROR);
+        response.setPayload(String.format("Pipeline launch failed: %s", e.getMessage()));
+      }
+    }
   }
 
   private ImmutableSetMultimap<String, PendingDeposit> getStandardPendingDeposits() {

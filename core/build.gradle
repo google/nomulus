@@ -783,27 +783,27 @@ createUberJar(
 // User should install gcloud and login to GCP before invoking this tasks.
 if (environment == 'alpha') {
   def pipelines = [
-      InitSql            :
+      initSql            :
           [
               mainClass: 'google.registry.beam.initsql.InitSqlPipeline',
               metaData : 'google/registry/beam/init_sql_pipeline_metadata.json'
           ],
-      BulkDeleteDatastore:
+      bulkDeleteDatastore:
           [
               mainClass: 'google.registry.beam.datastore.BulkDeleteDatastorePipeline',
               metaData : 'google/registry/beam/bulk_delete_datastore_pipeline_metadata.json'
           ],
-      Spec11             :
+      spec11             :
           [
               mainClass: 'google.registry.beam.spec11.Spec11Pipeline',
               metaData : 'google/registry/beam/spec11_pipeline_metadata.json'
           ],
-      Invoicing          :
+      invoicing          :
           [
               mainClass: 'google.registry.beam.invoicing.InvoicingPipeline',
               metaData : 'google/registry/beam/invoicing_pipeline_metadata.json'
           ],
-      Rde                :
+      rde                :
           [
               mainClass: 'google.registry.beam.rde.RdePipeline',
               metaData : 'google/registry/beam/rde_pipeline_metadata.json'
