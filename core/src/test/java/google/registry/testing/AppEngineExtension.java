@@ -516,6 +516,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   public void tearDown() throws Exception {
     // Resets Objectify. Although it would seem more obvious to do this at the start of a request
     // instead of at the end, this is more consistent with what ObjectifyFilter does in real code.
+    System.err.println("resetting objectify");
     ObjectifyFilter.complete();
     helper.tearDown();
     helper = null;
