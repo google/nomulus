@@ -21,7 +21,6 @@ import static google.registry.config.RegistryConfig.getHibernateHikariIdleTimeou
 import static google.registry.config.RegistryConfig.getHibernateHikariMaximumPoolSize;
 import static google.registry.config.RegistryConfig.getHibernateHikariMinimumIdle;
 import static google.registry.config.RegistryConfig.getHibernateLogSqlQueries;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.common.annotations.VisibleForTesting;
@@ -35,7 +34,6 @@ import google.registry.config.RegistryConfig.Config;
 import google.registry.persistence.transaction.CloudSqlCredentialSupplier;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.JpaTransactionManagerImpl;
-import google.registry.persistence.transaction.TransactionManager;
 import google.registry.privileges.secretmanager.SqlCredential;
 import google.registry.privileges.secretmanager.SqlCredentialStore;
 import google.registry.privileges.secretmanager.SqlUser;
@@ -206,12 +204,6 @@ public abstract class PersistenceModule {
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  @Provides
-  @Singleton
-  static TransactionManager provideTransactionManager() {
-    return tm();
   }
 
   @Provides

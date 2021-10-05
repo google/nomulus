@@ -14,6 +14,7 @@
 
 package google.registry.reporting.icann;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfEnumParameters;
@@ -23,7 +24,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.bigquery.BigqueryConnection;
-import google.registry.persistence.transaction.TransactionManager;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import java.util.Optional;
@@ -104,7 +104,7 @@ public final class IcannReportingModule {
 
   @Provides
   @Named(ICANN_REPORTING_DATA_SET)
-  static String provideIcannReportingDataSet(TransactionManager tm) {
-    return tm.isOfy() ? "icann_reporting" : "cloud_sql_icann_reporting";
+  static String provideIcannReportingDataSet() {
+    return tm().isOfy() ? "icann_reporting" : "cloud_sql_icann_reporting";
   }
 }
