@@ -192,6 +192,12 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
     emfEntityHash = entityHash;
   }
 
+  String getTestName(ExtensionContext context) {
+    return String.format("%s.%s",
+                         context.getTestClass().map(m -> m.getName()).orElse("NO-CLASS"),
+                         context.getTestMethod().map(m -> m.getName()).orElse("NO-METHOD"));
+  }
+
   @Override
   public void beforeEach(ExtensionContext context) throws Exception {
     if (entityHash == emfEntityHash) {
@@ -202,12 +208,12 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
     }
     JpaTransactionManagerImpl txnManager = new JpaTransactionManagerImpl(emf, clock);
     cachedTm = TransactionManagerFactory.jpaTm();
-    TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(txnManager));
+    TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(txnManager), getTestName(context));
   }
 
   @Override
   public void afterEach(ExtensionContext context) {
-    TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(cachedTm));
+    TransactionManagerFactory.setJpaTm(Suppliers.ofInstance(cachedTm), getTestName(context));
     // Even though we didn't set this, reset it to make sure no other tests are affected
     JpaTransactionManagerImpl.removeReplaySqlToDsOverrideForTest();
     cachedTm = null;

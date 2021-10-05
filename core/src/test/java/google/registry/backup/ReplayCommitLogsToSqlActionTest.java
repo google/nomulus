@@ -364,7 +364,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
     // spy the txn manager so we can see what order things were inserted/removed
     JpaTransactionManager spy = spy(jpaTm());
-    TransactionManagerFactory.setJpaTm(() -> spy);
+    TransactionManagerFactory.setJpaTm(() -> spy, "testReplay_properlyWeighted");
     // Save in the commit logs the domain and contact (in that order) and the token deletion
     saveDiffFile(
         gcsUtils,
@@ -407,7 +407,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
     // spy the txn manager so we can see what order things were inserted
     JpaTransactionManager spy = spy(jpaTm());
-    TransactionManagerFactory.setJpaTm(() -> spy);
+    TransactionManagerFactory.setJpaTm(() -> spy, "testReplay_properlyWeighted");
     // Save two commits -- the deletion, then the new version of the contact
     saveDiffFile(
         gcsUtils,
@@ -435,7 +435,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
     // spy the txn manager so we can verify it's never called
     JpaTransactionManager spy = spy(jpaTm());
-    TransactionManagerFactory.setJpaTm(() -> spy);
+    TransactionManagerFactory.setJpaTm(() -> spy, "testReplay_properlyWeighted");
 
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
     Key<CommitLogManifest> manifestKey =
@@ -474,7 +474,7 @@ public class ReplayCommitLogsToSqlActionTest {
     DateTime now = fakeClock.nowUtc();
     // spy the txn manager so we can verify it's never called
     JpaTransactionManager spy = spy(jpaTm());
-    TransactionManagerFactory.setJpaTm(() -> spy);
+    TransactionManagerFactory.setJpaTm(() -> spy, "testReplay_properlyWeighted");
 
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
     // Save a couple deletes that aren't propagated to SQL (the objects deleted are irrelevant)

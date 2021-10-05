@@ -110,12 +110,19 @@ public class TransactionManagerFactory {
   }
 
   /** Sets the return of {@link #jpaTm()} to the given instance of {@link JpaTransactionManager}. */
-  public static void setJpaTm(Supplier<JpaTransactionManager> jpaTmSupplier) {
+  public static synchronized void setJpaTm(
+      Supplier<JpaTransactionManager> jpaTmSupplier, String location) {
     checkNotNull(jpaTmSupplier, "jpaTmSupplier");
     checkState(
         RegistryEnvironment.get().equals(RegistryEnvironment.UNITTEST)
             || RegistryToolEnvironment.get() != null,
         "setJpamTm() should only be called by tools and tests.");
+    checkState(
+        !(jpaTm() instanceof JpaTransactionManagerImpl) || !jpaTm().hasActiveTransactions(),
+        "setJpaTm() must not be called while a transaction is active in any thread (called from "
+            + "%s)",
+        location);
+    System.err.printf("setting JPA Tm from %s%n", location);
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
   }
 
@@ -124,7 +131,8 @@ public class TransactionManagerFactory {
    * jpaTmSupplier} from now on. This method should only be called by an implementor of {@link
    * org.apache.beam.sdk.harness.JvmInitializer}.
    */
-  public static void setJpaTmOnBeamWorker(Supplier<JpaTransactionManager> jpaTmSupplier) {
+  public static synchronized void setJpaTmOnBeamWorker(
+      Supplier<JpaTransactionManager> jpaTmSupplier) {
     checkNotNull(jpaTmSupplier, "jpaTmSupplier");
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
   }

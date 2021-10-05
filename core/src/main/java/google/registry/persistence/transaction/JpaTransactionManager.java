@@ -78,4 +78,6 @@ public interface JpaTransactionManager extends TransactionManager {
   static Query setQueryFetchSize(Query query, int fetchSize) {
     return query.setHint("org.hibernate.fetchSize", fetchSize);
   }
+
+  public boolean hasActiveTransactions();
 }

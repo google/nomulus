@@ -108,6 +108,9 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   private static ThreadLocal<Optional<Boolean>> replaySqlToDatastoreOverrideForTest =
       ThreadLocal.withInitial(Optional::empty);
 
+  // Current count of active transactions.  Must be accessed through synchronized accessors.
+  private int activeTransactions;
+
   public JpaTransactionManagerImpl(EntityManagerFactory emf, Clock clock) {
     this.emf = emf;
     this.clock = clock;
@@ -150,6 +153,15 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public synchronized boolean hasActiveTransactions() {
+    return activeTransactions > 0;
+  }
+
+  private synchronized void incrementActiveTransactions(int value) {
+    activeTransactions += value;
+  }
+
+  @Override
   public void assertInTransaction() {
     if (!inTransaction()) {
       throw new IllegalStateException("Not in a transaction");
@@ -178,6 +190,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
           try {
             txn.begin();
             txnInfo.start(clock, withBackup);
+            incrementActiveTransactions(1);
             T result = work.get();
             txnInfo.recordTransaction();
             txn.commit();
@@ -193,6 +206,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
             }
             throw e;
           } finally {
+            incrementActiveTransactions(-1);
             txnInfo.clear();
           }
         },
@@ -210,6 +224,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
     try {
       txn.begin();
       txnInfo.start(clock, true);
+      incrementActiveTransactions(1);
       T result = work.get();
       txnInfo.recordTransaction();
       txn.commit();
@@ -224,6 +239,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
       }
       throw e;
     } finally {
+      incrementActiveTransactions(-1);
       txnInfo.clear();
     }
   }
