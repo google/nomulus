@@ -4,4 +4,7 @@ extraction:
       packages: "npm"
     index:
       java_version: "11"
+  python:
+    python_setup:
+      version: 3.7.3
 
