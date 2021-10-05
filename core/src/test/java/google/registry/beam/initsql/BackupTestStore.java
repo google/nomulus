@@ -16,7 +16,7 @@ package google.registry.beam.initsql;
 
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -75,7 +75,8 @@ public final class BackupTestStore implements AutoCloseable {
   /** Returns the timestamp of the transaction. */
   long transact(Iterable<Object> deletes, Iterable<Object> newOrUpdated) {
     long timestamp = fakeClock.nowUtc().getMillis();
-    tm().transact(
+    ofyTm()
+        .transact(
             () -> {
               auditedOfy().delete().entities(deletes);
               auditedOfy().save().entities(newOrUpdated);
@@ -91,7 +92,7 @@ public final class BackupTestStore implements AutoCloseable {
   @SafeVarargs
   public final long insertOrUpdate(Object... entities) {
     long timestamp = fakeClock.nowUtc().getMillis();
-    tm().transact(() -> auditedOfy().save().entities(entities).now());
+    ofyTm().transact(() -> auditedOfy().save().entities(entities).now());
     fakeClock.advanceOneMilli();
     return timestamp;
   }
@@ -100,7 +101,7 @@ public final class BackupTestStore implements AutoCloseable {
   @SafeVarargs
   public final long delete(Object... entities) {
     long timestamp = fakeClock.nowUtc().getMillis();
-    tm().transact(() -> auditedOfy().delete().entities(entities).now());
+    ofyTm().transact(() -> auditedOfy().delete().entities(entities).now());
     fakeClock.advanceOneMilli();
     return timestamp;
   }

@@ -14,7 +14,6 @@
 
 package google.registry.reporting.icann;
 
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 import static google.registry.request.RequestParameters.extractSetOfEnumParameters;
@@ -24,9 +23,11 @@ import com.google.common.util.concurrent.MoreExecutors;
 import dagger.Module;
 import dagger.Provides;
 import google.registry.bigquery.BigqueryConnection;
+import google.registry.persistence.transaction.TransactionManager;
 import google.registry.request.HttpException.BadRequestException;
 import google.registry.request.Parameter;
 import java.util.Optional;
+import javax.inject.Named;
 import javax.servlet.http.HttpServletRequest;
 import org.joda.time.Duration;
 
@@ -42,8 +43,7 @@ public final class IcannReportingModule {
 
   static final String PARAM_SUBDIR = "subdir";
   static final String PARAM_REPORT_TYPES = "reportTypes";
-  static final String ICANN_REPORTING_DATA_SET =
-      tm().isOfy() ? "icann_reporting" : "cloud_sql_icann_reporting";
+  static final String ICANN_REPORTING_DATA_SET = "icannReportingDataSet";
   static final String DATASTORE_EXPORT_DATA_SET = "latest_datastore_export";
   static final String MANIFEST_FILE_NAME = "MANIFEST.txt";
 
@@ -88,16 +88,23 @@ public final class IcannReportingModule {
    */
   @Provides
   static BigqueryConnection provideBigqueryConnection(
-      BigqueryConnection.Builder bigQueryConnectionBuilder) {
+      BigqueryConnection.Builder bigQueryConnectionBuilder,
+      @Named(ICANN_REPORTING_DATA_SET) String icannReportingDataSet) {
     try {
       return bigQueryConnectionBuilder
           .setExecutorService(MoreExecutors.newDirectExecutorService())
-          .setDatasetId(ICANN_REPORTING_DATA_SET)
+          .setDatasetId(icannReportingDataSet)
           .setOverwrite(true)
           .setPollInterval(Duration.standardSeconds(1))
           .build();
     } catch (Throwable e) {
       throw new RuntimeException("Could not initialize BigqueryConnection!", e);
     }
+  }
+
+  @Provides
+  @Named(ICANN_REPORTING_DATA_SET)
+  static String provideIcannReportingDataSet(TransactionManager tm) {
+    return tm.isOfy() ? "icann_reporting" : "cloud_sql_icann_reporting";
   }
 }

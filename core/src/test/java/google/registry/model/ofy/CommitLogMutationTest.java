@@ -16,7 +16,6 @@ package google.registry.model.ofy;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
-import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.testing.DatabaseHelper.createTld;
 
 import com.google.appengine.api.datastore.Entity;
@@ -66,7 +65,7 @@ public class CommitLogMutationTest {
     Entity rawEntity = convertToEntityInTxn(someObject);
     // Needs to be in a transaction so that registry-saving-to-entity will work.
     CommitLogMutation mutation =
-        tm().transact(() -> CommitLogMutation.create(manifestKey, someObject));
+        auditedOfy().transact(() -> CommitLogMutation.create(manifestKey, someObject));
     assertThat(Key.create(mutation))
         .isEqualTo(CommitLogMutation.createKey(manifestKey, Key.create(someObject)));
     assertThat(mutation.getEntity()).isEqualTo(rawEntity);
@@ -86,6 +85,6 @@ public class CommitLogMutationTest {
   }
 
   private static Entity convertToEntityInTxn(final ImmutableObject object) {
-    return tm().transact(() -> auditedOfy().save().toEntity(object));
+    return auditedOfy().transact(() -> auditedOfy().save().toEntity(object));
   }
 }

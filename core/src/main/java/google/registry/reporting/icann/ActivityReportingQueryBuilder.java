@@ -16,6 +16,7 @@ package google.registry.reporting.icann;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.reporting.icann.IcannReportingModule.DATASTORE_EXPORT_DATA_SET;
+import static google.registry.reporting.icann.IcannReportingModule.ICANN_REPORTING_DATA_SET;
 import static google.registry.reporting.icann.QueryBuilderUtils.getQueryFromFile;
 import static google.registry.reporting.icann.QueryBuilderUtils.getTableName;
 
@@ -23,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.SqlTemplate;
 import javax.inject.Inject;
+import javax.inject.Named;
 import org.joda.time.LocalDate;
 import org.joda.time.YearMonth;
 import org.joda.time.format.DateTimeFormat;
@@ -38,29 +40,32 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
   static final String EPP_METRICS = "epp_metrics";
   static final String WHOIS_COUNTS = "whois_counts";
   static final String ACTIVITY_REPORT_AGGREGATION = "activity_report_aggregation";
-  final String BIGQUERY_DATA_SET = tm().isOfy() ? "icann_reporting" : "cloud_sql_icann_reporting";
+
+  private final String projectId;
+  private final DnsCountQueryCoordinator dnsCountQueryCoordinator;
+  private final String icannReportingDataSet;
 
   @Inject
-  @Config("projectId")
-  String projectId;
-
-  @Inject DnsCountQueryCoordinator dnsCountQueryCoordinator;
-
-  @Inject
-  ActivityReportingQueryBuilder() {}
+  ActivityReportingQueryBuilder(
+      @Config("projectId") String projectId,
+      @Named(ICANN_REPORTING_DATA_SET) String icannReportingDataSet,
+      DnsCountQueryCoordinator dnsCountQueryCoordinator) {
+    this.projectId = projectId;
+    this.dnsCountQueryCoordinator = dnsCountQueryCoordinator;
+    this.icannReportingDataSet = icannReportingDataSet;
+  }
 
   /** Returns the aggregate query which generates the activity report from the saved view. */
   @Override
   public String getReportQuery(YearMonth yearMonth) {
     return String.format(
         "#standardSQL\nSELECT * FROM `%s.%s.%s`",
-        projectId, BIGQUERY_DATA_SET, getTableName(ACTIVITY_REPORT_AGGREGATION, yearMonth));
+        projectId, icannReportingDataSet, getTableName(ACTIVITY_REPORT_AGGREGATION, yearMonth));
   }
 
   /** Sets the month we're doing activity reporting for, and returns the view query map. */
   @Override
   public ImmutableMap<String, String> getViewQueryMap(YearMonth yearMonth) {
-
     LocalDate firstDayOfMonth = yearMonth.toLocalDate(1);
     // The pattern-matching is inclusive, so we subtract 1 day to only report that month's data.
     LocalDate lastDayOfMonth = yearMonth.toLocalDate(1).plusMonths(1).minusDays(1);
@@ -102,7 +107,7 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
     String eppQuery =
         SqlTemplate.create(getQueryFromFile("epp_metrics.sql"))
             .put("PROJECT_ID", projectId)
-            .put("ICANN_REPORTING_DATA_SET", BIGQUERY_DATA_SET)
+            .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
             .put("MONTHLY_LOGS_TABLE", getTableName(MONTHLY_LOGS, yearMonth))
             // All metadata logs for reporting come from google.registry.flows.FlowReporter.
             .put(
@@ -114,7 +119,7 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
     String whoisQuery =
         SqlTemplate.create(getQueryFromFile("whois_counts.sql"))
             .put("PROJECT_ID", projectId)
-            .put("ICANN_REPORTING_DATA_SET", BIGQUERY_DATA_SET)
+            .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
             .put("MONTHLY_LOGS_TABLE", getTableName(MONTHLY_LOGS, yearMonth))
             .build();
     queriesBuilder.put(getTableName(WHOIS_COUNTS, yearMonth), whoisQuery);
@@ -129,7 +134,7 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
             .put(
                 "REGISTRAR_OPERATING_STATUS_TABLE",
                 getTableName(REGISTRAR_OPERATING_STATUS, yearMonth))
-            .put("ICANN_REPORTING_DATA_SET", BIGQUERY_DATA_SET)
+            .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
             .put("DNS_COUNTS_TABLE", getTableName(DNS_COUNTS, yearMonth))
             .put("EPP_METRICS_TABLE", getTableName(EPP_METRICS, yearMonth))
             .put("WHOIS_COUNTS_TABLE", getTableName(WHOIS_COUNTS, yearMonth));
@@ -147,7 +152,7 @@ public final class ActivityReportingQueryBuilder implements QueryBuilder {
     return queriesBuilder.build();
   }
 
-  public void prepareForQuery(YearMonth yearMonth) throws InterruptedException {
+  void prepareForQuery(YearMonth yearMonth) throws InterruptedException {
     dnsCountQueryCoordinator.prepareForQuery(yearMonth);
   }
 }

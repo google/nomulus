@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.util.SqlTemplate;
 import javax.inject.Inject;
+import javax.inject.Named;
 import org.joda.time.DateTime;
 import org.joda.time.LocalTime;
 import org.joda.time.YearMonth;
@@ -34,9 +35,16 @@ import org.joda.time.format.DateTimeFormatter;
  */
 public final class TransactionsReportingQueryBuilder implements QueryBuilder {
 
-  @Inject @Config("projectId") String projectId;
+  final String projectId;
+  private final String icannReportingDataSet;
 
-  @Inject TransactionsReportingQueryBuilder() {}
+  @Inject
+  TransactionsReportingQueryBuilder(
+      @Config("projectId") String projectId,
+      @Named(ICANN_REPORTING_DATA_SET) String icannReportingDataSet) {
+    this.projectId = projectId;
+    this.icannReportingDataSet = icannReportingDataSet;
+  }
 
   static final String TRANSACTIONS_REPORT_AGGREGATION = "transactions_report_aggregation";
   static final String REGISTRAR_IANA_ID = "registrar_iana_id";
@@ -51,9 +59,7 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
   public String getReportQuery(YearMonth yearMonth) {
     return String.format(
         "#standardSQL\nSELECT * FROM `%s.%s.%s`",
-        projectId,
-        ICANN_REPORTING_DATA_SET,
-        getTableName(TRANSACTIONS_REPORT_AGGREGATION, yearMonth));
+        projectId, icannReportingDataSet, getTableName(TRANSACTIONS_REPORT_AGGREGATION, yearMonth));
   }
 
   /** Sets the month we're doing transactions reporting for, and returns the view query map. */
@@ -151,7 +157,7 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
             .put("PROJECT_ID", projectId)
             .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
             .put("REGISTRY_TABLE", "Registry")
-            .put("ICANN_REPORTING_DATA_SET", ICANN_REPORTING_DATA_SET)
+            .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
             .put("REGISTRAR_IANA_ID_TABLE", getTableName(REGISTRAR_IANA_ID, yearMonth))
             .put("TOTAL_DOMAINS_TABLE", getTableName(TOTAL_DOMAINS, yearMonth))
             .put("TOTAL_NAMESERVERS_TABLE", getTableName(TOTAL_NAMESERVERS, yearMonth))

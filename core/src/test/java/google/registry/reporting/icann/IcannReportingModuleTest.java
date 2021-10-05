@@ -18,34 +18,55 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import google.registry.persistence.transaction.JpaTestExtensions;
+import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link google.registry.reporting.icann.IcannReportingModule}. */
 class IcannReportingModuleTest {
 
-  @Test
-  void testProvideReportTypes() {
-    HttpServletRequest req = mock(HttpServletRequest.class);
+  @RegisterExtension
+  JpaUnitTestExtension jpaExtension = new JpaTestExtensions.Builder().buildUnitTestExtension();
 
+  @Test
+  void testProvideReportTypes_null() {
+    HttpServletRequest req = mock(HttpServletRequest.class);
     when(req.getParameter("reportTypes")).thenReturn(null);
     assertThat(IcannReportingModule.provideReportTypes(req))
         .containsExactly(
             IcannReportingModule.ReportType.ACTIVITY, IcannReportingModule.ReportType.TRANSACTIONS);
+  }
 
+  @Test
+  void testProvideReportTypes_empty() {
+    HttpServletRequest req = mock(HttpServletRequest.class);
     when(req.getParameter("reportTypes")).thenReturn("");
     assertThat(IcannReportingModule.provideReportTypes(req))
         .containsExactly(
             IcannReportingModule.ReportType.ACTIVITY, IcannReportingModule.ReportType.TRANSACTIONS);
+  }
 
+  @Test
+  void testProvideReportTypes_activity() {
+    HttpServletRequest req = mock(HttpServletRequest.class);
     when(req.getParameter("reportTypes")).thenReturn("activity");
     assertThat(IcannReportingModule.provideReportTypes(req))
         .containsExactly(IcannReportingModule.ReportType.ACTIVITY);
+  }
 
+  @Test
+  void testProvideReportTypes_transactions() {
+    HttpServletRequest req = mock(HttpServletRequest.class);
     when(req.getParameter("reportTypes")).thenReturn("transactions");
     assertThat(IcannReportingModule.provideReportTypes(req))
         .containsExactly(IcannReportingModule.ReportType.TRANSACTIONS);
+  }
 
+  @Test
+  void testProvideReportTypes_bothTypes() {
+    HttpServletRequest req = mock(HttpServletRequest.class);
     when(req.getParameter("reportTypes")).thenReturn("activity,transactions");
     assertThat(IcannReportingModule.provideReportTypes(req))
         .containsExactly(

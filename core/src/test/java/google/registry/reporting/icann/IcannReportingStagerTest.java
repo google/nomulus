@@ -54,13 +54,12 @@ class IcannReportingStagerTest {
 
   private IcannReportingStager createStager() {
     IcannReportingStager action = new IcannReportingStager();
-    ActivityReportingQueryBuilder activityBuilder = new ActivityReportingQueryBuilder();
-    activityBuilder.projectId = "test-project";
-    activityBuilder.dnsCountQueryCoordinator = new BasicDnsCountQueryCoordinator(null);
+    ActivityReportingQueryBuilder activityBuilder =
+        new ActivityReportingQueryBuilder(
+            "test-project", "icann_reporting", new BasicDnsCountQueryCoordinator(null));
     action.activityQueryBuilder = activityBuilder;
-    TransactionsReportingQueryBuilder transactionsBuilder = new TransactionsReportingQueryBuilder();
-    transactionsBuilder.projectId = "test-project";
-    action.transactionsQueryBuilder = transactionsBuilder;
+    action.transactionsQueryBuilder =
+        new TransactionsReportingQueryBuilder("test-project", "icann_reporting");
     action.reportingBucket = "test-bucket";
     action.bigquery = bigquery;
     action.gcsUtils = gcsUtils;
