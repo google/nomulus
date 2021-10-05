@@ -91,6 +91,19 @@ public class RegistryJpaReadTest {
   }
 
   @Test
+  void readSnapshot() {
+    Read<Object, String> read =
+        RegistryJpaIO.<Object, String>readSnapshot(
+            ImmutableList.of(Registrar.class, ContactResource.class),
+            x -> x.getClass().getSimpleName());
+    PCollection<String> snapshot = testPipeline.apply(read);
+
+    PAssert.that(snapshot)
+        .containsInAnyOrder("Registrar", "ContactResource", "ContactResource", "ContactResource");
+    testPipeline.run();
+  }
+
+  @Test
   void readWithCriteriaQuery() {
     Read<ContactResource, String> read =
         RegistryJpaIO.read(

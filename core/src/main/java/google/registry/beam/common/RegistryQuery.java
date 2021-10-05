@@ -16,6 +16,8 @@ package google.registry.beam.common;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
+import com.google.common.collect.ImmutableList;
+import google.registry.persistence.transaction.CriteriaQueryBuilder;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import java.io.Serializable;
 import java.util.Map;
@@ -102,6 +104,26 @@ public interface RegistryQuery<T> extends Serializable {
       TypedQuery<T> query = entityManager.createQuery(criteriaQuery.get());
       JpaTransactionManager.setQueryFetchSize(query, QUERY_FETCH_SIZE);
       return query.getResultStream().map(e -> detach(entityManager, e));
+    };
+  }
+
+  /**
+   * Returns a {@link RegistryQuery} that fetches a consistent snapshot of all entities of the given
+   * {@code entityTypes}.
+   */
+  static <T> RegistryQuery<T> createQuery(ImmutableList<Class<? extends T>> entityTypes) {
+    return () -> {
+      // TODO(b/193662898): switch to jpaTm().query() when it can properly detach loaded entities.
+      EntityManager entityManager = jpaTm().getEntityManager();
+      return entityTypes.stream()
+          .map(
+              clazz -> {
+                TypedQuery<? extends T> query =
+                    entityManager.createQuery(CriteriaQueryBuilder.create(clazz).build());
+                JpaTransactionManager.setQueryFetchSize(query, QUERY_FETCH_SIZE);
+                return query.getResultStream().map(e -> detach(entityManager, e));
+              })
+          .flatMap(x -> x);
     };
   }
 

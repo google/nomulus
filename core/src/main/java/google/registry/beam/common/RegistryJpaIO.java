@@ -27,6 +27,7 @@ import google.registry.model.replay.SqlEntity;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
@@ -116,6 +117,18 @@ public final class RegistryJpaIO {
         .build();
   }
 
+  /**
+   * Returns a {@link Read} connector that fetches a consistent snapshot of all entities of the
+   * given {@code entityTypes}.
+   */
+  public static <R, T> Read<R, T> readSnapshot(
+      Collection<Class<? extends R>> entityTypes, SerializableFunction<R, T> resultMapper) {
+    return Read.<R, T>builder()
+        .snapshotQuery(ImmutableList.copyOf(entityTypes))
+        .resultMapper(resultMapper)
+        .build();
+  }
+
   public static <T> Write<T> write() {
     return Write.<T>builder().build();
   }
@@ -195,6 +208,10 @@ public final class RegistryJpaIO {
 
       Builder<R, T> jpqlQuery(String jpql, Class<R> clazz, Map<String, Object> parameters) {
         return query(RegistryQuery.createQuery(jpql, parameters, clazz));
+      }
+
+      Builder<R, T> snapshotQuery(ImmutableList<Class<? extends R>> entityTypes) {
+        return query(RegistryQuery.createQuery(entityTypes));
       }
     }
 
