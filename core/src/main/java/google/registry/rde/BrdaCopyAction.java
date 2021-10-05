@@ -70,11 +70,7 @@ public final class BrdaCopyAction implements Runnable {
   @Inject @Config("rdeBucket") String stagingBucket;
   @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
   @Inject @Parameter(RdeModule.PARAM_WATERMARK) DateTime watermark;
-
-  @Inject
-  @Parameter(RdeModule.PARAM_PREFIX)
-  Optional<String> prefix;
-
+  @Inject @Parameter(RdeModule.PARAM_PREFIX) Optional<String> prefix;
   @Inject @Key("brdaReceiverKey") PGPPublicKey receiverKey;
   @Inject @Key("brdaSigningKey") PGPKeyPair signingKey;
   @Inject @Key("rdeStagingDecryptionKey") PGPPrivateKey stagingDecryptionKey;

@@ -224,25 +224,11 @@ public final class RdeStagingAction implements Runnable {
   @Inject Response response;
   @Inject GcsUtils gcsUtils;
   @Inject MapreduceRunner mrRunner;
-
-  @Inject
-  @Config("projectId")
-  String projectId;
-
-  @Inject
-  @Config("defaultJobRegion")
-  String jobRegion;
-
+  @Inject @Config("projectId") String projectId;
+  @Inject @Config("defaultJobRegion") String jobRegion;
   @Inject @Config("transactionCooldown") Duration transactionCooldown;
-
-  @Inject
-  @Config("beamStagingBucketUrl")
-  String stagingBucketUrl;
-
-  @Inject
-  @Config("rdeBucket")
-  String rdeBucket;
-
+  @Inject @Config("beamStagingBucketUrl") String stagingBucketUrl;
+  @Inject @Config("rdeBucket") String rdeBucket;
   @Inject @Parameter(RdeModule.PARAM_MANUAL) boolean manual;
   @Inject @Parameter(RdeModule.PARAM_DIRECTORY) Optional<String> directory;
   @Inject @Parameter(RdeModule.PARAM_MODE) ImmutableSet<String> modeStrings;
@@ -250,13 +236,8 @@ public final class RdeStagingAction implements Runnable {
   @Inject @Parameter(RdeModule.PARAM_WATERMARKS) ImmutableSet<DateTime> watermarks;
   @Inject @Parameter(RdeModule.PARAM_REVISION) Optional<Integer> revision;
   @Inject @Parameter(RdeModule.PARAM_LENIENT) boolean lenient;
-
-  @Inject
-  @Key("rdeStagingEncryptionKey")
-  byte[] stagingKeyBytes;
-
+  @Inject @Key("rdeStagingEncryptionKey") byte[] stagingKeyBytes;
   @Inject Dataflow dataflow;
-
   @Inject RdeStagingAction() {}
 
   @Override

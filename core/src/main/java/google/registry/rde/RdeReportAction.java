@@ -68,11 +68,7 @@ public final class RdeReportAction implements Runnable, EscrowTask {
   @Inject Response response;
   @Inject RdeReporter reporter;
   @Inject @Parameter(RequestParameters.PARAM_TLD) String tld;
-
-  @Inject
-  @Parameter(RdeModule.PARAM_PREFIX)
-  Optional<String> prefix;
-
+  @Inject @Parameter(RdeModule.PARAM_PREFIX) Optional<String> prefix;
   @Inject @Config("rdeBucket") String bucket;
   @Inject @Config("rdeInterval") Duration interval;
   @Inject @Config("rdeReportLockTimeout") Duration timeout;
