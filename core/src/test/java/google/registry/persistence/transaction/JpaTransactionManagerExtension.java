@@ -193,9 +193,10 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   }
 
   String getTestName(ExtensionContext context) {
-    return String.format("%s.%s",
-                         context.getTestClass().map(m -> m.getName()).orElse("NO-CLASS"),
-                         context.getTestMethod().map(m -> m.getName()).orElse("NO-METHOD"));
+    return String.format(
+        "%s.%s",
+        context.getTestClass().map(m -> m.getName()).orElse("NO-CLASS"),
+        context.getTestMethod().map(m -> m.getName()).orElse("NO-METHOD"));
   }
 
   @Override
