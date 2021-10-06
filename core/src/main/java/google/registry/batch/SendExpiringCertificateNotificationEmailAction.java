@@ -98,6 +98,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
     try {
       sendNotificationEmails();
       response.setStatus(SC_OK);
+      response.setPayload("Finished sending all expiring certificate notification emails.");
     } catch (Exception e) {
       logger.atWarning().withCause(e).log(
           "Exception thrown when sending expiring certificate notification emails.");
