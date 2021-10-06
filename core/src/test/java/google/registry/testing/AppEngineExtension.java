@@ -490,20 +490,22 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
       if (replayer != null) {
         replayer.replay();
       }
-
-      if (withCloudSql) {
-        if (enableJpaEntityCoverageCheck) {
-          jpaIntegrationWithCoverageExtension.afterEach(context);
-        } else if (withJpaUnitTest) {
-          jpaUnitTestExtension.afterEach(context);
-        } else {
-          jpaIntegrationTestExtension.afterEach(context);
-        }
-      }
-      tearDown();
     } finally {
-      if (isWithDatastoreAndCloudSql()) {
-        restoreTmAfterDualDatabaseTest(context);
+      try {
+        if (withCloudSql) {
+          if (enableJpaEntityCoverageCheck) {
+            jpaIntegrationWithCoverageExtension.afterEach(context);
+          } else if (withJpaUnitTest) {
+            jpaUnitTestExtension.afterEach(context);
+          } else {
+            jpaIntegrationTestExtension.afterEach(context);
+          }
+        }
+        tearDown();
+      } finally {
+        if (isWithDatastoreAndCloudSql()) {
+          restoreTmAfterDualDatabaseTest(context);
+        }
       }
     }
   }
