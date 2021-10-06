@@ -42,7 +42,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,10 +57,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
  */
 @ExtendWith(MockitoExtension.class)
 public abstract class CommandTestCase<C extends Command> {
-
-  // Lock for stdout/stderr.  Note that this is static: since we're dealing with globals, we need
-  // to lock for the entire JVM.
-  private static final ReentrantLock streamsLock = new ReentrantLock();
 
   private final ByteArrayOutputStream stdout = new ByteArrayOutputStream();
   private final ByteArrayOutputStream stderr = new ByteArrayOutputStream();
@@ -90,10 +85,7 @@ public abstract class CommandTestCase<C extends Command> {
     RegistryToolEnvironment.UNITTEST.setup(systemPropertyExtension);
     command = newCommandInstance();
 
-    // Capture standard output/error. This is problematic because gradle tests run in parallel in
-    // the same JVM.  So first lock out any other tests in this JVM that are trying to do this
-    // trick.
-    streamsLock.lock();
+    // Capture standard output/error.
     oldStdout = System.out;
     System.setOut(new PrintStream(new OutputSplitter(System.out, stdout)));
     oldStderr = System.err;
@@ -104,7 +96,6 @@ public abstract class CommandTestCase<C extends Command> {
   public final void afterEachCommandTestCase() {
     System.setOut(oldStdout);
     System.setErr(oldStderr);
-    streamsLock.unlock();
   }
 
   void runCommandInEnvironment(RegistryToolEnvironment env, String... args) throws Exception {
