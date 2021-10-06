@@ -55,7 +55,7 @@ public final class CommitLogImports {
    * represents the changes in one transaction. The {@code CommitLogManifest} contains deleted
    * entity keys, whereas each {@code CommitLogMutation} contains one whole entity.
    */
-  public static ImmutableList<ImmutableList<VersionedEntity>> loadEntitiesByTransaction(
+  static ImmutableList<ImmutableList<VersionedEntity>> loadEntitiesByTransaction(
       InputStream inputStream) {
     try (InputStream input = new BufferedInputStream(inputStream)) {
       Iterator<ImmutableObject> commitLogs = createDeserializingIterator(input, false);
@@ -104,7 +104,7 @@ public final class CommitLogImports {
    * represents the changes in one transaction. The {@code CommitLogManifest} contains deleted
    * entity keys, whereas each {@code CommitLogMutation} contains one whole entity.
    */
-  public static ImmutableList<VersionedEntity> loadEntities(InputStream inputStream) {
+  static ImmutableList<VersionedEntity> loadEntities(InputStream inputStream) {
     return loadEntitiesByTransaction(inputStream).stream()
         .flatMap(ImmutableList::stream)
         .collect(toImmutableList());

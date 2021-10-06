@@ -321,7 +321,8 @@ public final class Transforms {
     return true;
   }
 
-  private static Entity repairBadData(Entity entity) {
+  @VisibleForTesting
+  static Entity repairBadData(Entity entity) {
     if (entity.getKind().equals("Cancellation")
         && Objects.equals(entity.getProperty("reason"), "AUTO_RENEW")) {
       // AUTO_RENEW has been moved from 'reason' to flags. Change reason to RENEW and add the
@@ -377,7 +378,8 @@ public final class Transforms {
    * Returns a {@link PTransform} that produces a {@link PCollection} containing all elements in the
    * given {@link Iterable}.
    */
-  static PTransform<PBegin, PCollection<String>> toStringPCollection(Iterable<String> strings) {
+  private static PTransform<PBegin, PCollection<String>> toStringPCollection(
+      Iterable<String> strings) {
     return Create.of(strings).withCoder(StringUtf8Coder.of());
   }
 
@@ -385,7 +387,7 @@ public final class Transforms {
    * Returns a {@link PTransform} from file {@link Metadata} to {@link VersionedEntity} using
    * caller-provided {@code transformer}.
    */
-  static PTransform<PCollection<Metadata>, PCollection<VersionedEntity>> processFiles(
+  private static PTransform<PCollection<Metadata>, PCollection<VersionedEntity>> processFiles(
       DoFn<ReadableFile, VersionedEntity> transformer) {
     return new PTransform<PCollection<Metadata>, PCollection<VersionedEntity>>() {
       @Override
@@ -401,7 +403,7 @@ public final class Transforms {
     private final DateTime fromTime;
     private final DateTime toTime;
 
-    public FilterCommitLogFileByTime(DateTime fromTime, DateTime toTime) {
+    FilterCommitLogFileByTime(DateTime fromTime, DateTime toTime) {
       checkNotNull(fromTime, "fromTime");
       checkNotNull(toTime, "toTime");
       checkArgument(
