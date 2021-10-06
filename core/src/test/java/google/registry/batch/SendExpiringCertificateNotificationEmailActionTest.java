@@ -642,6 +642,8 @@ class SendExpiringCertificateNotificationEmailActionTest {
   void run_responseStatusIs200() {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+            .isEqualTo("Finished sending all expiring certificate notification emails.");
   }
 
   /** Returns a sample registrar with a customized registrar name, client id and certificate* */

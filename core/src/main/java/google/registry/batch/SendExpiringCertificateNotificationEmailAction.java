@@ -96,8 +96,12 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
   public void run() {
     response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
     try {
-      sendNotificationEmails();
-      response.setStatus(SC_OK);
+      int totalNumOfEmails = sendNotificationEmails();
+      String message = String
+          .format("Sent %d expiring certificate notification emails in total successfully.",
+              totalNumOfEmails);
+      logger.atInfo().log(message);
+      response.setPayload(message);
     } catch (Exception e) {
       logger.atWarning().withCause(e).log(
           "Exception thrown when sending expiring certificate notification emails.");
