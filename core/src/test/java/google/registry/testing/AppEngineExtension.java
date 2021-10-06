@@ -41,6 +41,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.flogger.FluentLogger;
 import com.google.common.io.Files;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyFilter;
@@ -83,6 +84,8 @@ import org.junit.jupiter.api.io.TempDir;
  * <p>This extension also resets global Objectify for the current thread.
  */
 public final class AppEngineExtension implements BeforeEachCallback, AfterEachCallback {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   public static final String NEW_REGISTRAR_GAE_USER_ID = "666";
   public static final String THE_REGISTRAR_GAE_USER_ID = "31337";
@@ -516,7 +519,7 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   public void tearDown() throws Exception {
     // Resets Objectify. Although it would seem more obvious to do this at the start of a request
     // instead of at the end, this is more consistent with what ObjectifyFilter does in real code.
-    System.err.println("resetting objectify");
+    logger.atInfo().log("Resetting objectify");
     ObjectifyFilter.complete();
     helper.tearDown();
     helper = null;

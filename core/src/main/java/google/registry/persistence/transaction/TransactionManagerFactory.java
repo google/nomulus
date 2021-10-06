@@ -22,6 +22,7 @@ import com.google.appengine.api.utils.SystemProperty;
 import com.google.appengine.api.utils.SystemProperty.Environment.Value;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
+import com.google.common.flogger.FluentLogger;
 import google.registry.config.RegistryEnvironment;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.PrimaryDatabase;
@@ -36,6 +37,8 @@ import org.joda.time.DateTime;
 /** Factory class to create {@link TransactionManager} instance. */
 // TODO: Rename this to PersistenceFactory and move to persistence package.
 public class TransactionManagerFactory {
+
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final DatastoreTransactionManager ofyTm = createTransactionManager();
 
@@ -122,7 +125,7 @@ public class TransactionManagerFactory {
         "setJpaTm() must not be called while a transaction is active in any thread (called from "
             + "%s)",
         location);
-    System.err.printf("setting JPA Tm from %s%n", location);
+    logger.atInfo().log("setting JPA Tm from %s%n", location);
     jpaTm = Suppliers.memoize(jpaTmSupplier::get);
   }
 
