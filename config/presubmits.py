@@ -213,6 +213,7 @@ PRESUBMITS = {
         {"src/test", "ActivityReportingQueryBuilder.java",
          # This class contains helper method to make queries in Beam.
          "RegistryJpaIO.java",
+         "CreateSyntheticHistoryEntriesAction.java",
          # TODO(b/179158393): Remove everything below, which should be done
          # using Criteria
          "JpaTransactionManager.java",
