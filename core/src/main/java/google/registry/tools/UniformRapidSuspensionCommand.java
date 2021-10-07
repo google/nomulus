@@ -36,6 +36,7 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
+import google.registry.tools.soy.DomainRenewSoyInfo;
 import google.registry.tools.soy.UniformRapidSuspensionSoyInfo;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 
 /** A command to suspend a domain for the Uniform Rapid Suspension process. */
 @Parameters(separators = " =",
@@ -97,6 +99,13 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
       description = "Flag indicating that is is an undo command, which removes locks.")
   private boolean undo;
 
+  @Parameter(
+      names = {"--renew_one_year"},
+      required = true,
+      description = "Flag indicating whether or not the domain will be renewed for a year.",
+      arity = 1)
+  private boolean renewOneYear;
+
   /** Set of existing locks that need to be preserved during undo, sorted for nicer output. */
   ImmutableSortedSet<String> existingLocks;
 
@@ -114,19 +123,20 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     superuser = true;
     DateTime now = DateTime.now(UTC);
     ImmutableSet<String> newHostsSet = ImmutableSet.copyOf(newHosts);
-    Optional<DomainBase> domain = loadByForeignKey(DomainBase.class, domainName, now);
-    checkArgumentPresent(domain, "Domain '%s' does not exist or is deleted", domainName);
+    Optional<DomainBase> domainOpt = loadByForeignKey(DomainBase.class, domainName, now);
+    checkArgumentPresent(domainOpt, "Domain '%s' does not exist or is deleted", domainName);
+    DomainBase domain = domainOpt.get();
     Set<String> missingHosts =
         difference(newHostsSet, checkResourcesExist(HostResource.class, newHosts, now));
     checkArgument(missingHosts.isEmpty(), "Hosts do not exist: %s", missingHosts);
     checkArgument(
         locksToPreserve.isEmpty() || undo,
         "Locks can only be preserved when running with --undo");
-    existingNameservers = getExistingNameservers(domain.get());
-    existingLocks = getExistingLocks(domain.get());
-    existingDsData = getExistingDsData(domain.get());
+    existingNameservers = getExistingNameservers(domain);
+    existingLocks = getExistingLocks(domain);
+    existingDsData = getExistingDsData(domain);
     removeStatuses =
-        (hasClientHold(domain.get()) && !undo)
+        (hasClientHold(domain) && !undo)
             ? ImmutableSet.of(StatusValue.CLIENT_HOLD.getXmlName())
             : ImmutableSet.of();
     ImmutableSet<String> statusesToApply;
@@ -138,6 +148,25 @@ final class UniformRapidSuspensionCommand extends MutatingEppToolCommand {
     } else {
       statusesToApply = URS_LOCKS;
     }
+
+    // trigger renew flow
+    if (renewOneYear) {
+      setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
+      addSoyRecord(
+          CLIENT_ID,
+          new SoyMapData(
+              "domainName",
+              domain.getDomainName(),
+              "expirationDate",
+              domain
+                  .getRegistrationExpirationTime()
+                  .toString(DateTimeFormat.forPattern("YYYY-MM-dd")),
+              // period is the number of years to renew the registration for
+              "period",
+              String.valueOf(1)));
+    }
+
+    // trigger update flow
     setSoyTemplate(
         UniformRapidSuspensionSoyInfo.getInstance(),
         UniformRapidSuspensionSoyInfo.UNIFORMRAPIDSUSPENSION);
