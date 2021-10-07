@@ -84,8 +84,12 @@ public class WipeOutContactHistoryPiiAction implements Runnable {
                             getNextContactHistoryEntitiesWithPiiBatch(wipeOutTime)));
         totalNumOfWipedEntities += numOfWipedEntities;
       } while (numOfWipedEntities > 0);
-      logger.atInfo().log(
-          "Wiped out PII of %d ContactHistory entities in total.", totalNumOfWipedEntities);
+      String msg =
+          String.format(
+              "Done. Wiped out PII of %d ContactHistory entities in total.",
+              totalNumOfWipedEntities);
+      logger.atInfo().log(msg);
+      response.setPayload(msg);
       response.setStatus(SC_OK);
 
     } catch (Exception e) {
