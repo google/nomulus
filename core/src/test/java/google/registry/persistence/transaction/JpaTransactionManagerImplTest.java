@@ -36,6 +36,7 @@ import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaUnitTestExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TmOverrideExtension;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.sql.SQLException;
@@ -48,8 +49,7 @@ import javax.persistence.IdClass;
 import javax.persistence.OptimisticLockException;
 import javax.persistence.RollbackException;
 import org.hibernate.exception.JDBCConnectionException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -84,15 +84,9 @@ class JpaTransactionManagerImplTest {
               TestEntity.class, TestCompoundIdEntity.class, TestNamedCompoundIdEntity.class)
           .buildUnitTestExtension();
 
-  @BeforeEach
-  void beforeEach() {
-    TransactionManagerFactory.setTmForTest(jpaTm());
-  }
-
-  @AfterEach
-  void afterEach() {
-    TransactionManagerFactory.removeTmOverrideForTest();
-  }
+  @RegisterExtension
+  @Order(Order.DEFAULT + 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
 
   @Test
   void transact_succeeds() {
