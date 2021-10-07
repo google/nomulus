@@ -43,6 +43,15 @@ public final class TestLogHandlerUtils {
         handler.getStoredLogRecords(), logRecord -> logRecord.getMessage().startsWith(prefix));
   }
 
+  /** Assert that the specified log message is <em>not</em> found. */
+  public static void assertNoLogMessage(CapturingLogHandler handler, Level level, String message) {
+    for (LogRecord logRecord : handler.getRecords()) {
+      if (logRecord.getLevel().equals(level) && logRecord.getMessage().contains(message)) {
+        assertWithMessage("Log message \"%s\" found: %s", message, logRecord.getMessage()).fail();
+      }
+    }
+  }
+
   public static void assertLogMessage(CapturingLogHandler handler, Level level, String message) {
     for (LogRecord logRecord : handler.getRecords()) {
       if (logRecord.getLevel().equals(level) && logRecord.getMessage().contains(message)) {
