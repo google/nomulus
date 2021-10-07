@@ -21,10 +21,9 @@ import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.registrar.RegistrarContact.RegistrarPocId;
 import google.registry.persistence.VKey;
-import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatastoreEntityExtension;
-import org.junit.jupiter.api.AfterEach;
+import google.registry.testing.TmOverrideExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -41,15 +40,13 @@ public class SqlEntityTest {
   final AppEngineExtension database =
       new AppEngineExtension.Builder().withCloudSql().withoutCannedData().build();
 
+  @RegisterExtension
+  @Order(Order.DEFAULT + 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
+
   @BeforeEach
   void setup() throws Exception {
-    TransactionManagerFactory.setTmForTest(TransactionManagerFactory.jpaTm());
     AppEngineExtension.loadInitialData();
-  }
-
-  @AfterEach
-  void teardown() {
-    TransactionManagerFactory.removeTmOverrideForTest();
   }
 
   @Test
