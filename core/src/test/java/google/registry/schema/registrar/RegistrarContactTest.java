@@ -17,6 +17,7 @@ package google.registry.schema.registrar;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
+import static google.registry.persistence.transaction.TransactionManagerFactory.removeTmOverrideForTest;
 import static google.registry.persistence.transaction.TransactionManagerFactory.setTmForTest;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
@@ -28,6 +29,7 @@ import google.registry.model.registrar.RegistrarContact;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -49,7 +51,7 @@ class RegistrarContactTest {
   private RegistrarContact testRegistrarPoc;
 
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     setTmForTest(jpaTm());
     testRegistrar = saveRegistrar("registrarId");
     testRegistrarPoc =
@@ -65,6 +67,11 @@ class RegistrarContactTest {
             .setVisibleInWhoisAsTech(false)
             .setVisibleInDomainWhoisAsAbuse(false)
             .build();
+  }
+
+  @AfterEach
+  void afterEach() {
+    removeTmOverrideForTest();
   }
 
   @Test
