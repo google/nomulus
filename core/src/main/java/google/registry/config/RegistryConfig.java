@@ -558,10 +558,22 @@ public final class RegistryConfig {
     }
 
     /**
+     * Returns the GCE machine type that a CPU-demanding pipeline should use.
+     *
+     * @see google.registry.beam.rde.RdePipeline
+     */
+    @Provides
+    @Config("highPerformanceMachineType")
+    public static String provideHighPerformanceMachineType(RegistryConfigSettings config) {
+      return config.beam.highPerformanceMachineType;
+    }
+
+    /**
      * Returns the default job region to run Apache Beam (Cloud Dataflow) jobs in.
      *
      * @see google.registry.beam.invoicing.InvoicingPipeline
      * @see google.registry.beam.spec11.Spec11Pipeline
+     * @see google.registry.beam.invoicing.InvoicingPipeline
      */
     @Provides
     @Config("defaultJobRegion")

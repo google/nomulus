@@ -43,6 +43,22 @@
       "regexes": [
         "[A-Za-z0-9\\-_]+"
       ]
+    },
+    {
+      "name": "workerMachineType",
+      "label": "The GCE machine type for the dataflow job workers.",
+      "helpText": "See https://cloud.google.com/dataflow/quotas#compute-engine-quotas for available machine types.",
+      "regexes": [
+        "[a-z0-9\\-]+"
+      ]
+    },
+    {
+      "name": "usePublicIps",
+      "label": "Whether the GCE workers are assigned public IPs",
+      "helpText": "Public IPs have an associated cost and there's a quota per region on the total number of public IPs assigned at a given time. If the service only needs to access GCP APIs, it's better to not use public IP, but one needs to configure the network accordingly. See https://cloud.google.com/dataflow/docs/guides/routes-firewall.",
+      "regexes": [
+        "true|false"
+      ]
     }
   ]
 }

@@ -79,6 +79,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     action.watermarks = ImmutableSet.of();
     action.revision = Optional.empty();
     action.dataflow = dataflow;
+    action.machineType = "machine-type";
   }
 
   @TestSqlOnly
