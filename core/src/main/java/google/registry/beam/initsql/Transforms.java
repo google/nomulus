@@ -330,9 +330,8 @@ public final class Transforms {
       // instead of append. See b/185954992.
       entity.setUnindexedProperty("reason", Reason.RENEW.name());
       entity.setUnindexedProperty("flags", ImmutableList.of(Flag.AUTO_RENEW.name()));
-    }
-    // Canonicalize old domain/host names from 2016 and earlier before we were enforcing this.
-    else if (entity.getKind().equals("DomainBase")) {
+    } else if (entity.getKind().equals("DomainBase")) {
+      // Canonicalize old domain/host names from 2016 and earlier before we were enforcing this.
       entity.setIndexedProperty(
           "fullyQualifiedDomainName",
           canonicalizeDomainName((String) entity.getProperty("fullyQualifiedDomainName")));
