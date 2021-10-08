@@ -49,8 +49,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
@@ -74,7 +73,8 @@ public class ReplicateToDatastoreActionTest {
   private ReplicateToDatastoreAction action;
   private FakeResponse response;
 
-  @BeforeEach
+  // TODO(b/197534789): fix these tests and re-add the @BeforeEach
+  // @BeforeEach
   void setUp() {
     resetAction();
     injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
@@ -88,13 +88,15 @@ public class ReplicateToDatastoreActionTest {
     TestObject.beforeDatastoreSaveCallCount = 0;
   }
 
-  @AfterEach
+  // TODO(b/197534789): fix these tests and re-add the @AfterEach
+  // @AfterEach
   void tearDown() {
     DatabaseHelper.removeDatabaseMigrationSchedule();
     fakeClock.disableAutoIncrement();
   }
 
   @RetryingTest(4)
+  @Disabled("b/197534789")
   void testReplication() {
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
@@ -120,6 +122,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
+  @Disabled("b/197534789")
   void testReplayFromLastTxn() {
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
@@ -142,6 +145,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
+  @Disabled("b/197534789")
   void testUnintentionalConcurrency() {
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
@@ -177,6 +181,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
+  @Disabled("b/197534789")
   void testMissingTransactions() {
     // Write a transaction (should have a transaction id of 1).
     TestObject foo = TestObject.create("foo");
@@ -194,6 +199,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
+  @Disabled("b/197534789")
   void testMissingTransactions_fullTask() {
     // Write a transaction (should have a transaction id of 1).
     TestObject foo = TestObject.create("foo");
@@ -212,6 +218,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
+  @Disabled("b/197534789")
   void testBeforeDatastoreSaveCallback() {
     TestObject testObject = TestObject.create("foo");
     insertInDb(testObject);
@@ -221,6 +228,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
+  @Disabled("b/197534789")
   void testNotInMigrationState_doesNothing() {
     // set a schedule that backtracks the current status to DATASTORE_PRIMARY
     DateTime now = fakeClock.nowUtc();
@@ -257,6 +265,7 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
+  @Disabled("b/197534789")
   void testFailure_cannotAcquireLock() {
     RequestStatusChecker requestStatusChecker = mock(RequestStatusChecker.class);
     when(requestStatusChecker.getLogId()).thenReturn("logId");

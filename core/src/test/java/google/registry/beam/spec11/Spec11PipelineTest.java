@@ -18,8 +18,6 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.removeTmOverrideForTest;
-import static google.registry.persistence.transaction.TransactionManagerFactory.setTmForTest;
 import static google.registry.testing.AppEngineExtension.makeRegistrar1;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
@@ -52,6 +50,7 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.util.ResourceUtils;
 import google.registry.util.Retrier;
 import java.io.File;
@@ -128,6 +127,10 @@ class Spec11PipelineTest {
   @RegisterExtension
   final JpaIntegrationTestExtension database =
       new JpaTestExtensions.Builder().withClock(new FakeClock()).buildIntegrationTestExtension();
+
+  @RegisterExtension
+  @Order(Order.DEFAULT + 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
 
   private final Spec11PipelineOptions options =
       PipelineOptionsFactory.create().as(Spec11PipelineOptions.class);
@@ -233,7 +236,6 @@ class Spec11PipelineTest {
   }
 
   private void setupCloudSql() {
-    setTmForTest(jpaTm());
     persistNewRegistrar("TheRegistrar");
     persistNewRegistrar("NewRegistrar");
     Registrar registrar1 =
@@ -273,7 +275,6 @@ class Spec11PipelineTest {
     persistResource(createDomain("no-email.com", "2A4BA9BBC-COM", registrar2, contact2));
     persistResource(
         createDomain("anti-anti-anti-virus.dev", "555666888-DEV", registrar3, contact3));
-    removeTmOverrideForTest();
   }
 
   private void verifySaveToGcs() throws Exception {

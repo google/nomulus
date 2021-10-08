@@ -17,9 +17,6 @@ package google.registry.beam.invoicing;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
-import static google.registry.persistence.transaction.TransactionManagerFactory.removeTmOverrideForTest;
-import static google.registry.persistence.transaction.TransactionManagerFactory.setTmForTest;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.newRegistry;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
@@ -48,6 +45,7 @@ import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationT
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestDataHelper;
+import google.registry.testing.TmOverrideExtension;
 import google.registry.util.ResourceUtils;
 import java.io.File;
 import java.nio.file.Files;
@@ -76,6 +74,25 @@ import org.junit.jupiter.api.io.TempDir;
 
 /** Unit tests for {@link InvoicingPipeline}. */
 class InvoicingPipelineTest {
+
+  @RegisterExtension
+  @Order(Order.DEFAULT - 1)
+  final transient DatastoreEntityExtension datastore =
+      new DatastoreEntityExtension().allThreads(true);
+
+  @RegisterExtension
+  final TestPipelineExtension pipeline =
+      TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
+
+  @RegisterExtension
+  final JpaIntegrationTestExtension database =
+      new JpaTestExtensions.Builder().withClock(new FakeClock()).buildIntegrationTestExtension();
+
+  @RegisterExtension
+  @Order(Order.DEFAULT + 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
+
+  @TempDir Path tmpDir;
 
   private static final String BILLING_BUCKET_URL = "billing_bucket";
   private static final String YEAR_MONTH = "2017-10";
@@ -225,21 +242,6 @@ class InvoicingPipelineTest {
           "2017-10-01,2018-09-30,456,20.50,USD,10125,1,PURCHASE,bestdomains - test,1,"
               + "RENEW | TLD: test | TERM: 1-year,20.50,USD,116688");
 
-  @RegisterExtension
-  @Order(Order.DEFAULT - 1)
-  final transient DatastoreEntityExtension datastore =
-      new DatastoreEntityExtension().allThreads(true);
-
-  @RegisterExtension
-  final TestPipelineExtension pipeline =
-      TestPipelineExtension.create().enableAbandonedNodeEnforcement(true);
-
-  @RegisterExtension
-  final JpaIntegrationTestExtension database =
-      new JpaTestExtensions.Builder().withClock(new FakeClock()).buildIntegrationTestExtension();
-
-  @TempDir Path tmpDir;
-
   private final InvoicingPipelineOptions options =
       PipelineOptionsFactory.create().as(InvoicingPipelineOptions.class);
 
@@ -261,13 +263,12 @@ class InvoicingPipelineTest {
     String query = InvoicingPipeline.makeQuery("2017-10", "my-project-id");
     assertThat(query)
         .isEqualTo(TestDataHelper.loadFile(this.getClass(), "billing_events_test.sql"));
-    // This is necessary because the TestPipelineExtension verifies that the pipelien is run.
+    // This is necessary because the TestPipelineExtension verifies that the pipeline is run.
     pipeline.run();
   }
 
   @Test
   void testSuccess_fullSqlPipeline() throws Exception {
-    setTmForTest(jpaTm());
     setupCloudSql();
     options.setDatabase("CLOUD_SQL");
     InvoicingPipeline invoicingPipeline = new InvoicingPipeline(options);
@@ -282,18 +283,15 @@ class InvoicingPipelineTest {
                 + "UnitPriceCurrency,PONumber");
     assertThat(overallInvoice.subList(1, overallInvoice.size()))
         .containsExactlyElementsIn(EXPECTED_INVOICE_OUTPUT);
-    removeTmOverrideForTest();
   }
 
   @Test
   void testSuccess_readFromCloudSql() throws Exception {
-    setTmForTest(jpaTm());
     setupCloudSql();
     PCollection<BillingEvent> billingEvents = InvoicingPipeline.readFromCloudSql(options, pipeline);
     billingEvents = billingEvents.apply(new ChangeDomainRepo());
     PAssert.that(billingEvents).containsInAnyOrder(INPUT_EVENTS);
     pipeline.run().waitUntilFinish();
-    removeTmOverrideForTest();
   }
 
   @Test

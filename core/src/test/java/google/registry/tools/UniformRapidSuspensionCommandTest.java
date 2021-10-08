@@ -23,12 +23,15 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
 import google.registry.persistence.VKey;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +43,8 @@ class UniformRapidSuspensionCommandTest
   private HostResource ns2;
   private HostResource urs1;
   private HostResource urs2;
+  private DomainBase defaultDomainBase;
+  private ImmutableSet<DelegationSignerData> defaultDsData;
 
   @BeforeEach
   void beforeEach() {
@@ -50,32 +55,36 @@ class UniformRapidSuspensionCommandTest
     ns2 = persistActiveHost("ns2.example.com");
     urs1 = persistActiveHost("urs1.example.com");
     urs2 = persistActiveHost("urs2.example.com");
+    defaultDomainBase = newDomainBase("evil.tld");
+    defaultDsData =
+        ImmutableSet.of(
+            DelegationSignerData.create(1, 2, 3, new HexBinaryAdapter().unmarshal("dead")),
+            DelegationSignerData.create(4, 5, 6, new HexBinaryAdapter().unmarshal("beef")));
   }
 
-  private void persistDomainWithHosts(HostResource... hosts) {
+  private void persistDomainWithHosts(
+      DomainBase domainBase, ImmutableSet<DelegationSignerData> dsData, HostResource... hosts) {
     ImmutableSet.Builder<VKey<HostResource>> hostRefs = new ImmutableSet.Builder<>();
     for (HostResource host : hosts) {
       hostRefs.add(host.createVKey());
     }
-    persistResource(newDomainBase("evil.tld").asBuilder()
-        .setNameservers(hostRefs.build())
-        .setDsData(ImmutableSet.of(
-            DelegationSignerData.create(1, 2, 3, new HexBinaryAdapter().unmarshal("dead")),
-            DelegationSignerData.create(4, 5, 6, new HexBinaryAdapter().unmarshal("beef"))))
-        .build());
+    persistResource(
+        domainBase.asBuilder().setNameservers(hostRefs.build()).setDsData(dsData).build());
   }
 
   @Test
   void testCommand_addsLocksReplacesHostsAndDsDataPrintsUndo() throws Exception {
-    persistDomainWithHosts(ns1, ns2);
+    persistDomainWithHosts(defaultDomainBase, defaultDsData, ns1, ns2);
     runCommandForced(
         "--domain_name=evil.tld",
         "--hosts=urs1.example.com,urs2.example.com",
-        "--dsdata=1 1 1 abcd");
+        "--dsdata=1 1 1 abcd",
+        "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
-        .verifySent("uniform_rapid_suspension.xml");
+        .verifySent("uniform_rapid_suspension.xml")
+        .verifyNoMoreSent();
     assertInStdout("uniform_rapid_suspension --undo");
     assertInStdout("--domain_name evil.tld");
     assertInStdout("--hosts ns1.example.com,ns2.example.com");
@@ -86,12 +95,16 @@ class UniformRapidSuspensionCommandTest
 
   @Test
   void testCommand_respectsExistingHost() throws Exception {
-    persistDomainWithHosts(urs2, ns1);
-    runCommandForced("--domain_name=evil.tld", "--hosts=urs1.example.com,urs2.example.com");
+    persistDomainWithHosts(defaultDomainBase, defaultDsData, urs2, ns1);
+    runCommandForced(
+        "--domain_name=evil.tld",
+        "--hosts=urs1.example.com,urs2.example.com",
+        "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
-        .verifySent("uniform_rapid_suspension_existing_host.xml");
+        .verifySent("uniform_rapid_suspension_existing_host.xml")
+        .verifyNoMoreSent();
     assertInStdout("uniform_rapid_suspension --undo ");
     assertInStdout("--domain_name evil.tld");
     assertInStdout("--hosts ns1.example.com,urs2.example.com");
@@ -101,8 +114,11 @@ class UniformRapidSuspensionCommandTest
   @Test
   void testCommand_generatesUndoForUndelegatedDomain() throws Exception {
     persistActiveDomain("evil.tld");
-    runCommandForced("--domain_name=evil.tld", "--hosts=urs1.example.com,urs2.example.com");
-    eppVerifier.verifySentAny();
+    runCommandForced(
+        "--domain_name=evil.tld",
+        "--hosts=urs1.example.com,urs2.example.com",
+        "--renew_one_year=false");
+    eppVerifier.verifySentAny().verifyNoMoreSent();
     assertInStdout("uniform_rapid_suspension --undo");
     assertInStdout("--domain_name evil.tld");
     assertNotInStdout("--locks_to_preserve");
@@ -114,8 +130,8 @@ class UniformRapidSuspensionCommandTest
         newDomainBase("evil.tld").asBuilder()
           .addStatusValue(StatusValue.SERVER_DELETE_PROHIBITED)
           .build());
-    runCommandForced("--domain_name=evil.tld");
-    eppVerifier.verifySentAny();
+    runCommandForced("--domain_name=evil.tld", "--renew_one_year=false");
+    eppVerifier.verifySentAny().verifyNoMoreSent();
     assertInStdout("uniform_rapid_suspension --undo");
     assertInStdout("--domain_name evil.tld");
     assertInStdout("--locks_to_preserve serverDeleteProhibited");
@@ -133,11 +149,13 @@ class UniformRapidSuspensionCommandTest
     runCommandForced(
         "--domain_name=evil.tld",
         "--hosts=urs1.example.com,urs2.example.com",
-        "--dsdata=1 1 1 abcd");
+        "--dsdata=1 1 1 abcd",
+        "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
-        .verifySent("uniform_rapid_suspension_with_client_hold.xml");
+        .verifySent("uniform_rapid_suspension_with_client_hold.xml")
+        .verifyNoMoreSent();
     assertInStdout("uniform_rapid_suspension --undo");
     assertInStdout("--domain_name evil.tld");
     assertInStdout("--hosts ns1.example.com,ns2.example.com");
@@ -146,54 +164,62 @@ class UniformRapidSuspensionCommandTest
 
   @Test
   void testUndo_removesLocksReplacesHostsAndDsData() throws Exception {
-    persistDomainWithHosts(urs1, urs2);
+    persistDomainWithHosts(defaultDomainBase, defaultDsData, urs1, urs2);
     runCommandForced(
-        "--domain_name=evil.tld", "--undo", "--hosts=ns1.example.com,ns2.example.com");
+        "--domain_name=evil.tld",
+        "--undo",
+        "--hosts=ns1.example.com,ns2.example.com",
+        "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
-        .verifySent("uniform_rapid_suspension_undo.xml");
+        .verifySent("uniform_rapid_suspension_undo.xml")
+        .verifyNoMoreSent();
     assertNotInStdout("--undo");  // Undo shouldn't print a new undo command.
   }
 
   @Test
   void testUndo_respectsLocksToPreserveFlag() throws Exception {
-    persistDomainWithHosts(urs1, urs2);
+    persistDomainWithHosts(defaultDomainBase, defaultDsData, urs1, urs2);
     runCommandForced(
         "--domain_name=evil.tld",
         "--undo",
         "--locks_to_preserve=serverDeleteProhibited",
-        "--hosts=ns1.example.com,ns2.example.com");
+        "--hosts=ns1.example.com,ns2.example.com",
+        "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
-        .verifySent("uniform_rapid_suspension_undo_preserve.xml");
+        .verifySent("uniform_rapid_suspension_undo_preserve.xml")
+        .verifyNoMoreSent();
     assertNotInStdout("--undo");  // Undo shouldn't print a new undo command.
   }
 
   @Test
   void testUndo_restoresClientHolds() throws Exception {
-    persistDomainWithHosts(urs1, urs2);
+    persistDomainWithHosts(defaultDomainBase, defaultDsData, urs1, urs2);
     runCommandForced(
         "--domain_name=evil.tld",
         "--undo",
         "--hosts=ns1.example.com,ns2.example.com",
-        "--restore_client_hold");
+        "--restore_client_hold",
+        "--renew_one_year=false");
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
-        .verifySent("uniform_rapid_suspension_undo_client_hold.xml");
+        .verifySent("uniform_rapid_suspension_undo_client_hold.xml")
+        .verifyNoMoreSent();
     assertNotInStdout("--undo"); // Undo shouldn't print a new undo command.
   }
 
   @Test
-  void testAutorenews_setToFalsebyDefault() throws Exception {
+  void testAutorenews_setToFalseByDefault() throws Exception {
     persistResource(
         newDomainBase("evil.tld")
             .asBuilder()
             .addStatusValue(StatusValue.SERVER_DELETE_PROHIBITED)
             .build());
-    runCommandForced("--domain_name=evil.tld");
+    runCommandForced("--domain_name=evil.tld", "--renew_one_year=false");
     eppVerifier.verifySentAny();
     assertInStdout("<superuser:autorenews>false</superuser:autorenews>");
   }
@@ -209,9 +235,55 @@ class UniformRapidSuspensionCommandTest
         "--domain_name=evil.tld",
         "--undo",
         "--hosts=ns1.example.com,ns2.example.com",
-        "--restore_client_hold");
+        "--restore_client_hold",
+        "--renew_one_year=false");
     eppVerifier.verifySentAny();
     assertInStdout("<superuser:autorenews>true</superuser:autorenews>");
+  }
+
+  @Test
+  void testRenewOneYear_renewFlowIsTriggered() throws Exception {
+    // this test case was written based on an existing test case,
+    // testUndo_removesLocksReplacesHostsAndDsData() but two things were modified to test the
+    // renew workflow, which were:
+    // 1) a different domain that contains creation time and expiration time
+    // 2) renew_one_year is set to true
+
+    persistDomainWithHosts(
+        newDomainBase("evil.tld")
+            .asBuilder()
+            .setCreationTimeForTest(DateTime.parse("2021-10-01T05:01:11Z"))
+            .setRegistrationExpirationTime(DateTime.parse("2022-10-01T05:01:11Z"))
+            .setPersistedCurrentSponsorRegistrarId("CharlestonRoad")
+            .build(),
+        defaultDsData,
+        urs1,
+        urs2);
+
+    runCommandForced(
+        "--domain_name=evil.tld",
+        "--undo",
+        "--hosts=ns1.example.com,ns2.example.com",
+        "--renew_one_year=true");
+
+    // verify if renew flow is triggered
+    eppVerifier
+        .expectRegistrarId("CharlestonRoad")
+        .expectSuperuser()
+        .verifySent(
+            "domain_renew.xml",
+            ImmutableMap.of("DOMAIN", "evil.tld", "EXPDATE", "2022-10-01", "YEARS", "1"));
+
+    // verify if update flow is triggered
+    eppVerifier
+        .expectRegistrarId("CharlestonRoad")
+        .expectSuperuser()
+        .verifySent("uniform_rapid_suspension_undo.xml")
+        .verifyNoMoreSent();
+    assertNotInStdout("--undo"); // Undo shouldn't print a new undo command.
+
+    // verify that no other flows are triggered after the renew and update flows
+    eppVerifier.verifyNoMoreSent();
   }
 
   @Test
@@ -222,7 +294,9 @@ class UniformRapidSuspensionCommandTest
             IllegalArgumentException.class,
             () ->
                 runCommandForced(
-                    "--domain_name=evil.tld", "--locks_to_preserve=serverDeleteProhibited"));
+                    "--domain_name=evil.tld",
+                    "--locks_to_preserve=serverDeleteProhibited",
+                    "--renew_one_year=false"));
     assertThat(thrown).hasMessageThat().contains("--undo");
   }
 
@@ -232,8 +306,18 @@ class UniformRapidSuspensionCommandTest
     ParameterException thrown =
         assertThrows(
             ParameterException.class,
-            () -> runCommandForced("--hosts=urs1.example.com,urs2.example.com"));
+            () ->
+                runCommandForced(
+                    "--hosts=urs1.example.com,urs2.example.com", "--renew_one_year=false"));
     assertThat(thrown).hasMessageThat().contains("--domain_name");
+  }
+
+  @Test
+  void testFailure_renewOneYearRequired() {
+    persistActiveDomain("evil.tld");
+    ParameterException thrown =
+        assertThrows(ParameterException.class, () -> runCommandForced("--domain_name=evil.tld"));
+    assertThat(thrown).hasMessageThat().contains("--renew_one_year");
   }
 
   @Test
@@ -242,7 +326,9 @@ class UniformRapidSuspensionCommandTest
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommandForced("--domain_name=evil.tld", "--dsdata=1 1 1 abc 1"));
+            () ->
+                runCommandForced(
+                    "--domain_name=evil.tld", "--dsdata=1 1 1 abc 1", "--renew_one_year=false"));
     assertThat(thrown)
         .hasMessageThat()
         .contains("dsRecord 1 1 1 abc 1 should have 4 parts, but has 5");
@@ -254,7 +340,9 @@ class UniformRapidSuspensionCommandTest
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommandForced("--domain_name=evil.tld", "--dsdata=1 1 1"));
+            () ->
+                runCommandForced(
+                    "--domain_name=evil.tld", "--dsdata=1 1 1", "--renew_one_year=false"));
     assertThat(thrown).hasMessageThat().contains("dsRecord 1 1 1 should have 4 parts, but has 3");
   }
 
@@ -264,7 +352,9 @@ class UniformRapidSuspensionCommandTest
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
-            () -> runCommandForced("--domain_name=evil.tld", "--dsdata=1,2,3"));
+            () ->
+                runCommandForced(
+                    "--domain_name=evil.tld", "--dsdata=1,2,3", "--renew_one_year=false"));
     assertThat(thrown).hasMessageThat().contains("dsRecord 1 should have 4 parts, but has 1");
   }
 }

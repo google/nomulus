@@ -22,7 +22,6 @@ import static google.registry.beam.rde.RdePipeline.encodePendings;
 import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeMode.THIN;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.rde.RdeResourceType.CONTACT;
 import static google.registry.rde.RdeResourceType.DOMAIN;
@@ -64,7 +63,6 @@ import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
-import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.rde.DepositFragment;
 import google.registry.rde.Ghostryde;
 import google.registry.rde.PendingDeposit;
@@ -74,6 +72,7 @@ import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeKeyringModule;
+import google.registry.testing.TmOverrideExtension;
 import java.io.IOException;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -88,7 +87,6 @@ import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -157,6 +155,10 @@ public class RdePipelineTest {
       new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @RegisterExtension
+  @Order(Order.DEFAULT + 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
+
+  @RegisterExtension
   final TestPipelineExtension pipeline =
       TestPipelineExtension.fromOptions(options).enableAbandonedNodeEnforcement(true);
 
@@ -164,7 +166,6 @@ public class RdePipelineTest {
 
   @BeforeEach
   void beforeEach() throws Exception {
-    TransactionManagerFactory.setTmForTest(jpaTm());
     loadInitialData();
 
     // Two real registrars have been created by loadInitialData(), named "New Registrar" and "The
@@ -219,11 +220,6 @@ public class RdePipelineTest {
     options.setRdeStagingBucket("gcs-bucket");
     options.setJobName("rde-job");
     rdePipeline = new RdePipeline(options, gcsUtils, cloudTasksHelper.getTestCloudTasksUtils());
-  }
-
-  @AfterEach
-  void afterEach() {
-    TransactionManagerFactory.removeTmOverrideForTest();
   }
 
   @Test

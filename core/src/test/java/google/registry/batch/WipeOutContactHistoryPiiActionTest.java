@@ -23,7 +23,6 @@ import static org.apache.http.HttpStatus.SC_OK;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.truth.Truth8;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactAuthInfo;
 import google.registry.model.contact.ContactBase;
@@ -50,8 +49,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 @DualDatabaseTest
 class WipeOutContactHistoryPiiActionTest {
 
+  private static final int TEST_BATCH_SIZE = 20;
   private static final int MIN_MONTHS_BEFORE_WIPE_OUT = 18;
-  private static final int BATCH_SIZE = 500;
   private static final ContactResource defaultContactResource =
       new ContactResource.Builder()
           .setContactId("sh8013")
@@ -115,7 +114,8 @@ class WipeOutContactHistoryPiiActionTest {
   void beforeEach() {
     response = new FakeResponse();
     action =
-        new WipeOutContactHistoryPiiAction(clock, MIN_MONTHS_BEFORE_WIPE_OUT, BATCH_SIZE, response);
+        new WipeOutContactHistoryPiiAction(
+            clock, MIN_MONTHS_BEFORE_WIPE_OUT, TEST_BATCH_SIZE, response);
   }
 
   @TestSqlOnly
@@ -133,10 +133,10 @@ class WipeOutContactHistoryPiiActionTest {
   }
 
   @TestSqlOnly
-  void getAllHistoryEntitiesOlderThan_returnsOnlyPartOfThePersistedEntities() {
+  void getAllHistoryEntitiesOlderThan_returnsOnlyOldEnoughPersistedEntities() {
     ImmutableList<ContactHistory> expectedToBeWipedOut =
         persistLotsOfContactHistoryEntities(
-            40, MIN_MONTHS_BEFORE_WIPE_OUT + 2, 0, defaultContactResource);
+            19, MIN_MONTHS_BEFORE_WIPE_OUT + 2, 0, defaultContactResource);
 
     // persisted entities that should not be part of the actual result
     persistLotsOfContactHistoryEntities(
@@ -145,7 +145,7 @@ class WipeOutContactHistoryPiiActionTest {
     jpaTm()
         .transact(
             () ->
-                Truth8.assertThat(
+                assertThat(
                         action.getNextContactHistoryEntitiesWithPiiBatch(
                             clock.nowUtc().minusMonths(MIN_MONTHS_BEFORE_WIPE_OUT)))
                     .containsExactlyElementsIn(expectedToBeWipedOut));
@@ -175,6 +175,8 @@ class WipeOutContactHistoryPiiActionTest {
         .isEqualTo(0);
 
     assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo("Done. Wiped out PII of 0 ContactHistory entities in total.");
   }
 
   @TestSqlOnly
@@ -197,6 +199,8 @@ class WipeOutContactHistoryPiiActionTest {
     assertAllEntitiesContainPii(DatabaseHelper.loadByEntitiesIfPresent(expectedToBeWipedOut));
 
     action.run();
+    assertThat(response.getPayload())
+        .isEqualTo("Done. Wiped out PII of 20 ContactHistory entities in total.");
 
     // The query should return an empty stream after the wipe out action.
     assertThat(
@@ -216,7 +220,7 @@ class WipeOutContactHistoryPiiActionTest {
   void run_withMultipleBatches_numOfEntitiesAsNonMultipleOfBatchSize_success() {
     int numOfMonthsFromNow = MIN_MONTHS_BEFORE_WIPE_OUT + 2;
     ImmutableList<ContactHistory> expectedToBeWipedOut =
-        persistLotsOfContactHistoryEntities(1234, numOfMonthsFromNow, 0, defaultContactResource);
+        persistLotsOfContactHistoryEntities(56, numOfMonthsFromNow, 0, defaultContactResource);
 
     // The query should return a subset of all persisted data.
     assertThat(
@@ -227,10 +231,12 @@ class WipeOutContactHistoryPiiActionTest {
                             .getNextContactHistoryEntitiesWithPiiBatch(
                                 clock.nowUtc().minusMonths(MIN_MONTHS_BEFORE_WIPE_OUT))
                             .count()))
-        .isEqualTo(BATCH_SIZE);
+        .isEqualTo(TEST_BATCH_SIZE);
 
     assertAllEntitiesContainPii(DatabaseHelper.loadByEntitiesIfPresent(expectedToBeWipedOut));
     action.run();
+    assertThat(response.getPayload())
+        .isEqualTo("Done. Wiped out PII of 56 ContactHistory entities in total.");
 
     // The query should return an empty stream after the wipe out action.
     assertThat(
@@ -250,7 +256,8 @@ class WipeOutContactHistoryPiiActionTest {
   void run_withMultipleBatches_numOfEntitiesAsMultiplesOfBatchSize_success() {
     int numOfMonthsFromNow = MIN_MONTHS_BEFORE_WIPE_OUT + 2;
     ImmutableList<ContactHistory> expectedToBeWipedOut =
-        persistLotsOfContactHistoryEntities(2000, numOfMonthsFromNow, 0, defaultContactResource);
+        persistLotsOfContactHistoryEntities(
+            TEST_BATCH_SIZE * 2, numOfMonthsFromNow, 0, defaultContactResource);
 
     // The query should return a subset of all persisted data.
     assertThat(
@@ -261,10 +268,12 @@ class WipeOutContactHistoryPiiActionTest {
                             .getNextContactHistoryEntitiesWithPiiBatch(
                                 clock.nowUtc().minusMonths(MIN_MONTHS_BEFORE_WIPE_OUT))
                             .count()))
-        .isEqualTo(BATCH_SIZE);
+        .isEqualTo(TEST_BATCH_SIZE);
 
     assertAllEntitiesContainPii(DatabaseHelper.loadByEntitiesIfPresent(expectedToBeWipedOut));
     action.run();
+    assertThat(response.getPayload())
+        .isEqualTo("Done. Wiped out PII of 40 ContactHistory entities in total.");
 
     // The query should return an empty stream after the wipe out action.
     assertThat(

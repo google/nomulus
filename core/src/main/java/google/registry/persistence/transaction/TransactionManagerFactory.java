@@ -132,13 +132,16 @@ public class TransactionManagerFactory {
   /**
    * Sets the return of {@link #tm()} to the given instance of {@link TransactionManager}.
    *
+   * <p>DO NOT CALL THIS DIRECTLY IF POSSIBLE. Strongly prefer the use of <code>TmOverrideExtension
+   * </code> in test code instead.
+   *
    * <p>Used when overriding the per-test transaction manager for dual-database tests. Should be
    * matched with a corresponding invocation of {@link #removeTmOverrideForTest()} either at the end
    * of the test or in an <code>@AfterEach</code> handler.
    */
   @VisibleForTesting
-  public static void setTmForTest(TransactionManager newTm) {
-    tmForTest = Optional.of(newTm);
+  public static void setTmOverrideForTest(TransactionManager newTmOverride) {
+    tmForTest = Optional.of(newTmOverride);
   }
 
   /** Resets the overridden transaction manager post-test. */
@@ -152,10 +155,10 @@ public class TransactionManagerFactory {
     }
   }
 
-  /** Thrown when a write is attempted when the DB is in read-only mode. */
+  /** Registry is currently undergoing maintenance and is in read-only mode. */
   public static class ReadOnlyModeException extends IllegalStateException {
-    public ReadOnlyModeException() {
-      super("Registry is currently in read-only mode");
+    ReadOnlyModeException() {
+      super("Registry is currently undergoing maintenance and is in read-only mode");
     }
   }
 }
