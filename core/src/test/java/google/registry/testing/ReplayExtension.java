@@ -62,6 +62,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
   FakeClock clock;
+  private final Retrier retrier = new Retrier(new SystemSleeper(), 5);
   boolean compare;
   boolean replayed = false;
   boolean inOfyContext;
@@ -199,7 +200,6 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   }
 
   private void replayToOfy() {
-    Retrier retrier = new Retrier(new SystemSleeper(), 5);
     if (sqlToDsReplicator == null) {
       return;
     }
