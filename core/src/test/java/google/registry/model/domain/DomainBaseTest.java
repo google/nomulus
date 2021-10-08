@@ -696,7 +696,7 @@ public class DomainBaseTest extends EntityTestCase {
             IllegalArgumentException.class, () -> domain.asBuilder().setDomainName("AAA.BBB"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Domain name must be in puny-coded, lower-case form");
+        .isEqualTo("Domain name AAA.BBB not in puny-coded, lower-case form");
   }
 
   @Test
@@ -706,7 +706,7 @@ public class DomainBaseTest extends EntityTestCase {
             IllegalArgumentException.class, () -> domain.asBuilder().setDomainName("みんな.みんな"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Domain name must be in puny-coded, lower-case form");
+        .isEqualTo("Domain name みんな.みんな not in puny-coded, lower-case form");
   }
 
   @Test

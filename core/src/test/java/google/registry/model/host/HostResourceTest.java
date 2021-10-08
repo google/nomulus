@@ -200,7 +200,7 @@ class HostResourceTest extends EntityTestCase {
             IllegalArgumentException.class, () -> host.asBuilder().setHostName("AAA.BBB.CCC"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Host name must be in puny-coded, lower-case form");
+        .isEqualTo("Host name AAA.BBB.CCC not in puny-coded, lower-case form");
   }
 
   @TestOfyAndSql
@@ -210,7 +210,7 @@ class HostResourceTest extends EntityTestCase {
             IllegalArgumentException.class, () -> host.asBuilder().setHostName("みんな.みんな.みんな"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Host name must be in puny-coded, lower-case form");
+        .isEqualTo("Host name みんな.みんな.みんな not in puny-coded, lower-case form");
   }
 
   @TestOfyAndSql
