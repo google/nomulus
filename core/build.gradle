@@ -705,7 +705,11 @@ createToolTask(
 
 
 createToolTask(
-        'jpaDemoPipeline', 'google.registry.beam.common.JpaDemoPipeline')
+    'jpaDemoPipeline', 'google.registry.beam.common.JpaDemoPipeline')
+
+createToolTask(
+    'createSyntheticHistoryEntries',
+    'google.registry.beam.common.CreateSyntheticHistoryEntries')
 
 project.tasks.create('initSqlPipeline', JavaExec) {
   main = 'google.registry.beam.initsql.InitSqlPipeline'
