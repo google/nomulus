@@ -15,7 +15,6 @@
 package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.existsInDb;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByKey;
@@ -29,11 +28,10 @@ import google.registry.model.registrar.RegistrarAddress;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
-import google.registry.persistence.transaction.TransactionManagerFactory;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.FakeClock;
+import google.registry.testing.TmOverrideExtension;
 import org.joda.time.DateTime;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -52,13 +50,16 @@ public class RegistrarDaoTest {
   JpaIntegrationWithCoverageExtension jpa =
       new JpaTestExtensions.Builder().withClock(fakeClock).buildIntegrationWithCoverageExtension();
 
+  @RegisterExtension
+  @Order(Order.DEFAULT + 1)
+  TmOverrideExtension tmOverrideExtension = TmOverrideExtension.withJpa();
+
   private final VKey<Registrar> registrarKey = VKey.createSql(Registrar.class, "registrarId");
 
   private Registrar testRegistrar;
 
   @BeforeEach
   void beforeEach() {
-    TransactionManagerFactory.setTmForTest(jpaTm());
     testRegistrar =
         new Registrar.Builder()
             .setType(Registrar.Type.TEST)
@@ -73,11 +74,6 @@ public class RegistrarDaoTest {
                     .setCountryCode("US")
                     .build())
             .build();
-  }
-
-  @AfterEach
-  void afterEach() {
-    TransactionManagerFactory.removeTmOverrideForTest();
   }
 
   @Test

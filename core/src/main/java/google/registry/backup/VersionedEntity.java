@@ -105,29 +105,29 @@ public abstract class VersionedEntity implements Serializable {
    * VersionedEntity VersionedEntities}. See {@link CommitLogImports#loadEntities} for more
    * information.
    */
-  public static Stream<VersionedEntity> fromManifest(CommitLogManifest manifest) {
+  static Stream<VersionedEntity> fromManifest(CommitLogManifest manifest) {
     long commitTimeMillis = manifest.getCommitTime().getMillis();
     return manifest.getDeletions().stream()
         .map(com.googlecode.objectify.Key::getRaw)
-        .map(key -> builder().commitTimeMills(commitTimeMillis).key(key).build());
+        .map(key -> newBuilder().commitTimeMills(commitTimeMillis).key(key).build());
   }
 
   /* Converts a {@link CommitLogMutation} to a {@link VersionedEntity}. */
-  public static VersionedEntity fromMutation(CommitLogMutation mutation) {
+  static VersionedEntity fromMutation(CommitLogMutation mutation) {
     return from(
         com.googlecode.objectify.Key.create(mutation).getParent().getId(),
         mutation.getEntityProtoBytes());
   }
 
   public static VersionedEntity from(long commitTimeMillis, byte[] entityProtoBytes) {
-    return builder()
+    return newBuilder()
         .entityProtoBytes(entityProtoBytes)
         .key(EntityTranslator.createFromPbBytes(entityProtoBytes).getKey())
         .commitTimeMills(commitTimeMillis)
         .build();
   }
 
-  static Builder builder() {
+  private static Builder newBuilder() {
     return new AutoValue_VersionedEntity.Builder();
   }
 
@@ -142,7 +142,7 @@ public abstract class VersionedEntity implements Serializable {
 
     public abstract VersionedEntity build();
 
-    public Builder entityProtoBytes(byte[] bytes) {
+    Builder entityProtoBytes(byte[] bytes) {
       return entityProtoBytes(new ImmutableBytes(bytes));
     }
   }
