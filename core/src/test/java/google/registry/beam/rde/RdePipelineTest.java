@@ -17,8 +17,8 @@ package google.registry.beam.rde;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.beam.rde.RdePipeline.decodePendings;
-import static google.registry.beam.rde.RdePipeline.encodePendings;
+import static google.registry.beam.rde.RdePipeline.decodePendingDeposits;
+import static google.registry.beam.rde.RdePipeline.encodePendingDeposits;
 import static google.registry.model.common.Cursor.CursorType.RDE_STAGING;
 import static google.registry.model.rde.RdeMode.FULL;
 import static google.registry.model.rde.RdeMode.THIN;
@@ -27,25 +27,26 @@ import static google.registry.rde.RdeResourceType.CONTACT;
 import static google.registry.rde.RdeResourceType.DOMAIN;
 import static google.registry.rde.RdeResourceType.HOST;
 import static google.registry.rde.RdeResourceType.REGISTRAR;
-import static google.registry.testing.AppEngineExtension.loadInitialData;
+import static google.registry.testing.AppEngineExtension.makeRegistrar1;
+import static google.registry.testing.AppEngineExtension.makeRegistrar2;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.newHostResource;
+import static google.registry.testing.DatabaseHelper.insertSimpleResources;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
-import static google.registry.testing.DatabaseHelper.persistDeletedDomain;
+import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistEppResource;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistResource;
 import static google.registry.util.ResourceUtils.readResourceUtf8;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.joda.time.Duration.standardDays;
+import static org.junit.Assert.assertThrows;
 
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.contrib.nio.testing.LocalStorageHelper;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Streams;
 import com.google.common.io.BaseEncoding;
 import google.registry.beam.TestPipelineExtension;
@@ -53,12 +54,26 @@ import google.registry.gcs.GcsUtils;
 import google.registry.keyring.api.PgpHelper;
 import google.registry.model.common.Cursor;
 import google.registry.model.common.Cursor.CursorType;
+import google.registry.model.contact.ContactBase;
+import google.registry.model.contact.ContactHistory;
+import google.registry.model.contact.ContactResource;
+import google.registry.model.domain.DesignatedContact;
+import google.registry.model.domain.DomainBase;
+import google.registry.model.domain.DomainContent;
+import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.Period;
+import google.registry.model.eppcommon.Trid;
+import google.registry.model.host.HostBase;
+import google.registry.model.host.HostHistory;
 import google.registry.model.host.HostResource;
 import google.registry.model.rde.RdeMode;
 import google.registry.model.rde.RdeRevision;
 import google.registry.model.rde.RdeRevision.RdeRevisionId;
 import google.registry.model.registrar.Registrar;
 import google.registry.model.registrar.Registrar.State;
+import google.registry.model.reporting.DomainTransactionRecord;
+import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
+import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTestExtensions;
@@ -111,14 +126,11 @@ public class RdePipelineTest {
   // This is teh default as-of time the RDE/BRDA job.
   private final DateTime now = DateTime.parse("2000-01-01TZ");
 
-  private final ImmutableSetMultimap<String, PendingDeposit> pendings =
-      ImmutableSetMultimap.of(
-          "soy",
-          PendingDeposit.create("soy", now, FULL, RDE_STAGING, standardDays(1)),
-          "soy",
-          PendingDeposit.create("soy", now, THIN, RDE_STAGING, standardDays(1)),
-          "fun",
-          PendingDeposit.create("fun", now, FULL, RDE_STAGING, standardDays(1)));
+  private final ImmutableSet<PendingDeposit> pendings =
+      ImmutableSet.of(
+          PendingDeposit.create("soy", now, FULL, RDE_STAGING, Duration.standardDays(1)),
+          PendingDeposit.create("soy", now, THIN, RDE_STAGING, Duration.standardDays(1)),
+          PendingDeposit.create("fun", now, FULL, RDE_STAGING, Duration.standardDays(1)));
 
   private final ImmutableList<DepositFragment> brdaFragments =
       ImmutableList.of(
@@ -129,8 +141,8 @@ public class RdePipelineTest {
       ImmutableList.of(
           DepositFragment.create(RdeResourceType.DOMAIN, "<rdeDomain:domain/>\n", ""),
           DepositFragment.create(RdeResourceType.REGISTRAR, "<rdeRegistrar:registrar/>\n", ""),
-          DepositFragment.create(RdeResourceType.CONTACT, "<rdeContact:contact/>\n", ""),
-          DepositFragment.create(RdeResourceType.HOST, "<rdeHost:host/>\n", ""));
+          DepositFragment.create(CONTACT, "<rdeContact:contact/>\n", ""),
+          DepositFragment.create(HOST, "<rdeHost:host/>\n", ""));
 
   private final GcsUtils gcsUtils = new GcsUtils(LocalStorageHelper.getOptions());
 
@@ -164,9 +176,68 @@ public class RdePipelineTest {
 
   private RdePipeline rdePipeline;
 
+  private ContactHistory persistContactHistory(ContactBase contact) {
+    return persistResource(
+        new ContactHistory.Builder()
+            .setType(HistoryEntry.Type.HOST_CREATE)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(clock.nowUtc())
+            .setRegistrarId("TheRegistrar")
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason("reason")
+            .setRequestedByRegistrar(true)
+            .setContact(contact)
+            .setContactRepoId(contact.getRepoId())
+            .build());
+  }
+
+  private DomainHistory persistDomainHistory(DomainContent domain) {
+    DomainTransactionRecord transactionRecord =
+        new DomainTransactionRecord.Builder()
+            .setTld("soy")
+            .setReportingTime(clock.nowUtc())
+            .setReportField(TransactionReportField.NET_ADDS_1_YR)
+            .setReportAmount(1)
+            .build();
+
+    return persistResource(
+        new DomainHistory.Builder()
+            .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(clock.nowUtc())
+            .setRegistrarId("TheRegistrar")
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason("reason")
+            .setRequestedByRegistrar(true)
+            .setDomain(domain)
+            .setDomainRepoId(domain.getRepoId())
+            .setDomainTransactionRecords(ImmutableSet.of(transactionRecord))
+            .setOtherRegistrarId("otherClient")
+            .setPeriod(Period.create(1, Period.Unit.YEARS))
+            .build());
+  }
+
+  private HostHistory persistHostHistory(HostBase hostBase) {
+    return persistResource(
+        new HostHistory.Builder()
+            .setType(HistoryEntry.Type.HOST_CREATE)
+            .setXmlBytes("<xml></xml>".getBytes(UTF_8))
+            .setModificationTime(clock.nowUtc())
+            .setRegistrarId("TheRegistrar")
+            .setTrid(Trid.create("ABC-123", "server-trid"))
+            .setBySuperuser(false)
+            .setReason("reason")
+            .setRequestedByRegistrar(true)
+            .setHost(hostBase)
+            .setHostRepoId(hostBase.getRepoId())
+            .build());
+  }
+
   @BeforeEach
   void beforeEach() throws Exception {
-    loadInitialData();
+    insertSimpleResources(ImmutableList.of(makeRegistrar1(), makeRegistrar2()));
 
     // Two real registrars have been created by loadInitialData(), named "New Registrar" and "The
     // Registrar". Create one included registrar (external_monitoring) and two excluded ones.
@@ -192,26 +263,89 @@ public class RdePipelineTest {
     tm().transact(
             () -> {
               tm().put(Cursor.create(CursorType.BRDA, now, Registry.get("soy")));
-              tm().put(Cursor.create(CursorType.RDE_STAGING, now, Registry.get("soy")));
+              tm().put(Cursor.create(RDE_STAGING, now, Registry.get("soy")));
               RdeRevision.saveRevision("soy", now, THIN, 0);
               RdeRevision.saveRevision("soy", now, FULL, 0);
             });
 
-    // Also persists a "contact1234" contact in the process.
-    persistActiveDomain("hello.soy");
-    persistActiveDomain("kitty.fun");
-    // Should not appear anywhere.
-    persistActiveDomain("lol.cat");
-    persistDeletedDomain("deleted.soy", DateTime.parse("1999-12-30TZ"));
+    // This contact is never referenced.
+    persistContactHistory(persistActiveContact("contactX"));
+    ContactResource contact1 = persistActiveContact("contact1234");
+    persistContactHistory(contact1);
+    ContactResource contact2 = persistActiveContact("contact456");
+    persistContactHistory(contact2);
 
-    persistActiveContact("contact456");
+    // This host is never referenced.
+    persistHostHistory(persistActiveHost("ns0.domain.tld"));
+    HostResource host1 = persistActiveHost("ns1.external.tld");
+    persistHostHistory(host1);
+    DomainBase helloDomain =
+        persistEppResource(
+            newDomainBase("hello.soy", contact1)
+                .asBuilder()
+                .addNameserver(host1.createVKey())
+                .build());
+    persistDomainHistory(helloDomain);
+    persistHostHistory(persistActiveHost("not-used-subordinate.hello.soy"));
+    HostResource host2 = persistActiveHost("ns1.hello.soy");
+    persistHostHistory(host2);
+    DomainBase kittyDomain =
+        persistEppResource(
+            newDomainBase("kitty.fun", contact2)
+                .asBuilder()
+                .addNameservers(ImmutableSet.of(host1.createVKey(), host2.createVKey()))
+                .build());
+    persistDomainHistory(kittyDomain);
+    // Should not appear because the TLD is not included in a pending deposit.
+    persistDomainHistory(persistEppResource(newDomainBase("lol.cat", contact1)));
+    // To be deleted.
+    DomainBase deletedDomain = persistActiveDomain("deleted.soy");
+    persistDomainHistory(deletedDomain);
 
-    HostResource host = persistEppResource(newHostResource("old.host.test"));
-    // Set the clock to 2000-01-02, the updated host should NOT show up in RDE.
+    // Advance time
+    clock.advanceOneMilli();
+    persistDomainHistory(deletedDomain.asBuilder().setDeletionTime(clock.nowUtc()).build());
+    kittyDomain = kittyDomain.asBuilder().setDomainName("cat.fun").build();
+    persistDomainHistory(kittyDomain);
+    ContactResource contact3 = persistActiveContact("contact789");
+    persistContactHistory(contact3);
+    // This is a subordinate domain in TLD .cat, which is not included in any pending deposit. But
+    // it should still be included as a subordinate host in the pendign deposit for .soy.
+    HostResource host3 = persistActiveHost("ns1.lol.cat");
+    persistHostHistory(host3);
+    persistDomainHistory(
+        helloDomain
+            .asBuilder()
+            .addContacts(
+                ImmutableSet.of(
+                    DesignatedContact.create(DesignatedContact.Type.ADMIN, contact3.createVKey())))
+            .addNameserver(host3.createVKey())
+            .build());
+    // contact456 is renamed to contactABC.
+    persistContactHistory(contact2.asBuilder().setContactId("contactABC").build());
+    // ns1.hello.soy is renamed to ns2.hello.soy
+    persistHostHistory(host2.asBuilder().setHostName("ns2.hello.soy").build());
+
+    // Set the clock to 2000-01-02, any change after hereafter should not show up in the
+    // resulting deposit fragments.
     clock.advanceBy(Duration.standardDays(2));
-    persistEppResource(host.asBuilder().setHostName("new.host.test").build());
+    persistDomainHistory(kittyDomain.asBuilder().setDeletionTime(clock.nowUtc()).build());
+    ContactResource futureContact = persistActiveContact("future-contact");
+    persistContactHistory(futureContact);
+    HostResource futureHost = persistActiveHost("ns1.future.tld");
+    persistHostHistory(futureHost);
+    persistDomainHistory(
+        persistEppResource(
+            newDomainBase("future.soy", futureContact)
+                .asBuilder()
+                .setNameservers(futureHost.createVKey())
+                .build()));
+    // contactABC is renamed to contactXYZ.
+    persistContactHistory(contact2.asBuilder().setContactId("contactXYZ").build());
+    // ns2.hello.soy is renamed to ns3.hello.soy
+    persistHostHistory(host2.asBuilder().setHostName("ns3.hello.soy").build());
 
-    options.setPendings(encodePendings(pendings));
+    options.setPendings(encodePendingDeposits(pendings));
     // The EPP resources created in tests do not have all the fields populated, using a STRICT
     // validation mode will result in a lot of warnings during marshalling.
     options.setValidationMode("LENIENT");
@@ -223,9 +357,22 @@ public class RdePipelineTest {
   }
 
   @Test
-  void testSuccess_encodeAndDecodePendingsMap() throws Exception {
-    String encodedString = encodePendings(pendings);
-    assertThat(decodePendings(encodedString)).isEqualTo(pendings);
+  void testSuccess_encodeAndDecodePendingDeposits() throws Exception {
+    String encodedString = encodePendingDeposits(pendings);
+    assertThat(decodePendingDeposits(encodedString)).isEqualTo(pendings);
+  }
+
+  @Test
+  void testFailure_pendingDepositsWithDifferentWatermarks() throws Exception {
+    options.setPendings(
+        encodePendingDeposits(
+            ImmutableSet.of(
+                PendingDeposit.create("soy", now, FULL, RDE_STAGING, Duration.standardDays(1)),
+                PendingDeposit.create(
+                    "soy", now.plusSeconds(1), THIN, RDE_STAGING, Duration.standardDays(1)))));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new RdePipeline(options, gcsUtils, cloudTasksHelper.getTestCloudTasksUtils()));
   }
 
   @Test
@@ -243,36 +390,47 @@ public class RdePipelineTest {
                         // The same registrars are attached to all the pending deposits.
                         .containsExactly("New Registrar", "The Registrar", "external_monitoring");
                     // Domain fragments.
-                    assertThat(
-                            getFragmentForType(kv, DOMAIN)
-                                .map(getXmlElement(DOMAIN_NAME_PATTERN))
-                                .anyMatch(
-                                    domain ->
-                                        // Deleted domain should not be included
-                                        domain.equals("deleted.soy")
-                                            // Only domains on the pending deposit's tld should
-                                            // appear.
-                                            || !kv.getKey()
-                                                .tld()
-                                                .equals(
-                                                    Iterables.get(
-                                                        Splitter.on('.').split(domain), 1))))
-                        .isFalse();
+                    if (kv.getKey().tld().equals("soy")) {
+                      assertThat(
+                              getFragmentForType(kv, DOMAIN)
+                                  .map(getXmlElement(DOMAIN_NAME_PATTERN))
+                                  .collect(toImmutableSet()))
+                          .containsExactly("hello.soy");
+                    } else {
+                      assertThat(
+                              getFragmentForType(kv, DOMAIN)
+                                  .map(getXmlElement(DOMAIN_NAME_PATTERN))
+                                  .collect(toImmutableSet()))
+                          .containsExactly("cat.fun");
+                    }
                     if (kv.getKey().mode().equals(FULL)) {
-                      // Contact fragments.
-                      assertThat(
-                              getFragmentForType(kv, CONTACT)
-                                  .map(getXmlElement(CONTACT_ID_PATTERN))
-                                  .collect(toImmutableSet()))
-                          // The same contacts are attached too all pending deposits.
-                          .containsExactly("contact1234", "contact456");
-                      // Host fragments.
-                      assertThat(
-                              getFragmentForType(kv, HOST)
-                                  .map(getXmlElement(HOST_NAME_PATTERN))
-                                  .collect(toImmutableSet()))
-                          // Should load the resource before update.
-                          .containsExactly("old.host.test");
+                      // Contact fragments for hello.soy.
+                      if (kv.getKey().tld().equals("soy")) {
+                        assertThat(
+                                getFragmentForType(kv, CONTACT)
+                                    .map(getXmlElement(CONTACT_ID_PATTERN))
+                                    .collect(toImmutableSet()))
+                            .containsExactly("contact1234", "contact789");
+                        // Host fragments for hello.soy.
+                        assertThat(
+                                getFragmentForType(kv, HOST)
+                                    .map(getXmlElement(HOST_NAME_PATTERN))
+                                    .collect(toImmutableSet()))
+                            .containsExactly("ns1.external.tld", "ns1.lol.cat");
+                      } else {
+                        // Contact fragmetns for cat.fun.
+                        assertThat(
+                                getFragmentForType(kv, CONTACT)
+                                    .map(getXmlElement(CONTACT_ID_PATTERN))
+                                    .collect(toImmutableSet()))
+                            .containsExactly("contactABC");
+                        // Host fragments for cat.soy.
+                        assertThat(
+                                getFragmentForType(kv, HOST)
+                                    .map(getXmlElement(HOST_NAME_PATTERN))
+                                    .collect(toImmutableSet()))
+                            .containsExactly("ns1.external.tld", "ns2.hello.soy");
+                      }
                     } else {
                       // BRDA does not contain contact or hosts.
                       assertThat(
@@ -295,7 +453,7 @@ public class RdePipelineTest {
     PendingDeposit brdaKey =
         PendingDeposit.create("soy", now, THIN, CursorType.BRDA, Duration.standardDays(1));
     PendingDeposit rdeKey =
-        PendingDeposit.create("soy", now, FULL, CursorType.RDE_STAGING, Duration.standardDays(1));
+        PendingDeposit.create("soy", now, FULL, RDE_STAGING, Duration.standardDays(1));
 
     verifyFiles(ImmutableMap.of(brdaKey, brdaFragments, rdeKey, rdeFragments), false);
 
@@ -311,7 +469,7 @@ public class RdePipelineTest {
         .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
     assertThat(loadRevision(now, THIN)).isEqualTo(1);
 
-    assertThat(loadCursorTime(CursorType.RDE_STAGING))
+    assertThat(loadCursorTime(RDE_STAGING))
         .isEquivalentAccordingToCompareTo(now.plus(Duration.standardDays(1)));
     assertThat(loadRevision(now, FULL)).isEqualTo(1);
     cloudTasksHelper.assertTasksEnqueued(
@@ -350,7 +508,7 @@ public class RdePipelineTest {
     assertThat(loadCursorTime(CursorType.BRDA)).isEquivalentAccordingToCompareTo(now);
     assertThat(loadRevision(now, THIN)).isEqualTo(0);
 
-    assertThat(loadCursorTime(CursorType.RDE_STAGING)).isEquivalentAccordingToCompareTo(now);
+    assertThat(loadCursorTime(RDE_STAGING)).isEquivalentAccordingToCompareTo(now);
     assertThat(loadRevision(now, FULL)).isEqualTo(0);
     cloudTasksHelper.assertNoTasksEnqueued("brda", "rde-upload");
   }

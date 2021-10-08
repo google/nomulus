@@ -419,6 +419,14 @@ misc:
 beam:
   # The default region to run Apache Beam (Cloud Dataflow) jobs in.
   defaultJobRegion: us-east1
+  # The GCE machine type to use when a job is CPU-intensive (e. g. RDE). Be sure
+  # to check the VM CPU quota for the job region. In a massively parallel
+  # pipeline this quota can be easily reached and needs to be raised, otherwise
+  # the job will run very slowly. Also note that there is a separate quota for
+  # external IPv4 address in a region, which means that machine type with higher
+  # core count per machine may be preferable in order to preserve IP addresses.
+  # See: https://cloud.google.com/compute/quotas#cpu_quota
+  highPerformanceMachineType: n2-standard-4
   stagingBucketUrl: gcs-bucket-with-staged-templates
 
 keyring:
