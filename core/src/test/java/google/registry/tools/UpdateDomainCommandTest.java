@@ -313,7 +313,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     runCommandForced("--client=NewRegistrar", "--autorenews=false", "example.tld");
     eppVerifier.verifySent(
         "domain_update_set_autorenew.xml", ImmutableMap.of("AUTORENEWS", "false"));
-    assertNoLogMessage(logHandler, Level.INFO, "autorenew grace period");
+    assertNoLogMessage(logHandler, Level.WARNING, "autorenew grace period");
   }
 
   @TestOfyAndSql
