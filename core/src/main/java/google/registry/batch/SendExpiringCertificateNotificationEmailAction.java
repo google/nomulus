@@ -98,9 +98,10 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
     try {
       int totalNumOfEmails = sendNotificationEmails();
       String message = String
-          .format("Sent %d expiring certificate notification emails in total successfully.",
+          .format("Done. Attempted to send %d expiring certificate notification emails in total.",
               totalNumOfEmails);
       logger.atInfo().log(message);
+      response.setStatus(SC_OK);
       response.setPayload(message);
     } catch (Exception e) {
       logger.atWarning().withCause(e).log(
