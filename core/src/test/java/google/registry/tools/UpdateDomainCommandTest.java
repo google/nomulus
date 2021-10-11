@@ -25,12 +25,15 @@ import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveDomain;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistResource;
+import static google.registry.testing.TestLogHandlerUtils.assertLogMessage;
+import static google.registry.testing.TestLogHandlerUtils.assertNoLogMessage;
 import static google.registry.util.DateTimeUtils.END_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.beust.jcommander.ParameterException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.LoggerConfig;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -46,12 +49,17 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.InjectExtension;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.util.CapturingLogHandler;
+import java.util.logging.Level;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 /** Unit tests for {@link UpdateDomainCommand}. */
 @DualDatabaseTest
 class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand> {
+
+  private final CapturingLogHandler logHandler = new CapturingLogHandler();
 
   private DomainBase domain;
 
@@ -62,6 +70,12 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     inject.setStaticField(Ofy.class, "clock", fakeClock);
     command.clock = fakeClock;
     domain = persistActiveDomain("example.tld");
+    LoggerConfig.getConfig(UpdateDomainCommand.class).addHandler(logHandler);
+  }
+
+  @AfterEach
+  void afterEach() {
+    LoggerConfig.getConfig(UpdateDomainCommand.class).removeHandler(logHandler);
   }
 
   @TestOfyAndSql
@@ -299,7 +313,7 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     runCommandForced("--client=NewRegistrar", "--autorenews=false", "example.tld");
     eppVerifier.verifySent(
         "domain_update_set_autorenew.xml", ImmutableMap.of("AUTORENEWS", "false"));
-    assertThat(getStderrAsString()).doesNotContain("autorenew grace period");
+    assertNoLogMessage(logHandler, Level.WARNING, "autorenew grace period");
   }
 
   @TestOfyAndSql
@@ -340,9 +354,9 @@ class UpdateDomainCommandTest extends EppToolCommandTestCase<UpdateDomainCommand
     runCommandForced("--client=NewRegistrar", "--autorenews=false", "example.tld");
     eppVerifier.verifySent(
         "domain_update_set_autorenew.xml", ImmutableMap.of("AUTORENEWS", "false"));
-    String stdErr = getStderrAsString();
-    assertThat(stdErr).contains("The following domains are in autorenew grace periods.");
-    assertThat(stdErr).contains("example.tld");
+    assertLogMessage(
+        logHandler, Level.WARNING, "The following domains are in autorenew grace periods.");
+    assertLogMessage(logHandler, Level.WARNING, "example.tld");
   }
 
   @TestOfyAndSql
