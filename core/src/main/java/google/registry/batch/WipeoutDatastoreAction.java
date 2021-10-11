@@ -92,7 +92,12 @@ public class WipeoutDatastoreAction implements Runnable {
               .setJobName(createJobName("bulk-delete-datastore-", clock))
               .setContainerSpecGcsPath(
                   String.format("%s/%s_metadata.json", stagingBucketUrl, PIPELINE_NAME))
-              .setParameters(ImmutableMap.of("kindsToDelete", "*"));
+              .setParameters(
+                  ImmutableMap.of(
+                      "kindsToDelete",
+                      "*",
+                      "registryEnvironment",
+                      RegistryEnvironment.get().name()));
       LaunchFlexTemplateResponse launchResponse =
           dataflow
               .projects()

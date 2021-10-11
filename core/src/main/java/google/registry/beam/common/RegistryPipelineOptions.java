@@ -34,7 +34,6 @@ import org.apache.beam.sdk.options.Description;
 public interface RegistryPipelineOptions extends GcpOptions {
 
   @Description("The Registry environment.")
-  @Nullable
   RegistryEnvironment getRegistryEnvironment();
 
   void setRegistryEnvironment(RegistryEnvironment environment);
