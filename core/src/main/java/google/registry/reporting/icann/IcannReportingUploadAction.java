@@ -46,7 +46,6 @@ import google.registry.util.SendEmailService;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
@@ -98,48 +97,39 @@ public final class IcannReportingUploadAction implements Runnable {
 
   @Override
   public void run() {
-    Runnable transactional =
-        () -> {
-          ImmutableMap.Builder<String, Boolean> reportSummaryBuilder = new ImmutableMap.Builder<>();
-
-          ImmutableMap<Cursor, String> cursors = loadCursors();
-
-          // If cursor time is before now, upload the corresponding report
-          cursors.entrySet().stream()
-              .filter(entry -> entry.getKey().getCursorTime().isBefore(clock.nowUtc()))
-              .forEach(
-                  entry -> {
-                    DateTime cursorTime = entry.getKey().getCursorTime();
-                    uploadReport(
-                        cursorTime,
-                        entry.getKey().getType(),
-                        entry.getValue(),
-                        reportSummaryBuilder);
-                  });
-          // Send email of which reports were uploaded
-          emailUploadResults(reportSummaryBuilder.build());
-          response.setStatus(SC_OK);
-          response.setContentType(PLAIN_TEXT_UTF_8);
-        };
-
-    Callable<Void> lockRunner =
-        () -> {
-          tm().transact(transactional);
-          return null;
-        };
-
-    String lockname = "IcannReportingUploadAction";
-    if (!lockHandler.executeWithLocks(lockRunner, null, Duration.standardHours(2), lockname)) {
-      throw new ServiceUnavailableException("Lock for IcannReportingUploadAction already in use");
+    String lockName = "IcannReportingUploadAction";
+    if (!lockHandler.executeWithLocks(
+        this::runWithLock, null, Duration.standardHours(2), lockName)) {
+      throw new ServiceUnavailableException(String.format("Lock for %s already in use", lockName));
     }
+  }
+
+  private Void runWithLock() {
+    ImmutableMap.Builder<String, Boolean> reportSummaryBuilder = new ImmutableMap.Builder<>();
+
+    ImmutableMap<Cursor, String> cursors = tm().transact(this::loadCursors);
+
+    // If cursor time is before now, upload the corresponding report
+    cursors.entrySet().stream()
+        .filter(entry -> entry.getKey().getCursorTime().isBefore(clock.nowUtc()))
+        .forEach(
+            entry ->
+                tm().transact(
+                        () ->
+                            uploadReport(entry.getKey(), entry.getValue(), reportSummaryBuilder)));
+    // Send email of which reports were uploaded
+    emailUploadResults(reportSummaryBuilder.build());
+    response.setStatus(SC_OK);
+    response.setContentType(PLAIN_TEXT_UTF_8);
+    return null;
   }
 
   /** Uploads the report and rolls forward the cursor for that report. */
   private void uploadReport(
-      DateTime cursorTime,
-      CursorType cursorType,
-      String tldStr,
-      ImmutableMap.Builder<String, Boolean> reportSummaryBuilder) {
+      Cursor cursor, String tldStr, ImmutableMap.Builder<String, Boolean> reportSummaryBuilder) {
+    verifyCursorHasNotChanged(cursor);
+    DateTime cursorTime = cursor.getCursorTime();
+    CursorType cursorType = cursor.getType();
     DateTime cursorTimeMinusMonth = cursorTime.withDayOfMonth(1).minusMonths(1);
     String reportSubdir =
         String.format(
@@ -190,6 +180,15 @@ public final class IcannReportingUploadAction implements Runnable {
               Registry.get(tldStr));
       tm().put(newCursor);
     }
+  }
+
+  // In order to keep the transactions short-lived, we load all of the cursors in a single
+  // transaction then later use one transaction per cursor when uploading the data / updating the
+  // cursors. We run behind a lock so the cursors shouldn't be changed, but double check to be sure.
+  private void verifyCursorHasNotChanged(Cursor cursor) {
+    Cursor fromDb = tm().loadByEntity(cursor);
+    checkArgument(
+        cursor.equals(fromDb), "Expected previously-loaded cursor %s to equal %s", cursor, fromDb);
   }
 
   private String getFileName(CursorType cursorType, DateTime cursorTime, String tld) {
