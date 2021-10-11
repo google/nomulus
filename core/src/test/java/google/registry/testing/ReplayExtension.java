@@ -206,9 +206,12 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
 
     List<TransactionEntity> transactionBatch;
     do {
-      transactionBatch = sqlToDsReplicator.getTransactionBatch();
+      transactionBatch =
+          retrier.callWithRetry(
+              () -> sqlToDsReplicator.getTransactionBatch(), IllegalArgumentException.class);
       for (TransactionEntity txn : transactionBatch) {
-        sqlToDsReplicator.applyTransaction(txn);
+        retrier.callWithRetry(
+            () -> sqlToDsReplicator.applyTransaction(txn), IllegalArgumentException.class);
         if (compare) {
           retrier.callWithRetry(
               () -> ofyTm().transact(() -> compareSqlTransaction(txn)),
