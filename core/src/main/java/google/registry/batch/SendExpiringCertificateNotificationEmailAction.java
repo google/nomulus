@@ -113,9 +113,11 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
   }
 
   /**
-   * Returns a list of registrars that should receive expiring notification emails. There are two
-   * certificates that should be considered (the main certificate and failOver certificate). The
-   * registrars should receive notifications if one of the certificate checks returns true.
+   * Returns a list of registrars that should receive expiring notification emails.
+   *
+   * <p>There are two certificates that should be considered (the main certificate and failOver
+   * certificate). The registrars should receive notifications if one of the certificate checks
+   * returns true.
    */
   @VisibleForTesting
   ImmutableList<RegistrarInfo> getRegistrarsWithExpiringCertificates() {
@@ -156,18 +158,24 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
       return false;
     }
     try {
-      ImmutableSet<InternetAddress> recipients = getEmailAddresses(registrar, Type.TECH);
+      ImmutableSet<InternetAddress> techEmails = getEmailAddresses(registrar, Type.TECH);
+      ImmutableSet<InternetAddress> adminEmails = getEmailAddresses(registrar, Type.ADMIN);
+      ImmutableSet<InternetAddress> recipients = techEmails;
+      ImmutableSet<InternetAddress> ccs = adminEmails;
       Date expirationDate = certificateChecker.getCertificate(certificate.get()).getNotAfter();
       logger.atInfo().log(
-          "Registrar %s should receive an email that its %s SSL certificate will expire on %s.",
-          registrar.getRegistrarName(),
+          " %s SSL certificate of registrar '%s' will expire on %s.",
           certificateType.getDisplayName(),
+          registrar.getRegistrarName(),
           expirationDate.toString());
-      if (recipients.isEmpty()) {
+      if (techEmails.isEmpty() && adminEmails.isEmpty()) {
         logger.atWarning().log(
             "Registrar %s contains no email addresses to receive notification email.",
             registrar.getRegistrarName());
         return false;
+      } else if (techEmails.isEmpty()) {
+        recipients = adminEmails;
+        ccs = ImmutableSet.of();
       }
       sendEmailService.sendEmail(
           EmailMessage.newBuilder()
@@ -180,7 +188,7 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
                       expirationDate,
                       registrar.getRegistrarId()))
               .setRecipients(recipients)
-              .setCcs(getEmailAddresses(registrar, Type.ADMIN))
+              .setCcs(ccs)
               .build());
       /*
        * A duration time offset is used here to ensure that date comparison between two
@@ -249,30 +257,32 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
   /** Sends notification emails to registrars with expiring certificates. */
   @VisibleForTesting
   int sendNotificationEmails() {
-    int emailsSent = 0;
+    int numEmailsSent = 0;
     for (RegistrarInfo registrarInfo : getRegistrarsWithExpiringCertificates()) {
       Registrar registrar = registrarInfo.registrar();
-      if (registrarInfo.isCertExpiring()) {
-        sendNotificationEmail(
-            registrar,
-            registrar.getLastExpiringCertNotificationSentDate(),
-            CertificateType.PRIMARY,
-            registrar.getClientCertificate());
-        emailsSent++;
+      if (registrarInfo.isCertExpiring()
+          && sendNotificationEmail(
+              registrar,
+              registrar.getLastExpiringCertNotificationSentDate(),
+              CertificateType.PRIMARY,
+              registrar.getClientCertificate())) {
+        numEmailsSent++;
       }
-      if (registrarInfo.isFailOverCertExpiring()) {
-        sendNotificationEmail(
-            registrar,
-            registrar.getLastExpiringFailoverCertNotificationSentDate(),
-            CertificateType.FAILOVER,
-            registrar.getFailoverClientCertificate());
-        emailsSent++;
+      if (registrarInfo.isFailOverCertExpiring()
+          && sendNotificationEmail(
+              registrar,
+              registrar.getLastExpiringFailoverCertNotificationSentDate(),
+              CertificateType.FAILOVER,
+              registrar.getFailoverClientCertificate())) {
+        numEmailsSent++;
       }
     }
-    return emailsSent;
+    return numEmailsSent;
   }
 
-  /** Returns a list of email addresses of the registrar that should receive a notification email */
+  /**
+   * Returns a list of email addresses of the registrar that should receive a notification email.
+   */
   @VisibleForTesting
   ImmutableSet<InternetAddress> getEmailAddresses(Registrar registrar, Type contactType) {
     ImmutableSortedSet<RegistrarContact> contacts = registrar.getContactsOfType(contactType);
