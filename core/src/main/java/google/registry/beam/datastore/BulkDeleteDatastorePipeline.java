@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.flogger.FluentLogger;
 import com.google.datastore.v1.Entity;
+import google.registry.config.RegistryEnvironment;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.beam.sdk.Pipeline;
@@ -307,6 +308,11 @@ public class BulkDeleteDatastorePipeline {
   }
 
   public interface BulkDeletePipelineOptions extends GcpOptions {
+
+    @Description("The Registry environment.")
+    RegistryEnvironment getRegistryEnvironment();
+
+    void setRegistryEnvironment(RegistryEnvironment environment);
 
     @Description(
         "The Datastore KINDs to be deleted. The format may be:\n"
