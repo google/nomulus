@@ -43,12 +43,16 @@ dependencies {
   testCompile deps['com.google.appengine:appengine-api-stubs']
   testCompile deps['com.google.guava:guava-testlib']
   testCompile deps['com.google.truth:truth']
+  testCompile deps['junit:junit']
   testCompile deps['org.junit.jupiter:junit-jupiter-api']
   testCompile deps['org.junit.jupiter:junit-jupiter-engine']
+  testCompile deps['org.junit.platform:junit-platform-runner']
+  testCompile deps['org.junit.platform:junit-platform-suite-api']
   testCompile deps['org.hamcrest:hamcrest']
   testCompile deps['org.hamcrest:hamcrest-core']
   testCompile deps['org.mockito:mockito-core']
   testCompile deps['org.mockito:mockito-junit-jupiter']
+  testCompile deps['org.testcontainers:junit-jupiter']
   testCompile files("${rootDir}/third_party/objectify/v4_1/objectify-4.1.3.jar")
   testCompile project(path: ':common', configuration: 'testing')
   testRuntime deps['com.google.flogger:flogger-system-backend']
@@ -56,4 +60,8 @@ dependencies {
   annotationProcessor deps['com.google.dagger:dagger-compiler']
   testAnnotationProcessor deps['com.google.auto.value:auto-value']
   testAnnotationProcessor deps['com.google.dagger:dagger-compiler']
+}
+
+test {
+  useJUnitPlatform()
 }
