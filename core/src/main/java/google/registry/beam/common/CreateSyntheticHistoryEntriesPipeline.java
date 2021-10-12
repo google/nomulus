@@ -64,16 +64,7 @@ public class CreateSyntheticHistoryEntriesPipeline implements Serializable {
   private static final String HISTORY_REASON =
       "Backfill EppResource history objects after initial backup to SQL";
 
-  public static void main(String[] args) {
-    RegistryPipelineOptions options =
-        PipelineOptionsFactory.fromArgs(args).withValidation().as(RegistryPipelineOptions.class);
-    RegistryPipelineOptions.validateRegistryPipelineOptions(options);
-    options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
-    String registryAdminRegistrarId =
-        DaggerCreateSyntheticHistoryEntriesPipeline_ConfigComponent.create()
-            .getRegistryAdminRegistrarId();
-
-    Pipeline pipeline = Pipeline.create(options);
+  static void setup(Pipeline pipeline, String registryAdminRegistrarId) {
     for (Class<? extends EppResource> clazz : EPP_RESOURCE_CLASSES) {
       pipeline
           .apply(
@@ -106,6 +97,19 @@ public class CreateSyntheticHistoryEntriesPipeline implements Serializable {
                         return null;
                       }));
     }
+  }
+
+  public static void main(String[] args) {
+    RegistryPipelineOptions options =
+        PipelineOptionsFactory.fromArgs(args).withValidation().as(RegistryPipelineOptions.class);
+    RegistryPipelineOptions.validateRegistryPipelineOptions(options);
+    options.setIsolationOverride(TransactionIsolationLevel.TRANSACTION_READ_COMMITTED);
+    String registryAdminRegistrarId =
+        DaggerCreateSyntheticHistoryEntriesPipeline_ConfigComponent.create()
+            .getRegistryAdminRegistrarId();
+
+    Pipeline pipeline = Pipeline.create(options);
+    setup(pipeline, registryAdminRegistrarId);
     pipeline.run();
   }
 

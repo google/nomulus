@@ -216,7 +216,8 @@ public class DomainBase extends DomainContent
           .setSubordinateHosts(domainContent.getSubordinateHosts())
           .setStatusValues(domainContent.getStatusValues())
           .setTransferData(domainContent.getTransferData())
-          .setDnsRefreshRequestTime(domainContent.getDnsRefreshRequestTime());
+          .setDnsRefreshRequestTime(domainContent.getDnsRefreshRequestTime())
+          ;
     }
   }
 }
