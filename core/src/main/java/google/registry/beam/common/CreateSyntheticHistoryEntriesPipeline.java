@@ -41,16 +41,16 @@ import org.apache.beam.sdk.values.TypeDescriptor;
  *
  * <p>The history entries in Datastore does not have the EPP resource embedded in them. Therefore
  * after {@link google.registry.beam.initsql.InitSqlPipeline} runs, these fields will all be empty.
- * This pipeline load all EPP resources and for each of them creates a synthetic history entry that
+ * This pipeline loads all EPP resources and for each of them creates a synthetic history entry that
  * contains the resource and saves them back to SQL, so that they can be used in the RDE pipeline.
  *
  * <p>To run the pipeline:
  *
  * <p><code>
- * $ ./nom_build :core:jpaDemo --args="--region=us-central1
+ * $ ./nom_build :core:cSHE --args="--region=us-central1
  *   --runner=DataflowRunner
  *   --registryEnvironment=CRASH
- *   --project={oroject-id}
+ *   --project={project-id}
  *   --workerMachineType=n2-standard-4"
  * </code>
  *
