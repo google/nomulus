@@ -80,6 +80,9 @@ def fragileTestPatterns = [
 
     // This test seems to have some problems.
     "google/registry/reporting/icann/TransactionsReportingQueryBuilderTest.*",
+
+    // Moved here as we see cases of it being the first test that fails.
+    "google/registry/batch/ExpandRecurringBillingEventsActionTest.*",
 ] + dockerIncompatibleTestPatterns
 
 sourceSets {

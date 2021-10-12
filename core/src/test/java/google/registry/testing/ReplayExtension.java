@@ -39,8 +39,6 @@ import google.registry.persistence.transaction.Transaction.Mutation;
 import google.registry.persistence.transaction.Transaction.Update;
 import google.registry.persistence.transaction.TransactionEntity;
 import google.registry.util.RequestStatusChecker;
-import google.registry.util.Retrier;
-import google.registry.util.SystemSleeper;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -199,7 +197,6 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   }
 
   private void replayToOfy() {
-    Retrier retrier = new Retrier(new SystemSleeper(), 5);
     if (sqlToDsReplicator == null) {
       return;
     }
@@ -210,9 +207,7 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
       for (TransactionEntity txn : transactionBatch) {
         sqlToDsReplicator.applyTransaction(txn);
         if (compare) {
-          retrier.callWithRetry(
-              () -> ofyTm().transact(() -> compareSqlTransaction(txn)),
-              IllegalArgumentException.class);
+          ofyTm().transact(() -> compareSqlTransaction(txn));
         }
         clock.advanceOneMilli();
       }
