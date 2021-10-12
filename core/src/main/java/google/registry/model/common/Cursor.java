@@ -108,6 +108,9 @@ public class Cursor extends ImmutableObject implements DatastoreAndSqlEntity, Un
     /** Cursor for tracking monthly uploads of ICANN activity reports. */
     ICANN_UPLOAD_ACTIVITY(Registry.class),
 
+    /** Cursor for tracking date/time through which domain creation notifications have been sent. */
+    DOMAIN_CREATION_WATCHER(EntityGroupRoot.class),
+
     // TODO(sarahbot) Delete this cursor once all data in the database that refers to it is removed.
     /** Cursor for tracking monthly uploads of MANIFEST.txt to ICANN. No longer used. */
     @Deprecated
