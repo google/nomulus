@@ -44,6 +44,11 @@ import org.apache.beam.sdk.values.TypeDescriptor;
  * This pipeline loads all EPP resources and for each of them creates a synthetic history entry that
  * contains the resource and saves them back to SQL, so that they can be used in the RDE pipeline.
  *
+ * <p>Note that this pipeline should only be run in a test environment right after the init SQL
+ * pipeline finishes, and no EPP update is being made to the system, otherwise there is no garuantee
+ * that the latest history entry for a given EPP resource does not already have the resource
+ * embedded within it.
+ *
  * <p>To run the pipeline:
  *
  * <p><code>
