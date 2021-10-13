@@ -709,7 +709,7 @@ createToolTask(
 
 createToolTask(
     'createSyntheticHistoryEntries',
-    'google.registry.beam.common.CreateSyntheticHistoryEntriesPipeline')
+    'google.registry.tools.javascrap.CreateSyntheticHistoryEntriesPipeline')
 
 project.tasks.create('initSqlPipeline', JavaExec) {
   main = 'google.registry.beam.initsql.InitSqlPipeline'
