@@ -229,6 +229,15 @@ public final class DomainRenewFlow implements TransactionalFlow {
 
   private DomainHistory buildDomainHistory(
       DomainBase newDomain, DateTime now, Period period, Duration renewGracePeriod) {
+    Optional<MetadataExtension> metadataExtensionOpt =
+        eppInput.getSingleExtension(MetadataExtension.class);
+    if (metadataExtensionOpt.isPresent()) {
+      MetadataExtension metadataExtension = metadataExtensionOpt.get();
+      if (metadataExtension.getReason() != null) {
+        historyBuilder.setReason(metadataExtension.getReason());
+      }
+      historyBuilder.setRequestedByRegistrar(metadataExtension.getRequestedByRegistrar());
+    }
     return historyBuilder
         .setType(DOMAIN_RENEW)
         .setPeriod(period)

@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
 import static google.registry.util.CollectionUtils.findDuplicates;
+import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 import static google.registry.util.PreconditionsUtils.checkArgumentPresent;
 
 import com.beust.jcommander.Parameter;
@@ -53,6 +54,17 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
   @Parameter(description = "Names of the domains to renew.", required = true)
   private List<String> mainParameters;
 
+  @Parameter(
+      names = {"--reason"},
+      description = "Reason for the change.")
+  String reason;
+
+  @Parameter(
+      names = {"--registrar_request"},
+      description = "Whether the change was requested by a registrar.",
+      arity = 1)
+  Boolean requestedByRegistrar;
+
   @Inject
   Clock clock;
 
@@ -70,12 +82,23 @@ final class RenewDomainCommand extends MutatingEppToolCommand {
       checkArgumentPresent(domainOptional, "Domain '%s' does not exist or is deleted", domainName);
       setSoyTemplate(DomainRenewSoyInfo.getInstance(), DomainRenewSoyInfo.RENEWDOMAIN);
       DomainBase domain = domainOptional.get();
-      addSoyRecord(
-          isNullOrEmpty(clientId) ? domain.getCurrentSponsorRegistrarId() : clientId,
+
+      SoyMapData soyMapData =
           new SoyMapData(
               "domainName", domain.getDomainName(),
               "expirationDate", domain.getRegistrationExpirationTime().toString(DATE_FORMATTER),
-              "period", String.valueOf(period)));
+              "period", String.valueOf(period));
+
+      if (requestedByRegistrar != null) {
+        soyMapData.put("requestedByRegistrar", requestedByRegistrar.toString());
+      }
+      if (reason != null) {
+        checkArgumentNotNull(
+            requestedByRegistrar, "--registrar_request is required when --reason is specified");
+        soyMapData.put("reason", reason);
+      }
+      addSoyRecord(
+          isNullOrEmpty(clientId) ? domain.getCurrentSponsorRegistrarId() : clientId, soyMapData);
     }
   }
 }

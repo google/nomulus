@@ -133,6 +133,55 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   }
 
   @Test
+  void testSuccess_withReasonAndRegistrarRequest() throws Exception {
+    persistActiveDomain(
+        "domain.tld",
+        DateTime.parse("2014-09-05T05:05:05Z"),
+        DateTime.parse("2015-09-05T05:05:05Z"));
+    runCommandForced(
+        "domain.tld", "--period=1", "--reason=Renewing test domain", "--registrar_request=true");
+
+    eppVerifier
+        .expectRegistrarId("TheRegistrar")
+        .verifySent(
+            "domain_renew_via_urs.xml",
+            ImmutableMap.of(
+                "DOMAIN",
+                "domain.tld",
+                "EXPDATE",
+                "2015-09-05",
+                "YEARS",
+                "1",
+                "REASON",
+                "Renewing test domain",
+                "REQUESTED",
+                "true"));
+  }
+
+  @Test
+  void testSuccess_withReqistrarRequestOnly() throws Exception {
+    persistActiveDomain(
+        "domain.tld",
+        DateTime.parse("2014-09-05T05:05:05Z"),
+        DateTime.parse("2015-09-05T05:05:05Z"));
+    runCommandForced("domain.tld", "--period=1", "--registrar_request=true");
+
+    eppVerifier
+        .expectRegistrarId("TheRegistrar")
+        .verifySent(
+            "domain_renew_with_metadata_requestedByRegistrar_only.xml",
+            ImmutableMap.of(
+                "DOMAIN",
+                "domain.tld",
+                "EXPDATE",
+                "2015-09-05",
+                "YEARS",
+                "1",
+                "REQUESTED",
+                "true"));
+  }
+
+  @Test
   void testFailure_domainDoesntExist() {
     IllegalArgumentException e =
         assertThrows(IllegalArgumentException.class, () -> runCommandForced("nonexistent.tld"));
@@ -172,5 +221,20 @@ public class RenewDomainCommandTest extends EppToolCommandTestCase<RenewDomainCo
   @Test
   void testFailure_missingDomainNames() {
     assertThrows(ParameterException.class, () -> runCommand("--period 4"));
+  }
+
+  @Test
+  void testFailure_registrarRequestIsRequiredWhenReasonIsPresent() {
+    persistActiveDomain(
+        "domain.tld",
+        DateTime.parse("2014-09-05T05:05:05Z"),
+        DateTime.parse("2015-09-05T05:05:05Z"));
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> runCommandForced("domain.tld", "--period=1", "--reason=testing_only"));
+    assertThat(e)
+        .hasMessageThat()
+        .isEqualTo("--registrar_request is required when --reason is specified");
   }
 }
