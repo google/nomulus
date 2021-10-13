@@ -23,7 +23,6 @@ For perforce users:
 import argparse
 import difflib
 import re
-import string
 import subprocess
 import io
 import sys
