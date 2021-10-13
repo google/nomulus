@@ -13,6 +13,8 @@ import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
 import com.google.common.collect.ImmutableList;
 import google.registry.beam.TestPipelineExtension;
 import google.registry.model.EppResource;
+import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.UpdateAutoTimestamp.DisableAutoUpdateResource;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
@@ -47,13 +49,16 @@ public class CreateSyntheticHistoryEntriesPipelineTest {
 
   @BeforeEach
   void beforeEach() {
+    UpdateAutoTimestamp.disableAutoUpdate();
     setTmOverrideForTest(jpaTm());
     persistNewRegistrar("TheRegistrar");
     persistNewRegistrar("NewRegistrar");
     createTld("tld");
-    domain = persistActiveDomain("example.tld");
-    contact = jpaTm().transact(() -> jpaTm().loadByKey(domain.getRegistrant()));
-    host = persistActiveHost("external.com");
+    try (DisableAutoUpdateResource disable = UpdateAutoTimestamp.disableAutoUpdate()) {
+      domain = persistActiveDomain("example.tld");
+      contact = jpaTm().transact(() -> jpaTm().loadByKey(domain.getRegistrant()));
+      host = persistActiveHost("external.com");
+    }
   }
 
   @AfterEach
@@ -83,6 +88,6 @@ public class CreateSyntheticHistoryEntriesPipelineTest {
     assertThat(historyEntry.getRegistrarId()).isEqualTo("NewRegistrar");
     assertAboutImmutableObjects()
         .that(historyEntry.getResourceAtPointInTime().get())
-        .isEqualExceptFields(resource, "updateTimestamp");
+        .hasFieldsEqualTo(resource);
   }
 }
