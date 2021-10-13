@@ -32,6 +32,8 @@ import google.registry.model.annotations.NotBackedUp;
 import google.registry.model.annotations.NotBackedUp.Reason;
 import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.persistence.VKey;
+import google.registry.persistence.transaction.JpaTransactionManager;
+import google.registry.persistence.transaction.TransactionManager;
 import google.registry.util.RequestStatusChecker;
 import google.registry.util.RequestStatusCheckerImpl;
 import java.io.Serializable;
@@ -212,6 +214,47 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
       Duration leaseLength,
       RequestStatusChecker requestStatusChecker,
       boolean checkThreadRunning) {
+    return acquireWithTransactionManager(
+        resourceName, tld, leaseLength, requestStatusChecker, checkThreadRunning, tm());
+  }
+
+  /**
+   * Try to acquire a lock in SQL. Returns absent if it can't be acquired.
+   *
+   * <p>This method exists so that Beam pipelines can acquire / load / release locks.
+   */
+  public static Optional<Lock> acquireSql(
+      String resourceName,
+      @Nullable String tld,
+      Duration leaseLength,
+      RequestStatusChecker requestStatusChecker,
+      boolean checkThreadRunning) {
+    return acquireWithTransactionManager(
+        resourceName, tld, leaseLength, requestStatusChecker, checkThreadRunning, jpaTm());
+  }
+
+  /** Release the lock. */
+  public void release() {
+    releaseWithTransactionManager(tm());
+  }
+
+  /**
+   * Release the lock from SQL.
+   *
+   * <p>This method exists so that Beam pipelines can acquire / load / release locks.
+   */
+  public void releaseSql() {
+    releaseWithTransactionManager(jpaTm());
+  }
+
+  /** Try to acquire a lock. Returns absent if it can't be acquired. */
+  private static Optional<Lock> acquireWithTransactionManager(
+      String resourceName,
+      @Nullable String tld,
+      Duration leaseLength,
+      RequestStatusChecker requestStatusChecker,
+      boolean checkThreadRunning,
+      TransactionManager transactionManager) {
     String scope = (tld != null) ? tld : GLOBAL;
     String lockId = makeLockId(resourceName, scope);
     // It's important to use transactNew rather than transact, because a Lock can be used to control
@@ -219,11 +262,12 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
     // must be definitively acquired before it is used, even when called inside another transaction.
     Supplier<AcquireResult> lockAcquirer =
         () -> {
-          DateTime now = tm().getTransactionTime();
+          DateTime now = transactionManager.getTransactionTime();
 
           // Checking if an unexpired lock still exists - if so, the lock can't be acquired.
           Lock lock =
-              tm().loadByKeyIfPresent(
+              transactionManager
+                  .loadByKeyIfPresent(
                       VKey.create(
                           Lock.class,
                           new LockId(resourceName, scope),
@@ -249,13 +293,15 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
               create(resourceName, scope, requestStatusChecker.getLogId(), now, leaseLength);
           // Locks are not parented under an EntityGroupRoot (so as to avoid write
           // contention) and don't need to be backed up.
-          tm().putIgnoringReadOnly(newLock);
+          transactionManager.putIgnoringReadOnly(newLock);
 
           return AcquireResult.create(now, lock, newLock, lockState);
         };
     // In ofy, backup is determined per-action, but in SQL it's determined per-transaction
     AcquireResult acquireResult =
-        tm().isOfy() ? tm().transactNew(lockAcquirer) : jpaTm().transactWithoutBackup(lockAcquirer);
+        transactionManager.isOfy()
+            ? transactionManager.transactNew(lockAcquirer)
+            : ((JpaTransactionManager) transactionManager).transactWithoutBackup(lockAcquirer);
 
     logAcquireResult(acquireResult);
     lockMetrics.recordAcquire(resourceName, scope, acquireResult.lockState());
@@ -263,7 +309,7 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
   }
 
   /** Release the lock. */
-  public void release() {
+  private void releaseWithTransactionManager(TransactionManager transactionManager) {
     // Just use the default clock because we aren't actually doing anything that will use the clock.
     Supplier<Void> lockReleaser =
         () -> {
@@ -274,15 +320,17 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
           VKey<Lock> key =
               VKey.create(
                   Lock.class, new LockId(resourceName, tld), Key.create(Lock.class, lockId));
-          Lock loadedLock = tm().loadByKeyIfPresent(key).orElse(null);
+          Lock loadedLock = transactionManager.loadByKeyIfPresent(key).orElse(null);
           if (Lock.this.equals(loadedLock)) {
             // Use deleteIgnoringReadOnly() so that we don't create a commit log entry for deleting
             // the lock.
             logger.atInfo().log("Deleting lock: %s", lockId);
-            tm().deleteIgnoringReadOnly(key);
+            transactionManager.deleteIgnoringReadOnly(key);
 
             lockMetrics.recordRelease(
-                resourceName, tld, new Duration(acquiredTime, tm().getTransactionTime()));
+                resourceName,
+                tld,
+                new Duration(acquiredTime, transactionManager.getTransactionTime()));
           } else {
             logger.atSevere().log(
                 "The lock we acquired was transferred to someone else before we"
@@ -294,11 +342,12 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
           }
           return null;
         };
+
     // In ofy, backup is determined per-action, but in SQL it's determined per-transaction
-    if (tm().isOfy()) {
-      tm().transact(lockReleaser);
+    if (transactionManager.isOfy()) {
+      transactionManager.transact(lockReleaser);
     } else {
-      jpaTm().transactWithoutBackup(lockReleaser);
+      ((JpaTransactionManager) transactionManager).transactWithoutBackup(lockReleaser);
     }
   }
 

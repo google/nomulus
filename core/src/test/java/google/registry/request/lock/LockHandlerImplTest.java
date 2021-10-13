@@ -40,7 +40,9 @@ final class LockHandlerImplTest {
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2001-08-29T12:20:00Z"));
 
-  @RegisterExtension final AppEngineExtension appEngine = AppEngineExtension.builder().build();
+  @RegisterExtension
+  final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private static class CountingCallable implements Callable<Void> {
     int numCalled = 0;
@@ -69,18 +71,13 @@ final class LockHandlerImplTest {
   }
 
   private boolean executeWithLocks(Callable<Void> callable, final @Nullable Lock acquiredLock) {
-    LockHandlerImpl lockHandler = new LockHandlerImpl(new RequestStatusCheckerImpl(), clock) {
-      private static final long serialVersionUID = 0L;
-      @Override
-      Optional<Lock> acquire(String resourceName, String tld, Duration leaseLength) {
-        assertThat(resourceName).isEqualTo("resourceName");
-        assertThat(tld).isEqualTo("tld");
-        assertThat(leaseLength).isEqualTo(ONE_DAY);
-        return Optional.ofNullable(acquiredLock);
-      }
-    };
+    return createTestLockHandler(acquiredLock)
+        .executeWithLocks(callable, "tld", ONE_DAY, "resourceName");
+  }
 
-    return lockHandler.executeWithLocks(callable, "tld", ONE_DAY, "resourceName");
+  private boolean executeWithSqlLocks(Callable<Void> callable, final @Nullable Lock acquiredLock) {
+    return createTestLockHandler(acquiredLock)
+        .executeWithSqlLocks(callable, "tld", ONE_DAY, "resourceName");
   }
 
   @Test
@@ -88,6 +85,15 @@ final class LockHandlerImplTest {
     Lock lock = mock(Lock.class);
     CountingCallable countingCallable = new CountingCallable();
     assertThat(executeWithLocks(countingCallable, lock)).isTrue();
+    assertThat(countingCallable.numCalled).isEqualTo(1);
+    verify(lock, times(1)).release();
+  }
+
+  @Test
+  void testSqlLockSucceeds() {
+    Lock lock = mock(Lock.class);
+    CountingCallable countingCallable = new CountingCallable();
+    assertThat(executeWithSqlLocks(countingCallable, lock)).isTrue();
     assertThat(countingCallable.numCalled).isEqualTo(1);
     verify(lock, times(1)).release();
   }
@@ -139,5 +145,24 @@ final class LockHandlerImplTest {
     CountingCallable countingCallable = new CountingCallable();
     assertThat(executeWithLocks(countingCallable, lock)).isFalse();
     assertThat(countingCallable.numCalled).isEqualTo(0);
+  }
+
+  private LockHandler createTestLockHandler(@Nullable Lock acquiredLock) {
+    return new LockHandlerImpl(new RequestStatusCheckerImpl(), clock) {
+      private static final long serialVersionUID = 0L;
+
+      @Override
+      Optional<Lock> acquire(String resourceName, String tld, Duration leaseLength) {
+        assertThat(resourceName).isEqualTo("resourceName");
+        assertThat(tld).isEqualTo("tld");
+        assertThat(leaseLength).isEqualTo(ONE_DAY);
+        return Optional.ofNullable(acquiredLock);
+      }
+
+      @Override
+      Optional<Lock> acquireSql(String resourceName, String tld, Duration leaseLength) {
+        return acquire(resourceName, tld, leaseLength);
+      }
+    };
   }
 }
