@@ -639,9 +639,32 @@ class SendExpiringCertificateNotificationEmailActionTest {
   }
 
   @TestOfyAndSql
-  void run_responseStatusIs200() {
+  void run_sentZeroEmail_responseStatusIs200() {
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo("Done. Sent 0 expiring certificate notification emails in total.");
+  }
+
+  @TestOfyAndSql
+  void run_sentEmails_responseStatusIs200() throws Exception {
+    for (int i = 1; i <= 5; i++) {
+      persistResource(
+          createRegistrar(
+                  "id_" + i,
+                  "name" + i,
+                  SelfSignedCaCertificate.create(
+                          "www.example.tld",
+                          DateTime.parse("2020-09-02T00:00:00Z"),
+                          DateTime.parse("2021-06-01T00:00:00Z"))
+                      .cert(),
+                  null)
+              .build());
+    }
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getPayload())
+        .isEqualTo("Done. Sent 5 expiring certificate notification emails in total.");
   }
 
   /** Returns a sample registrar with a customized registrar name, client id and certificate* */
