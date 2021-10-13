@@ -42,6 +42,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.EppException;
+import google.registry.flows.EppRequestSource;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -531,6 +532,55 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
             .setMsg("Domain was auto-renewed.")
             .setParent(historyEntryDomainRenew)
             .build());
+  }
+
+  @TestOfyAndSql
+  void testSuccess_metaData_withReasonAndRequestedByRegistrar() throws Exception {
+    eppRequestSource = EppRequestSource.TOOL;
+    setEppInput(
+        "domain_renew_metadata_with_reason_and_requestedByRegistrar.xml",
+        ImmutableMap.of(
+            "DOMAIN",
+            "example.tld",
+            "EXPDATE",
+            "2000-04-03",
+            "YEARS",
+            "1",
+            "REASON",
+            "domain-renew-test",
+            "REQUESTED",
+            "false"));
+    persistDomain();
+    runFlow();
+    DomainBase domain = reloadResourceByForeignKey();
+    assertAboutDomains()
+        .that(domain)
+        .hasOneHistoryEntryEachOfTypes(
+            HistoryEntry.Type.DOMAIN_CREATE, HistoryEntry.Type.DOMAIN_RENEW);
+    assertAboutHistoryEntries()
+        .that(getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_RENEW))
+        .hasMetadataReason("domain-renew-test")
+        .and()
+        .hasMetadataRequestedByRegistrar(false);
+  }
+
+  @TestOfyAndSql
+  void testSuccess_metaData_withRequestedByRegistrarOnly() throws Exception {
+    eppRequestSource = EppRequestSource.TOOL;
+    setEppInput("domain_renew_metadata_with_requestedByRegistrar_only.xml");
+
+    persistDomain();
+    runFlow();
+    DomainBase domain1 = reloadResourceByForeignKey();
+    assertAboutDomains()
+        .that(domain1)
+        .hasOneHistoryEntryEachOfTypes(
+            HistoryEntry.Type.DOMAIN_CREATE, HistoryEntry.Type.DOMAIN_RENEW);
+    assertAboutHistoryEntries()
+        .that(getOnlyHistoryEntryOfType(domain1, HistoryEntry.Type.DOMAIN_RENEW))
+        .hasMetadataReason(null)
+        .and()
+        .hasMetadataRequestedByRegistrar(true);
   }
 
   @TestOfyAndSql

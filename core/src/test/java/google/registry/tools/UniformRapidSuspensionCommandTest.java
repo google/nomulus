@@ -242,13 +242,44 @@ class UniformRapidSuspensionCommandTest
   }
 
   @Test
-  void testRenewOneYear_renewFlowIsTriggered() throws Exception {
-    // this test case was written based on an existing test case,
-    // testUndo_removesLocksReplacesHostsAndDsData() but two things were modified to test the
-    // renew workflow, which were:
-    // 1) a different domain that contains creation time and expiration time
-    // 2) renew_one_year is set to true
+  void testRenewOneYearWithoutUndo_verifyReasonWithoutUndo() throws Exception {
+    persistDomainWithHosts(
+        newDomainBase("evil.tld")
+            .asBuilder()
+            .setCreationTimeForTest(DateTime.parse("2021-10-01T05:01:11Z"))
+            .setRegistrationExpirationTime(DateTime.parse("2022-10-01T05:01:11Z"))
+            .setPersistedCurrentSponsorRegistrarId("CharlestonRoad")
+            .build(),
+        defaultDsData,
+        urs1,
+        urs2);
 
+    runCommandForced(
+        "--domain_name=evil.tld",
+        "--hosts=ns1.example.com,ns2.example.com",
+        "--renew_one_year=true");
+
+    eppVerifier
+        .expectRegistrarId("CharlestonRoad")
+        .expectSuperuser()
+        .verifySent(
+            "domain_renew_via_urs.xml",
+            ImmutableMap.of(
+                "DOMAIN",
+                "evil.tld",
+                "EXPDATE",
+                "2022-10-01",
+                "YEARS",
+                "1",
+                "REASON",
+                "Uniform Rapid Suspension",
+                "REQUESTED",
+                "false"))
+        .verifySentAny();
+  }
+
+  @Test
+  void testRenewOneYearWithUndo_verifyReasonWithUndo() throws Exception {
     persistDomainWithHosts(
         newDomainBase("evil.tld")
             .asBuilder()
@@ -266,21 +297,65 @@ class UniformRapidSuspensionCommandTest
         "--hosts=ns1.example.com,ns2.example.com",
         "--renew_one_year=true");
 
-    // verify if renew flow is triggered
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
         .verifySent(
-            "domain_renew.xml",
-            ImmutableMap.of("DOMAIN", "evil.tld", "EXPDATE", "2022-10-01", "YEARS", "1"));
+            "domain_renew_via_urs.xml",
+            ImmutableMap.of(
+                "DOMAIN",
+                "evil.tld",
+                "EXPDATE",
+                "2022-10-01",
+                "YEARS",
+                "1",
+                "REASON",
+                "Undo Uniform Rapid Suspension",
+                "REQUESTED",
+                "false"))
+        .verifySentAny();
+  }
 
-    // verify if update flow is triggered
+  @Test
+  void testRenewOneYear_verifyBothRenewAndUpdateFlowsAreTriggered() throws Exception {
+    persistDomainWithHosts(
+        newDomainBase("evil.tld")
+            .asBuilder()
+            .setCreationTimeForTest(DateTime.parse("2021-10-01T05:01:11Z"))
+            .setRegistrationExpirationTime(DateTime.parse("2022-10-01T05:01:11Z"))
+            .setPersistedCurrentSponsorRegistrarId("CharlestonRoad")
+            .build(),
+        defaultDsData,
+        urs1,
+        urs2);
+
+    runCommandForced(
+        "--domain_name=evil.tld",
+        "--undo",
+        "--hosts=ns1.example.com,ns2.example.com",
+        "--renew_one_year=true");
+
     eppVerifier
         .expectRegistrarId("CharlestonRoad")
         .expectSuperuser()
-        .verifySent("uniform_rapid_suspension_undo.xml")
-        .verifyNoMoreSent();
-    assertNotInStdout("--undo"); // Undo shouldn't print a new undo command.
+        .verifySent(
+            "domain_renew_via_urs.xml",
+            ImmutableMap.of(
+                "DOMAIN",
+                "evil.tld",
+                "EXPDATE",
+                "2022-10-01",
+                "YEARS",
+                "1",
+                "REASON",
+                "Undo Uniform Rapid Suspension",
+                "REQUESTED",
+                "false"));
+
+    eppVerifier
+        .expectRegistrarId("CharlestonRoad")
+        .expectSuperuser()
+        .verifySent("uniform_rapid_suspension_undo.xml");
 
     // verify that no other flows are triggered after the renew and update flows
     eppVerifier.verifyNoMoreSent();

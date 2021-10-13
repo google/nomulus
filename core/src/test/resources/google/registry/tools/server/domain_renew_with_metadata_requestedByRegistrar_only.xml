@@ -1,0 +1,18 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <command>
+    <renew>
+      <domain:renew
+          xmlns:domain="urn:ietf:params:xml:ns:domain-1.0">
+        <domain:name>%DOMAIN%</domain:name>
+        <domain:curExpDate>%EXPDATE%</domain:curExpDate>
+        <domain:period unit="y">%YEARS%</domain:period>
+      </domain:renew>
+    </renew>
+    <extension>
+      <metadata:metadata xmlns:metadata="urn:google:params:xml:ns:metadata-1.0">
+        <metadata:requestedByRegistrar>%REQUESTED%</metadata:requestedByRegistrar>
+      </metadata:metadata>
+    </extension>
+    <clTRID>RegistryTool</clTRID>
+  </command>
+</epp>
