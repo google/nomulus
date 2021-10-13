@@ -1,4 +1,4 @@
-package google.registry.beam.common;
+package google.registry.tools.javascrap;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;

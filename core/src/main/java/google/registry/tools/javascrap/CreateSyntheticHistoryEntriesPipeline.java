@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package google.registry.beam.common;
+package google.registry.tools.javascrap;
 
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 
 import com.google.common.collect.ImmutableList;
 import dagger.Component;
+import google.registry.beam.common.RegistryJpaIO;
+import google.registry.beam.common.RegistryPipelineOptions;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.model.EppResource;
