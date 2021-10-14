@@ -158,24 +158,19 @@ public class SendExpiringCertificateNotificationEmailAction implements Runnable 
       return false;
     }
     try {
-      ImmutableSet<InternetAddress> techEmails = getEmailAddresses(registrar, Type.TECH);
-      ImmutableSet<InternetAddress> adminEmails = getEmailAddresses(registrar, Type.ADMIN);
-      ImmutableSet<InternetAddress> recipients = techEmails;
-      ImmutableSet<InternetAddress> ccs = adminEmails;
+      ImmutableSet<InternetAddress> recipients = getEmailAddresses(registrar, Type.TECH);
+      ImmutableSet<InternetAddress> ccs = getEmailAddresses(registrar, Type.ADMIN);
       Date expirationDate = certificateChecker.getCertificate(certificate.get()).getNotAfter();
       logger.atInfo().log(
           " %s SSL certificate of registrar '%s' will expire on %s.",
           certificateType.getDisplayName(),
           registrar.getRegistrarName(),
           expirationDate.toString());
-      if (techEmails.isEmpty() && adminEmails.isEmpty()) {
+      if (recipients.isEmpty() && ccs.isEmpty()) {
         logger.atWarning().log(
             "Registrar %s contains no email addresses to receive notification email.",
             registrar.getRegistrarName());
         return false;
-      } else if (techEmails.isEmpty()) {
-        recipients = adminEmails;
-        ccs = ImmutableSet.of();
       }
       sendEmailService.sendEmail(
           EmailMessage.newBuilder()

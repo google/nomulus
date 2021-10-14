@@ -158,7 +158,6 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setFailoverClientCertificate(cert.get(), clock.nowUtc())
                 .build());
     persistSampleContacts(registrar, Type.TECH);
-    persistResource(registrar);
     assertThat(
             action.sendNotificationEmail(registrar, START_OF_TIME, CertificateType.FAILOVER, cert))
         .isEqualTo(true);
@@ -181,7 +180,6 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .setFailoverClientCertificate(cert.get(), clock.nowUtc())
                 .build());
     persistSampleContacts(registrar, Type.ADMIN);
-    persistResource(registrar);
     assertThat(
             action.sendNotificationEmail(registrar, START_OF_TIME, CertificateType.FAILOVER, cert))
         .isEqualTo(true);
@@ -202,7 +200,6 @@ class SendExpiringCertificateNotificationEmailActionTest {
                     null)
                 .build());
     persistSampleContacts(registrar, Type.LEGAL);
-    persistResource(registrar);
     assertThat(
             action.sendNotificationEmail(
                 registrar,
@@ -289,8 +286,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
   }
 
   @TestOfyAndSql
-  void sendNotificationEmails_allEmailsBeingAttemptedToSend_onlyMainCertificates()
-      throws Exception {
+  void sendNotificationEmails_allEmailsBeingSent_onlyMainCertificates() throws Exception {
     for (int i = 1; i <= 10; i++) {
       Registrar registrar =
           persistResource(
@@ -310,8 +306,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
   }
 
   @TestOfyAndSql
-  void sendNotificationEmails_allEmailsBeingAttemptedToSend_onlyFailOverCertificates()
-      throws Exception {
+  void sendNotificationEmails_allEmailsBeingSent_onlyFailOverCertificates() throws Exception {
     for (int i = 1; i <= 10; i++) {
       Registrar registrar =
           persistResource(
@@ -331,7 +326,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
   }
 
   @TestOfyAndSql
-  void sendNotificationEmails_allEmailsBeingAttemptedToSend_mixedOfCertificates() throws Exception {
+  void sendNotificationEmails_allEmailsBeingSent_mixedOfCertificates() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
