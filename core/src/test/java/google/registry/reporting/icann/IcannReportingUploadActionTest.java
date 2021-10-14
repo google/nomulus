@@ -294,8 +294,9 @@ class IcannReportingUploadActionTest {
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.SEVERE,
-            "Could not upload ICANN_UPLOAD_ACTIVITY report for tld because file"
-                + " tld-activity-200512.csv did not exist");
+            "Could not upload ICANN_UPLOAD_ACTIVITY report for tld because file "
+                + "tld-activity-200512.csv (object icann/monthly/2005-12/tld-activity-200512.csv in"
+                + " bucket basin) did not exist.");
   }
 
   @TestOfyAndSql
@@ -310,9 +311,9 @@ class IcannReportingUploadActionTest {
         .that(logHandler)
         .hasLogAtLevelWithMessage(
             Level.INFO,
-            "Could not upload ICANN_UPLOAD_ACTIVITY report for foo because file"
-                + " foo-activity-200607.csv did not exist. This report may not have been staged"
-                + " yet.");
+            "Could not upload ICANN_UPLOAD_ACTIVITY report for foo because file "
+                + "foo-activity-200607.csv (object icann/monthly/2006-07/foo-activity-200607.csv in"
+                + " bucket basin) did not exist. This report may not have been staged yet.");
   }
 
   @TestOfyAndSql
