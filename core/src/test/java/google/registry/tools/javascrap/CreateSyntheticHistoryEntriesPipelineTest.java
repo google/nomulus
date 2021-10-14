@@ -20,9 +20,10 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 import static google.registry.persistence.transaction.TransactionManagerFactory.removeTmOverrideForTest;
 import static google.registry.persistence.transaction.TransactionManagerFactory.setTmOverrideForTest;
 import static google.registry.testing.DatabaseHelper.createTld;
-import static google.registry.testing.DatabaseHelper.persistActiveDomain;
+import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveHost;
 import static google.registry.testing.DatabaseHelper.persistNewRegistrar;
+import static google.registry.testing.DatabaseHelper.persistSimpleResource;
 
 import com.google.common.collect.ImmutableList;
 import google.registry.beam.TestPipelineExtension;
@@ -65,9 +66,11 @@ public class CreateSyntheticHistoryEntriesPipelineTest {
     persistNewRegistrar("TheRegistrar");
     persistNewRegistrar("NewRegistrar");
     createTld("tld");
-    domain = persistActiveDomain("example.tld");
-    contact = jpaTm().transact(() -> jpaTm().loadByKey(domain.getRegistrant()));
     host = persistActiveHost("external.com");
+    domain =
+        persistSimpleResource(
+            newDomainBase("example.tld").asBuilder().setNameservers(host.createVKey()).build());
+    contact = jpaTm().transact(() -> jpaTm().loadByKey(domain.getRegistrant()));
   }
 
   @AfterEach
@@ -95,8 +98,14 @@ public class CreateSyntheticHistoryEntriesPipelineTest {
     HistoryEntry historyEntry = historyEntries.get(0);
     assertThat(historyEntry.getType()).isEqualTo(HistoryEntry.Type.SYNTHETIC);
     assertThat(historyEntry.getRegistrarId()).isEqualTo("NewRegistrar");
-    assertAboutImmutableObjects()
-        .that(historyEntry.getResourceAtPointInTime().get())
-        .isEqualExceptFields(resource, "updateTimestamp");
+    EppResource embeddedResource;
+    if (historyEntry instanceof DomainHistory) {
+      embeddedResource = ((DomainHistory) historyEntry).getDomainContent().get();
+    } else if (historyEntry instanceof ContactHistory) {
+      embeddedResource = ((ContactHistory) historyEntry).getContactBase().get();
+    } else {
+      embeddedResource = ((HostHistory) historyEntry).getHostBase().get();
+    }
+    assertAboutImmutableObjects().that(embeddedResource).hasFieldsEqualTo(resource);
   }
 }
