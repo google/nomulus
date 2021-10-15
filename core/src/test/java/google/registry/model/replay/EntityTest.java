@@ -51,8 +51,7 @@ public class EntityTest {
 
   @Test
   void testSqlEntityPersistence() {
-    try (ScanResult scanResult =
-        new ClassGraph().enableAnnotationInfo().whitelistPackages("google.registry").scan()) {
+    try (ScanResult scanResult = scanForClasses()) {
       // All javax.persistence entities must implement SqlEntity and vice versa
       ImmutableSet<String> javaxPersistenceClasses =
           getAllClassesWithAnnotation(scanResult, javax.persistence.Entity.class.getName());
@@ -75,8 +74,7 @@ public class EntityTest {
     // For replication, we need to be able to convert from Key -> VKey for the relevant classes.
     // This means that the relevant classes must have non-composite Objectify keys or must have a
     // createVKey method
-    try (ScanResult scanResult =
-        new ClassGraph().enableAnnotationInfo().whitelistPackages("google.registry").scan()) {
+    try (ScanResult scanResult = scanForClasses()) {
       ImmutableSet<Class<?>> datastoreEntityClasses =
           getClasses(scanResult.getClassesImplementing(DatastoreEntity.class.getName()));
       // some classes aren't converted so they aren't relevant
@@ -126,14 +124,25 @@ public class EntityTest {
     return classInfoList.stream()
         .filter(ClassInfo::isStandardClass)
         .map(ClassInfo::loadClass)
-        .filter(clazz -> !clazz.isAnnotationPresent(EntityForTesting.class))
-        .filter(clazz -> !clazz.isAnnotationPresent(Embed.class))
-        .filter(clazz -> !NON_CONVERTED_CLASSES.contains(clazz))
+        .filter(
+            clazz ->
+                !clazz.isAnnotationPresent(EntityForTesting.class)
+                    && !clazz.isAnnotationPresent(Embed.class)
+                    && !NON_CONVERTED_CLASSES.contains(clazz)
+                    && !clazz.getName().contains("Test"))
         .collect(toImmutableSet());
   }
 
   private ImmutableSet<String> getClassNames(ClassInfoList classInfoList) {
     return getClasses(classInfoList).stream().map(Class::getName).collect(toImmutableSet());
+  }
+
+  private ScanResult scanForClasses() {
+    return new ClassGraph()
+        .enableAnnotationInfo()
+        .ignoreClassVisibility()
+        .acceptPackages("google.registry")
+        .scan();
   }
 
   /** Entities that are solely used for testing, to avoid scanning them in {@link EntityTest}. */
