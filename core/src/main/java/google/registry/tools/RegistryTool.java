@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.tools.javascrap.BackfillRegistryLocksCommand;
 import google.registry.tools.javascrap.BackfillSpec11ThreatMatchesCommand;
 import google.registry.tools.javascrap.DeleteContactByRoidCommand;
+import google.registry.tools.javascrap.HardDeleteHostCommand;
 import google.registry.tools.javascrap.PopulateNullRegistrarFieldsCommand;
 import google.registry.tools.javascrap.RemoveIpAddressCommand;
 import google.registry.tools.javascrap.ResaveAllTldsCommand;
@@ -86,6 +87,7 @@ public final class RegistryTool {
           .put("get_sql_credential", GetSqlCredentialCommand.class)
           .put("get_tld", GetTldCommand.class)
           .put("ghostryde", GhostrydeCommand.class)
+          .put("hard_delete_host", HardDeleteHostCommand.class)
           .put("hash_certificate", HashCertificateCommand.class)
           .put("import_datastore", ImportDatastoreCommand.class)
           .put("list_cursors", ListCursorsCommand.class)

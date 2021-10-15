@@ -43,6 +43,7 @@ import google.registry.request.Modules.UserServiceModule;
 import google.registry.tools.AuthModule.LocalCredentialModule;
 import google.registry.tools.javascrap.BackfillRegistryLocksCommand;
 import google.registry.tools.javascrap.DeleteContactByRoidCommand;
+import google.registry.tools.javascrap.HardDeleteHostCommand;
 import google.registry.util.UtilsModule;
 import google.registry.whois.NonCachingWhoisModule;
 import javax.annotation.Nullable;
@@ -123,6 +124,8 @@ interface RegistryToolComponent {
   void inject(GetSqlCredentialCommand command);
 
   void inject(GhostrydeCommand command);
+
+  void inject(HardDeleteHostCommand command);
 
   void inject(ImportDatastoreCommand command);
 
