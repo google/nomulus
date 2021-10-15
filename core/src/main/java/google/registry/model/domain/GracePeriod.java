@@ -24,6 +24,7 @@ import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.replay.DatastoreAndSqlEntity;
+import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.persistence.BillingVKey.BillingEventVKey;
 import google.registry.persistence.BillingVKey.BillingRecurrenceVKey;
 import google.registry.persistence.VKey;
@@ -202,7 +203,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
   /** Entity class to represent a historic {@link GracePeriod}. */
   @Entity(name = "GracePeriodHistory")
   @Table(indexes = @Index(columnList = "domainRepoId"))
-  static class GracePeriodHistory extends GracePeriodBase {
+  static class GracePeriodHistory extends GracePeriodBase implements SqlOnlyEntity {
     @Id Long gracePeriodHistoryRevisionId;
 
     /** ID for the associated {@link DomainHistory} entity. */
