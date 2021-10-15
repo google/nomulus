@@ -694,8 +694,8 @@ createToolTask(
     sourceSets.nonprod)
 
 createToolTask(
-    'createSyntheticDomainHistories',
-    'google.registry.tools.javascrap.CreateSyntheticDomainHistoriesPipeline')
+    'createSyntheticContactHistories',
+    'google.registry.tools.javascrap.CreateSyntheticContactHistoriesPipeline')
 
 project.tasks.create('generateSqlSchema', JavaExec) {
   classpath = sourceSets.nonprod.runtimeClasspath
