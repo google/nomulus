@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 class DomainNameUtilsTest {
 
   @Test
-  void testCanonicalizeDomainName() {
+  void testCanonicalizeDomainName_succeeds() {
     assertThat(canonicalizeDomainName("foo")).isEqualTo("foo");
     assertThat(canonicalizeDomainName("FOO")).isEqualTo("foo");
     assertThat(canonicalizeDomainName("foo.tld")).isEqualTo("foo.tld");
@@ -36,6 +36,21 @@ class DomainNameUtilsTest {
     assertThat(canonicalizeDomainName("みんな.foo")).isEqualTo("xn--q9jyb4c.foo");
     assertThat(canonicalizeDomainName("foo.みんな")).isEqualTo("foo.xn--q9jyb4c");
     assertThat(canonicalizeDomainName("ħ")).isEqualTo("xn--1ea");
+  }
+
+  @Test
+  void testCanonicalizeDomainName_allowsRdnsNames() {
+    assertThat(canonicalizeDomainName("119.63.227.45-ns1.jhz-tt.uk"))
+        .isEqualTo("119.63.227.45-ns1.jhz-tt.uk");
+  }
+
+  @Test
+  void testCanonicalizeDomainName_throwsOn34HyphenRule() {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> canonicalizeDomainName("119.63.227.45--ns1.jhz-tt.uk"));
+    assertThat(thrown).hasCauseThat().hasMessageThat().contains("HYPHEN_3_4");
   }
 
   @Test
