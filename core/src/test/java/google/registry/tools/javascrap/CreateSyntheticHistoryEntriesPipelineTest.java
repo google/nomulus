@@ -38,6 +38,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationTestExtension;
 import google.registry.testing.DatastoreEntityExtension;
+import google.registry.testing.FakeClock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,9 +47,11 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 /** Unit tests for {@link CreateSyntheticHistoryEntriesPipeline}. */
 public class CreateSyntheticHistoryEntriesPipelineTest {
 
+  FakeClock clock = new FakeClock();
+
   @RegisterExtension
   JpaIntegrationTestExtension jpaEextension =
-      new JpaTestExtensions.Builder().buildIntegrationTestExtension();
+      new JpaTestExtensions.Builder().withClock(clock).buildIntegrationTestExtension();
 
   @RegisterExtension
   DatastoreEntityExtension datastoreEntityExtension =
@@ -71,6 +74,7 @@ public class CreateSyntheticHistoryEntriesPipelineTest {
         persistSimpleResource(
             newDomainBase("example.tld").asBuilder().setNameservers(host.createVKey()).build());
     contact = jpaTm().transact(() -> jpaTm().loadByKey(domain.getRegistrant()));
+    clock.advanceOneMilli();
   }
 
   @AfterEach

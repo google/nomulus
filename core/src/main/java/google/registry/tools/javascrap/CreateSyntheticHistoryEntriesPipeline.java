@@ -23,6 +23,8 @@ import google.registry.beam.common.RegistryPipelineOptions;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.model.EppResource;
+import google.registry.model.UpdateAutoTimestamp;
+import google.registry.model.UpdateAutoTimestamp.DisableAutoUpdateResource;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.host.HostResource;
@@ -90,16 +92,19 @@ public class CreateSyntheticHistoryEntriesPipeline implements Serializable {
                             .transact(
                                 () -> {
                                   EppResource eppResource = jpaTm().loadByKey(key);
-                                  jpaTm()
-                                      .put(
-                                          HistoryEntry.createBuilderForResource(eppResource)
-                                              .setRegistrarId(registryAdminRegistrarId)
-                                              .setBySuperuser(true)
-                                              .setRequestedByRegistrar(false)
-                                              .setModificationTime(jpaTm().getTransactionTime())
-                                              .setReason(HISTORY_REASON)
-                                              .setType(HistoryEntry.Type.SYNTHETIC)
-                                              .build());
+                                  try (DisableAutoUpdateResource disable =
+                                      UpdateAutoTimestamp.disableAutoUpdate()) {
+                                    jpaTm()
+                                        .put(
+                                            HistoryEntry.createBuilderForResource(eppResource)
+                                                .setRegistrarId(registryAdminRegistrarId)
+                                                .setBySuperuser(true)
+                                                .setRequestedByRegistrar(false)
+                                                .setModificationTime(jpaTm().getTransactionTime())
+                                                .setReason(HISTORY_REASON)
+                                                .setType(HistoryEntry.Type.SYNTHETIC)
+                                                .build());
+                                  }
                                 });
                         return null;
                       }));
