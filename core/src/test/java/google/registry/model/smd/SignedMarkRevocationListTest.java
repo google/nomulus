@@ -30,7 +30,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class SignedMarkRevocationListTest {
 
   @RegisterExtension
-  public final AppEngineExtension appEngine = AppEngineExtension.builder().withCloudSql().build();
+  public final AppEngineExtension appEngine =
+      AppEngineExtension.builder().withDatastoreAndCloudSql().build();
 
   private final FakeClock clock = new FakeClock(DateTime.parse("2013-01-01T00:00:00Z"));
 
