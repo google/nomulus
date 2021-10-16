@@ -216,6 +216,10 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
     return super.getId();
   }
 
+  public DomainHistoryId getDomainHistoryId() {
+    return new DomainHistoryId(getDomainRepoId(), getId());
+  }
+
   /** Returns keys to the {@link HostResource} that are the nameservers for the domain. */
   public Set<VKey<HostResource>> getNsHosts() {
     return nsHosts;
@@ -314,6 +318,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
           nullToEmptyImmutableCopy(domainHistory.domainContent.getGracePeriods()).stream()
               .map(gracePeriod -> GracePeriodHistory.createFrom(domainHistory.id, gracePeriod))
               .collect(toImmutableSet());
+    } else {
+      domainHistory.nsHosts = ImmutableSet.of();
     }
   }
 
@@ -393,8 +399,16 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
       if (domainContent == null) {
         return this;
       }
+      // TODO(b/203609982): if actual type of domainContent is DomainBase, convert to DomainContent
+      // Note: a DomainHistory fetched by JPA has DomainContent in this field. Allowing DomainBase
+      // in the setter makes equality checks messy.
       getInstance().domainContent = domainContent;
-      return super.setParent(domainContent);
+      if (domainContent instanceof DomainBase) {
+        super.setParent(domainContent);
+      } else {
+        super.setParent(Key.create(DomainBase.class, domainContent.getRepoId()));
+      }
+      return this;
     }
 
     public Builder setDomainRepoId(String domainRepoId) {
@@ -410,6 +424,20 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
       // builder is also used to convert legacy HistoryEntry objects to DomainHistory, when
       // domainContent is not available.
       fillAuxiliaryFieldsFromDomain(instance);
+      return instance;
+    }
+
+    public DomainHistory buildAndAssemble(
+        ImmutableSet<DomainDsDataHistory> dsDataHistories,
+        ImmutableSet<VKey<HostResource>> domainHistoryHosts,
+        ImmutableSet<GracePeriodHistory> gracePeriodHistories,
+        ImmutableSet<DomainTransactionRecord> transactionRecords) {
+      DomainHistory instance = super.build();
+      instance.dsDataHistories = dsDataHistories;
+      instance.nsHosts = domainHistoryHosts;
+      instance.gracePeriodHistories = gracePeriodHistories;
+      instance.domainTransactionRecords = transactionRecords;
+      instance.hashCode = null;
       return instance;
     }
   }

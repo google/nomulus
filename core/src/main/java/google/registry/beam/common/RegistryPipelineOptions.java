@@ -16,6 +16,7 @@ package google.registry.beam.common;
 
 import google.registry.beam.common.RegistryJpaIO.Write;
 import google.registry.config.RegistryEnvironment;
+import google.registry.persistence.PersistenceModule.JpaTransactionManagerType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import java.util.Objects;
 import javax.annotation.Nullable;
@@ -43,6 +44,12 @@ public interface RegistryPipelineOptions extends GcpOptions {
   TransactionIsolationLevel getIsolationOverride();
 
   void setIsolationOverride(TransactionIsolationLevel isolationOverride);
+
+  @Description("The JPA Transaction Manager to use.")
+  @Default.Enum(value = "REGULAR")
+  JpaTransactionManagerType getJpaTransactionManagerType();
+
+  void setJpaTransactionManagerType(JpaTransactionManagerType jpaTransactionManagerType);
 
   @Description("The number of entities to write to the SQL database in one operation.")
   @Default.Integer(20)

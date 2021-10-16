@@ -45,7 +45,6 @@ import java.sql.Driver;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -172,24 +171,39 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
       exporter.export(getTestEntities(), tempSqlFile);
       executeSql(new String(Files.readAllBytes(tempSqlFile.toPath()), StandardCharsets.UTF_8));
     }
+    assertReasonableNumDbConnections();
+    emf = createEntityManagerFactory(getJpaProperties());
+    emfEntityHash = entityHash;
+  }
 
-    ImmutableMap<String, String> properties = PersistenceModule.provideDefaultDatabaseConfigs();
+  /**
+   * Returns the full set of properties for setting up JPA {@link EntityManagerFactory} to the test
+   * database. This allows creation of customized JPA by individual tests.
+   *
+   * <p>Test that create {@code EntityManagerFactory} instances are reponsible for tearing them
+   * down.
+   */
+  public ImmutableMap<String, String> getJpaProperties() {
+    Map<String, String> mergedProperties =
+        Maps.newHashMap(PersistenceModule.provideDefaultDatabaseConfigs());
     if (!userProperties.isEmpty()) {
-      // If there are user properties, create a new properties object with these added.
-      Map<String, String> mergedProperties = Maps.newHashMap();
-      mergedProperties.putAll(properties);
       mergedProperties.putAll(userProperties);
-      properties = ImmutableMap.copyOf(mergedProperties);
     }
+    mergedProperties.put(Environment.URL, getJdbcUrl());
+    mergedProperties.put(Environment.USER, database.getUsername());
+    mergedProperties.put(Environment.PASS, database.getPassword());
+    // Tell Postgresql JDBC driver to retry on errors caused by out-of-band schema change between
+    // tests while the connection pool stays open (e.g., "cached plan must not change result type").
+    // We don't set this property in production since it has performance impact, and production
+    // schema is always compatible with the binary (enforced by our release process).
+    mergedProperties.put("hibernate.hikari.dataSource.autosave", "conservative");
+
     // Forbid Hibernate push to stay consistent with flyway-based schema management.
     checkState(
-        Objects.equals(properties.get(Environment.HBM2DDL_AUTO), "none"),
+        Objects.equals(mergedProperties.get(Environment.HBM2DDL_AUTO), "none"),
         "The HBM2DDL_AUTO property must be 'none'.");
-    assertReasonableNumDbConnections();
-    emf =
-        createEntityManagerFactory(
-            getJdbcUrl(), database.getUsername(), database.getPassword(), properties);
-    emfEntityHash = entityHash;
+
+    return ImmutableMap.copyOf(mergedProperties);
   }
 
   @Override
@@ -307,15 +321,7 @@ abstract class JpaTransactionManagerExtension implements BeforeEachCallback, Aft
   }
 
   /** Constructs the {@link EntityManagerFactory} instance. */
-  private EntityManagerFactory createEntityManagerFactory(
-      String jdbcUrl, String username, String password, ImmutableMap<String, String> configs) {
-    HashMap<String, String> properties = Maps.newHashMap(configs);
-    properties.put(Environment.URL, jdbcUrl);
-    properties.put(Environment.USER, username);
-    properties.put(Environment.PASS, password);
-    // Tell Postgresql JDBC driver to expect out-of-band schema change.
-    properties.put("hibernate.hikari.dataSource.autosave", "conservative");
-
+  private EntityManagerFactory createEntityManagerFactory(ImmutableMap<String, String> properties) {
     ParsedPersistenceXmlDescriptor descriptor =
         PersistenceXmlUtility.getParsedPersistenceXmlDescriptor();
 

@@ -152,13 +152,36 @@ public abstract class PersistenceModule {
   @Singleton
   @BeamPipelineCloudSqlConfigs
   static ImmutableMap<String, String> provideBeamPipelineCloudSqlConfigs(
-      @Config("beamCloudSqlJdbcUrl") String jdbcUrl,
-      @Config("beamCloudSqlInstanceConnectionName") String instanceConnectionName,
-      @DefaultHibernateConfigs ImmutableMap<String, String> defaultConfigs,
+      SqlCredentialStore credentialStore,
+      @Config("instanceConnectionNameOverride")
+          Optional<Provider<String>> instanceConnectionNameOverride,
       @Config("beamIsolationOverride")
-          Optional<Provider<TransactionIsolationLevel>> isolationOverride) {
-    return createPartialSqlConfigs(
-        jdbcUrl, instanceConnectionName, defaultConfigs, isolationOverride);
+          Optional<Provider<TransactionIsolationLevel>> isolationOverride,
+      @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs) {
+    HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
+    // TODO(b/175700623): make sql username configurable from config file.
+    SqlCredential credential = credentialStore.getCredential(new RobotUser(RobotId.NOMULUS));
+    overrides.put(Environment.USER, credential.login());
+    overrides.put(Environment.PASS, credential.password());
+    // Override the default minimum which is tuned for the Registry server. A worker VM should
+    // release all connections if it no longer interacts with the database.
+    overrides.put(HIKARI_MINIMUM_IDLE, "0");
+    /**
+     * Disable Hikari's maxPoolSize limit check by setting it to an absurdly large number. The
+     * effective (and desirable) limit is the number of pipeline threads on the pipeline worker,
+     * which can be configured using pipeline options. See {@link RegistryPipelineOptions} for more
+     * information.
+     */
+    overrides.put(HIKARI_MAXIMUM_POOL_SIZE, String.valueOf(Integer.MAX_VALUE));
+    instanceConnectionNameOverride
+        .map(Provider::get)
+        .ifPresent(
+            instanceConnectionName ->
+                overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, instanceConnectionName));
+    isolationOverride
+        .map(Provider::get)
+        .ifPresent(isolation -> overrides.put(Environment.ISOLATION, isolation.name()));
+    return ImmutableMap.copyOf(overrides);
   }
 
   @VisibleForTesting
@@ -230,37 +253,17 @@ public abstract class PersistenceModule {
   @Singleton
   @BeamJpaTm
   static JpaTransactionManager provideBeamJpaTm(
-      SqlCredentialStore credentialStore,
-      @Config("instanceConnectionNameOverride")
-          Optional<Provider<String>> instanceConnectionNameOverride,
-      @Config("beamIsolationOverride")
-          Optional<Provider<TransactionIsolationLevel>> isolationOverride,
-      @PartialCloudSqlConfigs ImmutableMap<String, String> cloudSqlConfigs,
-      Clock clock) {
-    HashMap<String, String> overrides = Maps.newHashMap(cloudSqlConfigs);
-    // TODO(b/175700623): make sql username configurable from config file.
-    SqlCredential credential = credentialStore.getCredential(new RobotUser(RobotId.NOMULUS));
-    overrides.put(Environment.USER, credential.login());
-    overrides.put(Environment.PASS, credential.password());
-    // Override the default minimum which is tuned for the Registry server. A worker VM should
-    // release all connections if it no longer interacts with the database.
-    overrides.put(HIKARI_MINIMUM_IDLE, "0");
-    /**
-     * Disable Hikari's maxPoolSize limit check by setting it to an absurdly large number. The
-     * effective (and desirable) limit is the number of pipeline threads on the pipeline worker,
-     * which can be configured using pipeline options. See {@link RegistryPipelineOptions} for more
-     * information.
-     */
-    overrides.put(HIKARI_MAXIMUM_POOL_SIZE, String.valueOf(Integer.MAX_VALUE));
-    instanceConnectionNameOverride
-        .map(Provider::get)
-        .ifPresent(
-            instanceConnectionName ->
-                overrides.put(HIKARI_DS_CLOUD_SQL_INSTANCE, instanceConnectionName));
-    isolationOverride
-        .map(Provider::get)
-        .ifPresent(isolation -> overrides.put(Environment.ISOLATION, isolation.name()));
-    return new JpaTransactionManagerImpl(create(overrides), clock);
+      @BeamPipelineCloudSqlConfigs ImmutableMap<String, String> beamCloudSqlConfigs, Clock clock) {
+    return new JpaTransactionManagerImpl(create(beamCloudSqlConfigs), clock);
+  }
+
+  @Provides
+  @Singleton
+  @BeamBulkQueryJpaTm
+  static JpaTransactionManager provideBeamBulkQueryJpaTm(
+      @BeamPipelineCloudSqlConfigs ImmutableMap<String, String> beamCloudSqlConfigs, Clock clock) {
+    return new JpaTransactionManagerImpl(
+        BulkQueryJpaFactory.createBulkQueryEntityManagerFactory(beamCloudSqlConfigs), clock);
   }
 
   @Provides
@@ -346,6 +349,17 @@ public abstract class PersistenceModule {
     }
   }
 
+  /** Types of {@link JpaTransactionManager JpaTransactionManagers}. */
+  public enum JpaTransactionManagerType {
+    /** The regular {@link JpaTransactionManager} for general use. */
+    REGULAR,
+    /**
+     * The {@link JpaTransactionManager} optimized for bulk loading multi-level JPA entities. Please
+     * see {@link google.registry.model.bulkquery.BulkQueryEntities} for more information.
+     */
+    BULK_QUERY
+  }
+
   /** Dagger qualifier for JDBC {@link Connection} with schema management privilege. */
   @Qualifier
   @Documented
@@ -357,10 +371,17 @@ public abstract class PersistenceModule {
   @interface AppEngineJpaTm {}
 
   /** Dagger qualifier for {@link JpaTransactionManager} used inside BEAM pipelines. */
-  // Note: @SocketFactoryJpaTm will be phased out in favor of this qualifier.
   @Qualifier
   @Documented
   public @interface BeamJpaTm {}
+
+  /**
+   * Dagger qualifier for {@link JpaTransactionManager} that uses an alternative entity model for
+   * faster bulk queries.
+   */
+  @Qualifier
+  @Documented
+  public @interface BeamBulkQueryJpaTm {}
 
   /** Dagger qualifier for {@link JpaTransactionManager} used for Nomulus tool. */
   @Qualifier

@@ -22,6 +22,7 @@ import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.replay.DatastoreAndSqlEntity;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -49,7 +50,6 @@ public class DomainTransactionRecord extends ImmutableObject
 
   @Id
   @Ignore
-  @ImmutableObject.DoNotCompare
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @ImmutableObject.Insignificant
   Long id;
@@ -57,6 +57,14 @@ public class DomainTransactionRecord extends ImmutableObject
   /** The TLD this record operates on. */
   @Column(nullable = false)
   String tld;
+
+  // The following two fields are exposed in this entity to support bulk-loading by the
+  // Datastore-cloudsql validation. They are excluded from equality check since older Datastore
+  // objects are missing this field.
+  // TODO(b/203609782): post migration, decide whether to keep these two fields.
+  @ImmutableObject.Insignificant String domainRepoId;
+
+  @ImmutableObject.Insignificant Long historyRevisionId;
 
   /**
    * The time this Transaction takes effect (counting grace periods and other nuances).
@@ -172,6 +180,10 @@ public class DomainTransactionRecord extends ImmutableObject
             "Unexpected error converting add/renew years to enum TransactionReportField", e);
       }
     }
+  }
+
+  public DomainHistoryId getDomainHistoryId() {
+    return new DomainHistoryId(domainRepoId, historyRevisionId);
   }
 
   public DateTime getReportingTime() {

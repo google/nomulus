@@ -21,6 +21,7 @@ import google.registry.config.CredentialModule;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.config.RegistryConfig.ConfigModule;
 import google.registry.persistence.PersistenceModule;
+import google.registry.persistence.PersistenceModule.BeamBulkQueryJpaTm;
 import google.registry.persistence.PersistenceModule.BeamJpaTm;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -45,8 +46,18 @@ public interface RegistryPipelineComponent {
   @Config("projectId")
   String getProjectId();
 
+  /** Returns the regular {@link JpaTransactionManager} for general use. */
   @BeamJpaTm
   Lazy<JpaTransactionManager> getJpaTransactionManager();
+
+  /**
+   * Returns a {@link JpaTransactionManager} optimized for bulk loading multi-level JPA entities
+   * ({@link google.registry.model.domain.DomainBase} and {@link
+   * google.registry.model.domain.DomainHistory}). Please refer to {@link
+   * google.registry.model.bulkquery.BulkQueryEntities} for more information.
+   */
+  @BeamBulkQueryJpaTm
+  Lazy<JpaTransactionManager> getBulkQueryJpaTransactionManager();
 
   @Component.Builder
   interface Builder {

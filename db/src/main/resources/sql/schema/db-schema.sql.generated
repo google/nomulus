@@ -412,12 +412,12 @@
 
     create table "DomainTransactionRecord" (
        id  bigserial not null,
+        domain_repo_id text,
+        history_revision_id int8,
         report_amount int4 not null,
         report_field text not null,
         reporting_time timestamptz not null,
         tld text not null,
-        domain_repo_id text,
-        history_revision_id int8,
         primary key (id)
     );
 

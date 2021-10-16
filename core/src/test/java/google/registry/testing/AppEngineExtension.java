@@ -146,6 +146,10 @@ public final class AppEngineExtension implements BeforeEachCallback, AfterEachCa
   private ImmutableList<Class<?>> ofyTestEntities;
   private ImmutableList<Class<?>> jpaTestEntities;
 
+  public Optional<JpaIntegrationTestExtension> getJpaIntegrationTestExtension() {
+    return Optional.ofNullable(jpaIntegrationTestExtension);
+  }
+
   /** Builder for {@link AppEngineExtension}. */
   public static class Builder {
 
