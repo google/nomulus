@@ -42,6 +42,16 @@ where:
 SCRIPT_DIR="$(realpath $(dirname $0))"
 JAR_NAME="google-java-format-1.8-all-deps.jar"
 
+# Make sure we have a valid python interpreter.
+if [ -z "$PYTHON" ]; then
+  echo "You must specify the name of a python3 interpreter in the PYTHON" \
+       "environment variable."
+  exit 1
+elif ! "$PYTHON" -c ''; then
+  echo "Invalid python interpreter: $PYTHON"
+  exit 1
+fi
+
 # Locate the java binary.
 if [ -n "$JAVA_HOME" ]; then
   JAVA_BIN="$JAVA_HOME/bin/java"
@@ -69,10 +79,14 @@ function runGoogleJavaFormatAgainstDiffs() {
   shift
 
   git diff -U0 "$forkPoint" | \
-      ${SCRIPT_DIR}/google-java-format-diff.py \
-      --java-binary "$JAVA_BIN" \
-      --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
-      -p1 "$@" | tee gjf.out
+      "${PYTHON}" "${SCRIPT_DIR}/google-java-format-diff.py" \
+          --java-binary "$JAVA_BIN" \
+          --google-java-format-jar "${SCRIPT_DIR}/${JAR_NAME}" \
+          -p1 "$@" | \
+      tee gjf.out
+
+  # If any of the commands in the last pipe failed, return false.
+  [[ ! "${PIPESTATUS[@]}" =~ [^0\ ] ]]
 }
 
 # Show the file names in a diff preceeded by a message.
@@ -96,7 +110,11 @@ function callGoogleJavaFormatDiff() {
   local callResult
   case "$1" in
     "check")
-      local output=$(runGoogleJavaFormatAgainstDiffs "$forkPoint")
+      # We need to do explicit checks for an error and "exit 1" if there was
+      # one here (though not elsewhere), "set -e" doesn't catch this case,
+      # it's not clear why.
+      local output
+      output=$(runGoogleJavaFormatAgainstDiffs "$forkPoint") || exit 1
       echo "$output" | showFileNames "\033[1mNeeds formatting: "
       callResult=$(echo -n "$output" | wc -l)
       ;;

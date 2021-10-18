@@ -200,9 +200,26 @@ rootProject.ext {
   pyver = { exe ->
     try {
       ext.execInBash(
-          exe + " -c 'import sys; print(sys.hexversion)'", "/") as Integer
+          exe + " -c 'import sys; print(sys.hexversion)' 2>/dev/null",
+          "/") as Integer
     } catch (org.gradle.process.internal.ExecException e) {
       return -1;
+    }
+  }
+
+  // Return the path to a usable python3 executable.
+  getPythonExecutable = {
+    // Find a python version greater than 3.7.3 (this is somewhat arbitrary, we
+    // know we'd like at least 3.6, but 3.7.3 is the latest that ships with
+    // Debian so it seems like that should be available anywhere).
+    def MIN_PY_VER = 0x3070300
+    if (pyver('python') >= MIN_PY_VER) {
+      return 'python'
+    } else if (pyver('/usr/bin/python3') >= MIN_PY_VER) {
+      return '/usr/bin/python3'
+    } else {
+      throw new GradleException("No usable Python version found (build " +
+                                "requires at least python 3.7.3)");
     }
   }
 }
@@ -212,18 +229,7 @@ task runPresubmits(type: Exec) {
   args('config/presubmits.py')
 
   doFirst {
-    // Find a python version greater than 3.7.3 (this is somewhat arbitrary, we
-    // know we'd like at least 3.6, but 3.7.3 is the latest that ships with
-    // Debian so it seems like that should be available anywhere).
-    def MIN_PY_VER = 0x3070300
-    if (pyver('python') >= MIN_PY_VER) {
-      executable 'python'
-    } else if (pyver('/usr/bin/python3') >= MIN_PY_VER) {
-      executable '/usr/bin/python3'
-    } else {
-      throw new GradleException("No usable Python version found (build " +
-                                "requires at least python 3.7.3)");
-    }
+    executable getPythonExecutable()
   }
 }
 
@@ -438,9 +444,10 @@ rootProject.ext {
             ? "${rootDir}/.."
             : rootDir
     def formatDiffScript = "${scriptDir}/google-java-format-git-diff.sh"
+    def pythonExe = getPythonExecutable()
 
     return ext.execInBash(
-        "${formatDiffScript} ${action}", "${workingDir}")
+        "PYTHON=${pythonExe} ${formatDiffScript} ${action}", "${workingDir}")
   }
 }
 
@@ -448,18 +455,23 @@ rootProject.ext {
 // Note that this task checks modified Java files in the entire repository.
 task javaIncrementalFormatCheck {
   doLast {
-    def checkResult = invokeJavaDiffFormatScript("check")
-    if (checkResult == 'true') {
-      throw new IllegalStateException(
-          "Some Java files need to be reformatted. You may use the "
-              + "'javaIncrementalFormatDryRun' task to review\n "
-              + "the changes, or the 'javaIncrementalFormatApply' task "
-              + "to reformat.")
-    } else if (checkResult != 'false') {
-      throw new RuntimeException(
-          "Failed to invoke format check script:\n" + checkResult)
+    // We can only do this in a git tree.
+    if (new File("${rootDir}/.git").exists()) {
+      def checkResult = invokeJavaDiffFormatScript("check")
+      if (checkResult == 'true') {
+        throw new IllegalStateException(
+            "Some Java files need to be reformatted. You may use the "
+                + "'javaIncrementalFormatDryRun' task to review\n "
+                + "the changes, or the 'javaIncrementalFormatApply' task "
+                + "to reformat.")
+      } else if (checkResult != 'false') {
+        throw new RuntimeException(
+            "Failed to invoke format check script:\n" + checkResult)
+      }
+      println("Incremental Java format check ok.")
+    } else {
+      println("Omitting format check: not in a git directory.")
     }
-    println("Incremental Java format check ok.")
   }
 }
 
