@@ -108,6 +108,16 @@ public class CreateSyntheticHistoryEntriesAction implements Runnable {
     return jpaTm()
         .transact(
             () -> {
+              // Use READ COMMITTED isolation level so that any long-living queries don't cause
+              // collection of predicate locks to spiral out of control (as would happen with a
+              // SERIALIZABLE isolation level)
+              //
+              // NB: setting the isolation level inside the transaction only works for Postgres and
+              // will be reverted to the default once the transaction is committed.
+              jpaTm()
+                  .getEntityManager()
+                  .createNativeQuery("SET TRANSACTION ISOLATION LEVEL READ COMMITTED")
+                  .executeUpdate();
               // The class we're searching from is based on which parent type (e.g. Domain) we have
               Class<? extends HistoryEntry> historyClass =
                   getHistoryClassFromParent(resource.getClass());
