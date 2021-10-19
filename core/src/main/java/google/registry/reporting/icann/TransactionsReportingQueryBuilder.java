@@ -182,37 +182,62 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
 
     // App Engine log table suffixes use YYYYMMDD format
     DateTimeFormatter logTableFormatter = DateTimeFormat.forPattern("yyyyMMdd");
-    String attemptedAddsQuery =
-        SqlTemplate.create(getQueryFromFile("attempted_adds.sql"))
-            .put("PROJECT_ID", projectId)
-            .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-            .put("REGISTRAR_TABLE", "Registrar")
-            .put("APPENGINE_LOGS_DATA_SET", "appengine_logs")
-            .put("REQUEST_TABLE", "appengine_googleapis_com_request_log_")
-            .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(earliestReportTime))
-            .put("LAST_DAY_OF_MONTH", logTableFormatter.print(latestReportTime))
-            // All metadata logs for reporting come from google.registry.flows.FlowReporter.
-            .put(
-                "METADATA_LOG_PREFIX",
-                "google.registry.flows.FlowReporter recordToLogs: FLOW-LOG-SIGNATURE-METADATA")
-            .build();
+    String attemptedAddsQuery;
+    if (tm().isOfy()) {
+      attemptedAddsQuery =
+          SqlTemplate.create(getQueryFromFile("attempted_adds.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
+              .put("REGISTRAR_TABLE", "Registrar")
+              .put("APPENGINE_LOGS_DATA_SET", "appengine_logs")
+              .put("REQUEST_TABLE", "appengine_googleapis_com_request_log_")
+              .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(earliestReportTime))
+              .put("LAST_DAY_OF_MONTH", logTableFormatter.print(latestReportTime))
+              // All metadata logs for reporting come from google.registry.flows.FlowReporter.
+              .put(
+                  "METADATA_LOG_PREFIX",
+                  "google.registry.flows.FlowReporter recordToLogs: FLOW-LOG-SIGNATURE-METADATA")
+              .build();
+    } else {
+      attemptedAddsQuery =
+          SqlTemplate.create(getQueryFromFile("cloud_sql_attempted_adds.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("APPENGINE_LOGS_DATA_SET", "appengine_logs")
+              .put("REQUEST_TABLE", "appengine_googleapis_com_request_log_")
+              .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(earliestReportTime))
+              .put("LAST_DAY_OF_MONTH", logTableFormatter.print(latestReportTime))
+              // All metadata logs for reporting come from google.registry.flows.FlowReporter.
+              .put(
+                  "METADATA_LOG_PREFIX",
+                  "google.registry.flows.FlowReporter recordToLogs: FLOW-LOG-SIGNATURE-METADATA")
+              .build();
+    }
     queriesBuilder.put(getTableName(ATTEMPTED_ADDS, yearMonth), attemptedAddsQuery);
 
-    String aggregateQuery =
-        SqlTemplate.create(getQueryFromFile("transactions_report_aggregation.sql"))
-            .put("PROJECT_ID", projectId)
-            .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-            .put("REGISTRY_TABLE", "Registry")
-            .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
-            .put("REGISTRAR_IANA_ID_TABLE", getTableName(REGISTRAR_IANA_ID, yearMonth))
-            .put("TOTAL_DOMAINS_TABLE", getTableName(TOTAL_DOMAINS, yearMonth))
-            .put("TOTAL_NAMESERVERS_TABLE", getTableName(TOTAL_NAMESERVERS, yearMonth))
-            .put("TRANSACTION_COUNTS_TABLE", getTableName(TRANSACTION_COUNTS, yearMonth))
-            .put(
-                "TRANSACTION_TRANSFER_LOSING_TABLE",
-                getTableName(TRANSACTION_TRANSFER_LOSING, yearMonth))
-            .put("ATTEMPTED_ADDS_TABLE", getTableName(ATTEMPTED_ADDS, yearMonth))
-            .build();
+    String aggregateQuery;
+    if (tm().isOfy()) {
+      aggregateQuery =
+          SqlTemplate.create(getQueryFromFile("transactions_report_aggregation.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
+              .put("REGISTRY_TABLE", "Registry")
+              .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
+              .put("REGISTRAR_IANA_ID_TABLE", getTableName(REGISTRAR_IANA_ID, yearMonth))
+              .put("TOTAL_DOMAINS_TABLE", getTableName(TOTAL_DOMAINS, yearMonth))
+              .put("TOTAL_NAMESERVERS_TABLE", getTableName(TOTAL_NAMESERVERS, yearMonth))
+              .put("TRANSACTION_COUNTS_TABLE", getTableName(TRANSACTION_COUNTS, yearMonth))
+              .put(
+                  "TRANSACTION_TRANSFER_LOSING_TABLE",
+                  getTableName(TRANSACTION_TRANSFER_LOSING, yearMonth))
+              .put("ATTEMPTED_ADDS_TABLE", getTableName(ATTEMPTED_ADDS, yearMonth))
+              .build();
+    } else {
+      aggregateQuery =
+          SqlTemplate.create(getQueryFromFile("cloud_sql_transactions_report_aggregation.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
+              .build();
+    }
     queriesBuilder.put(getTableName(TRANSACTIONS_REPORT_AGGREGATION, yearMonth), aggregateQuery);
 
     return queriesBuilder.build();

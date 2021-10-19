@@ -93,7 +93,9 @@ class TransactionsReportingQueryBuilderTest {
             TransactionsReportingQueryBuilder.TOTAL_DOMAINS,
             TransactionsReportingQueryBuilder.TOTAL_NAMESERVERS,
             TransactionsReportingQueryBuilder.TRANSACTION_COUNTS,
-            TransactionsReportingQueryBuilder.TRANSACTION_TRANSFER_LOSING);
+            TransactionsReportingQueryBuilder.TRANSACTION_TRANSFER_LOSING,
+            TransactionsReportingQueryBuilder.ATTEMPTED_ADDS,
+            TransactionsReportingQueryBuilder.TRANSACTIONS_REPORT_AGGREGATION);
 
     TransactionsReportingQueryBuilder queryBuilder =
         createQueryBuilder("cloud_sql_icann_reporting");
