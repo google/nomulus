@@ -19,6 +19,7 @@ import static google.registry.beam.common.RegistryPipelineOptions.validateRegist
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.config.RegistryEnvironment;
+import google.registry.persistence.PersistenceModule.JpaTransactionManagerType;
 import google.registry.persistence.PersistenceModule.TransactionIsolationLevel;
 import google.registry.testing.SystemPropertyExtension;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -122,5 +123,38 @@ class RegistryPipelineOptionsTest {
         PipelineOptionsFactory.fromArgs("--project=some-project").as(RegistryPipelineOptions.class);
     validateRegistryPipelineOptions(options);
     assertThat(options.getProject()).isEqualTo("some-project");
+  }
+
+  @Test
+  void jpaTransactionManagerType_default() {
+    RegistryPipelineOptions options =
+        PipelineOptionsFactory.fromArgs(
+                "--registryEnvironment=" + RegistryEnvironment.UNITTEST.name())
+            .withValidation()
+            .as(RegistryPipelineOptions.class);
+    assertThat(options.getJpaTransactionManagerType()).isEqualTo(JpaTransactionManagerType.REGULAR);
+  }
+
+  @Test
+  void jpaTransactionManagerType_regularJpa() {
+    RegistryPipelineOptions options =
+        PipelineOptionsFactory.fromArgs(
+                "--registryEnvironment=" + RegistryEnvironment.UNITTEST.name(),
+                "--jpaTransactionManagerType=REGULAR")
+            .withValidation()
+            .as(RegistryPipelineOptions.class);
+    assertThat(options.getJpaTransactionManagerType()).isEqualTo(JpaTransactionManagerType.REGULAR);
+  }
+
+  @Test
+  void jpaTransactionManagerType_bulkQueryJpa() {
+    RegistryPipelineOptions options =
+        PipelineOptionsFactory.fromArgs(
+                "--registryEnvironment=" + RegistryEnvironment.UNITTEST.name(),
+                "--jpaTransactionManagerType=BULK_QUERY")
+            .withValidation()
+            .as(RegistryPipelineOptions.class);
+    assertThat(options.getJpaTransactionManagerType())
+        .isEqualTo(JpaTransactionManagerType.BULK_QUERY);
   }
 }

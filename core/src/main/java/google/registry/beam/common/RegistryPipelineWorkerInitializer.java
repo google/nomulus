@@ -49,10 +49,19 @@ public class RegistryPipelineWorkerInitializer implements JvmInitializer {
     }
     logger.atInfo().log("Setting up RegistryEnvironment %s.", environment);
     environment.setup();
-    Lazy<JpaTransactionManager> transactionManagerLazy =
-        toRegistryPipelineComponent(registryOptions).getJpaTransactionManager();
+    RegistryPipelineComponent registryPipelineComponent =
+        toRegistryPipelineComponent(registryOptions);
+    Lazy<JpaTransactionManager> transactionManagerLazy;
+    switch (registryOptions.getJpaTransactionManagerType()) {
+      case BULK_QUERY:
+        transactionManagerLazy = registryPipelineComponent.getBulkQueryJpaTransactionManager();
+        break;
+      case REGULAR:
+      default:
+        transactionManagerLazy = registryPipelineComponent.getJpaTransactionManager();
+    }
     TransactionManagerFactory.setJpaTmOnBeamWorker(transactionManagerLazy::get);
-    // Masquarade all threads as App Engine threads so we can create Ofy keys in the pipeline. Also
+    // Masquerade all threads as App Engine threads so we can create Ofy keys in the pipeline. Also
     // loads all ofy entities.
     new AppEngineEnvironment("Beam").setEnvironmentForAllThreads();
     // Set the system property so that we can call IdService.allocateId() without access to

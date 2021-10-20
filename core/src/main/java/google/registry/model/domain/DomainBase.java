@@ -189,6 +189,7 @@ public class DomainBase extends DomainContent
     }
 
     public Builder copyFrom(DomainContent domainContent) {
+      this.getInstance().copyUpdateTimestamp(domainContent);
       return this.setAuthInfo(domainContent.getAuthInfo())
           .setAutorenewPollMessage(domainContent.getAutorenewPollMessage())
           .setAutorenewBillingEvent(domainContent.getAutorenewBillingEvent())

@@ -412,6 +412,10 @@ public final class ImmutableObjectSubject extends Subject {
     // don't use ImmutableMap or a stream->collect model since we can have nulls
     Map<Field, Object> result = new LinkedHashMap<>();
     for (Map.Entry<Field, Object> entry : originalFields.entrySet()) {
+      // TODO(b/203685960): filter by @DoNotCompare instead.
+      if (entry.getKey().isAnnotationPresent(ImmutableObject.Insignificant.class)) {
+        continue;
+      }
       if (!ignoredFieldSet.contains(entry.getKey().getName())) {
         result.put(entry.getKey(), entry.getValue());
       }
@@ -426,7 +430,9 @@ public final class ImmutableObjectSubject extends Subject {
     // don't use ImmutableMap or a stream->collect model since we can have nulls
     Map<Field, Object> result = new LinkedHashMap<>();
     for (Map.Entry<Field, Object> entry : originalFields.entrySet()) {
-      if (!entry.getKey().isAnnotationPresent(annotation)) {
+      // TODO(b/203685960): filter by @DoNotCompare instead.
+      if (!entry.getKey().isAnnotationPresent(annotation)
+          && !entry.getKey().isAnnotationPresent(ImmutableObject.Insignificant.class)) {
 
         // Perform any necessary substitutions.
         if (entry.getKey().isAnnotationPresent(ImmutableObject.EmptySetToNull.class)

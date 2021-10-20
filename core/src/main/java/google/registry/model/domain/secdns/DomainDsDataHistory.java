@@ -17,6 +17,7 @@ package google.registry.model.domain.secdns;
 import static google.registry.model.IdService.allocateId;
 
 import google.registry.model.domain.DomainHistory;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.replay.SqlOnlyEntity;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
@@ -51,6 +52,10 @@ public class DomainDsDataHistory extends DomainDsDataBase implements SqlOnlyEnti
     instance.digest = dsData.getDigest();
     instance.dsDataHistoryRevisionId = allocateId();
     return instance;
+  }
+
+  public DomainHistory.DomainHistoryId getDomainHistoryId() {
+    return new DomainHistoryId(getDomainRepoId(), domainHistoryRevisionId);
   }
 
   @Override

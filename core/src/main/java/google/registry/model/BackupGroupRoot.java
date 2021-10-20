@@ -14,6 +14,7 @@
 
 package google.registry.model;
 
+import google.registry.util.PreconditionsUtils;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.AttributeOverride;
@@ -48,5 +49,15 @@ public abstract class BackupGroupRoot extends ImmutableObject {
   /** Get the {@link UpdateAutoTimestamp} for this entity. */
   public UpdateAutoTimestamp getUpdateTimestamp() {
     return updateTimestamp;
+  }
+
+  /**
+   * Copies {@link #updateTimestamp} from another entity.
+   *
+   * <p>This method is for the few cases when {@code updateTimestamp} is copied between different
+   * types of entities. Use {@link #clone} for same-type copying.
+   */
+  protected void copyUpdateTimestamp(BackupGroupRoot other) {
+    this.updateTimestamp = PreconditionsUtils.checkArgumentNotNull(other, "other").updateTimestamp;
   }
 }

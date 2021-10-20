@@ -22,6 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Recurring;
+import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.model.replay.SqlOnlyEntity;
@@ -203,7 +204,7 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
   /** Entity class to represent a historic {@link GracePeriod}. */
   @Entity(name = "GracePeriodHistory")
   @Table(indexes = @Index(columnList = "domainRepoId"))
-  static class GracePeriodHistory extends GracePeriodBase implements SqlOnlyEntity {
+  public static class GracePeriodHistory extends GracePeriodBase implements SqlOnlyEntity {
     @Id Long gracePeriodHistoryRevisionId;
 
     /** ID for the associated {@link DomainHistory} entity. */
@@ -213,6 +214,10 @@ public class GracePeriod extends GracePeriodBase implements DatastoreAndSqlEntit
     @Access(AccessType.PROPERTY)
     public long getGracePeriodId() {
       return super.getGracePeriodId();
+    }
+
+    public DomainHistoryId getDomainHistoryId() {
+      return new DomainHistoryId(getDomainRepoId(), domainHistoryRevisionId);
     }
 
     static GracePeriodHistory createFrom(long historyRevisionId, GracePeriod gracePeriod) {
