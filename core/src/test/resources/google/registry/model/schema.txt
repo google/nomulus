@@ -644,8 +644,6 @@ class google.registry.model.replay.LastSqlTransaction {
 class google.registry.model.reporting.DomainTransactionRecord {
   google.registry.model.reporting.DomainTransactionRecord$TransactionReportField reportField;
   java.lang.Integer reportAmount;
-  java.lang.Long historyRevisionId;
-  java.lang.String domainRepoId;
   java.lang.String tld;
   org.joda.time.DateTime reportingTime;
 }

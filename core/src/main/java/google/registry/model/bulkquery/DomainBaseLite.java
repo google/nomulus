@@ -24,8 +24,12 @@ import javax.persistence.AccessType;
 import javax.persistence.Entity;
 
 /**
- * A 'light' version of {@link DomainBase} with only base table ("Domain") attributes. Please refer
- * to {@link BulkQueryEntities} for usage.
+ * A 'light' version of {@link DomainBase} with only base table ("Domain") attributes, which allows
+ * fast bulk loading. They are used in in-memory assembly of {@code DomainBase} instances along with
+ * bulk-loaded child entities ({@code GracePeriod} etc). The in-memory assembly achieves much higher
+ * performance than loading {@code DomainBase} directly.
+ *
+ * <p>Please refer to {@link BulkQueryEntities} for more information.
  */
 @Entity(name = "Domain")
 @WithStringVKey

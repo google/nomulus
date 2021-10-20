@@ -58,13 +58,13 @@ public class DomainTransactionRecord extends ImmutableObject
   @Column(nullable = false)
   String tld;
 
-  // The following two fields are exposed in this entity to support bulk-loading by the
-  // Datastore-cloudsql validation. They are excluded from equality check since older Datastore
-  // objects are missing this field.
+  // The following two fields are exposed in this entity to support bulk-loading in Cloud SQL by the
+  // Datastore-cloudsql validation. They are excluded from equality check since they are not set
+  // in Datastore.
   // TODO(b/203609782): post migration, decide whether to keep these two fields.
-  @ImmutableObject.Insignificant String domainRepoId;
+  @Ignore @ImmutableObject.Insignificant String domainRepoId;
 
-  @ImmutableObject.Insignificant Long historyRevisionId;
+  @Ignore @ImmutableObject.Insignificant Long historyRevisionId;
 
   /**
    * The time this Transaction takes effect (counting grace periods and other nuances).

@@ -17,6 +17,7 @@ package google.registry.model.bulkquery;
 import com.googlecode.objectify.Key;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainContent;
+import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.domain.Period;
 import google.registry.model.replay.SqlOnlyEntity;
@@ -34,12 +35,15 @@ import javax.persistence.IdClass;
 import javax.persistence.PostLoad;
 
 /**
- * A 'light' version of {@link google.registry.model.domain.DomainHistory} with only base table
- * ("DomainHistory") attributes. Please refer to {@link BulkQueryEntities} for usage.
+ * A 'light' version of {@link DomainHistory} with only base table ("DomainHistory") attributes,
+ * which allows fast bulk loading. They are used in in-memory assembly of {@code DomainHistory}
+ * instances along with bulk-loaded child entities ({@code GracePeriodHistory} etc). The in-memory
+ * assembly achieves much higher performance than loading {@code DomainHistory} directly.
  *
- * <p>This class is adapted from {@link google.registry.model.domain.DomainHistory} by removing the
- * {@code dsDataHistories}, {@code gracePeriodHistories}, and {@code nsHosts} fields and associated
- * methods.
+ * <p>Please refer to {@link BulkQueryEntities} for more information.
+ *
+ * <p>This class is adapted from {@link DomainHistory} by removing the {@code dsDataHistories},
+ * {@code gracePeriodHistories}, and {@code nsHosts} fields and associated methods.
  */
 @Entity(name = "DomainHistory")
 @Access(AccessType.FIELD)

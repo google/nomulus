@@ -75,17 +75,17 @@ class TestSetupHelper {
   }
 
   void initializeAllEntities() {
-    registry = upsertInDb(DatabaseHelper.newRegistry(TLD, Ascii.toUpperCase(TLD)));
+    registry = putInDb(DatabaseHelper.newRegistry(TLD, Ascii.toUpperCase(TLD)));
     registrar = saveRegistrar(REGISTRAR_ID);
-    contact = upsertInDb(createContact(DOMAIN_REPO_ID, REGISTRAR_ID));
-    domain = upsertInDb(createSimpleDomain(contact));
-    domainHistory = upsertInDb(createHistoryWithoutContent(domain, fakeClock));
-    host = upsertInDb(createHost());
+    contact = putInDb(createContact(DOMAIN_REPO_ID, REGISTRAR_ID));
+    domain = putInDb(createSimpleDomain(contact));
+    domainHistory = putInDb(createHistoryWithoutContent(domain, fakeClock));
+    host = putInDb(createHost());
   }
 
   void applyChangeToDomainAndHistory() {
-    domain = upsertInDb(createFullDomain(contact, host, fakeClock));
-    domainHistory = upsertInDb(createFullHistory(domain, fakeClock));
+    domain = putInDb(createFullDomain(contact, host, fakeClock));
+    domainHistory = putInDb(createFullHistory(domain, fakeClock));
   }
 
   void setupBulkQueryJpaTm(AppEngineExtension appEngineExtension) {
@@ -203,7 +203,7 @@ class TestSetupHelper {
         .build();
   }
 
-  static <T> T upsertInDb(T entity) {
+  static <T> T putInDb(T entity) {
     jpaTm().transact(() -> jpaTm().put(entity));
     return jpaTm().transact(() -> jpaTm().loadByEntity(entity));
   }
