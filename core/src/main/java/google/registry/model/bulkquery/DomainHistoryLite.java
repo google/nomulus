@@ -115,10 +115,8 @@ public class DomainHistoryLite extends HistoryEntry implements SqlOnlyEntity {
     // See inline comments in DomainHistory.postLoad for reasons for the following lines.
     if (domainContent.getDomainName() == null) {
       domainContent = null;
-    } else {
-      if (domainContent.getRepoId() == null) {
-        domainContent.setRepoId(parent.getName());
-      }
+    } else if (domainContent.getRepoId() == null) {
+      domainContent.setRepoId(parent.getName());
     }
   }
 }

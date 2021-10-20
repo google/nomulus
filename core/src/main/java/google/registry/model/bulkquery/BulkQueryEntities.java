@@ -58,8 +58,8 @@ public class BulkQueryEntities {
           DomainHistory.class.getCanonicalName(),
           DomainHistoryLite.class.getCanonicalName());
 
-  /* The JPA entity classes to be added to the {@link
-   * JpaTransactionManager} for bulk query.*/
+  /* The JPA entity classes that are not included in persistence.xml and need to be added to
+   * the {@link JpaTransactionManager} for bulk query.*/
   public static final ImmutableList<String> JPA_ENTITIES_NEW =
       ImmutableList.of(
           DomainHost.class.getCanonicalName(), DomainHistoryHost.class.getCanonicalName());
