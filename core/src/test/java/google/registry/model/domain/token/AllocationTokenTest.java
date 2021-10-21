@@ -34,6 +34,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.Serializations;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
@@ -41,6 +42,7 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -91,6 +93,44 @@ public class AllocationTokenTest extends EntityTestCase {
                 .setTokenType(SINGLE_USE)
                 .build());
     assertThat(loadByEntity(singleUseToken)).isEqualTo(singleUseToken);
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    AllocationToken unlimitedUseToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123Unlimited")
+                .setTokenType(UNLIMITED_USE)
+                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setAllowedTlds(ImmutableSet.of("dev", "app"))
+                .setAllowedRegistrarIds(ImmutableSet.of("TheRegistrar, NewRegistrar"))
+                .setDiscountFraction(0.5)
+                .setDiscountPremiums(true)
+                .setDiscountYears(3)
+                .setTokenStatusTransitions(
+                    ImmutableSortedMap.<DateTime, TokenStatus>naturalOrder()
+                        .put(START_OF_TIME, NOT_STARTED)
+                        .put(DateTime.now(UTC), TokenStatus.VALID)
+                        .put(DateTime.now(UTC).plusWeeks(8), TokenStatus.ENDED)
+                        .build())
+                .build());
+    AllocationToken persisted = loadByEntity(unlimitedUseToken);
+    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
+
+    DomainBase domain = persistActiveDomain("example.foo");
+    Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
+    AllocationToken singleUseToken =
+        persistResource(
+            new AllocationToken.Builder()
+                .setToken("abc123Single")
+                .setRedemptionHistoryEntry(HistoryEntry.createVKey(historyEntryKey))
+                .setDomainName("example.foo")
+                .setCreationTimeForTest(DateTime.parse("2010-11-12T05:00:00Z"))
+                .setTokenType(SINGLE_USE)
+                .build());
+    persisted = loadByEntity(singleUseToken);
+    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

@@ -27,6 +27,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.Serializations;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
@@ -59,6 +60,17 @@ public class HostHistoryTest extends EntityTestCase {
               assertHostHistoriesEqual(fromDatabase, hostHistory);
               assertThat(fromDatabase.getParentVKey()).isEqualTo(hostHistory.getParentVKey());
             });
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    insertInDb(host);
+    HostResource hostFromDb = loadByEntity(host);
+    HostHistory hostHistory = createHostHistory(hostFromDb);
+    insertInDb(hostHistory);
+    HostHistory fromDatabase = jpaTm().transact(() -> jpaTm().loadByKey(hostHistory.createVKey()));
+    assertThat(Serializations.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
   @TestSqlOnly

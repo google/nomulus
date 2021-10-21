@@ -20,6 +20,7 @@ import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.Buildable;
 import google.registry.model.Buildable.Overlayable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import java.util.Optional;
 import javax.persistence.Embeddable;
 import javax.persistence.EnumType;
@@ -38,7 +39,8 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @Embed
 @Embeddable
 @XmlType(propOrder = {"name", "org", "address", "type"})
-public class PostalInfo extends ImmutableObject implements Overlayable<PostalInfo> {
+public class PostalInfo extends ImmutableObject
+    implements Overlayable<PostalInfo>, UnsafeSerializable {
 
   /** The type of the address, either localized or international. */
   public enum Type {

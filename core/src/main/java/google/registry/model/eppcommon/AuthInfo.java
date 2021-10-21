@@ -16,6 +16,7 @@ package google.registry.model.eppcommon;
 
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 import javax.persistence.MappedSuperclass;
@@ -35,7 +36,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @XmlTransient
 @Embeddable
 @MappedSuperclass
-public abstract class AuthInfo extends ImmutableObject {
+public abstract class AuthInfo extends ImmutableObject implements UnsafeSerializable {
 
   @Embedded protected PasswordAuth pw;
 
@@ -47,7 +48,7 @@ public abstract class AuthInfo extends ImmutableObject {
   @Embed
   @XmlType(namespace = "urn:ietf:params:xml:ns:eppcom-1.0")
   @Embeddable
-  public static class PasswordAuth extends ImmutableObject {
+  public static class PasswordAuth extends ImmutableObject implements UnsafeSerializable {
     @XmlValue
     @XmlJavaTypeAdapter(NormalizedStringAdapter.class)
     String value;

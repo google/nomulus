@@ -27,6 +27,7 @@ import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.IgnoreSave;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import java.util.Optional;
 import javax.persistence.Embedded;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -39,7 +40,7 @@ import org.joda.time.DateTime;
 @Embed
 @XmlType(propOrder = {"noticeId", "expirationTime", "acceptedTime"})
 @javax.persistence.Embeddable
-public class LaunchNotice extends ImmutableObject {
+public class LaunchNotice extends ImmutableObject implements UnsafeSerializable {
 
   /** An empty instance to use in place of null. */
   private static final NoticeIdType EMPTY_NOTICE_ID = new NoticeIdType();
@@ -47,14 +48,13 @@ public class LaunchNotice extends ImmutableObject {
   /** An id with a validator-id attribute. */
   @Embed
   @javax.persistence.Embeddable
-  public static class NoticeIdType extends ImmutableObject {
+  public static class NoticeIdType extends ImmutableObject implements UnsafeSerializable {
 
     /**
-     * The Trademark Claims Notice ID from
-     * {@link "http://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.3"}.
+     * The Trademark Claims Notice ID from <a
+     * href="http://tools.ietf.org/html/draft-lozano-tmch-func-spec-08#section-6.3">the RFC</a>.
      */
-    @XmlValue
-    String tcnId;
+    @XmlValue String tcnId;
 
     /** The identifier of the TMDB provider to use, defaulting to the TMCH. */
     @IgnoreSave(IfNull.class)

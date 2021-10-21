@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import javax.persistence.Embeddable;
 import javax.persistence.MappedSuperclass;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -49,7 +50,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @XmlTransient
 @Embeddable
 @MappedSuperclass
-public class PhoneNumber extends ImmutableObject {
+public class PhoneNumber extends ImmutableObject implements UnsafeSerializable {
 
   @XmlValue
   @XmlJavaTypeAdapter(CollapsedStringAdapter.class)

@@ -501,7 +501,8 @@ task javadoc(type: Javadoc) {
   options.addBooleanOption('Xdoclint:all,-missing', true)
   options.addBooleanOption("-allow-script-in-comments",true)
   options.tags = ["type:a:Generic Type",
-                  "error:a:Expected Error"]
+                  "error:a:Expected Error",
+                  "invariant:a:Guaranteed Property"]
 }
 
 tasks.build.dependsOn(tasks.javadoc)

@@ -20,6 +20,7 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.contact.ContactHistory.ContactHistoryId;
 import google.registry.model.replay.DatastoreEntity;
 import google.registry.model.replay.SqlEntity;
@@ -59,7 +60,7 @@ import javax.persistence.PostLoad;
 @EntitySubclass
 @Access(AccessType.FIELD)
 @IdClass(ContactHistoryId.class)
-public class ContactHistory extends HistoryEntry implements SqlEntity {
+public class ContactHistory extends HistoryEntry implements SqlEntity, UnsafeSerializable {
 
   // Store ContactBase instead of ContactResource so we don't pick up its @Id
   // Nullable for the sake of pre-Registry-3.0 history objects

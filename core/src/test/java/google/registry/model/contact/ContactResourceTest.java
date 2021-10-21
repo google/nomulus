@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.Serializations;
 import google.registry.model.contact.Disclose.PostalInfoChoice;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -172,6 +173,14 @@ public class ContactResourceTest extends EntityTestCase {
             loadByForeignKey(
                 ContactResource.class, contactResource.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(contactResource);
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    ContactResource persisted =
+        loadByForeignKey(ContactResource.class, contactResource.getForeignKey(), fakeClock.nowUtc())
+            .get();
+    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

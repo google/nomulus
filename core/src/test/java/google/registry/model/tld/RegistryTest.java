@@ -38,6 +38,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.EntityTestCase;
+import google.registry.model.Serializations;
 import google.registry.model.tld.Registry.RegistryNotFoundException;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.label.PremiumList;
@@ -47,6 +48,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.Money;
@@ -85,6 +87,16 @@ public final class RegistryTest extends EntityTestCase {
     assertWithMessage("Registry not found").that(Registry.get("tld")).isNotNull();
     assertThat(tm().transact(() -> tm().loadByKey(Registry.createVKey("tld"))))
         .isEqualTo(Registry.get("tld"));
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    ReservedList rl15 = persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED");
+    Registry registry = Registry.get("tld").asBuilder().setReservedLists(rl15).build();
+    tm().transact(() -> tm().put(registry));
+    Registry persisted =
+        tm().transact(() -> tm().loadByKey(Registry.createVKey(registry.tldStrId)));
+    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyAndSql

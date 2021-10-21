@@ -15,6 +15,7 @@
 package google.registry.model.billing;
 
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.Serializations.serializeDeserialize;
 import static google.registry.model.domain.token.AllocationToken.TokenType.UNLIMITED_USE;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -46,6 +47,7 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 import google.registry.util.DateTimeUtils;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -193,6 +195,20 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(loadByEntity(cancellationRecurring)).isEqualTo(cancellationRecurring);
 
     ofyTmOrDoNothing(() -> assertThat(tm().loadByEntity(modification)).isEqualTo(modification));
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    BillingEvent persisted = loadByEntity(oneTime);
+    assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
+    persisted = loadByEntity(oneTimeSynthetic);
+    assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
+    persisted = loadByEntity(recurring);
+    assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
+    persisted = loadByEntity(cancellationOneTime);
+    assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
+    persisted = loadByEntity(cancellationRecurring);
+    assertThat(serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

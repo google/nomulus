@@ -85,6 +85,9 @@ public abstract class ImmutableObject implements Cloneable {
   @Target(FIELD)
   public @interface Insignificant {}
 
+  // Note: if this class is made to implement Serializable, this field must become 'transient' since
+  // hashing is not stable across executions. Also note that @XmlTransit is forbidden on transient
+  // fields and need to be removed if transient is added.
   @Ignore @XmlTransient protected Integer hashCode;
 
   private boolean equalsImmutableObject(ImmutableObject other) {

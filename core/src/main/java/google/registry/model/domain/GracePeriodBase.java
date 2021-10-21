@@ -17,6 +17,7 @@ package google.registry.model.domain;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.domain.rgp.GracePeriodStatus;
 import google.registry.persistence.BillingVKey.BillingEventVKey;
@@ -35,7 +36,7 @@ import org.joda.time.DateTime;
 @Embed
 @MappedSuperclass
 @Access(AccessType.FIELD)
-public class GracePeriodBase extends ImmutableObject {
+public class GracePeriodBase extends ImmutableObject implements UnsafeSerializable {
 
   /** Unique id required for hibernate representation. */
   @Transient long gracePeriodId;

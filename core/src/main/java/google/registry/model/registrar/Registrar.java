@@ -72,6 +72,7 @@ import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.UpdateAutoTimestamp;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
@@ -116,7 +117,7 @@ import org.joda.time.DateTime;
     })
 @InCrossTld
 public class Registrar extends ImmutableObject
-    implements Buildable, DatastoreAndSqlEntity, Jsonifiable {
+    implements Buildable, DatastoreAndSqlEntity, Jsonifiable, UnsafeSerializable {
 
   /** Represents the type of a registrar entity. */
   public enum Type {
@@ -404,7 +405,7 @@ public class Registrar extends ImmutableObject
 
   /** A billing account entry for this registrar, consisting of a currency and an account Id. */
   @Embed
-  public static class BillingAccountEntry extends ImmutableObject {
+  public static class BillingAccountEntry extends ImmutableObject implements UnsafeSerializable {
 
     CurrencyUnit currency;
     String accountId;

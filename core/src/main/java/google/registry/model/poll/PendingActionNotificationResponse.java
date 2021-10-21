@@ -17,6 +17,7 @@ package google.registry.model.poll;
 import com.google.common.annotations.VisibleForTesting;
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.eppoutput.EppResponse.ResponseData;
 import javax.persistence.Embeddable;
@@ -31,12 +32,13 @@ import org.joda.time.DateTime;
 /** The {@link ResponseData} returned when completing a pending action on a domain. */
 @XmlTransient
 @Embeddable
-public class PendingActionNotificationResponse extends ImmutableObject implements ResponseData {
+public class PendingActionNotificationResponse extends ImmutableObject
+    implements ResponseData, UnsafeSerializable {
 
   /** The inner name type that contains a name and the result boolean. */
   @Embed
   @Embeddable
-  static class NameOrId extends ImmutableObject {
+  static class NameOrId extends ImmutableObject implements UnsafeSerializable {
     @XmlValue
     String value;
 

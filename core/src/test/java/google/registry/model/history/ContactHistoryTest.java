@@ -27,6 +27,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.Serializations;
 import google.registry.model.contact.ContactAddress;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
@@ -62,6 +63,18 @@ public class ContactHistoryTest extends EntityTestCase {
               assertContactHistoriesEqual(fromDatabase, contactHistory);
               assertThat(fromDatabase.getParentVKey()).isEqualTo(contactHistory.getParentVKey());
             });
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+    insertInDb(contact);
+    ContactResource contactFromDb = loadByEntity(contact);
+    ContactHistory contactHistory = createContactHistory(contactFromDb);
+    insertInDb(contactHistory);
+    ContactHistory fromDatabase =
+        jpaTm().transact(() -> jpaTm().loadByKey(contactHistory.createVKey()));
+    assertThat(Serializations.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
   @TestSqlOnly

@@ -38,7 +38,7 @@ import org.joda.time.DateTime;
  * @see UpdateAutoTimestampTranslatorFactory
  */
 @Embeddable
-public class UpdateAutoTimestamp extends ImmutableObject {
+public class UpdateAutoTimestamp extends ImmutableObject implements UnsafeSerializable {
 
   // When set to true, database converters/translators should do the auto update.  When set to
   // false, auto update should be suspended (this exists to allow us to preserve the original value

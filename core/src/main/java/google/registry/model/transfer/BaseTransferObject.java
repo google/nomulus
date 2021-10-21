@@ -16,6 +16,7 @@ package google.registry.model.transfer;
 
 import google.registry.model.Buildable.GenericBuilder;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -27,7 +28,7 @@ import org.joda.time.DateTime;
 /** Fields common to {@link TransferData} and {@link TransferResponse}. */
 @XmlTransient
 @MappedSuperclass
-public abstract class BaseTransferObject extends ImmutableObject {
+public abstract class BaseTransferObject extends ImmutableObject implements UnsafeSerializable {
   /**
    * The status of the current or last transfer. Can be null if never transferred. Note that we
    * leave IgnoreSave off this field so that we can ensure that TransferData loaded from Objectify

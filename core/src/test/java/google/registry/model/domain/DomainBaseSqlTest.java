@@ -33,6 +33,7 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.googlecode.objectify.Key;
+import google.registry.model.Serializations;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -352,6 +353,14 @@ public class DomainBaseSqlTest {
               DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
               assertEqualDomainExcept(persisted);
             });
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    createTld("com");
+    insertInDb(contact, contact2, domain, host);
+    DomainBase persisted = jpaTm().transact(() -> jpaTm().loadByEntity(domain));
+    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestSqlOnly

@@ -35,6 +35,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
+import google.registry.model.Serializations;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainContent;
@@ -85,6 +86,16 @@ public class DomainHistoryTest extends EntityTestCase {
               assertDomainHistoriesEqual(fromDatabase, domainHistory);
               assertThat(fromDatabase.getParentVKey()).isEqualTo(domainHistory.getParentVKey());
             });
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
+    DomainHistory domainHistory = createDomainHistory(domain);
+    insertInDb(domainHistory);
+    DomainHistory fromDatabase =
+        jpaTm().transact(() -> jpaTm().loadByKey(domainHistory.createVKey()));
+    assertThat(Serializations.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
   @TestSqlOnly

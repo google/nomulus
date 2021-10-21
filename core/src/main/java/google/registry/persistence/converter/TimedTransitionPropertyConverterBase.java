@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import google.registry.model.common.TimedTransitionProperty;
 import google.registry.model.common.TimedTransitionProperty.TimedTransition;
 import google.registry.persistence.converter.StringMapDescriptor.StringMap;
+import java.io.Serializable;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.persistence.AttributeConverter;
@@ -30,7 +31,8 @@ import org.joda.time.DateTime;
  * Base JPA converter for {@link TimedTransitionProperty} objects that are stored in a column with
  * data type of hstore in the database.
  */
-public abstract class TimedTransitionPropertyConverterBase<K, V extends TimedTransition<K>>
+public abstract class TimedTransitionPropertyConverterBase<
+        K extends Serializable, V extends TimedTransition<K>>
     implements AttributeConverter<TimedTransitionProperty<K, V>, StringMap> {
 
   abstract Map.Entry<String, String> convertToDatabaseMapEntry(Map.Entry<DateTime, V> entry);

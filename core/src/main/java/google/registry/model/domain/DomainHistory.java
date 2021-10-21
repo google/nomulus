@@ -103,7 +103,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
 
   // We could have reused domainContent.nsHosts here, but Hibernate throws a weird exception after
   // we change to use a composite primary key.
-  // TODO(b/166776754): Investigate if we can reuse domainContent.nsHosts for storing host keys.
+  // TODO(b/166776754): Investigate if we can reuse domainContent.nsHosts for storing
+  // host keys.
   @ElementCollection
   @JoinTable(
       name = "DomainHistoryHost",

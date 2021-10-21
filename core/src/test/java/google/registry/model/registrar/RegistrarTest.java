@@ -39,12 +39,14 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
 import google.registry.model.EntityTestCase;
+import google.registry.model.Serializations;
 import google.registry.model.registrar.Registrar.State;
 import google.registry.model.registrar.Registrar.Type;
 import google.registry.model.tld.Registries;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
 import google.registry.util.CidrAddressBlock;
 import org.joda.money.CurrencyUnit;
 import org.junit.jupiter.api.BeforeEach;
@@ -133,6 +135,12 @@ class RegistrarTest extends EntityTestCase {
   @TestOfyAndSql
   void testPersistence() {
     assertThat(tm().transact(() -> tm().loadByKey(registrar.createVKey()))).isEqualTo(registrar);
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    Registrar persisted = tm().transact(() -> tm().loadByKey(registrar.createVKey()));
+    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

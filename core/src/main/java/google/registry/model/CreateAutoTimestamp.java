@@ -23,7 +23,7 @@ import org.joda.time.DateTime;
  *
  * @see CreateAutoTimestampTranslatorFactory
  */
-public class CreateAutoTimestamp extends ImmutableObject {
+public class CreateAutoTimestamp extends ImmutableObject implements UnsafeSerializable {
 
   DateTime timestamp;
 

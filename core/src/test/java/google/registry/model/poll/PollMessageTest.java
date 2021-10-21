@@ -25,6 +25,7 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.model.EntityTestCase;
+import google.registry.model.Serializations;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
@@ -118,6 +119,20 @@ public class PollMessageTest extends EntityTestCase {
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
   }
 
+  @TestSqlOnly
+  void testSerializableOneTime() {
+    PollMessage.OneTime pollMessage =
+        persistResource(
+            new PollMessage.OneTime.Builder()
+                .setRegistrarId("TheRegistrar")
+                .setEventTime(fakeClock.nowUtc())
+                .setMsg("Test poll message")
+                .setParent(historyEntry)
+                .build());
+    PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));
+    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
+  }
+
   @TestOfyAndSql
   void testPersistenceAutorenew() {
     PollMessage.Autorenew pollMessage =
@@ -131,6 +146,22 @@ public class PollMessageTest extends EntityTestCase {
                 .setTargetId("foobar.foo")
                 .build());
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
+  }
+
+  @TestSqlOnly
+  void testSerializableAutorenew() {
+    PollMessage.Autorenew pollMessage =
+        persistResource(
+            new PollMessage.Autorenew.Builder()
+                .setRegistrarId("TheRegistrar")
+                .setEventTime(fakeClock.nowUtc())
+                .setMsg("Test poll message")
+                .setParent(historyEntry)
+                .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
+                .setTargetId("foobar.foo")
+                .build());
+    PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));
+    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

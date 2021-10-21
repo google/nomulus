@@ -39,6 +39,7 @@ import com.googlecode.objectify.annotation.Parent;
 import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.TimeOfYear;
 import google.registry.model.domain.DomainBase;
@@ -72,7 +73,7 @@ import org.joda.time.DateTime;
 /** A billable event in a domain's lifecycle. */
 @MappedSuperclass
 public abstract class BillingEvent extends ImmutableObject
-    implements Buildable, TransferServerApproveEntity {
+    implements Buildable, TransferServerApproveEntity, UnsafeSerializable {
 
   /** The reason for the bill, which maps 1:1 to skus in go/registry-billing-skus. */
   public enum Reason {

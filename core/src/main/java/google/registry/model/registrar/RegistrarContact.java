@@ -46,6 +46,7 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.registrar.RegistrarContact.RegistrarPocId;
@@ -82,7 +83,7 @@ import javax.persistence.Transient;
 @IdClass(RegistrarPocId.class)
 @InCrossTld
 public class RegistrarContact extends ImmutableObject
-    implements DatastoreAndSqlEntity, Jsonifiable {
+    implements DatastoreAndSqlEntity, Jsonifiable, UnsafeSerializable {
 
   @Parent @Transient Key<Registrar> parent;
 

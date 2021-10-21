@@ -21,6 +21,7 @@ import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.contact.ContactResource;
 import google.registry.persistence.VKey;
 import javax.persistence.Embeddable;
@@ -46,7 +47,7 @@ import javax.xml.bind.annotation.XmlEnumValue;
  */
 @Embed
 @Embeddable
-public class DesignatedContact extends ImmutableObject {
+public class DesignatedContact extends ImmutableObject implements UnsafeSerializable {
 
   /**
    * XML type for contact types. This can be either: {@code "admin"}, {@code "billing"}, or

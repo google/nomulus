@@ -27,6 +27,7 @@ import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
 import google.registry.model.JsonMapBuilder;
 import google.registry.model.Jsonifiable;
+import google.registry.model.UnsafeSerializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -56,7 +57,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @XmlTransient
 @Embeddable
 @MappedSuperclass
-public class Address extends ImmutableObject implements Jsonifiable {
+public class Address extends ImmutableObject implements Jsonifiable, UnsafeSerializable {
 
   /** The schema validation will enforce that this has 3 lines at most. */
   // TODO(b/177569726): Remove this field after migration. We need to figure out how to generate

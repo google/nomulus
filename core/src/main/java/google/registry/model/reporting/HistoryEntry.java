@@ -31,6 +31,7 @@ import com.googlecode.objectify.condition.IfNull;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
@@ -83,7 +84,8 @@ import org.joda.time.DateTime;
 @Entity
 @MappedSuperclass
 @Access(AccessType.FIELD)
-public class HistoryEntry extends ImmutableObject implements Buildable, DatastoreEntity {
+public class HistoryEntry extends ImmutableObject
+    implements Buildable, DatastoreEntity, UnsafeSerializable {
 
   /** Represents the type of history entry. */
   public enum Type {

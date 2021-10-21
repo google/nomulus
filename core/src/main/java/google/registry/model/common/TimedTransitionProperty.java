@@ -27,7 +27,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 import com.googlecode.objectify.mapper.Mapper;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import google.registry.util.TypeUtils;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -53,11 +55,12 @@ import org.joda.time.DateTime;
  * to use for storing the list of transitions. The user is given this choice of subclass so that the
  * field of the value type stored in the transition can be given a customized name.
  */
-public class TimedTransitionProperty<V, T extends TimedTransitionProperty.TimedTransition<V>>
-    extends ForwardingMap<DateTime, T> {
+public class TimedTransitionProperty<
+        V extends Serializable, T extends TimedTransitionProperty.TimedTransition<V>>
+    extends ForwardingMap<DateTime, T> implements UnsafeSerializable {
 
   /**
-   * A transition to a value of type {@code V} at a certain time.  This superclass only has a field
+   * A transition to a value of type {@code V} at a certain time. This superclass only has a field
    * for the {@code DateTime}, which means that subclasses should supply the field of type {@code V}
    * and implementations of the abstract getter and setter methods to access that field. This design
    * is so that subclasses tagged with @Embed can define a custom field name for their value, for
@@ -65,11 +68,12 @@ public class TimedTransitionProperty<V, T extends TimedTransitionProperty.TimedT
    *
    * <p>The public visibility of this class exists only so that it can be subclassed; clients should
    * never call any methods on this class or attempt to access its members, but should instead treat
-   * it as a customizable implementation detail of {@code TimedTransitionProperty}.  However, note
+   * it as a customizable implementation detail of {@code TimedTransitionProperty}. However, note
    * that subclasses must also have public visibility so that they can be instantiated via
    * reflection in a call to {@code fromValueMap}.
    */
-  public abstract static class TimedTransition<V> extends ImmutableObject {
+  public abstract static class TimedTransition<V extends Serializable> extends ImmutableObject
+      implements UnsafeSerializable {
     /** The time at which this value becomes the active value. */
     private DateTime transitionTime;
 
@@ -89,16 +93,16 @@ public class TimedTransitionProperty<V, T extends TimedTransitionProperty.TimedT
   }
 
   /**
-   * Converts the provided value map into the equivalent transition map, using transition objects
-   * of the given TimedTransition subclass.  The value map must be sorted according to the natural
+   * Converts the provided value map into the equivalent transition map, using transition objects of
+   * the given TimedTransition subclass. The value map must be sorted according to the natural
    * ordering of its DateTime keys, and keys cannot be earlier than START_OF_TIME.
    */
   // NB: The Class<T> parameter could be eliminated by getting the class via reflection, but then
   // the callsite cannot infer T, so unless you explicitly call this as .<V, T>fromValueMap() it
   // will default to using just TimedTransition<V>, which fails at runtime.
-  private static <V, T extends TimedTransition<V>> NavigableMap<DateTime, T> makeTransitionMap(
-      ImmutableSortedMap<DateTime, V> valueMap,
-      final Class<T> timedTransitionSubclass) {
+  private static <V extends Serializable, T extends TimedTransition<V>>
+      NavigableMap<DateTime, T> makeTransitionMap(
+          ImmutableSortedMap<DateTime, V> valueMap, final Class<T> timedTransitionSubclass) {
     checkArgument(
         Ordering.natural().equals(valueMap.comparator()),
         "Timed transition value map must have transition time keys in chronological order");
@@ -121,9 +125,9 @@ public class TimedTransitionProperty<V, T extends TimedTransitionProperty.TimedT
    *
    * <p>This method should be the normal method for constructing a {@link TimedTransitionProperty}.
    */
-  public static <V, T extends TimedTransition<V>> TimedTransitionProperty<V, T> fromValueMap(
-      ImmutableSortedMap<DateTime, V> valueMap,
-      final Class<T> timedTransitionSubclass) {
+  public static <V extends Serializable, T extends TimedTransition<V>>
+      TimedTransitionProperty<V, T> fromValueMap(
+          ImmutableSortedMap<DateTime, V> valueMap, final Class<T> timedTransitionSubclass) {
     return new TimedTransitionProperty<>(ImmutableSortedMap.copyOf(
         makeTransitionMap(valueMap, timedTransitionSubclass)));
   }
@@ -147,7 +151,8 @@ public class TimedTransitionProperty<V, T extends TimedTransitionProperty.TimedT
    * @param transitionValue the value of the new transition
    * @param transitionClass the class of transitions in this map
    * @param allowedTransitions map of all possible state-to-state transitions
-   * @param allowedTransitionMapName transition map description string for error messages
+   * @param allowedTransitionMapName transition map description string for error messages extends
+   *     Serializable
    */
   public TimedTransitionProperty<V, T> copyWithAddedTransition(
       DateTime transitionTime,
@@ -175,10 +180,10 @@ public class TimedTransitionProperty<V, T extends TimedTransitionProperty.TimedT
    * @param allowedTransitions optional map of all possible state-to-state transitions
    * @param allowedTransitionMapName optional transition map description string for error messages
    * @param initialValue optional initial value; if present, the first transition must have this
-   *        value
+   *     value
    * @param badInitialValueErrorMessage option error message string if the initial value is wrong
    */
-  public static <V, T extends TimedTransitionProperty.TimedTransition<V>>
+  public static <V extends Serializable, T extends TimedTransitionProperty.TimedTransition<V>>
       TimedTransitionProperty<V, T> make(
           ImmutableSortedMap<DateTime, V> newTransitions,
           Class<T> transitionClass,
@@ -200,7 +205,7 @@ public class TimedTransitionProperty<V, T extends TimedTransitionProperty.TimedT
    * Validates that a transition map is not null or empty, starts at START_OF_TIME, and has
    * transitions which move from one value to another in allowed ways.
    */
-  public static <V, T extends TimedTransitionProperty.TimedTransition<V>>
+  public static <V extends Serializable, T extends TimedTransitionProperty.TimedTransition<V>>
       void validateTimedTransitionMap(
           @Nullable NavigableMap<DateTime, V> transitionMap,
           ImmutableMultimap<V, V> allowedTransitions,
@@ -240,8 +245,9 @@ public class TimedTransitionProperty<V, T extends TimedTransitionProperty.TimedT
    * annotation. The map for those fields must be mutable so that Objectify can load values from
    * Datastore into the map, but clients should still never mutate the field's map directly.
    */
-  public static <V, T extends TimedTransition<V>> TimedTransitionProperty<V, T> forMapify(
-      ImmutableSortedMap<DateTime, V> valueMap, Class<T> timedTransitionSubclass) {
+  public static <V extends Serializable, T extends TimedTransition<V>>
+      TimedTransitionProperty<V, T> forMapify(
+          ImmutableSortedMap<DateTime, V> valueMap, Class<T> timedTransitionSubclass) {
     return new TimedTransitionProperty<>(
         new TreeMap<>(makeTransitionMap(valueMap, timedTransitionSubclass)));
   }
@@ -254,8 +260,9 @@ public class TimedTransitionProperty<V, T extends TimedTransitionProperty.TimedT
    * annotation. The map for those fields must be mutable so that Objectify can load values from
    * Datastore into the map, but clients should still never mutate the field's map directly.
    */
-  public static <V, T extends TimedTransition<V>> TimedTransitionProperty<V, T> forMapify(
-      V valueAtStartOfTime, Class<T> timedTransitionSubclass) {
+  public static <V extends Serializable, T extends TimedTransition<V>>
+      TimedTransitionProperty<V, T> forMapify(
+          V valueAtStartOfTime, Class<T> timedTransitionSubclass) {
     return forMapify(
         ImmutableSortedMap.of(START_OF_TIME, valueAtStartOfTime), timedTransitionSubclass);
   }
