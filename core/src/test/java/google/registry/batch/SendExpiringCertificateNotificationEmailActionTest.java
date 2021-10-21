@@ -142,7 +142,7 @@ class SendExpiringCertificateNotificationEmailActionTest {
   }
 
   @TestOfyAndSql
-  void sendNotificationEmail_returnsTrue() throws Exception {
+  void sendNotificationEmail_techEMailAsRecipient_returnsTrue() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
@@ -157,23 +157,62 @@ class SendExpiringCertificateNotificationEmailActionTest {
                 .asBuilder()
                 .setFailoverClientCertificate(cert.get(), clock.nowUtc())
                 .build());
-    ImmutableList<RegistrarContact> contacts =
-        ImmutableList.of(
-            new RegistrarContact.Builder()
-                .setParent(registrar)
-                .setName("Will Doe")
-                .setEmailAddress("will@example-registrar.tld")
-                .setPhoneNumber("+1.3105551213")
-                .setFaxNumber("+1.3105551213")
-                .setTypes(ImmutableSet.of(RegistrarContact.Type.TECH))
-                .setVisibleInWhoisAsAdmin(true)
-                .setVisibleInWhoisAsTech(false)
-                .build());
-    persistSimpleResources(contacts);
-    persistResource(registrar);
+    persistSampleContacts(registrar, Type.TECH);
     assertThat(
             action.sendNotificationEmail(registrar, START_OF_TIME, CertificateType.FAILOVER, cert))
         .isEqualTo(true);
+  }
+
+  @TestOfyAndSql
+  void sendNotificationEmail_adminEMailAsRecipient_returnsTrue() throws Exception {
+    X509Certificate expiringCertificate =
+        SelfSignedCaCertificate.create(
+                "www.example.tld",
+                DateTime.parse("2020-09-02T00:00:00Z"),
+                DateTime.parse("2021-06-01T00:00:00Z"))
+            .cert();
+    Optional<String> cert =
+        Optional.of(certificateChecker.serializeCertificate(expiringCertificate));
+    Registrar registrar =
+        persistResource(
+            makeRegistrar1()
+                .asBuilder()
+                .setFailoverClientCertificate(cert.get(), clock.nowUtc())
+                .build());
+    persistSampleContacts(registrar, Type.ADMIN);
+    assertThat(
+            action.sendNotificationEmail(registrar, START_OF_TIME, CertificateType.FAILOVER, cert))
+        .isEqualTo(true);
+  }
+
+  @TestOfyAndSql
+  void sendNotificationEmail_returnsFalse_unsupportedEmailType() throws Exception {
+    Registrar registrar =
+        persistResource(
+            createRegistrar(
+                    "testId",
+                    "testName",
+                    SelfSignedCaCertificate.create(
+                            "www.example.tld",
+                            DateTime.parse("2020-09-02T00:00:00Z"),
+                            DateTime.parse("2021-06-01T00:00:00Z"))
+                        .cert(),
+                    null)
+                .build());
+    persistSampleContacts(registrar, Type.LEGAL);
+    assertThat(
+            action.sendNotificationEmail(
+                registrar,
+                START_OF_TIME,
+                CertificateType.FAILOVER,
+                Optional.of(
+                    certificateChecker.serializeCertificate(
+                        SelfSignedCaCertificate.create(
+                                "www.example.tld",
+                                DateTime.parse("2020-09-02T00:00:00Z"),
+                                DateTime.parse("2021-06-01T00:00:00Z"))
+                            .cert()))))
+        .isEqualTo(false);
   }
 
   @TestOfyAndSql
@@ -247,93 +286,82 @@ class SendExpiringCertificateNotificationEmailActionTest {
   }
 
   @TestOfyAndSql
-  void sendNotificationEmails_allEmailsBeingAttemptedToSend() throws Exception {
-    X509Certificate expiringCertificate =
-        SelfSignedCaCertificate.create(
-                "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
-            .cert();
-    X509Certificate certificate =
-        SelfSignedCaCertificate.create(
-                "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-10-01T00:00:00Z"))
-            .cert();
-    int numOfRegistrars = 10;
-    int numOfRegistrarsWithExpiringCertificates = 2;
-    for (int i = 1; i <= numOfRegistrarsWithExpiringCertificates; i++) {
-      persistResource(
-          createRegistrar("oldcert" + i, "name" + i, expiringCertificate, null).build());
+  void sendNotificationEmails_allEmailsBeingSent_onlyMainCertificates() throws Exception {
+    for (int i = 1; i <= 10; i++) {
+      Registrar registrar =
+          persistResource(
+              createRegistrar(
+                      "oldcert" + i,
+                      "name" + i,
+                      SelfSignedCaCertificate.create(
+                              "www.example.tld",
+                              DateTime.parse("2020-09-02T00:00:00Z"),
+                              DateTime.parse("2021-06-01T00:00:00Z"))
+                          .cert(),
+                      null)
+                  .build());
+      persistSampleContacts(registrar, Type.TECH);
     }
-    for (int i = numOfRegistrarsWithExpiringCertificates; i <= numOfRegistrars; i++) {
-      persistResource(createRegistrar("goodcert" + i, "name" + i, certificate, null).build());
-    }
-    assertThat(action.sendNotificationEmails()).isEqualTo(numOfRegistrarsWithExpiringCertificates);
+    assertThat(action.sendNotificationEmails()).isEqualTo(10);
   }
 
   @TestOfyAndSql
-  void sendNotificationEmails_allEmailsBeingAttemptedToSend_onlyMainCertificates()
-      throws Exception {
-    X509Certificate expiringCertificate =
-        SelfSignedCaCertificate.create(
-                "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
-            .cert();
-    int numOfRegistrars = 10;
-    for (int i = 1; i <= numOfRegistrars; i++) {
-      persistResource(
-          createRegistrar("oldcert" + i, "name" + i, expiringCertificate, null).build());
+  void sendNotificationEmails_allEmailsBeingSent_onlyFailOverCertificates() throws Exception {
+    for (int i = 1; i <= 10; i++) {
+      Registrar registrar =
+          persistResource(
+              createRegistrar(
+                      "oldcert" + i,
+                      "name" + i,
+                      null,
+                      SelfSignedCaCertificate.create(
+                              "www.example.tld",
+                              DateTime.parse("2020-09-02T00:00:00Z"),
+                              DateTime.parse("2021-06-01T00:00:00Z"))
+                          .cert())
+                  .build());
+      persistSampleContacts(registrar, Type.TECH);
     }
-    assertThat(action.sendNotificationEmails()).isEqualTo(numOfRegistrars);
+    assertThat(action.sendNotificationEmails()).isEqualTo(10);
   }
 
   @TestOfyAndSql
-  void sendNotificationEmails_allEmailsBeingAttemptedToSend_onlyFailOverCertificates()
-      throws Exception {
+  void sendNotificationEmails_allEmailsBeingSent_mixedOfCertificates() throws Exception {
     X509Certificate expiringCertificate =
         SelfSignedCaCertificate.create(
                 "www.example.tld",
                 DateTime.parse("2020-09-02T00:00:00Z"),
                 DateTime.parse("2021-06-01T00:00:00Z"))
             .cert();
-    int numOfRegistrars = 10;
-    for (int i = 1; i <= numOfRegistrars; i++) {
-      persistResource(
-          createRegistrar("oldcert" + i, "name" + i, null, expiringCertificate).build());
-    }
-    assertThat(action.sendNotificationEmails()).isEqualTo(numOfRegistrars);
-  }
 
-  @TestOfyAndSql
-  void sendNotificationEmails_allEmailsBeingAttemptedToSend_mixedOfCertificates() throws Exception {
-    X509Certificate expiringCertificate =
-        SelfSignedCaCertificate.create(
-                "www.example.tld",
-                DateTime.parse("2020-09-02T00:00:00Z"),
-                DateTime.parse("2021-06-01T00:00:00Z"))
-            .cert();
-    int numOfRegistrars = 10;
-    int numOfExpiringFailOverOnly = 2;
-    int numOfExpiringPrimaryOnly = 3;
-    for (int i = 1; i <= numOfExpiringFailOverOnly; i++) {
-      persistResource(
-          createRegistrar("cl" + i, "expiringFailOverOnly" + i, null, expiringCertificate).build());
+    for (int i = 1; i <= 3; i++) {
+      Registrar registrar =
+          persistResource(
+              createRegistrar(
+                      "cl" + i, "regWIthexpiringFailOverOnly" + i, null, expiringCertificate)
+                  .build());
+      persistSampleContacts(registrar, Type.TECH);
     }
-    for (int i = 1; i <= numOfExpiringPrimaryOnly; i++) {
-      persistResource(
-          createRegistrar("cli" + i, "expiringPrimaryOnly" + i, expiringCertificate, null).build());
+    for (int i = 1; i <= 5; i++) {
+      Registrar registrar =
+          persistResource(
+              createRegistrar(
+                      "cli" + i, "regWithexpiringPrimaryOnly" + i, expiringCertificate, null)
+                  .build());
+      persistSampleContacts(registrar, Type.TECH);
     }
-    for (int i = numOfExpiringFailOverOnly + numOfExpiringPrimaryOnly + 1;
-        i <= numOfRegistrars;
-        i++) {
-      persistResource(
-          createRegistrar("client" + i, "regularReg" + i, expiringCertificate, expiringCertificate)
-              .build());
+    for (int i = 1; i <= 4; i++) {
+      Registrar registrar =
+          persistResource(
+              createRegistrar(
+                      "client" + i,
+                      "regWithTwoExpiring" + i,
+                      expiringCertificate,
+                      expiringCertificate)
+                  .build());
+      persistSampleContacts(registrar, Type.ADMIN);
     }
-    assertThat(action.sendNotificationEmails())
-        .isEqualTo(numOfRegistrars + numOfExpiringFailOverOnly + numOfExpiringPrimaryOnly);
+    assertThat(action.sendNotificationEmails()).isEqualTo(16);
   }
 
   @TestOfyAndSql
@@ -649,17 +677,19 @@ class SendExpiringCertificateNotificationEmailActionTest {
   @TestOfyAndSql
   void run_sentEmails_responseStatusIs200() throws Exception {
     for (int i = 1; i <= 5; i++) {
-      persistResource(
-          createRegistrar(
-                  "id_" + i,
-                  "name" + i,
-                  SelfSignedCaCertificate.create(
-                          "www.example.tld",
-                          DateTime.parse("2020-09-02T00:00:00Z"),
-                          DateTime.parse("2021-06-01T00:00:00Z"))
-                      .cert(),
-                  null)
-              .build());
+      Registrar registrar =
+          persistResource(
+              createRegistrar(
+                      "id_" + i,
+                      "name" + i,
+                      SelfSignedCaCertificate.create(
+                              "www.example.tld",
+                              DateTime.parse("2020-09-02T00:00:00Z"),
+                              DateTime.parse("2021-06-01T00:00:00Z"))
+                          .cert(),
+                      null)
+                  .build());
+      persistSampleContacts(registrar, Type.TECH);
     }
     action.run();
     assertThat(response.getStatus()).isEqualTo(SC_OK);
@@ -667,7 +697,9 @@ class SendExpiringCertificateNotificationEmailActionTest {
         .isEqualTo("Done. Sent 5 expiring certificate notification emails in total.");
   }
 
-  /** Returns a sample registrar with a customized registrar name, client id and certificate* */
+  /**
+   * Returns a sample registrar builder with a customized registrar name, client id and certificate.
+   */
   private Registrar.Builder createRegistrar(
       String registrarId,
       String registrarName,
@@ -705,5 +737,28 @@ class SendExpiringCertificateNotificationEmailActionTest {
           certificateChecker.serializeCertificate(certificate), clock.nowUtc());
     }
     return builder;
+  }
+
+  /** Returns persisted sample contacts with a customized contact email type. */
+  private ImmutableList<RegistrarContact> persistSampleContacts(
+      Registrar registrar, RegistrarContact.Type emailType) {
+    return persistSimpleResources(
+        ImmutableList.of(
+            new RegistrarContact.Builder()
+                .setParent(registrar)
+                .setName("Will Doe")
+                .setEmailAddress("will@example-registrar.tld")
+                .setPhoneNumber("+1.0105551213")
+                .setFaxNumber("+1.0105551213")
+                .setTypes(ImmutableSet.of(emailType))
+                .build(),
+            new RegistrarContact.Builder()
+                .setParent(registrar)
+                .setName("Will Smith")
+                .setEmailAddress("will@test-registrar.tld")
+                .setPhoneNumber("+1.3105551213")
+                .setFaxNumber("+1.3105551213")
+                .setTypes(ImmutableSet.of(emailType))
+                .build()));
   }
 }
