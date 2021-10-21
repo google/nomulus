@@ -236,6 +236,14 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
           SqlTemplate.create(getQueryFromFile("cloud_sql_transactions_report_aggregation.sql"))
               .put("PROJECT_ID", projectId)
               .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
+              .put("REGISTRAR_IANA_ID_TABLE", getTableName(REGISTRAR_IANA_ID, yearMonth))
+              .put("TOTAL_DOMAINS_TABLE", getTableName(TOTAL_DOMAINS, yearMonth))
+              .put("TOTAL_NAMESERVERS_TABLE", getTableName(TOTAL_NAMESERVERS, yearMonth))
+              .put("TRANSACTION_COUNTS_TABLE", getTableName(TRANSACTION_COUNTS, yearMonth))
+              .put(
+                  "TRANSACTION_TRANSFER_LOSING_TABLE",
+                  getTableName(TRANSACTION_TRANSFER_LOSING, yearMonth))
+              .put("ATTEMPTED_ADDS_TABLE", getTableName(ATTEMPTED_ADDS, yearMonth))
               .build();
     }
     queriesBuilder.put(getTableName(TRANSACTIONS_REPORT_AGGREGATION, yearMonth), aggregateQuery);

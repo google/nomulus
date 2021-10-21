@@ -68,27 +68,27 @@ FROM
     EXTERNAL_QUERY("projects/%PROJECT_ID%/locations/us/connections/%PROJECT_ID%-sql", '''SELECT "tld_name" FROM "Tld" AS t WHERE t.tld_type='REAL';''') AS tlds
 JOIN
 (SELECT *
-    FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.registrar_iana_id`)
-    AS registrars
+  FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.%REGISTRAR_IANA_ID_TABLE%`)
+  AS registrars
 ON tlds.tld_name = registrars.tld
 -- We LEFT JOIN to produce reports even if the registrar made no transactions
 LEFT OUTER JOIN (
   -- Gather all intermediary data views
   SELECT *
-  FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.total_domains`
+  FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.%TOTAL_DOMAINS_TABLE%`
   UNION ALL
   SELECT *
-  FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.total_nameservers`
+  FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.%TOTAL_NAMESERVERS_TABLE%`
   UNION ALL
   SELECT *
-  FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.transaction_counts`
+  FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.%TRANSACTION_COUNTS_TABLE%`
   UNION ALL
   SELECT *
-  FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.transaction_transfer_losing`
+  FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.%TRANSACTION_TRANSFER_LOSING_TABLE%`
   UNION ALL
   SELECT *
-  FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.attempted_adds` ) AS metrics
- -- Join on tld and registrar name
+  FROM `%PROJECT_ID%.%ICANN_REPORTING_DATA_SET%.%ATTEMPTED_ADDS_TABLE%` ) AS metrics
+-- Join on tld and registrar name
 ON registrars.tld = metrics.tld
 AND registrars.registrar_name = metrics.registrar_name
 GROUP BY

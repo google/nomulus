@@ -68,27 +68,27 @@ FROM
     EXTERNAL_QUERY("projects/domain-registry-alpha/locations/us/connections/domain-registry-alpha-sql", '''SELECT "tld_name" FROM "Tld" AS t WHERE t.tld_type='REAL';''') AS tlds
 JOIN
 (SELECT *
-    FROM `domain-registry-alpha.cloud_sql_icann_reporting.registrar_iana_id`)
-    AS registrars
+  FROM `domain-registry-alpha.cloud_sql_icann_reporting.registrar_iana_id_201709`)
+  AS registrars
 ON tlds.tld_name = registrars.tld
 -- We LEFT JOIN to produce reports even if the registrar made no transactions
 LEFT OUTER JOIN (
   -- Gather all intermediary data views
   SELECT *
-  FROM `domain-registry-alpha.cloud_sql_icann_reporting.total_domains`
+  FROM `domain-registry-alpha.cloud_sql_icann_reporting.total_domains_201709`
   UNION ALL
   SELECT *
-  FROM `domain-registry-alpha.cloud_sql_icann_reporting.total_nameservers`
+  FROM `domain-registry-alpha.cloud_sql_icann_reporting.total_nameservers_201709`
   UNION ALL
   SELECT *
-  FROM `domain-registry-alpha.cloud_sql_icann_reporting.transaction_counts`
+  FROM `domain-registry-alpha.cloud_sql_icann_reporting.transaction_counts_201709`
   UNION ALL
   SELECT *
-  FROM `domain-registry-alpha.cloud_sql_icann_reporting.transaction_transfer_losing`
+  FROM `domain-registry-alpha.cloud_sql_icann_reporting.transaction_transfer_losing_201709`
   UNION ALL
   SELECT *
-  FROM `domain-registry-alpha.cloud_sql_icann_reporting.attempted_adds` ) AS metrics
- -- Join on tld and registrar name
+  FROM `domain-registry-alpha.cloud_sql_icann_reporting.attempted_adds_201709` ) AS metrics
+-- Join on tld and registrar name
 ON registrars.tld = metrics.tld
 AND registrars.registrar_name = metrics.registrar_name
 GROUP BY

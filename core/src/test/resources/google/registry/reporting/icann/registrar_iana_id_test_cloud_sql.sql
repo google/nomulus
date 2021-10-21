@@ -18,11 +18,11 @@
   -- This establishes which registrars will appear in the reports.
 
 SELECT
-  allowed_tlds AS tld,
+  allowedTlds AS tld,
   registrar_name,
-  ianaIdentifier AS iana_id
+  iana_identifier AS iana_id
 FROM
-  FROM EXTERNAL_QUERY("projects/domain-registry-alpha/locations/us/connections/domain-registry-alpha-sql",
+  EXTERNAL_QUERY("projects/domain-registry-alpha/locations/us/connections/domain-registry-alpha-sql",
   '''SELECT
     allowedTlds,
     registrar_name,
@@ -33,5 +33,5 @@ FROM
    WHERE
     r.type='REAL' OR r.type='INTERNAL';''')
 -- Filter out prober data
-AND NOT ENDS_WITH(allowedTlds, "test")
-ORDER BY tld, registrarName
+WHERE NOT ENDS_WITH(allowedTlds, "test")
+ORDER BY tld, registrar_name
