@@ -20,6 +20,7 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 
+import com.google.common.base.Ascii;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -38,6 +39,7 @@ import google.registry.persistence.transaction.Transaction.Delete;
 import google.registry.persistence.transaction.Transaction.Mutation;
 import google.registry.persistence.transaction.Transaction.Update;
 import google.registry.persistence.transaction.TransactionEntity;
+import google.registry.util.RequestStatusChecker;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +47,7 @@ import javax.annotation.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.mockito.Mockito;
 
 /**
  * A JUnit extension that replays datastore transactions against postgresql.
@@ -77,17 +80,32 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
     return new ReplayExtension(clock, true, null);
   }
 
+  // This allows us to disable the replay tests from an environment variable in specific
+  // environments (namely kokoro) where we see flakiness of unknown origin.
+  //
+  // TODO(b/197534789): Remove this once we get to the bottom of test flakiness
+  public static boolean replayTestsEnabled() {
+    String disableReplayTests = System.getenv("NOMULUS_DISABLE_REPLAY_TESTS");
+    if (disableReplayTests == null) {
+      return true;
+    }
+    return !Ascii.toLowerCase(disableReplayTests).equals("true");
+  }
+
   /**
    * Create a replay extension that replays from SQL to cloud datastore when running in SQL mode.
    */
   public static ReplayExtension createWithDoubleReplay(FakeClock clock) {
     // TODO: use the proper double-replay extension when the tests are not flaky
-    // return new ReplayExtension(
-    //     clock,
-    //     true,
-    //     new ReplicateToDatastoreAction(
-    //         clock, Mockito.mock(RequestStatusChecker.class), new FakeResponse()));
-    return createWithCompare(clock);
+    if (replayTestsEnabled()) {
+      return new ReplayExtension(
+          clock,
+          true,
+          new ReplicateToDatastoreAction(
+              clock, Mockito.mock(RequestStatusChecker.class), new FakeResponse()));
+    } else {
+      return createWithCompare(clock);
+    }
   }
 
   @Override

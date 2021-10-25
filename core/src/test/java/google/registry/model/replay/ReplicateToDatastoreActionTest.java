@@ -42,6 +42,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 import google.registry.testing.FakeResponse;
 import google.registry.testing.InjectExtension;
+import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestObject;
 import google.registry.util.RequestStatusChecker;
 import java.util.List;
@@ -49,7 +50,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junitpioneer.jupiter.RetryingTest;
@@ -73,8 +75,7 @@ public class ReplicateToDatastoreActionTest {
   private ReplicateToDatastoreAction action;
   private FakeResponse response;
 
-  // TODO(b/197534789): fix these tests and re-add the @BeforeEach
-  // @BeforeEach
+  @BeforeEach
   void setUp() {
     resetAction();
     injectExtension.setStaticField(Ofy.class, "clock", fakeClock);
@@ -88,16 +89,18 @@ public class ReplicateToDatastoreActionTest {
     TestObject.beforeDatastoreSaveCallCount = 0;
   }
 
-  // TODO(b/197534789): fix these tests and re-add the @AfterEach
-  // @AfterEach
+  @AfterEach
   void tearDown() {
     DatabaseHelper.removeDatabaseMigrationSchedule();
     fakeClock.disableAutoIncrement();
   }
 
   @RetryingTest(4)
-  @Disabled("b/197534789")
   void testReplication() {
+    if (!ReplayExtension.replayTestsEnabled()) {
+      return;
+    }
+
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
     TestObject baz = TestObject.create("baz");
@@ -122,8 +125,11 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
-  @Disabled("b/197534789")
   void testReplayFromLastTxn() {
+    if (!ReplayExtension.replayTestsEnabled()) {
+      return;
+    }
+
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
 
@@ -145,8 +151,11 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
-  @Disabled("b/197534789")
   void testUnintentionalConcurrency() {
+    if (!ReplayExtension.replayTestsEnabled()) {
+      return;
+    }
+
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
 
@@ -181,8 +190,11 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
-  @Disabled("b/197534789")
   void testMissingTransactions() {
+    if (!ReplayExtension.replayTestsEnabled()) {
+      return;
+    }
+
     // Write a transaction (should have a transaction id of 1).
     TestObject foo = TestObject.create("foo");
     insertInDb(foo);
@@ -199,8 +211,11 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
-  @Disabled("b/197534789")
   void testMissingTransactions_fullTask() {
+    if (!ReplayExtension.replayTestsEnabled()) {
+      return;
+    }
+
     // Write a transaction (should have a transaction id of 1).
     TestObject foo = TestObject.create("foo");
     insertInDb(foo);
@@ -218,8 +233,11 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
-  @Disabled("b/197534789")
   void testBeforeDatastoreSaveCallback() {
+    if (!ReplayExtension.replayTestsEnabled()) {
+      return;
+    }
+
     TestObject testObject = TestObject.create("foo");
     insertInDb(testObject);
     action.run();
@@ -228,8 +246,11 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
-  @Disabled("b/197534789")
   void testNotInMigrationState_doesNothing() {
+    if (!ReplayExtension.replayTestsEnabled()) {
+      return;
+    }
+
     // set a schedule that backtracks the current status to DATASTORE_PRIMARY
     DateTime now = fakeClock.nowUtc();
     jpaTm()
@@ -265,8 +286,11 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @Test
-  @Disabled("b/197534789")
   void testFailure_cannotAcquireLock() {
+    if (!ReplayExtension.replayTestsEnabled()) {
+      return;
+    }
+
     RequestStatusChecker requestStatusChecker = mock(RequestStatusChecker.class);
     when(requestStatusChecker.getLogId()).thenReturn("logId");
     Truth8.assertThat(
