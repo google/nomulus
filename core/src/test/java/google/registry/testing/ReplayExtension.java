@@ -85,7 +85,11 @@ public class ReplayExtension implements BeforeEachCallback, AfterEachCallback {
   //
   // TODO(b/197534789): Remove this once we get to the bottom of test flakiness
   public static boolean replayTestsEnabled() {
-    return !Ascii.toLowerCase(System.getenv("NOMULUS_DISABLE_REPLAY_TESTS")).equals("true");
+    String disableReplayTests = System.getenv("NOMULUS_DISABLE_REPLAY_TESTS");
+    if (disableReplayTests == null) {
+      return true;
+    }
+    return !Ascii.toLowerCase(disableReplayTests).equals("true");
   }
 
   /**
