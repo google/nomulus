@@ -19,14 +19,6 @@
   -- DomainTransactionRecords, which contain all necessary information for
   -- reporting (such as reporting time, report field, report amount, etc.
 
-  -- A special note on transfers: we only record 'TRANSFER_SUCCESSFUL' or
-  -- 'TRANSFER_NACKED', and we can infer the gaining and losing parties
-  -- from the enclosing HistoryEntry's clientId and otherClientId
-  -- respectively. This query templates the client ID, field for transfer
-  -- success, field for transfer nacks and default field. This allows us to
-  -- create one query for TRANSFER_GAINING and the other report fields,
-  -- and one query for TRANSFER_LOSING fields from the same template.
-
 SELECT
     tld,
     registrar_table.registrar_name AS registrar_name,
@@ -46,8 +38,8 @@ FROM (
             CASE
                 -- Explicit transfer acks (approve) and nacks (reject) are done
                 -- by the opposing registrar. Thus, for these specific actions,
-                -- we swap the 'otherClientId' with the 'clientId' to properly
-                -- account for this reversal.
+                -- we swap the 'history_other_registrar_id' with the
+                -- 'history_registrar_id' to properly account for this reversal.
                 WHEN (history_type = 'DOMAIN_TRANSFER_APPROVE'
                 OR history_type = 'DOMAIN_TRANSFER_REJECT')
                 THEN history_other_registrar_id
