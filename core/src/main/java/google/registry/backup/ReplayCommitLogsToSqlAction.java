@@ -112,7 +112,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
       return;
     }
     Optional<Lock> lock =
-        Lock.acquire(
+        Lock.acquireSql(
             this.getClass().getSimpleName(), null, LEASE_LENGTH, requestStatusChecker, false);
     if (!lock.isPresent()) {
       String message = "Can't acquire SQL commit log replay lock, aborting.";

@@ -26,11 +26,11 @@ public class FakeLockHandler implements LockHandler {
 
   private static final long serialVersionUID = 6437880915118738492L;
 
-  boolean lockSucceeds;
+  private final boolean lockSucceeds;
 
   /**
    * @param lockSucceeds if true - the lock acquisition will succeed and the callable will be
-   * called. If false, lock acquisition will fail and the caller isn't called.
+   *     called. If false, lock acquisition will fail and the caller isn't called.
    */
   public FakeLockHandler(boolean lockSucceeds) {
     this.lockSucceeds = lockSucceeds;
@@ -38,10 +38,17 @@ public class FakeLockHandler implements LockHandler {
 
   @Override
   public boolean executeWithLocks(
-      final Callable<Void> callable,
-      @Nullable String tld,
-      Duration leaseLength,
-      String... lockNames) {
+      Callable<Void> callable, @Nullable String tld, Duration leaseLength, String... lockNames) {
+    return execute(callable);
+  }
+
+  @Override
+  public boolean executeWithSqlLocks(
+      Callable<Void> callable, @Nullable String tld, Duration leaseLength, String... lockNames) {
+    return execute(callable);
+  }
+
+  private boolean execute(Callable<Void> callable) {
     if (!lockSucceeds) {
       return false;
     }

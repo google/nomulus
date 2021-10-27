@@ -20,6 +20,7 @@ import static google.registry.model.server.Lock.LockState.FREE;
 import static google.registry.model.server.Lock.LockState.IN_USE;
 import static google.registry.model.server.Lock.LockState.OWNER_DIED;
 import static google.registry.model.server.Lock.LockState.TIMED_OUT;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,8 +29,10 @@ import static org.mockito.Mockito.when;
 
 import google.registry.model.EntityTestCase;
 import google.registry.model.server.Lock.LockState;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import google.registry.util.RequestStatusChecker;
 import java.util.Optional;
 import org.joda.time.Duration;
@@ -130,6 +133,19 @@ public class LockTest extends EntityTestCase {
     fakeClock.advanceOneMilli();
     release(lockA.get(), "a", 1);
     assertThat(acquire("b", ONE_DAY, IN_USE)).isEmpty();
+  }
+
+  @TestOfyOnly
+  void testSqlLock_inOfyMode() {
+    Lock.lockMetrics = origLockMetrics;
+    Optional<Lock> lock = Lock.acquireSql(RESOURCE_NAME, null, ONE_DAY, requestStatusChecker, true);
+    assertThat(lock).isPresent();
+    assertThat(DatabaseHelper.loadAllOf(Lock.class)).isEmpty();
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Lock.class))).containsExactly(lock.get());
+
+    lock.get().releaseSql();
+    assertThat(DatabaseHelper.loadAllOf(Lock.class)).isEmpty();
+    assertThat(jpaTm().transact(() -> jpaTm().loadAllOf(Lock.class))).isEmpty();
   }
 
   @TestOfyAndSql

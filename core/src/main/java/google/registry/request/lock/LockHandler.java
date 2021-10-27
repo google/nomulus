@@ -22,8 +22,8 @@ import org.joda.time.Duration;
 /**
  * Code execution locked on some shared resource.
  *
- * <p>Locks are either specific to a tld or global to the entire system, in which case a tld of
- * null is used.
+ * <p>Locks are either specific to a tld or global to the entire system, in which case a tld of null
+ * is used.
  */
 public interface LockHandler extends Serializable {
 
@@ -38,6 +38,24 @@ public interface LockHandler extends Serializable {
    * @return true if all locks were acquired and the callable was run; false otherwise.
    */
   boolean executeWithLocks(
+      final Callable<Void> callable,
+      @Nullable String tld,
+      Duration leaseLength,
+      String... lockNames);
+
+  /**
+   * Acquire one or more locks using only Cloud SQL and execute a Void {@link Callable}.
+   *
+   * <p>Runs on a thread that will be killed if it doesn't complete before the lease expires.
+   *
+   * <p>Note that locks are specific either to a given tld or to the entire system (in which case
+   * tld should be passed as null).
+   *
+   * <p>This method exists so that Beam pipelines can acquire / load / release locks.
+   *
+   * @return true if all locks were acquired and the callable was run; false otherwise.
+   */
+  boolean executeWithSqlLocks(
       final Callable<Void> callable,
       @Nullable String tld,
       Duration leaseLength,

@@ -34,6 +34,7 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -111,6 +112,7 @@ public class ReplayCommitLogsToSqlActionTest {
               DelegationSignerData.class,
               DomainBase.class,
               GracePeriod.class,
+              Lock.class,
               PremiumList.class,
               PremiumEntry.class,
               RegistrarContact.class,
@@ -135,6 +137,7 @@ public class ReplayCommitLogsToSqlActionTest {
   @BeforeEach
   void beforeEach() {
     inject.setStaticField(Ofy.class, "clock", fakeClock);
+    lenient().when(requestStatusChecker.getLogId()).thenReturn("requestLogId");
     action.gcsUtils = gcsUtils;
     action.response = response;
     action.requestStatusChecker = requestStatusChecker;
@@ -464,9 +467,10 @@ public class ReplayCommitLogsToSqlActionTest {
               }
             });
     runAndAssertSuccess(now.minusMinutes(1), 1, 1);
-    // jpaTm()::putIgnoringReadOnly should only have been called with the checkpoint
+    // jpaTm()::putIgnoringReadOnly should only have been called with the checkpoint and the lock
     verify(spy, times(2)).putIgnoringReadOnly(any(SqlReplayCheckpoint.class));
-    verify(spy, times(2)).putIgnoringReadOnly(any());
+    verify(spy).putIgnoringReadOnly(any(Lock.class));
+    verify(spy, times(3)).putIgnoringReadOnly(any());
   }
 
   @Test
@@ -506,7 +510,7 @@ public class ReplayCommitLogsToSqlActionTest {
   @Test
   void testFailure_cannotAcquireLock() {
     Truth8.assertThat(
-            Lock.acquire(
+            Lock.acquireSql(
                 ReplayCommitLogsToSqlAction.class.getSimpleName(),
                 null,
                 Duration.standardHours(1),

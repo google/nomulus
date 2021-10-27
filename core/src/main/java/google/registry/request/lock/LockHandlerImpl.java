@@ -73,12 +73,42 @@ public class LockHandlerImpl implements LockHandler {
       @Nullable String tld,
       Duration leaseLength,
       String... lockNames) {
+    return executeWithLockAcquirer(callable, tld, leaseLength, this::acquire, lockNames);
+  }
+
+  /**
+   * Acquire one or more locks using only Cloud SQL and execute a Void {@link Callable}.
+   *
+   * <p>Thread will be killed if it doesn't complete before the lease expires.
+   *
+   * <p>Note that locks are specific either to a given tld or to the entire system (in which case
+   * tld should be passed as null).
+   *
+   * <p>This method exists so that Beam pipelines can acquire / load / release locks.
+   *
+   * @return whether all locks were acquired and the callable was run.
+   */
+  @Override
+  public boolean executeWithSqlLocks(
+      final Callable<Void> callable,
+      @Nullable String tld,
+      Duration leaseLength,
+      String... lockNames) {
+    return executeWithLockAcquirer(callable, tld, leaseLength, this::acquireSql, lockNames);
+  }
+
+  private boolean executeWithLockAcquirer(
+      final Callable<Void> callable,
+      @Nullable String tld,
+      Duration leaseLength,
+      LockAcquirer lockAcquirer,
+      String... lockNames) {
     DateTime startTime = clock.nowUtc();
     String sanitizedTld = Strings.emptyToNull(tld);
     try {
       return AppEngineTimeLimiter.create()
           .callWithTimeout(
-              new LockingCallable(callable, sanitizedTld, leaseLength, lockNames),
+              new LockingCallable(callable, lockAcquirer, sanitizedTld, leaseLength, lockNames),
               leaseLength.minus(LOCK_TIMEOUT_FUDGE).getMillis(),
               TimeUnit.MILLISECONDS);
     } catch (ExecutionException | UncheckedExecutionException e) {
@@ -108,17 +138,32 @@ public class LockHandlerImpl implements LockHandler {
     return Lock.acquire(lockName, tld, leaseLength, requestStatusChecker, true);
   }
 
+  @VisibleForTesting
+  Optional<Lock> acquireSql(String lockName, @Nullable String tld, Duration leaseLength) {
+    return Lock.acquireSql(lockName, tld, leaseLength, requestStatusChecker, true);
+  }
+
+  private interface LockAcquirer {
+    Optional<Lock> acquireLock(String lockName, @Nullable String tld, Duration leaseLength);
+  }
+
   /** A {@link Callable} that acquires and releases a lock around a delegate {@link Callable}. */
-  private class LockingCallable implements Callable<Boolean> {
+  private static class LockingCallable implements Callable<Boolean> {
     final Callable<Void> delegate;
+    final LockAcquirer lockAcquirer;
     @Nullable final String tld;
     final Duration leaseLength;
     final Set<String> lockNames;
 
     LockingCallable(
-        Callable<Void> delegate, String tld, Duration leaseLength, String... lockNames) {
+        Callable<Void> delegate,
+        LockAcquirer lockAcquirer,
+        String tld,
+        Duration leaseLength,
+        String... lockNames) {
       checkArgument(leaseLength.isLongerThan(LOCK_TIMEOUT_FUDGE));
       this.delegate = delegate;
+      this.lockAcquirer = lockAcquirer;
       this.tld = tld;
       this.leaseLength = leaseLength;
       // Make sure we join locks in a fixed (lexicographical) order to avoid deadlock.
@@ -130,7 +175,7 @@ public class LockHandlerImpl implements LockHandler {
       Set<Lock> acquiredLocks = new HashSet<>();
       try {
         for (String lockName : lockNames) {
-          Optional<Lock> lock = acquire(lockName, tld, leaseLength);
+          Optional<Lock> lock = lockAcquirer.acquireLock(lockName, tld, leaseLength);
           if (!lock.isPresent()) {
             logger.atInfo().log("Couldn't acquire lock named: %s for TLD %s.", lockName, tld);
             return false;

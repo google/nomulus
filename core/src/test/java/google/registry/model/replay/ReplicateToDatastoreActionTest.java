@@ -294,7 +294,7 @@ public class ReplicateToDatastoreActionTest {
     RequestStatusChecker requestStatusChecker = mock(RequestStatusChecker.class);
     when(requestStatusChecker.getLogId()).thenReturn("logId");
     Truth8.assertThat(
-            Lock.acquire(
+            Lock.acquireSql(
                 ReplicateToDatastoreAction.class.getSimpleName(),
                 null,
                 Duration.standardHours(1),
