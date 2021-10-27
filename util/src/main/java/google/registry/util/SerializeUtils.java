@@ -65,5 +65,10 @@ public final class SerializeUtils {
     }
   }
 
+  /** Serializes an object then deserializes it. This is typically used in tests. */
+  public static Object serializeDeserialize(Object object) {
+    return deserialize(Object.class, serialize(object));
+  }
+
   private SerializeUtils() {}
 }

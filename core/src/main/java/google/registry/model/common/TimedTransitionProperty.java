@@ -151,8 +151,7 @@ public class TimedTransitionProperty<
    * @param transitionValue the value of the new transition
    * @param transitionClass the class of transitions in this map
    * @param allowedTransitions map of all possible state-to-state transitions
-   * @param allowedTransitionMapName transition map description string for error messages extends
-   *     Serializable
+   * @param allowedTransitionMapName transition map description string for error messages
    */
   public TimedTransitionProperty<V, T> copyWithAddedTransition(
       DateTime transitionTime,

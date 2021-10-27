@@ -34,7 +34,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
-import google.registry.model.Serializations;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.token.AllocationToken.TokenStatus;
 import google.registry.model.domain.token.AllocationToken.TokenType;
@@ -43,6 +42,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -116,7 +116,7 @@ public class AllocationTokenTest extends EntityTestCase {
                         .build())
                 .build());
     AllocationToken persisted = loadByEntity(unlimitedUseToken);
-    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
 
     DomainBase domain = persistActiveDomain("example.foo");
     Key<HistoryEntry> historyEntryKey = Key.create(Key.create(domain), HistoryEntry.class, 1);
@@ -130,7 +130,7 @@ public class AllocationTokenTest extends EntityTestCase {
                 .setTokenType(SINGLE_USE)
                 .build());
     persisted = loadByEntity(singleUseToken);
-    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

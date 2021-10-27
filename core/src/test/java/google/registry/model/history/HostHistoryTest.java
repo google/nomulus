@@ -27,7 +27,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
-import google.registry.model.Serializations;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostBase;
 import google.registry.model.host.HostHistory;
@@ -37,6 +36,7 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 
 /** Tests for {@link HostHistory}. */
 @DualDatabaseTest
@@ -70,7 +70,7 @@ public class HostHistoryTest extends EntityTestCase {
     HostHistory hostHistory = createHostHistory(hostFromDb);
     insertInDb(hostHistory);
     HostHistory fromDatabase = jpaTm().transact(() -> jpaTm().loadByKey(hostHistory.createVKey()));
-    assertThat(Serializations.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
+    assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
   @TestSqlOnly

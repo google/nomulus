@@ -26,12 +26,12 @@ import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.model.EntityTestCase;
-import google.registry.model.Serializations;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.tld.Registry;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -54,7 +54,7 @@ public class CursorTest extends EntityTestCase {
     tm().transact(() -> tm().put(Cursor.createGlobal(RECURRING_BILLING, time)));
     Cursor persisted =
         tm().transact(() -> tm().loadByKey(Cursor.createGlobalVKey(RECURRING_BILLING)));
-    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyAndSql

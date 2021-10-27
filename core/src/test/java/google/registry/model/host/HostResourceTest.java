@@ -34,7 +34,6 @@ import com.google.common.net.InetAddresses;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
 import google.registry.model.ImmutableObjectSubject;
-import google.registry.model.Serializations;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppcommon.Trid;
@@ -47,6 +46,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -118,7 +118,7 @@ class HostResourceTest extends EntityTestCase {
     HostResource newHost = host.asBuilder().setRepoId("NEWHOST").build();
     tm().transact(() -> tm().insert(newHost));
     HostResource persisted = tm().transact(() -> tm().loadByEntity(newHost));
-    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

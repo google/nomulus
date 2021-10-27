@@ -33,7 +33,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
-import google.registry.model.Serializations;
 import google.registry.model.contact.Disclose.PostalInfoChoice;
 import google.registry.model.contact.PostalInfo.Type;
 import google.registry.model.eppcommon.AuthInfo.PasswordAuth;
@@ -49,6 +48,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link ContactResource}. */
@@ -180,7 +180,7 @@ public class ContactResourceTest extends EntityTestCase {
     ContactResource persisted =
         loadByForeignKey(ContactResource.class, contactResource.getForeignKey(), fakeClock.nowUtc())
             .get();
-    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

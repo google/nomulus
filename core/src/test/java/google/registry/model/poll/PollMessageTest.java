@@ -25,7 +25,6 @@ import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import google.registry.model.EntityTestCase;
-import google.registry.model.Serializations;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
@@ -37,6 +36,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link PollMessage}. */
@@ -130,7 +130,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setParent(historyEntry)
                 .build());
     PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));
-    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyAndSql
@@ -161,7 +161,7 @@ public class PollMessageTest extends EntityTestCase {
                 .setTargetId("foobar.foo")
                 .build());
     PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));
-    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

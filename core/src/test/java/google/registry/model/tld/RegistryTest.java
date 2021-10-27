@@ -38,7 +38,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.dns.writer.VoidDnsWriter;
 import google.registry.model.EntityTestCase;
-import google.registry.model.Serializations;
 import google.registry.model.tld.Registry.RegistryNotFoundException;
 import google.registry.model.tld.Registry.TldState;
 import google.registry.model.tld.label.PremiumList;
@@ -49,6 +48,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.Money;
@@ -96,7 +96,7 @@ public final class RegistryTest extends EntityTestCase {
     tm().transact(() -> tm().put(registry));
     Registry persisted =
         tm().transact(() -> tm().loadByKey(Registry.createVKey(registry.tldStrId)));
-    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyAndSql

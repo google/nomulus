@@ -33,7 +33,6 @@ import static org.joda.time.DateTimeZone.UTC;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.googlecode.objectify.Key;
-import google.registry.model.Serializations;
 import google.registry.model.billing.BillingEvent;
 import google.registry.model.billing.BillingEvent.Flag;
 import google.registry.model.billing.BillingEvent.Reason;
@@ -57,6 +56,7 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import java.util.Arrays;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -360,7 +360,7 @@ public class DomainBaseSqlTest {
     createTld("com");
     insertInDb(contact, contact2, domain, host);
     DomainBase persisted = jpaTm().transact(() -> jpaTm().loadByEntity(domain));
-    assertThat(Serializations.serializeDeserialize(persisted)).isEqualTo(persisted);
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestSqlOnly

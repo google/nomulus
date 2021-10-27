@@ -35,7 +35,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.EntityTestCase;
-import google.registry.model.Serializations;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainContent;
@@ -56,6 +55,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,7 +95,7 @@ public class DomainHistoryTest extends EntityTestCase {
     insertInDb(domainHistory);
     DomainHistory fromDatabase =
         jpaTm().transact(() -> jpaTm().loadByKey(domainHistory.createVKey()));
-    assertThat(Serializations.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
+    assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
   @TestSqlOnly
