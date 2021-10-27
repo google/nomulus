@@ -49,7 +49,12 @@ JOIN (
                 repo_id,
                 tld,
                 creation_time AS domain_creation_time,
-                CASE WHEN deletion_time > to_timestamp('9999-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS') THEN to_timestamp('9999-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS') ELSE deletion_time END as domain_deletion_time
+                CASE
+                  WHEN deletion_time > to_timestamp('9999-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+                    THEN to_timestamp('9999-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+                  ELSE
+                    deletion_time
+                  END as domain_deletion_time
             FROM "Domain";''')
         JOIN
         EXTERNAL_QUERY("projects/domain-registry-alpha/locations/us/connections/domain-registry-alpha-sql", '''SELECT domain_repo_id, host_repo_id FROM "DomainHost";''')

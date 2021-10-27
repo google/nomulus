@@ -60,7 +60,8 @@ class TransactionsReportingQueryBuilderTest {
         .isEqualTo(
             "#standardSQL\n"
                 + "SELECT * FROM "
-                + "`domain-registry-alpha.cloud_sql_icann_reporting.transactions_report_aggregation_201709`");
+                + "`domain-registry-alpha.cloud_sql_icann_reporting"
+                + ".transactions_report_aggregation_201709`");
   }
 
   @TestOfyOnly
