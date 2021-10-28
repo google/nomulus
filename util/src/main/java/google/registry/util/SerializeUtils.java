@@ -49,7 +49,7 @@ public final class SerializeUtils {
   }
 
   /**
-   * Turns an object into a encoded string that can be used safely as a URI query parameter.
+   * Turns an object into an encoded string that can be used safely as a URI query parameter.
    *
    * @return stringified object
    */

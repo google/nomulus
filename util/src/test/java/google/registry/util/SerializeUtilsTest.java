@@ -66,14 +66,23 @@ class SerializeUtilsTest {
   }
 
   @Test
+  void testStringify_string_returnsBase64EncodedString() {
+    assertThat(stringify("foo")).isEqualTo("rO0ABXQAA2Zvbw==");
+  }
+
+  @Test
+  void testParse_stringClass_returnsObject() {
+    assertThat(parse(String.class, "rO0ABXQAA2Zvbw==")).isEqualTo("foo");
+  }
+
+  @Test
   void testStringifyParse_stringValue_maintainsValue() {
     assertThat(parse(Serializable.class, stringify("hello"))).isEqualTo("hello");
   }
 
   @Test
   void testStringifyParse_longValue_maintainsValue() {
-    long value = 12345;
-    assertThat(parse(Serializable.class, stringify(value))).isEqualTo(value);
+    assertThat(parse(Serializable.class, stringify((long) 12345))).isEqualTo((long) 12345);
   }
 
   @Test

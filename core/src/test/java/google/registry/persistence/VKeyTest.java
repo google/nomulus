@@ -137,69 +137,145 @@ class VKeyTest {
     assertThat(vkey.getSqlKey()).isEqualTo("ROID-1");
   }
 
-  /**
-   * Test with sqlKeys only Vkeys a sqlKey should be serialiable. Key.create() can take 1) long, or
-   * 2) string
-   *
-   * <p>Vkeys with parent keys should be tested as well
-   */
+  /** Test stringify() with vkey created via different ways. */
   @Test
-  void testStringifyThenCreate_sqlKeyOnly_testObject_stringKey_success() throws Exception {
+  void testStringify_sqlOnlyVKey() throws Exception {
+    assertThat(VKey.createSql(TestObject.class, "foo").stringify())
+        .isEqualTo("kind:google.registry.testing.TestObject@sql:rO0ABXQAA2Zvbw==");
+  }
+
+  @Test
+  void testStringify_ofyOnlyVKey() throws Exception {
+    assertThat(VKey.createOfy(TestObject.class, Key.create(TestObject.class, "foo")).stringify())
+        .isEqualTo(
+            "kind:google.registry.testing.TestObject@ofy:agR0ZXN0chMLEgpUZXN0T2JqZWN0IgNmb28M");
+  }
+
+  @Test
+  void testStringify_sqlAndOfyVKey() throws Exception {
+    assertThat(
+            VKey.create(TestObject.class, "foo", Key.create(TestObject.create("foo"))).stringify())
+        .isEqualTo(
+            "kind:google.registry.testing.TestObject@sql:rO0ABXQAA2Zvbw==@ofy:agR0ZXN0cjELEg9FbnRpdHlHcm91cFJvb3QiCWNyb3NzLXRsZAwLEgpUZXN0T2JqZWN0IgNmb28M");
+  }
+
+  @Test
+  void testStringify_asymmetricVKey() throws Exception {
+    assertThat(
+            VKey.create(TestObject.class, "test", Key.create(TestObject.create("foo"))).stringify())
+        .isEqualTo(
+            "kind:google.registry.testing.TestObject@sql:rO0ABXQABHRlc3Q=@ofy:agR0ZXN0cjELEg9FbnRpdHlHcm91cFJvb3QiCWNyb3NzLXRsZAwLEgpUZXN0T2JqZWN0IgNmb28M");
+  }
+
+  /** Test create() via different vkey string representations. */
+  @Test
+  void testCreate_stringifedVKey_sqlOnlyVKeyString() throws Exception {
+    assertThat(VKey.create("kind:google.registry.testing.TestObject@sql:rO0ABXQAA2Zvbw=="))
+        .isEqualTo(VKey.createSql(TestObject.class, "foo"));
+  }
+
+  @Test
+  void testCreate_stringifedVKey_ofyOnlyVKeyString() throws Exception {
+    assertThat(
+            VKey.create(
+                "kind:google.registry.testing.TestObject@ofy:agR0ZXN0chMLEgpUZXN0T2JqZWN0IgNmb28M"))
+        .isEqualTo(VKey.createOfy(TestObject.class, Key.create(TestObject.class, "foo")));
+  }
+
+  @Test
+  void testCreate_stringifedVKey_asymmetricVKeyString() throws Exception {
+    assertThat(
+            VKey.create(
+                "kind:google.registry.testing.TestObject@sql:rO0ABXQABHRlc3Q=@ofy:agR0ZXN0cjELEg9FbnRpdHlHcm91cFJvb3QiCWNyb3NzLXRsZAwLEgpUZXN0T2JqZWN0IgNmb28M"))
+        .isEqualTo(VKey.create(TestObject.class, "test", Key.create(TestObject.create("foo"))));
+  }
+
+  @Test
+  void testCreate_stringifedVKey_sqlAndOfyVKeyString() throws Exception {
+    assertThat(
+            VKey.create(
+                "kind:google.registry.testing.TestObject@sql:rO0ABXQAA2Zvbw==@ofy:agR0ZXN0cjELEg9FbnRpdHlHcm91cFJvb3QiCWNyb3NzLXRsZAwLEgpUZXN0T2JqZWN0IgNmb28M"))
+        .isEqualTo(VKey.create(TestObject.class, "foo", Key.create(TestObject.create("foo"))));
+  }
+
+  @Test
+  void testCreate_stringifedVKey_websafeKey() throws Exception {
+    assertThat(VKey.create("agR0ZXN0chYLEgpEb21haW5CYXNlIgZST0lELTEM"))
+        .isEqualTo(VKey.fromWebsafeKey("agR0ZXN0chYLEgpEb21haW5CYXNlIgZST0lELTEM"));
+  }
+
+  @Test
+  void testCreate_invalidStringifiedVKey_failure() throws Exception {
+    IllegalArgumentException thrown =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> VKey.create("kind:google.registry.testing.TestObject@sq:l@ofya:bc"));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Cannot parse key string: kind:google.registry.testing.TestObject@sq:l@ofya:bc");
+  }
+
+  @Test
+  void testCreate_invalidOfyKeyString_failure() throws Exception {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> VKey.create("invalid"));
+    assertThat(thrown).hasMessageThat().contains("Could not parse Reference");
+  }
+
+  /** Test stringify() then create() flow. */
+  @Test
+  void testStringifyThenCreate_sqlOnlyVKey_testObject_stringKey_success() throws Exception {
     VKey<TestObject> vkey = VKey.createSql(TestObject.class, "foo");
-    String stringified = vkey.stringify();
-    VKey<TestObject> newKey = VKey.create(stringified);
-    assertThat(newKey).isEqualTo(vkey);
+    VKey<TestObject> newVkey = VKey.create(vkey.stringify());
+    assertThat(newVkey).isEqualTo(vkey);
   }
 
   @Test
-  void testStringifyThenCreate_sqlKeyOnly_testObject_longKey_success() throws Exception {
+  void testStringifyThenCreate_sqlOnlyVKey_testObject_longKey_success() throws Exception {
     VKey<TestObject> vkey = VKey.createSql(TestObject.class, (long) 12345);
-    VKey<TestObject> newKey = VKey.create(vkey.stringify());
-    assertThat(newKey).isEqualTo(vkey);
-  }
-
-  /**
-   * Test with ofyKey only Vkeys There should be test cases that test with 1) different Key.create()
-   * 2) object type
-   *
-   * <p>Vkeys with parent keys should be tested as well
-   */
-  @Test
-  void testStringifyThenCreate_ofyKeyOnly_testObject_success() throws Exception {
-    Key<TestObject> key = Key.create(TestObject.class, "tmpKey");
-    VKey<TestObject> vkey = VKey.createOfy(TestObject.class, key);
     VKey<TestObject> newVkey = VKey.create(vkey.stringify());
-    assertThat(vkey).isEqualTo(newVkey);
-  }
-
-  @Test
-  void testStringifyThenCreate_ofyKeyOnly_testObject_websafeString_success() throws Exception {
-    Key<TestObject> key = Key.create(TestObject.create("foo"));
-    VKey<TestObject> vkey = VKey.fromWebsafeKey(key.getString());
-    VKey<TestObject> newVkey = VKey.create(vkey.stringify());
-    assertThat(vkey).isEqualTo(newVkey);
-  }
-
-  /**
-   * Test with Vkeys that contain both sqlKey and ofyKey There should be test cases that test with
-   * 1) different Key.create() 2) object type
-   *
-   * <p>Vkeys with parent keys should be tested as well
-   */
-  @Test
-  void testStringifyThenCreate_sqlAndofyKey_success() throws Exception {
-    VKey<TestObject> originalKey1 =
-        VKey.create(TestObject.class, "foo", Key.create(TestObject.create("foo")));
-    String originalKeyString1 = originalKey1.stringify();
-    VKey<TestObject> newKey1 = VKey.create(originalKeyString1);
-    assertThat(originalKey1).isEqualTo(newKey1);
+    assertThat(newVkey).isEqualTo(vkey);
   }
 
   @Test
   void testCreate_createFromExistingOfyKey_success() throws Exception {
-    DomainBase domain = newDomainBase("example.com", "ROID-1", persistActiveContact("contact-1"));
-    String keyString = Key.create(domain).getString();
+    String keyString =
+        Key.create(newDomainBase("example.com", "ROID-1", persistActiveContact("contact-1")))
+            .getString();
     assertThat(VKey.fromWebsafeKey(keyString)).isEqualTo(VKey.create(keyString));
+  }
+
+  @Test
+  void testStringifyThenCreate_ofyOnlyVKey_testObject_success() throws Exception {
+    VKey<TestObject> vkey =
+        VKey.createOfy(TestObject.class, Key.create(TestObject.class, "tmpKey"));
+    assertThat(VKey.create(vkey.stringify())).isEqualTo(vkey);
+  }
+
+  @Test
+  void testStringifyThenCreate_ofyOnlyVKey_testObject_websafeString_success() throws Exception {
+    VKey<TestObject> vkey = VKey.fromWebsafeKey(Key.create(TestObject.create("foo")).getString());
+    assertThat(VKey.create(vkey.stringify())).isEqualTo(vkey);
+  }
+
+  @Test
+  void testStringifyThenCreate_sqlAndOfyVKey_success() throws Exception {
+    VKey<TestObject> vkey =
+        VKey.create(TestObject.class, "foo", Key.create(TestObject.create("foo")));
+    assertThat(VKey.create(vkey.stringify())).isEqualTo(vkey);
+  }
+
+  @Test
+  void testStringifyThenCreate_asymmetricVKey_success() throws Exception {
+    VKey<TestObject> vkey =
+        VKey.create(TestObject.class, "sqlKey", Key.create(TestObject.create("foo")));
+    assertThat(VKey.create(vkey.stringify())).isEqualTo(vkey);
+  }
+
+  @Test
+  void testStringifyThenCreate_symmetricVKey_success() throws Exception {
+    VKey<TestObject> vkey = TestObject.create("foo").key();
+    assertThat(VKey.create(vkey.stringify())).isEqualTo(vkey);
   }
 
   @Entity
