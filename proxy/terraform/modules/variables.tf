@@ -1,28 +1,37 @@
-# GCP project in which the proxy runs.
-variable "proxy_project_name" {}
+variable "proxy_project_name" {
+  description = "GCP project in which the proxy runs."
+}
 
-# GCP project from which the proxy image is pulled.
-variable "gcr_project_name" {}
+variable "gcr_project_name" {
+  description = "GCP project from which the proxy image is pulled."
+}
 
-# The base domain name of the proxy, without the whois. or epp. part.
-variable "proxy_domain_name" {}
+variable "proxy_domain_name" {
+  description = <<EOF
+    The base domain name of the proxy, without the whois. or epp. part.
+    EOF
+}
 
-# The GCS bucket that stores the encrypted SSL certificate.
-variable "proxy_certificate_bucket" {}
+variable "proxy_certificate_bucket" {
+  description = <<EOF
+    The GCS bucket that stores the encrypted SSL certificate.  The "gs://"
+    prefix should be omitted.
+    EOF
+}
 
-# Cloud KMS keyring name
 variable "proxy_key_ring" {
-  default = "proxy-key-ring"
+  default     = "proxy-key-ring"
+  description = "Cloud KMS keyring name"
 }
 
-# Cloud KMS key name
 variable "proxy_key" {
-  default = "proxy-key"
+  default     = "proxy-key"
+  description = "Cloud KMS key name"
 }
 
-# Node ports exposed by the proxy.
 variable "proxy_ports" {
-  type = map
+  type        = map
+  description = "Node ports exposed by the proxy."
 
   default = {
     health_check = 30000
@@ -33,9 +42,9 @@ variable "proxy_ports" {
   }
 }
 
-# Node ports exposed by the canary proxy.
 variable "proxy_ports_canary" {
-  type = map
+  type        = map
+  description = "Node ports exposed by the canary proxy."
 
   default = {
     health_check = 31000
@@ -44,4 +53,15 @@ variable "proxy_ports_canary" {
     http-whois   = 31010
     https-whois  = 31011
   }
+}
+
+variable "public_web_whois" {
+  type        = number
+  default     = 1
+  description = <<EOF
+    Set to 1 if the whois HTTP ports are external, 0 if not.  This is necessary
+    because our test projects are configured with
+    constraints/compute.restrictLoadBalancerCreationForTypes, which prohibits
+    forwarding external HTTP(s) connections.
+    EOF
 }

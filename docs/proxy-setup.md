@@ -105,13 +105,14 @@ mentioned above.
 
 Navigate to `proxy/terraform`, create a folder called
 `envs`, and inside it, create a folder for the environment that proxy is
-deployed to ("alpha" for example). Copy `example_config.tf` to the environment
-folder.
+deployed to ("alpha" for example). Copy `example_config.tf` and `outputs.tf`
+to the environment folder.
 
 ```bash
 $ cd proxy/terraform
 $ mkdir -p envs/alpha
 $ cp example_config.tf envs/alpha/config.tf
+$ cp outputs.tf envs/alpha
 ```
 
 Now go to the environment folder, edit the `config.tf` file and replace

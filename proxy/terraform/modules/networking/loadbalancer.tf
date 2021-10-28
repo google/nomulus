@@ -206,6 +206,7 @@ resource "google_compute_global_forwarding_rule" "https_whois_ipv4_forwarding_ru
   ip_address = google_compute_global_address.proxy_ipv4_address.address
   target     = google_compute_target_tcp_proxy.https_whois_tcp_proxy.self_link
   port_range = "443"
+  count      = var.public_web_whois
 }
 
 resource "google_compute_global_forwarding_rule" "https_whois_ipv6_forwarding_rule" {
@@ -213,6 +214,7 @@ resource "google_compute_global_forwarding_rule" "https_whois_ipv6_forwarding_ru
   ip_address = google_compute_global_address.proxy_ipv6_address.address
   target     = google_compute_target_tcp_proxy.https_whois_tcp_proxy.self_link
   port_range = "443"
+  count      = var.public_web_whois
 }
 
 resource "google_compute_global_forwarding_rule" "http_whois_ipv4_forwarding_rule" {
@@ -220,6 +222,7 @@ resource "google_compute_global_forwarding_rule" "http_whois_ipv4_forwarding_rul
   ip_address = google_compute_global_address.proxy_ipv4_address.address
   target     = google_compute_target_http_proxy.http_whois_http_proxy.self_link
   port_range = "80"
+  count      = var.public_web_whois
 }
 
 resource "google_compute_global_forwarding_rule" "http_whois_ipv6_forwarding_rule" {
@@ -227,4 +230,5 @@ resource "google_compute_global_forwarding_rule" "http_whois_ipv6_forwarding_rul
   ip_address = google_compute_global_address.proxy_ipv6_address.address
   target     = google_compute_target_http_proxy.http_whois_http_proxy.self_link
   port_range = "80"
+  count      = var.public_web_whois
 }
