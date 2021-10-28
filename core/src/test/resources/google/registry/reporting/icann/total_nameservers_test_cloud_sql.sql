@@ -30,7 +30,12 @@ FROM
         host_name,
         current_sponsor_registrar_id,
         creation_time AS host_creation_time,
-        CASE WHEN deletion_time > to_timestamp('9999-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS') THEN to_timestamp('9999-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS') ELSE deletion_time END as host_deletion_time
+        CASE
+          WHEN deletion_time > to_timestamp('9999-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+            THEN to_timestamp('9999-12-31 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+          ELSE
+            deletion_time
+          END as host_deletion_time
     FROM "Host";''')
 JOIN (
     SELECT
