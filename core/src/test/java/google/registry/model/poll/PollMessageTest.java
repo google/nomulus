@@ -36,6 +36,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link PollMessage}. */
@@ -118,6 +119,20 @@ public class PollMessageTest extends EntityTestCase {
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
   }
 
+  @TestSqlOnly
+  void testSerializableOneTime() {
+    PollMessage.OneTime pollMessage =
+        persistResource(
+            new PollMessage.OneTime.Builder()
+                .setRegistrarId("TheRegistrar")
+                .setEventTime(fakeClock.nowUtc())
+                .setMsg("Test poll message")
+                .setParent(historyEntry)
+                .build());
+    PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
+  }
+
   @TestOfyAndSql
   void testPersistenceAutorenew() {
     PollMessage.Autorenew pollMessage =
@@ -131,6 +146,22 @@ public class PollMessageTest extends EntityTestCase {
                 .setTargetId("foobar.foo")
                 .build());
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
+  }
+
+  @TestSqlOnly
+  void testSerializableAutorenew() {
+    PollMessage.Autorenew pollMessage =
+        persistResource(
+            new PollMessage.Autorenew.Builder()
+                .setRegistrarId("TheRegistrar")
+                .setEventTime(fakeClock.nowUtc())
+                .setMsg("Test poll message")
+                .setParent(historyEntry)
+                .setAutorenewEndTime(fakeClock.nowUtc().plusDays(365))
+                .setTargetId("foobar.foo")
+                .build());
+    PollMessage persisted = tm().transact(() -> tm().loadByEntity(pollMessage));
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

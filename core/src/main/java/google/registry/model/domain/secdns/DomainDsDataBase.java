@@ -17,6 +17,7 @@ package google.registry.model.domain.secdns;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.MappedSuperclass;
@@ -31,7 +32,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @Embed
 @MappedSuperclass
 @Access(AccessType.FIELD)
-public abstract class DomainDsDataBase extends ImmutableObject {
+public abstract class DomainDsDataBase extends ImmutableObject implements UnsafeSerializable {
 
   @Ignore @XmlTransient @Transient String domainRepoId;
 

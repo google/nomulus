@@ -48,6 +48,7 @@ import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
 
 /** Unit tests for {@link ContactResource}. */
@@ -172,6 +173,14 @@ public class ContactResourceTest extends EntityTestCase {
             loadByForeignKey(
                 ContactResource.class, contactResource.getForeignKey(), fakeClock.nowUtc()))
         .hasValue(contactResource);
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    ContactResource persisted =
+        loadByForeignKey(ContactResource.class, contactResource.getForeignKey(), fakeClock.nowUtc())
+            .get();
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

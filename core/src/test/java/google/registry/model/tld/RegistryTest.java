@@ -47,6 +47,8 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import java.math.BigDecimal;
 import java.util.Optional;
 import org.joda.money.Money;
@@ -85,6 +87,16 @@ public final class RegistryTest extends EntityTestCase {
     assertWithMessage("Registry not found").that(Registry.get("tld")).isNotNull();
     assertThat(tm().transact(() -> tm().loadByKey(Registry.createVKey("tld"))))
         .isEqualTo(Registry.get("tld"));
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    ReservedList rl15 = persistReservedList("tld-reserved15", "potato,FULLY_BLOCKED");
+    Registry registry = Registry.get("tld").asBuilder().setReservedLists(rl15).build();
+    tm().transact(() -> tm().put(registry));
+    Registry persisted =
+        tm().transact(() -> tm().loadByKey(Registry.createVKey(registry.tldStrId)));
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyAndSql

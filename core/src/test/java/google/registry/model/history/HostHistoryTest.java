@@ -36,6 +36,7 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 
 /** Tests for {@link HostHistory}. */
 @DualDatabaseTest
@@ -59,6 +60,17 @@ public class HostHistoryTest extends EntityTestCase {
               assertHostHistoriesEqual(fromDatabase, hostHistory);
               assertThat(fromDatabase.getParentVKey()).isEqualTo(hostHistory.getParentVKey());
             });
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    HostResource host = newHostResourceWithRoid("ns1.example.com", "host1");
+    insertInDb(host);
+    HostResource hostFromDb = loadByEntity(host);
+    HostHistory hostHistory = createHostHistory(hostFromDb);
+    insertInDb(hostHistory);
+    HostHistory fromDatabase = jpaTm().transact(() -> jpaTm().loadByKey(hostHistory.createVKey()));
+    assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
   @TestSqlOnly

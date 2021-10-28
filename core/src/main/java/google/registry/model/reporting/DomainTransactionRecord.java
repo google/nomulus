@@ -22,6 +22,7 @@ import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Ignore;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.domain.DomainHistory.DomainHistoryId;
 import google.registry.model.replay.DatastoreAndSqlEntity;
 import javax.persistence.Column;
@@ -46,7 +47,7 @@ import org.joda.time.DateTime;
 @Embed
 @Entity
 public class DomainTransactionRecord extends ImmutableObject
-    implements Buildable, DatastoreAndSqlEntity {
+    implements Buildable, DatastoreAndSqlEntity, UnsafeSerializable {
 
   @Id
   @Ignore

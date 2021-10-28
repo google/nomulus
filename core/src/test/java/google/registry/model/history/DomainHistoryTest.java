@@ -55,6 +55,7 @@ import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import java.util.Optional;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,6 +86,16 @@ public class DomainHistoryTest extends EntityTestCase {
               assertDomainHistoriesEqual(fromDatabase, domainHistory);
               assertThat(fromDatabase.getParentVKey()).isEqualTo(domainHistory.getParentVKey());
             });
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    DomainBase domain = addGracePeriodForSql(createDomainWithContactsAndHosts());
+    DomainHistory domainHistory = createDomainHistory(domain);
+    insertInDb(domainHistory);
+    DomainHistory fromDatabase =
+        jpaTm().transact(() -> jpaTm().loadByKey(domainHistory.createVKey()));
+    assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
   @TestSqlOnly

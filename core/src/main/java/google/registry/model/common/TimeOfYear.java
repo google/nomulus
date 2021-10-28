@@ -28,6 +28,7 @@ import com.google.common.collect.Range;
 import com.googlecode.objectify.annotation.Embed;
 import com.googlecode.objectify.annotation.Index;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import java.util.List;
 import javax.persistence.Embeddable;
 import org.joda.time.DateTime;
@@ -45,7 +46,7 @@ import org.joda.time.DateTime;
  */
 @Embed
 @Embeddable
-public class TimeOfYear extends ImmutableObject {
+public class TimeOfYear extends ImmutableObject implements UnsafeSerializable {
 
   /**
    * The time as "month day millis" with all fields left-padded with zeroes so that lexographic

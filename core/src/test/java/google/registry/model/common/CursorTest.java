@@ -30,6 +30,8 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.tld.Registry;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -44,6 +46,15 @@ public class CursorTest extends EntityTestCase {
   @BeforeEach
   void setUp() {
     fakeClock.setTo(DateTime.parse("2010-10-17TZ"));
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    final DateTime time = DateTime.parse("2012-07-12T03:30:00.000Z");
+    tm().transact(() -> tm().put(Cursor.createGlobal(RECURRING_BILLING, time)));
+    Cursor persisted =
+        tm().transact(() -> tm().loadByKey(Cursor.createGlobalVKey(RECURRING_BILLING)));
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyAndSql

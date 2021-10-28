@@ -31,7 +31,7 @@ import javax.xml.bind.annotation.XmlTransient;
  * that we can enforce strictly increasing timestamps.
  */
 @MappedSuperclass
-public abstract class BackupGroupRoot extends ImmutableObject {
+public abstract class BackupGroupRoot extends ImmutableObject implements UnsafeSerializable {
 
   /**
    * An automatically managed timestamp of when this object was last written to Datastore.

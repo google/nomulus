@@ -20,7 +20,9 @@ import com.google.common.collect.ImmutableList;
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.Buildable;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.eppcommon.PresenceMarker;
+import java.io.Serializable;
 import java.util.List;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
@@ -31,7 +33,7 @@ import javax.xml.bind.annotation.XmlType;
 @Embed
 @Embeddable
 @XmlType(propOrder = {"name", "org", "addr", "voice", "fax", "email"})
-public class Disclose extends ImmutableObject {
+public class Disclose extends ImmutableObject implements UnsafeSerializable {
 
   List<PostalInfoChoice> name;
 
@@ -78,7 +80,7 @@ public class Disclose extends ImmutableObject {
 
   /** The "intLocType" from <a href="http://tools.ietf.org/html/rfc5733">RFC5733</a>. */
   @Embed
-  public static class PostalInfoChoice extends ImmutableObject {
+  public static class PostalInfoChoice extends ImmutableObject implements Serializable {
     @XmlAttribute
     PostalInfo.Type type;
 

@@ -56,6 +56,7 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.FakeClock;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import java.util.Arrays;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -352,6 +353,14 @@ public class DomainBaseSqlTest {
               DomainBase persisted = jpaTm().loadByKey(domain.createVKey());
               assertEqualDomainExcept(persisted);
             });
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    createTld("com");
+    insertInDb(contact, contact2, domain, host);
+    DomainBase persisted = jpaTm().transact(() -> jpaTm().loadByEntity(domain));
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestSqlOnly

@@ -45,6 +45,8 @@ import google.registry.model.transfer.TransferStatus;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyAndSql;
 import google.registry.testing.TestOfyOnly;
+import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -109,6 +111,14 @@ class HostResourceTest extends EntityTestCase {
     assertThat(ImmutableList.of(tm().transact(() -> tm().loadByKey(newHost.createVKey()))))
         .comparingElementsUsing(immutableObjectCorrespondence("revisions"))
         .containsExactly(newHost);
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    HostResource newHost = host.asBuilder().setRepoId("NEWHOST").build();
+    tm().transact(() -> tm().insert(newHost));
+    HostResource persisted = tm().transact(() -> tm().loadByEntity(newHost));
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 
   @TestOfyOnly

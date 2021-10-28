@@ -16,6 +16,7 @@ package google.registry.schema.registrar;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.registrar.RegistrarContact.Type.WHOIS;
+import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.testing.DatabaseHelper.insertInDb;
 import static google.registry.testing.DatabaseHelper.loadByEntity;
 import static google.registry.testing.SqlHelper.saveRegistrar;
@@ -27,6 +28,7 @@ import google.registry.persistence.transaction.JpaTestExtensions;
 import google.registry.persistence.transaction.JpaTestExtensions.JpaIntegrationWithCoverageExtension;
 import google.registry.testing.DatastoreEntityExtension;
 import google.registry.testing.TmOverrideExtension;
+import google.registry.util.SerializeUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -73,5 +75,12 @@ class RegistrarContactTest {
   void testPersistence_succeeds() {
     insertInDb(testRegistrarPoc);
     assertThat(loadByEntity(testRegistrarPoc)).isEqualTo(testRegistrarPoc);
+  }
+
+  @Test
+  void testSerializable_succeeds() {
+    insertInDb(testRegistrarPoc);
+    RegistrarContact persisted = jpaTm().transact(() -> jpaTm().loadByEntity(testRegistrarPoc));
+    assertThat(SerializeUtils.serializeDeserialize(persisted)).isEqualTo(persisted);
   }
 }

@@ -33,6 +33,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.ExternalMessagingName;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.contact.ContactResource;
@@ -98,7 +99,7 @@ import org.joda.time.DateTime;
       @javax.persistence.Index(columnList = "eventTime")
     })
 public abstract class PollMessage extends ImmutableObject
-    implements Buildable, DatastoreAndSqlEntity, TransferServerApproveEntity {
+    implements Buildable, DatastoreAndSqlEntity, TransferServerApproveEntity, UnsafeSerializable {
 
   /** Entity id. */
   @Id

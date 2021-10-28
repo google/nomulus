@@ -18,6 +18,7 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.googlecode.objectify.annotation.Embed;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.xml.bind.annotation.XmlElement;
@@ -32,7 +33,7 @@ import javax.xml.bind.annotation.XmlType;
 @Embed
 @XmlType(propOrder = {"clientTransactionId", "serverTransactionId"})
 @javax.persistence.Embeddable
-public class Trid extends ImmutableObject {
+public class Trid extends ImmutableObject implements UnsafeSerializable {
 
   /** The server transaction id. */
   @XmlElement(name = "svTRID", namespace = "urn:ietf:params:xml:ns:epp-1.0")

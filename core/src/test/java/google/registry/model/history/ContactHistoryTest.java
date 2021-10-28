@@ -39,6 +39,7 @@ import google.registry.persistence.VKey;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
+import google.registry.util.SerializeUtils;
 
 /** Tests for {@link ContactHistory}. */
 @DualDatabaseTest
@@ -62,6 +63,18 @@ public class ContactHistoryTest extends EntityTestCase {
               assertContactHistoriesEqual(fromDatabase, contactHistory);
               assertThat(fromDatabase.getParentVKey()).isEqualTo(contactHistory.getParentVKey());
             });
+  }
+
+  @TestSqlOnly
+  void testSerializable() {
+    ContactResource contact = newContactResourceWithRoid("contactId", "contact1");
+    insertInDb(contact);
+    ContactResource contactFromDb = loadByEntity(contact);
+    ContactHistory contactHistory = createContactHistory(contactFromDb);
+    insertInDb(contactHistory);
+    ContactHistory fromDatabase =
+        jpaTm().transact(() -> jpaTm().loadByKey(contactHistory.createVKey()));
+    assertThat(SerializeUtils.serializeDeserialize(fromDatabase)).isEqualTo(fromDatabase);
   }
 
   @TestSqlOnly

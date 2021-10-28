@@ -52,6 +52,7 @@ import com.googlecode.objectify.annotation.Parent;
 import google.registry.model.Buildable;
 import google.registry.model.CreateAutoTimestamp;
 import google.registry.model.ImmutableObject;
+import google.registry.model.UnsafeSerializable;
 import google.registry.model.annotations.InCrossTld;
 import google.registry.model.annotations.ReportedOn;
 import google.registry.model.common.EntityGroupRoot;
@@ -88,7 +89,8 @@ import org.joda.time.Duration;
 @Entity
 @javax.persistence.Entity(name = "Tld")
 @InCrossTld
-public class Registry extends ImmutableObject implements Buildable, DatastoreAndSqlEntity {
+public class Registry extends ImmutableObject
+    implements Buildable, DatastoreAndSqlEntity, UnsafeSerializable {
 
   @Parent @Transient Key<EntityGroupRoot> parent = getCrossTldKey();
 
@@ -308,7 +310,7 @@ public class Registry extends ImmutableObject implements Buildable, DatastoreAnd
    * <p>There must be at least one entry in this set.
    *
    * <p>All entries of this list must be valid keys for the map of {@code DnsWriter}s injected by
-   * <code>@Inject Map<String, DnsWriter></code>
+   * {@code @Inject Map<String, DnsWriter>}
    */
   @Column(nullable = false)
   Set<String> dnsWriters;
