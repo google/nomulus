@@ -157,6 +157,30 @@ class PollRequestFlowTest extends FlowTestCase<PollRequestFlow> {
   }
 
   @TestOfyAndSql
+  void testSuccess_domainPendingActionImmediateDelete() throws Exception {
+    persistResource(
+        new PollMessage.OneTime.Builder()
+            .setRegistrarId(getRegistrarIdForFlow())
+            .setEventTime(clock.nowUtc())
+            .setMsg(
+                String.format(
+                    "Domain %s was deleted by registry administrator with final deletion"
+                        + " effective: %s",
+                    domain.getDomainName(), clock.nowUtc().minusMinutes(5)))
+            .setResponseData(
+                ImmutableList.of(
+                    DomainPendingActionNotificationResponse.create(
+                        domain.getDomainName(),
+                        true,
+                        Trid.create("ABC-12345", "other-trid"),
+                        clock.nowUtc())))
+            .setParent(createHistoryEntryForEppResource(domain))
+            .build());
+    assertTransactionalFlow(false);
+    runFlowAssertResponse(loadFile("poll_message_domain_pending_action_immediate_delete.xml"));
+  }
+
+  @TestOfyAndSql
   void testSuccess_domainAutorenewMessage() throws Exception {
     persistResource(
         new PollMessage.Autorenew.Builder()

@@ -371,6 +371,10 @@ public final class DomainDeleteFlow implements TransactionalFlow {
             String.format(
                 "Domain %s was deleted by registry administrator with final deletion effective: %s",
                 existingDomain.getDomainName(), deletionTime))
+        .setResponseData(
+            ImmutableList.of(
+                DomainPendingActionNotificationResponse.create(
+                    existingDomain.getDomainName(), true, trid, now)))
         .build();
   }
 
