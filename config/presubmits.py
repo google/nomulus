@@ -119,9 +119,10 @@ PRESUBMITS = {
       "AppEngineExtension.register(...) instead.",
 
     # PostgreSQLContainer instantiation must specify docker tag
+    # TODO(b/204572437): Fix the pattern to pass DatabaseSnapshotTest.java
     PresubmitCheck(
         r"[\s\S]*new\s+PostgreSQLContainer(<[\s\S]*>)?\(\s*\)[\s\S]*",
-        "java", {}):
+        "java", {"DatabaseSnapshotTest.java"}):
       "PostgreSQLContainer instantiation must specify docker tag.",
 
     # Various Soy linting checks
