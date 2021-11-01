@@ -24,10 +24,10 @@ import javax.persistence.EntityTransaction;
 
 /**
  * A database snapshot shareable by concurrent queries from multiple database clients. A snapshot is
- * uniquely identified by its {@link #getSnapshotId snapshotId}, and must stay open until all users
- * have registered with the database by calling {@link
+ * uniquely identified by its {@link #getSnapshotId snapshotId}, and must stay open until all
+ * concurrent queries to this snapshot have attached to it by calling {@link
  * google.registry.persistence.transaction.JpaTransactionManager#setDatabaseSnapshot}. However, it
- * can be closed before the shared users complete their transactions.
+ * can be closed before those queries complete.
  *
  * <p>This feature is <em>Postgresql-only</em>.
  *

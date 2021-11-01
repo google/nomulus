@@ -51,6 +51,10 @@ public class AppEngineEnvironment {
    * more information.
    */
   public AppEngineEnvironment() {
+    /**
+     * Use AppEngineExtension's appId here so that ofy and sql entities can be compared with {@code
+     * Objects#equals()}. The choice of this value does not impact functional correctness.
+     */
     this("test");
   }
 
