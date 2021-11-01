@@ -43,10 +43,6 @@ public class DatastoreEntityExtension implements BeforeEachCallback, AfterEachCa
 
   private boolean allThreads = false;
 
-  public DatastoreEntityExtension(String appId) {
-    environment = new AppEngineEnvironment(appId);
-  }
-
   public DatastoreEntityExtension() {
     environment = new AppEngineEnvironment();
   }

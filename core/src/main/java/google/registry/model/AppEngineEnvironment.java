@@ -43,10 +43,22 @@ public class AppEngineEnvironment {
 
   private Environment environment;
 
+  /**
+   * Constructor for use by tests.
+   *
+   * <p>All test suites must use the same appId for environments, since when tearing down we do not
+   * clear cached environments in spawned threads. See {@link #unsetEnvironmentForAllThreads} for
+   * more information.
+   */
   public AppEngineEnvironment() {
-    this("PlaceholderAppId");
+    /**
+     * Use AppEngineExtension's appId here so that ofy and sql entities can be compared with {@code
+     * Objects#equals()}. The choice of this value does not impact functional correctness.
+     */
+    this("test");
   }
 
+  /** Constructor for use by applications, e.g., BEAM pipelines. */
   public AppEngineEnvironment(String appId) {
     environment = createAppEngineEnvironment(appId);
   }
@@ -65,7 +77,17 @@ public class AppEngineEnvironment {
     ApiProxy.clearEnvironmentForCurrentThread();
   }
 
+  /**
+   * Unsets the test environment in all threads with best effort.
+   *
+   * <p>This method unsets the environment factory and clears the cached environment in the current
+   * thread (the main test runner thread). We do not clear the cache in spawned threads, even though
+   * they may be reused. This is not a problem as long as the appId stays the same: those threads
+   * are used only in AppEngine or BEAM tests, and expect the presence of an environment.
+   */
   public void unsetEnvironmentForAllThreads() {
+    unsetEnvironmentForCurrentThread();
+
     try {
       Method method = ApiProxy.class.getDeclaredMethod("clearEnvironmentFactory");
       method.setAccessible(true);

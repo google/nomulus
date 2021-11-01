@@ -106,7 +106,7 @@ class InitSqlPipelineTest {
   @RegisterExtension
   @Order(Order.DEFAULT - 1)
   final transient DatastoreEntityExtension datastore =
-      new DatastoreEntityExtension("test").allThreads(true);
+      new DatastoreEntityExtension().allThreads(true);
 
   @RegisterExtension final transient InjectExtension injectExtension = new InjectExtension();
 

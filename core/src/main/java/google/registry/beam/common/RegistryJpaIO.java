@@ -138,6 +138,9 @@ public final class RegistryJpaIO {
 
     abstract Coder<T> coder();
 
+    @Nullable
+    abstract String snapshotId();
+
     abstract Builder<R, T> toBuilder();
 
     @Override
@@ -145,7 +148,9 @@ public final class RegistryJpaIO {
     public PCollection<T> expand(PBegin input) {
       return input
           .apply("Starting " + name(), Create.of((Void) null))
-          .apply("Run query for " + name(), ParDo.of(new QueryRunner<>(query(), resultMapper())))
+          .apply(
+              "Run query for " + name(),
+              ParDo.of(new QueryRunner<>(query(), resultMapper(), snapshotId())))
           .setCoder(coder())
           .apply("Reshuffle", Reshuffle.viaRandomKey());
     }
@@ -160,6 +165,18 @@ public final class RegistryJpaIO {
 
     public Read<R, T> withCoder(Coder<T> coder) {
       return toBuilder().coder(coder).build();
+    }
+
+    /**
+     * Specifies the database snapshot to use for this query.
+     *
+     * <p>This feature is <em>Postgresql-only</em>. User is responsible for keeping the snapshot
+     * available until all JVM workers have started using it by calling {@link
+     * JpaTransactionManager#setDatabaseSnapshot}.
+     */
+    // TODO(b/193662898): vendor-independent support for richer transaction semantics.
+    public Read<R, T> withSnapshot(String snapshotId) {
+      return toBuilder().snapshotId(snapshotId).build();
     }
 
     static <R, T> Builder<R, T> builder() {
@@ -178,6 +195,8 @@ public final class RegistryJpaIO {
       abstract Builder<R, T> resultMapper(SerializableFunction<R, T> mapper);
 
       abstract Builder<R, T> coder(Coder coder);
+
+      abstract Builder<R, T> snapshotId(@Nullable String sharedSnapshotId);
 
       abstract Read<R, T> build();
 
@@ -201,17 +220,28 @@ public final class RegistryJpaIO {
     static class QueryRunner<R, T> extends DoFn<Void, T> {
       private final RegistryQuery<R> query;
       private final SerializableFunction<R, T> resultMapper;
+      // java.util.Optional is not serializable. Use of Guava Optional is discouraged.
+      @Nullable private final String snapshotId;
 
-      QueryRunner(RegistryQuery<R> query, SerializableFunction<R, T> resultMapper) {
+      QueryRunner(
+          RegistryQuery<R> query,
+          SerializableFunction<R, T> resultMapper,
+          @Nullable String snapshotId) {
         this.query = query;
         this.resultMapper = resultMapper;
+        this.snapshotId = snapshotId;
       }
 
       @ProcessElement
       public void processElement(OutputReceiver<T> outputReceiver) {
         jpaTm()
             .transactNoRetry(
-                () -> query.stream().map(resultMapper::apply).forEach(outputReceiver::output));
+                () -> {
+                  if (snapshotId != null) {
+                    jpaTm().setDatabaseSnapshot(snapshotId);
+                  }
+                  query.stream().map(resultMapper::apply).forEach(outputReceiver::output);
+                });
       }
     }
   }

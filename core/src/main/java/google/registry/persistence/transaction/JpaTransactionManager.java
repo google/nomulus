@@ -24,7 +24,33 @@ import javax.persistence.criteria.CriteriaQuery;
 /** Sub-interface of {@link TransactionManager} which defines JPA related methods. */
 public interface JpaTransactionManager extends TransactionManager {
 
-  /** Returns the {@link EntityManager} for the current request. */
+  /**
+   * Returns a long-lived {@link EntityManager} not bound to a particular transaction.
+   *
+   * <p>Caller is responsible for closing the returned instance.
+   */
+  EntityManager getStandaloneEntityManager();
+
+  /**
+   * Specifies a database snapshot exported by another transaction to use in the current
+   * transaction.
+   *
+   * <p>This is a Postgresql-specific feature. This method must be called before any other SQL
+   * commands in a transaction.
+   *
+   * <p>To support large queries, transaction isolation level is fixed at the REPEATABLE_READ to
+   * avoid exhausting predicate locks at the SERIALIZABLE level.
+   *
+   * @see google.registry.beam.common.DatabaseSnapshot
+   */
+  // TODO(b/193662898): vendor-independent support for richer transaction semantics.
+  JpaTransactionManager setDatabaseSnapshot(String snapshotId);
+
+  /**
+   * Returns the {@link EntityManager} for the current request.
+   *
+   * <p>The returned instance is closed when the current transaction completes.
+   */
   EntityManager getEntityManager();
 
   /**

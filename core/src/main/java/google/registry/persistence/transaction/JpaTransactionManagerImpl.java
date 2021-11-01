@@ -121,6 +121,11 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
+  public EntityManager getStandaloneEntityManager() {
+    return emf.createEntityManager();
+  }
+
+  @Override
   public EntityManager getEntityManager() {
     EntityManager entityManager = transactionInfo.get().entityManager;
     if (entityManager == null) {
@@ -129,6 +134,22 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
               + " of a transaction");
     }
     return entityManager;
+  }
+
+  @Override
+  public JpaTransactionManager setDatabaseSnapshot(String snapshotId) {
+    // Postgresql-specific: 'set transaction' command must be called inside a transaction
+    assertInTransaction();
+
+    EntityManager entityManager = getEntityManager();
+    // Isolation is hardcoded to REPEATABLE READ, as specified by parent's Javadoc.
+    entityManager
+        .createNativeQuery("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        .executeUpdate();
+    entityManager
+        .createNativeQuery(String.format("SET TRANSACTION SNAPSHOT '%s'", snapshotId))
+        .executeUpdate();
+    return this;
   }
 
   @Override
