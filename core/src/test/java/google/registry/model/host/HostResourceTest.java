@@ -319,4 +319,17 @@ class HostResourceTest extends EntityTestCase {
     assertThat(ofyTm().loadAllOf(EppResourceIndex.class))
         .containsExactly(EppResourceIndex.create(Key.create(host)));
   }
+
+  @TestOfyOnly
+  void testBeforeSqlSaveOnReplay_canonicalName() {
+    host.fullyQualifiedHostName = "NS1.EXAMPLE.COM";
+    assertThat(host.getHostName()).isEqualTo("NS1.EXAMPLE.COM");
+    host.beforeSqlSaveOnReplay();
+    assertThat(host.getHostName()).isEqualTo("ns1.example.com");
+
+    host.fullyQualifiedHostName = "ns1.kittyçat.com";
+    assertThat(host.getHostName()).isEqualTo("ns1.kittyçat.com");
+    host.beforeSqlSaveOnReplay();
+    assertThat(host.getHostName()).isEqualTo("ns1.xn--kittyat-yxa.com");
+  }
 }

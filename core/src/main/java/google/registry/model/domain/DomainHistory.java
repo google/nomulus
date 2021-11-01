@@ -33,6 +33,7 @@ import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
+import google.registry.util.DomainNameUtils;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Optional;
@@ -303,6 +304,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   public void beforeSqlSaveOnReplay() {
     if (domainContent == null) {
       domainContent = jpaTm().getEntityManager().find(DomainBase.class, getDomainRepoId());
+      domainContent.fullyQualifiedDomainName =
+          DomainNameUtils.canonicalizeDomainName(domainContent.fullyQualifiedDomainName);
       fillAuxiliaryFieldsFromDomain(this);
     }
   }
