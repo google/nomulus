@@ -14,6 +14,7 @@
 
 package google.registry.reporting.icann;
 
+import static google.registry.reporting.icann.IcannReportingModule.ICANN_REPORTING_DATA_SET;
 import static google.registry.util.TypeUtils.getClassFromString;
 import static google.registry.util.TypeUtils.instantiate;
 
@@ -21,6 +22,7 @@ import dagger.Module;
 import dagger.Provides;
 import google.registry.bigquery.BigqueryConnection;
 import google.registry.config.RegistryConfig.Config;
+import javax.inject.Named;
 
 /** Dagger module to provide the DnsCountQueryCoordinator. */
 @Module
@@ -30,9 +32,10 @@ public class DnsCountQueryCoordinatorModule {
   static DnsCountQueryCoordinator provideDnsCountQueryCoordinator(
       @Config("dnsCountQueryCoordinatorClass") String customClass,
       BigqueryConnection bigquery,
-      @Config("projectId") String projectId) {
+      @Config("projectId") String projectId,
+      @Named(ICANN_REPORTING_DATA_SET) String icannReportingDataSet) {
     DnsCountQueryCoordinator.Params params =
-        new DnsCountQueryCoordinator.Params(bigquery, projectId);
+        new DnsCountQueryCoordinator.Params(bigquery, projectId, icannReportingDataSet);
     return instantiate(getClassFromString(customClass, DnsCountQueryCoordinator.class), params);
   }
 }

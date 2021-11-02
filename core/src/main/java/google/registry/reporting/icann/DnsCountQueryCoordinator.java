@@ -35,14 +35,19 @@ public interface DnsCountQueryCoordinator {
    * <p>If your report query requires any additional parameters, add them here.
    */
   class Params {
+
     public BigqueryConnection bigquery;
 
     /** The Google Cloud project id. */
     public String projectId;
 
-    public Params(BigqueryConnection bigquery, String projectId) {
+    /** The BigQuery dataset from which to query. */
+    public String icannReportingDataSet;
+
+    public Params(BigqueryConnection bigquery, String projectId, String icannReportingDataSet) {
       this.bigquery = bigquery;
       this.projectId = projectId;
+      this.icannReportingDataSet = icannReportingDataSet;
     }
   }
 

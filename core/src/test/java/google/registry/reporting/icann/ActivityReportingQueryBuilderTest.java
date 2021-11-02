@@ -44,7 +44,7 @@ class ActivityReportingQueryBuilderTest {
         "domain-registry-alpha",
         datasetName,
         new BasicDnsCountQueryCoordinator(
-            new BasicDnsCountQueryCoordinator.Params(null, "domain-registry-alpha")));
+            new BasicDnsCountQueryCoordinator.Params(null, "domain-registry-alpha", datasetName)));
   }
 
   @TestOfyOnly
