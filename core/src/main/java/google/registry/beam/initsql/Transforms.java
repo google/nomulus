@@ -262,8 +262,8 @@ public final class Transforms {
 
   // Production data repair configs go below. See b/185954992.
 
-  // Prober domains in bad state, without associated contacts, hosts, billings, and history.
-  // They can be safely ignored.
+  // Prober domains in bad state, without associated contacts, hosts, billings, and non-synthesized
+  // history. They can be safely ignored.
   private static final ImmutableSet<String> IGNORED_DOMAINS =
       ImmutableSet.of("6AF6D2-IQCANT", "2-IQANYT");
 
@@ -299,7 +299,7 @@ public final class Transforms {
       return !IGNORED_HOSTS.contains(roid);
     }
     if (entity.getKind().equals("HistoryEntry")) {
-      // Remove production bad data: History of the contacts to be ignored:
+      // Remove production bad data: Histories of ignored EPP resources:
       com.google.appengine.api.datastore.Key parentKey = entity.getKey().getParent();
       if (parentKey.getKind().equals("ContactResource")) {
         String contactRoid = parentKey.getName();
@@ -308,6 +308,10 @@ public final class Transforms {
       if (parentKey.getKind().equals("HostResource")) {
         String hostRoid = parentKey.getName();
         return !IGNORED_HOSTS.contains(hostRoid);
+      }
+      if (parentKey.getKind().equals("DomainBase")) {
+        String domainRoid = parentKey.getName();
+        return !IGNORED_DOMAINS.contains(domainRoid);
       }
     }
     // End of production-specific checks.
