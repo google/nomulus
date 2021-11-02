@@ -18,10 +18,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import google.registry.model.BackupGroupRoot;
 import google.registry.model.ImmutableObject;
 import google.registry.model.translators.VKeyTranslatorFactory;
+import google.registry.util.SerializeUtils;
 import java.io.Serializable;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -35,6 +38,15 @@ import javax.annotation.Nullable;
 public class VKey<T> extends ImmutableObject implements Serializable {
 
   private static final long serialVersionUID = -5291472863840231240L;
+
+  // Info that's stored in in vkey string generated via stringify().
+  private static final String SQL_LOOKUP_KEY = "sql";
+  private static final String OFY_LOOKUP_KEY = "ofy";
+  private static final String CLASS_TYPE = "kind";
+
+  // Web safe delimiters that won't be used in base 64.
+  private static final String KV_SEPARATOR = ":";
+  private static final String DELIMITER = "@";
 
   // The SQL key for the referenced entity.
   Serializable sqlKey;
@@ -112,6 +124,47 @@ public class VKey<T> extends ImmutableObject implements Serializable {
             + " specified in a parent",
         kind.getCanonicalName());
     return new VKey<T>(kind, Key.create(kind, name), name);
+  }
+
+  /**
+   * Constructs a {@link VKey} from the string representation of a vkey.
+   *
+   * <p>There are two types of string representations: 1) existing ofy key string handled by
+   * fromWebsafeKey() and 2) string encoded via stringify() where @ separates the substrings and
+   * each of the substrings contains a look up key, ":", and its corresponding value. The key info
+   * is encoded via Base64. The string begins with "kind:" and it must contains at least ofy key or
+   * sql key.
+   *
+   * <p>Example of a Vkey string by fromWebsafeKey(): "agR0ZXN0chYLEgpEb21haW5CYXNlIgZST0lELTEM"
+   *
+   * <p>Example of a vkey string by stringify(): "google.registry.testing.TestObject@sql:rO0ABX" +
+   * "QAA2Zvbw@ofy:agR0ZXN0cjELEg9FbnRpdHlHcm91cFJvb3QiCWNyb3NzLXRsZAwLEgpUZXN0T2JqZWN0IgNmb28M",
+   * where sql key and ofy key are values are encoded in Base64.
+   */
+  public static <T> VKey<T> create(String keyString) throws Exception {
+    if (!keyString.startsWith(CLASS_TYPE + KV_SEPARATOR)) {
+      // to handle the existing ofy key string
+      return fromWebsafeKey(keyString);
+    } else {
+      ImmutableMap<String, String> kvs =
+          ImmutableMap.copyOf(
+              Splitter.on(DELIMITER).withKeyValueSeparator(KV_SEPARATOR).split(keyString));
+      Class classType = Class.forName(kvs.get(CLASS_TYPE));
+
+      if (kvs.containsKey(SQL_LOOKUP_KEY) && kvs.containsKey(OFY_LOOKUP_KEY)) {
+        return VKey.create(
+            classType,
+            SerializeUtils.parse(Serializable.class, kvs.get(SQL_LOOKUP_KEY)),
+            Key.create(kvs.get(OFY_LOOKUP_KEY)));
+      } else if (kvs.containsKey(SQL_LOOKUP_KEY)) {
+        return VKey.createSql(
+            classType, SerializeUtils.parse(Serializable.class, kvs.get(SQL_LOOKUP_KEY)));
+      } else if (kvs.containsKey(OFY_LOOKUP_KEY)) {
+        return VKey.createOfy(classType, Key.create(kvs.get(OFY_LOOKUP_KEY)));
+      } else {
+        throw new IllegalArgumentException(String.format("Cannot parse key string: %s", keyString));
+      }
+    }
   }
 
   /**
@@ -232,5 +285,30 @@ public class VKey<T> extends ImmutableObject implements Serializable {
   @Nullable
   public static <T> VKey<T> fromWebsafeKey(String ofyKeyRepr) {
     return from(Key.create(ofyKeyRepr));
+  }
+
+  /**
+   * Constructs the string representation of a {@link VKey}.
+   *
+   * <p>The string representation of a vkey contains its type, and sql key or ofy key, or both. Each
+   * of the keys is first serialized into a byte array then encoded via Base64 into a web safe
+   * string.
+   *
+   * <p>The string representation of a vkey contains key values pairs separated by delimiter "@".
+   * Another delimiter ":" is put in between each key and value. The following is the complete
+   * format of the string: "kind:class_name@sql:encoded_sqlKey@ofy:encoded_ofyKey", where kind is
+   * required. The string representation may contain an encoded ofy key, or an encoded sql key, or
+   * both.
+   */
+  public String stringify() {
+    // class type is required to create a vkey
+    String key = CLASS_TYPE + KV_SEPARATOR + getKind().getName();
+    if (maybeGetSqlKey().isPresent()) {
+      key += DELIMITER + SQL_LOOKUP_KEY + KV_SEPARATOR + SerializeUtils.stringify(getSqlKey());
+    }
+    if (maybeGetOfyKey().isPresent()) {
+      key += DELIMITER + OFY_LOOKUP_KEY + KV_SEPARATOR + getOfyKey().getString();
+    }
+    return key;
   }
 }

@@ -16,9 +16,12 @@ package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.util.SerializeUtils.deserialize;
+import static google.registry.util.SerializeUtils.parse;
 import static google.registry.util.SerializeUtils.serialize;
+import static google.registry.util.SerializeUtils.stringify;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.Serializable;
 import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link SerializeUtils}. */
@@ -60,5 +63,52 @@ class SerializeUtilsTest {
             IllegalArgumentException.class,
             () -> deserialize(String.class, new byte[] {(byte) 0xff}));
     assertThat(thrown).hasMessageThat().contains("Unable to deserialize: objectBytes=FF");
+  }
+
+  @Test
+  void testStringify_string_returnsBase64EncodedString() {
+    assertThat(stringify("foo")).isEqualTo("rO0ABXQAA2Zvbw");
+  }
+
+  @Test
+  void testParse_stringClass_returnsObject() {
+    assertThat(parse(String.class, "rO0ABXQAA2Zvbw")).isEqualTo("foo");
+  }
+
+  @Test
+  void testStringifyParse_stringValue_maintainsValue() {
+    assertThat(parse(Serializable.class, stringify("hello"))).isEqualTo("hello");
+  }
+
+  @Test
+  void testStringifyParse_longValue_maintainsValue() {
+    assertThat(parse(Serializable.class, stringify((long) 12345))).isEqualTo((long) 12345);
+  }
+
+  @Test
+  void testStringify_nullValue_throwsException() {
+    NullPointerException thrown = assertThrows(NullPointerException.class, () -> stringify(null));
+    assertThat(thrown).hasMessageThat().contains("Object cannot be null");
+  }
+
+  @Test
+  void testParse_nullClass_throwsException() {
+    NullPointerException thrown =
+        assertThrows(NullPointerException.class, () -> parse(null, "test"));
+    assertThat(thrown).hasMessageThat().contains("Class type is not specified");
+  }
+
+  @Test
+  void testParse_invalidBase64String_throwsException() {
+    IllegalArgumentException thrown =
+        assertThrows(IllegalArgumentException.class, () -> parse(String.class, "abcde:atest"));
+    assertThat(thrown).hasMessageThat().contains("Unable to deserialize");
+  }
+
+  @Test
+  void testParse_nullObjectStringValue_throwsException() {
+    NullPointerException thrown =
+        assertThrows(NullPointerException.class, () -> parse(String.class, null));
+    assertThat(thrown).hasMessageThat().contains("Object string cannot be null");
   }
 }
