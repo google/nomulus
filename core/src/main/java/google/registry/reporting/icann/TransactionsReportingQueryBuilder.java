@@ -14,6 +14,7 @@
 
 package google.registry.reporting.icann;
 
+import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.reporting.icann.IcannReportingModule.DATASTORE_EXPORT_DATA_SET;
 import static google.registry.reporting.icann.IcannReportingModule.ICANN_REPORTING_DATA_SET;
 import static google.registry.reporting.icann.QueryBuilderUtils.getQueryFromFile;
@@ -71,102 +72,180 @@ public final class TransactionsReportingQueryBuilder implements QueryBuilder {
     DateTime latestReportTime = earliestReportTime.plusMonths(1).minusMillis(1);
 
     ImmutableMap.Builder<String, String> queriesBuilder = ImmutableMap.builder();
-    String registrarIanaIdQuery =
-        SqlTemplate.create(getQueryFromFile("registrar_iana_id.sql"))
-            .put("PROJECT_ID", projectId)
-            .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-            .put("REGISTRAR_TABLE", "Registrar")
-            .build();
+    String registrarIanaIdQuery;
+    if (tm().isOfy()) {
+      registrarIanaIdQuery =
+          SqlTemplate.create(getQueryFromFile("registrar_iana_id.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
+              .put("REGISTRAR_TABLE", "Registrar")
+              .build();
+    } else {
+      registrarIanaIdQuery =
+          SqlTemplate.create(getQueryFromFile("cloud_sql_registrar_iana_id.sql"))
+              .put("PROJECT_ID", projectId)
+              .build();
+    }
     queriesBuilder.put(getTableName(REGISTRAR_IANA_ID, yearMonth), registrarIanaIdQuery);
 
-    String totalDomainsQuery =
-        SqlTemplate.create(getQueryFromFile("total_domains.sql"))
-            .put("PROJECT_ID", projectId)
-            .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-            .put("DOMAINBASE_TABLE", "DomainBase")
-            .put("REGISTRAR_TABLE", "Registrar")
-            .build();
+    String totalDomainsQuery;
+    if (tm().isOfy()) {
+      totalDomainsQuery =
+          SqlTemplate.create(getQueryFromFile("total_domains.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
+              .put("DOMAINBASE_TABLE", "DomainBase")
+              .put("REGISTRAR_TABLE", "Registrar")
+              .build();
+    } else {
+      totalDomainsQuery =
+          SqlTemplate.create(getQueryFromFile("cloud_sql_total_domains.sql"))
+              .put("PROJECT_ID", projectId)
+              .build();
+    }
     queriesBuilder.put(getTableName(TOTAL_DOMAINS, yearMonth), totalDomainsQuery);
 
     DateTimeFormatter timestampFormatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS");
-    String totalNameserversQuery =
-        SqlTemplate.create(getQueryFromFile("total_nameservers.sql"))
-            .put("PROJECT_ID", projectId)
-            .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-            .put("HOSTRESOURCE_TABLE", "HostResource")
-            .put("DOMAINBASE_TABLE", "DomainBase")
-            .put("REGISTRAR_TABLE", "Registrar")
-            .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
-            .build();
+    String totalNameserversQuery;
+    if (tm().isOfy()) {
+      totalNameserversQuery =
+          SqlTemplate.create(getQueryFromFile("total_nameservers.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
+              .put("HOSTRESOURCE_TABLE", "HostResource")
+              .put("DOMAINBASE_TABLE", "DomainBase")
+              .put("REGISTRAR_TABLE", "Registrar")
+              .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
+              .build();
+    } else {
+      totalNameserversQuery =
+          SqlTemplate.create(getQueryFromFile("cloud_sql_total_nameservers.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
+              .build();
+    }
     queriesBuilder.put(getTableName(TOTAL_NAMESERVERS, yearMonth), totalNameserversQuery);
 
-    String transactionCountsQuery =
-        SqlTemplate.create(getQueryFromFile("transaction_counts.sql"))
-            .put("PROJECT_ID", projectId)
-            .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-            .put("REGISTRAR_TABLE", "Registrar")
-            .put("HISTORYENTRY_TABLE", "HistoryEntry")
-            .put("EARLIEST_REPORT_TIME", timestampFormatter.print(earliestReportTime))
-            .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
-            .put("CLIENT_ID", "clientId")
-            .put("OTHER_CLIENT_ID", "otherClientId")
-            .put("TRANSFER_SUCCESS_FIELD", "TRANSFER_GAINING_SUCCESSFUL")
-            .put("TRANSFER_NACKED_FIELD", "TRANSFER_GAINING_NACKED")
-            .put("DEFAULT_FIELD", "field")
-            .build();
+    String transactionCountsQuery;
+    if (tm().isOfy()) {
+      transactionCountsQuery =
+          SqlTemplate.create(getQueryFromFile("transaction_counts.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
+              .put("REGISTRAR_TABLE", "Registrar")
+              .put("HISTORYENTRY_TABLE", "HistoryEntry")
+              .put("EARLIEST_REPORT_TIME", timestampFormatter.print(earliestReportTime))
+              .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
+              .put("CLIENT_ID", "clientId")
+              .put("OTHER_CLIENT_ID", "otherClientId")
+              .put("TRANSFER_SUCCESS_FIELD", "TRANSFER_GAINING_SUCCESSFUL")
+              .put("TRANSFER_NACKED_FIELD", "TRANSFER_GAINING_NACKED")
+              .put("DEFAULT_FIELD", "field")
+              .build();
+    } else {
+      transactionCountsQuery =
+          SqlTemplate.create(getQueryFromFile("cloud_sql_transaction_counts.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("EARLIEST_REPORT_TIME", timestampFormatter.print(earliestReportTime))
+              .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
+              .build();
+    }
     queriesBuilder.put(getTableName(TRANSACTION_COUNTS, yearMonth), transactionCountsQuery);
 
-    String transactionTransferLosingQuery =
-        SqlTemplate.create(getQueryFromFile("transaction_counts.sql"))
-            .put("PROJECT_ID", projectId)
-            .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-            .put("REGISTRAR_TABLE", "Registrar")
-            .put("HISTORYENTRY_TABLE", "HistoryEntry")
-            .put("EARLIEST_REPORT_TIME", timestampFormatter.print(earliestReportTime))
-            .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
-            // Roles are reversed for losing queries
-            .put("CLIENT_ID", "otherClientId")
-            .put("OTHER_CLIENT_ID", "clientId")
-            .put("TRANSFER_SUCCESS_FIELD", "TRANSFER_LOSING_SUCCESSFUL")
-            .put("TRANSFER_NACKED_FIELD", "TRANSFER_LOSING_NACKED")
-            .put("DEFAULT_FIELD", "NULL")
-            .build();
+    String transactionTransferLosingQuery;
+    if (tm().isOfy()) {
+      transactionTransferLosingQuery =
+          SqlTemplate.create(getQueryFromFile("transaction_counts.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
+              .put("REGISTRAR_TABLE", "Registrar")
+              .put("HISTORYENTRY_TABLE", "HistoryEntry")
+              .put("EARLIEST_REPORT_TIME", timestampFormatter.print(earliestReportTime))
+              .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
+              // Roles are reversed for losing queries
+              .put("CLIENT_ID", "otherClientId")
+              .put("OTHER_CLIENT_ID", "clientId")
+              .put("TRANSFER_SUCCESS_FIELD", "TRANSFER_LOSING_SUCCESSFUL")
+              .put("TRANSFER_NACKED_FIELD", "TRANSFER_LOSING_NACKED")
+              .put("DEFAULT_FIELD", "NULL")
+              .build();
+    } else {
+      transactionTransferLosingQuery =
+          SqlTemplate.create(getQueryFromFile("cloud_sql_transaction_transfer_losing.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("EARLIEST_REPORT_TIME", timestampFormatter.print(earliestReportTime))
+              .put("LATEST_REPORT_TIME", timestampFormatter.print(latestReportTime))
+              .build();
+    }
     queriesBuilder.put(
         getTableName(TRANSACTION_TRANSFER_LOSING, yearMonth), transactionTransferLosingQuery);
 
     // App Engine log table suffixes use YYYYMMDD format
     DateTimeFormatter logTableFormatter = DateTimeFormat.forPattern("yyyyMMdd");
-    String attemptedAddsQuery =
-        SqlTemplate.create(getQueryFromFile("attempted_adds.sql"))
-            .put("PROJECT_ID", projectId)
-            .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-            .put("REGISTRAR_TABLE", "Registrar")
-            .put("APPENGINE_LOGS_DATA_SET", "appengine_logs")
-            .put("REQUEST_TABLE", "appengine_googleapis_com_request_log_")
-            .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(earliestReportTime))
-            .put("LAST_DAY_OF_MONTH", logTableFormatter.print(latestReportTime))
-            // All metadata logs for reporting come from google.registry.flows.FlowReporter.
-            .put(
-                "METADATA_LOG_PREFIX",
-                "google.registry.flows.FlowReporter recordToLogs: FLOW-LOG-SIGNATURE-METADATA")
-            .build();
+    String attemptedAddsQuery;
+    if (tm().isOfy()) {
+      attemptedAddsQuery =
+          SqlTemplate.create(getQueryFromFile("attempted_adds.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
+              .put("REGISTRAR_TABLE", "Registrar")
+              .put("APPENGINE_LOGS_DATA_SET", "appengine_logs")
+              .put("REQUEST_TABLE", "appengine_googleapis_com_request_log_")
+              .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(earliestReportTime))
+              .put("LAST_DAY_OF_MONTH", logTableFormatter.print(latestReportTime))
+              // All metadata logs for reporting come from google.registry.flows.FlowReporter.
+              .put(
+                  "METADATA_LOG_PREFIX",
+                  "google.registry.flows.FlowReporter recordToLogs: FLOW-LOG-SIGNATURE-METADATA")
+              .build();
+    } else {
+      attemptedAddsQuery =
+          SqlTemplate.create(getQueryFromFile("cloud_sql_attempted_adds.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("APPENGINE_LOGS_DATA_SET", "appengine_logs")
+              .put("REQUEST_TABLE", "appengine_googleapis_com_request_log_")
+              .put("FIRST_DAY_OF_MONTH", logTableFormatter.print(earliestReportTime))
+              .put("LAST_DAY_OF_MONTH", logTableFormatter.print(latestReportTime))
+              // All metadata logs for reporting come from google.registry.flows.FlowReporter.
+              .put(
+                  "METADATA_LOG_PREFIX",
+                  "google.registry.flows.FlowReporter recordToLogs: FLOW-LOG-SIGNATURE-METADATA")
+              .build();
+    }
     queriesBuilder.put(getTableName(ATTEMPTED_ADDS, yearMonth), attemptedAddsQuery);
 
-    String aggregateQuery =
-        SqlTemplate.create(getQueryFromFile("transactions_report_aggregation.sql"))
-            .put("PROJECT_ID", projectId)
-            .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
-            .put("REGISTRY_TABLE", "Registry")
-            .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
-            .put("REGISTRAR_IANA_ID_TABLE", getTableName(REGISTRAR_IANA_ID, yearMonth))
-            .put("TOTAL_DOMAINS_TABLE", getTableName(TOTAL_DOMAINS, yearMonth))
-            .put("TOTAL_NAMESERVERS_TABLE", getTableName(TOTAL_NAMESERVERS, yearMonth))
-            .put("TRANSACTION_COUNTS_TABLE", getTableName(TRANSACTION_COUNTS, yearMonth))
-            .put(
-                "TRANSACTION_TRANSFER_LOSING_TABLE",
-                getTableName(TRANSACTION_TRANSFER_LOSING, yearMonth))
-            .put("ATTEMPTED_ADDS_TABLE", getTableName(ATTEMPTED_ADDS, yearMonth))
-            .build();
+    String aggregateQuery;
+    if (tm().isOfy()) {
+      aggregateQuery =
+          SqlTemplate.create(getQueryFromFile("transactions_report_aggregation.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("DATASTORE_EXPORT_DATA_SET", DATASTORE_EXPORT_DATA_SET)
+              .put("REGISTRY_TABLE", "Registry")
+              .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
+              .put("REGISTRAR_IANA_ID_TABLE", getTableName(REGISTRAR_IANA_ID, yearMonth))
+              .put("TOTAL_DOMAINS_TABLE", getTableName(TOTAL_DOMAINS, yearMonth))
+              .put("TOTAL_NAMESERVERS_TABLE", getTableName(TOTAL_NAMESERVERS, yearMonth))
+              .put("TRANSACTION_COUNTS_TABLE", getTableName(TRANSACTION_COUNTS, yearMonth))
+              .put(
+                  "TRANSACTION_TRANSFER_LOSING_TABLE",
+                  getTableName(TRANSACTION_TRANSFER_LOSING, yearMonth))
+              .put("ATTEMPTED_ADDS_TABLE", getTableName(ATTEMPTED_ADDS, yearMonth))
+              .build();
+    } else {
+      aggregateQuery =
+          SqlTemplate.create(getQueryFromFile("cloud_sql_transactions_report_aggregation.sql"))
+              .put("PROJECT_ID", projectId)
+              .put("ICANN_REPORTING_DATA_SET", icannReportingDataSet)
+              .put("REGISTRAR_IANA_ID_TABLE", getTableName(REGISTRAR_IANA_ID, yearMonth))
+              .put("TOTAL_DOMAINS_TABLE", getTableName(TOTAL_DOMAINS, yearMonth))
+              .put("TOTAL_NAMESERVERS_TABLE", getTableName(TOTAL_NAMESERVERS, yearMonth))
+              .put("TRANSACTION_COUNTS_TABLE", getTableName(TRANSACTION_COUNTS, yearMonth))
+              .put(
+                  "TRANSACTION_TRANSFER_LOSING_TABLE",
+                  getTableName(TRANSACTION_TRANSFER_LOSING, yearMonth))
+              .put("ATTEMPTED_ADDS_TABLE", getTableName(ATTEMPTED_ADDS, yearMonth))
+              .build();
+    }
     queriesBuilder.put(getTableName(TRANSACTIONS_REPORT_AGGREGATION, yearMonth), aggregateQuery);
 
     return queriesBuilder.build();
