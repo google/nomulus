@@ -14,16 +14,20 @@
 
 package google.registry.cron;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
-import com.google.appengine.api.taskqueue.Queue;
-import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.cloud.tasks.v2.Task;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
+import com.google.protobuf.Timestamp;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
-import google.registry.util.TaskQueueUtils;
-import java.time.Duration;
+import google.registry.util.Clock;
+import google.registry.util.CloudTasksUtils;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.Random;
 import javax.inject.Inject;
@@ -40,23 +44,41 @@ public final class CommitLogFanoutAction implements Runnable {
 
   private static final Random random = new Random();
 
-  @Inject TaskQueueUtils taskQueueUtils;
+  @Inject Clock clock;
+  @Inject CloudTasksUtils cloudTasksUtils;
+
   @Inject @Parameter("endpoint") String endpoint;
   @Inject @Parameter("queue") String queue;
   @Inject @Parameter("jitterSeconds") Optional<Integer> jitterSeconds;
   @Inject CommitLogFanoutAction() {}
 
+
+
   @Override
   public void run() {
-    Queue taskQueue = getQueue(queue);
     for (int bucketId : CommitLogBucket.getBucketIds()) {
-      long delay =
-          jitterSeconds.map(i -> random.nextInt((int) Duration.ofSeconds(i).toMillis())).orElse(0);
-      TaskOptions taskOptions =
-          TaskOptions.Builder.withUrl(endpoint)
-              .param(BUCKET_PARAM, Integer.toString(bucketId))
-              .countdownMillis(delay);
-      taskQueueUtils.enqueue(taskQueue, taskOptions);
+      cloudTasksUtils.enqueue(
+          queue, createTask(ImmutableMultimap.of(BUCKET_PARAM, Integer.toString(bucketId))));
     }
+  }
+
+  private Task createTask(Multimap<String, String> params) {
+    Instant scheduleTime =
+        Instant.ofEpochMilli(
+            clock
+                .nowUtc()
+                .plusMillis(
+                    jitterSeconds
+                        .map(seconds -> random.nextInt((int) SECONDS.toMillis(seconds)))
+                        .orElse(0))
+                .getMillis());
+    return Task.newBuilder(
+            CloudTasksUtils.createGetTask(endpoint, Service.BACKEND.toString(), params))
+        .setScheduleTime(
+            Timestamp.newBuilder()
+                .setSeconds(scheduleTime.getEpochSecond())
+                .setNanos(scheduleTime.getNano())
+                .build())
+        .build();
   }
 }
