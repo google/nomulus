@@ -53,6 +53,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "api_key/a",
             clock.nowUtc().toLocalDate(),
             PrimaryDatabase.DATASTORE,
+            true,
             clock,
             response,
             dataflow);
@@ -75,6 +76,7 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             "api_key/a",
             clock.nowUtc().toLocalDate(),
             PrimaryDatabase.DATASTORE,
+            true,
             clock,
             response,
             dataflow);
@@ -89,5 +91,27 @@ class GenerateSpec11ReportActionTest extends BeamActionTestBase {
             .param("jobId", "jobid")
             .param("date", "2018-06-11");
     assertTasksEnqueued("beam-reporting", matcher);
+  }
+
+  @Test
+  void testSuccess_noEmail() throws IOException {
+    action =
+        new GenerateSpec11ReportAction(
+            "test-project",
+            "us-east1-c",
+            "gs://staging-project/staging-bucket/",
+            "gs://reporting-project/reporting-bucket/",
+            "api_key/a",
+            clock.nowUtc().toLocalDate(),
+            PrimaryDatabase.DATASTORE,
+            false,
+            clock,
+            response,
+            dataflow);
+    action.run();
+    assertThat(response.getStatus()).isEqualTo(SC_OK);
+    assertThat(response.getContentType()).isEqualTo(MediaType.PLAIN_TEXT_UTF_8);
+    assertThat(response.getPayload()).isEqualTo("Launched Spec11 pipeline: jobid");
+    assertNoTasksEnqueued("beam-reporting");
   }
 }

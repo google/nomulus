@@ -14,6 +14,7 @@
 
 package google.registry.reporting;
 
+import static google.registry.request.RequestParameters.extractOptionalBooleanParameter;
 import static google.registry.request.RequestParameters.extractOptionalParameter;
 import static google.registry.request.RequestParameters.extractRequiredParameter;
 
@@ -55,11 +56,24 @@ public class ReportingModule {
   /** The request parameter specifying the jobId for a running Dataflow pipeline. */
   public static final String PARAM_JOB_ID = "jobId";
 
+  /**
+   * The request parameter name used by actions to indicate if an email should be sent. This
+   * parameter defaults to true if not specified.
+   */
+  public static final String SEND_EMAIL = "email";
+
   /** Provides the Cloud Dataflow jobId for a pipeline. */
   @Provides
   @Parameter(PARAM_JOB_ID)
   static String provideJobId(HttpServletRequest req) {
     return extractRequiredParameter(req, PARAM_JOB_ID);
+  }
+
+  /** Provides the boolean value indicating if emails should be sent. */
+  @Provides
+  @Parameter(SEND_EMAIL)
+  static boolean provideSendEmail(HttpServletRequest req) {
+    return extractOptionalBooleanParameter(req, SEND_EMAIL).orElse(true);
   }
 
   /** Extracts an optional YearMonth in yyyy-MM format from the request. */

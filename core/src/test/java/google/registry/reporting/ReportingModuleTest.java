@@ -114,4 +114,10 @@ class ReportingModuleTest {
     when(req.getParameter("date")).thenReturn("2017-07-02");
     assertThat(ReportingModule.provideDate(req, clock)).isEqualTo(new LocalDate(2017, 7, 2));
   }
+
+  @Test
+  void testEmptyEmail_returnsTrue() {
+    when(req.getParameter("email")).thenReturn(null);
+    assertThat(ReportingModule.provideSendEmail(req)).isTrue();
+  }
 }

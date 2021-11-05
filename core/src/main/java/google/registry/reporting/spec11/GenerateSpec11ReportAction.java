@@ -72,6 +72,7 @@ public class GenerateSpec11ReportAction implements Runnable {
   private final Response response;
   private final Dataflow dataflow;
   private final PrimaryDatabase database;
+  private final boolean sendEmail;
 
   @Inject
   GenerateSpec11ReportAction(
@@ -82,6 +83,7 @@ public class GenerateSpec11ReportAction implements Runnable {
       @Key("safeBrowsingAPIKey") String apiKey,
       @Parameter(ReportingModule.PARAM_DATE) LocalDate date,
       @Parameter(RequestParameters.PARAM_DATABASE) PrimaryDatabase database,
+      @Parameter(ReportingModule.SEND_EMAIL) boolean sendEmail,
       Clock clock,
       Response response,
       Dataflow dataflow) {
@@ -98,6 +100,7 @@ public class GenerateSpec11ReportAction implements Runnable {
     this.clock = clock;
     this.response = response;
     this.dataflow = dataflow;
+    this.sendEmail = sendEmail;
   }
 
   @Override
@@ -136,7 +139,9 @@ public class GenerateSpec11ReportAction implements Runnable {
       Map<String, String> beamTaskParameters =
           ImmutableMap.of(
               ReportingModule.PARAM_JOB_ID, jobId, ReportingModule.PARAM_DATE, date.toString());
-      enqueueBeamReportingTask(PublishSpec11ReportAction.PATH, beamTaskParameters);
+      if (sendEmail) {
+        enqueueBeamReportingTask(PublishSpec11ReportAction.PATH, beamTaskParameters);
+      }
       response.setStatus(SC_OK);
       response.setPayload(String.format("Launched Spec11 pipeline: %s", jobId));
     } catch (IOException e) {
