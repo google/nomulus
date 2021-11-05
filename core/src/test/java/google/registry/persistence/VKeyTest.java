@@ -13,12 +13,17 @@
 // limitations under the License.
 package google.registry.persistence;
 
+import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth8.assertThat;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
 import static google.registry.testing.DatabaseHelper.persistActiveContact;
+import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.billing.BillingEvent.OneTime;
@@ -26,7 +31,10 @@ import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.RegistrarContact;
 import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestObject;
+import google.registry.util.Retrier;
+import google.registry.util.TaskQueueUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -39,7 +47,19 @@ class VKeyTest {
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
           .withOfyTestEntities(TestObject.class)
+          .withTaskQueue(
+              Joiner.on('\n')
+                  .join(
+                      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                      "<queue-entries>",
+                      "  <queue>",
+                      "    <name>test-queue-for-vkey</name>",
+                      "    <rate>1/s</rate>",
+                      "  </queue>",
+                      "</queue-entries>"))
           .build();
+
+  private final TaskQueueUtils taskQueueUtils = new TaskQueueUtils(new Retrier(null, 1));
 
   @BeforeAll
   static void beforeAll() {
@@ -305,6 +325,97 @@ class VKeyTest {
   void testStringifyThenCreate_symmetricVKey_success() throws Exception {
     VKey<TestObject> vkey = TestObject.create("foo").key();
     assertThat(VKey.create(vkey.stringify())).isEqualTo(vkey);
+  }
+
+  /**
+   * Verifies a complete key can go into task queue and comes out unscathed.
+   *
+   * <p>TaskOption objects are being used here instead of Task objects, despite that we are in the
+   * process of migrating to using Cloud Tasks API, the stringify() and create() were written with
+   * the intention to handle all types of vkeys, inlcuding ofy only vkeys. The purpose of the
+   * following test cases is to make sure we don't deploy the system with parameters that don't work
+   * in the current implementation. Once migration is done, the following test cases with TaskOption
+   * or TaskHandle will go away.
+   */
+  @Test
+  void testStringifyThenCreate_ofyOnlyVKeyIntaskQueue_success() throws Exception {
+    VKey<TestObject> vkey =
+        VKey.createOfy(TestObject.class, Key.create(TestObject.class, "tmpKey"));
+
+    String vkeyStringFromQueue =
+        ImmutableMap.copyOf(
+                taskQueueUtils
+                    .enqueue(
+                        getQueue("test-queue-for-vkey"),
+                        TaskOptions.Builder.withUrl("/the/path").param("vkey", vkey.stringify()))
+                    .extractParams())
+            .get("vkey");
+
+    assertTasksEnqueued(
+        "test-queue-for-vkey", new TaskMatcher().url("/the/path").param("vkey", vkey.stringify()));
+    assertThat(vkeyStringFromQueue).isEqualTo(vkey.stringify());
+    assertThat(VKey.create(vkeyStringFromQueue)).isEqualTo(vkey);
+  }
+
+  @Test
+  void testStringifyThenCreate_sqlOnlyVKeyIntaskQueue_success() throws Exception {
+    VKey<TestObject> vkey = VKey.createSql(TestObject.class, "sqlKey");
+
+    String vkeyStringFromQueue =
+        ImmutableMap.copyOf(
+                taskQueueUtils
+                    .enqueue(
+                        getQueue("test-queue-for-vkey"),
+                        TaskOptions.Builder.withUrl("/the/path").param("vkey", vkey.stringify()))
+                    .extractParams())
+            .get("vkey");
+
+    assertTasksEnqueued(
+        "test-queue-for-vkey", new TaskMatcher().url("/the/path").param("vkey", vkey.stringify()));
+    assertThat(vkeyStringFromQueue).isEqualTo(vkey.stringify());
+    assertThat(VKey.create(vkeyStringFromQueue)).isEqualTo(vkey);
+  }
+
+  @Test
+  void testStringifyThenCreate_generalVKeyIntaskQueue_success() throws Exception {
+    VKey<TestObject> vkey =
+        VKey.create(TestObject.class, "12345", Key.create(TestObject.class, "12345"));
+
+    String vkeyStringFromQueue =
+        ImmutableMap.copyOf(
+                taskQueueUtils
+                    .enqueue(
+                        getQueue("test-queue-for-vkey"),
+                        TaskOptions.Builder.withUrl("/the/path").param("vkey", vkey.stringify()))
+                    .extractParams())
+            .get("vkey");
+
+    assertTasksEnqueued(
+        "test-queue-for-vkey", new TaskMatcher().url("/the/path").param("vkey", vkey.stringify()));
+    assertThat(vkeyStringFromQueue).isEqualTo(vkey.stringify());
+    assertThat(VKey.create(vkeyStringFromQueue)).isEqualTo(vkey);
+  }
+
+  @Test
+  void testStringifyThenCreate_vkeyFromWebsafeStringIntaskQueue_success() throws Exception {
+    VKey<DomainBase> vkey =
+        VKey.fromWebsafeKey(
+            Key.create(newDomainBase("example.com", "ROID-1", persistActiveContact("contact-1")))
+                .getString());
+
+    String vkeyStringFromQueue =
+        ImmutableMap.copyOf(
+                taskQueueUtils
+                    .enqueue(
+                        getQueue("test-queue-for-vkey"),
+                        TaskOptions.Builder.withUrl("/the/path").param("vkey", vkey.stringify()))
+                    .extractParams())
+            .get("vkey");
+
+    assertTasksEnqueued(
+        "test-queue-for-vkey", new TaskMatcher().url("/the/path").param("vkey", vkey.stringify()));
+    assertThat(vkeyStringFromQueue).isEqualTo(vkey.stringify());
+    assertThat(VKey.create(vkeyStringFromQueue)).isEqualTo(vkey);
   }
 
   @Entity
