@@ -14,12 +14,7 @@
 
 package google.registry.cron;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
-import com.google.cloud.tasks.v2.Task;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
-import com.google.protobuf.Timestamp;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.request.Action;
 import google.registry.request.Action.Service;
@@ -27,9 +22,7 @@ import google.registry.request.Parameter;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
 import google.registry.util.CloudTasksUtils;
-import java.time.Instant;
 import java.util.Optional;
-import java.util.Random;
 import javax.inject.Inject;
 
 /** Action for fanning out cron tasks for each commit log bucket. */
@@ -41,8 +34,6 @@ import javax.inject.Inject;
 public final class CommitLogFanoutAction implements Runnable {
 
   public static final String BUCKET_PARAM = "bucket";
-
-  private static final Random random = new Random();
 
   @Inject Clock clock;
   @Inject CloudTasksUtils cloudTasksUtils;
@@ -58,27 +49,13 @@ public final class CommitLogFanoutAction implements Runnable {
   public void run() {
     for (int bucketId : CommitLogBucket.getBucketIds()) {
       cloudTasksUtils.enqueue(
-          queue, createTask(ImmutableMultimap.of(BUCKET_PARAM, Integer.toString(bucketId))));
+          queue,
+          CloudTasksUtils.createGetTask(
+              endpoint,
+              Service.BACKEND.toString(),
+              ImmutableMultimap.of(BUCKET_PARAM, Integer.toString(bucketId)),
+              clock,
+              jitterSeconds));
     }
-  }
-
-  private Task createTask(Multimap<String, String> params) {
-    Instant scheduleTime =
-        Instant.ofEpochMilli(
-            clock
-                .nowUtc()
-                .plusMillis(
-                    jitterSeconds
-                        .map(seconds -> random.nextInt((int) SECONDS.toMillis(seconds)))
-                        .orElse(0))
-                .getMillis());
-    return Task.newBuilder(
-            CloudTasksUtils.createGetTask(endpoint, Service.BACKEND.toString(), params))
-        .setScheduleTime(
-            Timestamp.newBuilder()
-                .setSeconds(scheduleTime.getEpochSecond())
-                .setNanos(scheduleTime.getNano())
-                .build())
-        .build();
   }
 }

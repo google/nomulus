@@ -16,6 +16,7 @@ package google.registry.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.api.gax.rpc.ApiException;
 import com.google.cloud.tasks.v2.AppEngineHttpRequest;
@@ -34,9 +35,13 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import com.google.common.net.UrlEscapers;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Timestamp;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.Random;
 import java.util.function.Supplier;
 
 /** Utilities for dealing with Cloud Tasks. */
@@ -44,6 +49,7 @@ public class CloudTasksUtils implements Serializable {
 
   private static final long serialVersionUID = -7605156291755534069L;
   private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+  private static final Random random = new Random();
 
   private final Retrier retrier;
   private final String projectId;
@@ -129,12 +135,61 @@ public class CloudTasksUtils implements Serializable {
     return Task.newBuilder().setAppEngineHttpRequest(requestBuilder.build()).build();
   }
 
+  private static Task createTask(
+      String path,
+      HttpMethod method,
+      String service,
+      Multimap<String, String> params,
+      Clock clock,
+      Optional<Integer> jitterSeconds) {
+    Instant scheduleTime =
+        Instant.ofEpochMilli(
+            clock
+                .nowUtc()
+                .plusMillis(
+                    jitterSeconds
+                        .map(seconds -> random.nextInt((int) SECONDS.toMillis(seconds)))
+                        .orElse(0))
+                .getMillis());
+    return Task.newBuilder(createTask(path, method, service, params))
+        .setScheduleTime(
+            Timestamp.newBuilder()
+                .setSeconds(scheduleTime.getEpochSecond())
+                .setNanos(scheduleTime.getNano())
+                .build())
+        .build();
+  }
+
   public static Task createPostTask(String path, String service, Multimap<String, String> params) {
     return createTask(path, HttpMethod.POST, service, params);
   }
 
   public static Task createGetTask(String path, String service, Multimap<String, String> params) {
     return createTask(path, HttpMethod.GET, service, params);
+  }
+
+  /**
+   * Create a {@link Task} via HTTP.POST that will be randomly delayed up to {@code jitterSeconds}.
+   */
+  public static Task createPostTask(
+      String path,
+      String service,
+      Multimap<String, String> params,
+      Clock clock,
+      Optional<Integer> jitterSeconds) {
+    return createTask(path, HttpMethod.POST, service, params, clock, jitterSeconds);
+  }
+
+  /**
+   * Create a {@link Task} via HTTP.GET that will be randomly delayed up to {@code jitterSeconds}.
+   */
+  public static Task createGetTask(
+      String path,
+      String service,
+      Multimap<String, String> params,
+      Clock clock,
+      Optional<Integer> jitterSeconds) {
+    return createTask(path, HttpMethod.GET, service, params, clock, jitterSeconds);
   }
 
   public abstract static class SerializableCloudTasksClient implements Serializable {
