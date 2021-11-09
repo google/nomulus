@@ -153,7 +153,7 @@ public final class AsyncTaskEnqueuer {
     addTaskToQueueWithRetry(
         asyncDnsRefreshPullQueue,
         TaskOptions.Builder.withMethod(Method.PULL)
-            .param(PARAM_HOST_KEY, hostKey.getOfyKey().getString())
+            .param(PARAM_HOST_KEY, hostKey.stringify())
             .param(PARAM_REQUESTED_TIME, now.toString()));
   }
 

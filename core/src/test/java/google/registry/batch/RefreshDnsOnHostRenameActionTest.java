@@ -146,7 +146,7 @@ public class RefreshDnsOnHostRenameActionTest
     assertTasksEnqueued(
         QUEUE_ASYNC_HOST_RENAME,
         new TaskMatcher()
-            .param(PARAM_HOST_KEY, host.createVKey().getOfyKey().getString())
+            .param(PARAM_HOST_KEY, host.createVKey().stringify())
             .param(PARAM_REQUESTED_TIME, timeEnqueued.toString()));
     verify(action.asyncTaskMetrics).recordDnsRefreshBatchSize(1L);
     verifyNoMoreInteractions(action.asyncTaskMetrics);
@@ -238,7 +238,7 @@ public class RefreshDnsOnHostRenameActionTest
         QUEUE_ASYNC_HOST_RENAME,
         new TaskMatcher()
             .etaDelta(standardHours(23), standardHours(25))
-            .param("hostKey", Key.create(host).getString()));
+            .param("hostKey", host.createVKey().stringify()));
     assertThat(acquireLock()).isPresent();
   }
 
