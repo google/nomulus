@@ -14,21 +14,21 @@
 
 package google.registry.backup;
 
-import static com.google.appengine.api.taskqueue.QueueFactory.getQueue;
-import static com.google.appengine.api.taskqueue.TaskOptions.Builder.withUrl;
 import static google.registry.backup.ExportCommitLogDiffAction.LOWER_CHECKPOINT_TIME_PARAM;
 import static google.registry.backup.ExportCommitLogDiffAction.UPPER_CHECKPOINT_TIME_PARAM;
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.util.DateTimeUtils.isBeforeOrAt;
 
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.auth.Auth;
 import google.registry.util.Clock;
-import google.registry.util.TaskQueueUtils;
+import google.registry.util.CloudTasksUtils;
 import javax.inject.Inject;
 import org.joda.time.DateTime;
 
@@ -56,7 +56,8 @@ public final class CommitLogCheckpointAction implements Runnable {
 
   @Inject Clock clock;
   @Inject CommitLogCheckpointStrategy strategy;
-  @Inject TaskQueueUtils taskQueueUtils;
+  @Inject CloudTasksUtils cloudTasksUtils;
+
   @Inject CommitLogCheckpointAction() {}
 
   @Override
@@ -77,12 +78,16 @@ public final class CommitLogCheckpointAction implements Runnable {
                   .entities(
                       checkpoint, CommitLogCheckpointRoot.create(checkpoint.getCheckpointTime()));
               // Enqueue a diff task between previous and current checkpoints.
-              taskQueueUtils.enqueue(
-                  getQueue(QUEUE_NAME),
-                  withUrl(ExportCommitLogDiffAction.PATH)
-                      .param(LOWER_CHECKPOINT_TIME_PARAM, lastWrittenTime.toString())
-                      .param(
-                          UPPER_CHECKPOINT_TIME_PARAM, checkpoint.getCheckpointTime().toString()));
+              cloudTasksUtils.enqueue(
+                  QUEUE_NAME,
+                  CloudTasksUtils.createGetTask(
+                      ExportCommitLogDiffAction.PATH,
+                      Service.BACKEND.toString(),
+                      ImmutableMultimap.of(
+                          LOWER_CHECKPOINT_TIME_PARAM,
+                          lastWrittenTime.toString(),
+                          UPPER_CHECKPOINT_TIME_PARAM,
+                          checkpoint.getCheckpointTime().toString())));
             });
   }
 }

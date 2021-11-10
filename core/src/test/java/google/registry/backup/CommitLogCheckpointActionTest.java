@@ -17,8 +17,6 @@ package google.registry.backup;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ofy.CommitLogCheckpointRoot.loadRoot;
 import static google.registry.testing.DatabaseHelper.persistResource;
-import static google.registry.testing.TaskQueueHelper.assertNoTasksEnqueued;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static google.registry.util.DateTimeUtils.START_OF_TIME;
 import static org.joda.time.DateTimeZone.UTC;
 import static org.mockito.Mockito.mock;
@@ -28,10 +26,9 @@ import com.google.common.collect.ImmutableMap;
 import google.registry.model.ofy.CommitLogCheckpoint;
 import google.registry.model.ofy.CommitLogCheckpointRoot;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeClock;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
-import google.registry.util.Retrier;
-import google.registry.util.TaskQueueUtils;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,12 +47,13 @@ public class CommitLogCheckpointActionTest {
 
   private DateTime now = DateTime.now(UTC);
   private CommitLogCheckpointAction task = new CommitLogCheckpointAction();
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
 
   @BeforeEach
   void beforeEach() {
     task.clock = new FakeClock(now);
     task.strategy = strategy;
-    task.taskQueueUtils = new TaskQueueUtils(new Retrier(null, 1));
+    task.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     when(strategy.computeCheckpoint())
         .thenReturn(
             CommitLogCheckpoint.create(
@@ -65,7 +63,7 @@ public class CommitLogCheckpointActionTest {
   @Test
   void testRun_noCheckpointEverWritten_writesCheckpointAndEnqueuesTask() {
     task.run();
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         QUEUE_NAME,
         new TaskMatcher()
             .url(ExportCommitLogDiffAction.PATH)
@@ -79,7 +77,7 @@ public class CommitLogCheckpointActionTest {
     DateTime oneMinuteAgo = now.minusMinutes(1);
     persistResource(CommitLogCheckpointRoot.create(oneMinuteAgo));
     task.run();
-    assertTasksEnqueued(
+    cloudTasksHelper.assertTasksEnqueued(
         QUEUE_NAME,
         new TaskMatcher()
             .url(ExportCommitLogDiffAction.PATH)
@@ -93,7 +91,7 @@ public class CommitLogCheckpointActionTest {
     DateTime oneMinuteFromNow = now.plusMinutes(1);
     persistResource(CommitLogCheckpointRoot.create(oneMinuteFromNow));
     task.run();
-    assertNoTasksEnqueued(QUEUE_NAME);
+    cloudTasksHelper.assertNoTasksEnqueued(QUEUE_NAME);
     assertThat(loadRoot().getLastWrittenTime()).isEqualTo(oneMinuteFromNow);
   }
 }
