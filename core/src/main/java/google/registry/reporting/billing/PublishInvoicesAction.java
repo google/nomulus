@@ -23,16 +23,17 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import com.google.api.services.dataflow.Dataflow;
 import com.google.api.services.dataflow.model.Job;
-import com.google.appengine.api.taskqueue.QueueFactory;
-import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.flogger.FluentLogger;
 import com.google.common.net.MediaType;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.reporting.ReportingModule;
 import google.registry.request.Action;
+import google.registry.request.Action.Service;
 import google.registry.request.Parameter;
 import google.registry.request.Response;
 import google.registry.request.auth.Auth;
+import google.registry.util.CloudTasksUtils;
 import java.io.IOException;
 import javax.inject.Inject;
 import org.joda.time.YearMonth;
@@ -65,6 +66,7 @@ public class PublishInvoicesAction implements Runnable {
   private final Dataflow dataflow;
   private final Response response;
   private final YearMonth yearMonth;
+  private final CloudTasksUtils cloudTasksUtils;
 
   @Inject
   PublishInvoicesAction(
@@ -74,7 +76,8 @@ public class PublishInvoicesAction implements Runnable {
       BillingEmailUtils emailUtils,
       Dataflow dataflow,
       Response response,
-      YearMonth yearMonth) {
+      YearMonth yearMonth,
+      CloudTasksUtils cloudTasksUtils) {
     this.projectId = projectId;
     this.jobRegion = jobRegion;
     this.jobId = jobId;
@@ -82,6 +85,7 @@ public class PublishInvoicesAction implements Runnable {
     this.dataflow = dataflow;
     this.response = response;
     this.yearMonth = yearMonth;
+    this.cloudTasksUtils = cloudTasksUtils;
   }
 
   static final String PATH = "/_dr/task/publishInvoices";
@@ -119,10 +123,11 @@ public class PublishInvoicesAction implements Runnable {
   }
 
   private void enqueueCopyDetailReportsTask() {
-    TaskOptions copyDetailTask =
-        TaskOptions.Builder.withUrl(CopyDetailReportsAction.PATH)
-            .method(TaskOptions.Method.POST)
-            .param(PARAM_YEAR_MONTH, yearMonth.toString());
-    QueueFactory.getQueue(BillingModule.CRON_QUEUE).add(copyDetailTask);
+    cloudTasksUtils.enqueue(
+        BillingModule.CRON_QUEUE,
+        CloudTasksUtils.createPostTask(
+            CopyDetailReportsAction.PATH,
+            Service.BACKEND.toString(),
+            ImmutableMultimap.of(PARAM_YEAR_MONTH, yearMonth.toString())));
   }
 }

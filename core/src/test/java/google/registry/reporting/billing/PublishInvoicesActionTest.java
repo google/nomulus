@@ -15,7 +15,6 @@
 package google.registry.reporting.billing;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_MODIFIED;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
@@ -30,10 +29,13 @@ import com.google.api.services.dataflow.Dataflow.Projects.Locations;
 import com.google.api.services.dataflow.Dataflow.Projects.Locations.Jobs;
 import com.google.api.services.dataflow.Dataflow.Projects.Locations.Jobs.Get;
 import com.google.api.services.dataflow.model.Job;
+import com.google.cloud.tasks.v2.HttpMethod;
 import com.google.common.net.MediaType;
 import google.registry.testing.AppEngineExtension;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
 import google.registry.testing.FakeResponse;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
+import google.registry.util.CloudTasksUtils;
 import java.io.IOException;
 import org.joda.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +53,8 @@ class PublishInvoicesActionTest {
   private final Job expectedJob = new Job();
   private final BillingEmailUtils emailUtils = mock(BillingEmailUtils.class);
   private final FakeResponse response = new FakeResponse();
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
+  private final CloudTasksUtils cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
   private PublishInvoicesAction uploadAction;
 
   @RegisterExtension
@@ -72,7 +76,8 @@ class PublishInvoicesActionTest {
             emailUtils,
             dataflow,
             response,
-            new YearMonth(2017, 10));
+            new YearMonth(2017, 10),
+            cloudTasksUtils);
   }
 
   @Test
@@ -84,9 +89,9 @@ class PublishInvoicesActionTest {
     TaskMatcher matcher =
         new TaskMatcher()
             .url("/_dr/task/copyDetailReports")
-            .method("POST")
+            .method(HttpMethod.POST)
             .param("yearMonth", "2017-10");
-    assertTasksEnqueued("retryable-cron-tasks", matcher);
+    cloudTasksHelper.assertTasksEnqueued("retryable-cron-tasks", matcher);
   }
 
   @Test
