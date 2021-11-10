@@ -187,51 +187,6 @@ PRESUBMITS = {
         {"/node_modules/", "google/registry/ui/js/util.js", "registrar_bin."},
     ):
         "JavaScript files should not include console logging.",
-    # SQL injection protection rule for java source file:
-    # The sql template passed to createQuery/createNativeQuery methods must be
-    # a variable name in UPPER_CASE_UNDERSCORE format, i.e., a static final
-    # String variable. This forces the use of parameter-binding on all queries
-    # that take parameters.
-    # The rule would forbid invocation of createQuery(Criteria). However, this
-    # can be handled by adding a helper method in an exempted class to make
-    # the calls.
-    # TODO(b/179158393): enable the 'ConstantName' Java style check to ensure
-    # that non-final variables do not use the UPPER_CASE_UNDERSCORE format.
-    PresubmitCheck(
-        # Line 1: the method names we check and the opening parenthesis, which
-        #    marks the beginning of the first parameter
-        # Line 2: The first parameter is a match if is NOT any of the following:
-        #    - final variable name: \s*([A-Z_]+
-        #    - string literal: "([^"]|\\")*"
-        #    - concatenation of literals: (\s*\+\s*"([^"]|\\")*")*
-        # Line 3: , or the closing parenthesis, marking the end of the first
-        #    parameter
-        r'.*\.(query|createQuery|createNativeQuery)\('
-        r'(?!(\s*([A-Z_]+|"([^"]|\\")*"(\s*\+\s*"([^"]|\\")*")*)'
-        r'(,|\s*\))))',
-        "java",
-        # ActivityReportingQueryBuilder deals with Dremel queries
-        {"src/test", "ActivityReportingQueryBuilder.java",
-         # This class contains helper method to make queries in Beam.
-         "RegistryJpaIO.java",
-         "CreateSyntheticHistoryEntriesAction.java",
-         # TODO(b/179158393): Remove everything below, which should be done
-         # using Criteria
-         "JpaTransactionManager.java",
-         "JpaTransactionManagerImpl.java",
-         # CriteriaQueryBuilder is a false positive
-         "CriteriaQueryBuilder.java",
-         "RdapDomainSearchAction.java",
-         "RdapNameserverSearchAction.java",
-         "ReadOnlyCheckingEntityManager.java",
-         "RegistryQuery",
-         },
-    ):
-        "The first String parameter to EntityManager.create(Native)Query "
-        "methods must be one of the following:\n"
-        "  - A String literal\n"
-        "  - Concatenation of String literals only\n"
-        "  - The name of a static final String variable"
 }
 
 # Note that this regex only works for one kind of Flyway file.  If we want to
