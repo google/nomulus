@@ -175,7 +175,7 @@ public final class RegistryJpaIO {
      * JpaTransactionManager#setDatabaseSnapshot}.
      */
     // TODO(b/193662898): vendor-independent support for richer transaction semantics.
-    public Read<R, T> withSnapshot(String snapshotId) {
+    public Read<R, T> withSnapshot(@Nullable String snapshotId) {
       return toBuilder().snapshotId(snapshotId).build();
     }
 

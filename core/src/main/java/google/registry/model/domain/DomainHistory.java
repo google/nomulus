@@ -18,7 +18,9 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.util.CollectionUtils.nullToEmptyImmutableCopy;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.EntitySubclass;
 import google.registry.model.EppResource;
@@ -381,6 +383,24 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
     @SuppressWarnings("unused")
     private void setId(long id) {
       this.id = id;
+    }
+
+    /**
+     * A deterministic string representation of a {@link DomainHistoryId}. See {@link
+     * ImmutableObject#toString} for more information.
+     */
+    @Override
+    public String toString() {
+      return String.format(
+                  "%s: {\n%s",
+                  getClass().getSimpleName(),
+                  Joiner.on('\n')
+                      .join(
+                          ImmutableSortedMap.<String, Object>of(
+                                  "domainRepoId", getDomainRepoId(), "id", getId())
+                              .entrySet()))
+              .replaceAll("\n", "\n    ")
+          + "\n}";
     }
   }
 

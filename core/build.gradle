@@ -703,6 +703,12 @@ createToolTask(
     'google.registry.tools.DevTool',
     sourceSets.nonprod)
 
+createToolTask(
+    'initSqlPipeline', 'google.registry.beam.initsql.InitSqlPipeline')
+
+createToolTask(
+    'validateSqlPipeline', 'google.registry.beam.comparedb.ValidateSqlPipeline')
+
 
 createToolTask(
     'jpaDemoPipeline', 'google.registry.beam.common.JpaDemoPipeline')
@@ -710,30 +716,6 @@ createToolTask(
 createToolTask(
     'createSyntheticHistoryEntries',
     'google.registry.tools.javascrap.CreateSyntheticHistoryEntriesPipeline')
-
-project.tasks.create('initSqlPipeline', JavaExec) {
-  main = 'google.registry.beam.initsql.InitSqlPipeline'
-
-  doFirst {
-    getToolArgsList().ifPresent {
-      args it
-    }
-
-    def isDirectRunner =
-        args.contains('DirectRunner') || args.contains('--runner=DirectRunner')
-    // The dependency containing DirectRunner is intentionally excluded from the
-    // production binary, so that it won't be chosen by mistake: we definitely do
-    // not want to use it for the real jobs, yet DirectRunner is the default if
-    // the user forgets to override it.
-    // DirectRunner is required for tests and is already on testRuntimeClasspath.
-    // For simplicity, we add testRuntimeClasspath to this task's classpath instead
-    // of defining a new configuration just for the DirectRunner dependency.
-    classpath =
-        isDirectRunner
-            ? sourceSets.main.runtimeClasspath.plus(sourceSets.test.runtimeClasspath)
-            : sourceSets.main.runtimeClasspath
-  }
-}
 
 // Caller must provide projectId, GCP region, runner, and the kinds to delete
 // (comma-separated kind names or '*' for all). E.g.:

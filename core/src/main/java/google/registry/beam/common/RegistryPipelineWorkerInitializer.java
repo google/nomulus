@@ -63,7 +63,8 @@ public class RegistryPipelineWorkerInitializer implements JvmInitializer {
     TransactionManagerFactory.setJpaTmOnBeamWorker(transactionManagerLazy::get);
     // Masquerade all threads as App Engine threads so we can create Ofy keys in the pipeline. Also
     // loads all ofy entities.
-    new AppEngineEnvironment("Beam").setEnvironmentForAllThreads();
+    new AppEngineEnvironment("s~" + registryPipelineComponent.getProjectId())
+        .setEnvironmentForAllThreads();
     // Set the system property so that we can call IdService.allocateId() without access to
     // datastore.
     SystemPropertySetter.PRODUCTION_IMPL.setProperty(PROPERTY, "true");
