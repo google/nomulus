@@ -19,12 +19,22 @@ import static com.google.common.collect.Sets.union;
 import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.EppResourceUtils.loadByForeignKey;
+import static google.registry.model.eppcommon.StatusValue.CLIENT_DELETE_PROHIBITED;
+import static google.registry.model.eppcommon.StatusValue.CLIENT_HOLD;
+import static google.registry.model.eppcommon.StatusValue.CLIENT_RENEW_PROHIBITED;
+import static google.registry.model.eppcommon.StatusValue.SERVER_DELETE_PROHIBITED;
+import static google.registry.model.eppcommon.StatusValue.SERVER_HOLD;
+import static google.registry.model.eppcommon.StatusValue.SERVER_TRANSFER_PROHIBITED;
 import static google.registry.model.eppcommon.StatusValue.SERVER_UPDATE_PROHIBITED;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_CREATE;
+import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.model.tld.Registry.TldState.QUIET_PERIOD;
 import static google.registry.testing.DatabaseHelper.assertBillingEvents;
 import static google.registry.testing.DatabaseHelper.assertNoBillingEvents;
+import static google.registry.testing.DatabaseHelper.assertPollMessagesForResource;
 import static google.registry.testing.DatabaseHelper.createTld;
 import static google.registry.testing.DatabaseHelper.getOnlyHistoryEntryOfType;
+import static google.registry.testing.DatabaseHelper.getPollMessages;
 import static google.registry.testing.DatabaseHelper.loadByKey;
 import static google.registry.testing.DatabaseHelper.loadRegistrar;
 import static google.registry.testing.DatabaseHelper.newDomainBase;
@@ -88,7 +98,7 @@ import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.secdns.DelegationSignerData;
 import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.host.HostResource;
-import google.registry.model.reporting.HistoryEntry;
+import google.registry.model.poll.PollMessage;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DualDatabaseTest;
@@ -155,7 +165,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 .build());
     persistResource(
         new DomainHistory.Builder()
-            .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .setType(DOMAIN_CREATE)
             .setModificationTime(clock.nowUtc())
             .setRegistrarId(domain.getCreationRegistrarId())
             .setDomain(domain)
@@ -179,7 +189,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
                 .build());
     persistResource(
         new DomainHistory.Builder()
-            .setType(HistoryEntry.Type.DOMAIN_CREATE)
+            .setType(DOMAIN_CREATE)
             .setModificationTime(clock.nowUtc())
             .setRegistrarId(domain.getCreationRegistrarId())
             .setDomain(domain)
@@ -202,8 +212,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         .and()
         .hasAuthInfoPwd("2BARfoo")
         .and()
-        .hasOneHistoryEntryEachOfTypes(
-            HistoryEntry.Type.DOMAIN_CREATE, HistoryEntry.Type.DOMAIN_UPDATE)
+        .hasOneHistoryEntryEachOfTypes(DOMAIN_CREATE, DOMAIN_UPDATE)
         .and()
         .hasLastEppUpdateTime(clock.nowUtc())
         .and()
@@ -329,10 +338,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertTransactionalFlow(true);
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     DomainBase domain = reloadResourceByForeignKey();
-    assertAboutDomains()
-        .that(domain)
-        .hasOneHistoryEntryEachOfTypes(
-            HistoryEntry.Type.DOMAIN_CREATE, HistoryEntry.Type.DOMAIN_UPDATE);
+    assertAboutDomains().that(domain).hasOneHistoryEntryEachOfTypes(DOMAIN_CREATE, DOMAIN_UPDATE);
     assertThat(domain.getNameservers()).hasSize(13);
     // getContacts does not return contacts of type REGISTRANT, so check these separately.
     assertThat(domain.getContacts()).hasSize(3);
@@ -349,12 +355,9 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     persistDomain();
     runFlow();
     DomainBase domain = reloadResourceByForeignKey();
-    assertAboutDomains()
-        .that(domain)
-        .hasOneHistoryEntryEachOfTypes(
-            HistoryEntry.Type.DOMAIN_CREATE, HistoryEntry.Type.DOMAIN_UPDATE);
+    assertAboutDomains().that(domain).hasOneHistoryEntryEachOfTypes(DOMAIN_CREATE, DOMAIN_UPDATE);
     assertAboutHistoryEntries()
-        .that(getOnlyHistoryEntryOfType(domain, HistoryEntry.Type.DOMAIN_UPDATE))
+        .that(getOnlyHistoryEntryOfType(domain, DOMAIN_UPDATE))
         .hasMetadataReason("domain-update-test")
         .and()
         .hasMetadataRequestedByRegistrar(true);
@@ -482,10 +485,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     clock.advanceOneMilli();
     runFlowAssertResponse(loadFile("generic_success_response.xml"));
     DomainBase resource = reloadResourceByForeignKey();
-    assertAboutDomains()
-        .that(resource)
-        .hasOnlyOneHistoryEntryWhich()
-        .hasType(HistoryEntry.Type.DOMAIN_UPDATE);
+    assertAboutDomains().that(resource).hasOnlyOneHistoryEntryWhich().hasType(DOMAIN_UPDATE);
     assertThat(resource.getDsData())
         .isEqualTo(
             expectedDsData.stream()
@@ -687,9 +687,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
               .setBillingTime(clock.nowUtc())
               .setParent(
                   getOnlyHistoryEntryOfType(
-                      reloadResourceByForeignKey(),
-                      HistoryEntry.Type.DOMAIN_UPDATE,
-                      DomainHistory.class))
+                      reloadResourceByForeignKey(), DOMAIN_UPDATE, DomainHistory.class))
               .build());
     } else {
       assertNoBillingEvents();
@@ -768,7 +766,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
         .that(reloadResourceByForeignKey())
         .hasStatusValue(StatusValue.CLIENT_UPDATE_PROHIBITED)
         .and()
-        .hasStatusValue(StatusValue.SERVER_HOLD);
+        .hasStatusValue(SERVER_HOLD);
   }
 
   private void doSecDnsFailingTest(
@@ -910,12 +908,103 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   }
 
   @TestOfyAndSql
-  void testSuccess_superuserStatusValueNotClientSettable() throws Exception {
+  void testSuccess_superuserCanSetServerStatusValues() throws Exception {
     setEppInput("domain_update_prohibited_status.xml");
     persistReferencedEntities();
     persistDomain();
     runFlowAssertResponse(
         CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
+    // No poll message because the server status was added by the owning registrar.
+    assertThat(getPollMessages()).isEmpty();
+  }
+
+  @TestOfyAndSql
+  void testSuccess_addingServerStatusValue_sendsPollMessage() throws Exception {
+    setEppInput("domain_update_prohibited_status.xml");
+    persistReferencedEntities();
+    persistDomain();
+    persistResource(
+        reloadResourceByForeignKey()
+            .asBuilder()
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
+            .build());
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
+    DomainBase updatedDomain = reloadResourceByForeignKey();
+    assertPollMessagesForResource(
+        updatedDomain,
+        new PollMessage.OneTime.Builder()
+            .setEventTime(clock.nowUtc())
+            .setParent(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
+            .setRegistrarId("NewRegistrar")
+            .setMsg("The registry administrator has added the status(es) [serverHold].")
+            .build());
+  }
+
+  @TestOfyAndSql
+  void testSuccess_removingServerStatusValue_sendsPollMessage() throws Exception {
+    setEppInput("domain_update_remove_server_statuses.xml");
+    persistReferencedEntities();
+    persistDomain();
+    persistResource(
+        reloadResourceByForeignKey()
+            .asBuilder()
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
+            .setStatusValues(
+                ImmutableSet.of(
+                    SERVER_DELETE_PROHIBITED,
+                    SERVER_TRANSFER_PROHIBITED,
+                    SERVER_UPDATE_PROHIBITED,
+                    CLIENT_DELETE_PROHIBITED,
+                    CLIENT_RENEW_PROHIBITED,
+                    CLIENT_HOLD,
+                    SERVER_HOLD))
+            .build());
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
+    DomainBase updatedDomain = reloadResourceByForeignKey();
+    assertPollMessagesForResource(
+        updatedDomain,
+        new PollMessage.OneTime.Builder()
+            .setEventTime(clock.nowUtc())
+            .setParent(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
+            .setRegistrarId("NewRegistrar")
+            .setMsg(
+                "The registry administrator has removed the status(es) [serverHold,"
+                    + " serverTransferProhibited, serverUpdateProhibited].")
+            .build());
+  }
+
+  @TestOfyAndSql
+  void testSuccess_addingAndRemovingServerStatusValues_sendsPollMessage() throws Exception {
+    setEppInput("domain_update_change_server_statuses.xml");
+    persistReferencedEntities();
+    persistDomain();
+    persistResource(
+        reloadResourceByForeignKey()
+            .asBuilder()
+            .setPersistedCurrentSponsorRegistrarId("NewRegistrar")
+            .setStatusValues(
+                ImmutableSet.of(
+                    SERVER_DELETE_PROHIBITED,
+                    SERVER_TRANSFER_PROHIBITED,
+                    CLIENT_DELETE_PROHIBITED,
+                    CLIENT_RENEW_PROHIBITED))
+            .build());
+    runFlowAssertResponse(
+        CommitMode.LIVE, UserPrivileges.SUPERUSER, loadFile("generic_success_response.xml"));
+    DomainBase updatedDomain = reloadResourceByForeignKey();
+    assertPollMessagesForResource(
+        updatedDomain,
+        new PollMessage.OneTime.Builder()
+            .setEventTime(clock.nowUtc())
+            .setParent(getOnlyHistoryEntryOfType(updatedDomain, DOMAIN_UPDATE))
+            .setRegistrarId("NewRegistrar")
+            .setMsg(
+                "The registry administrator has added the status(es) [serverHold,"
+                    + " serverRenewProhibited] and removed the status(es)"
+                    + " [serverTransferProhibited].")
+            .build());
   }
 
   @TestOfyAndSql

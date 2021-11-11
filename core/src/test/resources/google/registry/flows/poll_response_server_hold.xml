@@ -1,0 +1,16 @@
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
+  <response>
+    <result code="1301">
+      <msg>Command completed successfully; ack to dequeue</msg>
+    </result>
+    <msgQ count="1" id="1-7-TLD-14-16-2000">
+      <qDate>2000-06-02T13:00:00Z</qDate>
+      <msg>The registry administrator has added the status(es) [serverHold].
+      </msg>
+    </msgQ>
+    <trID>
+      <clTRID>ABC-12345</clTRID>
+      <svTRID>server-trid</svTRID>
+    </trID>
+  </response>
+</epp>
