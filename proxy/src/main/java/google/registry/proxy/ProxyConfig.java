@@ -30,6 +30,8 @@ public class ProxyConfig {
     SANDBOX_CANARY,
     CRASH,
     CRASH_CANARY,
+    QA,
+    QA_CANARY,
     ALPHA,
     LOCAL,
   }
