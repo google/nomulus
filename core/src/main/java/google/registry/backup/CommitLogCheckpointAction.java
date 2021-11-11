@@ -80,7 +80,7 @@ public final class CommitLogCheckpointAction implements Runnable {
               // Enqueue a diff task between previous and current checkpoints.
               cloudTasksUtils.enqueue(
                   QUEUE_NAME,
-                  CloudTasksUtils.createGetTask(
+                  CloudTasksUtils.createPostTask(
                       ExportCommitLogDiffAction.PATH,
                       Service.BACKEND.toString(),
                       ImmutableMultimap.of(
