@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: proxy-deployment-canary
+  labels:
+    app: proxy-canary
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: proxy-canary
+  template:
+    metadata:
+      labels:
+        app: proxy-canary
+    spec:
+      containers:
+      - name: proxy-canary
+        image: gcr.io/GCP_PROJECT/proxy
+        ports:
+        - containerPort: 30000
+          name: health-check
+        - containerPort: 30001
+          name: whois
+        - containerPort: 30002
+          name: epp
+        - containerPort: 30010
+          name: http-whois
+        - containerPort: 30011
+          name: https-whois
+        readinessProbe:
+          tcpSocket:
+            port: health-check
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: health-check
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        imagePullPolicy: Always
+        args: ["--env", "qa_canary", "--log"]
+        env:
+        - name: POD_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: CONTAINER_NAME
+          value: proxy-canary
