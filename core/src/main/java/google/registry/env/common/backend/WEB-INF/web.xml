@@ -157,6 +157,12 @@
     <url-pattern>/_dr/cron/readDnsQueue</url-pattern>
   </servlet-mapping>
 
+  <!-- Replicates SQL transactions to Datastore during the Registry 3.0 migration. -->
+  <servlet-mapping>
+    <servlet-name>backend-servlet</servlet-name>
+    <url-pattern>/_dr/cron/replicateToDatastore</url-pattern>
+  </servlet-mapping>
+
   <!-- Publishes DNS updates. -->
   <servlet-mapping>
     <servlet-name>backend-servlet</servlet-name>

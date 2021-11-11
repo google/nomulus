@@ -3,6 +3,7 @@ PATH                                               CLASS                        
 /_dr/cron/commitLogFanout                          CommitLogFanoutAction                          GET      y  INTERNAL,API APP ADMIN
 /_dr/cron/fanout                                   TldFanoutAction                                GET      y  INTERNAL,API APP ADMIN
 /_dr/cron/readDnsQueue                             ReadDnsQueueAction                             GET      y  INTERNAL,API APP ADMIN
+/_dr/cron/replicateToDatastore                     ReplicateToDatastoreAction                     GET      y  INTERNAL,API APP ADMIN
 /_dr/dnsRefresh                                    RefreshDnsAction                               GET      y  INTERNAL,API APP ADMIN
 /_dr/task/backupDatastore                          BackupDatastoreAction                          POST     y  INTERNAL,API APP ADMIN
 /_dr/task/brdaCopy                                 BrdaCopyAction                                 POST     y  INTERNAL,API APP ADMIN
