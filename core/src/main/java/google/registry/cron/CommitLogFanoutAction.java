@@ -50,7 +50,7 @@ public final class CommitLogFanoutAction implements Runnable {
     for (int bucketId : CommitLogBucket.getBucketIds()) {
       cloudTasksUtils.enqueue(
           queue,
-          CloudTasksUtils.createGetTask(
+          CloudTasksUtils.createPostTask(
               endpoint,
               Service.BACKEND.toString(),
               ImmutableMultimap.of(BUCKET_PARAM, Integer.toString(bucketId)),

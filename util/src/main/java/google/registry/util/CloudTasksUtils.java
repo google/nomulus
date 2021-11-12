@@ -94,7 +94,7 @@ public class CloudTasksUtils implements Serializable {
    *     Queue API if no service is specified, the service which enqueues the task will be used to
    *     process the task. Cloud Tasks API does not support this feature so the service will always
    *     needs to be explicitly specified.
-   * @param params A multi-map of URL query parameters. Duplicate keys are saved as is, and it is up
+   * @param params a multi-map of URL query parameters. Duplicate keys are saved as is, and it is up
    *     to the server to process the duplicate keys.
    * @return the enqueued task.
    * @see <a
@@ -135,6 +135,24 @@ public class CloudTasksUtils implements Serializable {
     return Task.newBuilder().setAppEngineHttpRequest(requestBuilder.build()).build();
   }
 
+  /**
+   * Create a {@link Task} to be enqueued.
+   *
+   * @param path the relative URI (staring with a slash and ending without one).
+   * @param method the HTTP method to be used for the request, only GET and POST are supported.
+   * @param service the App Engine service to route the request to. Note that with App Engine Task
+   *     Queue API if no service is specified, the service which enqueues the task will be used to
+   *     process the task. Cloud Tasks API does not support this feature so the service will always
+   *     needs to be explicitly specified.
+   * @param params a multi-map of URL query parameters. Duplicate keys are saved as is, and it is up
+   *     to the server to process the duplicate keys.
+   * @param clock a source of time.
+   * @param jitterSeconds the number of seconds that a task is randomly delayed up to.
+   * @return the enqueued task.
+   * @see <a
+   *     href=ttps://cloud.google.com/appengine/docs/standard/java/taskqueue/push/creating-tasks#target>Specifyinig
+   *     the worker service</a>
+   */
   private static Task createTask(
       String path,
       HttpMethod method,
@@ -142,14 +160,14 @@ public class CloudTasksUtils implements Serializable {
       Multimap<String, String> params,
       Clock clock,
       Optional<Integer> jitterSeconds) {
+    if ((jitterSeconds.isPresent() && jitterSeconds.get() <= 0) || jitterSeconds.isEmpty()) {
+      return createTask(path, method, service, params);
+    }
     Instant scheduleTime =
         Instant.ofEpochMilli(
             clock
                 .nowUtc()
-                .plusMillis(
-                    jitterSeconds
-                        .map(seconds -> random.nextInt((int) SECONDS.toMillis(seconds)))
-                        .orElse(0))
+                .plusMillis(random.nextInt((int) SECONDS.toMillis(jitterSeconds.get())))
                 .getMillis());
     return Task.newBuilder(createTask(path, method, service, params))
         .setScheduleTime(
