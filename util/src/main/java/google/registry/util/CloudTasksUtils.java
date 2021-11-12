@@ -136,7 +136,7 @@ public class CloudTasksUtils implements Serializable {
   }
 
   /**
-   * Create a {@link Task} to be enqueued.
+   * Create a {@link Task} to be enqueued with a random delay up to {@code jitterSeconds}.
    *
    * @param path the relative URI (staring with a slash and ending without one).
    * @param method the HTTP method to be used for the request, only GET and POST are supported.
@@ -160,7 +160,7 @@ public class CloudTasksUtils implements Serializable {
       Multimap<String, String> params,
       Clock clock,
       Optional<Integer> jitterSeconds) {
-    if ((jitterSeconds.isPresent() && jitterSeconds.get() <= 0) || jitterSeconds.isEmpty()) {
+    if (jitterSeconds.isEmpty() || jitterSeconds.get() <= 0) {
       return createTask(path, method, service, params);
     }
     Instant scheduleTime =
