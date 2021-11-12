@@ -67,7 +67,6 @@ import google.registry.model.replay.SqlReplayCheckpoint;
 import google.registry.model.server.Lock;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
-import google.registry.model.tmch.TmchCrl;
 import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManager;
@@ -482,7 +481,8 @@ public class ReplayCommitLogsToSqlActionTest {
 
     jpaTm().transact(() -> SqlReplayCheckpoint.set(now.minusMinutes(1).minusMillis(1)));
     // Save a couple deletes that aren't propagated to SQL (the objects deleted are irrelevant)
-    Key<TmchCrl> tmchCrlKey = Key.create(TmchCrl.class, 1L);
+    Key<CommitLogManifest> manifestKey =
+        CommitLogManifest.createKey(getBucketKey(1), now.minusMinutes(1));
     saveDiffFile(
         gcsUtils,
         createCheckpoint(now.minusMinutes(1)),
@@ -490,7 +490,7 @@ public class ReplayCommitLogsToSqlActionTest {
             getBucketKey(1),
             now.minusMinutes(1),
             // one object only exists in Datastore, one is dually-written (so isn't replicated)
-            ImmutableSet.of(getCrossTldKey(), tmchCrlKey)));
+            ImmutableSet.of(getCrossTldKey(), manifestKey)));
 
     runAndAssertSuccess(now.minusMinutes(1), 1, 1);
     verify(spy, times(0)).delete(any(VKey.class));
