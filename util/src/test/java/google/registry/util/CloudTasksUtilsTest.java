@@ -15,6 +15,7 @@
 package google.registry.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -93,13 +94,11 @@ public class CloudTasksUtilsTest {
 
     Instant scheduleTime = Instant.ofEpochSecond(task.getScheduleTime().getSeconds());
     Instant lowerBoundTime = Instant.ofEpochMilli(clock.nowUtc().getMillis());
-    Instant upperBound = Instant.ofEpochMilli(clock.nowUtc().plusMillis(1).getMillis());
+    Instant upperBound =
+        Instant.ofEpochMilli(clock.nowUtc().plusMillis((int) SECONDS.toMillis(100)).getMillis());
 
-    assertThat(scheduleTime.getEpochSecond() + scheduleTime.getNano())
-        .isAtLeast(lowerBoundTime.getEpochSecond() + lowerBoundTime.getNano());
-
-    assertThat(scheduleTime.getEpochSecond() + scheduleTime.getNano())
-        .isAtMost(upperBound.getEpochSecond() + upperBound.getNano());
+    assertThat(scheduleTime.isBefore(lowerBoundTime)).isFalse();
+    assertThat(upperBound.isBefore(scheduleTime)).isFalse();
   }
 
   @SuppressWarnings("ProtoTimestampGetSecondsGetNano")
@@ -119,13 +118,11 @@ public class CloudTasksUtilsTest {
 
     Instant scheduleTime = Instant.ofEpochSecond(task.getScheduleTime().getSeconds());
     Instant lowerBoundTime = Instant.ofEpochMilli(clock.nowUtc().getMillis());
-    Instant upperBound = Instant.ofEpochMilli(clock.nowUtc().plusMillis(1).getMillis());
+    Instant upperBound =
+        Instant.ofEpochMilli(clock.nowUtc().plusMillis((int) SECONDS.toMillis(1)).getMillis());
 
-    assertThat(scheduleTime.getEpochSecond() + scheduleTime.getNano())
-        .isAtLeast(lowerBoundTime.getEpochSecond() + lowerBoundTime.getNano());
-
-    assertThat(scheduleTime.getEpochSecond() + scheduleTime.getNano())
-        .isAtMost(upperBound.getEpochSecond() + upperBound.getNano());
+    assertThat(scheduleTime.isBefore(lowerBoundTime)).isFalse();
+    assertThat(upperBound.isBefore(scheduleTime)).isFalse();
   }
 
   @Test
