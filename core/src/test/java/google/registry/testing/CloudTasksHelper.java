@@ -188,7 +188,7 @@ public class CloudTasksHelper implements Serializable {
 
     String taskName;
     String service;
-    HttpMethod method;
+    HttpMethod method = HttpMethod.POST;  // Task queue methods default to "POST".
     String url;
     Multimap<String, String> headers = ArrayListMultimap.create();
     Multimap<String, String> params = ArrayListMultimap.create();
