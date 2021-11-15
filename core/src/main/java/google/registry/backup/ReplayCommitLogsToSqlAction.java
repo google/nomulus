@@ -140,7 +140,7 @@ public class ReplayCommitLogsToSqlAction implements Runnable {
       response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
       response.setPayload(message);
     } finally {
-      lock.ifPresent(Lock::release);
+      lock.ifPresent(Lock::releaseSql);
     }
   }
 
