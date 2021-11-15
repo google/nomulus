@@ -235,7 +235,7 @@ public final class DomainTransferRequestFlow implements TransactionalFlow {
             .build();
     DomainHistory domainHistory = buildDomainHistory(newDomain, registry, now, period);
 
-    asyncTaskEnqueuer.enqueueAsyncResave(newDomain, now, automaticTransferTime);
+    asyncTaskEnqueuer.enqueueAsyncResave(newDomain.createVKey(), now, automaticTransferTime);
     tm().putAll(
             new ImmutableSet.Builder<>()
                 .add(newDomain, domainHistory, requestPollMessage)

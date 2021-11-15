@@ -187,7 +187,7 @@ public final class DomainDeleteFlow implements TransactionalFlow {
     } else {
       DateTime redemptionTime = now.plus(redemptionGracePeriodLength);
       asyncTaskEnqueuer.enqueueAsyncResave(
-          existingDomain, now, ImmutableSortedSet.of(redemptionTime, deletionTime));
+          existingDomain.createVKey(), now, ImmutableSortedSet.of(redemptionTime, deletionTime));
       builder
           .setDeletionTime(deletionTime)
           .setStatusValues(ImmutableSet.of(StatusValue.PENDING_DELETE))
