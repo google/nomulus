@@ -470,7 +470,7 @@ task soyToJava {
 
     outputs.each { file ->
       exec {
-        commandLine 'sed', '-i', 's/@link/LINK/g', file.getCanonicalPath()
+        commandLine 'sed', '-i""', '-e', 's/@link/LINK/g', file.getCanonicalPath()
       }
     }
   }
