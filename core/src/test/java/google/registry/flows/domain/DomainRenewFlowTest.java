@@ -42,6 +42,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
 import google.registry.flows.ResourceFlowTestCase;
@@ -73,10 +74,12 @@ import google.registry.model.reporting.DomainTransactionRecord;
 import google.registry.model.reporting.DomainTransactionRecord.TransactionReportField;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.SetClockExtension;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import java.util.Map;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -869,5 +872,21 @@ class DomainRenewFlowTest extends ResourceFlowTestCase<DomainRenewFlow, DomainBa
                 historyEntry.getModificationTime().plusMinutes(9),
                 TransactionReportField.netRenewsFieldFromYears(5),
                 1));
+  }
+
+  @TestOfyOnly
+  void testModification_duringReadOnlyPhase() throws Exception {
+    persistDomain();
+    DomainBase domain = reloadResourceByForeignKey();
+    persistResource(
+        domain
+            .asBuilder()
+            .setRegistrationExpirationTime(domain.getRegistrationExpirationTime().minusYears(1))
+            .build());
+    clock.setTo(clock.nowUtc().minusSeconds(2));
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
+    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

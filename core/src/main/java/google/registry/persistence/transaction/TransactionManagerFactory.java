@@ -157,7 +157,7 @@ public class TransactionManagerFactory {
 
   /** Registry is currently undergoing maintenance and is in read-only mode. */
   public static class ReadOnlyModeException extends IllegalStateException {
-    ReadOnlyModeException() {
+    public ReadOnlyModeException() {
       super("Registry is currently undergoing maintenance and is in read-only mode");
     }
   }

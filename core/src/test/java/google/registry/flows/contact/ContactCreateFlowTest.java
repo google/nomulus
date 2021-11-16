@@ -26,15 +26,18 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.contact.ContactFlowUtils.BadInternationalizedPostalInfoException;
 import google.registry.flows.contact.ContactFlowUtils.DeclineContactDisclosureFieldDisallowedPolicyException;
 import google.registry.flows.exceptions.ResourceAlreadyExistsForThisClientException;
 import google.registry.flows.exceptions.ResourceCreateContentionException;
 import google.registry.model.contact.ContactResource;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -136,5 +139,13 @@ class ContactCreateFlowTest extends ResourceFlowTestCase<ContactCreateFlow, Cont
   void testIcannActivityReportField_getsLogged() throws Exception {
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-create");
+  }
+
+  @TestOfyOnly
+  void testModification_duringReadOnlyPhase() {
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
+    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

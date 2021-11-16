@@ -65,6 +65,7 @@ import org.joda.time.DateTime;
  * hosts cannot have any. This flow allows creating a host name, and if necessary enqueues tasks to
  * update DNS.
  *
+ * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.IpAddressVersionMismatchException}
  * @error {@link ResourceAlreadyExistsForThisClientException}
  * @error {@link ResourceCreateContentionException}

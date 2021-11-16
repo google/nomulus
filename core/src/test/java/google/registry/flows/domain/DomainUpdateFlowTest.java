@@ -59,6 +59,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig;
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.ResourceFlowTestCase;
@@ -101,9 +102,11 @@ import google.registry.model.host.HostResource;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.tld.Registry;
 import google.registry.persistence.VKey;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import java.util.Optional;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -133,7 +136,7 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
   final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   @BeforeEach
-  void initDomainTest() {
+  void beforeEach() {
     createTld("tld");
     // Note that "domain_update.xml" tests adding and removing the same contact type.
     setEppInput("domain_update.xml");
@@ -1494,5 +1497,15 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     clock.advanceOneMilli();
     runFlowAsSuperuser();
     assertAboutDomains().that(reloadResourceByForeignKey()).hasNoAutorenewEndTime();
+  }
+
+  @TestOfyOnly
+  void testModification_duringReadOnlyPhase() throws Exception {
+    persistReferencedEntities();
+    persistDomain();
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
+    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }
