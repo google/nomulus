@@ -416,4 +416,45 @@ public class BillingEventTest extends EntityTestCase {
     assertThat(recurring.getParentKey()).isEqualTo(Key.create(domainHistory));
     new BillingEvent.OneTime.Builder().setParent(Key.create(domainHistory));
   }
+
+  @TestOfyAndSql
+  void testReasonRequiringPeriodYears_missingPeriodYears_throwsException() {
+    IllegalStateException thrown =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                new BillingEvent.OneTime.Builder()
+                    .setBillingTime(DateTime.parse("2020-02-05T15:33:11Z"))
+                    .setEventTime(DateTime.parse("2020-01-05T15:33:11Z"))
+                    .setReason(Reason.RENEW));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Period years must be set if and only if reason is");
+  }
+
+  @TestOfyAndSql
+  void testReasonNotRequiringPeriodYears_havingPeriodYears_throwsException() {
+    IllegalStateException thrown =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                new BillingEvent.OneTime.Builder()
+                    .setBillingTime(DateTime.parse("2020-02-05T15:33:11Z"))
+                    .setEventTime(DateTime.parse("2020-01-05T15:33:11Z"))
+                    .setPeriodYears(2)
+                    .setReason(Reason.SERVER_STATUS));
+    assertThat(thrown)
+        .hasMessageThat()
+        .contains("Period years must be set if and only if reason is");
+  }
+
+  @TestOfyAndSql
+  void testReasonRequiringPeriodYears_missingPeriodYears_isAllowedOnOldData() {
+    // This won't throw even though periodYears is missing on a RESTORE because the event time
+    // is before 2019.
+    new BillingEvent.OneTime.Builder()
+        .setBillingTime(DateTime.parse("2018-02-05T15:33:11Z"))
+        .setEventTime(DateTime.parse("2018-01-05T15:33:11Z"))
+        .setReason(Reason.RESTORE);
+  }
 }
