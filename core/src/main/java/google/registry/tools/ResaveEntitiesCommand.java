@@ -37,7 +37,7 @@ public final class ResaveEntitiesCommand extends MutatingCommand {
   /** The number of resaves to do in a single transaction. */
   private static final int BATCH_SIZE = 10;
 
-  //TODO(rachelguan): figure out if there's a guide that shows how a websafe key should look like
+  // TODO(rachelguan): figure out if there's a guide that shows how a websafe key should look like
   @Parameter(description = "Websafe keys", required = true)
   List<String> mainParameters;
 

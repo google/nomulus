@@ -83,6 +83,7 @@ public class CommitLogMutation extends ImmutableObject implements DatastoreOnlyE
     CommitLogMutation instance = new CommitLogMutation();
     instance.parent = checkNotNull(parent);
     // Creates a web-safe key string.
+    // TODO(rachelguan): figure out if this should be modified as part of (b/184350590)
     instance.entityKey = KeyFactory.keyToString(rawEntity.getKey());
     instance.entityProtoBytes = convertToPb(rawEntity).toByteArray();
     return instance;
@@ -91,6 +92,7 @@ public class CommitLogMutation extends ImmutableObject implements DatastoreOnlyE
   /** Returns the key of a mutation based on the {@code entityKey} of the entity it stores. */
   public static
       Key<CommitLogMutation> createKey(Key<CommitLogManifest> parent, Key<?> entityKey) {
+    // TODO(rachelguan): this affects EppResourceUtils; is this gonna be used to create a VKey?
     return Key.create(parent, CommitLogMutation.class, entityKey.getString());
   }
 }
