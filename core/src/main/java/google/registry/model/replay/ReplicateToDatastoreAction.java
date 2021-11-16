@@ -194,7 +194,7 @@ public class ReplicateToDatastoreAction implements Runnable {
       response.setStatus(SC_INTERNAL_SERVER_ERROR);
       response.setPayload(message);
     } finally {
-      lock.ifPresent(Lock::release);
+      lock.ifPresent(Lock::releaseSql);
     }
   }
 
