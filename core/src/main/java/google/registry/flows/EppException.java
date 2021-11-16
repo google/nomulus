@@ -25,10 +25,12 @@ import google.registry.model.eppinput.EppInput.InnerCommand;
 import google.registry.model.eppinput.EppInput.ResourceCommandWrapper;
 import google.registry.model.eppoutput.Result;
 import google.registry.model.eppoutput.Result.Code;
+import google.registry.persistence.transaction.TransactionManagerFactory.ReadOnlyModeException;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import javax.annotation.Nullable;
 
 /** Exception used to propagate all failures containing one or more EPP responses. */
 public abstract class EppException extends Exception {
@@ -37,7 +39,12 @@ public abstract class EppException extends Exception {
 
   /** Create an EppException with a custom message. */
   private EppException(String message) {
-    super(message);
+    this(message, null);
+  }
+
+  /** Create an EppException with a custom message and cause. */
+  private EppException(String message, @Nullable Throwable cause) {
+    super(message, cause);
     Code code = getClass().getAnnotation(EppResultCode.class).value();
     Preconditions.checkState(!code.isSuccess());
     this.result = Result.create(code, message);
@@ -253,6 +260,14 @@ public abstract class EppException extends Exception {
   public static class UnimplementedProtocolVersionException extends EppException {
     public UnimplementedProtocolVersionException() {
       super("Specified protocol version is not implemented");
+    }
+  }
+
+  /** Registry is currently undergoing maintenance and is in read-only mode. */
+  @EppResultCode(Code.COMMAND_FAILED)
+  public static class ReadOnlyModeEppException extends EppException {
+    ReadOnlyModeEppException(ReadOnlyModeException cause) {
+      super("Registry is currently undergoing maintenance and is in read-only mode", cause);
     }
   }
 }

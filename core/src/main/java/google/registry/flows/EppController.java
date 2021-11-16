@@ -143,9 +143,6 @@ public final class EppController {
   /** Creates a response indicating an EPP failure. */
   @VisibleForTesting
   static EppOutput getErrorResponse(Result result, Trid trid) {
-    return EppOutput.create(new EppResponse.Builder()
-        .setResult(result)
-        .setTrid(trid)
-        .build());
+    return EppOutput.create(new EppResponse.Builder().setResult(result).setTrid(trid).build());
   }
 }

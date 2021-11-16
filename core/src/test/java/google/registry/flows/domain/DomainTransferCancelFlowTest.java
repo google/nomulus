@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
@@ -55,9 +56,11 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,7 +77,7 @@ class DomainTransferCancelFlowTest
   final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   @BeforeEach
-  void setUp() {
+  void beforeEach() {
     setEppInput("domain_transfer_cancel.xml");
     setRegistrarIdForFlow("NewRegistrar");
     setupDomainWithPendingTransfer("example", "tld");
@@ -415,5 +418,13 @@ class DomainTransferCancelFlowTest
     // We should only produce a cancellation record for the original transfer success
     assertThat(persistedEntry.getDomainTransactionRecords())
         .containsExactly(previousSuccessRecord.asBuilder().setReportAmount(-1).build());
+  }
+
+  @TestOfyOnly
+  void testModification_duringReadOnlyPhase() {
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
+    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

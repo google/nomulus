@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
@@ -51,9 +52,11 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import google.registry.testing.TestSqlOnly;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -241,6 +244,15 @@ class ContactDeleteFlowTest extends ResourceFlowTestCase<ContactDeleteFlow, Cont
     clock.advanceOneMilli();
     runFlow();
     assertIcannReportingActivityFieldLogged("srs-cont-delete");
+  }
+
+  @TestOfyOnly
+  void testModification_duringReadOnlyPhase() throws Exception {
+    persistActiveContact(getUniqueIdFromCommand());
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
+    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 
   private void assertOfyDeleteSuccess(String registrarId, String clientTrid, boolean isSuperuser)

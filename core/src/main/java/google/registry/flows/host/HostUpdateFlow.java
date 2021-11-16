@@ -73,11 +73,12 @@ import org.joda.time.DateTime;
  * hosts. Internal hosts must have at least one IP address associated with them, whereas external
  * hosts cannot have any.
  *
- * <p>This flow allows changing a host name, and adding or removing IP addresses to hosts. When
- * a host is renamed from internal to external all IP addresses must be simultaneously removed, and
+ * <p>This flow allows changing a host name, and adding or removing IP addresses to hosts. When a
+ * host is renamed from internal to external all IP addresses must be simultaneously removed, and
  * when it is renamed from external to internal at least one must be added. If the host is renamed
  * or IP addresses are added, tasks are enqueued to update DNS accordingly.
  *
+ * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.ResourceFlowUtils.AddRemoveSameValueException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}

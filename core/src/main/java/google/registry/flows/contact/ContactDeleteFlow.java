@@ -60,6 +60,7 @@ import org.joda.time.DateTime;
  * references to the host before the deletion is allowed to proceed. A poll message will be written
  * with the success or failure message when the process is complete.
  *
+ * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}
  * @error {@link google.registry.flows.exceptions.ResourceStatusProhibitsOperationException}
