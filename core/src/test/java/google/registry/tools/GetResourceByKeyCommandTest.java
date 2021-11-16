@@ -79,7 +79,9 @@ class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKeyComman
                     "agR0ZXN0chULEgpEb21haW5CYXNlIgU0LVRMRAw"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Could not load resource for key: Key<?>(DomainBase(\"4-TLD\"))");
+        .contains(
+            "Could not load resource for key:"
+                + " kind:google.registry.model.domain.DomainBase@sql:rO0ABXQABTQtVExE@ofy:agR0ZXN0chULEgpEb21haW5CYXNlIgU0LVRMRAw");
   }
 
   @Test
@@ -128,7 +130,9 @@ class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKeyComman
                     "agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjMtUk9JRAw"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Could not load resource for key: Key<?>(ContactResource(\"3-ROID\"))");
+        .contains(
+            "Could not load resource for key:"
+                + " kind:google.registry.model.contact.ContactResource@sql:rO0ABXQABjMtUk9JRA@ofy:agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjMtUk9JRAw");
   }
 
   @Test
@@ -177,7 +181,9 @@ class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKeyComman
                     "agR0ZXN0chgLEgxIb3N0UmVzb3VyY2UiBjMtUk9JRAw"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Could not load resource for key: Key<?>(HostResource(\"3-ROID\"))");
+        .contains(
+            "Could not load resource for key:"
+                + " kind:google.registry.model.host.HostResource@sql:rO0ABXQABjMtUk9JRA@ofy:agR0ZXN0chgLEgxIb3N0UmVzb3VyY2UiBjMtUk9JRAw");
   }
 
   @Test
@@ -210,7 +216,9 @@ class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKeyComman
             () -> runCommand("agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Could not load resource for key: Key<?>(DomainBase(\"2-TLD\"))");
+        .contains(
+            "Could not load resource for key:"
+                + " kind:google.registry.model.domain.DomainBase@sql:rO0ABXQABTItVExE@ofy:agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw");
   }
 
   @Test
