@@ -112,7 +112,6 @@ public enum StatusValue implements EppEnum {
    */
   PENDING_UPDATE(AllowedOn.NONE),
 
-
   /** A non-client-settable status that prevents deletes of EPP resources. */
   SERVER_DELETE_PROHIBITED(AllowedOn.ALL),
 
@@ -160,6 +159,10 @@ public enum StatusValue implements EppEnum {
   public boolean isClientSettable() {
     // This is the actual definition of client-settable statuses; see RFC5730 section 2.3.
     return xmlName.startsWith("client");
+  }
+
+  public boolean isServerSettable() {
+    return xmlName.startsWith("server");
   }
 
   public boolean isChargedStatus() {

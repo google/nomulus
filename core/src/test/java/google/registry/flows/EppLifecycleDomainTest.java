@@ -1449,4 +1449,39 @@ class EppLifecycleDomainTest extends EppTestCase {
         .atTime("2001-01-08T00:00:00Z")
         .hasResponse("domain_transfer_query_response_completed_fakesite.xml");
   }
+
+  @TestOfyAndSql
+  void testDomainUpdateBySuperuser_sendsPollMessage() throws Exception {
+    setIsSuperuser(false);
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+    createContacts(DateTime.parse("2000-06-01T00:00:00Z"));
+
+    // Create domain example.tld
+    assertThatCommand(
+            "domain_create_no_hosts_or_dsdata.xml", ImmutableMap.of("DOMAIN", "example.tld"))
+        .atTime("2000-06-01T00:02:00Z")
+        .hasResponse(
+            "domain_create_response.xml",
+            ImmutableMap.of(
+                "DOMAIN", "example.tld",
+                "CRDATE", "2000-06-01T00:02:00Z",
+                "EXDATE", "2002-06-01T00:02:00Z"));
+    assertThatLogoutSucceeds();
+
+    setIsSuperuser(true);
+    assertThatLoginSucceeds("TheRegistrar", "password2");
+    // Run domain update that adds server status as superuser
+    assertThatCommand("domain_update_server_hold.xml")
+        .atTime("2000-06-02T13:00:00Z")
+        .hasResponse("generic_success_response.xml");
+    assertThatLogoutSucceeds();
+    setIsSuperuser(false);
+
+    assertThatLoginSucceeds("NewRegistrar", "foo-BAR2");
+    // Verify that the owning registrar now has the correct poll message
+    assertThatCommand("poll.xml")
+        .atTime("2000-06-02T13:00:01Z")
+        .hasResponse("poll_response_server_hold.xml");
+    assertThatLogoutSucceeds();
+  }
 }

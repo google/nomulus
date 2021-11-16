@@ -16,6 +16,7 @@ package google.registry.flows.domain;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.google.common.collect.ImmutableSortedSet.toImmutableSortedSet;
 import static com.google.common.collect.Sets.symmetricDifference;
 import static com.google.common.collect.Sets.union;
 import static google.registry.flows.FlowUtils.persistEntityChanges;
@@ -43,6 +44,9 @@ import static google.registry.model.reporting.HistoryEntry.Type.DOMAIN_UPDATE;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.Sets;
 import com.google.common.net.InternetDomainName;
 import google.registry.dns.DnsQueue;
 import google.registry.flows.EppException;
@@ -76,6 +80,7 @@ import google.registry.model.eppcommon.StatusValue;
 import google.registry.model.eppinput.EppInput;
 import google.registry.model.eppinput.ResourceCommand;
 import google.registry.model.eppoutput.EppResponse;
+import google.registry.model.poll.PollMessage;
 import google.registry.model.reporting.IcannReportingTypes.ActivityReportField;
 import google.registry.model.tld.Registry;
 import java.util.Optional;
@@ -175,6 +180,9 @@ public final class DomainUpdateFlow implements TransactionalFlow {
     Optional<BillingEvent.OneTime> statusUpdateBillingEvent =
         createBillingEventForStatusUpdates(existingDomain, newDomain, domainHistory, now);
     statusUpdateBillingEvent.ifPresent(entitiesToSave::add);
+    Optional<PollMessage.OneTime> serverStatusUpdatePollMessage =
+        createPollMessageForServerStatusUpdates(existingDomain, newDomain, domainHistory, now);
+    serverStatusUpdatePollMessage.ifPresent(entitiesToSave::add);
     EntityChanges entityChanges =
         flowCustomLogic.beforeSave(
             BeforeSaveParameters.newBuilder()
@@ -305,5 +313,51 @@ public final class DomainUpdateFlow implements TransactionalFlow {
       }
     }
     return Optional.empty();
+  }
+
+  /** Enqueues a poll message iff a superuser is adding/removing server statuses. */
+  private Optional<PollMessage.OneTime> createPollMessageForServerStatusUpdates(
+      DomainBase existingDomain, DomainBase newDomain, DomainHistory historyEntry, DateTime now) {
+    if (registrarId.equals(existingDomain.getPersistedCurrentSponsorRegistrarId())) {
+      // Don't send a poll message when a superuser registrar is updating its own domain.
+      return Optional.empty();
+    }
+    ImmutableSortedSet<String> addedServerStatuses =
+        Sets.difference(newDomain.getStatusValues(), existingDomain.getStatusValues()).stream()
+            .filter(StatusValue::isServerSettable)
+            .map(StatusValue::getXmlName)
+            .collect(toImmutableSortedSet(Ordering.natural()));
+    ImmutableSortedSet<String> removedServerStatuses =
+        Sets.difference(existingDomain.getStatusValues(), newDomain.getStatusValues()).stream()
+            .filter(StatusValue::isServerSettable)
+            .map(StatusValue::getXmlName)
+            .collect(toImmutableSortedSet(Ordering.natural()));
+
+    String msg = "";
+    if (addedServerStatuses.size() > 0 && removedServerStatuses.size() > 0) {
+      msg =
+          String.format(
+              "The registry administrator has added the status(es) %s and removed the status(es)"
+                  + " %s.",
+              addedServerStatuses, removedServerStatuses);
+    } else if (addedServerStatuses.size() > 0) {
+      msg =
+          String.format(
+              "The registry administrator has added the status(es) %s.", addedServerStatuses);
+    } else if (removedServerStatuses.size() > 0) {
+      msg =
+          String.format(
+              "The registry administrator has removed the status(es) %s.", removedServerStatuses);
+    } else {
+      return Optional.empty();
+    }
+
+    return Optional.ofNullable(
+        new PollMessage.OneTime.Builder()
+            .setParent(historyEntry)
+            .setEventTime(now)
+            .setRegistrarId(existingDomain.getCurrentSponsorRegistrarId())
+            .setMsg(msg)
+            .build());
   }
 }
