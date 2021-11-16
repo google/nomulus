@@ -40,6 +40,7 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.eppoutput.Result;
 import google.registry.model.eppoutput.Result.Code;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.persistence.transaction.TransactionManagerFactory.ReadOnlyModeException;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.FakeClock;
 import google.registry.util.Clock;
@@ -244,6 +245,26 @@ class EppControllerTest {
     LogRecord logRecord =
         findFirstLogRecordWithMessagePrefix(logHandler, "Unexpected failure in flow execution");
     assertThat(logRecord.getThrown()).isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void testHandleEppCommand_throwsReadOnlyException_givesUsefulMessage() throws Exception {
+    when(flowRunner.run(eppController.eppMetricBuilder)).thenThrow(new ReadOnlyModeException());
+    EppOutput output =
+        eppController.handleEppCommand(
+            sessionMetadata,
+            transportCredentials,
+            EppRequestSource.UNIT_TEST,
+            false,
+            true,
+            domainCreateXml.getBytes(UTF_8));
+    assertAboutLogs()
+        .that(logHandler)
+        .hasLogAtLevelWithMessage(INFO, "Flow failed due to read-only mode");
+    assertThat(output.isSuccess()).isFalse();
+    assertThat(output.getResponse().getResult().getCode()).isEqualTo(Code.COMMAND_FAILED);
+    assertThat(output.getResponse().getResult().getMsg())
+        .isEqualTo("Registry is currently undergoing maintenance and is in read-only mode");
   }
 
   @SuppressWarnings("unchecked")

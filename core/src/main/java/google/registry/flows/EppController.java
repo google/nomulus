@@ -33,6 +33,7 @@ import google.registry.model.eppoutput.EppResponse;
 import google.registry.model.eppoutput.Result;
 import google.registry.model.eppoutput.Result.Code;
 import google.registry.monitoring.whitebox.EppMetric;
+import google.registry.persistence.transaction.TransactionManagerFactory.ReadOnlyModeException;
 import java.util.Optional;
 import javax.inject.Inject;
 import org.json.simple.JSONValue;
@@ -133,6 +134,11 @@ public final class EppController {
       logger.atInfo().withCause(e).log("Flow returned failure response.");
       EppException eppEx = (EppException) (e instanceof EppException ? e : e.getCause());
       return getErrorResponse(eppEx.getResult(), flowComponent.trid());
+    } catch (ReadOnlyModeException e) {
+      // In the special case of a read-only-mode exception, tell the user we are in read-only mode
+      logger.atInfo().withCause(e).log("Flow failed due to read-only mode");
+      return getErrorResponse(
+          Result.create(Code.COMMAND_FAILED, e.getMessage()), flowComponent.trid());
     } catch (Throwable e) {
       // Something bad and unexpected happened. Send the client a generic error, and log at SEVERE.
       logger.atSevere().withCause(e).log("Unexpected failure in flow execution.");
@@ -143,9 +149,6 @@ public final class EppController {
   /** Creates a response indicating an EPP failure. */
   @VisibleForTesting
   static EppOutput getErrorResponse(Result result, Trid trid) {
-    return EppOutput.create(new EppResponse.Builder()
-        .setResult(result)
-        .setTrid(trid)
-        .build());
+    return EppOutput.create(new EppResponse.Builder().setResult(result).setTrid(trid).build());
   }
 }
