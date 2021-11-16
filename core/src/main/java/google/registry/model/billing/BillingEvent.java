@@ -27,7 +27,6 @@ import static google.registry.util.PreconditionsUtils.checkArgumentNotNull;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -77,14 +76,29 @@ public abstract class BillingEvent extends ImmutableObject
 
   /** The reason for the bill, which maps 1:1 to skus in go/registry-billing-skus. */
   public enum Reason {
-    CREATE,
+    CREATE(true),
     @Deprecated // TODO(b/31676071): remove this legacy value once old data is cleaned up.
-    ERROR,
-    FEE_EARLY_ACCESS,
-    RENEW,
-    RESTORE,
-    SERVER_STATUS,
-    TRANSFER
+    ERROR(false),
+    FEE_EARLY_ACCESS(true),
+    RENEW(true),
+    RESTORE(true),
+    SERVER_STATUS(false),
+    TRANSFER(true);
+
+    private final boolean requiresPeriod;
+
+    Reason(boolean requiresPeriod) {
+      this.requiresPeriod = requiresPeriod;
+    }
+
+    /**
+     * Returns whether billing events with this reason have a period years associated with them.
+     *
+     * <p>Note that this is an "if an only if" condition.
+     */
+    public boolean hasPeriodYears() {
+      return requiresPeriod;
+    }
   }
 
   /** Set of flags that can be applied to billing events. */
@@ -268,7 +282,7 @@ public abstract class BillingEvent extends ImmutableObject
     public T build() {
       T instance = getInstance();
       checkNotNull(instance.reason, "Reason must be set");
-      checkNotNull(instance.clientId, "Client ID must be set");
+      checkNotNull(instance.clientId, "Registrar ID must be set");
       checkNotNull(instance.eventTime, "Event time must be set");
       checkNotNull(instance.targetId, "Target ID must be set");
       checkNotNull(instance.parent, "Parent must be set");
@@ -462,17 +476,14 @@ public abstract class BillingEvent extends ImmutableObject
         checkNotNull(instance.billingTime);
         checkNotNull(instance.cost);
         checkState(!instance.cost.isNegative(), "Costs should be non-negative.");
-        ImmutableSet<Reason> reasonsWithPeriods =
-            Sets.immutableEnumSet(
-                Reason.CREATE,
-                Reason.FEE_EARLY_ACCESS,
-                Reason.RENEW,
-                Reason.RESTORE,
-                Reason.TRANSFER);
-        checkState(
-            reasonsWithPeriods.contains(instance.reason) == (instance.periodYears != null),
-            "Period years must be set if and only if reason is "
-                + "CREATE, FEE_EARLY_ACCESS, RENEW, RESTORE or TRANSFER.");
+        // TODO(mcilwain): Enforce this check on all billing events (not just more recent ones)
+        //                 post-migration after we add the missing period years values in SQL.
+        if (instance.eventTime.isAfter(DateTime.parse("2019-01-01T00:00:00Z"))) {
+          checkState(
+              instance.reason.hasPeriodYears() == (instance.periodYears != null),
+              "Period years must be set if and only if reason is "
+                  + "CREATE, FEE_EARLY_ACCESS, RENEW, RESTORE or TRANSFER.");
+        }
         checkState(
             instance.getFlags().contains(Flag.SYNTHETIC)
                 == (instance.syntheticCreationTime != null),
