@@ -789,13 +789,6 @@ enum google.registry.model.tld.Registry$TldType {
   REAL;
   TEST;
 }
-class google.registry.model.tmch.TmchCrl {
-  @Id long id;
-  @Parent com.googlecode.objectify.Key<google.registry.model.common.EntityGroupRoot> parent;
-  java.lang.String crl;
-  java.lang.String url;
-  org.joda.time.DateTime updated;
-}
 class google.registry.model.transfer.ContactTransferData {
   google.registry.model.eppcommon.Trid transferRequestTrid;
   google.registry.model.transfer.TransferStatus transferStatus;

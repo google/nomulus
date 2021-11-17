@@ -15,39 +15,26 @@
 package google.registry.model.tmch;
 
 import static com.google.common.truth.Truth.assertThat;
-import static google.registry.testing.DatabaseHelper.loadByEntity;
 
 import google.registry.model.EntityTestCase;
-import google.registry.testing.DualDatabaseTest;
-import google.registry.testing.TestOfyAndSql;
 import java.util.Optional;
+import org.junit.jupiter.api.Test;
 
 /** Unit tests for {@link TmchCrl}. */
-@DualDatabaseTest
 public class TmchCrlTest extends EntityTestCase {
 
   TmchCrlTest() {
     super(JpaEntityCoverageCheck.ENABLED);
   }
 
-  @TestOfyAndSql
+  @Test
   void testSuccess() {
     assertThat(TmchCrl.get()).isEqualTo(Optional.empty());
     TmchCrl.set("lolcat", "https://lol.cat");
     assertThat(TmchCrl.get().get().getCrl()).isEqualTo("lolcat");
   }
 
-  @TestOfyAndSql
-  void testDualWrite() {
-    TmchCrl expected = new TmchCrl();
-    expected.crl = "lolcat";
-    expected.url = "https://lol.cat";
-    expected.updated = fakeClock.nowUtc();
-    TmchCrl.set("lolcat", "https://lol.cat");
-    assertThat(loadByEntity(new TmchCrl())).isEqualTo(expected);
-  }
-
-  @TestOfyAndSql
+  @Test
   void testMultipleWrites() {
     TmchCrl.set("first", "https://first.cat");
     assertThat(TmchCrl.get().get().getCrl()).isEqualTo("first");

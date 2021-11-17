@@ -43,7 +43,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.server.Lock;
 import google.registry.model.server.ServerSecret;
 import google.registry.model.tld.Registry;
-import google.registry.model.tmch.TmchCrl;
 
 /** Sets of classes of the Objectify-registered entities in use throughout the model. */
 public final class EntityClasses {
@@ -85,8 +84,7 @@ public final class EntityClasses {
           Registrar.class,
           RegistrarContact.class,
           Registry.class,
-          ServerSecret.class,
-          TmchCrl.class);
+          ServerSecret.class);
 
   private EntityClasses() {}
 }
