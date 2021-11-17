@@ -30,6 +30,9 @@ import google.registry.testing.FakeClock;
 import google.registry.testing.FakeSleeper;
 import google.registry.util.CloudTasksUtils.SerializableCloudTasksClient;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Optional;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +44,7 @@ public class CloudTasksUtilsTest {
   private final CloudTasksUtils cloudTasksUtils =
       new CloudTasksUtils(
           new Retrier(new FakeSleeper(new FakeClock()), 1), "project", "location", mockClient);
+  private final Clock clock = new FakeClock(DateTime.parse("2021-11-08"));
 
   @BeforeEach
   void beforeEach() {
@@ -59,6 +63,7 @@ public class CloudTasksUtilsTest {
         .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
     assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
         .isEqualTo("myservice");
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
   }
 
   @Test
@@ -72,6 +77,103 @@ public class CloudTasksUtilsTest {
         .isEqualTo("application/x-www-form-urlencoded");
     assertThat(task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8))
         .isEqualTo("key1=val1&key2=val2&key1=val3");
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @SuppressWarnings("ProtoTimestampGetSecondsGetNano")
+  @Test
+  void testSuccess_createGetTasks_withJitterSeconds() {
+    Task task =
+        CloudTasksUtils.createGetTask("/the/path", "myservice", params, clock, Optional.of(100));
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri())
+        .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+
+    Instant scheduleTime = Instant.ofEpochSecond(task.getScheduleTime().getSeconds());
+    Instant lowerBoundTime = Instant.ofEpochMilli(clock.nowUtc().getMillis());
+    Instant upperBound = Instant.ofEpochMilli(clock.nowUtc().plusSeconds(100).getMillis());
+
+    assertThat(scheduleTime.isBefore(lowerBoundTime)).isFalse();
+    assertThat(upperBound.isBefore(scheduleTime)).isFalse();
+  }
+
+  @SuppressWarnings("ProtoTimestampGetSecondsGetNano")
+  @Test
+  void testSuccess_createPostTasks_withJitterSeconds() {
+    Task task =
+        CloudTasksUtils.createPostTask("/the/path", "myservice", params, clock, Optional.of(1));
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getAppEngineHttpRequest().getHeadersMap().get("Content-Type"))
+        .isEqualTo("application/x-www-form-urlencoded");
+    assertThat(task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8))
+        .isEqualTo("key1=val1&key2=val2&key1=val3");
+    assertThat(task.getScheduleTime().getSeconds()).isNotEqualTo(0);
+
+    Instant scheduleTime = Instant.ofEpochSecond(task.getScheduleTime().getSeconds());
+    Instant lowerBoundTime = Instant.ofEpochMilli(clock.nowUtc().getMillis());
+    Instant upperBound = Instant.ofEpochMilli(clock.nowUtc().plusSeconds(1).getMillis());
+
+    assertThat(scheduleTime.isBefore(lowerBoundTime)).isFalse();
+    assertThat(upperBound.isBefore(scheduleTime)).isFalse();
+  }
+
+  @Test
+  void testSuccess_createPostTasks_withEmptyJitterSeconds() {
+    Task task =
+        CloudTasksUtils.createPostTask("/the/path", "myservice", params, clock, Optional.empty());
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getAppEngineHttpRequest().getHeadersMap().get("Content-Type"))
+        .isEqualTo("application/x-www-form-urlencoded");
+    assertThat(task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8))
+        .isEqualTo("key1=val1&key2=val2&key1=val3");
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_createGetTasks_withEmptyJitterSeconds() {
+    Task task =
+        CloudTasksUtils.createGetTask("/the/path", "myservice", params, clock, Optional.empty());
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri())
+        .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_createPostTasks_withZeroJitterSeconds() {
+    Task task =
+        CloudTasksUtils.createPostTask("/the/path", "myservice", params, clock, Optional.of(0));
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.POST);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri()).isEqualTo("/the/path");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getAppEngineHttpRequest().getHeadersMap().get("Content-Type"))
+        .isEqualTo("application/x-www-form-urlencoded");
+    assertThat(task.getAppEngineHttpRequest().getBody().toString(StandardCharsets.UTF_8))
+        .isEqualTo("key1=val1&key2=val2&key1=val3");
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
+  }
+
+  @Test
+  void testSuccess_createGetTasks_withZeroJitterSeconds() {
+    Task task =
+        CloudTasksUtils.createGetTask("/the/path", "myservice", params, clock, Optional.of(0));
+    assertThat(task.getAppEngineHttpRequest().getHttpMethod()).isEqualTo(HttpMethod.GET);
+    assertThat(task.getAppEngineHttpRequest().getRelativeUri())
+        .isEqualTo("/the/path?key1=val1&key2=val2&key1=val3");
+    assertThat(task.getAppEngineHttpRequest().getAppEngineRouting().getService())
+        .isEqualTo("myservice");
+    assertThat(task.getScheduleTime().getSeconds()).isEqualTo(0);
   }
 
   @Test

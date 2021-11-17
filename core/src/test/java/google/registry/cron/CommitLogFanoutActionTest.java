@@ -15,14 +15,13 @@
 package google.registry.cron;
 
 import static google.registry.cron.CommitLogFanoutAction.BUCKET_PARAM;
-import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
 
 import com.google.common.base.Joiner;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.testing.AppEngineExtension;
-import google.registry.testing.TaskQueueHelper.TaskMatcher;
-import google.registry.util.Retrier;
-import google.registry.util.TaskQueueUtils;
+import google.registry.testing.CloudTasksHelper;
+import google.registry.testing.CloudTasksHelper.TaskMatcher;
+import google.registry.testing.FakeClock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +33,7 @@ class CommitLogFanoutActionTest {
 
   private static final String ENDPOINT = "/the/servlet";
   private static final String QUEUE = "the-queue";
+  private final CloudTasksHelper cloudTasksHelper = new CloudTasksHelper();
 
   @RegisterExtension
   final AppEngineExtension appEngineExtension =
@@ -54,15 +54,16 @@ class CommitLogFanoutActionTest {
   @Test
   void testSuccess() {
     CommitLogFanoutAction action = new CommitLogFanoutAction();
-    action.taskQueueUtils = new TaskQueueUtils(new Retrier(null, 1));
+    action.cloudTasksUtils = cloudTasksHelper.getTestCloudTasksUtils();
     action.endpoint = ENDPOINT;
     action.queue = QUEUE;
     action.jitterSeconds = Optional.empty();
+    action.clock = new FakeClock();
     action.run();
     List<TaskMatcher> matchers = new ArrayList<>();
     for (int bucketId : CommitLogBucket.getBucketIds()) {
       matchers.add(new TaskMatcher().url(ENDPOINT).param(BUCKET_PARAM, Integer.toString(bucketId)));
     }
-    assertTasksEnqueued(QUEUE, matchers);
+    cloudTasksHelper.assertTasksEnqueued(QUEUE, matchers);
   }
 }
