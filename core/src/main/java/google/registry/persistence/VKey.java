@@ -311,4 +311,25 @@ public class VKey<T> extends ImmutableObject implements Serializable {
     }
     return key;
   }
+
+  /**
+   * Constructs the readable string representation of a {@link VKey}.
+   *
+   * <p>This readable string representation of a vkey contains its type and its sql key or ofy key,
+   * or both.
+   */
+  public String getInfo() {
+    if (maybeGetOfyKey().isPresent() && maybeGetSqlKey().isPresent()) {
+      return String.format(
+          "VKey<%s>(sqlKey:%s,ofyKey:%s)",
+          getKind().getSimpleName(), getSqlKey().toString(), getOfyKey().getName());
+    } else if (maybeGetSqlKey().isPresent()) {
+      return String.format(
+          "VKey<%s>(sqlKey:%s)", getKind().getSimpleName(), getSqlKey().toString());
+    } else if (maybeGetOfyKey().isPresent()) {
+      return String.format("VKey<%s>(ofyKey:%s)", getKind().getSimpleName(), getOfyKey().getName());
+    } else {
+      throw new IllegalStateException("VKey should contain at least one form of key");
+    }
+  }
 }
