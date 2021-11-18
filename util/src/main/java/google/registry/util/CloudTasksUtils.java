@@ -160,7 +160,7 @@ public class CloudTasksUtils implements Serializable {
       Multimap<String, String> params,
       Clock clock,
       Optional<Integer> jitterSeconds) {
-    if (jitterSeconds.isEmpty() || jitterSeconds.get() <= 0) {
+    if (!jitterSeconds.isPresent() || jitterSeconds.get() <= 0) {
       return createTask(path, method, service, params);
     }
     Instant scheduleTime =
