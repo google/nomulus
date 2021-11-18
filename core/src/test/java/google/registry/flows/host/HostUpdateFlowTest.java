@@ -46,7 +46,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.ResourceFlowTestCase;
@@ -78,7 +77,6 @@ import google.registry.model.reporting.HistoryEntry;
 import google.registry.model.tld.Registry;
 import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferStatus;
-import google.registry.persistence.VKey;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
@@ -221,9 +219,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertTasksEnqueued(
         QUEUE_ASYNC_HOST_RENAME,
         new TaskMatcher()
-            .param(
-                "hostKey",
-                VKey.create(HostResource.class, host.getRepoId(), Key.create(host)).stringify())
+            .param("hostKey", renamedHost.createVKey().getOfyKey().getString())
             .param("requestedTime", clock.nowUtc().toString()));
   }
 

@@ -55,7 +55,7 @@ abstract class GetEppResourceCommand implements CommandWithRemoteApi {
             ? String.format(
                 "%s\n\nWebsafe key: %s",
                 expand ? resource.get().toHydratedString() : resource.get(),
-                resource.get().createVKey().stringify())
+                resource.get().createVKey().getOfyKey().getString())
             : String.format("%s '%s' does not exist or is deleted\n", resourceType, uniqueId));
   }
 

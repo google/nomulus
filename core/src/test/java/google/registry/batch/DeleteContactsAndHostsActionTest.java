@@ -496,7 +496,7 @@ public class DeleteContactsAndHostsActionTest
         QUEUE_ASYNC_DELETE,
         new TaskMatcher()
             .etaDelta(standardHours(23), standardHours(25))
-            .param("resourceKey", contactNotSaved.createVKey().stringify())
+            .param("resourceKey", contactNotSaved.createVKey().getOfyKey().getString())
             .param("requestingClientId", "TheRegistrar")
             .param("clientTransactionId", "fakeClientTrid")
             .param("serverTransactionId", "fakeServerTrid")
@@ -504,7 +504,7 @@ public class DeleteContactsAndHostsActionTest
             .param("requestedTime", timeBeforeRun.toString()),
         new TaskMatcher()
             .etaDelta(standardHours(23), standardHours(25))
-            .param("resourceKey", hostNotSaved.createVKey().stringify())
+            .param("resourceKey", hostNotSaved.createVKey().getOfyKey().getString())
             .param("requestingClientId", "TheRegistrar")
             .param("clientTransactionId", "fakeClientTrid")
             .param("serverTransactionId", "fakeServerTrid")

@@ -76,6 +76,7 @@ public class ResaveEntityAction implements Runnable {
         "Re-saving entity %s which was enqueued at %s.", resourceKey, requestedTime);
     tm().transact(
             () -> {
+              // TODO(@rachelguan): should this be modified as well for vkey string replacement?
               ImmutableObject entity = tm().loadByKey(VKey.from(resourceKey));
               tm().put(
                       (entity instanceof EppResource)
