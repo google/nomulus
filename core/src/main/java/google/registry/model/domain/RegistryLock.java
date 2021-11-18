@@ -28,6 +28,8 @@ import google.registry.util.DateTimeUtils;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import javax.annotation.Nullable;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -100,7 +102,11 @@ public final class RegistryLock extends ImmutableObject implements Buildable, Sq
   private String registrarPocId;
 
   /** When the lock is first requested. */
-  @Column(nullable = false)
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "creationTime",
+        column = @Column(name = "lockRequestTime", nullable = false))
+  })
   private CreateAutoTimestamp lockRequestTime = CreateAutoTimestamp.create(null);
 
   /** When the unlock is first requested. */

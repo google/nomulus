@@ -100,3 +100,4 @@ V99__drop_kms_secret_table.sql
 V100__database_migration_schedule.sql
 V101__domain_add_dns_refresh_request_time.sql
 V102__add_indexes_to_domain_history_sub_tables.sql
+V103__creation_time_not_null.sql

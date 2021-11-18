@@ -122,7 +122,6 @@ public class AllocationToken extends BackupGroupRoot implements Buildable, Datas
   @Nullable @Index String domainName;
 
   /** When this token was created. */
-  @Column(nullable = false)
   CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /** Allowed registrar client IDs for this token, or null if all registrars are allowed. */
