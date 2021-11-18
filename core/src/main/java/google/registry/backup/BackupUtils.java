@@ -41,11 +41,12 @@ public class BackupUtils {
   }
 
   /**
-   * Converts the given {@link ImmutableObject} to a raw Datastore entity and write it to an
-   * {@link OutputStream} in delimited protocol buffer format.
+   * Converts the given {@link ImmutableObject} to a raw Datastore entity and write it to an {@link
+   * OutputStream} in delimited protocol buffer format.
    */
   static void serializeEntity(ImmutableObject entity, OutputStream stream) throws IOException {
-    EntityTranslator.convertToPb(auditedOfy().save().toEntity(entity)).writeDelimitedTo(stream);
+    EntityTranslator.convertToPb(auditedOfy().saveIgnoringReadOnly().toEntity(entity))
+        .writeDelimitedTo(stream);
   }
 
   /**
