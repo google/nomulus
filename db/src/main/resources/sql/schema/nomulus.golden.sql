@@ -690,7 +690,8 @@ CREATE TABLE public."PollMessage" (
     transfer_response_transfer_request_time timestamp with time zone,
     transfer_response_transfer_status text,
     autorenew_end_time timestamp with time zone,
-    autorenew_domain_name text
+    autorenew_domain_name text,
+    transfer_response_host_id text
 );
 
 
