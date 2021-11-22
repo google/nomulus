@@ -79,7 +79,6 @@ public class BatchModule {
 
   @Provides
   @Parameter(PARAM_RESOURCE_KEY)
-  // TODO(@rachelguan): figure out if this needs to modified for vkey string replacement
   static Key<ImmutableObject> provideResourceKey(HttpServletRequest req) {
     return Key.create(extractRequiredParameter(req, PARAM_RESOURCE_KEY));
   }
