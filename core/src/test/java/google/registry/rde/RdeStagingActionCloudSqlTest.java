@@ -79,6 +79,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
     action.watermarks = ImmutableSet.of();
     action.revision = Optional.empty();
     action.dataflow = dataflow;
+    action.machineType = "machine-type";
   }
 
   @TestSqlOnly
@@ -156,7 +157,7 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
   }
 
   @TestSqlOnly
-  void testRun_afterTransactionCooldown_runsMapReduce() throws Exception {
+  void testRun_afterTransactionCooldown_runsPipeline() throws Exception {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01T00:05:00Z"));
     action.transactionCooldown = Duration.standardMinutes(5);
@@ -241,18 +242,19 @@ public class RdeStagingActionCloudSqlTest extends BeamActionTestBase {
   }
 
   @TestSqlOnly
-  void testManualRun_validParameters_runsMapReduce() throws Exception {
+  void testManualRun_validParameters_runsPipeline() throws Exception {
     createTldWithEscrowEnabled("lol");
     clock.setTo(DateTime.parse("2000-01-01TZ"));
     action.manual = true;
     action.directory = Optional.of("test/");
     action.modeStrings = ImmutableSet.of("full");
     action.tlds = ImmutableSet.of("lol");
-    action.watermarks = ImmutableSet.of(DateTime.parse("2001-01-01TZ"));
+    action.watermarks =
+        ImmutableSet.of(DateTime.parse("1999-12-31TZ"), DateTime.parse("2001-01-01TZ"));
     action.run();
     assertThat(response.getStatus()).isEqualTo(200);
-    assertThat(response.getPayload()).contains("Launched RDE pipeline: jobid");
-    verify(templates, times(1))
+    assertThat(response.getPayload()).contains("Launched RDE pipeline: jobid, jobid1");
+    verify(templates, times(2))
         .launch(eq("projectId"), eq("jobRegion"), any(LaunchFlexTemplateRequest.class));
   }
 

@@ -57,7 +57,8 @@ import org.apache.beam.sdk.values.TypeDescriptor;
 /**
  * Definition of a Dataflow Flex pipeline template, which generates a given month's invoices.
  *
- * <p>To stage this template locally, run the {@code stage_beam_pipeline.sh} shell script.
+ * <p>To stage this template locally, run {@code ./nom_build :core:sBP --environment=alpha
+ * --pipeline=invoicing}.
  *
  * <p>Then, you can run the staged template via the API client library, gCloud or a raw REST call.
  *

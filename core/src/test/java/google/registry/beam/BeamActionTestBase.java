@@ -29,8 +29,10 @@ import com.google.api.services.dataflow.model.LaunchFlexTemplateRequest;
 import com.google.api.services.dataflow.model.LaunchFlexTemplateResponse;
 import google.registry.testing.FakeResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.mockito.stubbing.Answer;
 
 /** Base class for all actions that launches a Dataflow Flex template. */
 @MockitoSettings(strictness = Strictness.STRICT_STUBS)
@@ -42,8 +44,19 @@ public abstract class BeamActionTestBase {
   private Locations locations = mock(Locations.class);
   protected FlexTemplates templates = mock(FlexTemplates.class);
   protected Launch launch = mock(Launch.class);
-  private LaunchFlexTemplateResponse launchResponse =
-      new LaunchFlexTemplateResponse().setJob(new Job().setId("jobid"));
+  private Answer<LaunchFlexTemplateResponse> answer =
+      new Answer<LaunchFlexTemplateResponse>() {
+        private Integer times = 0;
+
+        @Override
+        public LaunchFlexTemplateResponse answer(InvocationOnMock invocation) throws Throwable {
+          LaunchFlexTemplateResponse response =
+              new LaunchFlexTemplateResponse()
+                  .setJob(new Job().setId("jobid" + (times == 0 ? "" : times.toString())));
+          times = times + 1;
+          return response;
+        }
+      };
 
   @BeforeEach
   protected void beforeEach() throws Exception {
@@ -52,6 +65,6 @@ public abstract class BeamActionTestBase {
     when(locations.flexTemplates()).thenReturn(templates);
     when(templates.launch(anyString(), anyString(), any(LaunchFlexTemplateRequest.class)))
         .thenReturn(launch);
-    when(launch.execute()).thenReturn(launchResponse);
+    when(launch.execute()).thenAnswer(answer);
   }
 }

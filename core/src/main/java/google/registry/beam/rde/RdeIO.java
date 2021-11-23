@@ -75,6 +75,8 @@ public class RdeIO {
   abstract static class Write
       extends PTransform<PCollection<KV<PendingDeposit, Iterable<DepositFragment>>>, PDone> {
 
+    private static final long serialVersionUID = 3334807737227087760L;
+
     abstract GcsUtils gcsUtils();
 
     abstract CloudTasksUtils cloudTasksUtils();
@@ -113,8 +115,9 @@ public class RdeIO {
           .apply(
               "Write to GCS",
               ParDo.of(new RdeWriter(gcsUtils(), rdeBucket(), stagingKeyBytes(), validationMode())))
-          .apply("Update cursors", ParDo.of(new CursorUpdater()))
-          .apply("Enqueue upload action", ParDo.of(new UploadEnqueuer(cloudTasksUtils())));
+          .apply(
+              "Update cursor and enqueue next action",
+              ParDo.of(new CursorUpdater(cloudTasksUtils())));
       return PDone.in(input.getPipeline());
     }
   }
@@ -123,6 +126,7 @@ public class RdeIO {
       extends DoFn<KV<PendingDeposit, Iterable<DepositFragment>>, KV<PendingDeposit, Integer>> {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final long serialVersionUID = 5496375923068400382L;
 
     private final GcsUtils gcsUtils;
     private final String rdeBucket;
@@ -169,7 +173,7 @@ public class RdeIO {
         checkState(key.directoryWithTrailingSlash() != null, "Manual subdirectory not specified");
         prefix = prefix + "/manual/" + key.directoryWithTrailingSlash() + basename;
       } else {
-        prefix = prefix + "/" + basename;
+        prefix = prefix + '/' + basename;
       }
       BlobId xmlFilename = BlobId.of(rdeBucket, prefix + ".xml.ghostryde");
       // This file will contain the byte length (ASCII) of the raw unencrypted XML.
@@ -250,12 +254,20 @@ public class RdeIO {
     }
   }
 
-  private static class CursorUpdater extends DoFn<KV<PendingDeposit, Integer>, PendingDeposit> {
+  private static class CursorUpdater extends DoFn<KV<PendingDeposit, Integer>, Void> {
+
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final long serialVersionUID = 5822176227753327224L;
+
+    private final CloudTasksUtils cloudTasksUtils;
+
+    private CursorUpdater(CloudTasksUtils cloudTasksUtils) {
+      this.cloudTasksUtils = cloudTasksUtils;
+    }
 
     @ProcessElement
     public void processElement(
-        @Element KV<PendingDeposit, Integer> input, OutputReceiver<PendingDeposit> outputReceiver) {
+        @Element KV<PendingDeposit, Integer> input, PipelineOptions options) {
       tm().transact(
               () -> {
                 PendingDeposit key = input.getKey();
@@ -282,46 +294,32 @@ public class RdeIO {
                 logger.atInfo().log(
                     "Rolled forward %s on %s cursor to %s.", key.cursor(), key.tld(), newPosition);
                 RdeRevision.saveRevision(key.tld(), key.watermark(), key.mode(), revision);
+                if (key.mode() == RdeMode.FULL) {
+                  cloudTasksUtils.enqueue(
+                      RDE_UPLOAD_QUEUE,
+                      CloudTasksUtils.createPostTask(
+                          RdeUploadAction.PATH,
+                          Service.BACKEND.getServiceId(),
+                          ImmutableMultimap.of(
+                              RequestParameters.PARAM_TLD,
+                              key.tld(),
+                              RdeModule.PARAM_PREFIX,
+                              options.getJobName() + '/')));
+                } else {
+                  cloudTasksUtils.enqueue(
+                      BRDA_QUEUE,
+                      CloudTasksUtils.createPostTask(
+                          BrdaCopyAction.PATH,
+                          Service.BACKEND.getServiceId(),
+                          ImmutableMultimap.of(
+                              RequestParameters.PARAM_TLD,
+                              key.tld(),
+                              RdeModule.PARAM_WATERMARK,
+                              key.watermark().toString(),
+                              RdeModule.PARAM_PREFIX,
+                              options.getJobName() + '/')));
+                }
               });
-      outputReceiver.output(input.getKey());
-    }
-  }
-
-  private static class UploadEnqueuer extends DoFn<PendingDeposit, Void> {
-
-    private final CloudTasksUtils cloudTasksUtils;
-
-    private UploadEnqueuer(CloudTasksUtils cloudTasksUtils) {
-      this.cloudTasksUtils = cloudTasksUtils;
-    }
-
-    @ProcessElement
-    public void processElement(@Element PendingDeposit input, PipelineOptions options) {
-      if (input.mode() == RdeMode.FULL) {
-        cloudTasksUtils.enqueue(
-            RDE_UPLOAD_QUEUE,
-            CloudTasksUtils.createPostTask(
-                RdeUploadAction.PATH,
-                Service.BACKEND.getServiceId(),
-                ImmutableMultimap.of(
-                    RequestParameters.PARAM_TLD,
-                    input.tld(),
-                    RdeModule.PARAM_PREFIX,
-                    options.getJobName() + '/')));
-      } else {
-        cloudTasksUtils.enqueue(
-            BRDA_QUEUE,
-            CloudTasksUtils.createPostTask(
-                BrdaCopyAction.PATH,
-                Service.BACKEND.getServiceId(),
-                ImmutableMultimap.of(
-                    RequestParameters.PARAM_TLD,
-                    input.tld(),
-                    RdeModule.PARAM_WATERMARK,
-                    input.watermark().toString(),
-                    RdeModule.PARAM_PREFIX,
-                    options.getJobName() + '/')));
-      }
     }
   }
 }
