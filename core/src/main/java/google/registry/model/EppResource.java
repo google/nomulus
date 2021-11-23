@@ -50,6 +50,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import javax.persistence.Access;
 import javax.persistence.AccessType;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
@@ -112,7 +114,9 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
    * <p>This can be null in the case of pre-Registry-3.0-migration history objects with null
    * resource fields.
    */
-  @Index CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
+  @AttributeOverrides({@AttributeOverride(name = "creationTime", column = @Column())})
+  @Index
+  CreateAutoTimestamp creationTime = CreateAutoTimestamp.create(null);
 
   /**
    * The time when this resource was or will be deleted.

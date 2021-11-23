@@ -763,7 +763,7 @@ CREATE TABLE public."Registrar" (
     client_certificate text,
     client_certificate_hash text,
     contacts_require_syncing boolean NOT NULL,
-    creation_time timestamp with time zone,
+    creation_time timestamp with time zone NOT NULL,
     drive_folder_id text,
     email_address text,
     failover_client_certificate text,

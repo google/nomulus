@@ -27,6 +27,8 @@ import google.registry.model.replay.SqlOnlyEntity;
 import google.registry.model.tld.label.ReservedList.ReservedListEntry;
 import java.util.Map;
 import java.util.Optional;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -56,7 +58,11 @@ public class ClaimsList extends ImmutableObject implements SqlOnlyEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long revisionId;
 
-  @Column(nullable = false)
+  @AttributeOverrides({
+    @AttributeOverride(
+        name = "creationTime",
+        column = @Column(name = "creationTimestamp", nullable = false))
+  })
   CreateAutoTimestamp creationTimestamp = CreateAutoTimestamp.create(null);
 
   /**

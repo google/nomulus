@@ -24,6 +24,7 @@ import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -33,6 +34,8 @@ import com.google.common.testing.TestLogHandler;
 import com.google.common.truth.Truth8;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
+import google.registry.model.domain.token.AllocationToken;
+import google.registry.model.domain.token.AllocationToken.TokenType;
 import google.registry.model.ofy.CommitLogBucket;
 import google.registry.model.ofy.Ofy;
 import google.registry.model.server.Lock;
@@ -64,8 +67,8 @@ public class ReplicateToDatastoreActionTest {
   public final AppEngineExtension appEngine =
       AppEngineExtension.builder()
           .withDatastoreAndCloudSql()
-          .withOfyTestEntities(Lock.class, TestObject.class)
-          .withJpaUnitTestEntities(Lock.class, TestObject.class)
+          .withOfyTestEntities(AllocationToken.class, Lock.class, TestObject.class)
+          .withJpaUnitTestEntities(AllocationToken.class, Lock.class, TestObject.class)
           .withClock(fakeClock)
           .build();
 
@@ -97,9 +100,7 @@ public class ReplicateToDatastoreActionTest {
 
   @RetryingTest(4)
   void testReplication() {
-    if (!ReplayExtension.replayTestsEnabled()) {
-      return;
-    }
+    assumeTrue(ReplayExtension.replayTestsEnabled());
 
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
@@ -126,9 +127,7 @@ public class ReplicateToDatastoreActionTest {
 
   @RetryingTest(4)
   void testReplayFromLastTxn() {
-    if (!ReplayExtension.replayTestsEnabled()) {
-      return;
-    }
+    assumeTrue(ReplayExtension.replayTestsEnabled());
 
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
@@ -152,9 +151,7 @@ public class ReplicateToDatastoreActionTest {
 
   @RetryingTest(4)
   void testUnintentionalConcurrency() {
-    if (!ReplayExtension.replayTestsEnabled()) {
-      return;
-    }
+    assumeTrue(ReplayExtension.replayTestsEnabled());
 
     TestObject foo = TestObject.create("foo");
     TestObject bar = TestObject.create("bar");
@@ -190,10 +187,23 @@ public class ReplicateToDatastoreActionTest {
   }
 
   @RetryingTest(4)
+  void testCreateAutoTimestamp() {
+    // Verify that fields populated by the DB (e.g. CreateAutoTimestamp) correctly get populated in
+    // both databases.
+    assumeTrue(ReplayExtension.replayTestsEnabled());
+
+    AllocationToken allocationToken =
+        new AllocationToken.Builder().setToken("abc123").setTokenType(TokenType.SINGLE_USE).build();
+    insertInDb(allocationToken);
+    runAndVerifySuccess();
+
+    assertThat(ofyTm().transact(() -> ofyTm().loadByEntity(allocationToken)))
+        .isEqualTo(jpaTm().transact(() -> jpaTm().loadByEntity(allocationToken)));
+  }
+
+  @RetryingTest(4)
   void testMissingTransactions() {
-    if (!ReplayExtension.replayTestsEnabled()) {
-      return;
-    }
+    assumeTrue(ReplayExtension.replayTestsEnabled());
 
     // Write a transaction (should have a transaction id of 1).
     TestObject foo = TestObject.create("foo");
@@ -212,9 +222,7 @@ public class ReplicateToDatastoreActionTest {
 
   @Test
   void testMissingTransactions_fullTask() {
-    if (!ReplayExtension.replayTestsEnabled()) {
-      return;
-    }
+    assumeTrue(ReplayExtension.replayTestsEnabled());
 
     // Write a transaction (should have a transaction id of 1).
     TestObject foo = TestObject.create("foo");
@@ -234,9 +242,7 @@ public class ReplicateToDatastoreActionTest {
 
   @Test
   void testBeforeDatastoreSaveCallback() {
-    if (!ReplayExtension.replayTestsEnabled()) {
-      return;
-    }
+    assumeTrue(ReplayExtension.replayTestsEnabled());
 
     TestObject testObject = TestObject.create("foo");
     insertInDb(testObject);
@@ -247,9 +253,7 @@ public class ReplicateToDatastoreActionTest {
 
   @Test
   void testNotInMigrationState_doesNothing() {
-    if (!ReplayExtension.replayTestsEnabled()) {
-      return;
-    }
+    assumeTrue(ReplayExtension.replayTestsEnabled());
 
     // set a schedule that backtracks the current status to DATASTORE_PRIMARY
     DateTime now = fakeClock.nowUtc();
@@ -287,9 +291,7 @@ public class ReplicateToDatastoreActionTest {
 
   @Test
   void testFailure_cannotAcquireLock() {
-    if (!ReplayExtension.replayTestsEnabled()) {
-      return;
-    }
+    assumeTrue(ReplayExtension.replayTestsEnabled());
 
     RequestStatusChecker requestStatusChecker = mock(RequestStatusChecker.class);
     when(requestStatusChecker.getLogId()).thenReturn("logId");

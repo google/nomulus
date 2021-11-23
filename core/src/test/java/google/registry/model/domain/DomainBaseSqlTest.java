@@ -657,20 +657,18 @@ public class DomainBaseSqlTest {
   }
 
   private void assertEqualDomainExcept(DomainBase thatDomain, String... excepts) {
-    // Fix the original creation timestamp (this gets initialized on first write)
-    DomainBase org = domain.asBuilder().setCreationTime(thatDomain.getCreationTime()).build();
-
     ImmutableList<String> moreExcepts =
         new ImmutableList.Builder<String>()
             .addAll(Arrays.asList(excepts))
+            .add("creationTime")
             .add("updateTimestamp")
             .add("transferData")
             .build();
     // Note that the equality comparison forces a lazy load of all fields.
-    assertAboutImmutableObjects().that(thatDomain).isEqualExceptFields(org, moreExcepts);
+    assertAboutImmutableObjects().that(thatDomain).isEqualExceptFields(domain, moreExcepts);
     // Transfer data cannot be directly compared due to serverApproveEtities inequalities
     assertAboutImmutableObjects()
         .that(domain.getTransferData())
-        .isEqualExceptFields(org.getTransferData(), "serverApproveEntities");
+        .isEqualExceptFields(thatDomain.getTransferData(), "serverApproveEntities");
   }
 }
