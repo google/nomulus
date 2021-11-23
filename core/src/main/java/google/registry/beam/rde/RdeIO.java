@@ -294,7 +294,7 @@ public class RdeIO {
                 logger.atInfo().log(
                     "Rolled forward %s on %s cursor to %s.", key.cursor(), key.tld(), newPosition);
                 RdeRevision.saveRevision(key.tld(), key.watermark(), key.mode(), revision);
-                if (input.getKey().mode() == RdeMode.FULL) {
+                if (key.mode() == RdeMode.FULL) {
                   cloudTasksUtils.enqueue(
                       RDE_UPLOAD_QUEUE,
                       CloudTasksUtils.createPostTask(
@@ -302,7 +302,7 @@ public class RdeIO {
                           Service.BACKEND.getServiceId(),
                           ImmutableMultimap.of(
                               RequestParameters.PARAM_TLD,
-                              input.getKey().tld(),
+                              key.tld(),
                               RdeModule.PARAM_PREFIX,
                               options.getJobName() + '/')));
                 } else {
@@ -313,9 +313,9 @@ public class RdeIO {
                           Service.BACKEND.getServiceId(),
                           ImmutableMultimap.of(
                               RequestParameters.PARAM_TLD,
-                              input.getKey().tld(),
+                              key.tld(),
                               RdeModule.PARAM_WATERMARK,
-                              input.getKey().watermark().toString(),
+                              key.watermark().toString(),
                               RdeModule.PARAM_PREFIX,
                               options.getJobName() + '/')));
                 }

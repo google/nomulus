@@ -418,7 +418,7 @@ public class RdePipelineTest {
                                     .collect(toImmutableSet()))
                             .containsExactly("ns1.external.tld", "ns1.lol.cat");
                       } else {
-                        // Contact fragmetns for cat.fun.
+                        // Contact fragments for cat.fun.
                         assertThat(
                                 getFragmentForType(kv, CONTACT)
                                     .map(getXmlElement(CONTACT_ID_PATTERN))

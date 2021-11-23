@@ -103,8 +103,8 @@ import org.joda.time.DateTime;
 /**
  * Definition of a Dataflow Flex template, which generates RDE/BRDA deposits.
  *
- * <p>To stage this template locally, run {@code ./gradlew :core:sBP -Penvironment=alpha
- * -Ppipeline=rde}.
+ * <p>To stage this template locally, run {@code ./nom_build :core:sBP --environment=alpha
+ * --pipeline=rde}.
  *
  * <p>Then, you can run the staged template via the API client library, gCloud or a raw REST call.
  *
@@ -119,7 +119,7 @@ import org.joda.time.DateTime;
  *
  * <h2>{@link Registrar}</h2>
  *
- * Non-test registrar entities are loaded from Cloud SQL and marshalled into deposit fragment. They
+ * Non-test registrar entities are loaded from Cloud SQL and marshalled into deposit fragments. They
  * are <b>NOT</b> rewound to the watermark.
  *
  * <h2>{@link EppResource}</h2>
@@ -391,7 +391,8 @@ public class RdePipeline implements Serializable {
    * <p>The (repoId, revisionId) paris come from the most recent history entry query, which can be
    * used to load the embedded resources themselves.
    *
-   * @return a pair of (repoId, (pendingDeposit, revisionId)) where both
+   * @return a pair of (repoId, ([pendingDeposit], [revisionId])) where neither the pendingDeposit
+   *     nor the revisionId list is empty.
    */
   private static PCollection<KV<String, CoGbkResult>> removeUnreferencedResource(
       PCollection<KV<String, PendingDeposit>> referencedResources,

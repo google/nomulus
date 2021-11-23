@@ -170,9 +170,9 @@ import org.joda.time.Duration;
  * our code throws an exception.</i>
  *
  * <p>For the Dataflow job we do not employ a lock because it is difficult to span a lock across
- * three subsequent transforms (save to GCS, roll forward cursor, enqueue next action). Instead we
- * get around the issue with idempotency by saving the deposit to a unique folder named after the
- * job name so there is no possibility of overwriting.
+ * three subsequent transforms (save to GCS, roll forward cursor, enqueue next action). Instead, we
+ * get around the issue by saving the deposit to a unique folder named after the job name so there
+ * is no possibility of overwriting.
  *
  * <p>Deposits are generated serially for a given (watermark, mode) pair. A deposit is never started
  * beyond the cursor. Once a deposit is completed, its cursor is rolled forward transactionally.

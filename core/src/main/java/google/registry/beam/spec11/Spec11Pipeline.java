@@ -61,8 +61,8 @@ import org.json.JSONObject;
 /**
  * Definition of a Dataflow Flex template, which generates a given month's spec11 report.
  *
- * <p>To stage this template locally, run {@code ./gradlew :core:sBP -Penvironment=alpha
- * -Ppipeline=spec11}.
+ * <p>To stage this template locally, run {@code ./nom_build :core:sBP --environment=alpha
+ * --pipeline=spec11}.
  *
  * <p>Then, you can run the staged template via the API client library, gCloud or a raw REST call.
  *
