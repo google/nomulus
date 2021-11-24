@@ -43,6 +43,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Streams;
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
@@ -72,9 +73,11 @@ import google.registry.model.transfer.DomainTransferData;
 import google.registry.model.transfer.TransferResponse.DomainTransferResponse;
 import google.registry.model.transfer.TransferStatus;
 import google.registry.persistence.VKey;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import org.joda.money.Money;
@@ -94,7 +97,7 @@ class DomainTransferApproveFlowTest
   final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   @BeforeEach
-  void setUp() {
+  void beforeEach() {
     setEppInput("domain_transfer_approve.xml");
     // Change the registry so that the renew price changes a day minus 1 millisecond before the
     // transfer (right after there will be an autorenew in the test case that has one) and then
@@ -673,5 +676,13 @@ class DomainTransferApproveFlowTest
         "domain_transfer_approve_response_zero_period_autorenew_grace.xml",
         domain.getRegistrationExpirationTime());
     assertHistoryEntriesDoNotContainTransferBillingEventsOrGracePeriods();
+  }
+
+  @TestOfyOnly
+  void testModification_duringReadOnlyPhase() {
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
+    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }

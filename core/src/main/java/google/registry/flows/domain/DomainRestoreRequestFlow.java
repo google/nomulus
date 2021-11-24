@@ -93,6 +93,7 @@ import org.joda.time.DateTime;
  * restored to a single year expiration starting at the restore time, regardless of what the
  * original expiration time was.
  *
+ * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.EppException.UnimplementedExtensionException}
  * @error {@link google.registry.flows.FlowUtils.UnknownCurrencyEppException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
@@ -110,7 +111,7 @@ import org.joda.time.DateTime;
  * @error {@link DomainRestoreRequestFlow.RestoreCommandIncludesChangesException}
  */
 @ReportingSpec(ActivityReportField.DOMAIN_RGP_RESTORE_REQUEST)
-public final class DomainRestoreRequestFlow implements TransactionalFlow  {
+public final class DomainRestoreRequestFlow implements TransactionalFlow {
 
   @Inject ResourceCommand resourceCommand;
   @Inject ExtensionManager extensionManager;

@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
+import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
@@ -57,9 +58,11 @@ import google.registry.model.tld.Registry;
 import google.registry.model.transfer.TransferData;
 import google.registry.model.transfer.TransferResponse;
 import google.registry.model.transfer.TransferStatus;
+import google.registry.testing.DatabaseHelper;
 import google.registry.testing.DualDatabaseTest;
 import google.registry.testing.ReplayExtension;
 import google.registry.testing.TestOfyAndSql;
+import google.registry.testing.TestOfyOnly;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -76,7 +79,7 @@ class DomainTransferRejectFlowTest
   final ReplayExtension replayExtension = ReplayExtension.createWithDoubleReplay(clock);
 
   @BeforeEach
-  void setUp() {
+  void beforeEach() {
     setEppInput("domain_transfer_reject.xml");
     setRegistrarIdForFlow("TheRegistrar");
     setupDomainWithPendingTransfer("example", "tld");
@@ -383,5 +386,13 @@ class DomainTransferRejectFlowTest
         .containsExactly(
             previousSuccessRecord.asBuilder().setReportAmount(-1).build(),
             DomainTransactionRecord.create("tld", clock.nowUtc(), TRANSFER_NACKED, 1));
+  }
+
+  @TestOfyOnly
+  void testModification_duringReadOnlyPhase() {
+    DatabaseHelper.setMigrationScheduleToDatastorePrimaryReadOnly(clock);
+    EppException thrown = assertThrows(ReadOnlyModeEppException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
+    DatabaseHelper.removeDatabaseMigrationSchedule();
   }
 }
