@@ -523,18 +523,19 @@ public class DeleteContactsAndHostsAction implements Runnable {
     static DeletionRequest createFromTask(TaskHandle task, DateTime now)
         throws Exception {
       ImmutableMap<String, String> params = ImmutableMap.copyOf(task.extractParams());
-      Key<EppResource> resourceKey =
-          Key.create(
+      VKey<EppResource> resourceKey =
+          VKey.create(
               checkNotNull(params.get(PARAM_RESOURCE_KEY), "Resource to delete not specified"));
       EppResource resource =
           checkNotNull(
-              auditedOfy().load().key(resourceKey).now(), "Resource to delete doesn't exist");
+              auditedOfy().load().key(resourceKey.getOfyKey()).now(),
+              "Resource to delete doesn't exist");
       checkState(
           resource instanceof ContactResource || resource instanceof HostResource,
           "Cannot delete a %s via this action",
           resource.getClass().getSimpleName());
       return new AutoValue_DeleteContactsAndHostsAction_DeletionRequest.Builder()
-          .setKey(resourceKey)
+          .setKey(resourceKey.getOfyKey())
           .setLastUpdateTime(resource.getUpdateTimestamp().getTimestamp())
           .setRequestingClientId(
               checkNotNull(

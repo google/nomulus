@@ -82,6 +82,7 @@ public class CommitLogMutation extends ImmutableObject implements DatastoreOnlyE
       com.google.appengine.api.datastore.Entity rawEntity) {
     CommitLogMutation instance = new CommitLogMutation();
     instance.parent = checkNotNull(parent);
+    // TODO(b/207516684): figure out if this should be converted to a vkey string via stringify()
     // Creates a web-safe key string.
     instance.entityKey = KeyFactory.keyToString(rawEntity.getKey());
     instance.entityProtoBytes = convertToPb(rawEntity).toByteArray();
@@ -91,6 +92,8 @@ public class CommitLogMutation extends ImmutableObject implements DatastoreOnlyE
   /** Returns the key of a mutation based on the {@code entityKey} of the entity it stores. */
   public static
       Key<CommitLogMutation> createKey(Key<CommitLogManifest> parent, Key<?> entityKey) {
+    // TODO(b/207516684): figure out if the return type needs to be VKey and
+    //  if the string used to create a key should remain the same
     return Key.create(parent, CommitLogMutation.class, entityKey.getString());
   }
 }

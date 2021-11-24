@@ -19,8 +19,8 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
+import google.registry.persistence.VKey;
 import java.util.List;
 
 /**
@@ -40,15 +40,15 @@ final class GetResourceByKeyCommand implements CommandWithRemoteApi {
   boolean expand;
 
   @Override
-  public void run() {
+  public void run() throws Exception {
     for (String keyString : mainParameters) {
       System.out.println("\n");
-      Key<EppResource> resourceKey =
-          checkNotNull(Key.create(keyString), "Could not parse key string: " + keyString);
+      VKey<EppResource> resourceKey =
+          checkNotNull(VKey.create(keyString), "Could not parse key string: " + keyString);
       EppResource resource =
           checkNotNull(
-              auditedOfy().load().key(resourceKey).now(),
-              "Could not load resource for key: " + resourceKey);
+              auditedOfy().load().key(resourceKey.getOfyKey()).now(),
+              "Could not load resource for key: " + resourceKey.getOfyKey());
       System.out.println(expand ? resource.toHydratedString() : resource.toString());
     }
   }

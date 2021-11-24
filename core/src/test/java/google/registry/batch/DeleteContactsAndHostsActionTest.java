@@ -64,7 +64,6 @@ import com.google.appengine.api.taskqueue.TaskOptions.Method;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskMetrics.OperationResult;
 import google.registry.batch.AsyncTaskMetrics.OperationType;
 import google.registry.batch.DeleteContactsAndHostsAction.DeleteEppResourceReducer;
@@ -497,7 +496,7 @@ public class DeleteContactsAndHostsActionTest
         QUEUE_ASYNC_DELETE,
         new TaskMatcher()
             .etaDelta(standardHours(23), standardHours(25))
-            .param("resourceKey", Key.create(contactNotSaved).getString())
+            .param("resourceKey", contactNotSaved.createVKey().getOfyKey().getString())
             .param("requestingClientId", "TheRegistrar")
             .param("clientTransactionId", "fakeClientTrid")
             .param("serverTransactionId", "fakeServerTrid")
@@ -505,7 +504,7 @@ public class DeleteContactsAndHostsActionTest
             .param("requestedTime", timeBeforeRun.toString()),
         new TaskMatcher()
             .etaDelta(standardHours(23), standardHours(25))
-            .param("resourceKey", Key.create(hostNotSaved).getString())
+            .param("resourceKey", hostNotSaved.createVKey().getOfyKey().getString())
             .param("requestingClientId", "TheRegistrar")
             .param("clientTransactionId", "fakeClientTrid")
             .param("serverTransactionId", "fakeServerTrid")

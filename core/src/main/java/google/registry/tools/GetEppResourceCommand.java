@@ -19,7 +19,6 @@ import static org.joda.time.DateTimeZone.UTC;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import java.util.Optional;
 import org.joda.time.DateTime;
@@ -56,7 +55,7 @@ abstract class GetEppResourceCommand implements CommandWithRemoteApi {
             ? String.format(
                 "%s\n\nWebsafe key: %s",
                 expand ? resource.get().toHydratedString() : resource.get(),
-                Key.create(resource.get()).getString())
+                resource.get().createVKey().getOfyKey().getString())
             : String.format("%s '%s' does not exist or is deleted\n", resourceType, uniqueId));
   }
 

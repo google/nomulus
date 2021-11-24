@@ -35,7 +35,6 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.flogger.LoggerConfig;
-import com.googlecode.objectify.Key;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.RegistryLock;
 import google.registry.testing.AppEngineExtension;
@@ -95,7 +94,8 @@ public class AsyncTaskEnqueuerTest {
   @Test
   void test_enqueueAsyncResave_success() {
     ContactResource contact = persistActiveContact("jd23456");
-    asyncTaskEnqueuer.enqueueAsyncResave(contact, clock.nowUtc(), clock.nowUtc().plusDays(5));
+    asyncTaskEnqueuer.enqueueAsyncResave(
+        contact.createVKey(), clock.nowUtc(), clock.nowUtc().plusDays(5));
     assertTasksEnqueued(
         QUEUE_ASYNC_ACTIONS,
         new TaskMatcher()
@@ -103,7 +103,7 @@ public class AsyncTaskEnqueuerTest {
             .method("POST")
             .header("Host", "backend.hostname.fake")
             .header("content-type", "application/x-www-form-urlencoded")
-            .param(PARAM_RESOURCE_KEY, Key.create(contact).getString())
+            .param(PARAM_RESOURCE_KEY, contact.createVKey().getOfyKey().getString())
             .param(PARAM_REQUESTED_TIME, clock.nowUtc().toString())
             .etaDelta(
                 standardDays(5).minus(standardSeconds(30)),
@@ -115,7 +115,7 @@ public class AsyncTaskEnqueuerTest {
     ContactResource contact = persistActiveContact("jd23456");
     DateTime now = clock.nowUtc();
     asyncTaskEnqueuer.enqueueAsyncResave(
-        contact,
+        contact.createVKey(),
         now,
         ImmutableSortedSet.of(now.plusHours(24), now.plusHours(50), now.plusHours(75)));
     assertTasksEnqueued(
@@ -125,7 +125,7 @@ public class AsyncTaskEnqueuerTest {
             .method("POST")
             .header("Host", "backend.hostname.fake")
             .header("content-type", "application/x-www-form-urlencoded")
-            .param(PARAM_RESOURCE_KEY, Key.create(contact).getString())
+            .param(PARAM_RESOURCE_KEY, contact.createVKey().getOfyKey().getString())
             .param(PARAM_REQUESTED_TIME, now.toString())
             .param(PARAM_RESAVE_TIMES, "2015-05-20T14:34:56.000Z,2015-05-21T15:34:56.000Z")
             .etaDelta(
@@ -137,7 +137,8 @@ public class AsyncTaskEnqueuerTest {
   @Test
   void test_enqueueAsyncResave_ignoresTasksTooFarIntoFuture() {
     ContactResource contact = persistActiveContact("jd23456");
-    asyncTaskEnqueuer.enqueueAsyncResave(contact, clock.nowUtc(), clock.nowUtc().plusDays(31));
+    asyncTaskEnqueuer.enqueueAsyncResave(
+        contact.createVKey(), clock.nowUtc(), clock.nowUtc().plusDays(31));
     assertNoTasksEnqueued(QUEUE_ASYNC_ACTIONS);
     assertLogMessage(logHandler, Level.INFO, "Ignoring async re-save");
   }

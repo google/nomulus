@@ -148,7 +148,7 @@ public class ResaveEntityActionTest {
             .method("POST")
             .header("Host", "backend.hostname.fake")
             .header("content-type", "application/x-www-form-urlencoded")
-            .param(PARAM_RESOURCE_KEY, Key.create(resavedDomain).getString())
+            .param(PARAM_RESOURCE_KEY, resavedDomain.createVKey().getOfyKey().getString())
             .param(PARAM_REQUESTED_TIME, requestedTime.toString())
             .etaDelta(
                 standardDays(5).minus(standardSeconds(30)),

@@ -19,8 +19,8 @@ import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import com.googlecode.objectify.Key;
 import google.registry.model.ImmutableObject;
+import google.registry.persistence.VKey;
 import java.util.List;
 
 /**
@@ -37,15 +37,16 @@ public final class ResaveEntitiesCommand extends MutatingCommand {
   /** The number of resaves to do in a single transaction. */
   private static final int BATCH_SIZE = 10;
 
+  // TODO(b/207376744): figure out if there's a guide that shows how a websafe key should look like
   @Parameter(description = "Websafe keys", required = true)
   List<String> mainParameters;
 
   @Override
-  protected void init() {
+  protected void init() throws Exception {
     for (List<String> batch : partition(mainParameters, BATCH_SIZE)) {
       for (String websafeKey : batch) {
         ImmutableObject entity =
-            auditedOfy().load().key(Key.<ImmutableObject>create(websafeKey)).now();
+            (ImmutableObject) auditedOfy().load().key(VKey.create(websafeKey).getOfyKey()).now();
         stageEntityChange(entity, entity);
       }
       flushTransaction();

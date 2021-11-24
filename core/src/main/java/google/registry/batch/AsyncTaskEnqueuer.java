@@ -24,10 +24,8 @@ import com.google.appengine.api.taskqueue.TransientFailureException;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.common.flogger.FluentLogger;
-import com.googlecode.objectify.Key;
 import google.registry.config.RegistryConfig.Config;
 import google.registry.model.EppResource;
-import google.registry.model.ImmutableObject;
 import google.registry.model.domain.RegistryLock;
 import google.registry.model.eppcommon.Trid;
 import google.registry.model.host.HostResource;
@@ -84,8 +82,7 @@ public final class AsyncTaskEnqueuer {
   }
 
   /** Enqueues a task to asynchronously re-save an entity at some point in the future. */
-  public void enqueueAsyncResave(
-      ImmutableObject entityToResave, DateTime now, DateTime whenToResave) {
+  public void enqueueAsyncResave(VKey<?> entityToResave, DateTime now, DateTime whenToResave) {
     enqueueAsyncResave(entityToResave, now, ImmutableSortedSet.of(whenToResave));
   }
 
@@ -96,10 +93,9 @@ public final class AsyncTaskEnqueuer {
    * itself to run at the next time if there are remaining re-saves scheduled.
    */
   public void enqueueAsyncResave(
-      ImmutableObject entityToResave, DateTime now, ImmutableSortedSet<DateTime> whenToResave) {
+      VKey<?> entityKey, DateTime now, ImmutableSortedSet<DateTime> whenToResave) {
     DateTime firstResave = whenToResave.first();
     checkArgument(isBeforeOrAt(now, firstResave), "Can't enqueue a resave to run in the past");
-    Key<ImmutableObject> entityKey = Key.create(entityToResave);
     Duration etaDuration = new Duration(now, firstResave);
     if (etaDuration.isLongerThan(MAX_ASYNC_ETA)) {
       logger.atInfo().log(
@@ -114,7 +110,7 @@ public final class AsyncTaskEnqueuer {
             .method(Method.POST)
             .header("Host", backendHostname)
             .countdownMillis(etaDuration.getMillis())
-            .param(PARAM_RESOURCE_KEY, entityKey.getString())
+            .param(PARAM_RESOURCE_KEY, entityKey.getOfyKey().getString())
             .param(PARAM_REQUESTED_TIME, now.toString());
     if (whenToResave.size() > 1) {
       task.param(PARAM_RESAVE_TIMES, Joiner.on(',').join(whenToResave.tailSet(firstResave, false)));
@@ -129,14 +125,13 @@ public final class AsyncTaskEnqueuer {
       String requestingRegistrarId,
       Trid trid,
       boolean isSuperuser) {
-    Key<EppResource> resourceKey = Key.create(resourceToDelete);
     logger.atInfo().log(
         "Enqueuing async deletion of %s on behalf of registrar %s.",
-        resourceKey, requestingRegistrarId);
+        resourceToDelete.getRepoId(), requestingRegistrarId);
     TaskOptions task =
         TaskOptions.Builder.withMethod(Method.PULL)
             .countdownMillis(asyncDeleteDelay.getMillis())
-            .param(PARAM_RESOURCE_KEY, resourceKey.getString())
+            .param(PARAM_RESOURCE_KEY, resourceToDelete.createVKey().getOfyKey().getString())
             .param(PARAM_REQUESTING_CLIENT_ID, requestingRegistrarId)
             .param(PARAM_SERVER_TRANSACTION_ID, trid.getServerTransactionId())
             .param(PARAM_IS_SUPERUSER, Boolean.toString(isSuperuser))

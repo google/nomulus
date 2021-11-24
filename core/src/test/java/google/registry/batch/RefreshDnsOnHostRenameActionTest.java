@@ -44,7 +44,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.googlecode.objectify.Key;
 import google.registry.batch.AsyncTaskMetrics.OperationResult;
 import google.registry.batch.RefreshDnsOnHostRenameAction.RefreshDnsOnHostRenameReducer;
 import google.registry.dns.DnsQueue;
@@ -238,7 +237,7 @@ public class RefreshDnsOnHostRenameActionTest
         QUEUE_ASYNC_HOST_RENAME,
         new TaskMatcher()
             .etaDelta(standardHours(23), standardHours(25))
-            .param("hostKey", Key.create(host).getString()));
+            .param("hostKey", host.createVKey().getOfyKey().getString()));
     assertThat(acquireLock()).isPresent();
   }
 

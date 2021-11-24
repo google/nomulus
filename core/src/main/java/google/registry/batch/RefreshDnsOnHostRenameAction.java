@@ -353,8 +353,7 @@ public class RefreshDnsOnHostRenameAction implements Runnable {
     static DnsRefreshRequest createFromTask(TaskHandle task, DateTime now) throws Exception {
       ImmutableMap<String, String> params = ImmutableMap.copyOf(task.extractParams());
       VKey<HostResource> hostKey =
-          VKey.fromWebsafeKey(
-              checkNotNull(params.get(PARAM_HOST_KEY), "Host to refresh not specified"));
+          VKey.create(checkNotNull(params.get(PARAM_HOST_KEY), "Host to refresh not specified"));
       HostResource host =
           tm().transact(() -> tm().loadByKeyIfPresent(hostKey))
               .orElseThrow(() -> new NoSuchElementException("Host to refresh doesn't exist"));

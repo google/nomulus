@@ -46,7 +46,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
-import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
 import google.registry.flows.EppRequestSource;
 import google.registry.flows.ResourceFlowTestCase;
@@ -220,7 +219,7 @@ class HostUpdateFlowTest extends ResourceFlowTestCase<HostUpdateFlow, HostResour
     assertTasksEnqueued(
         QUEUE_ASYNC_HOST_RENAME,
         new TaskMatcher()
-            .param("hostKey", Key.create(renamedHost).getString())
+            .param("hostKey", renamedHost.createVKey().getOfyKey().getString())
             .param("requestedTime", clock.nowUtc().toString()));
   }
 
