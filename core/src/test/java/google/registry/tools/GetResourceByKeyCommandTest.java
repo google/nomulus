@@ -79,7 +79,7 @@ class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKeyComman
                     "agR0ZXN0chULEgpEb21haW5CYXNlIgU0LVRMRAw"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Could not load resource for key: Key<?>(DomainBase(\"4-TLD\"))");
+        .contains("Could not load resource for key: VKey<DomainBase>(sql:4-TLD,ofy:4-TLD)");
   }
 
   @Test
@@ -128,7 +128,7 @@ class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKeyComman
                     "agR0ZXN0chsLEg9Db250YWN0UmVzb3VyY2UiBjMtUk9JRAw"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Could not load resource for key: Key<?>(ContactResource(\"3-ROID\"))");
+        .contains("Could not load resource for key: VKey<ContactResource>(sql:3-ROID,ofy:3-ROID)");
   }
 
   @Test
@@ -177,7 +177,7 @@ class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKeyComman
                     "agR0ZXN0chgLEgxIb3N0UmVzb3VyY2UiBjMtUk9JRAw"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Could not load resource for key: Key<?>(HostResource(\"3-ROID\"))");
+        .contains("Could not load resource for key: VKey<HostResource>(sql:3-ROID,ofy:3-ROID)");
   }
 
   @Test
@@ -210,7 +210,7 @@ class GetResourceByKeyCommandTest extends CommandTestCase<GetResourceByKeyComman
             () -> runCommand("agR0ZXN0chULEgpEb21haW5CYXNlIgUyLVRMRAw"));
     assertThat(thrown)
         .hasMessageThat()
-        .contains("Could not load resource for key: Key<?>(DomainBase(\"2-TLD\"))");
+        .contains("Could not load resource for key: VKey<DomainBase>(sql:2-TLD,ofy:2-TLD)");
   }
 
   @Test
