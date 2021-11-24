@@ -21,6 +21,7 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.EppException;
+import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceCheckFlowTestCase;
 import google.registry.flows.exceptions.TooManyResourceChecksException;
 import google.registry.model.contact.ContactResource;
@@ -40,6 +41,13 @@ class ContactCheckFlowTest extends ResourceCheckFlowTestCase<ContactCheckFlow, C
 
   ContactCheckFlowTest() {
     setEppInput("contact_check.xml");
+  }
+
+  @TestOfyAndSql
+  void testNotLoggedIn() {
+    sessionMetadata.setRegistrarId(null);
+    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @TestOfyAndSql

@@ -24,6 +24,7 @@ import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptio
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import google.registry.flows.EppException;
+import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.exceptions.NoTransferHistoryToQueryException;
@@ -86,6 +87,13 @@ class DomainTransferQueryFlowTest
     // Setup done; run the test.
     assertTransactionalFlow(false);
     runFlow();
+  }
+
+  @TestOfyAndSql
+  void testNotLoggedIn() {
+    sessionMetadata.setRegistrarId(null);
+    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @TestOfyAndSql

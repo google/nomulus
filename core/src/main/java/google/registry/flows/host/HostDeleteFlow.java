@@ -59,6 +59,7 @@ import org.joda.time.DateTime;
  * with the success or failure message when the process is complete.
  *
  * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}
  * @error {@link google.registry.flows.exceptions.ResourceStatusProhibitsOperationException}

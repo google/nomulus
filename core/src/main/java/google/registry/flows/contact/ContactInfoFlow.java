@@ -46,6 +46,7 @@ import org.joda.time.DateTime;
  * ever been transferred. Any registrar can see any contact's information, but the authInfo is only
  * visible to the registrar that owns the contact or to a registrar that already supplied it.
  *
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}
  */

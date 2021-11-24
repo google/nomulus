@@ -54,6 +54,7 @@ import org.joda.time.DateTime;
  * reject the transfer request.
  *
  * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}

@@ -67,6 +67,7 @@ import org.joda.time.DateTime;
  *
  * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.FlowUtils.IpAddressVersionMismatchException}
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link ResourceAlreadyExistsForThisClientException}
  * @error {@link ResourceCreateContentionException}
  * @error {@link HostFlowUtils.HostNameTooLongException}

@@ -79,6 +79,7 @@ import org.joda.time.DateTime;
  * or IP addresses are added, tasks are enqueued to update DNS accordingly.
  *
  * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.AddRemoveSameValueException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}

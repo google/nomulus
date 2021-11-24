@@ -42,6 +42,7 @@ import javax.inject.Inject;
  * <p>This flows can check the existence of multiple contacts simultaneously.
  *
  * @error {@link google.registry.flows.exceptions.TooManyResourceChecksException}
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  */
 @ReportingSpec(ActivityReportField.CONTACT_CHECK)
 public final class ContactCheckFlow implements Flow {

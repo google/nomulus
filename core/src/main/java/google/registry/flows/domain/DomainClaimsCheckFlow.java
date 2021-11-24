@@ -57,13 +57,14 @@ import org.joda.time.DateTime;
  * An EPP flow that checks whether domain labels are trademarked.
  *
  * @error {@link google.registry.flows.exceptions.TooManyResourceChecksException}
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link DomainFlowUtils.BadCommandForRegistryPhaseException}
  * @error {@link DomainFlowUtils.ClaimsPeriodEndedException}
  * @error {@link DomainFlowUtils.NotAuthorizedForTldException}
  * @error {@link DomainFlowUtils.TldDoesNotExistException}
  * @error {@link DomainClaimsCheckNotAllowedWithAllocationTokens}
  */
-@ReportingSpec(ActivityReportField.DOMAIN_CHECK)  // Claims check is a special domain check.
+@ReportingSpec(ActivityReportField.DOMAIN_CHECK) // Claims check is a special domain check.
 public final class DomainClaimsCheckFlow implements Flow {
 
   @Inject ExtensionManager extensionManager;
