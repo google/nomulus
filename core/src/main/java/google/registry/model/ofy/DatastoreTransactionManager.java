@@ -356,13 +356,25 @@ public class DatastoreTransactionManager implements TransactionManager {
   }
 
   @Override
-  public void putIgnoringReadOnly(Object entity) {
-    syncIfTransactionless(getOfy().saveIgnoringReadOnly().entities(toDatastoreEntity(entity)));
+  public void putIgnoringReadOnlyWithoutBackup(Object entity) {
+    syncIfTransactionless(
+        getOfy().saveIgnoringReadOnlyWithoutBackup().entities(toDatastoreEntity(entity)));
   }
 
   @Override
-  public void deleteIgnoringReadOnly(VKey<?> key) {
-    syncIfTransactionless(getOfy().deleteIgnoringReadOnly().key(key.getOfyKey()));
+  public void deleteIgnoringReadOnlyWithoutBackup(VKey<?> key) {
+    syncIfTransactionless(getOfy().deleteIgnoringReadOnlyWithoutBackup().key(key.getOfyKey()));
+  }
+
+  /** Performs the write ignoring read-only restrictions and also writes commit logs. */
+  public void putIgnoringReadOnlyWithBackup(Object entity) {
+    syncIfTransactionless(
+        getOfy().saveIgnoringReadOnlyWithBackup().entities(toDatastoreEntity(entity)));
+  }
+
+  /** Performs the delete ignoring read-only restrictions and also writes commit logs. */
+  public void deleteIgnoringReadOnlyWithBackup(VKey<?> key) {
+    syncIfTransactionless(getOfy().deleteIgnoringReadOnlyWithBackup().key(key.getOfyKey()));
   }
 
   /**

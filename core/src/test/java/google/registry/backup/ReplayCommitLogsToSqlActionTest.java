@@ -382,10 +382,10 @@ public class ReplayCommitLogsToSqlActionTest {
     //    even though the domain came first in the file
     // 2. that the allocation token delete occurred after the insertions
     InOrder inOrder = Mockito.inOrder(spy);
-    inOrder.verify(spy).putIgnoringReadOnly(any(ContactResource.class));
-    inOrder.verify(spy).putIgnoringReadOnly(any(DomainBase.class));
-    inOrder.verify(spy).deleteIgnoringReadOnly(toDelete.createVKey());
-    inOrder.verify(spy).putIgnoringReadOnly(any(SqlReplayCheckpoint.class));
+    inOrder.verify(spy).putIgnoringReadOnlyWithoutBackup(any(ContactResource.class));
+    inOrder.verify(spy).putIgnoringReadOnlyWithoutBackup(any(DomainBase.class));
+    inOrder.verify(spy).deleteIgnoringReadOnlyWithoutBackup(toDelete.createVKey());
+    inOrder.verify(spy).putIgnoringReadOnlyWithoutBackup(any(SqlReplayCheckpoint.class));
   }
 
   @Test
@@ -424,8 +424,8 @@ public class ReplayCommitLogsToSqlActionTest {
     // deletes have higher weight
     ArgumentCaptor<Object> putCaptor = ArgumentCaptor.forClass(Object.class);
     InOrder inOrder = Mockito.inOrder(spy);
-    inOrder.verify(spy).deleteIgnoringReadOnly(contact.createVKey());
-    inOrder.verify(spy).putIgnoringReadOnly(putCaptor.capture());
+    inOrder.verify(spy).deleteIgnoringReadOnlyWithoutBackup(contact.createVKey());
+    inOrder.verify(spy).putIgnoringReadOnlyWithoutBackup(putCaptor.capture());
     assertThat(putCaptor.getValue().getClass()).isEqualTo(ContactResource.class);
     assertThat(jpaTm().transact(() -> jpaTm().loadByKey(contact.createVKey()).getEmailAddress()))
         .isEqualTo("replay@example.tld");
@@ -467,9 +467,9 @@ public class ReplayCommitLogsToSqlActionTest {
             });
     runAndAssertSuccess(now.minusMinutes(1), 1, 1);
     // jpaTm()::putIgnoringReadOnly should only have been called with the checkpoint and the lock
-    verify(spy, times(2)).putIgnoringReadOnly(any(SqlReplayCheckpoint.class));
-    verify(spy).putIgnoringReadOnly(any(Lock.class));
-    verify(spy, times(3)).putIgnoringReadOnly(any());
+    verify(spy, times(2)).putIgnoringReadOnlyWithoutBackup(any(SqlReplayCheckpoint.class));
+    verify(spy).putIgnoringReadOnlyWithoutBackup(any(Lock.class));
+    verify(spy, times(3)).putIgnoringReadOnlyWithoutBackup(any());
   }
 
   @Test

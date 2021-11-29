@@ -242,7 +242,7 @@ public class Transaction extends ImmutableObject implements Buildable {
       if (entity instanceof DatastoreEntity) {
         ((DatastoreEntity) entity).beforeDatastoreSaveOnReplay();
       }
-      ofyTm().putIgnoringReadOnly(entity);
+      ofyTm().putIgnoringReadOnlyWithBackup(entity);
     }
 
     @Override
@@ -280,7 +280,7 @@ public class Transaction extends ImmutableObject implements Buildable {
 
     @Override
     public void writeToDatastore() {
-      ofyTm().deleteIgnoringReadOnly(key);
+      ofyTm().deleteIgnoringReadOnlyWithBackup(key);
     }
 
     @Override

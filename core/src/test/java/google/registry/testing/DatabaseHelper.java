@@ -1488,7 +1488,7 @@ public class DatabaseHelper {
         .transact(
             () ->
                 jpaTm()
-                    .putIgnoringReadOnly(
+                    .putIgnoringReadOnlyWithoutBackup(
                         new DatabaseMigrationStateSchedule(
                             DatabaseMigrationStateSchedule.DEFAULT_TRANSITION_MAP)));
     DatabaseMigrationStateSchedule.CACHE.invalidateAll();
