@@ -323,19 +323,17 @@ public class VKey<T> extends ImmutableObject implements Serializable {
     if (maybeGetOfyKey().isPresent() && maybeGetSqlKey().isPresent()) {
       return String.format(
           "VKey<%s>(%s:%s,%s:%s)",
-          getKind().getSimpleName(),
-          SQL_LOOKUP_KEY,
-          getSqlKey().toString(),
-          OFY_LOOKUP_KEY,
-          getOfyKey().getName());
+          getKind().getSimpleName(), SQL_LOOKUP_KEY, sqlKey, OFY_LOOKUP_KEY, ofyKeyToString());
     } else if (maybeGetSqlKey().isPresent()) {
-      return String.format(
-          "VKey<%s>(%s:%s)", getKind().getSimpleName(), SQL_LOOKUP_KEY, getSqlKey().toString());
+      return String.format("VKey<%s>(%s:%s)", getKind().getSimpleName(), SQL_LOOKUP_KEY, sqlKey);
     } else if (maybeGetOfyKey().isPresent()) {
-      return String.format(
-          "VKey<%s>(%s:%s)", getKind().getSimpleName(), OFY_LOOKUP_KEY, getOfyKey().getName());
+      return String.format("VKey<%s>(%s:%s)", ofyKey.getKind(), OFY_LOOKUP_KEY, ofyKeyToString());
     } else {
       throw new IllegalStateException("VKey should contain at least one form of key");
     }
+  }
+
+  private String ofyKeyToString() {
+    return ofyKey.getName() == null ? String.valueOf(ofyKey.getId()) : ofyKey.getName();
   }
 }
