@@ -63,7 +63,7 @@ final class ValidateSqlUtils {
    * <p>The {@link ValidateSqlPipeline} uses this query to parallelize the query to some of the
    * history tables. Although the {@code repo_id} column is the leading column in the primary keys
    * of these tables, in practice and with production data, division by {@code history_revision_id}
-   * works slightly better for unknown reasons.
+   * works slightly faster for unknown reasons.
    */
   private static final String MEDIAN_ID_QUERY_TEMPLATE =
       "SELECT history_revision_id FROM (                                                        "
@@ -223,6 +223,9 @@ final class ValidateSqlUtils {
       if (authField != null) {
         authField.setAccessible(true);
         AuthInfo authInfo = (AuthInfo) authField.get(eppResource);
+        // When AuthInfo is missing, the authInfo field is null if the object is loaded from
+        // Datastore, or a PasswordAuth with null properties if loaded from SQL. In the second case
+        // we set the authInfo field to null.
         if (authInfo != null
             && authInfo.getPw() != null
             && authInfo.getPw().getRepoId() == null
@@ -247,6 +250,8 @@ final class ValidateSqlUtils {
    * unwanted checks and changes.
    */
   static HistoryEntry normalizeHistoryEntry(HistoryEntry historyEntry) {
+    // History objects from Datastore do not have details of their EppResource objects
+    // (domainContent, contactBase, hostBase).
     try {
       if (historyEntry instanceof DomainHistory) {
         Field domainContent = DomainHistory.class.getDeclaredField("domainContent");

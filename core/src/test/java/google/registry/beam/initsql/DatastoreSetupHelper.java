@@ -235,7 +235,7 @@ public class DatastoreSetupHelper {
                           StatusValue.SERVER_HOLD))
                   .setRegistrant(contact1.createVKey())
                   .setContacts(
-                      ImmutableSet.of(
+                      ImmutableSet.of(AuthInfo
                           DesignatedContact.create(
                               DesignatedContact.Type.ADMIN, contact2.createVKey())))
                   .setNameservers(ImmutableSet.of(hostResource.createVKey()))
