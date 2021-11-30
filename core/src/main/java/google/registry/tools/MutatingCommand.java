@@ -103,7 +103,8 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
      * workaround to handle cases when a SqlEntity instance does not have a primary key before being
      * persisted.
      */
-    private EntityChange(ImmutableObject oldEntity, ImmutableObject newEntity, VKey<?> vkey) {
+    private EntityChange(
+        @Nullable ImmutableObject oldEntity, @Nullable ImmutableObject newEntity, VKey<?> vkey) {
       type = ChangeType.get(oldEntity != null, newEntity != null);
       if (type == ChangeType.UPDATE) {
         checkArgument(
@@ -127,7 +128,7 @@ public abstract class MutatingCommand extends ConfirmingCommand implements Comma
     }
 
     /** Returns a human-readable ID string for the entity being changed. */
-    public String getEntityId() {
+    String getEntityId() {
       return String.format(
           "%s@%s",
           key.getOfyKey().getKind(),

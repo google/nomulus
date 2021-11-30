@@ -111,6 +111,8 @@ interface RegistryToolComponent {
 
   void inject(EncryptEscrowDepositCommand command);
 
+  void inject(EnqueuePollMessageCommand command);
+
   void inject(GenerateAllocationTokensCommand command);
 
   void inject(GenerateDnsReportCommand command);
