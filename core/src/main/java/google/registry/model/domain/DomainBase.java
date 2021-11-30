@@ -14,6 +14,8 @@
 
 package google.registry.model.domain;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+
 import com.googlecode.objectify.Key;
 import google.registry.model.EppResource;
 import google.registry.model.EppResource.ForeignKeyedEppResource;
@@ -168,6 +170,7 @@ public class DomainBase extends DomainContent
   @Override
   public void beforeSqlSaveOnReplay() {
     fullyQualifiedDomainName = DomainNameUtils.canonicalizeDomainName(fullyQualifiedDomainName);
+    dsData = dsData.stream().filter(datum -> datum.getDigest() != null).collect(toImmutableSet());
   }
 
   @Override
