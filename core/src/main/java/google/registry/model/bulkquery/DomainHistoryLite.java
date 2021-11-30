@@ -107,6 +107,10 @@ public class DomainHistoryLite extends HistoryEntry implements SqlOnlyEntity {
     return VKey.create(DomainBase.class, getDomainRepoId());
   }
 
+  public DomainHistoryId getDomainHistoryId() {
+    return new DomainHistoryId(getDomainRepoId(), getId());
+  }
+
   @PostLoad
   void postLoad() {
     if (domainContent == null) {

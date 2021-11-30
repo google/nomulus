@@ -50,8 +50,18 @@ import google.registry.testing.AppEngineExtension;
 import google.registry.testing.DatabaseHelper;
 import google.registry.testing.FakeClock;
 
-/** Entity creation utilities for domain-related tests. */
-class TestSetupHelper {
+/**
+ * Utilities for managing domain-related SQL test scenarios.
+ *
+ * <p>The {@link #initializeAllEntities} method initializes the database, and the {@link
+ * #applyChangeToDomainAndHistory} makes one change to the domain, generating an additional history
+ * event. The most up-to-date values of the relevant entities are saved in public instance
+ * variables, {@link #domain} etc.
+ *
+ * <p>This class makes use of {@link DatabaseHelper}, which requires Datastore. Tests that use this
+ * class should use {@link AppEngineExtension}.
+ */
+public final class TestSetupHelper {
 
   public static final String TLD = "tld";
   public static final String DOMAIN_REPO_ID = "4-TLD";
@@ -60,21 +70,21 @@ class TestSetupHelper {
 
   private final FakeClock fakeClock;
 
-  Registry registry;
-  Registrar registrar;
-  ContactResource contact;
-  DomainBase domain;
-  DomainHistory domainHistory;
-  HostResource host;
+  public Registry registry;
+  public Registrar registrar;
+  public ContactResource contact;
+  public DomainBase domain;
+  public DomainHistory domainHistory;
+  public HostResource host;
 
   private JpaTransactionManager originalJpaTm;
   private JpaTransactionManager bulkQueryJpaTm;
 
-  TestSetupHelper(FakeClock fakeClock) {
+  public TestSetupHelper(FakeClock fakeClock) {
     this.fakeClock = fakeClock;
   }
 
-  void initializeAllEntities() {
+  public void initializeAllEntities() {
     registry = putInDb(DatabaseHelper.newRegistry(TLD, Ascii.toUpperCase(TLD)));
     registrar = saveRegistrar(REGISTRAR_ID);
     contact = putInDb(createContact(DOMAIN_REPO_ID, REGISTRAR_ID));
@@ -83,12 +93,12 @@ class TestSetupHelper {
     host = putInDb(createHost());
   }
 
-  void applyChangeToDomainAndHistory() {
+  public void applyChangeToDomainAndHistory() {
     domain = putInDb(createFullDomain(contact, host, fakeClock));
     domainHistory = putInDb(createFullHistory(domain, fakeClock));
   }
 
-  void setupBulkQueryJpaTm(AppEngineExtension appEngineExtension) {
+  public void setupBulkQueryJpaTm(AppEngineExtension appEngineExtension) {
     bulkQueryJpaTm =
         BulkQueryJpaFactory.createBulkQueryJpaTransactionManager(
             appEngineExtension
@@ -101,7 +111,7 @@ class TestSetupHelper {
     TransactionManagerFactory.setJpaTm(() -> bulkQueryJpaTm);
   }
 
-  void tearDownBulkQueryJpaTm() {
+  public void tearDownBulkQueryJpaTm() {
     if (bulkQueryJpaTm != null) {
       bulkQueryJpaTm.teardown();
       TransactionManagerFactory.setJpaTm(() -> originalJpaTm);

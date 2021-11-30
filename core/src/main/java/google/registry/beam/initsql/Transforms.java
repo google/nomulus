@@ -101,8 +101,9 @@ public final class Transforms {
   }
 
   /**
-   * Composite {@link PTransform transform} that loads the Datastore snapshot at {@code
-   * commitLogToTime} for caller specified {@code kinds}.
+   * Composite {@link PTransform transform} that loads the Datastore snapshot right before {@code
+   * commitLogToTime} for caller specified {@code kinds}. The resulting snapshot has all changes
+   * that happened before {@code commitLogToTime}, and none at or after {@code commitLogToTime}.
    *
    * <p>Caller must provide the location of a Datastore export that started AFTER {@code
    * commitLogFromTime} and completed BEFORE {@code commitLogToTime}, as well as the root directory
@@ -363,7 +364,7 @@ public final class Transforms {
    *     to make Optional work with BEAM)
    */
   @Nullable
-  public static Object convertVersionedEntityToSqlEntity(VersionedEntity dsEntity) {
+  public static SqlEntity convertVersionedEntityToSqlEntity(VersionedEntity dsEntity) {
     return dsEntity
         .getEntity()
         .filter(Transforms::isMigratable)

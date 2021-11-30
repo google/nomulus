@@ -79,7 +79,7 @@ class ExportLoadingTransformsTest implements Serializable {
   @RegisterExtension
   @Order(value = 1)
   final transient DatastoreEntityExtension datastoreEntityExtension =
-      new DatastoreEntityExtension();
+      new DatastoreEntityExtension().allThreads(true);
 
   @RegisterExtension
   final transient TestPipelineExtension testPipeline =
