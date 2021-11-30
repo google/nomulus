@@ -38,6 +38,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ReadOnlyModeEppException;
+import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.domain.DomainFlowUtils.NotAuthorizedForTldException;
@@ -203,6 +204,13 @@ class DomainTransferCancelFlowTest
     // Setup done; run the test.
     assertTransactionalFlow(true);
     runFlow();
+  }
+
+  @TestOfyAndSql
+  void testNotLoggedIn() {
+    sessionMetadata.setRegistrarId(null);
+    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @TestOfyAndSql

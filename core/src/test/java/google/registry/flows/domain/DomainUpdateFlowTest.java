@@ -62,6 +62,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
+import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.AddRemoveSameValueException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -225,6 +226,13 @@ class DomainUpdateFlowTest extends ResourceFlowTestCase<DomainUpdateFlow, Domain
     assertNoBillingEvents();
     assertDnsTasksEnqueued("example.tld");
     assertLastHistoryContainsResource(reloadResourceByForeignKey());
+  }
+
+  @TestOfyAndSql
+  void testNotLoggedIn() {
+    sessionMetadata.setRegistrarId(null);
+    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @TestOfyAndSql

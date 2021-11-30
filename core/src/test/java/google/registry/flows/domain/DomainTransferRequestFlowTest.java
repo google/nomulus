@@ -62,6 +62,7 @@ import google.registry.batch.ResaveEntityAction;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.EppRequestSource;
+import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
@@ -647,6 +648,13 @@ class DomainTransferRequestFlowTest
 
   private void doFailingTest(String commandFilename) throws Exception {
     runTest(commandFilename, UserPrivileges.NORMAL, ImmutableMap.of());
+  }
+
+  @TestOfyAndSql
+  void testNotLoggedIn() {
+    sessionMetadata.setRegistrarId(null);
+    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @TestOfyAndSql

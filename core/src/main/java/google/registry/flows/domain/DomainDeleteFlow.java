@@ -105,6 +105,7 @@ import org.joda.time.Duration;
  *
  * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
  * @error {@link google.registry.flows.EppException.UnimplementedExtensionException}
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}
  * @error {@link google.registry.flows.exceptions.OnlyToolCanPassMetadataException}

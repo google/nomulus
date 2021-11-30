@@ -71,6 +71,7 @@ import google.registry.flows.EppException;
 import google.registry.flows.EppException.ReadOnlyModeEppException;
 import google.registry.flows.EppException.UnimplementedExtensionException;
 import google.registry.flows.EppRequestSource;
+import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException;
@@ -292,6 +293,13 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
         .setEventTime(A_MONTH_FROM_NOW)
         .setAutorenewEndTime(END_OF_TIME)
         .setParent(earlierHistoryEntry);
+  }
+
+  @TestOfyAndSql
+  void testNotLoggedIn() {
+    sessionMetadata.setRegistrarId(null);
+    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @TestOfyAndSql

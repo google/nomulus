@@ -44,6 +44,7 @@ import org.joda.time.DateTime;
  * <p>The returned information included IP addresses, if any, and details of the host's most recent
  * transfer if it has ever been transferred. Any registrar can see the information for any host.
  *
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link HostFlowUtils.HostNameNotLowerCaseException}
  * @error {@link HostFlowUtils.HostNameNotNormalizedException}

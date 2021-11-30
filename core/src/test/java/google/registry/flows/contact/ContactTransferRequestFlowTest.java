@@ -36,6 +36,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import google.registry.flows.EppException;
 import google.registry.flows.EppException.ReadOnlyModeEppException;
+import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.exceptions.AlreadyPendingTransferException;
@@ -151,6 +152,13 @@ class ContactTransferRequestFlowTest
     // Setup done; run the test.
     assertTransactionalFlow(true);
     runFlow();
+  }
+
+  @TestOfyAndSql
+  void testNotLoggedIn() {
+    sessionMetadata.setRegistrarId(null);
+    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @TestOfyAndSql

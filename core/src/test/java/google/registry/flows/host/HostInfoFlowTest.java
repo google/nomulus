@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.net.InetAddresses;
 import google.registry.flows.EppException;
+import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException;
 import google.registry.flows.host.HostFlowUtils.HostNameNotLowerCaseException;
@@ -81,6 +82,13 @@ class HostInfoFlowTest extends ResourceFlowTestCase<HostInfoFlow, HostResource> 
             .setLastEppUpdateTime(DateTime.parse("1999-12-03T09:00:00.0Z"))
             .setLastTransferTime(DateTime.parse("2000-04-08T09:00:00.0Z"))
             .build());
+  }
+
+  @TestOfyAndSql
+  void testNotLoggedIn() {
+    sessionMetadata.setRegistrarId(null);
+    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @TestOfyAndSql

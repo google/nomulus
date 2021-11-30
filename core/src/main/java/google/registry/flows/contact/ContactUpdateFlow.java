@@ -56,6 +56,7 @@ import org.joda.time.DateTime;
  * An EPP flow that updates a contact.
  *
  * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.AddRemoveSameValueException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}

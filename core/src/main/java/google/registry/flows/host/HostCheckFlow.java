@@ -42,6 +42,7 @@ import javax.inject.Inject;
  * <p>This flows can check the existence of multiple hosts simultaneously.
  *
  * @error {@link google.registry.flows.exceptions.TooManyResourceChecksException}
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  */
 @ReportingSpec(ActivityReportField.HOST_CHECK)
 public final class HostCheckFlow implements Flow {

@@ -21,10 +21,8 @@ import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableO
 import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
 import static google.registry.persistence.transaction.TransactionManagerUtil.transactIfJpaTm;
-import static google.registry.testing.EppExceptionSubject.assertAboutEppExceptions;
 import static google.registry.testing.LogsSubject.assertAboutLogs;
 import static google.registry.testing.TaskQueueHelper.assertTasksEnqueued;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -33,7 +31,6 @@ import com.google.common.collect.Streams;
 import com.google.common.flogger.LoggerConfig;
 import com.google.common.testing.TestLogHandler;
 import com.googlecode.objectify.Key;
-import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.model.EppResource;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
@@ -58,7 +55,6 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.json.simple.JSONValue;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 
 /**
  * Base class for resource flow unit tests.
@@ -118,13 +114,6 @@ public abstract class ResourceFlowTestCase<F extends Flow, R extends EppResource
   /** Persists a testing claims list to Cloud SQL. */
   protected void persistClaimsList(ImmutableMap<String, String> labelsToKeys) {
     ClaimsListDao.save(ClaimsList.create(clock.nowUtc(), labelsToKeys));
-  }
-
-  @Test
-  void testRequiresLogin() {
-    sessionMetadata.setRegistrarId(null);
-    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
-    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   /**

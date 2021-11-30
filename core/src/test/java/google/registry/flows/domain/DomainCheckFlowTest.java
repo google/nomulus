@@ -40,6 +40,7 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import com.googlecode.objectify.Key;
 import google.registry.flows.EppException;
+import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.FlowUtils.UnknownCurrencyEppException;
 import google.registry.flows.ResourceCheckFlowTestCase;
 import google.registry.flows.domain.DomainCheckFlow.OnlyCheckedNamesCanBeFeeCheckedException;
@@ -120,6 +121,13 @@ class DomainCheckFlowTest extends ResourceCheckFlowTestCase<DomainCheckFlow, Dom
   void initCheckTest() {
     createTld("tld", TldState.QUIET_PERIOD);
     persistResource(Registry.get("tld").asBuilder().setReservedLists(createReservedList()).build());
+  }
+
+  @TestOfyAndSql
+  void testNotLoggedIn() {
+    sessionMetadata.setRegistrarId(null);
+    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @TestOfyAndSql

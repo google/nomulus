@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import google.registry.flows.EppException;
+import google.registry.flows.FlowUtils.NotLoggedInException;
 import google.registry.flows.ResourceFlowTestCase;
 import google.registry.flows.domain.DomainClaimsCheckFlow.DomainClaimsCheckNotAllowedWithAllocationTokens;
 import google.registry.flows.domain.DomainFlowUtils.BadCommandForRegistryPhaseException;
@@ -66,6 +67,13 @@ public class DomainClaimsCheckFlowTest
     assertNoHistory(); // Checks don't create a history event.
     assertNoBillingEvents(); // Checks are always free.
     runFlowAssertResponse(loadFile(expectedXmlFilename));
+  }
+
+  @TestOfyAndSql
+  void testNotLoggedIn() {
+    sessionMetadata.setRegistrarId(null);
+    EppException thrown = assertThrows(NotLoggedInException.class, this::runFlow);
+    assertAboutEppExceptions().that(thrown).marshalsToXml();
   }
 
   @TestOfyAndSql

@@ -68,6 +68,7 @@ import org.joda.time.DateTime;
  * those speculative objects are deleted.
  *
  * @error {@link google.registry.flows.EppException.ReadOnlyModeEppException}
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceNotOwnedException}

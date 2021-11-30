@@ -63,6 +63,7 @@ import org.joda.time.DateTime;
  * domain, will get a rich result with all of the domain's fields. All other requests will be
  * answered with a minimal result containing only basic information about the domain.
  *
+ * @error {@link google.registry.flows.FlowUtils.NotLoggedInException}
  * @error {@link google.registry.flows.FlowUtils.UnknownCurrencyEppException}
  * @error {@link google.registry.flows.ResourceFlowUtils.BadAuthInfoForResourceException}
  * @error {@link google.registry.flows.ResourceFlowUtils.ResourceDoesNotExistException}

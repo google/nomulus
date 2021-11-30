@@ -10,6 +10,8 @@ This flows can check the existence of multiple contacts simultaneously.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2306
     *   Too many resource checks requested in one check command.
 
@@ -21,6 +23,8 @@ An EPP flow that creates a new contact.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2005
     *   Internationalized postal infos can only contain ASCII characters.
 *   2302
@@ -45,6 +49,8 @@ or failure message when the process is complete.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2201
     *   The specified resource belongs to another client.
 *   2303
@@ -70,6 +76,8 @@ registrar that owns the contact or to a registrar that already supplied it.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2201
     *   The specified resource belongs to another client.
 *   2303
@@ -89,6 +97,8 @@ transfer request, which then becomes effective immediately.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2201
     *   The specified resource belongs to another client.
 *   2202
@@ -114,6 +124,8 @@ request.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2201
     *   Registrar is not the initiator of this transfer.
 *   2202
@@ -142,6 +154,7 @@ transfer period expiring.
 ### Errors
 
 *   2002
+    *   Registrar is not logged in.
     *   Object has no transfer history.
 *   2201
     *   Registrar is not authorized to view transfer status.
@@ -163,6 +176,8 @@ that window, this flow allows the losing client to reject the transfer request.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2201
     *   The specified resource belongs to another client.
 *   2202
@@ -189,6 +204,7 @@ or rejected, and the gaining registrar can also cancel the transfer request.
 ### Errors
 
 *   2002
+    *   Registrar is not logged in.
     *   Registrar already sponsors the object of this transfer request.
 *   2201
     *   Authorization info is required to request a transfer.
@@ -211,6 +227,8 @@ An EPP flow that updates a contact.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2004
     *   The specified status value cannot be set by clients.
 *   2005
@@ -241,6 +259,7 @@ information.
 ### Errors
 
 *   2002
+    *   Registrar is not logged in.
     *   Command is not allowed in the current registry phase.
 *   2004
     *   Unknown currency.
@@ -279,6 +298,7 @@ An EPP flow that checks whether domain labels are trademarked.
 ### Errors
 
 *   2002
+    *   Registrar is not logged in.
     *   Command is not allowed in the current registry phase.
     *   Claims checks are not allowed with allocation tokens.
 *   2004
@@ -300,6 +320,7 @@ An EPP flow that creates a new domain resource.
 
 *   2002
     *   Service extension(s) must be declared at login.
+    *   Registrar is not logged in.
     *   The current registry phase allows registrations only with signed marks.
     *   The current registry phase does not allow for general registrations.
     *   Signed marks are only allowed during sunrise.
@@ -397,6 +418,7 @@ An EPP flow that deletes a domain.
 ### Errors
 
 *   2002
+    *   Registrar is not logged in.
     *   Command is not allowed in the current registry phase.
 *   2103
     *   Specified extension is not implemented.
@@ -426,6 +448,8 @@ information about the domain.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2004
     *   Unknown currency.
 *   2202
@@ -457,6 +481,8 @@ comes in at the exact millisecond that the domain would have expired.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2003
     *   Fees must be explicitly acknowledged when performing any operations on a
         premium name.
@@ -515,6 +541,7 @@ regardless of what the original expiration time was.
 ### Errors
 
 *   2002
+    *   Registrar is not logged in.
     *   Restore command cannot have other changes specified.
 *   2003
     *   Fees must be explicitly acknowledged when performing any operations on a
@@ -566,6 +593,8 @@ replaced with new ones with the correct approval time.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2201
     *   The specified resource belongs to another client.
     *   Registrar is not authorized to access this TLD.
@@ -596,6 +625,8 @@ transfer period passed. In this flow, those speculative objects are deleted.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2201
     *   Registrar is not the initiator of this transfer.
     *   Registrar is not authorized to access this TLD.
@@ -625,6 +656,7 @@ transfer period expiring.
 ### Errors
 
 *   2002
+    *   Registrar is not logged in.
     *   Object has no transfer history.
 *   2201
     *   Registrar is not authorized to view transfer status.
@@ -650,6 +682,8 @@ transfer period passed. In this flow, those speculative objects are deleted.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2201
     *   The specified resource belongs to another client.
     *   Registrar is not authorized to access this TLD.
@@ -684,6 +718,7 @@ new ones with the correct approval time).
 ### Errors
 
 *   2002
+    *   Registrar is not logged in.
     *   Registrar already sponsors the object of this transfer request.
 *   2003
     *   Fees must be explicitly acknowledged when performing any operations on a
@@ -739,6 +774,8 @@ statuses are updated at once.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2003
     *   At least one of 'add' or 'rem' is required on a secDNS update.
     *   Fees must be explicitly acknowledged when performing an operation which
@@ -801,6 +838,8 @@ This flows can check the existence of multiple hosts simultaneously.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2306
     *   Too many resource checks requested in one check command.
 
@@ -818,6 +857,8 @@ allows creating a host name, and if necessary enqueues tasks to update DNS.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2003
     *   Subordinate hosts must have an ip address.
 *   2004
@@ -855,6 +896,8 @@ or failure message when the process is complete.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2005
     *   Host names must be in lower-case.
     *   Host names must be in normalized format.
@@ -882,6 +925,8 @@ see the information for any host.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2005
     *   Host names must be in lower-case.
     *   Host names must be in normalized format.
@@ -908,6 +953,8 @@ are enqueued to update DNS accordingly.
 
 ### Errors
 
+*   2002
+    *   Registrar is not logged in.
 *   2004
     *   The specified status value cannot be set by clients.
     *   Host names are limited to 253 characters.
