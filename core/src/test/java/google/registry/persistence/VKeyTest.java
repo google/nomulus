@@ -27,9 +27,9 @@ import com.google.common.collect.ImmutableMap;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import google.registry.model.billing.BillingEvent.OneTime;
+import google.registry.model.common.ClassPathManager;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.registrar.RegistrarContact;
-import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.testing.AppEngineExtension;
 import google.registry.testing.TaskQueueHelper.TaskMatcher;
 import google.registry.testing.TestObject;
@@ -63,7 +63,7 @@ class VKeyTest {
 
   @BeforeAll
   static void beforeAll() {
-    VKeyTranslatorFactory.addTestEntityClass(TestObject.class);
+    ClassPathManager.addTestEntityClass(TestObject.class);
   }
 
   @Test

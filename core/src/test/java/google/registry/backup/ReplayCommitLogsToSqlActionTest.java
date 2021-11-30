@@ -48,6 +48,7 @@ import com.google.common.truth.Truth8;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.googlecode.objectify.Key;
 import google.registry.gcs.GcsUtils;
+import google.registry.model.common.ClassPathManager;
 import google.registry.model.common.DatabaseMigrationStateSchedule;
 import google.registry.model.common.DatabaseMigrationStateSchedule.MigrationState;
 import google.registry.model.contact.ContactResource;
@@ -67,7 +68,6 @@ import google.registry.model.replay.SqlReplayCheckpoint;
 import google.registry.model.server.Lock;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.PremiumList.PremiumEntry;
-import google.registry.model.translators.VKeyTranslatorFactory;
 import google.registry.persistence.VKey;
 import google.registry.persistence.transaction.JpaTransactionManager;
 import google.registry.persistence.transaction.TransactionManagerFactory;
@@ -130,7 +130,7 @@ public class ReplayCommitLogsToSqlActionTest {
 
   @BeforeAll
   static void beforeAll() {
-    VKeyTranslatorFactory.addTestEntityClass(TestObject.class);
+    ClassPathManager.addTestEntityClass(TestObject.class);
   }
 
   @BeforeEach
