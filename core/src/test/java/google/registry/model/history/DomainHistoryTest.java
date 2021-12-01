@@ -16,7 +16,6 @@ package google.registry.model.history;
 
 import static com.google.common.truth.Truth.assertThat;
 import static google.registry.model.ImmutableObjectSubject.assertAboutImmutableObjects;
-import static google.registry.model.ImmutableObjectSubject.immutableObjectCorrespondence;
 import static google.registry.model.tld.Registry.TldState.GENERAL_AVAILABILITY;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.tm;
@@ -326,17 +325,10 @@ public class DomainHistoryTest extends EntityTestCase {
   }
 
   static void assertDomainHistoriesEqual(DomainHistory one, DomainHistory two) {
+    assertAboutImmutableObjects().that(one).isEqualExceptFields(two, "domainContent");
     assertAboutImmutableObjects()
-        .that(one)
-        .isEqualExceptFields(
-            two, "domainContent", "domainRepoId", "nsHosts", "domainTransactionRecords");
-    assertThat(one.getDomainContent().map(DomainContent::getDomainName))
-        .isEqualTo(two.getDomainContent().map(DomainContent::getDomainName));
-    // NB: the record's ID gets reset by Hibernate, causing the hash code to differ so we have to
-    // compare it separately
-    assertThat(one.getDomainTransactionRecords())
-        .comparingElementsUsing(immutableObjectCorrespondence())
-        .containsExactlyElementsIn(two.getDomainTransactionRecords());
+        .that(one.getDomainContent().get())
+        .isEqualExceptFields(two.getDomainContent().get(), "updateTimestamp");
   }
 
   private DomainHistory createDomainHistory(DomainContent domain) {

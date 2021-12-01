@@ -1087,13 +1087,6 @@ class DomainDeleteFlowTest extends ResourceFlowTestCase<DomainDeleteFlow, Domain
             null));
     setUpGracePeriodDurations();
     clock.advanceOneMilli();
-    earlierHistoryEntry =
-        persistResource(
-            earlierHistoryEntry
-                .asBuilder()
-                .setType(DOMAIN_CREATE)
-                .setModificationTime(TIME_BEFORE_FLOW.minusDays(2))
-                .build());
     runFlow();
     HistoryEntry persistedEntry = getOnlyHistoryEntryOfType(domain, DOMAIN_DELETE);
     // Transaction record should just be the grace period delete
