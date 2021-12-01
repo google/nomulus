@@ -418,6 +418,32 @@ class VKeyTest {
     assertThat(VKey.create(vkeyStringFromQueue)).isEqualTo(vkey);
   }
 
+  @Test
+  void testToString_sqlOnlyVKey() {
+    assertThat(VKey.createSql(TestObject.class, "testId").toString())
+        .isEqualTo("VKey<TestObject>(sql:testId)");
+  }
+
+  @Test
+  void testToString_ofyOnlyVKey_withName() {
+    assertThat(
+            VKey.createOfy(TestObject.class, Key.create(TestObject.class, "testName")).toString())
+        .isEqualTo("VKey<TestObject>(ofy:testName)");
+  }
+
+  @Test
+  void testToString_ofyOnlyVKey_withId() {
+    assertThat(VKey.createOfy(TestObject.class, Key.create(TestObject.class, 12345)).toString())
+        .isEqualTo("VKey<TestObject>(ofy:12345)");
+  }
+
+  @Test
+  void testToString_sqlAndOfyVKey() {
+    assertThat(
+            VKey.create(TestObject.class, "foo", Key.create(TestObject.create("ofy"))).toString())
+        .isEqualTo("VKey<TestObject>(sql:foo,ofy:ofy)");
+  }
+
   @Entity
   static class OtherObject {}
 }

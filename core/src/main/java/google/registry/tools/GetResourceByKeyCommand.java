@@ -48,7 +48,7 @@ final class GetResourceByKeyCommand implements CommandWithRemoteApi {
       EppResource resource =
           checkNotNull(
               auditedOfy().load().key(resourceKey.getOfyKey()).now(),
-              "Could not load resource for key: " + resourceKey.getOfyKey());
+              "Could not load resource for key: " + resourceKey);
       System.out.println(expand ? resource.toHydratedString() : resource.toString());
     }
   }
