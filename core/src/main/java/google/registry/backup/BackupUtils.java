@@ -45,7 +45,7 @@ public class BackupUtils {
    * OutputStream} in delimited protocol buffer format.
    */
   static void serializeEntity(ImmutableObject entity, OutputStream stream) throws IOException {
-    EntityTranslator.convertToPb(auditedOfy().saveIgnoringReadOnly().toEntity(entity))
+    EntityTranslator.convertToPb(auditedOfy().saveIgnoringReadOnlyWithoutBackup().toEntity(entity))
         .writeDelimitedTo(stream);
   }
 

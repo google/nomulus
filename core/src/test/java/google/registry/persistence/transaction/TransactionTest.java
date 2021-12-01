@@ -14,7 +14,9 @@
 
 package google.registry.persistence.transaction;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.google.common.truth.Truth.assertThat;
+import static google.registry.model.ofy.ObjectifyService.auditedOfy;
 import static google.registry.persistence.transaction.TransactionManagerFactory.jpaTm;
 import static google.registry.persistence.transaction.TransactionManagerFactory.ofyTm;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -23,6 +25,8 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import google.registry.model.ImmutableObject;
+import google.registry.model.ofy.CommitLogManifest;
+import google.registry.model.ofy.CommitLogMutation;
 import google.registry.model.ofy.Ofy;
 import google.registry.persistence.VKey;
 import google.registry.testing.AppEngineExtension;
@@ -33,6 +37,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.StreamCorruptedException;
+import java.util.Comparator;
+import java.util.List;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +47,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 class TransactionTest {
 
-  private final FakeClock fakeClock = new FakeClock(DateTime.parse("2000-01-01TZ"));
+  private final FakeClock fakeClock =
+      new FakeClock(DateTime.parse("2000-01-01TZ")).setAutoIncrementByOneMilli();
 
   @RegisterExtension
   final AppEngineExtension appEngine =
@@ -83,6 +90,16 @@ class TransactionTest {
     txn = new Transaction.Builder().addDelete(barEntity.key()).build();
     txn.writeToDatastore();
     assertThat(ofyTm().exists(barEntity.key())).isEqualTo(false);
+
+    assertThat(
+            auditedOfy().load().type(CommitLogMutation.class).list().stream()
+                .map(clm -> auditedOfy().load().<TestEntity>fromEntity(clm.getEntity()))
+                .collect(toImmutableSet()))
+        .containsExactly(fooEntity, barEntity);
+    List<CommitLogManifest> manifests = auditedOfy().load().type(CommitLogManifest.class).list();
+    manifests.sort(Comparator.comparing(CommitLogManifest::getCommitTime));
+    assertThat(manifests.get(0).getDeletions()).isEmpty();
+    assertThat(manifests.get(1).getDeletions()).containsExactly(Key.create(barEntity));
   }
 
   @Test

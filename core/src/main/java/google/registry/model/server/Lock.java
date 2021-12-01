@@ -293,7 +293,7 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
               create(resourceName, scope, requestStatusChecker.getLogId(), now, leaseLength);
           // Locks are not parented under an EntityGroupRoot (so as to avoid write
           // contention) and don't need to be backed up.
-          transactionManager.putIgnoringReadOnly(newLock);
+          transactionManager.putIgnoringReadOnlyWithoutBackup(newLock);
 
           return AcquireResult.create(now, lock, newLock, lockState);
         };
@@ -325,7 +325,7 @@ public class Lock extends ImmutableObject implements DatastoreAndSqlEntity, Seri
             // Use deleteIgnoringReadOnly() so that we don't create a commit log entry for deleting
             // the lock.
             logger.atInfo().log("Deleting lock: %s", lockId);
-            transactionManager.deleteIgnoringReadOnly(key);
+            transactionManager.deleteIgnoringReadOnlyWithoutBackup(key);
 
             lockMetrics.recordRelease(
                 resourceName,

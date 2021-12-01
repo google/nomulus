@@ -637,7 +637,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void putIgnoringReadOnly(Object entity) {
+  public void putIgnoringReadOnlyWithoutBackup(Object entity) {
     checkArgumentNotNull(entity);
     if (isEntityOfIgnoredClass(entity)) {
       return;
@@ -652,7 +652,7 @@ public class JpaTransactionManagerImpl implements JpaTransactionManager {
   }
 
   @Override
-  public void deleteIgnoringReadOnly(VKey<?> key) {
+  public void deleteIgnoringReadOnlyWithoutBackup(VKey<?> key) {
     checkArgumentNotNull(key, "key must be specified");
     assertInTransaction();
     if (IGNORED_ENTITY_CLASSES.contains(key.getKind())) {

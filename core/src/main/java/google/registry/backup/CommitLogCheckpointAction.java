@@ -74,7 +74,7 @@ public final class CommitLogCheckpointAction implements Runnable {
                 return;
               }
               auditedOfy()
-                  .saveIgnoringReadOnly()
+                  .saveIgnoringReadOnlyWithoutBackup()
                   .entities(
                       checkpoint, CommitLogCheckpointRoot.create(checkpoint.getCheckpointTime()));
               // Enqueue a diff task between previous and current checkpoints.

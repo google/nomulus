@@ -133,15 +133,7 @@ public class Ofy {
    */
   public Deleter delete() {
     assertNotReadOnlyMode();
-    return new AugmentedDeleter() {
-      @Override
-      protected void handleDeletion(Iterable<Key<?>> keys) {
-        assertInTransaction();
-        checkState(Streams.stream(keys).allMatch(Objects::nonNull), "Can't delete a null key.");
-        checkProhibitedAnnotations(keys, NotBackedUp.class, VirtualEntity.class);
-        TRANSACTION_INFO.get().putDeletes(keys);
-      }
-    };
+    return deleteIgnoringReadOnlyWithBackup();
   }
 
   /**
@@ -151,7 +143,7 @@ public class Ofy {
    */
   public Deleter deleteWithoutBackup() {
     assertNotReadOnlyMode();
-    return deleteIgnoringReadOnly();
+    return deleteIgnoringReadOnlyWithoutBackup();
   }
 
   /**
@@ -162,6 +154,41 @@ public class Ofy {
    */
   public Saver save() {
     assertNotReadOnlyMode();
+    return saveIgnoringReadOnlyWithBackup();
+  }
+
+  /**
+   * Save, without any augmentations except to check that we're not saving any virtual entities.
+   *
+   * <p>No backups get written.
+   */
+  public Saver saveWithoutBackup() {
+    assertNotReadOnlyMode();
+    return saveIgnoringReadOnlyWithoutBackup();
+  }
+
+  /** Save, ignoring any backups or any read-only settings. */
+  public Saver saveIgnoringReadOnlyWithoutBackup() {
+    return new AugmentedSaver() {
+      @Override
+      protected void handleSave(Iterable<?> entities) {
+        checkProhibitedAnnotations(entities, VirtualEntity.class);
+      }
+    };
+  }
+
+  /** Delete, ignoring any backups or any read-only settings. */
+  public Deleter deleteIgnoringReadOnlyWithoutBackup() {
+    return new AugmentedDeleter() {
+      @Override
+      protected void handleDeletion(Iterable<Key<?>> keys) {
+        checkProhibitedAnnotations(keys, VirtualEntity.class);
+      }
+    };
+  }
+
+  /** Save, ignoring any read-only settings (but still write commit logs). */
+  public Saver saveIgnoringReadOnlyWithBackup() {
     return new AugmentedSaver() {
       @Override
       protected void handleSave(Iterable<?> entities) {
@@ -175,32 +202,15 @@ public class Ofy {
     };
   }
 
-  /**
-   * Save, without any augmentations except to check that we're not saving any virtual entities.
-   *
-   * <p>No backups get written.
-   */
-  public Saver saveWithoutBackup() {
-    assertNotReadOnlyMode();
-    return saveIgnoringReadOnly();
-  }
-
-  /** Save, ignoring any backups or any read-only settings. */
-  public Saver saveIgnoringReadOnly() {
-    return new AugmentedSaver() {
-      @Override
-      protected void handleSave(Iterable<?> entities) {
-        checkProhibitedAnnotations(entities, VirtualEntity.class);
-      }
-    };
-  }
-
-  /** Delete, ignoring any backups or any read-only settings. */
-  public Deleter deleteIgnoringReadOnly() {
+  /** Delete, ignoring any read-only settings (but still write commit logs). */
+  public Deleter deleteIgnoringReadOnlyWithBackup() {
     return new AugmentedDeleter() {
       @Override
       protected void handleDeletion(Iterable<Key<?>> keys) {
-        checkProhibitedAnnotations(keys, VirtualEntity.class);
+        assertInTransaction();
+        checkState(Streams.stream(keys).allMatch(Objects::nonNull), "Can't delete a null key.");
+        checkProhibitedAnnotations(keys, NotBackedUp.class, VirtualEntity.class);
+        TRANSACTION_INFO.get().putDeletes(keys);
       }
     };
   }

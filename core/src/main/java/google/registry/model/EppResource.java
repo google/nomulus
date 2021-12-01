@@ -228,8 +228,8 @@ public abstract class EppResource extends BackupGroupRoot implements Buildable {
 
   /** Used when replaying from SQL to DS to populate the Datastore indexes. */
   protected void saveIndexesToDatastore() {
-    ofyTm().putIgnoringReadOnly(ForeignKeyIndex.create(this, getDeletionTime()));
-    ofyTm().putIgnoringReadOnly(EppResourceIndex.create(Key.create(this)));
+    ofyTm().putIgnoringReadOnlyWithBackup(ForeignKeyIndex.create(this, getDeletionTime()));
+    ofyTm().putIgnoringReadOnlyWithBackup(EppResourceIndex.create(Key.create(this)));
   }
 
   /** EppResources that are loaded via foreign keys should implement this marker interface. */

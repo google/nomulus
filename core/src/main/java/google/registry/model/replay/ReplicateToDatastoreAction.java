@@ -149,7 +149,7 @@ public class ReplicateToDatastoreAction implements Runnable {
                 // Write the updated last transaction id to Datastore as part of this Datastore
                 // transaction.
                 auditedOfy()
-                    .saveIgnoringReadOnly()
+                    .saveIgnoringReadOnlyWithoutBackup()
                     .entity(lastSqlTxn.cloneWithNewTransactionId(nextTxnId));
                 logger.atInfo().log(
                     "Finished applying single transaction Cloud SQL -> Cloud Datastore.");
