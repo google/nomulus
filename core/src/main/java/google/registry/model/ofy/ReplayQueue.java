@@ -95,22 +95,21 @@ public class ReplayQueue {
       // Sort the changes into an order that will work for insertion into the database.
       jpaTm()
           .transact(
-              () -> {
-                changes.entrySet().stream()
-                    .sorted(ReplayQueue::compareByPriority)
-                    .forEach(
-                        entry -> {
-                          if (entry.getValue().equals(TransactionInfo.Delete.SENTINEL)) {
-                            VKey<?> vkey = VKey.from(entry.getKey());
-                            ReplaySpecializer.beforeSqlDelete(vkey);
-                            jpaTm().delete(vkey);
-                          } else {
-                            ((DatastoreEntity) entry.getValue())
-                                .toSqlEntity()
-                                .ifPresent(jpaTm()::put);
-                          }
-                        });
-              });
+              () ->
+                  changes.entrySet().stream()
+                      .sorted(ReplayQueue::compareByPriority)
+                      .forEach(
+                          entry -> {
+                            if (entry.getValue().equals(TransactionInfo.Delete.SENTINEL)) {
+                              VKey<?> vkey = VKey.from(entry.getKey());
+                              ReplaySpecializer.beforeSqlDelete(vkey);
+                              jpaTm().delete(vkey);
+                            } else {
+                              ((DatastoreEntity) entry.getValue())
+                                  .toSqlEntity()
+                                  .ifPresent(jpaTm()::put);
+                            }
+                          }));
     }
   }
 }

@@ -196,7 +196,8 @@ public class DomainHistory extends HistoryEntry implements SqlEntity {
   @Access(AccessType.PROPERTY)
   @OneToMany(
       cascade = {CascadeType.ALL},
-      fetch = FetchType.EAGER)
+      fetch = FetchType.EAGER,
+      orphanRemoval = true)
   @JoinColumn(name = "historyRevisionId", referencedColumnName = "historyRevisionId")
   @JoinColumn(name = "domainRepoId", referencedColumnName = "domainRepoId")
   @SuppressWarnings("unused")

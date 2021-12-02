@@ -25,7 +25,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainBase;
@@ -79,15 +78,10 @@ class HistoryEntryTest extends EntityTestCase {
   void testPersistence() {
     transactIfJpaTm(
         () -> {
-          HistoryEntry fromDatabase = tm().loadByEntity(domainHistory);
+          DomainHistory fromDatabase = tm().loadByEntity(domainHistory);
           assertAboutImmutableObjects()
               .that(fromDatabase)
-              .isEqualExceptFields(
-                  domainHistory, "nsHosts", "domainTransactionRecords", "domainContent");
-          assertAboutImmutableObjects()
-              .that(Iterables.getOnlyElement(fromDatabase.getDomainTransactionRecords()))
-              .isEqualExceptFields(
-                  Iterables.getOnlyElement(domainHistory.getDomainTransactionRecords()), "id");
+              .isEqualExceptFields(domainHistory, "domainContent");
         });
   }
 
