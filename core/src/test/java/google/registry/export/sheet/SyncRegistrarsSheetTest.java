@@ -344,7 +344,7 @@ public class SyncRegistrarsSheetTest {
     ImmutableMap<String, String> row = getOnlyElement(getOnlyElement(rowsCaptor.getAllValues()));
     assertThat(row).containsEntry("clientIdentifier", "SomeRegistrar");
     assertThat(row).containsEntry("registrarName", "Some Registrar");
-    assertThat(row).containsEntry("state", "");
+    assertThat(row).containsEntry("state", "ACTIVE");
     assertThat(row).containsEntry("ianaIdentifier", "8");
     assertThat(row).containsEntry("billingIdentifier", "");
     assertThat(row).containsEntry("primaryContacts", "");
