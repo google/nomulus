@@ -354,6 +354,10 @@ public abstract class PollMessage extends ImmutableObject
     @Column(name = "transfer_response_contact_id")
     String contactId;
 
+    @Ignore
+    @Column(name = "transfer_response_host_id")
+    String hostId;
+
     @Override
     public VKey<OneTime> createVKey() {
       return VKey.create(OneTime.class, getId(), Key.create(this));
@@ -392,6 +396,9 @@ public abstract class PollMessage extends ImmutableObject
       // Take the Objectify-specific fields and map them to the SQL-specific fields, if applicable
       if (!isNullOrEmpty(contactPendingActionNotificationResponses)) {
         pendingActionNotificationResponse = contactPendingActionNotificationResponses.get(0);
+      }
+      if (!isNullOrEmpty(hostPendingActionNotificationResponses)) {
+        pendingActionNotificationResponse = hostPendingActionNotificationResponses.get(0);
       }
       if (!isNullOrEmpty(contactTransferResponses)) {
         contactId = contactTransferResponses.get(0).getContactId();
@@ -433,6 +440,16 @@ public abstract class PollMessage extends ImmutableObject
                   pendingActionNotificationResponse.processedDate);
           pendingActionNotificationResponse = domainPendingResponse;
           domainPendingActionNotificationResponses = ImmutableList.of(domainPendingResponse);
+        } else if (hostId != null) {
+          HostPendingActionNotificationResponse hostPendingActionNotificationResponse =
+              HostPendingActionNotificationResponse.create(
+                  pendingActionNotificationResponse.nameOrId.value,
+                  pendingActionNotificationResponse.getActionResult(),
+                  pendingActionNotificationResponse.getTrid(),
+                  pendingActionNotificationResponse.processedDate);
+          pendingActionNotificationResponse = hostPendingActionNotificationResponse;
+          hostPendingActionNotificationResponses =
+              ImmutableList.of(hostPendingActionNotificationResponse);
         }
       }
       if (transferResponse != null) {
@@ -527,6 +544,7 @@ public abstract class PollMessage extends ImmutableObject
         } else if (instance.hostPendingActionNotificationResponses != null) {
           instance.pendingActionNotificationResponse =
               instance.hostPendingActionNotificationResponses.get(0);
+          instance.hostId = instance.hostPendingActionNotificationResponses.get(0).nameOrId.value;
         }
         // Set the generic transfer response field as appropriate
         if (instance.contactTransferResponses != null) {

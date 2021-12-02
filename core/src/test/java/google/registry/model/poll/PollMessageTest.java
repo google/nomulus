@@ -24,12 +24,14 @@ import static google.registry.testing.DatabaseHelper.persistActiveContact;
 import static google.registry.testing.DatabaseHelper.persistResource;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.ImmutableList;
 import google.registry.model.EntityTestCase;
 import google.registry.model.contact.ContactResource;
 import google.registry.model.domain.DomainBase;
 import google.registry.model.domain.DomainHistory;
 import google.registry.model.domain.Period;
 import google.registry.model.eppcommon.Trid;
+import google.registry.model.poll.PendingActionNotificationResponse.HostPendingActionNotificationResponse;
 import google.registry.model.reporting.HistoryEntry;
 import google.registry.persistence.VKey;
 import google.registry.testing.DualDatabaseTest;
@@ -117,6 +119,32 @@ public class PollMessageTest extends EntityTestCase {
                 .setParent(historyEntry)
                 .build());
     assertThat(tm().transact(() -> tm().loadByEntity(pollMessage))).isEqualTo(pollMessage);
+  }
+
+  @TestOfyAndSql
+  void testPersistenceOneTime_hostPendingActionNotification() {
+    HostPendingActionNotificationResponse hostPendingActionNotificationResponse =
+        HostPendingActionNotificationResponse.create(
+            "test.example",
+            true,
+            Trid.create("ABC-123", "server-trid"),
+            fakeClock.nowUtc().minusDays(5));
+
+    PollMessage.OneTime pollMessage =
+        new PollMessage.OneTime.Builder()
+            .setRegistrarId("TheRegistrar")
+            .setEventTime(fakeClock.nowUtc())
+            .setMsg("Test poll message")
+            .setParent(historyEntry)
+            .setResponseData(ImmutableList.of(hostPendingActionNotificationResponse))
+            .build();
+    persistResource(pollMessage);
+    assertThat(tm().transact(() -> tm().loadByEntity(pollMessage).getMsg()))
+        .isEqualTo(pollMessage.msg);
+    assertThat(
+            tm().transact(() -> tm().loadByEntity(pollMessage))
+                .hostPendingActionNotificationResponses)
+        .contains(hostPendingActionNotificationResponse);
   }
 
   @TestSqlOnly

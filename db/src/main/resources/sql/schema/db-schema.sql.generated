@@ -523,6 +523,7 @@
         transfer_response_contact_id text,
         transfer_response_domain_expiration_time timestamptz,
         transfer_response_domain_name text,
+        transfer_response_host_id text,
         pending_action_response_action_result boolean,
         pending_action_response_name_or_id text,
         pending_action_response_processed_date timestamptz,
