@@ -170,7 +170,10 @@ public class DomainBase extends DomainContent
   @Override
   public void beforeSqlSaveOnReplay() {
     fullyQualifiedDomainName = DomainNameUtils.canonicalizeDomainName(fullyQualifiedDomainName);
-    dsData = dsData.stream().filter(datum -> datum.getDigest() != null).collect(toImmutableSet());
+    dsData =
+        dsData.stream()
+            .filter(datum -> datum.getDigest() != null && datum.getDigest().length > 0)
+            .collect(toImmutableSet());
   }
 
   @Override
