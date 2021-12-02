@@ -14,6 +14,7 @@
 package google.registry.persistence;
 
 import google.registry.persistence.converter.IntervalDescriptor;
+import google.registry.persistence.converter.JodaMoneyType;
 import google.registry.persistence.converter.StringCollectionDescriptor;
 import google.registry.persistence.converter.StringMapDescriptor;
 import java.sql.Types;
@@ -34,6 +35,7 @@ public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
     registerColumnType(IntervalDescriptor.COLUMN_TYPE, IntervalDescriptor.COLUMN_NAME);
   }
 
+  @SuppressWarnings("deprecation") // See comments below on JodaMoneyType.
   @Override
   public void contributeTypes(
       TypeContributions typeContributions, ServiceRegistry serviceRegistry) {
@@ -44,5 +46,8 @@ public class NomulusPostgreSQLDialect extends PostgreSQL95Dialect {
     typeContributions.contributeSqlTypeDescriptor(StringMapDescriptor.getInstance());
     typeContributions.contributeJavaTypeDescriptor(IntervalDescriptor.getInstance());
     typeContributions.contributeSqlTypeDescriptor(IntervalDescriptor.getInstance());
+    // Below method (contributing CompositeUserType) is deprecated. Please see javadoc of
+    // JodaMoneyType for reasons.
+    typeContributions.contributeType(JodaMoneyType.INSTANCE, JodaMoneyType.TYPE_NAME);
   }
 }

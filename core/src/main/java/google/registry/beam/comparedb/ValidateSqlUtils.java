@@ -19,12 +19,9 @@ import static google.registry.persistence.transaction.TransactionManagerFactory.
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Maps;
 import com.google.common.flogger.FluentLogger;
 import google.registry.model.EppResource;
 import google.registry.model.ImmutableObject;
-import google.registry.model.billing.BillingEvent.OneTime;
 import google.registry.model.contact.ContactBase;
 import google.registry.model.contact.ContactHistory;
 import google.registry.model.domain.DomainContent;
@@ -34,7 +31,6 @@ import google.registry.model.host.HostHistory;
 import google.registry.model.poll.PollMessage;
 import google.registry.model.replay.SqlEntity;
 import google.registry.model.reporting.HistoryEntry;
-import google.registry.model.tld.Registry;
 import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -48,7 +44,6 @@ import org.apache.beam.sdk.metrics.Metrics;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.TupleTag;
-import org.joda.money.Money;
 
 /** Helpers for use by {@link ValidateSqlPipeline}. */
 final class ValidateSqlUtils {
@@ -195,12 +190,6 @@ final class ValidateSqlUtils {
     if (sqlEntity instanceof HistoryEntry) {
       return (SqlEntity) normalizeHistoryEntry((HistoryEntry) sqlEntity);
     }
-    if (sqlEntity instanceof Registry) {
-      return normalizeRegistry((Registry) sqlEntity);
-    }
-    if (sqlEntity instanceof OneTime) {
-      return normalizeOnetime((OneTime) sqlEntity);
-    }
     return sqlEntity;
   }
 
@@ -277,45 +266,5 @@ final class ValidateSqlUtils {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-  }
-
-  static Registry normalizeRegistry(Registry registry) {
-    if (registry.getStandardCreateCost().getAmount().scale() == 0) {
-      return registry;
-    }
-    return registry
-        .asBuilder()
-        .setCreateBillingCost(normalizeMoney(registry.getStandardCreateCost()))
-        .setRestoreBillingCost(normalizeMoney(registry.getStandardRestoreCost()))
-        .setServerStatusChangeBillingCost(normalizeMoney(registry.getServerStatusChangeCost()))
-        .setRegistryLockOrUnlockBillingCost(
-            normalizeMoney(registry.getRegistryLockOrUnlockBillingCost()))
-        .setRenewBillingCostTransitions(
-            ImmutableSortedMap.copyOf(
-                Maps.transformValues(
-                    registry.getRenewBillingCostTransitions(), ValidateSqlUtils::normalizeMoney)))
-        .setEapFeeSchedule(
-            ImmutableSortedMap.copyOf(
-                Maps.transformValues(
-                    registry.getEapFeeScheduleAsMap(), ValidateSqlUtils::normalizeMoney)))
-        .build();
-  }
-
-  /** Normalizes an {@link OneTime} instance for comparison. */
-  static OneTime normalizeOnetime(OneTime oneTime) {
-    Money cost = oneTime.getCost();
-    if (cost.getAmount().scale() == 0) {
-      return oneTime;
-    }
-    try {
-      return oneTime.asBuilder().setCost(normalizeMoney(oneTime.getCost())).build();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  static Money normalizeMoney(Money original) {
-    // Strips ".00" from the amount.
-    return Money.of(original.getCurrencyUnit(), original.getAmount().stripTrailingZeros());
   }
 }

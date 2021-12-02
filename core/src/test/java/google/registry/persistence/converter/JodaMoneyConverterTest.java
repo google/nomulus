@@ -26,8 +26,6 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -36,30 +34,14 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapKeyColumn;
-import javax.persistence.PostLoad;
+import org.hibernate.annotations.Columns;
+import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-/**
- * Unit tests for embeddable {@link Money}.
- *
- * <p>{@link Money} is a wrapper around {@link org.joda.money.BigMoney} which itself contains two
- * fields: a {@link BigDecimal} {@code amount} and a {@link CurrencyUnit} {@code currency}. When we
- * store an entity with a {@link Money} field, we would like to store it in two columns, for the
- * amount and the currency separately, so that it is easily queryable. This requires that we make
- * {@link Money} a nested embeddable object.
- *
- * <p>However becaues {@link Money} is not a class that we control, we cannot use annotation-based
- * mapping. Therefore there is no {@code JodaMoneyConverter} class. Instead, we define the mapping
- * in {@code META-INF/orm.xml}.
- *
- * <p>Also note that any entity that contains a {@link Money} should should implement a
- * {@link @PostLoad} callback that converts the amount in the {@link Money} to a scale that is
- * appropriate for the currency. This is espcially necessary for currencies like JPY where the scale
- * is 0, which is different from the default scale that {@link BigDecimal} is persisted in database.
- */
+/** Unit tests for embeddable {@link JodaMoneyType}. */
 public class JodaMoneyConverterTest {
 
   @RegisterExtension
@@ -83,10 +65,51 @@ public class JodaMoneyConverterTest {
                             "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
                         .getResultList());
     assertThat(result.size()).isEqualTo(1);
+    // The amount property, when loaded as a raw value, has the same scale as the table column,
+    // which is 2.
     assertThat(Arrays.asList((Object[]) result.get(0)))
-        .containsExactly(
-            BigDecimal.valueOf(100).setScale(CurrencyUnit.USD.getDecimalPlaces()), "USD")
+        .containsExactly(BigDecimal.valueOf(100).setScale(2), "USD")
         .inOrder();
+    TestEntity persisted =
+        jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
+    assertThat(persisted.money).isEqualTo(money);
+    assertThat(persisted.money.getAmount().scale()).isEqualTo(2);
+  }
+
+  @Test
+  void roundTripConversion_scale0() {
+    Money money = Money.ofMajor(CurrencyUnit.JPY, 100);
+    assertThat(money.getAmount().scale()).isEqualTo(0); // JPY's amount has scale at 0.
+    TestEntity entity = new TestEntity(money);
+    insertInDb(entity);
+    List<?> result =
+        jpaTm()
+            .transact(
+                () ->
+                    jpaTm()
+                        .getEntityManager()
+                        .createNativeQuery(
+                            "SELECT amount, currency FROM \"TestEntity\" WHERE name = 'id'")
+                        .getResultList());
+    assertThat(result.size()).isEqualTo(1);
+    /* The amount property, when loaded as a raw value, has the same scale as the table column,
+    which is 2. */
+    assertThat(Arrays.asList((Object[]) result.get(0)))
+        .containsExactly(BigDecimal.valueOf(100).setScale(2), "JPY")
+        .inOrder();
+
+    result =
+        jpaTm()
+            .transact(
+                () ->
+                    jpaTm()
+                        .getEntityManager()
+                        .createQuery("SELECT money FROM TestEntity WHERE name" + " = 'id'")
+                        .getResultList());
+
+    // When the money field is loaded as an embedded entity, it has the desired scale (0).
+    assertThat(result.get(0)).isEqualTo(money);
+
     TestEntity persisted =
         jpaTm().transact(() -> jpaTm().getEntityManager().find(TestEntity.class, "id"));
     assertThat(persisted.money).isEqualTo(money);
@@ -132,11 +155,6 @@ public class JodaMoneyConverterTest {
         jpaTm().transact(() -> jpaTm().getEntityManager().find(ComplexTestEntity.class, "id"));
     assertThat(result.size()).isEqualTo(1);
 
-    // Note that the amount has two decimal places even though JPY is supposed to have scale 0.
-    // This is due to the unfournate fact that we need to accommodate differet currencies stored
-    // in the same table so that the scale has to be set to the largest (2). When a Money field is
-    // persisted in an entity, the entity should always have a @PostLoad callback to convert the
-    // Money to the correct scale.
     assertThat(Arrays.asList((Object[]) result.get(0)))
         .containsExactly(BigDecimal.valueOf(2000).setScale(2), "JPY")
         .inOrder();
@@ -147,13 +165,15 @@ public class JodaMoneyConverterTest {
   }
 
   // Override entity name to exclude outer-class name in table name. Not necessary if class is not
-  // inner class. The double quotes are added to conform to our schema generation convention.
-  @Entity(name = "\"TestEntity\"")
+  // inner class.
+  @Entity(name = "TestEntity")
   @EntityForTesting
   public static class TestEntity extends ImmutableObject {
 
     @Id String name = "id";
 
+    @Type(type = JodaMoneyType.TYPE_NAME)
+    @Columns(columns = {@Column(name = "amount"), @Column(name = "currency")})
     Money money;
 
     public TestEntity() {}
@@ -164,50 +184,26 @@ public class JodaMoneyConverterTest {
   }
 
   // See comments on the annotation for TestEntity above for reason.
-  @Entity(name = "\"ComplexTestEntity\"")
+  @Entity(name = "ComplexTestEntity")
   @EntityForTesting
   // This entity is used to test column override for embedded fields and collections.
   public static class ComplexTestEntity extends ImmutableObject {
-
-    // After the entity is loaded from the database, go through the money map and make sure that
-    // the scale is consistent with the currency. This is necessary for currency like JPY where
-    // the scale is 0 but the amount is persisteted as BigDecimal with scale 2.
-    @PostLoad
-    void setCurrencyScale() {
-      moneyMap
-          .entrySet()
-          .forEach(
-              entry -> {
-                Money money = entry.getValue();
-                if (!money.toBigMoney().isCurrencyScale()) {
-                  CurrencyUnit currency = money.getCurrencyUnit();
-                  BigDecimal amount = money.getAmount().setScale(currency.getDecimalPlaces());
-                  entry.setValue(Money.of(currency, amount));
-                }
-              });
-    }
 
     @Id String name = "id";
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "MoneyMap", joinColumns = @JoinColumn(name = "entity_name"))
     @MapKeyColumn(name = "map_key")
-    @AttributeOverrides({
-      @AttributeOverride(name = "value.money.amount", column = @Column(name = "map_amount")),
-      @AttributeOverride(name = "value.money.currency", column = @Column(name = "map_currency"))
-    })
+    @Type(type = JodaMoneyType.TYPE_NAME)
+    @Columns(columns = {@Column(name = "map_amount"), @Column(name = "map_currency")})
     Map<String, Money> moneyMap;
 
-    @AttributeOverrides({
-      @AttributeOverride(name = "money.amount", column = @Column(name = "my_amount")),
-      @AttributeOverride(name = "money.currency", column = @Column(name = "my_currency"))
-    })
+    @Type(type = JodaMoneyType.TYPE_NAME)
+    @Columns(columns = {@Column(name = "my_amount"), @Column(name = "my_currency")})
     Money myMoney;
 
-    @AttributeOverrides({
-      @AttributeOverride(name = "money.amount", column = @Column(name = "your_amount")),
-      @AttributeOverride(name = "money.currency", column = @Column(name = "your_currency"))
-    })
+    @Type(type = JodaMoneyType.TYPE_NAME)
+    @Columns(columns = {@Column(name = "your_amount"), @Column(name = "your_currency")})
     Money yourMoney;
 
     public ComplexTestEntity() {}

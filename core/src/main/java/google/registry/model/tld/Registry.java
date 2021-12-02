@@ -64,6 +64,7 @@ import google.registry.model.replay.DatastoreAndSqlEntity;
 import google.registry.model.tld.label.PremiumList;
 import google.registry.model.tld.label.ReservedList;
 import google.registry.persistence.VKey;
+import google.registry.persistence.converter.JodaMoneyType;
 import google.registry.util.Idn;
 import java.util.Map;
 import java.util.Optional;
@@ -72,13 +73,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
 import javax.persistence.Column;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.PostLoad;
 import javax.persistence.Transient;
+import org.hibernate.annotations.Columns;
+import org.hibernate.annotations.Type;
 import org.joda.money.CurrencyUnit;
 import org.joda.money.Money;
 import org.joda.time.DateTime;
@@ -466,47 +467,39 @@ public class Registry extends ImmutableObject
   CurrencyUnit currency = DEFAULT_CURRENCY;
 
   /** The per-year billing cost for registering a new domain name. */
-  @AttributeOverrides({
-    @AttributeOverride(
-        name = "money.amount",
-        column = @Column(name = "create_billing_cost_amount")),
-    @AttributeOverride(
-        name = "money.currency",
-        column = @Column(name = "create_billing_cost_currency"))
-  })
+  @Type(type = JodaMoneyType.TYPE_NAME)
+  @Columns(
+      columns = {
+        @Column(name = "create_billing_cost_amount"),
+        @Column(name = "create_billing_cost_currency")
+      })
   Money createBillingCost = DEFAULT_CREATE_BILLING_COST;
 
   /** The one-time billing cost for restoring a domain name from the redemption grace period. */
-  @AttributeOverrides({
-    @AttributeOverride(
-        name = "money.amount",
-        column = @Column(name = "restore_billing_cost_amount")),
-    @AttributeOverride(
-        name = "money.currency",
-        column = @Column(name = "restore_billing_cost_currency"))
-  })
+  @Type(type = JodaMoneyType.TYPE_NAME)
+  @Columns(
+      columns = {
+        @Column(name = "restore_billing_cost_amount"),
+        @Column(name = "restore_billing_cost_currency")
+      })
   Money restoreBillingCost = DEFAULT_RESTORE_BILLING_COST;
 
   /** The one-time billing cost for changing the server status (i.e. lock). */
-  @AttributeOverrides({
-    @AttributeOverride(
-        name = "money.amount",
-        column = @Column(name = "server_status_change_billing_cost_amount")),
-    @AttributeOverride(
-        name = "money.currency",
-        column = @Column(name = "server_status_change_billing_cost_currency"))
-  })
+  @Type(type = JodaMoneyType.TYPE_NAME)
+  @Columns(
+      columns = {
+        @Column(name = "server_status_change_billing_cost_amount"),
+        @Column(name = "server_status_change_billing_cost_currency")
+      })
   Money serverStatusChangeBillingCost = DEFAULT_SERVER_STATUS_CHANGE_BILLING_COST;
 
   /** The one-time billing cost for a registry lock/unlock action initiated by a registrar. */
-  @AttributeOverrides({
-      @AttributeOverride(
-          name = "money.amount",
-          column = @Column(name = "registry_lock_or_unlock_cost_amount")),
-      @AttributeOverride(
-          name = "money.currency",
-          column = @Column(name = "registry_lock_or_unlock_cost_currency"))
-  })
+  @Type(type = JodaMoneyType.TYPE_NAME)
+  @Columns(
+      columns = {
+        @Column(name = "registry_lock_or_unlock_cost_amount"),
+        @Column(name = "registry_lock_or_unlock_cost_currency")
+      })
   Money registryLockOrUnlockBillingCost = DEFAULT_REGISTRY_LOCK_OR_UNLOCK_BILLING_COST;
 
   /**
