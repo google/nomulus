@@ -121,6 +121,15 @@
   </cron>
 
   <cron>
+    <url><![CDATA[/_dr/cron/replicateToDatastore]]></url>
+    <description>
+      Replays recent transactions from SQL to the Datastore secondary backend.
+    </description>
+    <schedule>every 3 minutes</schedule>
+    <target>backend</target>
+  </cron>
+
+  <cron>
     <url><![CDATA[/_dr/cron/commitLogCheckpoint]]></url>
     <description>
       This job checkpoints the commit log buckets and exports the diff since last checkpoint to GCS.
